@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>2.5.0-SNAPSHOT</version>
+        <version>2.5.2-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
@@ -101,10 +101,6 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -543,7 +539,6 @@
                                         <includes>
                                             <include>commons-pool:commons-pool</include>
                                             <include>org.apache.commons:commons-lang3</include>
-                                            <include>joda-time:joda-time</include>
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.esotericsoftware.kryo:kryo</include>
                                             <include>org.objenesis:objenesis</include>
@@ -577,6 +572,10 @@
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
+                                            <include>gov.nsa.datawave.microservice:metadata-utils</include>
+                                            <include>gov.nsa.datawave.microservice:type-utils</include>
+                                            <include>gov.nsa.datawave.microservice:base-rest-responses</include>
+                                            <include>gov.nsa.datawave.microservice:common-utils</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
@@ -617,6 +616,10 @@
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
+                                            <include>gov.nsa.datawave.microservice:metadata-utils</include>
+                                            <include>gov.nsa.datawave.microservice:type-utils</include>
+                                            <include>gov.nsa.datawave.microservice:base-rest-responses</include>
+                                            <include>gov.nsa.datawave.microservice:common-utils</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>com.google.code.gson:gson</include>

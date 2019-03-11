@@ -72,7 +72,6 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
             filterChain.doFilter(request, response);
         } catch (AuthenticationException e) {
             SecurityContextHolder.clearContext();
-            ;
             request.setAttribute(WebAttributes.AUTHENTICATION_EXCEPTION, e);
             if (authenticationEntryPoint != null) {
                 authenticationEntryPoint.commence(req, res, e);

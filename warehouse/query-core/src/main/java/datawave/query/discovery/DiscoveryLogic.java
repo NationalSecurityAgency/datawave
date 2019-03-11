@@ -76,6 +76,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
+    private MetadataHelper metadataHelper;
     
     public DiscoveryLogic() {
         super();
@@ -91,7 +92,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         this.scannerFactory = new ScannerFactory(connection);
         
-        initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        this.metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -134,25 +135,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             config.setDatatypeFilter(dataTypeFilter);
             if (log.isDebugEnabled()) {
                 log.debug("Data type filter set to " + dataTypeFilter);
-            }
-        }
-        
-        // Get the MAX_RESULTS_OVERRIDE parameter if given
-        if (null != settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE)
-                        && null != settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue()
-                        && !settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue().isEmpty()) {
-            try {
-                long override = Long.parseLong(settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue());
-                
-                if (override < config.getMaxQueryResults()) {
-                    config.setMaxQueryResults(override);
-                    // this.maxresults is initially set to the value in the config, we are overriding it here for this instance
-                    // of the query.
-                    this.setMaxResults(override);
-                }
-            } catch (NumberFormatException nfe) {
-                log.error(QueryParameters.MAX_RESULTS_OVERRIDE + " query parameter is not a valid number: "
-                                + settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue() + ", using default value");
             }
         }
         

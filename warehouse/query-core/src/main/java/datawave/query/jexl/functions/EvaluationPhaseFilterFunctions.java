@@ -217,7 +217,7 @@ public class EvaluationPhaseFilterFunctions {
         return FunctionalSet.unmodifiableSet(matches);
     }
     
-    // Evaluate a regex. Note this is being done against the un-normalized value.
+    // Evaluate a regex. Note this is being done against the un-normalized value unless the regex is not case sensitive.
     public static FunctionalSet<ValueTuple> includeRegex(Object fieldValue, String regex) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null
@@ -228,7 +228,7 @@ public class EvaluationPhaseFilterFunctions {
         return matches;
     }
     
-    // Evaluate a regex. Note this is being done against the un-normalized value.
+    // Evaluate a regex. Note this is being done against the un-normalized value unless the regex is not case sensitive.
     public static FunctionalSet<ValueTuple> includeRegex(Iterable<?> values, String regex) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         // Important to note that a regex of ".*" still requires
@@ -314,6 +314,34 @@ public class EvaluationPhaseFilterFunctions {
     
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
         return includeRegex(fieldValue, regex);
+    }
+    
+    // Evaluate text. Note this is being done against the un-normalized value.
+    public static FunctionalSet<ValueTuple> includeText(Object fieldValue, String valueToMatch) {
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
+        if (fieldValue != null && ValueTuple.getStringValue(fieldValue).equals(valueToMatch)) {
+            matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        }
+        return matches;
+    }
+    
+    // Evaluate text. Note this is being done against the un-normalized value.
+    public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
+        if (null == values) {
+            return matches;
+        }
+        
+        for (Object value : values) {
+            if (null == value)
+                continue;
+            
+            if (ValueTuple.getStringValue(value).equals(valueToMatch)) {
+                matches = FunctionalSet.singleton(getHitTerm(value));
+                return matches;
+            }
+        }
+        return matches;
     }
     
     /**
@@ -1470,7 +1498,19 @@ public class EvaluationPhaseFilterFunctions {
         return ValueTuple.toValueTuple(valueTuple);
     }
     
-    public static String getMatchToLeftOfPeriod(String input, int pos) {
+    /**
+     * <pre>
+     * for a field like:
+     * NAME.GGPARENT.GPARENT.PARENT.CHILD
+     * if the pos is 0, then GGPARENT.GPARENT.PARENT will be returned
+     * if the pos is 2, then GGPARENT will be returned
+     * </pre>
+     * 
+     * @param input
+     * @param pos
+     * @return
+     */
+    static String getMatchToLeftOfPeriod(String input, int pos) {
         // always peel off the fieldName before the first '.'
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = indicesOf(input, '.');
@@ -1479,7 +1519,18 @@ public class EvaluationPhaseFilterFunctions {
         return input.substring(0, indices[indices.length - pos - 1]);
     }
     
-    public static String getMatchToRightOfPeriod(String input, int pos) {
+    /**
+     * <pre>
+     *     for a field like NAME.NAME_1.5
+     *     if the pos is 0, then '5' will be returned
+     *     if the pos it 1, then NAME_1.5 will be returned
+     * </pre>
+     * 
+     * @param input
+     * @param pos
+     * @return
+     */
+    static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)
             throw new RuntimeException("Input" + input + " does not have a '.' at position " + pos + " from the right.");

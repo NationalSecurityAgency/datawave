@@ -146,6 +146,7 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.warehouse.pool.normal.size:remove
 /system-property=dw.warehouse.pool.high.size:remove
 /system-property=dw.warehouse.pool.admin.size:remove
+/system-property=dw.metadatahelper.all.auths:remove
 /system-property=dw.metrics.pool.low.size:remove
 /system-property=dw.metrics.pool.normal.size:remove
 /system-property=dw.metrics.pool.high.size:remove

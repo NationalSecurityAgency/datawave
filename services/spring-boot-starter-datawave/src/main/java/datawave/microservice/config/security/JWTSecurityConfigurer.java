@@ -1,5 +1,6 @@
 package datawave.microservice.config.security;
 
+import com.google.common.base.Preconditions;
 import datawave.microservice.authorization.Http403ForbiddenEntryPoint;
 import datawave.microservice.authorization.config.DatawaveSecurityProperties;
 import datawave.microservice.authorization.jwt.JWTAuthenticationFilter;
@@ -9,9 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -39,6 +42,7 @@ import java.util.List;
 @Order(SecurityProperties.BASIC_AUTH_ORDER - 2)
 @Configuration
 @EnableWebSecurity
+@ConditionalOnWebApplication
 @EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true)
 @ConditionalOnProperty(name = "security.jwt.enabled", matchIfMissing = true)
 public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
@@ -95,7 +99,8 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
     }
     
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    protected void configure(@Nullable AuthenticationManagerBuilder auth) throws Exception {
+        Preconditions.checkNotNull(auth);
         auth.authenticationProvider(jwtAuthenticationProvider);
     }
     
@@ -129,6 +134,7 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
             filterChain.doFilter(httpServletRequest, httpServletResponse);
         }
         
+        @Nullable
         private X509Certificate extractClientCertificate(HttpServletRequest request) {
             X509Certificate[] certs = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
             

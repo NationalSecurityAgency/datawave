@@ -844,7 +844,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      */
     protected MetadataHelper getMetadataHelper(Connector con) throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         Authorizations auths = con.securityOperations().getUserAuthorizations(con.whoami());
-        return metadataHelperFactory.createMetadataHelper().initialize(con, this.getMetadataTableName(), Collections.singleton(auths));
+        return metadataHelperFactory.createMetadataHelper(con, this.getMetadataTableName(), Collections.singleton(auths));
     }
     
     /**
@@ -912,7 +912,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         try {
             GenericResponse<String> createResponse = queryService.createQuery(logicName, QueryParametersImpl.paramsToMap(logicName, query.toString(),
                             "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
-                            StringUtils.join(auths, ','), expiration, 2, -1, QueryPersistence.TRANSIENT, queryOptions.toString(), false));
+                            StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, queryOptions.toString(), false));
             
             id = createResponse.getResult();
             BaseQueryResponse response = queryService.next(id);

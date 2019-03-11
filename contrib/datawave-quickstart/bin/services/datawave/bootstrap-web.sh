@@ -16,11 +16,10 @@ DW_DATAWAVE_WEB_CMD_STOP="datawaveWebIsRunning && [[ ! -z \$DW_DATAWAVE_WEB_PID_
 DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS="pgrep -f 'jboss.home.dir=${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}'"
 
 DW_DATAWAVE_WEB_SYMLINK="datawave-webservice"
+DW_DATAWAVE_WEB_BASEDIR="datawave-webservice-install"
 
 getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
 DW_DATAWAVE_WEB_DIST="${tarball}"
-DW_DATAWAVE_WEB_VERSION="$( echo "${DW_DATAWAVE_WEB_DIST}" | sed "s/.*\///" | sed "s/datawave-ws-deploy-application-//" | sed "s/-${DW_DATAWAVE_BUILD_PROFILE}.tar.gz//" )"
-DW_DATAWAVE_WEB_BASEDIR="datawave-web-${DW_DATAWAVE_WEB_VERSION}"
 
 function datawaveWebIsRunning() {
     DW_DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS} -d ' '")"
@@ -61,14 +60,19 @@ function datawaveWebTest() {
 }
 
 function datawaveWebUninstall() {
-   if datawaveWebIsInstalled ; then
+   # Guard against false negative (bug) by testing to see if a "datawave-webservice-*" dir does actually exist, since
+   # DW_DATAWAVE_WEB_BASEDIR value may have been only partially defined (without the DW version, e.g., if build failed, etc)
+   # This is only for backward compatibility, since now the dir name is no longer defined dynamically
+   local install_dir="$( find "${DW_DATAWAVE_SERVICE_DIR}" -maxdepth 1 -type d -name "${DW_DATAWAVE_WEB_BASEDIR}*" )"
+
+   if datawaveWebIsInstalled || [ -n "${install_dir}" ] ; then
 
       if [ -L "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" ] ; then
           ( cd "${DW_CLOUD_HOME}" && unlink "${DW_DATAWAVE_WEB_SYMLINK}" ) || error "Failed to remove DataWave Web symlink"
       fi
 
-      if [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_BASEDIR}" ] ; then
-          rm -rf "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_BASEDIR}"
+      if [ -n "${install_dir}" ] ; then
+          rm -rf "${install_dir}"
       fi
 
       if [ -L "${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}" ] ; then

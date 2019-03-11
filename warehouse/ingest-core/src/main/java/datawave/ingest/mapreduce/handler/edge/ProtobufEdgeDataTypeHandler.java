@@ -10,7 +10,6 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.PrimitiveSink;
 import datawave.data.normalizer.DateNormalizer;
-import datawave.edge.protobuf.EdgeData.MetadataValue.Metadata;
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeKey.EDGE_FORMAT;
 import datawave.edge.util.EdgeKey.STATS_TYPE;
@@ -38,6 +37,8 @@ import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
 import datawave.ingest.time.Now;
 import datawave.marking.MarkingFunctions;
+import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
+import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
@@ -861,9 +862,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     InterruptedException {
         for (Entry<Key,Set<Metadata>> entry : metadataRegistry.entrySet()) {
             Key metaKey = entry.getKey();
-            datawave.edge.protobuf.EdgeData.MetadataValue.Builder valueBuilder = datawave.edge.protobuf.EdgeData.MetadataValue.newBuilder();
+            MetadataValue.Builder valueBuilder = MetadataValue.newBuilder();
             valueBuilder.addAllMetadata(entry.getValue());
-            datawave.edge.protobuf.EdgeData.MetadataValue value = valueBuilder.build();
+            MetadataValue value = valueBuilder.build();
             
             // write out a metadataRegistry key
             BulkIngestKey bulk = new BulkIngestKey(new Text(tableName), metaKey);

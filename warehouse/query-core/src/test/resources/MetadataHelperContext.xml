@@ -6,38 +6,38 @@
     xmlns:cache="http://www.springframework.org/schema/cache"
     xsi:schemaLocation="
      http://www.springframework.org/schema/beans 
-     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+     http://www.springframework.org/schema/beans/spring-beans.xsd
      http://www.springframework.org/schema/cache 
-     http://www.springframework.org/schema/cache/spring-cache-4.0.xsd
-     http://www.springframework.org/schema/util 
-     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
-     
+     http://www.springframework.org/schema/cache/spring-cache.xsd
+     http://www.springframework.org/schema/util
+     http://www.springframework.org/schema/util/spring-util.xsd">
+
      <!--  cacheManager is in CacheContext.xml. You must also include CacheContext.xml in any spring context that includes this file -->
-    <cache:annotation-driven cache-manager="cacheManager"/>
+    <cache:annotation-driven cache-manager="metadataHelperCacheManager"/>
     
-    <bean id="metadataHelper" scope="prototype" class="datawave.query.util.MetadataHelperWithDescriptions" >
-        <property name="allFieldMetadataHelper" ref="allFieldMetadataHelper"/>
-        <property name="allMetadataAuths" ref="allMetadataAuths"/>
-    </bean>
-    
-    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" >
-        <lookup-method name="createMetadataHelper" bean="metadataHelper" />
+    <bean id="metadataHelper" scope="prototype" class="datawave.query.util.MetadataHelper" >
+        <constructor-arg name="allFieldMetadataHelper" ref="allFieldMetadataHelper"/>
+        <constructor-arg name="allMetadataAuths" ref="allMetadataAuths"/>
     </bean>
 
+    <bean id="typeMetadataHelperFactory" class="datawave.query.util.TypeMetadataHelper.Factory" autowire="constructor" />
+
+    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" autowire="constructor" />
+
     <bean id="allFieldMetadataHelper" scope="prototype" class="datawave.query.util.AllFieldMetadataHelper" >
-        <property name="typeMetadataHelper" ref="typeMetadataHelper"/>
-        <property name="compositeMetadataHelper" ref="compositeMetadataHelper"/>
+        <constructor-arg name="typeMetadataHelper" ref="typeMetadataHelper"/>
+        <constructor-arg name="compositeMetadataHelper" ref="compositeMetadataHelper"/>
     </bean>
 
     <bean id="typeMetadataHelper" scope="prototype" class="datawave.query.util.TypeMetadataHelper" >
-        <property name="typeSubstitutions" ref="typeSubstitutions" />
-        <property name="allMetadataAuths" ref="allMetadataAuths" />
+        <constructor-arg name="typeSubstitutions" ref="typeSubstitutions" />
+        <constructor-arg name="allMetadataAuths" ref="allMetadataAuths" />
     </bean>
 
     <bean id="compositeMetadataHelper" scope="prototype" class="datawave.query.composite.CompositeMetadataHelper" />
 
     <util:set id="allMetadataAuths" scope="prototype" value-type="org.apache.accumulo.core.security.Authorizations" >
-        <bean class="org.apache.accumulo.core.security.Authorizations" >
+        <bean class="org.apache.accumulo.core.security.Authorizations">
             <constructor-arg>
                 <list>
                     <value>ALL</value>

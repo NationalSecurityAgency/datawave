@@ -199,6 +199,8 @@ cd /path/to/datawave/services
 java -jar authorization-service/target/authorization-service*-exec.jar --spring.profiles.active=dev,nomessaging,mock 
 ```
 
+Note that the authorization service is configured for two-way authentication, and the PKI materials located [here](spring-boot-starter-datawave/src/main/resources) are used by default (password for all: *ChangeIt*). For example, to access the authorization service endpoints below, simply import either the **testUser.p12** or **testServer.p12** client cert into your browser or preferred HTTP client. The default PKI configuration is provided for testing purposes only and is not intended for production use.
+
 Once all services are running, you should be able to hit some of the 
 following URLs:
 * `https://localhost:8643/authorization/v1/authorize` will return a JWT corresponding
@@ -207,7 +209,7 @@ following URLs:
   of the DatawaveUser corresponding to your client certificate
 * `https://localhost:8643/authorization/swagger-ui.html` shows Swagger documentation
   of the service
-* `https://localhost:8643/authorization/mgmt/docs/` shows available management
+* `https://localhost:8643/authorization/mgmt/` shows available Spring Boot Actuator management
   endpoints
 
 You may see an exception from either the authorization or config service due to

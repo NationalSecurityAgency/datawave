@@ -93,9 +93,10 @@ public class TLDQueryIterator extends QueryIterator {
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled(),
-                            useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek,
-                            maxKeysBeforeSeek, limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.EMPTY_MAP, limitFieldsField, getNonEventFields());
+            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, useWhiteListedFields ? whiteListedFields : null, 
+                            useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek, 
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.EMPTY_MAP, limitFieldsField, 
+                            getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }

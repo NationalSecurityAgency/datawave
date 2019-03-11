@@ -1,6 +1,7 @@
 # Sourced by env.sh
 
 DW_DATAWAVE_INGEST_SYMLINK="datawave-ingest"
+DW_DATAWAVE_INGEST_BASEDIR="datawave-ingest-install"
 
 DW_DATAWAVE_INGEST_HOME="${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}"
 
@@ -71,8 +72,6 @@ DW_DATAWAVE_MAPRED_INGEST_OPTS="-useInlineCombiner -ingestMetricsDisabled"
 
 getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
 DW_DATAWAVE_INGEST_DIST="${tarball}"
-DW_DATAWAVE_INGEST_VERSION="$( echo "${DW_DATAWAVE_INGEST_DIST}" | sed "s/.*\///" | sed "s/datawave-${DW_DATAWAVE_BUILD_PROFILE}-//" | sed "s/-dist.tar.gz//" )"
-DW_DATAWAVE_INGEST_BASEDIR="datawave-ingest-${DW_DATAWAVE_INGEST_VERSION}"
 
 # Service helpers...
 
@@ -108,13 +107,19 @@ function datawaveIngestIsInstalled() {
 }
 
 function datawaveIngestUninstall() {
-   if datawaveIngestIsInstalled ; then
+
+   # Guard against false negative (bug) by testing to see if a "datawave-ingest-*" dir does actually exist, since
+   # DW_DATAWAVE_INGEST_BASEDIR value may have been only partially defined (without the DW version, e.g., if build failed, etc)
+   # This is only for backward compatibility, since now the dir name is no longer defined dynamically
+   local install_dir="$( find "${DW_DATAWAVE_SERVICE_DIR}" -maxdepth 1 -type d -name "${DW_DATAWAVE_INGEST_BASEDIR}*" )"
+
+   if datawaveIngestIsInstalled || [ -n "${install_dir}" ] ; then
       if [ -L "${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}" ] ; then
           unlink "${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}" || error "Failed to remove DataWave Ingest symlink"
       fi
 
-      if [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_BASEDIR}" ] ; then
-          rm -rf "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_BASEDIR}"
+      if [ -n "${install_dir}" ] ; then
+          rm -rf "${install_dir}"
       fi
 
       ! datawaveIngestIsInstalled && info "DataWave Ingest uninstalled" || error "Failed to uninstall DataWave Ingest"

@@ -62,9 +62,9 @@ import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.transformer.GroupingTransform;
+import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
-import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.TraceIterators;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
@@ -78,6 +78,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
 import org.apache.accumulo.trace.instrument.Span;
 import org.apache.accumulo.trace.instrument.Trace;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
@@ -138,7 +140,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * </ol>
  *
  */
-public class QueryIterator extends QueryOptions implements SortedKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
+public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
                 SourceFactory<Key,Value> {
     
     private static final Logger log = Logger.getLogger(QueryIterator.class);
@@ -154,7 +156,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     
     protected Key key;
     protected Value value;
-    protected YieldCallbackWrapper<Key> yield;
+    protected YieldCallback<Key> yield;
     
     protected IteratorEnvironment myEnvironment;
     
@@ -255,8 +257,9 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         return result;
     }
     
-    public void enableYielding(Object yieldCallback) {
-        this.yield = new YieldCallbackWrapper(yieldCallback);
+    @Override
+    public void enableYielding(YieldCallback<Key> yieldCallback) {
+        this.yield = yieldCallback;
     }
     
     @Override
@@ -1389,7 +1392,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         if (groupingTransform == null && getGroupFields() != null & !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
                 if (groupingTransform == null) {
-                    groupingTransform = new GroupingTransform(null, getGroupFields());
+                    groupingTransform = new GroupingTransform(null, getGroupFields(), true);
                     groupingTransform.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
                 }
             }

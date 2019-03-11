@@ -2,8 +2,8 @@ package datawave.webservice.edgedictionary;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
-import datawave.edge.protobuf.EdgeData;
 import datawave.edge.util.EdgeKey;
+import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.webservice.results.edgedictionary.DefaultEdgeDictionary;
 import datawave.webservice.results.edgedictionary.EventField;
 import datawave.webservice.results.edgedictionary.DefaultMetadata;
@@ -117,18 +117,13 @@ public class DefaultDatawaveEdgeDictionaryImplTest {
     private static Value createEdgeValue() {
         // Extra Metadata values with different dates to ensure that the earliest date is chosen to be the start date
         // of collection. Early Date = 20130318
-        EdgeData.MetadataValue.Metadata value1 = EdgeData.MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20130415")
-                        .build();
-        EdgeData.MetadataValue.Metadata value2 = EdgeData.MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20130320")
-                        .build();
-        EdgeData.MetadataValue.Metadata value3 = EdgeData.MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD)
-                        .setDate(EARLY_DATE_FIELD).build();
-        EdgeData.MetadataValue.Metadata value4 = EdgeData.MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20140314")
-                        .build();
-        EdgeData.MetadataValue.Metadata value5 = EdgeData.MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20130319")
-                        .build();
+        MetadataValue.Metadata value1 = MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20130415").build();
+        MetadataValue.Metadata value2 = MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20130320").build();
+        MetadataValue.Metadata value3 = MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate(EARLY_DATE_FIELD).build();
+        MetadataValue.Metadata value4 = MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20140314").build();
+        MetadataValue.Metadata value5 = MetadataValue.Metadata.newBuilder().setSource(SOURCE_FIELD).setSink(SINK_FIELD).setDate("20130319").build();
         
-        EdgeData.MetadataValue.Builder valueBuilder = datawave.edge.protobuf.EdgeData.MetadataValue.newBuilder();
+        MetadataValue.Builder valueBuilder = MetadataValue.newBuilder();
         valueBuilder.addAllMetadata(Collections.singletonList(value1));
         valueBuilder.addAllMetadata(Collections.singletonList(value2));
         valueBuilder.addAllMetadata(Collections.singletonList(value3));

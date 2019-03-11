@@ -23,6 +23,7 @@ import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
@@ -849,22 +850,37 @@ public class DefaultQueryPlanner extends QueryPlanner {
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
                     ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         ASTJexlScript queryTree = originalQueryTree;
+        
+        TraceStopwatch stopwatch = null;
+        
+        if (!disableExpandIndexFunction) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
+            
+            // Coalesce any bounded ranges into separate AND subtrees
+            queryTree = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, queryTree);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after function index queries were expanded:");
+            }
+            
+            stopwatch.stop();
+        }
+        
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
         // If the max term expansion is reached, then the original query tree is
         // returned.
         // If the max regex expansion is reached for a term, then it will be
         // left as a regex
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ANYFIELD regex nodes");
         Set<String> expansionFields = null;
         if (!disableAnyFieldLookup) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ANYFIELD regex nodes");
+            
             try {
                 
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields);
-            } catch (CannotExpandUnfieldedTermFatalException e) {
-                // The visitor will only throw this if we cannot expand a term that is not nested in an or.
-                // Hence this query would return no results.
+            } catch (EmptyUnfieldedTermExpansionException e) {
+                // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ",
                                 queryData.getQuery()));
@@ -880,18 +896,16 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after fixing unfielded queries:");
             }
+            stopwatch.stop();
         }
         
-        stopwatch.stop();
         if (!disableTestNonExistentFields) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Test for non-existent fields");
             
             // Verify that the query does not contain fields we've never seen
             // before
             Set<String> nonexistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(metadataHelper, queryTree, config.getDatatypeFilter(),
-                            Sets.newHashSet(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD));// ,
-                                                                                                           // "filter",
-                                                                                                           // "countOf"));
+                            Sets.newHashSet(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD, Constants.NO_FIELD));
             if (log.isDebugEnabled()) {
                 log.debug("Testing for non-existent fields, found: " + nonexistentFields.size());
             }
@@ -914,18 +928,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
                                 "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields, config.getAuthorizations()));
                 log.error(qe);
                 throw new InvalidQueryException(qe);
-            }
-            
-            stopwatch.stop();
-        }
-        
-        if (!disableExpandIndexFunction) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
-            
-            // Coalesce any bounded ranges into separate AND subtrees
-            queryTree = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, queryTree);
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after function index queries were expanded:");
             }
             
             stopwatch.stop();
@@ -1612,11 +1614,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
                             
                             if (config.isDebugMultithreadedSources()) {
                                 addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
-                            }
-                            
-                            if (config.isDataQueryExpressionFilterEnabled()) {
-                                addOption(cfg, QueryOptions.DATA_QUERY_EXPRESSION_FILTER_ENABLED,
-                                                Boolean.toString(config.isDataQueryExpressionFilterEnabled()), false);
                             }
                             
                             if (config.isLimitFieldsPreQueryEvaluation()) {

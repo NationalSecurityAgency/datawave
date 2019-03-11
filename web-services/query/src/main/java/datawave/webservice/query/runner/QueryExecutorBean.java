@@ -165,14 +165,16 @@ import static datawave.webservice.query.cache.QueryTraceCache.CacheListener;
 import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 
 @Path("/Query")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
 @Stateless
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryExecutorBean implements QueryExecutor {
+    
+    private static final String PRIVILEGED_USER = "PrivilegedUser";
     
     private final Logger log = Logger.getLogger(QueryExecutorBean.class);
     
@@ -355,7 +357,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 
                 logicConfigurationList.add(d);
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error setting query logic description", e);
             }
         }
         Collections.sort(logicConfigurationList, Comparator.comparing(QueryLogicDescription::getName));
@@ -472,6 +474,24 @@ public class QueryExecutorBean implements QueryExecutor {
             throw new BadRequestException(qe, response);
         }
         
+        // validate the max results override relative to the max results on a query logic
+        // privileged users however can set whatever they want
+        if (qp.isMaxResultsOverridden()) {
+            if (!ctx.isCallerInRole(PRIVILEGED_USER)) {
+                if (qp.getMaxResultsOverride() < 0) {
+                    if (qd.logic.getMaxResults() >= 0) {
+                        GenericResponse<String> response = new GenericResponse<>();
+                        throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
+                    }
+                } else {
+                    if (qd.logic.getMaxResults() < qp.getMaxResultsOverride()) {
+                        GenericResponse<String> response = new GenericResponse<>();
+                        throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
+                    }
+                }
+            }
+        }
+        
         // Set private audit-related parameters, stripping off any that the user might have passed in first.
         // These are parameters that aren't passed in by the user, but rather are computed from other sources.
         PrivateAuditConstants.stripPrivateParameters(queryParameters);
@@ -542,7 +562,7 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("Error accessing optional query parameters", e);
             QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -625,7 +645,7 @@ public class QueryExecutorBean implements QueryExecutor {
                                 queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
                             }
                         } catch (Exception e) {
-                            log.error(e.getMessage());
+                            log.error("Error accessing query selector", e);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1028,7 +1048,7 @@ public class QueryExecutorBean implements QueryExecutor {
                                 queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
                             }
                         } catch (Exception e) {
-                            log.error(e.getMessage());
+                            log.error("Error accessing query selector", e);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1138,18 +1158,8 @@ public class QueryExecutorBean implements QueryExecutor {
         
         GenericResponse<String> createResponse = createQuery(logicName, queryParameters, httpHeaders);
         String queryId = createResponse.getResult();
-        try {
-            CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
-            return next(queryId, false);
-        } catch (NoResultsException e) {
-            close(queryId);
-            throw e;
-        } catch (EJBException e) {
-            if (e.getCause() instanceof NoResultsException) {
-                close(queryId);
-            }
-            throw e;
-        }
+        CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
+        return next(queryId, false);
     }
     
     @POST
@@ -1815,6 +1825,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
             }
+            close(id); // close the query, as there were no results and we are done here
             throw e;
         } catch (DatawaveWebApplicationException e) {
             if (query != null) {
@@ -1824,7 +1835,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     try {
                         metrics.updateMetric(query.getMetric());
                     } catch (Exception e1) {
-                        log.error(e1.getMessage());
+                        log.error("Error updating query metrics", e1);
                     }
                 }
             }
@@ -1832,6 +1843,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 ctx.getUserTransaction().setRollbackOnly();
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
+            }
+            if (e.getCause() instanceof NoResultsException) {
+                close(id);
             }
             throw e;
         } catch (Exception e) {
@@ -1843,7 +1857,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     try {
                         metrics.updateMetric(query.getMetric());
                     } catch (Exception e1) {
-                        log.error(e1.getMessage());
+                        log.error("Error updating query metrics", e1);
                     }
                 }
             }
@@ -1856,6 +1870,9 @@ public class QueryExecutorBean implements QueryExecutor {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, MessageFormat.format("query id: {0}", id));
             log.error(qe);
             response.addException(qe.getBottomQueryException());
+            if (e.getCause() instanceof NoResultsException) {
+                close(id);
+            }
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
         } finally {
@@ -1946,7 +1963,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
@@ -1999,7 +2016,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
@@ -2089,7 +2106,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while canceling query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
@@ -2144,7 +2161,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while canceling query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
@@ -2372,6 +2389,8 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - defaults to old pagesize, number of results to return on each call to next() (optional)
      * @param newPageTimeout
      *            - specify timeout (in minutes) for each call to next(), defaults to -1 indicating disabled (optional)
+     * @param newMaxResultsOverride
+     *            - specify max results (optional)
      * @param newPersistenceMode
      *            - defaults to PERSISTENT, indicates whether or not the query is persistent (optional)
      * @param newParameters
@@ -2379,7 +2398,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param trace
      *            - optional (defaults to {@code false}) indication of whether or not the query should be traced using the distributed tracing mechanism
      * @see datawave.webservice.query.runner.QueryExecutorBean#duplicateQuery(String, String, String, String, String, Date, Date, String, Date, Integer,
-     *      Integer, QueryPersistence, String, boolean)
+     *      Integer, Long, QueryPersistence, String, boolean)
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2406,8 +2425,8 @@ public class QueryExecutorBean implements QueryExecutor {
                                     defaultTime = "235959", defaultMillisec = "999") Date newEndDate, @FormParam("auths") String newQueryAuthorizations,
                     @FormParam("expiration") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date newExpirationDate,
                     @FormParam("pagesize") Integer newPagesize, @FormParam("pageTimeout") Integer newPageTimeout,
-                    @FormParam("persistence") QueryPersistence newPersistenceMode, @FormParam("params") String newParameters,
-                    @FormParam("trace") @DefaultValue("false") boolean trace) {
+                    @FormParam("maxResultsOverride") Long newMaxResultsOverride, @FormParam("persistence") QueryPersistence newPersistenceMode,
+                    @FormParam("params") String newParameters, @FormParam("trace") @DefaultValue("false") boolean trace) {
         
         GenericResponse<String> response = new GenericResponse<>();
         
@@ -2447,6 +2466,9 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             if (newPagesize != null) {
                 q.setPagesize(newPagesize);
+            }
+            if (newMaxResultsOverride != null) {
+                q.setMaxResultsOverride(newMaxResultsOverride);
             }
             if (newPageTimeout != null) {
                 q.setPageTimeout(newPageTimeout);
@@ -2500,12 +2522,14 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - number of results to return on each call to next() (optional)
      * @param pageTimeout
      *            - specify timeout (in minutes) for each call to next(), defaults to -1 indicating disabled (optional)
+     * @param maxResultsOverride
+     *            - specify max results (optional)
      * @param persistenceMode
      *            - indicates whether or not the query is persistent (optional)
      * @param parameters
      *            - optional parameters to the query, a semi-colon separated list name=value pairs (optional, auditing required if changed)
      * @see datawave.webservice.query.runner.QueryExecutorBean#updateQuery(String, String, String, String, java.util.Date, java.util.Date, String,
-     *      java.util.Date, Integer, Integer, datawave.webservice.query.QueryPersistence, String)
+     *      java.util.Date, Integer, Integer, Long, datawave.webservice.query.QueryPersistence, String)
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2531,12 +2555,13 @@ public class QueryExecutorBean implements QueryExecutor {
                                     defaultTime = "235959", defaultMillisec = "999") Date endDate, @FormParam("auths") String queryAuthorizations,
                     @FormParam("expiration") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date expirationDate,
                     @FormParam("pagesize") Integer pagesize, @FormParam("pageTimeout") Integer pageTimeout,
-                    @FormParam("persistence") QueryPersistence persistenceMode, @FormParam("params") String parameters) {
+                    @FormParam("maxResultsOverride") Long maxResultsOverride, @FormParam("persistence") QueryPersistence persistenceMode,
+                    @FormParam("params") String parameters) {
         GenericResponse<String> response = new GenericResponse<>();
         try {
             RunningQuery rq = getQueryById(id);
-            updateQuery(response, rq, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode,
-                            parameters);
+            updateQuery(response, rq, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout,
+                            maxResultsOverride, persistenceMode, parameters);
             
             response.setResult(id);
             return response;
@@ -2555,8 +2580,8 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private void updateQuery(GenericResponse<String> response, RunningQuery runningQuery, String queryLogicName, String query, Date beginDate, Date endDate,
-                    String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, QueryPersistence persistenceMode, String parameters)
-                    throws Exception {
+                    String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, Long maxResultsOverride,
+                    QueryPersistence persistenceMode, String parameters) throws Exception {
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String userid = p.getName();
@@ -2590,7 +2615,8 @@ public class QueryExecutorBean implements QueryExecutor {
             Query duplicate = q.duplicate(q.getQueryName());
             duplicate.setId(q.getId());
             
-            updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, parameters);
+            updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout,
+                            maxResultsOverride, parameters);
             
             // Fire off an audit prior to updating
             Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
@@ -2614,7 +2640,8 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // update the actual running query
-        updateQueryParams(q, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, parameters);
+        updateQueryParams(q, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
+                        parameters);
         
         // update the persistenceMode post audit
         if (persistenceMode != null) {
@@ -2633,7 +2660,7 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private void updateQueryParams(Query q, String queryLogicName, String query, Date beginDate, Date endDate, String queryAuthorizations, Date expirationDate,
-                    Integer pagesize, Integer pageTimeout, String parameters) throws CloneNotSupportedException {
+                    Integer pagesize, Integer pageTimeout, Long maxResultsOverride, String parameters) throws CloneNotSupportedException {
         Principal p = ctx.getCallerPrincipal();
         // TODO: add validation for all these sets
         if (queryLogicName != null) {
@@ -2660,6 +2687,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         if (pageTimeout != null) {
             q.setPageTimeout(pageTimeout);
+        }
+        if (maxResultsOverride != null) {
+            q.setMaxResultsOverride(maxResultsOverride);
         }
         if (parameters != null) {
             Set<Parameter> params = new HashSet<>();
@@ -3096,7 +3126,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 metrics.updateMetric(rq.getMetric());
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error updating query metric", e);
             }
             
             boolean done = false;
@@ -3145,7 +3175,7 @@ public class QueryExecutorBean implements QueryExecutor {
                         try {
                             metrics.updateMetric(rq.getMetric());
                         } catch (Exception e) {
-                            log.error(e.getMessage(), e);
+                            log.error("Error updating query metric", e);
                         }
                     }
                 }
@@ -3155,7 +3185,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 close(rq);
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error closing query", e);
             }
         }
         

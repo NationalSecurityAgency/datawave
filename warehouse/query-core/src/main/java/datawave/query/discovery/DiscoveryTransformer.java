@@ -35,7 +35,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     private ResponseObjectFactory responseObjectFactory;
     
     public DiscoveryTransformer(BaseQueryLogic<DiscoveredThing> logic, Query settings, QueryModel qm) {
-        super(new MarkingFunctions.NoOp());
+        super(new MarkingFunctions.Default());
         this.markingFunctions = logic.getMarkingFunctions();
         this.responseObjectFactory = logic.getResponseObjectFactory();
         this.logic = logic;

@@ -2,7 +2,7 @@ package datawave.query.testframework;
 
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions.NoOp;
+import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -138,7 +138,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setIncludeDataTypeAsField(true);
         
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        this.logic.setMarkingFunctions(new NoOp());
+        this.logic.setMarkingFunctions(new Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
@@ -151,7 +151,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         countLogic.setFullTableScanEnabled(false);
         
         countLogic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        countLogic.setMarkingFunctions(new NoOp());
+        countLogic.setMarkingFunctions(new Default());
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());
         countLogic.setQueryPlanner(new DefaultQueryPlanner());
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
@@ -289,6 +289,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         runTestQuery(expected, queryStr, startDate, endDate, Collections.emptyMap());
     }
     
+    protected void runTestQuery(Collection<String> expected, String queryStr) throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        runTestQuery(expected, queryStr, startEndDate[0], startEndDate[1], Collections.emptyMap());
+    }
+    
     /**
      * Equivalent to {@link #runTestQuery(Collection, String, Date, Date, Map, List)}, with an empty list for the checkers.
      *
@@ -338,6 +343,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         
         GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
         this.logic.setupQuery(config);
+        log.debug("Plan: " + config.getQueryString());
         testHarness.assertLogicResults(this.logic, expected, checkers);
     }
     

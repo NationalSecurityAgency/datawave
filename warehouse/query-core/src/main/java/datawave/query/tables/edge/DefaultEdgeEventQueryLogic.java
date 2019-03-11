@@ -72,7 +72,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         setEdgeDictionary(getEdgeDictionary(connection, auths, 8)); // TODO grab threads from somewhere
         
         // Load and apply the configured edge query model
-        loadEdgeQueryModel();
+        loadEdgeQueryModel(connection, auths);
         
         String queryString = applyQueryModel(getJexlQueryString(settings));
         
@@ -90,13 +90,13 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     /**
      * Loads the query model specified by the current configuration, to be applied to the incoming query.
      */
-    protected void loadEdgeQueryModel() {
+    protected void loadEdgeQueryModel(Connector connector, Set<Authorizations> auths) {
         String model = getEdgeModelName() == null ? "" : getEdgeModelName();
         String modelTable = getModelTableName() == null ? "" : getModelTableName();
         if (null == getEdgeQueryModel() && (!model.isEmpty() && !modelTable.isEmpty())) {
             try {
-                setEdgeQueryModel(new EdgeQueryModel(getMetadataHelperFactory().createMetadataHelper().getQueryModel(config.getModelTableName(),
-                                config.getModelName())));
+                setEdgeQueryModel(new EdgeQueryModel(getMetadataHelperFactory().createMetadataHelper(connector, config.getMetadataTableName(), auths)
+                                .getQueryModel(config.getModelTableName(), config.getModelName())));
             } catch (Throwable t) {
                 log.error("Unable to load edgeQueryModel from metadata table", t);
             }

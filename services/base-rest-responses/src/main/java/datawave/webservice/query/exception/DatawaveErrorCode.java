@@ -216,6 +216,7 @@ public enum DatawaveErrorCode {
     MISSING_REQUIRED_PARAMETER(400, 40, "Missing required parameter."),
     INVALID_PAGE_TIMEOUT(400, 41, "Invalid page timeout."),
     BEGIN_DATE_AFTER_END_DATE(400, 42, "The begin date occurs after the end date."),
+    INVALID_MAX_RESULTS_OVERRIDE(400, 43, "Invalid max results override value."),
     // 401 Unauthorized
     QUERY_OWNER_MISMATCH(401, 1, "Current user does not match user that defined query."),
     JOB_EXECUTION_UNAUTHORIZED(401, 2, "User not authorized to run this job."),

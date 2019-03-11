@@ -1,9 +1,48 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.JexlASTHelper.isIndexed;
-import static datawave.query.jexl.JexlASTHelper.isLiteralEquality;
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.JexlNodeFactory.ContainerType;
+import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.TreeHashNode;
+import datawave.query.model.QueryModel;
+import datawave.query.planner.pushdown.Cost;
+import datawave.query.planner.pushdown.CostEstimator;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
+import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.Node;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -18,49 +57,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
-import datawave.data.type.Type;
-import datawave.query.model.QueryModel;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.TreeHashNode;
-import datawave.query.planner.pushdown.Cost;
-import datawave.query.planner.pushdown.CostEstimator;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.Query;
-
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
-import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.Node;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import static datawave.query.jexl.JexlASTHelper.isIndexed;
+import static datawave.query.jexl.JexlASTHelper.isLiteralEquality;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 public class ParallelIndexExpansion extends RebuildingVisitor {
     
@@ -197,7 +197,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         if (node.jjtGetNumChildren() == 0) {
             log.warn("Did not find any matches in index for the expansion of unfielded terms.");
-            throw new CannotExpandUnfieldedTermFatalException("Did not find any matches in index for the expansion of unfielded terms.");
+            throw new EmptyUnfieldedTermExpansionException("Did not find any matches in index for the expansion of unfielded terms.");
         }
         
         return node;
@@ -616,20 +616,19 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             // If we have no children, it's impossible to find any records, so this query returns no results
             if (fieldsToValues.isEmpty()) {
                 
-                // When we're not within an Or, we cannot proceed with this query.
-                // We can proceed an in Or because we can trim this term out of the query
-                // The And (or single term) implies that all results must have this term,
-                // but we don't know which field the term actually appears in.
-                if (!JexlASTHelper.isWithinOr(node)) {
-                    log.warn("Could not convert an 'anyfield' node to an 'or' node");
-                    throw new CannotExpandUnfieldedTermFatalException("Did not find any matches in index for the expansion of unfielded terms");
-                }
-                
                 if (log.isDebugEnabled()) {
                     try {
-                        log.debug("Retaining _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(node) + "\"}");
+                        log.debug("Failed to expand _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(node) + "\"}");
                     } catch (Exception ex) {
                         // it's just a debug statement
+                    }
+                }
+                
+                // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
+                // the query against the document
+                for (ASTIdentifier id : JexlASTHelper.getIdentifiers(node)) {
+                    if (Constants.ANY_FIELD.equals(id.image)) {
+                        id.image = Constants.NO_FIELD;
                     }
                 }
                 newNode = node;

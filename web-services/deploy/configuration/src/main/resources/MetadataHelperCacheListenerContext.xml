@@ -16,29 +16,29 @@
       -->
     <!-- a singleton -->
     <bean id="metadataHelperCacheManagementListener" class="datawave.query.util.MetadataHelperCacheManagementListener" destroy-method="shutdown" >
-        <property name="zookeepers" value="${zookeeper.hosts}" />
-    	<property name="metadataHelper" ref="metadataHelper" />
-    	<property name="metadataTableNames" >
+        <constructor-arg name="zookeepers" value="${zookeeper.hosts}" />
+        <constructor-arg name="metadataCacheManager" ref="metadataCacheManager" />
+        <constructor-arg name="metadataTableNames" >
     		<util:list>
 				${metadata.table.names}
     		</util:list>
-    	</property>
+        </constructor-arg>
     </bean>
 
 	<bean id="metadataHelperUpdateHdfsListener" class="datawave.query.util.MetadataHelperUpdateHdfsListener" >
-		<property name="zookeepers" value="${zookeeper.hosts}" />
-		<property name="typeMetadataHelperFactory" ref="typeMetadataHelperFactory" />
-		<property name="instance" value="${accumulo.instance.name}" />
-		<property name="password" value="${accumulo.user.password}" />
-		<property name="username" value="${accumulo.user.name}" />
-		<property name="allMetadataAuths" ref="allMetadataAuths" />
-		<property name="lockWaitTime" value="1000" />
+		<constructor-arg name="zookeepers" value="${zookeeper.hosts}" />
+		<constructor-arg name="typeMetadataHelperFactory" ref="typeMetadataHelperFactory" />
+		<constructor-arg name="instance" value="${accumulo.instance.name}" />
+		<constructor-arg name="password" value="${accumulo.user.password}" />
+		<constructor-arg name="username" value="${accumulo.user.name}" />
+		<constructor-arg name="allMetadataAuths" ref="allMetadataAuths" />
+		<constructor-arg name="lockWaitTime" value="1000" />
 
-		<property name="metadataTableNames" >
+		<constructor-arg name="metadataTableNames" >
 			<util:list>
 				${metadata.table.names}
 			</util:list>
-		</property>
+		</constructor-arg>
 	</bean>
 
 </beans>

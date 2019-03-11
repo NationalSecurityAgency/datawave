@@ -1,5 +1,22 @@
 package datawave.query.iterator.pipeline;
 
+import datawave.core.iterators.IteratorThreadPoolManager;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.NestedQuery;
+import datawave.query.iterator.NestedQueryIterator;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.util.Tuple2;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IterationInterruptedException;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.log4j.Logger;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
@@ -9,24 +26,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import datawave.query.iterator.profile.QuerySpan;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IterationInterruptedException;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
-
-import datawave.core.iterators.IteratorThreadPoolManager;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.NestedQuery;
-import datawave.query.iterator.NestedQueryIterator;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.YieldCallbackWrapper;
-import datawave.query.iterator.profile.QuerySpanCollector;
-import datawave.query.util.Tuple2;
-
 /**
  * This is the iterator that handles the evaluation pipelines. Essentially it will queue up N evaluations. On each hasNext and next call, it will pull the
  * results ready from the top and cache the non-null results in a results queue.
@@ -34,7 +33,7 @@ import datawave.query.util.Tuple2;
 public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     
     private static final Logger log = Logger.getLogger(PipelineIterator.class);
-    protected final YieldCallbackWrapper<Key> yield;
+    protected final YieldCallback<Key> yield;
     protected final long yieldThresholdMs;
     protected final NestedIterator<Key> docSource;
     protected final PipelinePool pipelines;
@@ -49,7 +48,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     
     public PipelineIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, QuerySpanCollector querySpanCollector, QuerySpan querySpan,
                     QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env,
-                    YieldCallbackWrapper<Key> yieldCallback, long yieldThresholdMs) {
+                    YieldCallback<Key> yieldCallback, long yieldThresholdMs) {
         this.docSource = documents;
         this.pipelines = new PipelinePool(maxPipelines, querySpanCollector, sourceIterator, sourceForDeepCopy, env);
         this.evaluationQueue = new LinkedList<>();
@@ -73,6 +72,11 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
      */
     @Override
     public boolean hasNext() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return false;
+        }
+        
         Entry<Key,Document> next = getNext(false);
         if (log.isTraceEnabled()) {
             log.trace("QueryIterator.hasNext() -> " + (next == null ? null : next.getKey()));
@@ -87,6 +91,11 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
      */
     @Override
     public Entry<Key,Document> next() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return null;
+        }
+        
         Entry<Key,Document> next = getNext(true);
         if (log.isTraceEnabled()) {
             log.trace("QueryIterator.next() -> " + (next == null ? null : next.getKey()));
@@ -131,10 +140,17 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
                     next = results.peek();
                 }
             }
+            
             return next;
         } catch (Exception e) {
             // cancel out existing executions
             cancel();
+            
+            // if we yielded, then leave gracefully
+            if (yield != null && yield.hasYielded()) {
+                return null;
+            }
+            
             log.error("Failed to retrieve evaluation pipeline result", e);
             throw new RuntimeException("Failed to retrieve evaluation pipeline result", e);
         }
@@ -156,12 +172,16 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
                 long delta = System.currentTimeMillis() - startMs;
                 if (delta > yieldThresholdMs) {
                     yield.yield(lastKeyEvaluated);
+                    if (log.isDebugEnabled())
+                        log.debug("Yielding at " + lastKeyEvaluated);
                     throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
                 }
                 try {
                     result = poll(yieldThresholdMs - delta);
                 } catch (TimeoutException e) {
                     yield.yield(lastKeyEvaluated);
+                    if (log.isDebugEnabled())
+                        log.debug("Yielding at " + lastKeyEvaluated);
                     throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
                 }
             } else {

@@ -146,9 +146,7 @@ import java.util.concurrent.TimeUnit;
  *     evaluate an Event based on information not already present in the Event or information that doesn't need to be returned with the Event.
  *     Filtering must be enabled by setting {@link ShardQueryConfiguration#useFilters} to true and providing a list of {@link datawave.query.index.lookup.DataTypeFilter} class
  *     names in {@link ShardQueryConfiguration#filterClassNames}.
- *  6. The query limits the results (default: 5000) using the setMaxResults method. In addition, "max.results.override" can be passed to the
- *     query as part of the Parameters object which allows query specific limits (but will not be more than set default)
- *  7. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
+ *  6. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
  * 
  * </pre>
  * 
@@ -456,19 +454,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths, boolean rawTypes) {
         if (log.isTraceEnabled())
             log.trace("prepareMetadataHelper with " + connection);
-        MetadataHelper metadataHelper = this.metadataHelperFactory.createMetadataHelper();
-        // check to see if i need to initialize a new one
-        if (metadataHelper.getMetadataTableName() != null && metadataTableName != null && !metadataTableName.equals(metadataHelper.getMetadataTableName())) {
-            // initialize it
-            metadataHelper.initialize(connection, metadataTableName, auths, rawTypes);
-        } else if (metadataHelper.getAuths() == null || metadataHelper.getAuths().isEmpty()) {
-            return metadataHelper.initialize(connection, metadataTableName, auths, rawTypes);
-            // assumption is that it is already initialized. we shall see.....
-        } else {
-            if (log.isTraceEnabled())
-                log.trace("the MetadataHelper did not need to be initialized:" + metadataHelper + " and " + metadataTableName + " and " + auths);
-        }
-        return metadataHelper.initialize(connection, metadataTableName, auths, rawTypes);
+        return metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths, rawTypes);
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {
@@ -694,28 +680,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     log.debug("Blacklisted fields: " + tBlacklistedFields);
                 }
             }
-        }
-        
-        // Get the MAX_RESULTS_OVERRIDE parameter if given
-        String maxResultsOverrideStr = settings.findParameter(MAX_RESULTS_OVERRIDE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(maxResultsOverrideStr)) {
-            try {
-                long override = Long.parseLong(maxResultsOverrideStr);
-                
-                if (override < config.getMaxQueryResults()) {
-                    config.setMaxQueryResults(override);
-                    // this.maxresults is initially set to the value in the
-                    // config, we are overriding it here for this instance
-                    // of the query.
-                    this.setMaxResults(override);
-                }
-            } catch (NumberFormatException nfe) {
-                log.error(MAX_RESULTS_OVERRIDE + " query parameter is not a valid number: " + maxResultsOverrideStr + ", using default value");
-            }
-        }
-        
-        if (log.isDebugEnabled()) {
-            log.debug("Max Results: " + config.getMaxQueryResults());
         }
         
         // Get the LIMIT_FIELDS parameter if given
@@ -1407,14 +1371,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public String getTableName() {
         if (null == getConfig()) {
-            return this.tableName;
+            return super.getTableName();
         }
         return this.config.getTableName();
     }
     
     @Override
     public void setTableName(String tableName) {
-        this.tableName = tableName;
+        super.setTableName(tableName);
         // Null check required due to a super constructor call that attempts to set
         // the tableName prior to ShardQueryConfig initialization
         if (null != getConfig()) {
@@ -1850,7 +1814,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         params.add(QueryParameters.DATATYPE_FILTER_SET);
         params.add(QueryParameters.RETURN_FIELDS);
         params.add(QueryParameters.BLACKLISTED_FIELDS);
-        params.add(QueryParameters.MAX_RESULTS_OVERRIDE);
         params.add(QueryParameters.FILTER_MASKED_VALUES);
         params.add(QueryParameters.INCLUDE_DATATYPE_AS_FIELD);
         params.add(QueryParameters.INCLUDE_GROUPING_CONTEXT);
@@ -2096,14 +2059,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setDebugMultithreadedSources(boolean debugMultithreadedSources) {
         this.config.setDebugMultithreadedSources(debugMultithreadedSources);
-    }
-    
-    public boolean isDataQueryExpressionFilterEnabled() {
-        return this.config.isDataQueryExpressionFilterEnabled();
-    }
-    
-    public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
-        this.config.setDataQueryExpressionFilterEnabled(dataQueryExpressionFilterEnabled);
     }
     
     public boolean isSortGeoWaveQueryRanges() {

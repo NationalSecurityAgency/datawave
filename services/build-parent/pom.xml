@@ -23,8 +23,11 @@
     <modules>
         <module>..</module>
         <module>../service-parent</module>
+        <module>../common-utils</module>
         <module>../accumulo-utils</module>
         <module>../base-rest-responses</module>
+        <module>../type-utils</module>
+        <module>../metadata-utils</module>
         <module>../metrics-reporter</module>
         <module>../authorization-api</module>
         <module>../audit-api</module>

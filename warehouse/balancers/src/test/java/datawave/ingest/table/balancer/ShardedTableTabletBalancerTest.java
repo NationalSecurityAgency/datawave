@@ -16,9 +16,6 @@ import org.apache.accumulo.server.master.balancer.GroupBalancer.Location;
 import org.apache.accumulo.server.master.state.TServerInstance;
 import org.apache.accumulo.server.master.state.TabletMigration;
 import org.apache.hadoop.io.Text;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.DateTimeFormatterBuilder;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -27,6 +24,9 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -687,7 +687,7 @@ public class ShardedTableTabletBalancerTest {
         }
         
         public void checkDateDistribution() {
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendYear(4, 4).appendMonthOfYear(2).appendDayOfMonth(2).toFormatter();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
             
             // Accumulate tservers per day, per week, per month
             HashMap<LocalDate,Set<TServerInstance>> dayCounts = new HashMap<>();
@@ -698,33 +698,21 @@ public class ShardedTableTabletBalancerTest {
             MapCounter<Integer> shardsPerMonth = new MapCounter<>();
             for (Entry<KeyExtent,TServerInstance> entry : tabletLocs.entrySet()) {
                 String ds = entry.getKey().getEndRow().toString().substring(0, 8);
-                LocalDate date = formatter.parseLocalDate(ds);
+                LocalDate date = LocalDate.parse(ds, formatter);
                 
                 Set<TServerInstance> set;
                 
-                set = dayCounts.get(date);
-                if (set == null) {
-                    set = new HashSet<>();
-                    dayCounts.put(date, set);
-                }
+                set = dayCounts.computeIfAbsent(date, k -> new HashSet<>());
                 set.add(entry.getValue());
                 shardsPerDay.increment(date, 1);
                 
-                int week = date.getWeekOfWeekyear();
-                set = weekCounts.get(week);
-                if (set == null) {
-                    set = new HashSet<>();
-                    weekCounts.put(week, set);
-                }
+                int week = date.get(WeekFields.ISO.weekOfWeekBasedYear());
+                set = weekCounts.computeIfAbsent(week, k -> new HashSet<>());
                 set.add(entry.getValue());
                 shardsPerWeek.increment(week, 1);
                 
-                int month = date.getMonthOfYear();
-                set = monthCounts.get(month);
-                if (set == null) {
-                    set = new HashSet<>();
-                    monthCounts.put(month, set);
-                }
+                int month = date.getMonthValue();
+                set = monthCounts.computeIfAbsent(month, k -> new HashSet<>());
                 set.add(entry.getValue());
                 shardsPerMonth.increment(month, 1);
             }

@@ -10,6 +10,7 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import java.util.Map;
 import java.util.Set;
 
+@Deprecated
 public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     
     private final EventDataQueryFilter filter;

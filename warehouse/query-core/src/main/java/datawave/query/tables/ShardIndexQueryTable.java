@@ -1,46 +1,34 @@
 package datawave.query.tables;
 
-import static com.google.common.collect.Iterators.concat;
-import static com.google.common.collect.Iterators.transform;
-import static datawave.query.config.ShardQueryConfiguration.PARAM_VALUE_SEP_STR;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.QueryParameters;
+import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.discovery.DiscoveredThing;
 import datawave.query.discovery.DiscoveryIterator;
 import datawave.query.discovery.DiscoveryTransformer;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.discovery.VisibilityPruningIterator;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
-import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.model.QueryModel;
-import datawave.query.config.ShardIndexQueryConfiguration;
-import datawave.query.discovery.VisibilityPruningIterator;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.LiteralNodeVisitor;
 import datawave.query.jexl.visitors.PatternNodeVisitor;
+import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -50,7 +38,6 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -71,15 +58,26 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.collect.Iterators.concat;
+import static com.google.common.collect.Iterators.transform;
+import static datawave.query.config.ShardQueryConfiguration.PARAM_VALUE_SEP_STR;
 
 /**
  * Query Table implementation that accepts a single term and returns information from the global index for that term. The response includes the number of
@@ -95,7 +93,6 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     private List<String> realmSuffixExclusionPatterns = null;
     protected String modelName = "DATAWAVE";
     protected String modelTableName = "DatawaveMetadata";
-    protected MetadataHelper metadataHelper;
     protected MetadataHelperFactory metadataHelperFactory;
     protected ScannerFactory scannerFactory;
     protected QueryModel queryModel;
@@ -111,7 +108,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         this.queryModel = other.getQueryModel();
         this.modelName = other.getModelName();
         this.modelTableName = other.getModelTableName();
-        this.metadataHelper = other.getMetadataHelper();
+        this.metadataHelperFactory = other.getMetadataHelperFactory();
         this.setRealmSuffixExclusionPatterns(other.getRealmSuffixExclusionPatterns());
     }
     
@@ -142,23 +139,15 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     }
     
     /**
-     * Initialize a metadata helper if we haven't already
+     * Create and initialize a metadata helper
      * 
      * @param connector
      * @param metadataTableName
      * @param auths
+     * @return a new initialized MetadataHelper
      */
-    protected void initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        this.metadataHelper = this.metadataHelperFactory.createMetadataHelper();
-        this.metadataHelper.initialize(connector, metadataTableName, auths);
-    }
-    
-    public MetadataHelper getMetadataHelper() {
-        return metadataHelper;
-    }
-    
-    public void setMetadataHelper(MetadataHelper metadataHelper) {
-        this.metadataHelper = metadataHelper;
+    protected MetadataHelper initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
+        return this.metadataHelperFactory.createMetadataHelper(connector, metadataTableName, auths);
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {
@@ -189,7 +178,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         ShardIndexQueryConfiguration config = new ShardIndexQueryConfiguration(this, settings);
         this.scannerFactory = new ScannerFactory(connection);
-        initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        MetadataHelper metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -264,8 +253,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ASTJexlScript script;
         try {
             Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
-            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, this.metadataHelper, origScript, expansionFields);
-        } catch (CannotExpandUnfieldedTermFatalException e) {
+            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields);
+        } catch (EmptyUnfieldedTermExpansionException e) {
             Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             config.setNormalizedTerms(emptyMap);
             config.setNormalizedPatterns(emptyMap);
@@ -297,7 +286,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             }
         }
         
-        script = ExpandMultiNormalizedTerms.expandTerms(config, this.metadataHelper, script);
+        script = ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script);
         
         Multimap<String,String> literals = LiteralNodeVisitor.getLiterals(script);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);

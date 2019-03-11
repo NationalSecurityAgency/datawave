@@ -1,6 +1,7 @@
 package datawave.microservice.config.web;
 
 import io.undertow.Undertow;
+import io.undertow.UndertowOptions;
 import io.undertow.server.Connectors;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import org.slf4j.Logger;
@@ -54,6 +55,9 @@ public class UndertowCustomizer implements WebServerFactoryCustomizer<Configurab
         
         // @formatter:off
         factory.addBuilderCustomizers(c -> {
+            // Ensure that the request start time is set on the request by Undertow
+            c.setServerOption(UndertowOptions.RECORD_REQUEST_START_TIME, true);
+
             if (useDaemonThreads) {
                 // Tell XNIO to use Daemon threads
                 c.setWorkerOption(Options.THREAD_DAEMON, true);

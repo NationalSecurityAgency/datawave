@@ -1,22 +1,23 @@
 package datawave.query.iterator.pipeline;
 
-import java.util.Map.Entry;
-
+import com.google.common.collect.Maps;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.YieldCallbackWrapper;
 import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.log4j.Logger;
 
-import com.google.common.collect.Maps;
-
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.profile.QuerySpanCollector;
+import java.util.Map.Entry;
 
 public class SerialIterator extends PipelineIterator {
+    
+    private static final Logger log = Logger.getLogger(SerialIterator.class);
     
     protected Pipeline currentPipeline;
     
@@ -24,12 +25,17 @@ public class SerialIterator extends PipelineIterator {
     
     public SerialIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, QuerySpanCollector querySpanCollector, QuerySpan querySpan,
                     QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env,
-                    YieldCallbackWrapper<Key> yieldCallback, long yieldThresholdMs) {
+                    YieldCallback<Key> yieldCallback, long yieldThresholdMs) {
         super(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env, yieldCallback, yieldThresholdMs);
     }
     
     @Override
     public boolean hasNext() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return false;
+        }
+        
         if (null == result) {
             long start = System.currentTimeMillis();
             while (this.docSource.hasNext()) {
@@ -42,6 +48,9 @@ public class SerialIterator extends PipelineIterator {
                     break;
                 if (yield != null && ((System.currentTimeMillis() - start) > yieldThresholdMs)) {
                     yield.yield(docKey);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Yielding at " + docKey);
+                    }
                     break;
                 }
             }
@@ -51,6 +60,11 @@ public class SerialIterator extends PipelineIterator {
     
     @Override
     public Entry<Key,Document> next() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return null;
+        }
+        
         Entry<Key,Document> returnResult = result;
         result = null;
         return returnResult;

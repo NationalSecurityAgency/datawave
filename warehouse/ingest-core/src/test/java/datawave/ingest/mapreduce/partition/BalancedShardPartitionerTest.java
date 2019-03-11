@@ -16,7 +16,6 @@ import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -194,20 +193,20 @@ public class BalancedShardPartitionerTest {
     private void simulateDifferentNumberShardsPerDay(String missingShardStrategy, String tableName) throws IOException {
         // This emulates today, yesterday and the day before have SHARDS_PER_DAY splits and
         // 3 days ago and 4 days ago only have 2 splits, _0 and _1.
-        SortedMap<KeyExtent,String> locations = new TreeMap<>();
+        SortedMap<Text,String> locations = new TreeMap<>();
         long now = System.currentTimeMillis();
         int tserverId = 1;
         Text prevEndRow = new Text();
         for (int daysAgo = 0; daysAgo <= 2; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard = 0; currShard < SHARDS_PER_DAY; currShard++) {
-                locations.put(new KeyExtent(tableName, new Text(day + "_" + currShard), prevEndRow), Integer.toString(tserverId++));
+                locations.put(new Text(day + "_" + currShard), Integer.toString(tserverId++));
             }
         }
         for (int daysAgo = 3; daysAgo <= 4; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard : Arrays.asList(1, 4)) {
-                locations.put(new KeyExtent(tableName, new Text(day + "_" + currShard), prevEndRow), Integer.toString(tserverId++));
+                locations.put(new Text(day + "_" + currShard), Integer.toString(tserverId++));
             }
         }
         new TestShardGenerator(conf, locations, tableName);

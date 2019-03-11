@@ -35,6 +35,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -329,7 +330,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
             try {
                 Date eventDate = DateHelper.parse(date);
                 event.setDate(eventDate.getTime());
-            } catch (IllegalArgumentException e) {
+            } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Could not parse date from filename " + date);
             }
         }

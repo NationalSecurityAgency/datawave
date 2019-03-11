@@ -33,9 +33,10 @@ while 1:
         cleanUpFiles = {}
         doneFiles = {}
         for file in availableFlags:
-                if file[-4:]=="done":
+                if file[-10:]==".flag.done":
                         #print "counting done file"
-                        fileName = string.join(string.split(file,'.')[0:-2],'.')
+                        #remove .done
+                        fileName = string.join(string.split(file,'.')[0:-1],'.')
                         #print file+": "+fileName
                         if doneFiles.has_key(fileName):
                                 doneFiles[fileName] += 1
@@ -49,19 +50,19 @@ while 1:
                 continue
 
         for file in doneFiles.keys():
-                fileName = string.join(string.split(file,'.')[0:-1],'.')
                 #print "Looking to cleanup " + fileName
-                print "cleaning up "+fileName
-                cmd = "/bin/cat "+logdir+fileName+"*log | gzip -c > "+archivedir+today+"/"+fileName+".log.gz"
+                print "cleaning up "+file
+                cmd = "/bin/cat "+logdir+file+"*log | gzip -c > "+archivedir+today+"/"+file+".log.gz"
                 if os.system(cmd)!=0:
-                        print "couldn't consolidate log files for "+fileName
+                        print "couldn't consolidate log files for "+file
                 else:
-                        cmd = "/bin/rm -f "+logdir+fileName+"*log"
+                        cmd = "/bin/rm -f "+logdir+file+"*log"
                         os.system(cmd)
-                cmd = "/bin/mv "+logdir+fileName+"*gz "+archivedir+today
+                cmd = "/bin/mv "+logdir+file+"*gz "+archivedir+today
                 if os.system(cmd)!=0:
-                        print "couldn't move compressed log files for "+fileName
-                cmd = "/bin/rm -f "+flagdir+fileName+"*done "+flagdir+fileName+".cleanup"
+                        print "couldn't move compressed log files for "+file
+                        continue
+                cmd = "/bin/rm -f "+flagdir+file+"*done "+flagdir+file+".cleanup"
                 if os.system(cmd)!=0:
-                        print "couldn't clear flags for "+fileName
+                        print "couldn't clear flags for "+file
         sys.stdout.flush()

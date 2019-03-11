@@ -2,6 +2,7 @@ package datawave.webservice.query.util;
 
 import java.security.Principal;
 import java.text.ParseException;
+import java.time.format.DateTimeParseException;
 import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
@@ -138,7 +139,7 @@ public class LookupUUIDUtil {
         // Assign the begin date
         try {
             this.beginAsDate = DateHelper.parseWithGMT(this.lookupUUIDConfiguration.getBeginDate());
-        } catch (IllegalArgumentException e) {
+        } catch (DateTimeParseException e) {
             this.log.error(e.getMessage(), e);
         }
         

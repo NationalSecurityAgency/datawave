@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -258,8 +259,7 @@ public class MetricsIngester extends Configured implements Tool {
             cf = iterKey.getColumnFamily().toString();
             try {
                 dateObj = DateHelper.parseTimeExactToSeconds(cf);
-                Date dateObjNext = (Date) dateObj.clone();
-                dateObjNext.setHours(dateObj.getHours() + 1);
+                Date dateObjNext = DateHelper.addHours(dateObj, 1);
                 if (calendar.getTime().compareTo(dateObj) > 0) {
                     // remove the entries older than 24 hrs. If we are restarting after a long pause,
                     // then those entries will be removed following successful access.
@@ -270,7 +270,7 @@ public class MetricsIngester extends Configured implements Tool {
                 ranges.add(new Range(new Key(new Text("IngestJob_" + outFormat.format(dateObj))), new Key(
                                 new Text("IngestJob_" + outFormat.format(dateObjNext)))));
                 
-            } catch (IllegalArgumentException e) {
+            } catch (DateTimeParseException e) {
                 log.error(e);
             }
             

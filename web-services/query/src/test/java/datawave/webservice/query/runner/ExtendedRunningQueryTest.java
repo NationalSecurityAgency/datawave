@@ -77,7 +77,7 @@ public class ExtendedRunningQueryTest {
     @Before
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
     }
     
     @Test
@@ -152,6 +152,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getQueryName()).andReturn(queryName);
         expect(this.query.getBeginDate()).andReturn(beginDate);
         expect(this.query.getEndDate()).andReturn(endDate);
+        expect(this.query.isMaxResultsOverridden()).andReturn(false).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
         expect(this.query.getParameters()).andReturn(new HashSet<>());
         expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);
@@ -230,6 +231,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getQueryName()).andReturn(queryName);
         expect(this.query.getBeginDate()).andReturn(beginDate);
         expect(this.query.getEndDate()).andReturn(endDate);
+        expect(this.query.isMaxResultsOverridden()).andReturn(false).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
         expect(this.query.getParameters()).andReturn(new HashSet<>());
         expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);

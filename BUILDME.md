@@ -69,3 +69,25 @@ ensure that the new version is used. Look for properties starting with `version.
 If you are updating an API module, you should be careful. In general, the associated service will need to be updated as
 well to support the API changes. The service should _add_ a new version of the API and continue to support the old
 version until it can be ensured that there are no more consumers of the old API.
+
+# Troubleshooting Build Issues
+
+Due to our use of the **git-commit-id-plugin** Maven plugin, your build could fail with...
+```
+....
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+...
+[ERROR] Failed to execute goal pl.project13.maven:git-commit-id-plugin:2.2.4:revision (default) on project XXXXXXX:
+.git directory is not found! Please specify a valid [dotGitDirectory] in your pom.xml
+```
+...under the following circumstances:
+
+* You've downloaded the source archive (zip) from github.com rather than pulling it via `git clone ...`
+* Or your local `.git` directory has become corrupted for some reason
+
+### Resolution
+* Use `git clone ...` to retrieve the source code into a new local directory and then retry the build
+* If `git clone` is not an option for some reason, either edit POMs to disable the `git-commit-id-plugin` or `git init` a new local repo in the directory containing the source code and make at least one commit. This option is not recommended and only intended as a last resort, as you will be prevented from submitting pull requests and performing other Git workflows associated with this repository
+

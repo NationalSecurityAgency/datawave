@@ -22,6 +22,14 @@ spring:
       allowed-callers:
         - "cn=test keystore, ou=my department, o=my company, st=some-state, c=us<cn=test keystore, ou=my department, o=my company, st=some-state, c=us>"
 
+# Specify the authorization service to use when using the "remoteauth" profile for services.
+# With this profile, if a service receives a call and no Authorization header is specified with a JWT,
+# then the service makes a remote call to the authorization service at the location specified in order
+# to authenticate the user.
+datawave:
+  authorization:
+    uri: "https://localhost:8643/authorization/v1/authorize"
+
 # To report metrics to the console, uncomment the following:
 #metrics:
 #  reporter:

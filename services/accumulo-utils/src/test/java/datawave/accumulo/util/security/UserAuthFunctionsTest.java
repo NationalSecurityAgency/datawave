@@ -40,13 +40,13 @@ public class UserAuthFunctionsTest {
         user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
         p1 = new DatawaveUser(p1dn, DatawaveUser.UserType.SERVER, Sets.newHashSet("A", "B", "E"), null, null, System.currentTimeMillis());
         p2 = new DatawaveUser(p2dn, DatawaveUser.UserType.SERVER, Sets.newHashSet("A", "F", "G"), null, null, System.currentTimeMillis());
-        proxyChain = Lists.newArrayList(p1, p2);
+        proxyChain = Lists.newArrayList(user, p1, p2);
     }
     
     @Test
     public void testDowngradeAuthorizations() {
         HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "C"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "G"));
-        assertEquals(expected, UAF.mergeAuthorizations(UAF.getRequestedAuthorizations(requestedAuths, user), proxyChain));
+        assertEquals(expected, UAF.mergeAuthorizations(UAF.getRequestedAuthorizations(requestedAuths, user), proxyChain, u -> u != user));
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -57,7 +57,7 @@ public class UserAuthFunctionsTest {
     
     @Test
     public void testUserAuthsFirstInMergedSet() {
-        HashSet<Authorizations> mergedAuths = UAF.mergeAuthorizations(UAF.getRequestedAuthorizations(requestedAuths, user), proxyChain);
+        HashSet<Authorizations> mergedAuths = UAF.mergeAuthorizations(UAF.getRequestedAuthorizations(requestedAuths, user), proxyChain, u -> u != user);
         assertEquals(3, mergedAuths.size());
         assertEquals("Merged user authorizations were not first in the return set", new Authorizations("A", "C"), mergedAuths.iterator().next());
     }

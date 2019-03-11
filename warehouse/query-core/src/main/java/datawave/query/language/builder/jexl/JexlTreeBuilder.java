@@ -26,6 +26,7 @@ import datawave.query.language.functions.jexl.MatchesInGroupFunction;
 import datawave.query.language.functions.jexl.MatchesInGroupLeft;
 import datawave.query.language.functions.jexl.OccurrenceFunction;
 import datawave.query.language.functions.jexl.Options;
+import datawave.query.language.functions.jexl.Text;
 import datawave.query.language.functions.jexl.TimeFunction;
 import datawave.query.language.functions.jexl.Unique;
 import datawave.query.language.parser.jexl.JexlNode;
@@ -47,10 +48,10 @@ import com.google.common.collect.ImmutableList;
 
 public class JexlTreeBuilder extends QueryTreeBuilder {
     
-    public static final JexlQueryFunction[] DEFAULT_ALLOWED_FUNCTIONS = {new IsNull(), new IsNotNull(), new Include(), new Exclude(), new GeoFunction(),
-            new Contains(), new CoveredBy(), new Covers(), new Crosses(), new Intersects(), new Overlaps(), new Within(), new Loaded(), new DateFunction(),
-            new OccurrenceFunction(), new MatchesInGroupFunction(), new MatchesInGroupLeft(), new GetAllMatches(), new MatchesAtLeastCountOf(), new Jexl(),
-            new TimeFunction(), new AtomValuesMatchFunction(), new Options(), new Unique(), new GroupBy()};
+    public static final JexlQueryFunction[] DEFAULT_ALLOWED_FUNCTIONS = {new IsNull(), new IsNotNull(), new Include(), new Exclude(), new Text(),
+            new GeoFunction(), new Contains(), new CoveredBy(), new Covers(), new Crosses(), new Intersects(), new Overlaps(), new Within(), new Loaded(),
+            new DateFunction(), new OccurrenceFunction(), new MatchesInGroupFunction(), new MatchesInGroupLeft(), new GetAllMatches(),
+            new MatchesAtLeastCountOf(), new Jexl(), new TimeFunction(), new AtomValuesMatchFunction(), new Options(), new Unique(), new GroupBy()};
     
     public static final List<JexlQueryFunction> DEFAULT_ALLOWED_FUNCTION_LIST;
     
