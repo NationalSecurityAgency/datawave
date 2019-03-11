@@ -64,10 +64,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     private Set<String> nonEventFields;
     
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null,
-                        Collections.EMPTY_SET);
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
+                    long maxKeysBeforeSeek) {
+        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null, Collections.EMPTY_SET);
     }
     
     /**
@@ -80,9 +79,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * 
      * @param script
      */
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField,
-                    Set<String> nonEventFields) {
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
+                    long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
         super(script, attributeFactory, nonEventFields);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;

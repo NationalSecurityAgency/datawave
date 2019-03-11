@@ -290,7 +290,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key key1 = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "field2" + Constants.NULL_BYTE_STRING + "value");
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, null, null, 3, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
-       
+        
         assertTrue(filter.keep(key1));
         // increments counts = 1
         assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
@@ -549,12 +549,14 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Set<String> nonEventFields = new HashSet<>();
         nonEventFields.add("field2");
         
+        expect(mockAttributeFactory.getTypeMetadata("field2", "dataType")).andReturn(Collections.emptyList()).anyTimes();
+        
         replayAll();
         
         // blacklisted tld key to initialize doc
         Key rootKey = new Key("row", "dataType" + Constants.NULL + "123.345.456", "field3" + Constants.NULL_BYTE_STRING + "value");
         // child key that would normally not be kept
-        Key key = new Key("row", "dataType" + Constants.NULL + "123.345.456.1", "field2" + Constants.NULL_BYTE_STRING + "value");
+        Key key = new Key("row", "dataType" + Constants.NULL + "123.345.456.1", "field2" + Constants.NULL_BYTE_STRING + "bar");
         filter = new TLDEventDataFilter(query, mockAttributeFactory, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD", nonEventFields);
         
         // set the parse info correctly
@@ -566,7 +568,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         verifyAll();
     }
-
+    
     @Test
     public void apply_acceptGroupingFields() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("grouping:matchesInGroup(FOO, 'bar')");
