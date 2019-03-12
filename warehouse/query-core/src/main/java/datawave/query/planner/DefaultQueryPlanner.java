@@ -1585,6 +1585,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
                                                 QueryOptions.buildIndexOnlyFieldsString(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
                                 addOption(cfg, QueryOptions.COMPOSITE_FIELDS, QueryOptions.buildIndexOnlyFieldsString(metadataHelper.getCompositeToFieldMap(
                                                 config.getDatatypeFilter()).keySet()), true);
+                                
+                                // buildIndexOnlyFieldString has nothing to do with indexOnly fields. Chill.
+                                addOption(cfg, QueryOptions.INDEXED_FIELDS,
+                                                QueryOptions.buildIndexOnlyFieldsString(metadataHelper.getIndexedFields(config.getDatatypeFilter())), true);
                             } catch (TableNotFoundException e) {
                                 QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
                                 throw new DatawaveQueryException(qe);

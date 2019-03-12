@@ -173,6 +173,10 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             return false;
         }
         
+        if (options.containsKey(INDEXED_FIELDS)) {
+            this.indexedFields = buildIndexOnlyFieldsSet(options.get(INDEXED_FIELDS));
+        }
+        
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
             this.ignoreColumnFamilies = buildIgnoredColumnFamilies(options.get(IGNORE_COLUMN_FAMILIES));
         }

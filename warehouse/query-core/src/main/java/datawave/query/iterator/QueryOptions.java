@@ -109,6 +109,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String PROJECTION_FIELDS = "projection.fields";
     public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
     public static final String INDEX_ONLY_FIELDS = "index.only.fields";
+    public static final String INDEXED_FIELDS = "indexed.fields";
     public static final String COMPOSITE_FIELDS = "composite.fields";
     public static final String COMPOSITE_METADATA = "composite.metadata";
     public static final String COMPOSITE_SEEK_THRESHOLD = "composite.seek.threshold";
@@ -263,6 +264,7 @@ public class QueryOptions implements OptionDescriber {
     protected int maxPipelineCachedResults = 25;
     
     protected Set<String> indexOnlyFields = Sets.newHashSet();
+    protected Set<String> indexedFields = Sets.newHashSet();
     protected Set<String> ignoreColumnFamilies = Sets.newHashSet();
     
     protected boolean includeGroupingContext = false;
@@ -381,6 +383,7 @@ public class QueryOptions implements OptionDescriber {
         this.fiAggregator = other.fiAggregator;
         
         this.indexOnlyFields = other.indexOnlyFields;
+        this.indexedFields = other.indexedFields;
         this.ignoreColumnFamilies = other.ignoreColumnFamilies;
         
         this.includeGroupingContext = other.includeGroupingContext;
@@ -703,6 +706,10 @@ public class QueryOptions implements OptionDescriber {
         return this.indexOnlyFields;
     }
     
+    public Set<String> getIndexedFields() {
+        return this.indexedFields;
+    }
+    
     public Set<String> getAllIndexOnlyFields() {
         Set<String> allIndexOnlyFields = new HashSet<>();
         // index only fields are by definition not in the event
@@ -993,6 +1000,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(DATATYPE_FIELDNAME, "The field name to use when inserting the fieldname into the document.");
         options.put(DATATYPE_FILTER, "CSV of data type names that should be included when scanning.");
         options.put(INDEX_ONLY_FIELDS, "The serialized collection of field names that only occur in the index");
+        options.put(INDEXED_FIELDS, "The serialized collection of indexed fields.");
         options.put(COMPOSITE_FIELDS, "The serialized collection of field names that make up composites");
         options.put(START_TIME, "The start time for this query in milliseconds");
         options.put(END_TIME, "The end time for this query in milliseconds");
@@ -1239,6 +1247,10 @@ public class QueryOptions implements OptionDescriber {
         } else if (!this.fullTableScanOnly) {
             log.error("A list of index only fields must be provided when running an optimized query");
             return false;
+        }
+        
+        if (options.containsKey(INDEXED_FIELDS)) {
+            this.indexedFields = buildIndexOnlyFieldsSet(options.get(INDEXED_FIELDS));
         }
         
         this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
@@ -1672,6 +1684,10 @@ public class QueryOptions implements OptionDescriber {
         return new String(Base64.encodeBase64(byteStream.toByteArray()));
     }
     
+    /*
+     * TODO: The following two methods are more appropriately generified and put into utils.There is nothing indexOnly field specific about them at all. They
+     * only transformcollections into csv strings and back.
+     */
     public static String buildIndexOnlyFieldsString(Collection<String> fields) {
         StringBuilder sb = new StringBuilder();
         for (String field : fields) {

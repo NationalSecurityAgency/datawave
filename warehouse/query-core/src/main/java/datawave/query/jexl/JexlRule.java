@@ -61,6 +61,7 @@ public class JexlRule extends AppliedRule {
         iterOptions.put(QueryOptions.FILTER_MASKED_VALUES, "true");
         iterOptions.put(QueryOptions.INCLUDE_DATATYPE, "true");
         iterOptions.put(QueryOptions.INDEX_ONLY_FIELDS, "");
+        iterOptions.put(QueryOptions.INDEXED_FIELDS, "");
         iterOptions.put(QueryOptions.START_TIME, "0");
         iterOptions.put(QueryOptions.END_TIME, Long.toString(Long.MAX_VALUE));
         iterOptions.put(QueryOptions.POSTPROCESSING_CLASSES, "");
