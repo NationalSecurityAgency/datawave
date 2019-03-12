@@ -312,8 +312,8 @@ public class EventMetadata implements RawRecordMetadata {
             for (String field : fields.keySet()) {
                 if (h.isContentIndexField(field)) {
                     updateForIndexedField(helper, event, fields, countDelta, loadDate, tokenDesignator, field);
-                    termFrequencyFieldsInfo.createOrUpdate(field, event.getDataType().outputName(), MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS,
-                                    event.getDate());
+                    termFrequencyFieldsInfo.createOrUpdate(field + tokenDesignator, event.getDataType().outputName(),
+                                    MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
                 }
                 
                 if (h.isReverseContentIndexField(field)) {
