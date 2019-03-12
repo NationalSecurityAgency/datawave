@@ -1243,14 +1243,14 @@ public class QueryOptions implements OptionDescriber {
         }
         
         if (options.containsKey(INDEX_ONLY_FIELDS)) {
-            this.indexOnlyFields = buildIndexOnlyFieldsSet(options.get(INDEX_ONLY_FIELDS));
+            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
         } else if (!this.fullTableScanOnly) {
             log.error("A list of index only fields must be provided when running an optimized query");
             return false;
         }
         
         if (options.containsKey(INDEXED_FIELDS)) {
-            this.indexedFields = buildIndexOnlyFieldsSet(options.get(INDEXED_FIELDS));
+            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
         
         this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
@@ -1684,11 +1684,7 @@ public class QueryOptions implements OptionDescriber {
         return new String(Base64.encodeBase64(byteStream.toByteArray()));
     }
     
-    /*
-     * TODO: The following two methods are more appropriately generified and put into utils.There is nothing indexOnly field specific about them at all. They
-     * only transformcollections into csv strings and back.
-     */
-    public static String buildIndexOnlyFieldsString(Collection<String> fields) {
+    public static String buildFieldStringFromSet(Collection<String> fields) {
         StringBuilder sb = new StringBuilder();
         for (String field : fields) {
             if (sb.length() > 0) {
@@ -1701,11 +1697,11 @@ public class QueryOptions implements OptionDescriber {
         return sb.toString();
     }
     
-    public static Set<String> buildIndexOnlyFieldsSet(String indexOnlyFields) {
+    public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
-        for (String indexOnlyField : StringUtils.split(indexOnlyFields, ',')) {
-            if (!org.apache.commons.lang.StringUtils.isBlank(indexOnlyField)) {
-                fields.add(indexOnlyField);
+        for (String field : StringUtils.split(fieldStr, ',')) {
+            if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
+                fields.add(field);
             }
         }
         return fields;
