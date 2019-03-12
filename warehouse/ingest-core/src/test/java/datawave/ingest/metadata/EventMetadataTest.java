@@ -13,7 +13,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.IdentityDataType;
 import datawave.TestBaseIngestHelper;
-import datawave.TestAbstarctContentIngestHelper;
+import datawave.TestAbstractContentIngestHelper;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -58,7 +58,7 @@ public class EventMetadataTest {
     }
     
     public void setupAbstractContentIngestHelper() {
-        helper = new TestAbstarctContentIngestHelper(createEventFields()) {
+        helper = new TestAbstractContentIngestHelper(createEventFields()) {
             @Override
             public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
                 return Arrays.asList(new IdentityDataType());

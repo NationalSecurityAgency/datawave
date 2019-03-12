@@ -5,17 +5,17 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 
-public class TestAbstarctContentIngestHelper extends AbstractContentIngestHelper {
+public class TestAbstractContentIngestHelper extends AbstractContentIngestHelper {
     private final Multimap<String,NormalizedContentInterface> eventFields;
     
     /**
      * Deliberately return null from getEventFields when created
      */
-    public TestAbstarctContentIngestHelper() {
+    public TestAbstractContentIngestHelper() {
         this(null);
     }
     
-    public TestAbstarctContentIngestHelper(Multimap<String,NormalizedContentInterface> eventFields) {
+    public TestAbstractContentIngestHelper(Multimap<String,NormalizedContentInterface> eventFields) {
         super();
         this.eventFields = eventFields;
     }
