@@ -16,6 +16,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.slf4j.Logger;
@@ -157,7 +158,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *            an iterator source
      * @return the flushed value that is an aggregation from the source iterator
      */
-    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int max) {
+    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int groupFieldsBatchSize, YieldCallback yieldCallback) {
         
         return new Iterator<Entry<Key,Document>>() {
             
@@ -165,9 +166,26 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             @Override
             public boolean hasNext() {
-                for (int i = 0; i < max && in.hasNext(); i++) {
-                    Entry<Key,Document> lastEntry = in.next();
-                    GroupingTransform.this.apply(lastEntry);
+                for (int i = 0; i < groupFieldsBatchSize; i++) {
+                    if (in.hasNext()) {
+                        Entry<Key,Document> lastEntry = in.next();
+                        if (lastEntry != null) {
+                            GroupingTransform.this.apply(lastEntry);
+                        } else if (yieldCallback != null && yieldCallback.hasYielded()) {
+                            log.trace("lastEntry is null and yield was called");
+                            yieldCallback.yield(null); // undo the yield
+                        } else {
+                            // lastEntry was null and there was no yield
+                            break;
+                        }
+                    } else if (yieldCallback != null && yieldCallback.hasYielded()) {
+                        // hasNext is false and yield has been called. Undo the yield.
+                        log.trace("hasNext is false because yield was called");
+                        yieldCallback.yield(null);
+                    } else {
+                        // there is no next and there was no yield
+                        break;
+                    }
                 }
                 next = GroupingTransform.this.flush();
                 return next != null;
