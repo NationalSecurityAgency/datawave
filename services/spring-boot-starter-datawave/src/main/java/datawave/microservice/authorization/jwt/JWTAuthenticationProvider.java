@@ -11,6 +11,7 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -23,6 +24,7 @@ import java.util.Collection;
  * .
  */
 @Component
+@ConditionalOnWebApplication
 public class JWTAuthenticationProvider implements AuthenticationProvider {
     private final JWTTokenHandler tokenHandler;
     

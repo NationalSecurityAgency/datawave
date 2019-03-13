@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+datawave.microservice.config.server.autoconfigure.DatawaveEncryptionConfiguration
+org.springframework.cloud.bootstrap.BootstrapConfiguration=\
+datawave.microservice.config.server.autoconfigure.DatawaveEncryptionBootstrapConfiguration

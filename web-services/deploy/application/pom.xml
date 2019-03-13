@@ -15,7 +15,6 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <!-- In mine, but not in upstream...leaving here for now. -->
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-data-dictionary-core</artifactId>
             <version>${project.version}</version>
@@ -91,13 +90,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-data-dictionary</artifactId>
-            <version>${project.version}</version>
-            <type>ejb</type>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-edge-dictionary</artifactId>
+            <artifactId>datawave-ws-dictionary</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
@@ -297,14 +290,6 @@
                         </ejbModule>
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
-                            <artifactId>datawave-ws-data-dictionary</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>gov.nsa.datawave.webservices</groupId>
-                            <artifactId>datawave-ws-edge-dictionary</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-atom</artifactId>
                         </ejbModule>
                         <ejbModule>
@@ -318,6 +303,10 @@
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-model</artifactId>
+                        </ejbModule>
+                        <ejbModule>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
+                            <artifactId>datawave-ws-dictionary</artifactId>
                         </ejbModule>
                         <webModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>

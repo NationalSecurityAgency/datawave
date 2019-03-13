@@ -12,37 +12,11 @@
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-edge-dictionary</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.weld.se</groupId>
-            <artifactId>weld-se-core</artifactId>
-            <version>${version.weld-se}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>dictionary-api</artifactId>
         </dependency>
     </dependencies>
     <build>

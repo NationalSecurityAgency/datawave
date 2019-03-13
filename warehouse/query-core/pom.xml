@@ -75,12 +75,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-edge-dictionary</artifactId>
-            <version>${project.version}</version>
-            <type>ejb</type>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>

@@ -42,6 +42,12 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-data-dictionary-core</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
@@ -115,18 +121,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-data-dictionary</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-edge-dictionary</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>

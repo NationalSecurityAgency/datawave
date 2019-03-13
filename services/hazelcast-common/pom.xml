@@ -4,15 +4,20 @@
     <parent>
         <artifactId>datawave-microservice-service-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.2</version>
+        <version>1.3</version>
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>hazelcast-common</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.4</version>
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-spring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave</artifactId>
+            <version>1.3</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -33,11 +33,14 @@
         <module>../audit-api</module>
         <module>../hazelcast-common</module>
         <module>../hazelcast-client</module>
+        <module>../spring-boot-starter-datawave-cache</module>
         <module>../spring-boot-starter-datawave</module>
         <module>../config-service</module>
         <module>../hazelcast-service</module>
         <module>../authorization-service</module>
         <module>../audit-service</module>
+        <module>../dictionary-api</module>
+        <module>../dictionary-service</module>
     </modules>
 
 </project>

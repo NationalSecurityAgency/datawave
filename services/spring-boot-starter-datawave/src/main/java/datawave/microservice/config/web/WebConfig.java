@@ -1,19 +1,27 @@
 package datawave.microservice.config.web;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import datawave.microservice.config.web.DatawaveServerProperties.Cors;
-import datawave.microservice.config.web.filter.ResponseHeaderFilter;
+import datawave.microservice.config.web.filter.ResponseHeaderServletFilter;
+import datawave.microservice.config.web.filter.ResponseHeaderWebFilter;
+import datawave.microservice.http.converter.html.BannerProvider;
 import datawave.microservice.http.converter.html.HtmlProviderHttpMessageConverter;
 import datawave.microservice.http.converter.html.VoidResponseHttpMessageConverter;
 import datawave.microservice.http.converter.protostuff.ProtostuffHttpMessageConverter;
+import datawave.webservice.HtmlProvider;
+import datawave.webservice.result.VoidResponse;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -21,11 +29,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import javax.servlet.DispatcherType;
 import java.util.List;
 
+/**
+ * Web configuration for Datawave microservices. TODO: We have only setup configuration here for a servlet-based web application. Additional work needs to be
+ * done for a reactive application.
+ */
 @Configuration
+@EnableConfigurationProperties(DatawaveServerProperties.class)
 public class WebConfig {
     /**
-     * Creates a {@link JaxbAnnotationModule} bean, which will be added automatically to any {@link com.fasterxml.jackson.databind.ObjectMapper} created by
-     * Spring.
+     * Creates a {@link JaxbAnnotationModule} bean, which will be added automatically to any {@link ObjectMapper} created by Spring.
      * 
      * @return a new {@link JaxbAnnotationModule}
      */
@@ -39,10 +51,10 @@ public class WebConfig {
      *
      * @param serverProperties
      *            the {@link DatawaveServerProperties} from which to retrieve {@link Cors} properties
-     * @return a {@link WebMvcConfigurer} that applies CORS settings
+     * @return a {@link WebMvcConfigurer} that applies CORS settings for a servlet application
      */
     @Bean
-    public WebMvcConfigurer corsConfiguration(final DatawaveServerProperties serverProperties) {
+    public WebMvcConfigurer corsConfiguration(DatawaveServerProperties serverProperties) {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
@@ -60,21 +72,47 @@ public class WebConfig {
     }
     
     /**
+     * Creates a {@link WebFluxConfigurer} that applies CORS configuration as defined in the {@link Cors} properties.
+     *
+     * @param serverProperties
+     *            the {@link DatawaveServerProperties} from which to retrieve {@link Cors} properties
+     * @return a {@link WebFluxConfigurer} that applies CORS settings for a webflux application
+     */
+    @Bean
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+    public WebFluxConfigurer webFluxCorsConfigurer(DatawaveServerProperties serverProperties) {
+        return new WebFluxConfigurer() {
+            @Override
+            public void addCorsMappings(org.springframework.web.reactive.config.CorsRegistry registry) {
+                Cors cors = serverProperties.getCors();
+                // @formatter:off
+                cors.getCorsPaths().forEach(p -> registry.addMapping(p)
+                        .allowedOrigins(cors.getAllowedOrigins())
+                        .allowedMethods(cors.getAllowedMethods())
+                        .allowedHeaders(cors.getAllowedHeaders())
+                        .allowCredentials(cors.isAllowCredentials())
+                        .maxAge(cors.getMaxAge()));
+                // @formatter:on
+            }
+        };
+    }
+    
+    /**
      * Creates a {@link WebMvcConfigurer} that adds {@link HttpMessageConverter}s to handle protostuff {@link io.protostuff.Message} responses,
-     * {@link datawave.webservice.HtmlProvider} responses, and {@link datawave.webservice.result.VoidResponse} responses.
+     * {@link HtmlProvider} responses, and {@link VoidResponse} responses.
      *
      * @param serverProperties
      *            the {@link DatawaveServerProperties} from which to retrieve the static CSS location for HTML responses.
      * @return a {@link WebMvcConfigurer} that adds custom {@link HttpMessageConverter}s.
      */
     @Bean
-    public WebMvcConfigurer messageConverterConfiguration(final DatawaveServerProperties serverProperties) {
+    public WebMvcConfigurer messageConverterConfiguration(final DatawaveServerProperties serverProperties, ObjectProvider<BannerProvider> bannerProvider) {
         return new WebMvcConfigurer() {
             @Override
             public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
                 converters.add(new ProtostuffHttpMessageConverter());
-                converters.add(new VoidResponseHttpMessageConverter(serverProperties));
-                converters.add(new HtmlProviderHttpMessageConverter(serverProperties));
+                converters.add(new VoidResponseHttpMessageConverter(serverProperties, bannerProvider.getIfAvailable()));
+                converters.add(new HtmlProviderHttpMessageConverter(serverProperties, bannerProvider.getIfAvailable()));
             }
         };
     }
@@ -82,16 +120,29 @@ public class WebConfig {
     /**
      * Creates a {@link FilterRegistrationBean} that registers our custom filter that adds headers to HTTP responses.
      *
-     * @return a {@link FilterRegistrationBean} that registers a {@link ResponseHeaderFilter}
+     * @return a {@link FilterRegistrationBean} that registers a {@link ResponseHeaderServletFilter}
      */
     @Bean
     @ConditionalOnClass(DispatcherServlet.class)
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-    public FilterRegistrationBean<ResponseHeaderFilter> responseHeaderFilter(@Value("${system.name:UNKNOWN}") String systemName) {
-        ResponseHeaderFilter filter = new ResponseHeaderFilter(systemName);
-        FilterRegistrationBean<ResponseHeaderFilter> registration = new FilterRegistrationBean<>(filter);
+    public FilterRegistrationBean<ResponseHeaderServletFilter> responseHeaderFilter(@Value("${system.name:UNKNOWN}") String systemName) {
+        ResponseHeaderServletFilter filter = new ResponseHeaderServletFilter(systemName);
+        FilterRegistrationBean<ResponseHeaderServletFilter> registration = new FilterRegistrationBean<>(filter);
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
         registration.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.ASYNC);
         return registration;
+    }
+    
+    /**
+     * Creates a {@link org.springframework.web.server.WebFilter} that adds headers to HTTP responses for reactive applications.
+     *
+     * @return a new {@link ResponseHeaderWebFilter}
+     */
+    @Bean
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+    public ResponseHeaderWebFilter responseHeaderWebFilter(@Value("${system.name:UNKNOWN}") String systemName) {
+        ResponseHeaderWebFilter filter = new ResponseHeaderWebFilter(systemName);
+        filter.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
+        return filter;
     }
 }

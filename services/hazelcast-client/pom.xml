@@ -4,14 +4,14 @@
     <parent>
         <artifactId>datawave-microservice-service-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.2</version>
+        <version>1.3</version>
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>hazelcast-client</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.4</version>
     <properties>
-        <version.hazelcast-kubernetes>1.1.0</version.hazelcast-kubernetes>
-        <version.microservice.hazelcast>1.3</version.microservice.hazelcast>
+        <version.hazelcast-kubernetes>1.4</version.hazelcast-kubernetes>
+        <version.microservice.hazelcast>1.4</version.microservice.hazelcast>
     </properties>
     <dependencyManagement>
         <dependencies>

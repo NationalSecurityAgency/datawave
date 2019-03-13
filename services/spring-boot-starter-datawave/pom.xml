@@ -4,19 +4,24 @@
     <parent>
         <artifactId>datawave-microservice-service-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.2</version>
+        <version>1.3</version>
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave</artifactId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.3</version>
     <properties>
+        <version.accumulo>1.9.2</version.accumulo>
         <version.dropwizard-metrics>3.1.5</version.dropwizard-metrics>
+        <version.in-memory-accumulo>1.9.2.1</version.in-memory-accumulo>
         <version.jackson>2.9.6</version.jackson>
         <version.jzlib>1.1.3</version.jzlib>
+        <version.log4j-1.2-api>2.11.1</version.log4j-1.2-api>
         <version.metrics-spring>3.1.3</version.metrics-spring>
         <version.microservice.accumulo-utils>1.3</version.microservice.accumulo-utils>
         <version.microservice.authorization.api>1.3</version.microservice.authorization.api>
-        <version.microservice.base-rest-responses>1.0</version.microservice.base-rest-responses>
+        <version.microservice.base-rest-responses>1.1</version.microservice.base-rest-responses>
+        <version.microservice.cache-starter>1.0</version.microservice.cache-starter>
+        <version.microservice.metadata-utils>1.3</version.microservice.metadata-utils>
         <version.microservice.metrics.reporter>1.2</version.microservice.metrics.reporter>
         <version.protostuff>1.5.5</version.protostuff>
         <version.springfox>2.9.2</version.springfox>
@@ -49,6 +54,13 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>accumulo-utils</artifactId>
                 <version>${version.microservice.accumulo-utils}</version>
+                <exclusions>
+                    <!-- Exclude log4j since with spring boot we're using log4j2 -->
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -62,8 +74,33 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>metadata-utils</artifactId>
+                <version>${version.microservice.metadata-utils}</version>
+                <exclusions>
+                    <!-- Exclude log4j since with spring boot we're using log4j2 -->
+                    <exclusion>
+                        <artifactId>commons-logging</artifactId>
+                        <groupId>commons-logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>slf4j-log4j12</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metrics-reporter</artifactId>
                 <version>${version.microservice.metrics.reporter}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-cache</artifactId>
+                <version>${version.microservice.cache-starter}</version>
             </dependency>
             <dependency>
                 <groupId>io.protostuff</groupId>
@@ -74,6 +111,52 @@
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-annotations</artifactId>
                 <version>${version.swagger}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-core</artifactId>
+                <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>commons-logging</artifactId>
+                        <groupId>commons-logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>junit</artifactId>
+                        <groupId>junit</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <!-- This bridge allows log4j2 to work with code that is still using the log4j 1.2 classes/api -->
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${version.log4j-1.2-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.contrib</groupId>
+                <artifactId>datawave-in-memory-accumulo</artifactId>
+                <version>${version.in-memory-accumulo}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <!-- Exclude log4j since with spring boot we're using log4j2 -->
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>slf4j-log4j12</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <!--
                 TEMPORARILY REMOVED DUE TO UPGRADE ISSUES
@@ -132,6 +215,14 @@
             <artifactId>metrics-reporter</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative-boringssl-static</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
         </dependency>
@@ -155,6 +246,14 @@
             <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
@@ -169,6 +268,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-reactor-netty</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -227,6 +330,10 @@
                 <exclusion>
                     <artifactId>*</artifactId>
                     <groupId>io.netty</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>spring-cloud-netflix-core</artifactId>
+                    <groupId>org.springframework.cloud</groupId>
                 </exclusion>
                 <exclusion>
                     <artifactId>spring-cloud-starter-netflix-ribbon</artifactId>

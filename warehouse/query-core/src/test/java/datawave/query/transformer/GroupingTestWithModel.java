@@ -14,13 +14,14 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
+import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
+import datawave.query.util.VisibilityWiseGuysIngestWithModel;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
-import datawave.query.util.VisibilityWiseGuysIngestWithModel;
-import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
@@ -134,7 +135,8 @@ public abstract class GroupingTestWithModel {
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
+                        .deleteClass(DefaultEdgeEventQueryLogic.class)
+                        .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(

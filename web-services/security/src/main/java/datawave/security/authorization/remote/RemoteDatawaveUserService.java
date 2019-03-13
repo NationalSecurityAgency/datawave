@@ -4,7 +4,6 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.spotify.dns.LookupResult;
 import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
@@ -20,10 +19,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.util.EntityUtils;
-import org.xbill.DNS.DClass;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.Type;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Priority;
@@ -237,46 +232,27 @@ public class RemoteDatawaveUserService extends RemoteHttpService implements Cach
         }
     }
     
-    protected <T> T executeGetMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
-                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
-        URIBuilder builder = new URIBuilder();
-        builder.setScheme(authServiceScheme);
-        if (useSrvDNS) {
-            List<LookupResult> results = dnsSrvResolver.resolve(authServiceHost);
-            if (results != null && !results.isEmpty()) {
-                LookupResult result = results.get(0);
-                builder.setHost(result.host());
-                builder.setPort(result.port());
-                // Consul sends the hostname back in its own namespace. Although the A record is included in the
-                // "ADDITIONAL SECTION", Spotify SRV lookup doesn't translate, so we need to do the lookup manually.
-                if (result.host().endsWith(".consul.")) {
-                    Record[] newResults = new Lookup(result.host(), Type.A, DClass.IN).run();
-                    if (newResults != null && newResults.length > 0) {
-                        builder.setHost(newResults[0].rdataToString());
-                    } else {
-                        throw new IllegalArgumentException("Unable to resolve auth service host " + authServiceHost + " -> " + result.host() + " -> ???");
-                    }
-                }
-            } else {
-                throw new IllegalArgumentException("Unable to resolve auth service host: " + authServiceHost);
-            }
-        } else {
-            builder.setHost(authServiceHost);
-            builder.setPort(authServicePort);
-        }
-        builder.setPath(authServiceURI + uriSuffix);
-        uriCustomizer.accept(builder);
-        HttpGet getRequest = new HttpGet(builder.build());
-        requestCustomizer.accept(getRequest);
-        return super.execute(getRequest, resultConverter, errorSupplier);
-    }
-    
     @PostConstruct
     protected void init() {
         super.init();
         datawaveUserReader = objectMapper.readerFor(DatawaveUser.class);
         datawaveUserListReader = objectMapper.readerFor(objectMapper.getTypeFactory().constructCollectionType(Collection.class, DatawaveUser.class));
         datawaveUserInfoListReader = objectMapper.readerFor(objectMapper.getTypeFactory().constructCollectionType(Collection.class, DatawaveUserInfo.class));
+    }
+    
+    @Override
+    protected String serviceHost() {
+        return authServiceHost;
+    }
+    
+    @Override
+    protected int servicePort() {
+        return authServicePort;
+    }
+    
+    @Override
+    protected String serviceURI() {
+        return authServiceURI;
     }
     
     @Override
