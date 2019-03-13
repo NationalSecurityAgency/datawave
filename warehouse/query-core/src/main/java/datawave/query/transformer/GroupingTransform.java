@@ -158,7 +158,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *            an iterator source
      * @return the flushed value that is an aggregation from the source iterator
      */
-    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int groupFieldsBatchSize, YieldCallback yieldCallback) {
+    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
         
         return new Iterator<Entry<Key,Document>>() {
             
@@ -168,20 +168,22 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             public boolean hasNext() {
                 for (int i = 0; i < groupFieldsBatchSize; i++) {
                     if (in.hasNext()) {
-                        Entry<Key,Document> lastEntry = in.next();
-                        if (lastEntry != null) {
-                            GroupingTransform.this.apply(lastEntry);
-                        } else if (yieldCallback != null && yieldCallback.hasYielded()) {
-                            log.trace("lastEntry is null and yield was called");
-                            yieldCallback.yield(null); // undo the yield
-                        } else {
-                            // lastEntry was null and there was no yield
-                            break;
-                        }
+                        GroupingTransform.this.apply(in.next());
                     } else if (yieldCallback != null && yieldCallback.hasYielded()) {
-                        // hasNext is false and yield has been called. Undo the yield.
+                        // hasNext is false and yield has been called. Save the key and undo the yield.
                         log.trace("hasNext is false because yield was called");
-                        yieldCallback.yield(null);
+                        if (countingMap == null || countingMap.isEmpty()) {
+                            log.trace("There is no countingMap to flatten and i have yielded. Return false");
+                            return false;
+                        }
+                        Key positionAtYield = yieldCallback.getPositionAndReset();
+                        if (positionAtYield == null) {
+                            log.error("yielded with null key when lastEntry was null");
+                        } else {
+                            log.trace("key from yield is {}", positionAtYield);
+                            keys.add(positionAtYield); // this will become the key in the flattened document returned from 'next' below
+                        }
+                        break;
                     } else {
                         // there is no next and there was no yield
                         break;
@@ -318,7 +320,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      */
     private void flatten(List<Document> documents) {
         log.trace("flatten {}", documents);
-        Document theDocument = new Document(documents.get(0).getMetadata(), true);
+        Document theDocument = new Document(documents.get(documents.size() - 1).getMetadata(), true);
         int context = 0;
         Set<ColumnVisibility> visibilities = new HashSet<>();
         for (Document document : documents) {
