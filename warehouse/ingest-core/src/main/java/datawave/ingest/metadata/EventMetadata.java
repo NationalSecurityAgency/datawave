@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -307,13 +308,13 @@ public class EventMetadata implements RawRecordMetadata {
         
         // The ContentIndexingColumnBasedHandler uses helpers with this interface
         if (helper instanceof AbstractContentIngestHelper) {
-            String tokenDesignator = ((AbstractContentIngestHelper) helper).getTokenFieldNameDesignator();
+            String tokenDesignator = Objects.toString(((AbstractContentIngestHelper) helper).getTokenFieldNameDesignator(), "");
             AbstractContentIngestHelper h = (AbstractContentIngestHelper) helper;
             for (String field : fields.keySet()) {
                 if (h.isContentIndexField(field)) {
                     updateForIndexedField(helper, event, fields, countDelta, loadDate, tokenDesignator, field);
-                    termFrequencyFieldsInfo.createOrUpdate(field, event.getDataType().outputName(), MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS,
-                                    event.getDate());
+                    termFrequencyFieldsInfo.createOrUpdate(field + tokenDesignator, event.getDataType().outputName(),
+                                    MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
                 }
                 
                 if (h.isReverseContentIndexField(field)) {
