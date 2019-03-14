@@ -7,7 +7,7 @@
         <version>1.3</version>
     </parent>
     <artifactId>dictionary-api</artifactId>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <properties>
         <version.base-responses>1.0</version.base-responses>
         <version.guava>25.1-jre</version.guava>

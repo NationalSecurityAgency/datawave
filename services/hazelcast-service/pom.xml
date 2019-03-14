@@ -8,7 +8,7 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>hazelcast-service</artifactId>
-    <version>1.4</version>
+    <version>1.5-SNAPSHOT</version>
     <description>DATAWAVE Hazelcast Server</description>
     <properties>
         <start-class>datawave.microservice.cached.server.HazelcastService</start-class>

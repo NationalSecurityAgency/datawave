@@ -8,7 +8,7 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-cache</artifactId>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

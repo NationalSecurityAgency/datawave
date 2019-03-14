@@ -8,7 +8,7 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <description>DATAWAVE Dictionary Service</description>
     <properties>
         <start-class>datawave.microservice.dictionary.DictionaryService</start-class>
