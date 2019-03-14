@@ -1,9 +1,10 @@
 package datawave.microservice.config.web;
 
 import com.google.common.collect.Lists;
+import datawave.microservice.validator.NotBlankIfFieldEquals;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.boot.web.server.Ssl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.validation.annotation.Validated;
 
@@ -21,18 +22,21 @@ import static datawave.microservice.authorization.preauth.ProxiedEntityX509Filte
 import static datawave.microservice.authorization.preauth.ProxiedEntityX509Filter.SUBJECT_DN_HEADER;
 
 @Validated
-@EnableConfigurationProperties(DatawaveServerProperties.class)
 @ConfigurationProperties(prefix = "server", ignoreInvalidFields = true)
 public class DatawaveServerProperties {
     @PositiveOrZero
     private Integer nonSecurePort = null;
     
     @NotBlank
-    private String cssUri = "/screen.css";
+    private String cdnUri = "/";
     
     @Valid
     @NestedConfigurationProperty
     private Cors cors = new Cors();
+    
+    @Valid
+    @NestedConfigurationProperty
+    private OutboundSsl outboundSsl = new OutboundSsl();
     
     public Integer getNonSecurePort() {
         return nonSecurePort;
@@ -42,16 +46,26 @@ public class DatawaveServerProperties {
         this.nonSecurePort = nonSecurePort;
     }
     
-    public String getCssUri() {
-        return cssUri;
+    public String getCdnUri() {
+        return cdnUri;
     }
     
-    public void setCssUri(String cssUri) {
-        this.cssUri = cssUri;
+    public void setCdnUri(String cdnUri) {
+        this.cdnUri = cdnUri;
     }
     
     public Cors getCors() {
         return cors;
+    }
+    
+    /**
+     * Gets the {@link Ssl} configuration for outbound connections that may require two-way SSL. Note that this can be disabled by setting the property
+     * "server.outbound-ssl.enabled" to "false".
+     *
+     * @return the outbound {@link Ssl} configuration
+     */
+    public OutboundSsl getOutboundSsl() {
+        return outboundSsl;
     }
     
     public static class Cors {
@@ -116,4 +130,14 @@ public class DatawaveServerProperties {
             this.maxAge = maxAge;
         }
     }
+    
+    @Validated
+    @NotBlankIfFieldEquals.List({@NotBlankIfFieldEquals(fieldName = "enabled", fieldValue = "true", notBlankFieldName = "keyStore"),
+            @NotBlankIfFieldEquals(fieldName = "enabled", fieldValue = "true", notBlankFieldName = "keyStorePassword"),
+            @NotBlankIfFieldEquals(fieldName = "enabled", fieldValue = "true", notBlankFieldName = "keyStoreType"),
+            @NotBlankIfFieldEquals(fieldName = "enabled", fieldValue = "true", notBlankFieldName = "trustStore"),
+            @NotBlankIfFieldEquals(fieldName = "enabled", fieldValue = "true", notBlankFieldName = "trustStorePassword"),
+            @NotBlankIfFieldEquals(fieldName = "enabled", fieldValue = "true", notBlankFieldName = "trustStoreType"),
+            @NotBlankIfFieldEquals(fieldName = "enabled", fieldValue = "true", notBlankFieldName = "protocol")})
+    public static class OutboundSsl extends Ssl {}
 }

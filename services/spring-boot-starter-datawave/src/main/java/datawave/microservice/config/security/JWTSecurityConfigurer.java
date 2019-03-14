@@ -12,14 +12,14 @@ import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointR
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -41,9 +41,7 @@ import java.util.List;
  */
 @Order(SecurityProperties.BASIC_AUTH_ORDER - 2)
 @Configuration
-@EnableWebSecurity
 @ConditionalOnWebApplication
-@EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true)
 @ConditionalOnProperty(name = "security.jwt.enabled", matchIfMissing = true)
 public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
     private final DatawaveSecurityProperties securityProperties;
@@ -102,6 +100,20 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
     protected void configure(@Nullable AuthenticationManagerBuilder auth) throws Exception {
         Preconditions.checkNotNull(auth);
         auth.authenticationProvider(jwtAuthenticationProvider);
+    }
+    
+    /**
+     * Configures web security to allow access to static resources without authentication.
+     *
+     * @param web
+     *            the {@link WebSecurity} to configure
+     * @throws Exception
+     *             if there is any problem configuring the web security
+     */
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        super.configure(web);
+        web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
     }
     
     protected AuthenticationEntryPoint getAuthenticationEntryPoint() {

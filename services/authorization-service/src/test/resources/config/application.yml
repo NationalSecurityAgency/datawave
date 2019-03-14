@@ -22,6 +22,13 @@ server:
     key-store: classpath:ssl/host.p12
     key-store-type: PKCS12
     key-store-password: LetMeIn
+  outbound-ssl:
+    key-store: ${server.ssl.key-store}
+    key-store-password: ${server.ssl.key-store-password}
+    key-store-type: ${server.ssl.key-store-type}
+    trust-store: ${server.ssl.trust-store}
+    trust-store-password: ${server.ssl.trust-store-password}
+    trust-store-type: ${server.ssl.trust-store-type}
 
 management:
   endpoints:
@@ -30,4 +37,4 @@ management:
 
 logging:
   level:
-    datawave.midroservice.authorization.cached: DEBUG
+    datawave.microservice.authorization.cached: DEBUG

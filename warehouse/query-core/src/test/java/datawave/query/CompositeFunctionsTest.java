@@ -7,16 +7,17 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataHelper;
 import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
-import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.Connector;
@@ -167,7 +168,8 @@ public abstract class CompositeFunctionsTest {
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
+                        .deleteClass(DefaultEdgeEventQueryLogic.class)
+                        .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(

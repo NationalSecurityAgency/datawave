@@ -20,7 +20,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngest;
-import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
@@ -34,6 +34,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
+import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -45,6 +46,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import java.io.File;
 import java.text.DateFormat;
@@ -134,7 +136,6 @@ public abstract class GroupingTest {
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
@@ -503,6 +504,15 @@ public abstract class GroupingTest {
                     Assert.assertEquals(new ColumnVisibility("D"), attr.getColumnVisibility());
                 }
             }
+        }
+    }
+    
+    private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
+    
+    public static class Producer {
+        @Produces
+        public static RemoteEdgeDictionary produceRemoteEdgeDictionary() {
+            return mockRemoteEdgeDictionary;
         }
     }
     

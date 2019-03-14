@@ -31,6 +31,12 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-data-dictionary-core</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

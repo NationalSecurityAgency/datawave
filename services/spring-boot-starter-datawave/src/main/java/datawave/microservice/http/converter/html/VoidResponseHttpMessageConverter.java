@@ -6,6 +6,7 @@ import datawave.webservice.result.VoidResponse;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
@@ -16,10 +17,10 @@ import java.util.List;
  * A {@link org.springframework.http.converter.HttpMessageConverter} that writes a {@link VoidResponse} to HTML. This class does not support reading HTML and
  * converting to an {@link VoidResponse}.
  */
-public class VoidResponseHttpMessageConverter extends AbstractHtmlProviderHttpMessageConverter<VoidResponse> {
+public class VoidResponseHttpMessageConverter extends AbstractDatawaveHttpMessageConverter<VoidResponse> {
     
-    public VoidResponseHttpMessageConverter(DatawaveServerProperties datawaveServerProperties) {
-        super(datawaveServerProperties);
+    public VoidResponseHttpMessageConverter(DatawaveServerProperties datawaveServerProperties, @Nullable BannerProvider bannerProvider) {
+        super(datawaveServerProperties, bannerProvider);
         setSupportedMediaTypes(Arrays.asList(MediaType.TEXT_HTML, MediaType.TEXT_PLAIN));
     }
     

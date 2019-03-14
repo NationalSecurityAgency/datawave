@@ -3,7 +3,6 @@ package datawave.webservice.common.audit.remote;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
-import com.spotify.dns.LookupResult;
 import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditService;
@@ -14,10 +13,6 @@ import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.util.EntityUtils;
-import org.xbill.DNS.DClass;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.Type;
 
 import javax.annotation.Priority;
 import javax.annotation.Resource;
@@ -140,38 +135,19 @@ public class RemoteAuditor extends RemoteHttpService implements AuditService {
         }
     }
     
-    protected <T> T executePostMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws URISyntaxException, IOException {
-        URIBuilder builder = new URIBuilder();
-        builder.setScheme(auditServiceScheme);
-        if (useSrvDNS) {
-            List<LookupResult> results = dnsSrvResolver.resolve(auditServiceHost);
-            if (results != null && !results.isEmpty()) {
-                LookupResult result = results.get(0);
-                builder.setHost(result.host());
-                builder.setPort(result.port());
-                // Consul sends the hostname back in its own namespace. Although the A record is included in the
-                // "ADDITIONAL SECTION". Spotify SRV doesn't translate, so we need to do the lookup manually.
-                if (result.host().endsWith(".consul.")) {
-                    Record[] newResults = new Lookup(result.host(), Type.A, DClass.IN).run();
-                    if (newResults != null && newResults.length > 0) {
-                        builder.setHost(newResults[0].rdataToString());
-                    } else {
-                        throw new IllegalArgumentException("Unable to resolve audit service host " + auditServiceHost + " -> " + result.host() + " -> ???");
-                    }
-                }
-            } else {
-                throw new IllegalArgumentException("Unable to resolve audit service host: " + auditServiceHost);
-            }
-        } else {
-            builder.setHost(auditServiceHost);
-            builder.setPort(auditServicePort);
-        }
-        builder.setPath(auditServiceURI + uriSuffix);
-        uriCustomizer.accept(builder);
-        HttpPost postRequest = new HttpPost(builder.build());
-        requestCustomizer.accept(postRequest);
-        return super.execute(postRequest, resultConverter, errorSupplier);
+    @Override
+    protected String serviceHost() {
+        return auditServiceHost;
+    }
+    
+    @Override
+    protected int servicePort() {
+        return auditServicePort;
+    }
+    
+    @Override
+    protected String serviceURI() {
+        return auditServiceURI;
     }
     
     @Override

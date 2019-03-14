@@ -16,14 +16,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.context.annotation.RequestScope;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -107,18 +105,7 @@ public class LogAuditorTest {
     @Configuration
     @Profile("LogAuditorTest")
     @ComponentScan(basePackages = "datawave.microservice")
-    public static class LogAuditorTestConfiguration {
-        @Bean("restAuditParams")
-        @RequestScope
-        public AuditParameters restAuditParams() {
-            return new AuditParameters();
-        }
-        
-        @Bean("msgHandlerAuditParams")
-        public AuditParameters msgHandlerAuditParams() {
-            return new AuditParameters();
-        }
-    }
+    public static class LogAuditorTestConfiguration {}
     
     static class TestAppender extends AbstractAppender {
         private final List<LogEvent> log = new ArrayList<>();

@@ -5,8 +5,6 @@ import datawave.cache.CollectionSafeKeyGenerator;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -33,17 +31,11 @@ public class MarkingConfig {
     }
     
     @Bean(name = "markings-cache-manager")
-    @ConditionalOnMissingBean
-    public CacheManager markingsCacheManager(@Autowired @Qualifier("markings-cache-manager-specification") CaffeineSpec caffeineSpec) {
+    @ConditionalOnMissingBean(name = "markings-cache-manager")
+    public CacheManager markingsCacheManager() {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeineSpec(caffeineSpec);
+        caffeineCacheManager.setCaffeineSpec(CaffeineSpec.parse("maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h"));
         return caffeineCacheManager;
-    }
-    
-    @Bean(name = "markings-cache-manager-specification")
-    @ConditionalOnMissingBean
-    public CaffeineSpec cacheManagerSpec() {
-        return CaffeineSpec.parse("maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h");
     }
     
     @Bean

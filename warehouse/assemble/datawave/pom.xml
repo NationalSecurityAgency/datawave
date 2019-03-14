@@ -41,6 +41,10 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-data-dictionary-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
         </dependency>
         <dependency>
@@ -568,6 +572,7 @@
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>
                                             <include>${project.groupId}:datawave-common</include>
+                                            <include>${project.groupId}:datawave-data-dictionary-core</include>
                                             <include>${project.groupId}:datawave-edge-dictionary-core</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
