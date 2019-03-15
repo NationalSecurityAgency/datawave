@@ -43,7 +43,7 @@ public class AccumuloAuditor implements Auditor {
         } catch (AccumuloException | AccumuloSecurityException e) {
             log.error("Unable to create audit table.", e);
         } catch (TableExistsException e) {
-            log.warn("Accumulo Audit Table [" + tableName + "] already exists.", e);
+            log.warn("Accumulo Audit Table [{}] already exists.", tableName, e);
         }
     }
     

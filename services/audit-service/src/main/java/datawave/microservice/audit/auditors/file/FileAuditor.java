@@ -10,7 +10,9 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -43,7 +45,7 @@ public class FileAuditor implements Auditor {
     protected long maxFileAgeMillis;
     
     protected FileSystem fileSystem;
-    protected Path basePath;
+    protected Path path;
     
     protected Path currentFile = null;
     protected Date creationDate = null;
@@ -53,24 +55,26 @@ public class FileAuditor implements Auditor {
         this.maxFileAgeMillis = builder.maxFileAgeMillis;
         
         Configuration config = new Configuration();
-        config.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-        config.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
         
         if (builder.configResources != null) {
             for (String resource : builder.configResources)
                 config.addResource(new Path(resource));
         }
         
-        if (builder.fileUri != null)
-            fileSystem = FileSystem.get(new URI(builder.fileUri), config);
-        else
-            fileSystem = FileSystem.get(config);
+        path = new Path(builder.path);
         
-        basePath = new Path(builder.path);
-        if (!fileSystem.exists(basePath))
-            fileSystem.mkdirs(basePath);
+        if (builder.subpath != null)
+            path = new Path(path, builder.subpath);
         
-        this.sdf = new SimpleDateFormat("'" + builder.prefix + "'-yyyyMMdd_HHmmss.SSS'.json'");
+        if (builder.prefix != null)
+            path = new Path(path, builder.prefix);
+        
+        fileSystem = FileSystem.get(path.toUri(), config);
+        
+        if (!fileSystem.exists(path))
+            fileSystem.mkdirs(path);
+        
+        this.sdf = new SimpleDateFormat("yyyyMMdd_HHmmss.SSS'.json'");
     }
     
     @Override
@@ -97,13 +101,13 @@ public class FileAuditor implements Auditor {
         try {
             return URLEncoder.encode(value, "UTF8");
         } catch (UnsupportedEncodingException e) {
-            log.error("Unable to URL encode value: " + value);
+            log.error("Unable to URL encode value: {}", value);
         }
         return value;
     }
     
     protected void writeAudit(String jsonAuditParams) throws Exception {
-        OutputStream appendStream = (fileSystem instanceof LocalFileSystem) ? new FileOutputStream(currentFile.toString(), true)
+        OutputStream appendStream = (fileSystem instanceof LocalFileSystem) ? new FileOutputStream(new File(currentFile.toUri()), true)
                         : fileSystem.append(currentFile);
         appendStream.write(jsonAuditParams.getBytes("UTF8"));
         appendStream.close();
@@ -111,20 +115,8 @@ public class FileAuditor implements Auditor {
     
     protected void createNewFile() throws IOException, ParseException {
         // create a new file and output stream
-        Date currentDate = null;
-        do {
-            // if this isn't our first attempt, sleep for a short time
-            if (currentDate != null) {
-                try {
-                    Thread.sleep((long) (Math.random() * 10));
-                } catch (InterruptedException e) {
-                    // getting interrupted is ok
-                }
-            }
-            
-            currentDate = new Date();
-            currentFile = new Path(basePath, sdf.format(currentDate));
-        } while (fileSystem.exists(currentFile));
+        Date currentDate = new Date();
+        currentFile = new Path(path, sdf.format(currentDate));
         FSDataOutputStream outStream = fileSystem.create(currentFile);
         outStream.close();
         creationDate = currentDate;
@@ -139,8 +131,8 @@ public class FileAuditor implements Auditor {
     }
     
     public static class Builder<T extends Builder<T>> {
-        protected String fileUri;
         protected String path;
+        protected String subpath;
         protected String prefix;
         protected Long maxFileLenBytes;
         protected Long maxFileAgeMillis;
@@ -153,16 +145,6 @@ public class FileAuditor implements Auditor {
             configResources = new ArrayList<>();
         }
         
-        public String getFileUri() {
-            return fileUri;
-        }
-        
-        public T setFileUri(String fileUri) {
-            if (fileUri != null)
-                this.fileUri = fileUri;
-            return (T) this;
-        }
-        
         public String getPath() {
             return path;
         }
@@ -170,6 +152,16 @@ public class FileAuditor implements Auditor {
         public T setPath(String path) {
             if (path != null)
                 this.path = path;
+            return (T) this;
+        }
+        
+        public String getSubpath() {
+            return subpath;
+        }
+        
+        public T setSubpath(String subpath) {
+            if (subpath != null)
+                this.subpath = subpath;
             return (T) this;
         }
         

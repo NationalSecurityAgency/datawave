@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -21,6 +22,7 @@ import java.util.List;
 public class FileAuditConfig {
     
     @Bean("fileAuditProperties")
+    @Valid
     @ConfigurationProperties("audit.auditors.file")
     public FileAuditProperties fileAuditProperties() {
         return new FileAuditProperties();
@@ -28,14 +30,17 @@ public class FileAuditConfig {
     
     @Bean(name = "fileAuditor")
     public Auditor fileAuditor(AuditProperties auditProperties, @Qualifier("fileAuditProperties") FileAuditProperties fileAuditProperties) throws Exception {
-        String fileUri = (fileAuditProperties.getFs().getFileUri() != null) ? fileAuditProperties.getFs().getFileUri() : auditProperties.getFs().getFileUri();
         List<String> configResources = (fileAuditProperties.getFs().getConfigResources() != null) ? fileAuditProperties.getFs().getConfigResources()
                         : auditProperties.getFs().getConfigResources();
         
+        String subpath = fileAuditProperties.getSubpath();
+        if (subpath == null && fileAuditProperties.getSubpathEnvVar() != null)
+            subpath = System.getenv(fileAuditProperties.getSubpathEnvVar());
+        
         // @formatter:off
         return new FileAuditor.Builder()
-                .setFileUri(fileUri)
-                .setPath(fileAuditProperties.getPath())
+                .setPath(fileAuditProperties.getPathUri())
+                .setSubpath(subpath)
                 .setMaxFileAgeMillis(fileAuditProperties.getMaxFileAgeMillis())
                 .setMaxFileLenBytes(fileAuditProperties.getMaxFileLenBytes())
                 .setConfigResources(configResources)

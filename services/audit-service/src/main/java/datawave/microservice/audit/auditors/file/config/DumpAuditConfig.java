@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.SubscribableChannel;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -29,6 +30,7 @@ import java.util.List;
 public class DumpAuditConfig {
     
     @Bean("dumpAuditProperties")
+    @Valid
     @ConfigurationProperties("audit.auditors.dump")
     public FileAuditProperties dumpAuditProperties() {
         return new FileAuditProperties();
@@ -50,14 +52,17 @@ public class DumpAuditConfig {
     
     @Bean
     public Auditor dumpAuditor(AuditProperties auditProperties, @Qualifier("dumpAuditProperties") FileAuditProperties dumpAuditProperties) throws Exception {
-        String fileUri = (dumpAuditProperties.getFs().getFileUri() != null) ? dumpAuditProperties.getFs().getFileUri() : auditProperties.getFs().getFileUri();
         List<String> configResources = (dumpAuditProperties.getFs().getConfigResources() != null) ? dumpAuditProperties.getFs().getConfigResources()
                         : auditProperties.getFs().getConfigResources();
         
+        String subpath = dumpAuditProperties.getSubpath();
+        if (subpath == null && dumpAuditProperties.getSubpathEnvVar() != null)
+            subpath = System.getenv(dumpAuditProperties.getSubpathEnvVar());
+        
         // @formatter:off
         return new FileAuditor.Builder()
-                .setFileUri(fileUri)
-                .setPath(dumpAuditProperties.getPath())
+                .setPath(dumpAuditProperties.getPathUri())
+                .setSubpath(subpath)
                 .setMaxFileAgeMillis(dumpAuditProperties.getMaxFileAgeMillis())
                 .setMaxFileLenBytes(dumpAuditProperties.getMaxFileLenBytes())
                 .setConfigResources(configResources)

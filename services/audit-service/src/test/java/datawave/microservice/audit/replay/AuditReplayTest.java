@@ -31,13 +31,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -130,9 +134,13 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/createAndStart")
-                        .queryParam("path", tempDir.getAbsolutePath()).build();
+                        .build();
         
-        jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
+        jwtRestTemplate.exchange(requestEntity, String.class);
     }
     
     // Test create (0 msgs/sec), status, stop, status, update, status, resume, verify status, delete, verify file names, verify messageCollector
@@ -146,10 +154,15 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents createUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath()).queryParam("sendRate", 0).build();
+                        .build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        map.add("sendRate", "0");
         
         // Create the audit replay request
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri, String.class);
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId = response.getBody();
         
         // Get the status of the audit replay request
@@ -160,8 +173,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 0,
                 false,
@@ -174,7 +186,7 @@ public class AuditReplayTest {
         
         Exception exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, stopUri, String.class);
+            jwtRestTemplate.exchange(authUser, HttpMethod.PUT, stopUri, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -185,7 +197,7 @@ public class AuditReplayTest {
         // Start the audit replay request
         UriComponents startUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/start").build();
-        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         
         Assert.assertEquals(200, startResp.getStatusCode().value());
         
@@ -201,8 +213,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 2,
                 false,
@@ -236,7 +247,7 @@ public class AuditReplayTest {
         // @formatter:on
         
         // Stop the audit replay request
-        ResponseEntity<String> stopResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, stopUri, String.class);
+        ResponseEntity<String> stopResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, stopUri, String.class);
         
         Assert.assertEquals(200, stopResp.getStatusCode().value());
         
@@ -246,8 +257,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 2,
                 false,
@@ -282,8 +292,13 @@ public class AuditReplayTest {
         
         // Update the audit replay request
         UriComponents updateUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/" + replayId + "/update").queryParam("sendRate", 200).build();
-        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, updateUri, String.class);
+                        .path("/audit/v1/replay/" + replayId + "/update").build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("sendRate", "200");
+        
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.PUT, updateUri);
+        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(requestEntity, String.class);
         
         Assert.assertEquals(200, updateResp.getStatusCode().value());
         
@@ -293,8 +308,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 200L,
                 2,
                 false,
@@ -330,7 +344,7 @@ public class AuditReplayTest {
         // Resume the audit replay request
         UriComponents resumeUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/resume").build();
-        ResponseEntity<String> resumeResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, resumeUri, String.class);
+        ResponseEntity<String> resumeResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, resumeUri, String.class);
         
         Assert.assertEquals(200, resumeResp.getStatusCode().value());
         
@@ -345,8 +359,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 200L,
                 2,
                 false,
@@ -382,7 +395,7 @@ public class AuditReplayTest {
         // Test resume on a finished audit replay
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, resumeUri, String.class);
+            jwtRestTemplate.exchange(authUser, HttpMethod.PUT, resumeUri, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -394,7 +407,7 @@ public class AuditReplayTest {
         // Test start on a finished audit replay
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+            jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -406,7 +419,7 @@ public class AuditReplayTest {
         // Delete the audit replay request
         UriComponents deleteUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/delete").build();
-        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         
         Assert.assertEquals(200, deleteResp.getStatusCode().value());
         
@@ -471,10 +484,16 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents createUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath()).queryParam("sendRate", 0).queryParam("replayUnfinishedFiles", true).build();
+                        .build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        map.add("sendRate", "0");
+        map.add("replayUnfinishedFiles", "true");
         
         // Create the audit replay request
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri, String.class);
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId = response.getBody();
         
         // Get the status of the audit replay request
@@ -485,8 +504,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 0,
                 true,
@@ -496,7 +514,7 @@ public class AuditReplayTest {
         // Start the audit replay request
         UriComponents startUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/start").build();
-        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         
         Assert.assertEquals(200, startResp.getStatusCode().value());
         
@@ -512,8 +530,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 4,
                 true,
@@ -575,7 +592,7 @@ public class AuditReplayTest {
         // Stop the audit replay request
         UriComponents stopUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/stop").build();
-        ResponseEntity<String> stopResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, stopUri, String.class);
+        ResponseEntity<String> stopResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, stopUri, String.class);
         
         Assert.assertEquals(200, stopResp.getStatusCode().value());
         
@@ -585,8 +602,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 4,
                 true,
@@ -647,8 +663,14 @@ public class AuditReplayTest {
         
         // Update the audit replay request
         UriComponents updateUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/" + replayId + "/update").queryParam("sendRate", 200).build();
-        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, updateUri, String.class);
+                        .path("/audit/v1/replay/" + replayId + "/update").build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("sendRate", "200");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.PUT, updateUri);
+        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(requestEntity, String.class);
         
         Assert.assertEquals(200, updateResp.getStatusCode().value());
         
@@ -658,8 +680,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 200L,
                 4,
                 true,
@@ -721,7 +742,7 @@ public class AuditReplayTest {
         // Resume the audit replay request
         UriComponents resumeUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/resume").build();
-        ResponseEntity<String> resumeResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, resumeUri, String.class);
+        ResponseEntity<String> resumeResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, resumeUri, String.class);
         
         Assert.assertEquals(200, resumeResp.getStatusCode().value());
         
@@ -736,8 +757,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 200L,
                 4,
                 true,
@@ -799,7 +819,7 @@ public class AuditReplayTest {
         // Delete the audit replay request
         UriComponents deleteUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/delete").build();
-        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         
         Assert.assertEquals(200, deleteResp.getStatusCode().value());
         
@@ -902,13 +922,27 @@ public class AuditReplayTest {
         
         // Create the audit replay requests
         UriComponents createUri1 = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json").queryParam("sendRate", 0).build();
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri1, String.class);
+                        .build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString() + "/audit-20190227_000000.000.json");
+        map.add("sendRate", "0");
+        
+        // Create the audit replay request
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri1);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId1 = response.getBody();
         
         UriComponents createUri2 = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json").queryParam("sendRate", 0).build();
-        response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri2, String.class);
+                        .build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString() + "/audit-20190228_000000.000.json");
+        map.add("sendRate", "0");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri2);
+        response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId2 = response.getBody();
         
         // Get the status of the audit replay requests
@@ -921,8 +955,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath()+ "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString()+ "/audit-20190227_000000.000.json",
                 0L,
                 0,
                 false,
@@ -934,8 +967,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath()+ "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString()+ "/audit-20190228_000000.000.json",
                 0L,
                 0,
                 false,
@@ -945,7 +977,7 @@ public class AuditReplayTest {
         // Start all of the audit replay requests
         UriComponents startUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/startAll")
                         .build();
-        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         
         Assert.assertEquals(200, startResp.getStatusCode().value());
         
@@ -971,8 +1003,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190227_000000.000.json",
                 0L,
                 1,
                 false,
@@ -997,8 +1028,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190228_000000.000.json",
                 0L,
                 1,
                 false,
@@ -1021,7 +1051,7 @@ public class AuditReplayTest {
         // Stop the audit replay request
         UriComponents stopAllUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/stopAll")
                         .build();
-        ResponseEntity<String> stopResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, stopAllUri, String.class);
+        ResponseEntity<String> stopResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, stopAllUri, String.class);
         
         Assert.assertEquals(200, stopResp.getStatusCode().value());
         
@@ -1033,8 +1063,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190227_000000.000.json",
                 0L,
                 1,
                 false,
@@ -1059,8 +1088,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190228_000000.000.json",
                 0L,
                 1,
                 false,
@@ -1082,8 +1110,14 @@ public class AuditReplayTest {
         
         // Update the audit replay request
         UriComponents updateAllUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/updateAll").queryParam("sendRate", 200).build();
-        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, updateAllUri, String.class);
+                        .path("/audit/v1/replay/updateAll").build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("sendRate", "200");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.PUT, updateAllUri);
+        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(requestEntity, String.class);
         
         Assert.assertEquals(200, updateResp.getStatusCode().value());
         
@@ -1095,8 +1129,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190227_000000.000.json",
                 200L,
                 1,
                 false,
@@ -1121,8 +1154,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190228_000000.000.json",
                 200L,
                 1,
                 false,
@@ -1145,7 +1177,7 @@ public class AuditReplayTest {
         // Resume the audit replay request
         UriComponents resumeAllUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/resumeAll").build();
-        ResponseEntity<String> resumeResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, resumeAllUri, String.class);
+        ResponseEntity<String> resumeResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, resumeAllUri, String.class);
         
         Assert.assertEquals(200, resumeResp.getStatusCode().value());
         
@@ -1170,8 +1202,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190227_000000.000.json",
                 200L,
                 1,
                 false,
@@ -1196,8 +1227,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190228_000000.000.json",
                 200L,
                 1,
                 false,
@@ -1220,7 +1250,7 @@ public class AuditReplayTest {
         // Delete the audit replay requests
         UriComponents deleteUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/deleteAll")
                         .build();
-        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         
         Assert.assertEquals(200, deleteResp.getStatusCode().value());
         
@@ -1283,10 +1313,16 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents createAndStartUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/createAndStart").queryParam("path", tempDir.getAbsolutePath()).queryParam("sendRate", 0).build();
+                        .path("/audit/v1/replay/createAndStart").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        map.add("sendRate", "0");
         
         // Create and start the audit replay request
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createAndStartUri, String.class);
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createAndStartUri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
+        
         String replayId = response.getBody();
         
         // Get the status of the audit replay request
@@ -1303,8 +1339,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 2,
                 false,
@@ -1348,8 +1383,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.IDLE,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 2,
                 false,
@@ -1358,8 +1392,14 @@ public class AuditReplayTest {
         
         // Update the audit replay request
         UriComponents updateUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/" + replayId + "/update").queryParam("sendRate", 200).build();
-        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, updateUri, String.class);
+                        .path("/audit/v1/replay/" + replayId + "/update").build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("sendRate", "200");
+        
+        // Create and start the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.PUT, updateUri);
+        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(requestEntity, String.class);
         
         Assert.assertEquals(200, updateResp.getStatusCode().value());
         
@@ -1369,8 +1409,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.IDLE,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 200L,
                 2,
                 false,
@@ -1406,7 +1445,7 @@ public class AuditReplayTest {
         // Resume the audit replay request
         UriComponents resumeUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/resume").build();
-        ResponseEntity<String> resumeResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, resumeUri, String.class);
+        ResponseEntity<String> resumeResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, resumeUri, String.class);
         
         Assert.assertEquals(200, resumeResp.getStatusCode().value());
         
@@ -1421,8 +1460,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 200L,
                 2,
                 false,
@@ -1458,7 +1496,7 @@ public class AuditReplayTest {
         // Delete the audit replay request
         UriComponents deleteUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/delete").build();
-        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         
         Assert.assertEquals(200, deleteResp.getStatusCode().value());
         
@@ -1524,10 +1562,15 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents createAndStartUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/createAndStart").queryParam("path", tempDir.getAbsolutePath()).queryParam("sendRate", 0).build();
+                        .path("/audit/v1/replay/createAndStart").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        map.add("sendRate", "0");
         
         // Create and start the audit replay request
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createAndStartUri, String.class);
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createAndStartUri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId = response.getBody();
         
         // Get the status of the audit replay request
@@ -1544,8 +1587,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 2,
                 false,
@@ -1584,7 +1626,7 @@ public class AuditReplayTest {
         
         Exception exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+            jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1615,11 +1657,17 @@ public class AuditReplayTest {
         
         // update
         UriComponents updateUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/bogusId/update").queryParam("sendRate", 200).build();
+                        .path("/audit/v1/replay/bogusId/update").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("sendRate", "200");
+        
+        // Create and start the audit replay request
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.PUT, updateUri);
         
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, updateUri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1632,7 +1680,7 @@ public class AuditReplayTest {
                         .path("/audit/v1/replay/bogusId/start").build();
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+            jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1645,7 +1693,7 @@ public class AuditReplayTest {
                         .build();
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+            jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1658,7 +1706,7 @@ public class AuditReplayTest {
                         .path("/audit/v1/replay/bogusId/resume").build();
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, resumeUri, String.class);
+            jwtRestTemplate.exchange(authUser, HttpMethod.PUT, resumeUri, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1671,7 +1719,7 @@ public class AuditReplayTest {
                         .path("/audit/v1/replay/bogusId/delete").build();
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+            jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1691,10 +1739,15 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents createUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath()).queryParam("sendRate", 0).build();
+                        .build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        map.add("sendRate", "0");
         
         // Create the audit replay request
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri, String.class);
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId = response.getBody();
         
         // Get the status of the audit replay request
@@ -1705,8 +1758,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 0,
                 false,
@@ -1716,7 +1768,7 @@ public class AuditReplayTest {
         // Start the audit replay request
         UriComponents startUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/start").build();
-        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         
         Assert.assertEquals(200, startResp.getStatusCode().value());
         
@@ -1732,8 +1784,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 2,
                 false,
@@ -1768,8 +1819,14 @@ public class AuditReplayTest {
         
         // Update the audit replay request
         UriComponents updateUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/updateAll")
-                        .queryParam("sendRate", 200).build();
-        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, updateUri, String.class);
+                        .build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("sendRate", "200");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.PUT, updateUri);
+        ResponseEntity<String> updateResp = jwtRestTemplate.exchange(requestEntity, String.class);
         
         Assert.assertEquals(200, updateResp.getStatusCode().value());
         
@@ -1784,8 +1841,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 200L,
                 2,
                 false,
@@ -1821,7 +1877,7 @@ public class AuditReplayTest {
         // Delete the audit replay request
         UriComponents deleteUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/delete").build();
-        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         
         Assert.assertEquals(200, deleteResp.getStatusCode().value());
         
@@ -1883,11 +1939,18 @@ public class AuditReplayTest {
         
         // create
         UriComponents createUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath()).queryParam("sendRate", -1).build();
+                        .build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        map.add("sendRate", "-1");
+        
+        // Create the audit replay request
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri);
         
         Exception exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1898,11 +1961,18 @@ public class AuditReplayTest {
         
         // createAndStart
         UriComponents createAndStartUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/createAndStart").queryParam("path", tempDir.getAbsolutePath()).queryParam("sendRate", -1).build();
+                        .path("/audit/v1/replay/createAndStart").build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        map.add("sendRate", "-1");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createAndStartUri);
         
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, createAndStartUri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1913,11 +1983,17 @@ public class AuditReplayTest {
         
         // update
         UriComponents updateUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/bogusId/update").queryParam("sendRate", -1).build();
+                        .path("/audit/v1/replay/bogusId/update").build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("sendRate", "-1");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.PUT, updateUri);
         
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, updateUri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1928,11 +2004,17 @@ public class AuditReplayTest {
         
         // updateAll
         UriComponents updateAllUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/updateAll").queryParam("sendRate", -1).build();
+                        .path("/audit/v1/replay/updateAll").build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("sendRate", "-1");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.PUT, updateAllUri);
         
         exception = null;
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, updateAllUri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } catch (Exception e) {
             exception = e;
         }
@@ -1954,11 +2036,15 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents createAndStartUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/createAndStart").queryParam("path", tempDir.getAbsolutePath() + "/audit-20080601_000000.000.json")
-                        .queryParam("sendRate", 200).build();
+                        .path("/audit/v1/replay/createAndStart").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString() + "/audit-20080601_000000.000.json");
+        map.add("sendRate", "200");
         
         // Create the audit replay request
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createAndStartUri, String.class);
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createAndStartUri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId = response.getBody();
         
         // Get the status of the audit replay request
@@ -1975,8 +2061,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20080601_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20080601_000000.000.json",
                 200L,
                 1,
                 false,
@@ -1999,7 +2084,7 @@ public class AuditReplayTest {
         // Delete the audit replay request
         UriComponents deleteUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/delete").build();
-        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         
         Assert.assertEquals(200, deleteResp.getStatusCode().value());
         
@@ -2027,11 +2112,15 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents createAndStartUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/createAndStart").queryParam("path", tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json")
-                        .queryParam("sendRate", 200).build();
+                        .path("/audit/v1/replay/createAndStart").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString() + "/audit-20190227_000000.000.json");
+        map.add("sendRate", "200");
         
         // Create the audit replay request
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createAndStartUri, String.class);
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createAndStartUri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId = response.getBody();
         
         // Get the status of the audit replay request
@@ -2048,8 +2137,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190227_000000.000.json",
                 200L,
                 1,
                 false,
@@ -2072,7 +2160,7 @@ public class AuditReplayTest {
         // Delete the audit replay request
         UriComponents deleteUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/delete").build();
-        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, deleteUri, String.class);
+        ResponseEntity<String> deleteResp = jwtRestTemplate.exchange(authUser, HttpMethod.DELETE, deleteUri, String.class);
         
         Assert.assertEquals(200, deleteResp.getStatusCode().value());
         
@@ -2098,10 +2186,15 @@ public class AuditReplayTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents createUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath()).queryParam("sendRate", 200).build();
+                        .build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString());
+        map.add("sendRate", "200");
         
         // Create the audit replay request
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri, String.class);
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId = response.getBody();
         
         // Get the status of the audit replay request
@@ -2112,8 +2205,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 200L,
                 0,
                 false,
@@ -2131,8 +2223,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 0,
                 false,
@@ -2142,7 +2233,7 @@ public class AuditReplayTest {
         // Start the audit replay request
         UriComponents startUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/" + replayId + "/start").build();
-        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         
         Assert.assertEquals(200, startResp.getStatusCode().value());
         
@@ -2158,8 +2249,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 2,
                 false,
@@ -2201,8 +2291,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath(),
+                tempDir.toURI().toString(),
                 0L,
                 2,
                 false,
@@ -2221,13 +2310,27 @@ public class AuditReplayTest {
         
         // Create the audit replay requests
         UriComponents createUri1 = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json").queryParam("sendRate", 0).build();
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri1, String.class);
+                        .build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString() + "/audit-20190227_000000.000.json");
+        map.add("sendRate", "0");
+        
+        // Create the audit replay request
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri1);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId1 = response.getBody();
         
         UriComponents createUri2 = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/create")
-                        .queryParam("path", tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json").queryParam("sendRate", 0).build();
-        response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createUri2, String.class);
+                        .build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString() + "/audit-20190228_000000.000.json");
+        map.add("sendRate", "0");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createUri2);
+        response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId2 = response.getBody();
         
         // Get the status of the audit replay requests
@@ -2240,8 +2343,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath()+ "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString()+ "/audit-20190227_000000.000.json",
                 0L,
                 0,
                 false,
@@ -2253,8 +2355,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.CREATED,
-                "file:///",
-                tempDir.getAbsolutePath()+ "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString()+ "/audit-20190228_000000.000.json",
                 0L,
                 0,
                 false,
@@ -2264,7 +2365,7 @@ public class AuditReplayTest {
         // Start all of the audit replay requests
         UriComponents startUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/replay/startAll")
                         .build();
-        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.POST, startUri, String.class);
+        ResponseEntity<String> startResp = jwtRestTemplate.exchange(authUser, HttpMethod.PUT, startUri, String.class);
         
         Assert.assertEquals(200, startResp.getStatusCode().value());
         
@@ -2290,8 +2391,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190227_000000.000.json",
                 0L,
                 1,
                 false,
@@ -2316,8 +2416,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190228_000000.000.json",
                 0L,
                 1,
                 false,
@@ -2361,8 +2460,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190227_000000.000.json",
                 200L,
                 1,
                 false,
@@ -2387,8 +2485,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.FINISHED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190228_000000.000.json",
                 200L,
                 1,
                 false,
@@ -2420,15 +2517,27 @@ public class AuditReplayTest {
         
         // Create the audit replay requests
         UriComponents createAndStartUri1 = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/createAndStart").queryParam("path", tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json")
-                        .queryParam("sendRate", 0).build();
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createAndStartUri1, String.class);
+                        .path("/audit/v1/replay/createAndStart").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString() + "/audit-20190227_000000.000.json");
+        map.add("sendRate", "0");
+        
+        // Create the audit replay request
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createAndStartUri1);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId1 = response.getBody();
         
         UriComponents createAndStartUri2 = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                        .path("/audit/v1/replay/createAndStart").queryParam("path", tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json")
-                        .queryParam("sendRate", 0).build();
-        response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, createAndStartUri2, String.class);
+                        .path("/audit/v1/replay/createAndStart").build();
+        
+        map = new LinkedMultiValueMap<>();
+        map.add("pathUri", tempDir.toURI().toString() + "/audit-20190228_000000.000.json");
+        map.add("sendRate", "0");
+        
+        // Create the audit replay request
+        requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, createAndStartUri2);
+        response = jwtRestTemplate.exchange(requestEntity, String.class);
         String replayId2 = response.getBody();
         
         // Get the status of the audit replay requests
@@ -2441,8 +2550,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath()+ "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString()+ "/audit-20190227_000000.000.json",
                 0L,
                 1,
                 false,
@@ -2467,8 +2575,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.RUNNING,
-                "file:///",
-                tempDir.getAbsolutePath()+ "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString()+ "/audit-20190228_000000.000.json",
                 0L,
                 1,
                 false,
@@ -2499,8 +2606,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190227_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190227_000000.000.json",
                 0,
                 1,
                 false,
@@ -2525,8 +2631,7 @@ public class AuditReplayTest {
         // @formatter:off
         assertStatus(
                 Status.ReplayState.STOPPED,
-                "file:///",
-                tempDir.getAbsolutePath() + "/audit-20190228_000000.000.json",
+                tempDir.toURI().toString() + "/audit-20190228_000000.000.json",
                 0,
                 1,
                 false,
@@ -2547,11 +2652,10 @@ public class AuditReplayTest {
         // @formatter:on
     }
     
-    private static void assertStatus(Status.ReplayState expectedState, String expectedFileUri, String expectedPath, long expectedSendRate, int expectedNumFiles,
+    private static void assertStatus(Status.ReplayState expectedState, String expectedPath, long expectedSendRate, int expectedNumFiles,
                     boolean expectedReplayUnfinishedFiles, Status actual) {
         Assert.assertEquals(expectedState, actual.getState());
-        Assert.assertEquals(expectedFileUri, actual.getFileUri());
-        Assert.assertEquals(expectedPath, actual.getPath());
+        Assert.assertEquals(expectedPath, actual.getPathUri());
         Assert.assertEquals(expectedSendRate, actual.getSendRate());
         Assert.assertEquals(expectedNumFiles, actual.getFiles().size());
         Assert.assertEquals(expectedReplayUnfinishedFiles, actual.isReplayUnfinishedFiles());
@@ -2560,7 +2664,7 @@ public class AuditReplayTest {
     private static void assertFileStatus(Status.FileState expectedState, String expectedFilename, long expectedLinesRead, long expectedAuditsSent,
                     long expectedAuditsFailed, long expectedParseFailures, boolean expectedEncounteredError, Status.FileStatus actual) {
         Assert.assertEquals(expectedState, actual.getState());
-        Assert.assertTrue(actual.getPath().endsWith(expectedFilename));
+        Assert.assertTrue(actual.getPathUri().endsWith(expectedFilename));
         Assert.assertEquals(expectedLinesRead, actual.getLinesRead());
         Assert.assertEquals(expectedAuditsSent, actual.getAuditsSent());
         Assert.assertEquals(expectedAuditsFailed, actual.getAuditsFailed());
@@ -2608,8 +2712,7 @@ public class AuditReplayTest {
         Status status = new Status();
         status.setId((String) map.get("id"));
         status.setState(Status.ReplayState.valueOf((String) map.get("state")));
-        status.setFileUri((String) map.get("fileUri"));
-        status.setPath((String) map.get("path"));
+        status.setPathUri((String) map.get("pathUri"));
         status.setSendRate(Integer.toUnsignedLong((int) map.get("sendRate")));
         status.setLastUpdated(ISODateTimeFormat.dateTime().parseDateTime((String) map.get("lastUpdated")).toDate());
         status.setReplayUnfinishedFiles((boolean) map.get("replayUnfinishedFiles"));
@@ -2618,7 +2721,7 @@ public class AuditReplayTest {
             List<Status.FileStatus> fileStatuses = new ArrayList<>();
             for (Map<String,Object> file : (List<Map<String,Object>>) map.get("files")) {
                 Status.FileState state = Status.FileState.valueOf((String) file.get("state"));
-                String path = (String) file.get("path");
+                String path = (String) file.get("pathUri");
                 
                 Status.FileStatus fileStatus = new Status.FileStatus(path, state);
                 fileStatus.setLinesRead((int) file.get("linesRead"));
@@ -2634,7 +2737,7 @@ public class AuditReplayTest {
         
         status.getFiles().sort((o1, o2) -> {
             if (o1.getState() == o2.getState())
-                return o1.getPath().compareTo(o2.getPath());
+                return o1.getPathUri().compareTo(o2.getPathUri());
             else
                 return o2.getState().ordinal() - o1.getState().ordinal();
         });

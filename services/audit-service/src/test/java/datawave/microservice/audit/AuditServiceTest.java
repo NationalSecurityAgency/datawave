@@ -33,12 +33,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.util.UriComponents;
@@ -48,6 +51,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -114,12 +118,18 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.QUERY_STRING, query).queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations)
-                        .queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType).queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } finally {
             assertTrue(messageCollector.forChannel(auditSourceBinding.auditSource()).isEmpty());
         }
@@ -131,12 +141,18 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations)
-                        .queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType).queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } finally {
             assertTrue(messageCollector.forChannel(auditSourceBinding.auditSource()).isEmpty());
         }
@@ -148,12 +164,18 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType).queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } finally {
             assertTrue(messageCollector.forChannel(auditSourceBinding.auditSource()).isEmpty());
         }
@@ -165,13 +187,19 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         try {
-            jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+            jwtRestTemplate.exchange(requestEntity, String.class);
         } finally {
             assertTrue(messageCollector.forChannel(auditSourceBinding.auditSource()).isEmpty());
         }
@@ -183,22 +211,27 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
         
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
+        
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
         
         @SuppressWarnings("unchecked")
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNotNull(msg);
         Map<String,String> received = msg.getPayload().getAuditParameters();
-        Map<String,String> expected = uri.getQueryParams().toSingleValueMap();
         
-        for (String param : expected.keySet()) {
-            assertEquals(expected.get(param), received.get(param));
+        for (String param : map.keySet()) {
+            assertEquals(map.get(param).get(0), received.get(param));
             received.remove(param);
         }
         
@@ -223,12 +256,18 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
         
-        jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
+        
+        jwtRestTemplate.exchange(requestEntity, String.class);
     }
     
     @DirtiesContext
@@ -246,22 +285,26 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
         
-        ResponseEntity response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
+        
+        ResponseEntity response = jwtRestTemplate.exchange(requestEntity, String.class);
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
         
         @SuppressWarnings("unchecked")
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNull(msg);
         
-        Map<String,String> expected = uri.getQueryParams().toSingleValueMap();
-        
-        List<File> files = Arrays.stream(new File(fileAuditProperties.getPath()).listFiles()).filter(f -> f.getName().endsWith(".json"))
-                        .collect(Collectors.toList());
+        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubpath()).listFiles())
+                        .filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
         assertEquals(1, files.size());
         
         BufferedReader reader = new BufferedReader(new FileReader(files.get(0)));
@@ -274,8 +317,8 @@ public class AuditServiceTest {
         assertEquals(1, lines.size());
         
         HashMap<String,String> auditParamsMap = new ObjectMapper().readValue(lines.get(0), new TypeReference<HashMap<String,String>>() {});
-        for (String param : expected.keySet()) {
-            assertEquals(expected.get(param), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
+        for (String param : map.keySet()) {
+            assertEquals(map.get(param).get(0), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
             auditParamsMap.remove(param);
         }
         
@@ -303,13 +346,19 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         long startTimeMillis = System.currentTimeMillis();
-        jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        jwtRestTemplate.exchange(requestEntity, String.class);
         long stopTimeMillis = System.currentTimeMillis();
         
         assertTrue((stopTimeMillis - startTimeMillis) >= (maxAttempts * backoffIntervalMillis));
@@ -332,13 +381,19 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         long startTimeMillis = System.currentTimeMillis();
-        ResponseEntity response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        ResponseEntity response = jwtRestTemplate.exchange(requestEntity, String.class);
         long stopTimeMillis = System.currentTimeMillis();
         
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
@@ -348,10 +403,8 @@ public class AuditServiceTest {
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNull(msg);
         
-        Map<String,String> expected = uri.getQueryParams().toSingleValueMap();
-        
-        List<File> files = Arrays.stream(new File(fileAuditProperties.getPath()).listFiles()).filter(f -> f.getName().endsWith(".json"))
-                        .collect(Collectors.toList());
+        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubpath()).listFiles())
+                        .filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
         assertEquals(1, files.size());
         
         BufferedReader reader = new BufferedReader(new FileReader(files.get(0)));
@@ -364,8 +417,8 @@ public class AuditServiceTest {
         assertEquals(1, lines.size());
         
         HashMap<String,String> auditParamsMap = new ObjectMapper().readValue(lines.get(0), new TypeReference<HashMap<String,String>>() {});
-        for (String param : expected.keySet()) {
-            assertEquals(expected.get(param), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
+        for (String param : map.keySet()) {
+            assertEquals(map.get(param).get(0), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
             auditParamsMap.remove(param);
         }
         
@@ -392,13 +445,19 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         long startTimeMillis = System.currentTimeMillis();
-        jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        jwtRestTemplate.exchange(requestEntity, String.class);
         long stopTimeMillis = System.currentTimeMillis();
         
         assertTrue((stopTimeMillis - startTimeMillis) >= failTimeoutMillis);
@@ -420,13 +479,19 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         long startTimeMillis = System.currentTimeMillis();
-        ResponseEntity response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        ResponseEntity response = jwtRestTemplate.exchange(requestEntity, String.class);
         long stopTimeMillis = System.currentTimeMillis();
         
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
@@ -436,10 +501,8 @@ public class AuditServiceTest {
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNull(msg);
         
-        Map<String,String> expected = uri.getQueryParams().toSingleValueMap();
-        
-        List<File> files = Arrays.stream(new File(fileAuditProperties.getPath()).listFiles()).filter(f -> f.getName().endsWith(".json"))
-                        .collect(Collectors.toList());
+        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubpath()).listFiles())
+                        .filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
         assertEquals(1, files.size());
         
         BufferedReader reader = new BufferedReader(new FileReader(files.get(0)));
@@ -452,8 +515,8 @@ public class AuditServiceTest {
         assertEquals(1, lines.size());
         
         HashMap<String,String> auditParamsMap = new ObjectMapper().readValue(lines.get(0), new TypeReference<HashMap<String,String>>() {});
-        for (String param : expected.keySet()) {
-            assertEquals(expected.get(param), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
+        for (String param : map.keySet()) {
+            assertEquals(map.get(param).get(0), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
             auditParamsMap.remove(param);
         }
         
@@ -469,22 +532,28 @@ public class AuditServiceTest {
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         String auditId = UUID.randomUUID().toString();
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").queryParam(AuditParameters.AUDIT_ID, auditId).build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
         
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        map.add(AuditParameters.AUDIT_ID, auditId);
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
+        
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
         
         @SuppressWarnings("unchecked")
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNotNull(msg);
         Map<String,String> received = msg.getPayload().getAuditParameters();
-        Map<String,String> expected = uri.getQueryParams().toSingleValueMap();
         
-        for (String param : expected.keySet()) {
-            assertEquals(expected.get(param), received.get(param));
+        for (String param : map.keySet()) {
+            assertEquals(map.get(param).get(0), received.get(param));
             received.remove(param);
         }
         
@@ -508,22 +577,26 @@ public class AuditServiceTest {
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
-                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
-                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
-                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit").build();
         
-        ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.add(AuditParameters.USER_DN, userDN);
+        map.add(AuditParameters.QUERY_STRING, query);
+        map.add(AuditParameters.QUERY_AUTHORIZATIONS, authorizations);
+        map.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+        map.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
+        
+        ResponseEntity<String> response = jwtRestTemplate.exchange(requestEntity, String.class);
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
         
         @SuppressWarnings("unchecked")
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNotNull(msg);
         
-        Map<String,String> expected = uri.getQueryParams().toSingleValueMap();
-        
-        List<File> files = Arrays.stream(new File(fileAuditProperties.getPath()).listFiles()).filter(f -> f.getName().endsWith(".json"))
-                        .collect(Collectors.toList());
+        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubpath()).listFiles())
+                        .filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
         assertEquals(1, files.size());
         
         BufferedReader reader = new BufferedReader(new FileReader(files.get(0)));
@@ -536,8 +609,8 @@ public class AuditServiceTest {
         assertEquals(1, lines.size());
         
         HashMap<String,String> auditParamsMap = new ObjectMapper().readValue(lines.get(0), new TypeReference<HashMap<String,String>>() {});
-        for (String param : expected.keySet()) {
-            assertEquals(expected.get(param), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
+        for (String param : map.keySet()) {
+            assertEquals(map.get(param).get(0), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
             auditParamsMap.remove(param);
         }
         
@@ -560,22 +633,20 @@ public class AuditServiceTest {
             FileAuditProperties fileAuditProperties = new FileAuditProperties();
             File tempDir = Files.createTempDir();
             tempDir.deleteOnExit();
-            fileAuditProperties.setPath(tempDir.getAbsolutePath());
+            fileAuditProperties.setPathUri(tempDir.toURI().toString());
+            fileAuditProperties.setSubpath("audit");
             return fileAuditProperties;
         }
         
         @Bean(name = "fileAuditor")
         public Auditor fileAuditor(AuditProperties auditProperties, @Qualifier("fileAuditProperties") FileAuditProperties fileAuditProperties)
                         throws Exception {
-            String fileUri = (fileAuditProperties.getFs().getFileUri() != null) ? fileAuditProperties.getFs().getFileUri()
-                            : auditProperties.getFs().getFileUri();
             List<String> configResources = (fileAuditProperties.getFs().getConfigResources() != null) ? fileAuditProperties.getFs().getConfigResources()
                             : auditProperties.getFs().getConfigResources();
             
             // @formatter:off
             return new TestFileAuditor.Builder()
-                    .setFileUri(fileUri)
-                    .setPath(fileAuditProperties.getPath())
+                    .setPath(fileAuditProperties.getPathUri())
                     .setMaxFileAgeMillis(fileAuditProperties.getMaxFileAgeMillis())
                     .setMaxFileLenBytes(fileAuditProperties.getMaxFileLenBytes())
                     .setConfigResources(configResources)

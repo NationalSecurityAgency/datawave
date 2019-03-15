@@ -96,7 +96,7 @@ public class AuditController {
             if (correlationLatchMap.containsKey(correlationId)) {
                 correlationLatchMap.get(correlationId).countDown();
             } else
-                log.warn("Unable to decrement latch for audit ID [" + correlationId + "]");
+                log.warn("Unable to decrement latch for audit ID [{}]", correlationId);
         } else {
             log.warn("No correlation ID found in confirm ack message");
         }
@@ -184,7 +184,7 @@ public class AuditController {
             }
             
             if (log.isDebugEnabled())
-                log.debug("[" + auditParameters.getAuditId() + "] Audit attempt " + attempts + " of " + retry.getMaxAttempts());
+                log.debug("[{}] Audit attempt {} of {}", auditParameters.getAuditId(), attempts, retry.getMaxAttempts());
             
             success = sendMessage(auditParameters);
             currentTime = System.currentTimeMillis();
@@ -195,21 +195,21 @@ public class AuditController {
             success = true;
             try {
                 if (log.isDebugEnabled())
-                    log.debug("[" + auditParameters.getAuditId() + "] Attempting to log audit to the filesystem");
+                    log.debug("[{}] Attempting to log audit to the filesystem", auditParameters.getAuditId());
                 
                 fileAuditor.audit(auditParameters);
             } catch (Exception e) {
-                log.error("[" + auditParameters.getAuditId() + "] Unable to save audit to the filesystem", e);
+                log.error("[{}] Unable to save audit to the filesystem", auditParameters.getAuditId(), e);
                 success = false;
             }
         }
         
         if (!success)
-            log.warn("[" + auditParameters.getAuditId() + "] Audit failed. {attempts = " + attempts + ", elapsedMillis = " + (currentTime - auditStartTime)
-                            + ((fileAuditor != null) ? ", hdfsElapsedMillis = " + (System.currentTimeMillis() - currentTime) + "}" : "}"));
+            log.warn("[{}] Audit failed. {attempts = {}, elapsedMillis = {}{}}", auditParameters.getAuditId(), attempts, (currentTime - auditStartTime),
+                            ((fileAuditor != null) ? ", hdfsElapsedMillis = " + (System.currentTimeMillis() - currentTime) : ""));
         else
-            log.info("[" + auditParameters.getAuditId() + "] Audit successful. {attempts = " + attempts + ", elapsedMillis = " + (currentTime - auditStartTime)
-                            + ((fileAuditor != null) ? ", hdfsElapsedMillis = " + (System.currentTimeMillis() - currentTime) + "}" : "}"));
+            log.info("[{}] Audit successful. {attempts = {}, elapsedMillis = {}{}}", auditParameters.getAuditId(), attempts, (currentTime - auditStartTime),
+                            ((fileAuditor != null) ? ", hdfsElapsedMillis = " + (System.currentTimeMillis() - currentTime) : ""));
         
         return success;
     }

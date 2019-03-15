@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
 /**
  * A {@link CacheInspector} that is capable of inspecting a {@link com.hazelcast.spring.cache.HazelcastCache}.
  */
-class HazelcastCacheInspector implements CacheInspector {
+public class HazelcastCacheInspector implements CacheInspector {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final CacheManager cacheManager;
+    protected final CacheManager cacheManager;
     
     public HazelcastCacheInspector(CacheManager cacheManager) {
         this.cacheManager = cacheManager;

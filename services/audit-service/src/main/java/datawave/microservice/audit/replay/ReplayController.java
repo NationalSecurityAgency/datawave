@@ -12,7 +12,6 @@ import datawave.webservice.common.audit.AuditParameters;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,24 +25,27 @@ import org.springframework.http.MediaType;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static datawave.microservice.audit.replay.status.Status.ReplayState.CREATED;
 import static datawave.microservice.audit.replay.status.Status.ReplayState.IDLE;
 import static datawave.microservice.audit.replay.status.Status.ReplayState.RUNNING;
 import static datawave.microservice.audit.replay.status.Status.ReplayState.STOPPED;
+import static io.undertow.util.StatusCodes.UNPROCESSABLE_ENTITY;
 
 /**
  * The ReplayController presents the REST endpoints for audit replay.
@@ -91,8 +93,6 @@ public class ReplayController {
     }
     
     private void init() {
-        config.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-        config.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
         if (auditProperties.getFs().getConfigResources() != null) {
             for (String resource : auditProperties.getFs().getConfigResources())
                 config.addResource(new Path(resource));
@@ -102,10 +102,8 @@ public class ReplayController {
     /**
      * Creates an audit replay request
      *
-     * @param path
+     * @param pathUri
      *            The path where the audit file(s) to be replayed can be found
-     * @param fileUri
-     *            The file URI to use, if the default is not desired
      * @param sendRate
      *            The number of messages to send per second
      * @param replayUnfinishedFiles
@@ -114,16 +112,14 @@ public class ReplayController {
      */
     @ApiOperation(value = "Creates an audit replay request.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/create", method = org.springframework.web.bind.annotation.RequestMethod.POST)
-    public String create(@ApiParam(value = "The path where the audit file(s) to be replayed can be found", required = true) @RequestParam String path,
-                    @ApiParam("The file URI to use, relative to the path") @RequestParam(defaultValue = "") String fileUri,
+    @RequestMapping(path = "/create", method = RequestMethod.POST)
+    public String create(@ApiParam(value = "The path where the audit file(s) to be replayed can be found", required = true) @RequestParam String pathUri,
                     @ApiParam(value = "The number of messages to send per second", defaultValue = "100") @RequestParam(defaultValue = "100") Long sendRate,
                     @ApiParam(value = "Indicates whether files from an unfinished audit replay should be included",
                                     defaultValue = "false") @RequestParam(defaultValue = "false") boolean replayUnfinishedFiles,
                     HttpServletResponse response) {
         
-        log.info("Creating audit replay with params: path=" + path + ", fileUri=" + fileUri + ", sendRate=" + sendRate + ", replayUnfinishedFiles="
-                        + replayUnfinishedFiles);
+        log.info("Creating audit replay with params: pathUri={}, sendRate={}, replayUnfinishedFiles={}", pathUri, sendRate, replayUnfinishedFiles);
         
         String resp;
         
@@ -131,14 +127,13 @@ public class ReplayController {
         if (sendRate >= 0) {
             String id = UUID.randomUUID().toString();
             
-            Status status = statusCache.create(id, path, (!fileUri.isEmpty()) ? fileUri : FileSystem.getDefaultUri(config).toString(), sendRate,
-                            replayUnfinishedFiles);
+            Status status = statusCache.create(id, pathUri, sendRate, replayUnfinishedFiles);
             
-            log.info("Created audit replay [" + status + "]");
+            log.info("Created audit replay [{}]", status);
             
             resp = status.getId();
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(UNPROCESSABLE_ENTITY);
             resp = "Send rate must be >= 0";
         }
         
@@ -148,10 +143,8 @@ public class ReplayController {
     /**
      * Creates an audit replay request, and starts it
      *
-     * @param path
+     * @param pathUri
      *            The path where the audit file(s) to be replayed can be found
-     * @param fileUri
-     *            The file URI to use, if the default is not desired
      * @param sendRate
      *            The number of messages to send per second
      * @param replayUnfinishedFiles
@@ -160,16 +153,15 @@ public class ReplayController {
      */
     @ApiOperation(value = "Creates an audit replay request, and starts it.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/createAndStart", method = org.springframework.web.bind.annotation.RequestMethod.POST)
-    public String createAndStart(@ApiParam(value = "The path where the audit file(s) to be replayed can be found", required = true) @RequestParam String path,
-                    @ApiParam("The file URI to use, relative to the path") @RequestParam(defaultValue = "") String fileUri,
+    @RequestMapping(path = "/createAndStart", method = RequestMethod.POST)
+    public String createAndStart(
+                    @ApiParam(value = "The path where the audit file(s) to be replayed can be found", required = true) @RequestParam String pathUri,
                     @ApiParam(value = "The number of messages to send per second", defaultValue = "100") @RequestParam(defaultValue = "100") Long sendRate,
                     @ApiParam(value = "Indicates whether files from an unfinished audit replay should be included",
                                     defaultValue = "false") @RequestParam(defaultValue = "false") boolean replayUnfinishedFiles,
                     HttpServletResponse response) {
         
-        log.info("Creating and starting audit replay with params: path=" + path + ", fileUri=" + fileUri + ", sendRate=" + sendRate + ", replayUnfinishedFiles="
-                        + replayUnfinishedFiles);
+        log.info("Creating and starting audit replay with params: pathUri={}, sendRate={}, replayUnfinishedFiles={}", pathUri, sendRate, replayUnfinishedFiles);
         
         String resp;
         
@@ -177,15 +169,24 @@ public class ReplayController {
         if (sendRate >= 0) {
             String id = UUID.randomUUID().toString();
             
-            Status status = statusCache.create(id, path, (!fileUri.isEmpty()) ? fileUri : FileSystem.getDefaultUri(config).toString(), sendRate,
-                            replayUnfinishedFiles);
-            runningReplays.put(id, start(status));
-            
-            log.info("Created and started audit replay [" + status + "]");
-            
-            resp = id;
+            Status status;
+            if (statusCache.tryLock(id, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                try {
+                    status = statusCache.create(id, pathUri, sendRate, replayUnfinishedFiles);
+                    runningReplays.put(id, start(status));
+                    
+                    log.info("Created and started audit replay [{}]", status);
+                    
+                    resp = id;
+                } finally {
+                    statusCache.unlock(id);
+                }
+            } else {
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                resp = "Failed to acquire lock on status cache";
+            }
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(UNPROCESSABLE_ENTITY);
             resp = "Send rate must be >= 0";
         }
         
@@ -203,32 +204,42 @@ public class ReplayController {
      */
     @ApiOperation(value = "Starts an audit replay.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/{id}/start", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/{id}/start", method = RequestMethod.PUT)
     public String start(@ApiParam(value = "The audit replay id") @PathVariable String id, HttpServletResponse response) {
         
         log.info("Starting audit replay with id " + id);
         
-        Status status = status(id, replayProperties.isPublishEvents());
-        
         String resp;
-        // if the state is 'created', we can run the replay
-        if (status != null) {
-            if (status.getState() == CREATED) {
-                RunningReplay runningReplay = start(status);
-                if (runningReplay != null) {
-                    runningReplays.put(id, runningReplay);
-                    resp = "Started audit replay with id " + id;
+        
+        if (statusCache.tryLock(id, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+            try {
+                Status status = status(id, replayProperties.isPublishEvents());
+                
+                // if the state is 'created', we can run the replay
+                if (status != null) {
+                    if (status.getState() == CREATED) {
+                        RunningReplay runningReplay = start(status);
+                        if (runningReplay != null) {
+                            runningReplays.put(id, runningReplay);
+                            resp = "Started audit replay with id " + id;
+                        } else {
+                            resp = "Cannot start audit replay with id " + id;
+                            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        }
+                    } else {
+                        resp = "Cannot start audit replay with state " + status.getState();
+                        response.setStatus(UNPROCESSABLE_ENTITY);
+                    }
                 } else {
-                    resp = "Cannot start audit replay with id " + id;
-                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    resp = "No audit replay found with id " + id;
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 }
-            } else {
-                resp = "Cannot start audit replay with state " + status.getState();
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            } finally {
+                statusCache.unlock(id);
             }
         } else {
-            resp = "No audit replay found with id " + id;
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp = "Failed to acquire lock on status cache";
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
         
         log.info(resp);
@@ -248,7 +259,7 @@ public class ReplayController {
                 }
             };
         } catch (Exception e) {
-            log.warn("Unable to create replay task for id " + status.getId(), e);
+            log.warn("Unable to create replay task for id {}", status.getId(), e);
         }
         
         if (replayTask != null) {
@@ -256,7 +267,7 @@ public class ReplayController {
             try {
                 future = auditReplayExecutor.submit(replayTask);
             } catch (TaskRejectedException e) {
-                log.warn("Unable to accept audit replay task for id " + status.getId(), e);
+                log.warn("Unable to accept audit replay task for id {}", status.getId(), e);
             }
             
             if (future != null)
@@ -273,26 +284,33 @@ public class ReplayController {
      */
     @ApiOperation(value = "Starts all audit replays.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/startAll", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/startAll", method = RequestMethod.PUT)
     public String startAll() {
         
         log.info("Starting all audit replays");
         
         int replaysStarted = 0;
-        List<Status> statuses = statusCache.retrieveAll();
-        if (statuses != null) {
-            for (Status status : statuses) {
-                if (status.getState() == CREATED) {
-                    RunningReplay replay = start(status);
-                    if (replay != null) {
-                        runningReplays.put(status.getId(), replay);
-                        replaysStarted++;
+        List<String> statusIds = statusCache.retrieveAllIds();
+        if (statusIds != null) {
+            for (String statusId : statusIds) {
+                if (statusCache.tryLock(statusId, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                    try {
+                        Status status = statusCache.retrieve(statusId);
+                        if (status != null && status.getState() == CREATED) {
+                            RunningReplay replay = start(status);
+                            if (replay != null) {
+                                runningReplays.put(statusId, replay);
+                                replaysStarted++;
+                            }
+                        }
+                    } finally {
+                        statusCache.unlock(statusId);
                     }
                 }
             }
         }
         
-        log.info(replaysStarted + " audit replays started");
+        log.info("{} audit replays started", replaysStarted);
         return replaysStarted + " audit replays started";
     }
     
@@ -305,15 +323,24 @@ public class ReplayController {
      */
     @ApiOperation(value = "Gets the status of an audit replay.")
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/{id}/status", method = org.springframework.web.bind.annotation.RequestMethod.GET)
+    @RequestMapping(path = "/{id}/status", method = RequestMethod.GET)
     public Status status(@ApiParam("The audit replay id") @PathVariable("id") String id, HttpServletResponse response) throws IOException {
         
-        log.info("Getting status for audit replay with id " + id);
+        log.info("Getting status for audit replay with id {}", id);
         
-        Status status = status(id, replayProperties.isPublishEvents());
+        Status status = null;
+        if (statusCache.tryLock(id, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+            try {
+                status = status(id, replayProperties.isPublishEvents());
+            } finally {
+                statusCache.unlock(id);
+            }
+        } else {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to acquire lock on status cache");
+        }
         
         if (status == null)
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No audit replay found with id " + id);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No audit replay found with id " + id);
         
         return status;
     }
@@ -343,14 +370,25 @@ public class ReplayController {
      */
     @ApiOperation(value = "Lists the status for all audit replays.")
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/statusAll", method = org.springframework.web.bind.annotation.RequestMethod.GET)
+    @RequestMapping(path = "/statusAll", method = RequestMethod.GET)
     public List<Status> statusAll() {
         
         log.info("Getting status for all audit replays");
         
-        List<Status> statuses = statusCache.retrieveAll();
-        if (statuses != null)
-            statuses = statuses.stream().map(status -> idleCheck(status, replayProperties.isPublishEvents())).collect(Collectors.toList());
+        List<Status> statuses = new ArrayList<>();
+        List<String> statusIds = statusCache.retrieveAllIds();
+        if (statusIds != null) {
+            for (String statusId : statusIds) {
+                if (statusCache.tryLock(statusId, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                    try {
+                        statuses.add(status(statusId, replayProperties.isPublishEvents()));
+                    } finally {
+                        statusCache.unlock(statusId);
+                    }
+                }
+            }
+        }
+        statuses.removeIf(Objects::isNull);
         return statuses;
     }
     
@@ -365,27 +403,36 @@ public class ReplayController {
      */
     @ApiOperation(value = "Updates an audit replay.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/{id}/update", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/{id}/update", method = RequestMethod.PUT)
     public String update(@ApiParam("The audit replay id") @PathVariable("id") String id,
                     @ApiParam(value = "The number of messages to send per second", required = true) @RequestParam long sendRate, HttpServletResponse response) {
         
-        log.info("Updating sendRate to " + sendRate + " for audit replay with id " + id);
+        log.info("Updating sendRate to {} for audit replay with id {}", sendRate, id);
         
         String resp;
         
         // only update if the send rate is valid
         if (sendRate >= 0) {
-            // pull the replay status from cache to ensure it exists
-            Status status = status(id, replayProperties.isPublishEvents());
-            if (status != null) {
-                update(status, sendRate, replayProperties.isPublishEvents());
-                resp = "Updated audit replay with id " + id;
+            if (statusCache.tryLock(id, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                try {
+                    // pull the replay status from cache to ensure it exists
+                    Status status = status(id, replayProperties.isPublishEvents());
+                    if (status != null) {
+                        update(status, sendRate, replayProperties.isPublishEvents());
+                        resp = "Updated audit replay with id " + id;
+                    } else {
+                        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                        resp = "No audit replay found with id " + id;
+                    }
+                } finally {
+                    statusCache.unlock(id);
+                }
             } else {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp = "No audit replay found with id " + id;
+                resp = "Failed to acquire lock on status cache";
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(UNPROCESSABLE_ENTITY);
             resp = "Send rate must be >= 0";
         }
         
@@ -396,17 +443,14 @@ public class ReplayController {
     private void update(Status status, long sendRate, boolean publishEvent) {
         // is the replay running?
         if (status.getState() == RUNNING) {
-            
             // if we own it, update it. otherwise fire an event to all of the audit services
             RunningReplay replay = runningReplays.get(status.getId());
             if (replay != null) {
                 replay.getStatus().setSendRate(sendRate);
-                statusCache.update(replay.getStatus());
             } else if (publishEvent) {
                 appCtx.publishEvent(new AuditReplayRemoteRequestEvent(this, busProperties.getId(), Request.update(status.getId(), sendRate)));
             }
         } else {
-            
             // just update the cache if it's not running
             status.setSendRate(sendRate);
             statusCache.update(status);
@@ -422,11 +466,11 @@ public class ReplayController {
      */
     @ApiOperation(value = "Updates all audit replays.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/updateAll", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/updateAll", method = RequestMethod.PUT)
     public String updateAll(@ApiParam(value = "The number of messages to send per second", required = true) @RequestParam long sendRate,
                     HttpServletResponse response) {
         
-        log.info("Updating sendRate to " + sendRate + " for all audit replays");
+        log.info("Updating sendRate to {} for all audit replays", sendRate);
         
         String resp;
         
@@ -434,7 +478,7 @@ public class ReplayController {
         if (sendRate >= 0) {
             resp = updateAll(sendRate, replayProperties.isPublishEvents(), false) + "audit replays updated";
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(UNPROCESSABLE_ENTITY);
             resp = "Send rate must be >= 0";
         }
         
@@ -449,13 +493,19 @@ public class ReplayController {
             appCtx.publishEvent(new AuditReplayRemoteRequestEvent(this, busProperties.getId(), Request.updateAll(sendRate)));
         
         // update all of our replays.
-        List<Status> statuses = statusAll();
-        if (onlyUpdateRunning)
-            statuses = statuses.stream().filter(status -> status.getState() == RUNNING).collect(Collectors.toList());
-        
-        for (Status status : statuses) {
-            update(status, sendRate, false);
-            replaysUpdated++;
+        List<String> statusIds = statusCache.retrieveAllIds();
+        for (String statusId : statusIds) {
+            if (statusCache.tryLock(statusId, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                try {
+                    Status status = status(statusId, false);
+                    if (status != null && (!onlyUpdateRunning || status.getState() == RUNNING)) {
+                        update(status, sendRate, false);
+                        replaysUpdated++;
+                    }
+                } finally {
+                    statusCache.unlock(statusId);
+                }
+            }
         }
         
         return replaysUpdated;
@@ -470,24 +520,33 @@ public class ReplayController {
      */
     @ApiOperation(value = "Stops an audit replay.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/{id}/stop", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/{id}/stop", method = RequestMethod.PUT)
     public String stop(@ApiParam("The audit replay id") @PathVariable("id") String id, HttpServletResponse response) {
         
-        log.info("Stopping audit replay with id " + id);
+        log.info("Stopping audit replay with id {}", id);
         
         String resp;
         
-        Status status = status(id, replayProperties.isPublishEvents());
-        if (status != null) {
-            if (stop(status, replayProperties.isPublishEvents())) {
-                resp = "Stopped audit replay with id " + id;
-            } else {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp = "Cannot stop audit replay with id " + id;
+        if (statusCache.tryLock(id, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+            try {
+                Status status = status(id, replayProperties.isPublishEvents());
+                if (status != null) {
+                    if (stop(status, replayProperties.isPublishEvents())) {
+                        resp = "Stopped audit replay with id " + id;
+                    } else {
+                        response.setStatus(UNPROCESSABLE_ENTITY);
+                        resp = "Cannot stop audit replay with id " + id;
+                    }
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    resp = "No audit replay found with id " + id;
+                }
+            } finally {
+                statusCache.unlock(id);
             }
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp = "No audit replay found with id " + id;
+            resp = "Failed to acquire lock on status cache";
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
         
         log.info(resp);
@@ -502,7 +561,6 @@ public class ReplayController {
             RunningReplay replay = runningReplays.get(status.getId());
             if (replay != null) {
                 replay.getStatus().setState(STOPPED);
-                statusCache.update(replay.getStatus());
                 
                 try {
                     replay.getFuture().get(replayProperties.getStopGracePeriodMillis(), TimeUnit.MILLISECONDS);
@@ -510,9 +568,11 @@ public class ReplayController {
                     // interrupts and timeouts are ok. we just want to give some time to cleanup.
                 }
                 
-                // if it's still not done, cancel it
-                if (!replay.getFuture().isDone())
+                // if it's still not done, cancel it, and update the cache
+                if (!replay.getFuture().isDone()) {
                     replay.getFuture().cancel(true);
+                    statusCache.update(replay.getStatus());
+                }
                 
                 runningReplays.remove(status.getId());
             } else if (publishEvent) {
@@ -532,7 +592,7 @@ public class ReplayController {
      */
     @ApiOperation(value = "Stops all audit replays.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/stopAll", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/stopAll", method = RequestMethod.PUT)
     public String stopAll() {
         
         log.info("Stopping all audit replays");
@@ -551,10 +611,18 @@ public class ReplayController {
             appCtx.publishEvent(new AuditReplayRemoteRequestEvent(this, busProperties.getId(), Request.stopAll()));
         
         // stop all of our replays. then, send an event out to all audit services to stop all replays
-        List<Status> statuses = statusAll().stream().filter(status -> status.getState() == RUNNING).collect(Collectors.toList());
-        for (Status status : statuses) {
-            if (stop(status, false))
-                replaysStopped++;
+        List<String> statusIds = statusCache.retrieveAllIds();
+        for (String statusId : statusIds) {
+            if (statusCache.tryLock(statusId, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                try {
+                    Status status = status(statusId, false);
+                    if (status != null && status.getState() == RUNNING && stop(status, false)) {
+                        replaysStopped++;
+                    }
+                } finally {
+                    statusCache.unlock(statusId);
+                }
+            }
         }
         
         return replaysStopped;
@@ -569,23 +637,33 @@ public class ReplayController {
      */
     @ApiOperation(value = "Resumes an audit replay.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/{id}/resume", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/{id}/resume", method = RequestMethod.PUT)
     public String resume(@ApiParam("The audit replay id") @PathVariable("id") String id, HttpServletResponse response) {
         
-        log.info("Resuming audit replay with id " + id);
+        log.info("Resuming audit replay with id {}", id);
         
         String resp;
-        Status status = status(id, replayProperties.isPublishEvents());
-        if (status != null) {
-            if (resume(status)) {
-                resp = "Resumed audit replay with id " + id;
-            } else {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp = "Cannot resume audit replay with id " + id;
+        
+        if (statusCache.tryLock(id, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+            try {
+                Status status = status(id, replayProperties.isPublishEvents());
+                if (status != null) {
+                    if (resume(status)) {
+                        resp = "Resumed audit replay with id " + id;
+                    } else {
+                        response.setStatus(UNPROCESSABLE_ENTITY);
+                        resp = "Cannot resume audit replay with id " + id;
+                    }
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    resp = "No audit replay found with id " + id;
+                }
+            } finally {
+                statusCache.unlock(id);
             }
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp = "No audit replay found with id " + id;
+            resp = "Failed to acquire lock on status cache";
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
         
         log.info(resp);
@@ -609,7 +687,7 @@ public class ReplayController {
      */
     @ApiOperation(value = "Resumes all audit replays.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/resumeAll", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/resumeAll", method = RequestMethod.PUT)
     public String resumeAll() {
         
         log.info("Resuming all audit replays");
@@ -617,10 +695,19 @@ public class ReplayController {
         int replaysResumed = 0;
         
         // resume all of our replays
-        List<Status> statuses = statusAll().stream().filter(status -> status.getState() == IDLE || status.getState() == STOPPED).collect(Collectors.toList());
-        for (Status status : statuses) {
-            runningReplays.put(status.getId(), start(status));
-            replaysResumed++;
+        List<String> statusIds = statusCache.retrieveAllIds();
+        for (String statusId : statusIds) {
+            if (statusCache.tryLock(statusId, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                try {
+                    Status status = status(statusId, false);
+                    if (status != null && (status.getState() == IDLE || status.getState() == STOPPED)) {
+                        runningReplays.put(status.getId(), start(status));
+                        replaysResumed++;
+                    }
+                } finally {
+                    statusCache.unlock(statusId);
+                }
+            }
         }
         
         String resp = replaysResumed + " audit replays resumed";
@@ -637,25 +724,35 @@ public class ReplayController {
      */
     @ApiOperation(value = "Deletes an audit replay.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/{id}/delete", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/{id}/delete", method = RequestMethod.DELETE)
     public String delete(@ApiParam("The audit replay id") @PathVariable("id") String id, HttpServletResponse response) {
         
-        log.info("Deleting audit replay with id " + id);
+        log.info("Deleting audit replay with id {}", id);
         
         String resp;
-        Status status = status(id, replayProperties.isPublishEvents());
         
-        if (status != null) {
-            if (status.getState() != RUNNING) {
-                statusCache.delete(status.getId());
-                resp = "Deleted audit replay with id " + id;
-            } else {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp = "Cannot delete an audit replay with state " + status.getState();
+        if (statusCache.tryLock(id, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+            try {
+                Status status = status(id, replayProperties.isPublishEvents());
+                
+                if (status != null) {
+                    if (status.getState() != RUNNING) {
+                        statusCache.delete(status.getId());
+                        resp = "Deleted audit replay with id " + id;
+                    } else {
+                        response.setStatus(UNPROCESSABLE_ENTITY);
+                        resp = "Cannot delete an audit replay with state " + status.getState();
+                    }
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    resp = "No audit replay found with id " + id;
+                }
+            } finally {
+                statusCache.unlock(id);
             }
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp = "No audit replay found with id " + id;
+            resp = "Failed to acquire lock on status cache";
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
         
         log.info(resp);
@@ -669,17 +766,26 @@ public class ReplayController {
      */
     @ApiOperation(value = "Deletes all audit replays.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @RequestMapping(path = "/deleteAll", method = org.springframework.web.bind.annotation.RequestMethod.POST)
+    @RequestMapping(path = "/deleteAll", method = RequestMethod.DELETE)
     public String deleteAll() {
         
         log.info("Deleting all audit replays");
         
         int replaysDeleted = 0;
         
-        List<Status> statuses = statusAll().stream().filter(status -> status.getState() != RUNNING).collect(Collectors.toList());
-        for (Status status : statuses) {
-            statusCache.delete(status.getId());
-            replaysDeleted++;
+        List<String> statusIds = statusCache.retrieveAllIds();
+        for (String statusId : statusIds) {
+            if (statusCache.tryLock(statusId, replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                try {
+                    Status status = status(statusId, false);
+                    if (status != null && status.getState() != RUNNING) {
+                        statusCache.delete(status.getId());
+                        replaysDeleted++;
+                    }
+                } finally {
+                    statusCache.unlock(statusId);
+                }
+            }
         }
         
         String resp = replaysDeleted + " audit replays deleted";
@@ -688,39 +794,52 @@ public class ReplayController {
     }
     
     public void handleRemoteRequest(Request request) {
-        
         Status status = (request.getId() != null) ? status(request.getId(), replayProperties.isPublishEvents()) : null;
         
         Request.UpdateRequest updateRequest = (request instanceof Request.UpdateRequest) ? (Request.UpdateRequest) request : null;
         
         switch (request.getMethod()) {
             case UPDATE:
-                if (updateRequest != null && status != null) {
-                    update(status, updateRequest.getSendRate(), false);
-                    log.info("Updated sendRate to " + updateRequest.getSendRate() + " for audit replay with id " + status.getId());
+                if (status != null && updateRequest != null && updateRequest.getId() != null) {
+                    if (statusCache.tryLock(status.getId(), replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                        try {
+                            update(status, updateRequest.getSendRate(), false);
+                            log.info("Updated sendRate to " + updateRequest.getSendRate() + " for audit replay with id " + status.getId());
+                        } finally {
+                            statusCache.unlock(request.getId());
+                        }
+                    }
                 }
                 break;
             
             case UPDATE_ALL:
                 if (updateRequest != null) {
                     int replaysUpdated = updateAll(updateRequest.getSendRate(), false, true);
-                    log.info(replaysUpdated + " audit replays updated");
+                    log.info("{} audit replays updated", replaysUpdated);
                 }
                 break;
             
             case STOP:
-                if (status != null && stop(status, false)) {
-                    log.info("Stopped audit replay with id " + status.getId());
+                if (request.getId() != null && status != null) {
+                    if (statusCache.tryLock(status.getId(), replayProperties.getLockWaitTimeMillis(), replayProperties.getLockLeaseTimeMillis())) {
+                        try {
+                            if (stop(status, false)) {
+                                log.info("Stopped audit replay with id {}", status.getId());
+                            }
+                        } finally {
+                            statusCache.unlock(request.getId());
+                        }
+                    }
                 }
                 break;
             
             case STOP_ALL:
                 int replaysStopped = stopAll(false);
-                log.info(replaysStopped + " audit replays stopped");
+                log.info("{} audit replays stopped", replaysStopped);
                 break;
             
             default:
-                log.debug("Unknown remote request method: " + request.getMethod());
+                log.debug("Unknown remote request method: {}", request.getMethod());
         }
     }
 }
