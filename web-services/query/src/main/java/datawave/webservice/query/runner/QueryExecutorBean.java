@@ -390,6 +390,22 @@ public class QueryExecutorBean implements QueryExecutor {
         log.debug(queryParameters);
         qp.clear();
         qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
+        
+        // Pull "params" values into individual query parameters for validation on the query logic.
+        // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
+        // parameter, this code block can go away.
+        String params = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
+        if (params != null) {
+            for (Parameter pm : QueryUtil.parseParameters(params)) {
+                if (!queryParameters.containsKey(pm.getParameterName())) {
+                    queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                }
+            }
+        }
+        queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
+        queryParameters.remove(AuditParameters.USER_DN);
+        queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
+        
         qp.validate(queryParameters);
         
         // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
@@ -413,19 +429,6 @@ public class QueryExecutorBean implements QueryExecutor {
         if ((qp.getBeginDate() != null && qp.getEndDate() != null) && qp.getBeginDate().after(qp.getEndDate())) {
             GenericResponse<String> response = new GenericResponse<>();
             throwBadRequest(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, response);
-        }
-        
-        // Pull "params" values into individual query parameters for validation on the query logic.
-        // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
-        // parameter, this code block can go away.
-        String params = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
-        if (params != null) {
-            for (Parameter pm : QueryUtil.parseParameters(params)) {
-                queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
-            }
-            queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
-            queryParameters.remove(AuditParameters.USER_DN);
-            queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
         }
         
         // will throw IllegalArgumentException if not defined
