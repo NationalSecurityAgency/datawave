@@ -80,7 +80,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     /**
      * list of documents to return, created from the countingMap
      */
-    private LinkedList<Document> documents = null;
+    private final LinkedList<Document> documents = new LinkedList<>();
     
     /**
      * mapping used to combine field names that map to different model names
@@ -170,25 +170,18 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     if (in.hasNext()) {
                         GroupingTransform.this.apply(in.next());
                     } else if (yieldCallback != null && yieldCallback.hasYielded()) {
-                        // hasNext is false and yield has been called. Save the key and undo the yield.
                         log.trace("hasNext is false because yield was called");
-                        if (countingMap == null || countingMap.isEmpty()) {
-                            log.trace("There is no countingMap to flatten and i have yielded. Return false");
-                            return false;
-                        }
-                        Key positionAtYield = yieldCallback.getPositionAndReset();
-                        if (positionAtYield == null) {
-                            log.error("yielded with null key when lastEntry was null");
-                        } else {
-                            log.trace("key from yield is {}", positionAtYield);
-                            keys.add(positionAtYield); // this will become the key in the flattened document returned from 'next' below
+                        if (countingMap != null && !countingMap.isEmpty()) {
+                            // reset the yield and use its key in the flattened document prepared below
+                            keys.add(yieldCallback.getPositionAndReset());
                         }
                         break;
                     } else {
-                        // there is no next and there was no yield
+                        // in.hasNext() was false and there was no yield
                         break;
                     }
                 }
+                // if there is nothing in the countingMap, next will be null (so method returns false)
                 next = GroupingTransform.this.flush();
                 return next != null;
             }
@@ -213,13 +206,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     @Override
     public Entry<Key,Document> flush() {
-        if (flatten)
-            log.trace("tserver flush");
-        else
-            log.trace("webserver flush");
-        if (documents == null) {
-            documents = new LinkedList<>();
-        }
+        
         if (!countingMap.isEmpty()) {
             
             log.trace("flush will use the countingMap: {}", countingMap);
@@ -332,7 +319,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 Attribute<? extends Comparable<?>> attribute = entry.getValue();
                 attribute.setColumnVisibility(entry.getValue().getColumnVisibility());
                 // call copy() on the GroupingTypeAttribute to get a plain TypeAttribute
-                // GroupingTypeAttribute is so embarrassing that it is package protected and won't serialize
+                // instead of a GroupingTypeAttribute that it is package protected and won't serialize
                 theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true, false);
             }
             context++;
