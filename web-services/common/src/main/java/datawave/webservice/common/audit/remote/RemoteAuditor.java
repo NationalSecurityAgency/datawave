@@ -11,8 +11,11 @@ import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.Lookup;
@@ -108,14 +111,16 @@ public class RemoteAuditor extends RemoteHttpService implements AuditService {
             dp = (DatawavePrincipal) p;
         
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(dp.getName(), dp.getProxiedUsers());
+        UrlEncodedFormEntity postBody = new UrlEncodedFormEntity(params.entrySet().stream()
+                        .map(e -> (NameValuePair) new BasicNameValuePair(e.getKey(), e.getValue()))::iterator);
         // @formatter:off
         return executePostMethodWithRuntimeException(
                 "audit",
-                uriBuilder -> {
-                    for (String param : params.keySet())
-                        uriBuilder.addParameter(param, params.get(param));
+                uriBuilder -> {},
+                httpPost -> {
+                    httpPost.setEntity(postBody);
+                    httpPost.setHeader("Authorization", bearerHeader);
                 },
-                httpPost -> httpPost.setHeader("Authorization", bearerHeader),
                 EntityUtils::toString,
                 () -> "audit [" + params + "]");
         // @formatter:on
