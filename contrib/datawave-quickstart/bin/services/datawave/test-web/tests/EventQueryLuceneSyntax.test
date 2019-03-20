@@ -102,11 +102,4 @@ configureTest \
         "" \
         204
 
-runTest
-
-################################################################
-# Close query
-
-configureCloseQueryTest ${DW_QUERY_ID}
-
 # This last test is executed by run.sh, as usual
