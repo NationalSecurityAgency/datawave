@@ -145,11 +145,13 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         
         this.logic.setCollectTimingDetails(true);
         this.logic.setLogTimingDetails(true);
+        this.logic.setMinimumSelectivity(0.03D);
+        this.logic.setMaxIndexScanTimeMillis(5000);
         
         // count logic
         countLogic.setIncludeDataTypeAsField(true);
         countLogic.setFullTableScanEnabled(false);
-        
+
         countLogic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         countLogic.setMarkingFunctions(new Default());
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());

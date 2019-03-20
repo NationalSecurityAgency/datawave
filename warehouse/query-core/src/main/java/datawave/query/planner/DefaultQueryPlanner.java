@@ -217,6 +217,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     private static Multimap<String,Type<?>> normalizedFieldAsDataTypeMap;
     
     private static Set<String> cachedIndexedFields = null;
+    private static Set<String> cachedReverseIndexedFields = null;
     private static Set<String> cachedNormalizedFields = null;
     
     protected List<PushDownRule> rules = Lists.newArrayList();
@@ -285,6 +286,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         setDisableRangeCoalescing(other.disableRangeCoalescing);
         if (null != other.cachedIndexedFields)
             cachedIndexedFields = Sets.newHashSet(other.cachedIndexedFields);
+        if (null != other.cachedReverseIndexedFields)
+            cachedReverseIndexedFields = Sets.newHashSet(other.cachedReverseIndexedFields);
         if (null != other.cachedNormalizedFields)
             cachedNormalizedFields = Sets.newHashSet(other.cachedNormalizedFields);
         rules.addAll(other.rules);

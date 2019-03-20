@@ -2,6 +2,9 @@ package datawave.query;
 
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.visitors.ParallelIndexExpansion;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -10,6 +13,8 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.util.AllFieldMetadataHelper;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -66,6 +71,45 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String regex = "'.*i'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + RE_OP + regex;
+            runTest(query, query);
+        }
+    }
+    
+    @Test
+    public void testMissingIndex() throws Exception {
+        log.info("------  testMissingIndex  ------");
+        // should at least match France
+        String regex = "'.*?e'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.COUNTRY.name() + RE_OP + regex;
+            runTest(query, query);
+        }
+    }
+    
+    @Test
+    public void testMissingReverseIndex() throws Exception {
+        log.info("------  testMissingReverseIndex  ------");
+        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        // should at least match usa, fra, and ita
+        String regex = "'.*?a'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.CODE.name() + RE_OP + regex;
+            runTest(query, query);
+        }
+    }
+    
+    @Test
+    public void testMissingReverseIndexPlus() throws Exception {
+        log.info("------  testMissingReverseIndex  ------");
+        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Logger.getLogger(ParallelIndexExpansion.class).setLevel(Level.DEBUG);
+        Logger.getLogger(ShardIndexQueryTableStaticMethods.class).setLevel(Level.DEBUG);
+        Logger.getLogger(AllFieldMetadataHelper.class).setLevel(Level.DEBUG);
+        // should at least match usa, fra, and ita
+        String regex = "'.*?a'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.CODE.name() + RE_OP + regex + AND_OP + "!("
+                            + CityField.STATE + EQ_OP + "null)";
             runTest(query, query);
         }
     }
@@ -139,10 +183,18 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
+    @Test
+    public void testFullTableScan() throws Exception {
+        String regex = "'.*uro.*'";
+        String query = CityField.CONTINENT.name() + RE_OP + regex;
+        logic.setFullTableScanEnabled(true);
+        runTest(query, query);
+    }
+
     // ============================================
     // error conditions
-    @Test(expected = DoNotPerformOptimizedQueryException.class)
+    @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorOptimized() throws Exception {
         String regex = "'.*iss.*'";
         String query = CityField.STATE.name() + RE_OP + regex;
@@ -155,12 +207,32 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CONTINENT.name() + RE_OP + regex;
         runTest(query, query);
     }
-    
-    @Test(expected = DoNotPerformOptimizedQueryException.class)
+
+    @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorInfinite() throws Exception {
         String regex = "'.*'";
         String query = CityField.STATE.name() + RE_OP + regex;
         runTest(query, query);
+    }
+
+    @Test(expected = DoNotPerformOptimizedQueryException.class)
+    public void testErrorFullTableInfinite() throws Exception {
+        String regex = "'.*'";
+        String query = CityField.STATE.name() + RE_OP + regex;
+        logic.setFullTableScanEnabled(true);
+        runTest(query, query);
+    }
+
+    @Test(expected = FullTableScansDisallowedException.class)
+    public void testErrorMissingReverseIndex() throws Exception {
+        log.info("------  testMissingReverseIndex  ------");
+        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        // should at least match usa, fra, and ita
+        String regex = "'.*?a'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CODE.name() + RE_OP + regex;
+            runTest(query, query);
+        }
     }
     
     // ============================================
