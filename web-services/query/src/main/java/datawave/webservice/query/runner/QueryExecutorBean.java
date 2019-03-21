@@ -486,20 +486,12 @@ public class QueryExecutorBean implements QueryExecutor {
         
         // validate the max results override relative to the max results on a query logic
         // privileged users however can set whatever they want
-        if (qp.isMaxResultsOverridden()) {
+        if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
             if (!ctx.isCallerInRole(PRIVILEGED_USER)) {
-                if (qp.getMaxResultsOverride() < 0) {
-                    if (qd.logic.getMaxResults() >= 0) {
-                        log.error("Invalid max results override: " + qp.getPagesize() + " vs " + qd.logic.getMaxResults());
-                        GenericResponse<String> response = new GenericResponse<>();
-                        throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
-                    }
-                } else {
-                    if (qd.logic.getMaxResults() < qp.getMaxResultsOverride()) {
-                        log.error("Invalid max results override: " + qp.getPagesize() + " vs " + qd.logic.getMaxResults());
-                        GenericResponse<String> response = new GenericResponse<>();
-                        throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
-                    }
+                if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
+                    log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
+                    GenericResponse<String> response = new GenericResponse<>();
+                    throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
                 }
             }
         }
