@@ -151,7 +151,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         // count logic
         countLogic.setIncludeDataTypeAsField(true);
         countLogic.setFullTableScanEnabled(false);
-
+        
         countLogic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         countLogic.setMarkingFunctions(new Default());
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());

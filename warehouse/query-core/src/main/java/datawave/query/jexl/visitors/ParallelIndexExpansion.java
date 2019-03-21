@@ -566,11 +566,10 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 }
                 
                 if (null != sawException) {
-                    log.error(sawException);
+                    log.error(sawException.getMessage(), sawException);
                     throw new CannotExpandUnfieldedTermFatalException(sawException);
                 }
             }
-            
         } catch (InterruptedException e) {
             throw new CannotExpandUnfieldedTermFatalException(e.getMessage());
         } finally {
@@ -763,17 +762,17 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         if (config.getFullTableScanEnabled()) {
             return true;
         }
-
+        
         String regex = JexlASTHelper.getLiteralValue(node).toString();
         JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(regex);
-
+        
         // if the regex is double ended, then we cannot expand it
         if (analyzer.isNgram()) {
             return false;
         }
-
+        
         String fieldName = JexlASTHelper.getIdentifier(node);
-
+        
         if (analyzer.isLeadingLiteral() && helper.isIndexed(fieldName, config.getDatatypeFilter())) {
             return true;
         } else if (analyzer.isTrailingLiteral() && helper.isReverseIndexed(fieldName, config.getDatatypeFilter())) {

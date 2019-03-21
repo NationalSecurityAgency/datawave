@@ -183,7 +183,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-
+    
     @Test
     public void testFullTableScan() throws Exception {
         String regex = "'.*uro.*'";
@@ -191,7 +191,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         logic.setFullTableScanEnabled(true);
         runTest(query, query);
     }
-
+    
     // ============================================
     // error conditions
     @Test(expected = FullTableScansDisallowedException.class)
@@ -207,14 +207,14 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CONTINENT.name() + RE_OP + regex;
         runTest(query, query);
     }
-
+    
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorInfinite() throws Exception {
         String regex = "'.*'";
         String query = CityField.STATE.name() + RE_OP + regex;
         runTest(query, query);
     }
-
+    
     @Test(expected = DoNotPerformOptimizedQueryException.class)
     public void testErrorFullTableInfinite() throws Exception {
         String regex = "'.*'";
@@ -222,7 +222,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         logic.setFullTableScanEnabled(true);
         runTest(query, query);
     }
-
+    
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorMissingReverseIndex() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
