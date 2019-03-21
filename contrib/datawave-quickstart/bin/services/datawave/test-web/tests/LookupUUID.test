@@ -65,7 +65,6 @@ configureTest \
      "Performs lookup on nonexistent uidType and nonexistent uid" \
      "-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}" \
      application/xml \
-     500 \
-     true
+     500
 
 # This last test is executed by run.sh, as usual

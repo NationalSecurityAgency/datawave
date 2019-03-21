@@ -97,7 +97,7 @@ runTest
 
 ################################################################
 # Try to get another page. Should be 204 / No content
-#
+# (Queries with 204 status are now automatically closed at the server)
 
 configureTest \
         204OnJexlFieldedPage3 \
@@ -105,12 +105,5 @@ configureTest \
         "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
         "" \
         204
-
-runTest
-
-################################################################
-# Close fielded query with /Query/${DW_QUERY_ID}/close endpoint
-
-configureCloseQueryTest ${DW_QUERY_ID}
 
 # This last test is executed by run.sh, as usual

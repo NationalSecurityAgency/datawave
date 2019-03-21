@@ -89,7 +89,7 @@ function downloadTarball() {
    tarball="$( basename ${uri} )"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
-          $( cd "${tarballdir}" && curl -o "./${tarball}" "${uri}" )
+          $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || error "File copy failed for ${uri:7}"
       else
           $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
       fi
