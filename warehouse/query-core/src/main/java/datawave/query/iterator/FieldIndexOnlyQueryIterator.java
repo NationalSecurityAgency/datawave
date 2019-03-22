@@ -256,7 +256,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
         Collection<String> unindexedTypes = Lists.newArrayList();
         
-        Set<String> keys = fetchDatatypeKeys(this.documentOptions.get(NON_INDEXED_DATATYPES));
+        Set<String> keys = fetchDataTypeKeys(this.documentOptions.get(NON_INDEXED_DATATYPES));
         unindexedTypes.addAll(keys);
         
         if (isQueryFullySatisfiedInitialState) {

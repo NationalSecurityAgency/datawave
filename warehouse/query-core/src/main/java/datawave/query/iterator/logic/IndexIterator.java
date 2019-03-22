@@ -7,6 +7,7 @@ import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.iterator.DocumentIterator;
+import datawave.query.iterator.LimitedSortedKeyValueIterator;
 import datawave.query.iterator.Util;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
@@ -95,6 +96,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     public static final String INDEX_FILTERING_CLASSES = "indexfiltering.classes";
     
     protected SortedKeyValueIterator<Key,Value> source;
+    protected LimitedSortedKeyValueIterator limitedSource;
     protected final Text valueMinPrefix;
     protected final Text columnFamily;
     protected final Collection<ByteSequence> seekColumnFamilies;
@@ -134,6 +136,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         }
         
         this.source = source;
+        // wrap the source with a limit
+        limitedSource = new LimitedSortedKeyValueIterator(source);
         this.timeFilter = timeFilter;
         if (timeFilter instanceof SeekingFilter) {
             timeSeekingFilter = (SeekingFilter) timeFilter;
@@ -319,8 +323,10 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                 continue;
             }
             
+            // restrict the aggregation to the current target value within the document
+            limitedSource.setLimit(new Key(top.getRow(), columnFamily, new Text(valueMinPrefix + Constants.MAX_UNICODE_STRING)));
             // Aggregate the document. NOTE: This will advance the source iterator
-            tk = buildDocument ? aggregation.apply(source, document, attributeFactory) : aggregation.apply(source, scanRange, seekColumnFamilies,
+            tk = buildDocument ? aggregation.apply(limitedSource, document, attributeFactory) : aggregation.apply(limitedSource, scanRange, seekColumnFamilies,
                             includeColumnFamilies);
             if (log.isTraceEnabled()) {
                 log.trace("Doc size: " + this.document.size());

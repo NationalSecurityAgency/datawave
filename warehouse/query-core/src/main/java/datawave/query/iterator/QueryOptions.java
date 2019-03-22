@@ -1558,7 +1558,7 @@ public class QueryOptions implements OptionDescriber {
         
         Map<String,Set<String>> mapping = new HashMap<>();
         
-        if (data != null) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
             String[] entries = StringUtils.split(data, ';');
             for (String entry : entries) {
                 String[] entrySplits = StringUtils.split(entry, ':');
@@ -1582,9 +1582,9 @@ public class QueryOptions implements OptionDescriber {
         return mapping;
     }
     
-    public static Set<String> fetchDatatypeKeys(String data) {
+    public static Set<String> fetchDataTypeKeys(String data) {
         Set<String> keys = Sets.newHashSet();
-        if (data != null) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
             String[] entries = StringUtils.split(data, ';');
             for (String entry : entries) {
                 String[] entrySplits = StringUtils.split(entry, ':');
