@@ -1,6 +1,7 @@
 package datawave.microservice.cached.server;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -13,7 +14,7 @@ import java.net.ServerSocket;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 @EnableDiscoveryClient
-@SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = SecurityAutoConfiguration.class)
+@SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {SecurityAutoConfiguration.class, ManagementWebSecurityAutoConfiguration.class})
 public class HazelcastService {
     private static final int MAX_PORT = 100;
     

@@ -80,8 +80,8 @@ public class AuthorizationServiceTest {
         testAdminMethodFailure(unuathUser, "/authorization/v1/admin/listUsersMatching", "substring=ignore");
         
         Collection<String> roles = Collections.singleton("Administrator");
-        DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
-        ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
+        DatawaveUser authDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
+        ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(authDWUser), authDWUser.getCreationTime());
         
         testAdminMethodSuccess(authUser, "/authorization/v1/admin/evictAll", null);
         testAdminMethodSuccess(authUser, "/authorization/v1/admin/evictUser", "username=ignored");
@@ -119,7 +119,7 @@ public class AuthorizationServiceTest {
         }
         
         @Bean
-        public HazelcastInstance hazelcastInstance() {
+        public HazelcastInstance testHazelcastInstance() {
             Config config = new Config();
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             return Hazelcast.newHazelcastInstance(config);

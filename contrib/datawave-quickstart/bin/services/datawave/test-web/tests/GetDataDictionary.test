@@ -1,7 +1,0 @@
-
-configureTest \
-    DataDictionaryGET \
-    "Gets DataWave's data dictionary" \
-    "-X GET ${URI_ROOT}/DataDictionary" \
-    application/xml \
-    200

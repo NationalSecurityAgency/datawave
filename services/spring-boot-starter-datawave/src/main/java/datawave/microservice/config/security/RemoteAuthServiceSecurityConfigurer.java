@@ -14,7 +14,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.lang.Nullable;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
@@ -27,7 +26,6 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 @Profile(RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE)
 @Order(SecurityProperties.BASIC_AUTH_ORDER - 3)
 @Configuration
-@EnableWebSecurity
 @ConditionalOnWebApplication
 public class RemoteAuthServiceSecurityConfigurer extends JWTSecurityConfigurer {
     private final DatawaveSecurityProperties securityProperties;

@@ -1,7 +1,0 @@
-
-configureTest \
-    EdgeDictionaryGET \
-    "Gets DataWave's graph edge dictionary" \
-    "-X GET ${URI_ROOT}/EdgeDictionary" \
-    application/xml \
-    200

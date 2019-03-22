@@ -1432,7 +1432,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getDNs()).andReturn(new String[] {"userDN"});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.queryLogic1.getMaxPageSize()).andReturn(10).times(3);
+        expect(this.queryLogic1.getMaxPageSize()).andReturn(10).times(4);
         
         // Run the test
         PowerMock.replayAll();

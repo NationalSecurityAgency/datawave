@@ -58,7 +58,8 @@ public class HazelcastConfiguration {
             HazelcastKubernetesDiscoveryStrategyFactory factory = new HazelcastKubernetesDiscoveryStrategyFactory();
             DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(factory);
             discoveryStrategyConfig.addProperty(KubernetesProperties.SERVICE_DNS.key(), serverProperties.getK8s().getServiceDnsName());
-            discoveryStrategyConfig.addProperty(KubernetesProperties.SERVICE_DNS_TIMEOUT.key(), serverProperties.getK8s().getServiceDnsTimeout());
+            discoveryStrategyConfig.addProperty(KubernetesProperties.SERVICE_DNS_TIMEOUT.key(),
+                            Integer.toString(serverProperties.getK8s().getServiceDnsTimeout()));
             joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
         }
         

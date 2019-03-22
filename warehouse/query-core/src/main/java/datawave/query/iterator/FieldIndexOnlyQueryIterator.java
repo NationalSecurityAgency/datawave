@@ -167,10 +167,14 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
         
         if (options.containsKey(INDEX_ONLY_FIELDS)) {
-            this.indexOnlyFields = buildIndexOnlyFieldsSet(options.get(INDEX_ONLY_FIELDS));
+            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
         } else if (!this.fullTableScanOnly) {
             log.error("A list of index only fields must be provided when running an optimized query");
             return false;
+        }
+        
+        if (options.containsKey(INDEXED_FIELDS)) {
+            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
@@ -252,7 +256,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
         Collection<String> unindexedTypes = Lists.newArrayList();
         
-        Set<String> keys = fetchDatatypeKeys(this.documentOptions.get(NON_INDEXED_DATATYPES));
+        Set<String> keys = fetchDataTypeKeys(this.documentOptions.get(NON_INDEXED_DATATYPES));
         unindexedTypes.addAll(keys);
         
         if (isQueryFullySatisfiedInitialState) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source /opt/datawave/contrib/datawave-quickstart/bin/env.sh
+source ~/.bashrc
 
 START_AS_DAEMON=true
 

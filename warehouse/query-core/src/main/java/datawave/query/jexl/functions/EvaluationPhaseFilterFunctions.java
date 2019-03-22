@@ -1510,7 +1510,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param pos
      * @return
      */
-    static String getMatchToLeftOfPeriod(String input, int pos) {
+    public static String getMatchToLeftOfPeriod(String input, int pos) {
         // always peel off the fieldName before the first '.'
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = indicesOf(input, '.');
@@ -1530,7 +1530,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param pos
      * @return
      */
-    static String getMatchToRightOfPeriod(String input, int pos) {
+    public static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)
             throw new RuntimeException("Input" + input + " does not have a '.' at position " + pos + " from the right.");

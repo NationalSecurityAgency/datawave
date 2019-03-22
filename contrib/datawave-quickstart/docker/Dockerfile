@@ -54,6 +54,12 @@ RUN rm -f .dockerignore && \
 # By design, if 'datawaveWebTest' exits with non-zero status, the docker build will fail
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
+    echo "export DW_ACCUMULO_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_ZOOKEEPER_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'zookeeper*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_JAVA_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/java -name '*tar.gz')" >> ~/.bashrc && \
+    echo "export DW_MAVEN_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_HADOOP_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/hadoop -name 'hadoop*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_WILDFLY_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/datawave -name 'wildfly*.tar.gz')" >> ~/.bashrc && \
     echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
     /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --verbose && allStop" && \
     echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \

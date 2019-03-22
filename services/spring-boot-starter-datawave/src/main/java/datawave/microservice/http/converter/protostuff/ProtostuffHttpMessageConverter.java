@@ -57,7 +57,7 @@ public class ProtostuffHttpMessageConverter extends AbstractHttpMessageConverter
                 ProtostuffIOUtil.mergeFrom(inputMessage.getBody(), msg, msg.cachedSchema(), buffer.get());
                 return msg;
             } catch (InstantiationException | IllegalAccessException e) {
-                throw new HttpMessageNotReadableException("Unable to read protostuff message: " + e.getMessage(), e);
+                throw new HttpMessageNotReadableException("Unable to read protostuff message: " + e.getMessage(), e, inputMessage);
             }
         }
         

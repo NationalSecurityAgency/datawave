@@ -6,7 +6,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheType;
 import org.springframework.boot.test.autoconfigure.core.AutoConfigureCache;
-import org.springframework.boot.test.context.SpringBootTestContextBootstrapper;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
@@ -16,12 +16,12 @@ import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.BootstrapWith;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -30,8 +30,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringRunner.class)
 @DirtiesContext
 @AutoConfigureCache(cacheProvider = CacheType.SIMPLE)
-@BootstrapWith(SpringBootTestContextBootstrapper.class)
-@ContextConfiguration(classes = CachingConfigurerTest.CachingConfiguration.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, classes = CachingConfigurerTest.CachingConfiguration.class)
 public class CachingConfigurerTest {
     public static final Object ERROR_KEY = new Object();
     
@@ -104,6 +103,7 @@ public class CachingConfigurerTest {
     @ComponentScan(basePackages = "datawave.microservice")
     public static class CachingConfiguration {
         @Bean
+        @Primary
         public CacheManager cacheManager(TestCache testCache) {
             SimpleCacheManager simpleCacheManager = new SimpleCacheManager();
             simpleCacheManager.setCaches(Collections.singletonList(testCache));
@@ -118,6 +118,31 @@ public class CachingConfigurerTest {
         @Bean
         public TestService testService() {
             return new TestService();
+        }
+        
+        @Bean
+        public CacheInspector testCacheInspector() {
+            return new CacheInspector() {
+                @Override
+                public <T> T list(String cacheName, Class<T> cacheObjectType, String key) {
+                    throw new UnsupportedOperationException();
+                }
+                
+                @Override
+                public <T> List<? extends T> listAll(String cacheName, Class<T> cacheObjectType) {
+                    throw new UnsupportedOperationException();
+                }
+                
+                @Override
+                public <T> List<? extends T> listMatching(String cacheName, Class<T> cacheObjectType, String substring) {
+                    throw new UnsupportedOperationException();
+                }
+                
+                @Override
+                public <T> int evictMatching(String cacheName, Class<T> cacheObjectType, String substring) {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
     }
     

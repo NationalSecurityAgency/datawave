@@ -24,9 +24,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.context.annotation.RequestScope;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -38,8 +36,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = AccumuloAuditorTest.AccumuloAuditorTestConfiguration.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.main.allow-bean-definition-overriding=true")
 @ActiveProfiles({"AccumuloAuditorTest", "accumulo-enabled"})
 public class AccumuloAuditorTest {
     
@@ -162,17 +159,6 @@ public class AccumuloAuditorTest {
     @Profile("AccumuloAuditorTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class AccumuloAuditorTestConfiguration {
-        @Bean("restAuditParams")
-        @RequestScope
-        public AuditParameters restAuditParams() {
-            return new AuditParameters();
-        }
-        
-        @Bean("msgHandlerAuditParams")
-        public AuditParameters msgHandlerAuditParams() {
-            return new AuditParameters();
-        }
-        
         @Bean
         public Instance accumuloInstance(AccumuloAuditProperties accumuloAuditProperties) {
             return new InMemoryInstance(accumuloAuditProperties.getAccumuloConfig().getInstanceName());

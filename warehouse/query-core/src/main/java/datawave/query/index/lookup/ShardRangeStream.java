@@ -53,7 +53,9 @@ public class ShardRangeStream extends RangeStream {
             
             try {
                 DefaultQueryPlanner.addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS,
-                                QueryOptions.buildIndexOnlyFieldsString(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
+                                QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
+                DefaultQueryPlanner.addOption(cfg, QueryOptions.INDEXED_FIELDS,
+                                QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexedFields(config.getDatatypeFilter())), true);
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }

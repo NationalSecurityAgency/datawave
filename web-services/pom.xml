@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>2.5.2-SNAPSHOT</version>
+        <version>2.5.9-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.webservices</groupId>
     <artifactId>datawave-ws-parent</artifactId>
@@ -22,14 +22,13 @@
         <module>map-reduce</module>
         <module>map-reduce-status</module>
         <module>map-reduce-embedded</module>
-        <module>data-dictionary</module>
-        <module>edge-dictionary</module>
         <module>atom</module>
         <module>query-websocket</module>
         <module>web-root</module>
         <module>modification</module>
         <module>rest-api</module>
         <module>model</module>
+        <module>dictionary</module>
     </modules>
     <properties>
         <accumulo.scope>provided</accumulo.scope>

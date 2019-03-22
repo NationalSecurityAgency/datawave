@@ -1,0 +1,159 @@
+/* basic screen style for all pages */
+html,body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	color: #333333;
+	font-size: 10pt;
+	font-family: helvetica, arial, sans-serif;
+	text-align: center;
+}
+
+
+hr {
+	border: 0;
+	height: 1px;
+	background-color: #304065;
+	color: #304065;
+}
+
+table {
+	margin-left: auto;
+	margin-right: auto;
+	min-width: 60%;
+	max-width: 95%;
+	border: 1px #333333 solid;
+	border-spacing-top: 0;
+	border-spacing-bottom: 0;
+	border: 1px #333333 solid;
+	border: 1px #333333 solid;
+}
+
+table.banner {
+	margin-left: auto;
+	margin-right: auto;
+	width: 100%;
+	min-width: 100%;
+	max-width: 100%;
+	border: 1px #333333 solid;
+	border-spacing-top: 0;
+	border-spacing-bottom: 0;
+	border: 1px #333333 solid;
+	border: 1px #333333 solid;
+}
+
+table.sortable {
+	border-left: 0;
+	border-right: 0;
+	border-top: 1px #333333 dotted;
+	border-bottom: 1px #333333 dotted;
+}
+
+
+td {
+	border-top: 0;
+	border-bottom: 0;
+	border-left: 0;
+	border-right: 0;
+	border-spacing-top: 0;
+	border-spacing-bottom: 0;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	padding-top: 0.15em;
+	padding-bottom: 0.15em;
+	color: #333333;
+    font-size: 10pt;
+}
+
+th {
+	border-top: 0;
+	border-bottom: 3px #333333 solid;
+	border-left: 1px #333333 dotted;
+	border-right: 0;
+	border-spacing-top: 0;
+	border-spacing-bottom: 0;
+	cursor: pointer;
+	text-align: center;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	padding-top: 0.2em;
+	padding-bottom: 0.2em;
+	color: #333333;
+	font-size: 11pt;
+	vertical-align: bottom;
+}
+
+td.firstcell {
+	border-left: 0;
+}
+
+th.firstcell {
+	border-left: 0;
+}
+
+a {
+	text-decoration: none;
+	color: #0000ff;
+	line-height: 1.5em;
+}
+
+a:hover {
+	color: #004400;
+	text-decoration: underline;
+}
+
+a img {
+	border: 0px;
+}
+
+div.show {
+	display: block;
+}
+
+div.hide {
+	display: none;
+}
+
+.noborder {
+	border: 0;
+	border-spacing: 0;
+	border-bottom: 0;
+	border-right: 0;
+}
+
+.noborder td {
+	vertical-align: top;
+}
+
+.left {
+	text-align: left;
+}
+
+.right {
+	text-align: right;
+	margin-right: 0;
+}
+
+.center {
+	text-align: center;
+	padding: 0.5em;
+}
+
+.nowrap {
+    white-space:nowrap;
+}
+
+.highlight {
+    background-color: #C1D5ED;
+}
+
+#vishoverinfo {
+    visibility: hidden;
+    position: absolute;
+    border: 1px solid #C4C4C4;
+    background-color: #FFFFFF;
+}
+
+tbody tr.even {
+	background-color: #C1D5ED;
+}

@@ -1,12 +1,12 @@
 package datawave.query.tables.edge;
 
 import datawave.query.QueryParameters;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.edgedictionary.DatawaveEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
@@ -36,7 +36,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     protected EdgeDictionaryBase<?,? extends MetadataBase<?>> dict;
     
     @Inject
-    protected DatawaveEdgeDictionary datawaveEdgeDictionary;
+    protected RemoteEdgeDictionary remoteEdgeDictionary;
     
     public DefaultEdgeEventQueryLogic() {}
     
@@ -56,10 +56,8 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     }
     
     @SuppressWarnings("unchecked")
-    protected EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(Connector connector, Set<Authorizations> auths, int numThreads)
-                    throws Exception {
-        
-        return this.datawaveEdgeDictionary.getEdgeDictionary(this.getMetadataTableName(), connector, auths, numThreads);
+    protected EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(String queryAuths) {
+        return remoteEdgeDictionary.getEdgeDictionary(getMetadataTableName(), queryAuths);
     }
     
     protected DefaultEventQueryBuilder getEventQueryBuilder() {
@@ -69,7 +67,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         
-        setEdgeDictionary(getEdgeDictionary(connection, auths, 8)); // TODO grab threads from somewhere
+        setEdgeDictionary(getEdgeDictionary(settings.getQueryAuthorizations())); // TODO grab threads from somewhere
         
         // Load and apply the configured edge query model
         loadEdgeQueryModel(connection, auths);

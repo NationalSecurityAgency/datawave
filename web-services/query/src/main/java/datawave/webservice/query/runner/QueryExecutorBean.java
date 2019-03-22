@@ -390,30 +390,6 @@ public class QueryExecutorBean implements QueryExecutor {
         log.debug(queryParameters);
         qp.clear();
         qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
-        qp.validate(queryParameters);
-        
-        // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
-        // Leaving for now until we can test to ensure that is always the case.
-        if (qp.getPagesize() <= 0) {
-            GenericResponse<String> response = new GenericResponse<>();
-            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
-        }
-        
-        if (qp.getPageTimeout() != -1 && (qp.getPageTimeout() < PAGE_TIMEOUT_MIN || qp.getPageTimeout() > PAGE_TIMEOUT_MAX)) {
-            GenericResponse<String> response = new GenericResponse<>();
-            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_TIMEOUT, response);
-        }
-        
-        if (System.currentTimeMillis() >= qp.getExpirationDate().getTime()) {
-            GenericResponse<String> response = new GenericResponse<>();
-            throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
-        }
-        
-        // Ensure begin date does not occur after the end date (if dates are not null)
-        if ((qp.getBeginDate() != null && qp.getEndDate() != null) && qp.getBeginDate().after(qp.getEndDate())) {
-            GenericResponse<String> response = new GenericResponse<>();
-            throwBadRequest(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, response);
-        }
         
         // Pull "params" values into individual query parameters for validation on the query logic.
         // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
@@ -421,17 +397,49 @@ public class QueryExecutorBean implements QueryExecutor {
         String params = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
         if (params != null) {
             for (Parameter pm : QueryUtil.parseParameters(params)) {
-                queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                if (!queryParameters.containsKey(pm.getParameterName())) {
+                    queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                }
             }
-            queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
-            queryParameters.remove(AuditParameters.USER_DN);
-            queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
+        }
+        queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
+        queryParameters.remove(AuditParameters.USER_DN);
+        queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
+        
+        qp.validate(queryParameters);
+        
+        // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
+        // Leaving for now until we can test to ensure that is always the case.
+        if (qp.getPagesize() <= 0) {
+            log.error("Invalid page size: " + qp.getPagesize());
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
+        }
+        
+        if (qp.getPageTimeout() != -1 && (qp.getPageTimeout() < PAGE_TIMEOUT_MIN || qp.getPageTimeout() > PAGE_TIMEOUT_MAX)) {
+            log.error("Invalid page timeout: " + qp.getPageTimeout());
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_TIMEOUT, response);
+        }
+        
+        if (System.currentTimeMillis() >= qp.getExpirationDate().getTime()) {
+            log.error("Invalid expiration date: " + qp.getExpirationDate());
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
+        }
+        
+        // Ensure begin date does not occur after the end date (if dates are not null)
+        if ((qp.getBeginDate() != null && qp.getEndDate() != null) && qp.getBeginDate().after(qp.getEndDate())) {
+            log.error("Invalid begin and/or end date: " + qp.getBeginDate() + " - " + qp.getEndDate());
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, response);
         }
         
         // will throw IllegalArgumentException if not defined
         try {
             qd.logic = queryLogicFactory.getQueryLogic(queryLogicName, ctx.getCallerPrincipal());
         } catch (Exception e) {
+            log.error("Failed to get query logic for " + queryLogicName, e);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.QUERY_LOGIC_ERROR, e);
             GenericResponse<String> response = new GenericResponse<>();
             response.addException(qe.getBottomQueryException());
@@ -443,6 +451,7 @@ public class QueryExecutorBean implements QueryExecutor {
             marking.clear();
             marking.validate(queryParameters);
         } catch (IllegalArgumentException e) {
+            log.error("Failed security markings validation", e);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
             GenericResponse<String> response = new GenericResponse<>();
             response.addException(qe);
@@ -467,6 +476,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         // always check against the max
         if (qd.logic.getMaxPageSize() > 0 && qp.getPagesize() > qd.logic.getMaxPageSize()) {
+            log.error("Invalid page size: " + qp.getPagesize() + " vs " + qd.logic.getMaxPageSize());
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.PAGE_SIZE_TOO_LARGE, MessageFormat.format("Max = {0}.",
                             qd.logic.getMaxPageSize()));
             GenericResponse<String> response = new GenericResponse<>();
@@ -476,18 +486,12 @@ public class QueryExecutorBean implements QueryExecutor {
         
         // validate the max results override relative to the max results on a query logic
         // privileged users however can set whatever they want
-        if (qp.isMaxResultsOverridden()) {
+        if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
             if (!ctx.isCallerInRole(PRIVILEGED_USER)) {
-                if (qp.getMaxResultsOverride() < 0) {
-                    if (qd.logic.getMaxResults() >= 0) {
-                        GenericResponse<String> response = new GenericResponse<>();
-                        throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
-                    }
-                } else {
-                    if (qd.logic.getMaxResults() < qp.getMaxResultsOverride()) {
-                        GenericResponse<String> response = new GenericResponse<>();
-                        throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
-                    }
+                if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
+                    log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
+                    GenericResponse<String> response = new GenericResponse<>();
+                    throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
                 }
             }
         }

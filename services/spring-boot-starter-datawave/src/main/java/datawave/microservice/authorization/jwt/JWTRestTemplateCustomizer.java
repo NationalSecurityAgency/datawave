@@ -1,11 +1,13 @@
 package datawave.microservice.authorization.jwt;
 
 import datawave.security.authorization.JWTTokenHandler;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
+@ConditionalOnWebApplication
 public class JWTRestTemplateCustomizer implements RestTemplateCustomizer {
     private final JWTTokenHandler jwtTokenHandler;
     

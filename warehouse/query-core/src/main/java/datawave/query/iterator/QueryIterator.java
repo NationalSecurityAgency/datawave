@@ -393,7 +393,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             GroupingTransform groupify = getGroupingTransform();
             if (groupify != null && this.groupFieldsBatchSize > 0) {
                 
-                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize);
+                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize, this.yield);
                 
                 if (log.isTraceEnabled()) {
                     pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
@@ -1277,7 +1277,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         
         // determine the list of indexed fields
-        Set<String> indexedFields = new HashSet<>(this.getTypeMetadata().keySet());
+        Set<String> indexedFields = this.getIndexedFields();
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
         return c.newInstance().setSource(this, this.myEnvironment).setTimeFilter(this.getTimeFilter()).setTypeMetadata(this.getTypeMetadata())
@@ -1321,7 +1321,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected SatisfactionVisitor createSatisfiabilityVisitor(boolean isQueryFullySatisfiedInitialState) {
         
         // determine the list of indexed fields
-        Set<String> indexedFields = new HashSet<>(this.getTypeMetadata().keySet());
+        Set<String> indexedFields = this.getIndexedFields();
+        
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
         return new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.emptySet(), isQueryFullySatisfiedInitialState);

@@ -16,6 +16,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.slf4j.Logger;
@@ -79,7 +80,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     /**
      * list of documents to return, created from the countingMap
      */
-    private LinkedList<Document> documents = null;
+    private final LinkedList<Document> documents = new LinkedList<>();
     
     /**
      * mapping used to combine field names that map to different model names
@@ -157,7 +158,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *            an iterator source
      * @return the flushed value that is an aggregation from the source iterator
      */
-    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int max) {
+    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
         
         return new Iterator<Entry<Key,Document>>() {
             
@@ -165,10 +166,22 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             @Override
             public boolean hasNext() {
-                for (int i = 0; i < max && in.hasNext(); i++) {
-                    Entry<Key,Document> lastEntry = in.next();
-                    GroupingTransform.this.apply(lastEntry);
+                for (int i = 0; i < groupFieldsBatchSize; i++) {
+                    if (in.hasNext()) {
+                        GroupingTransform.this.apply(in.next());
+                    } else if (yieldCallback != null && yieldCallback.hasYielded()) {
+                        log.trace("hasNext is false because yield was called");
+                        if (countingMap != null && !countingMap.isEmpty()) {
+                            // reset the yield and use its key in the flattened document prepared below
+                            keys.add(yieldCallback.getPositionAndReset());
+                        }
+                        break;
+                    } else {
+                        // in.hasNext() was false and there was no yield
+                        break;
+                    }
                 }
+                // if there is nothing in the countingMap, next will be null (so method returns false)
                 next = GroupingTransform.this.flush();
                 return next != null;
             }
@@ -193,13 +206,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     @Override
     public Entry<Key,Document> flush() {
-        if (flatten)
-            log.trace("tserver flush");
-        else
-            log.trace("webserver flush");
-        if (documents == null) {
-            documents = new LinkedList<>();
-        }
+        
         if (!countingMap.isEmpty()) {
             
             log.trace("flush will use the countingMap: {}", countingMap);
@@ -300,7 +307,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      */
     private void flatten(List<Document> documents) {
         log.trace("flatten {}", documents);
-        Document theDocument = new Document(documents.get(0).getMetadata(), true);
+        Document theDocument = new Document(documents.get(documents.size() - 1).getMetadata(), true);
         int context = 0;
         Set<ColumnVisibility> visibilities = new HashSet<>();
         for (Document document : documents) {
@@ -312,7 +319,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 Attribute<? extends Comparable<?>> attribute = entry.getValue();
                 attribute.setColumnVisibility(entry.getValue().getColumnVisibility());
                 // call copy() on the GroupingTypeAttribute to get a plain TypeAttribute
-                // GroupingTypeAttribute is so embarrassing that it is package protected and won't serialize
+                // instead of a GroupingTypeAttribute that is package protected and won't serialize
                 theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true, false);
             }
             context++;

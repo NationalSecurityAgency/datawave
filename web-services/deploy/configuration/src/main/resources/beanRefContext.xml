@@ -18,8 +18,6 @@
                 <value>classpath*:datawave/query/QueryMetricsWriter.xml</value>
                 <value>classpath*:datawave/query/*QueryLogicFactory.xml</value>
                 <value>classpath*:datawave/query/CachedResults*.xml</value>
-				<value>classpath*:datawave/datadictionary/DataDictionary.xml</value>
-                <value>classpath*:datawave/edgedictionary/EdgeDictionary.xml</value>
                 <value>classpath*:datawave/mapreduce/MapReduceJobs.xml</value>
 				<value>classpath*:datawave/modification/ModificationServices.xml</value>
                 <value>classpath*:org/apache/accumulo/operations/LookupBean.xml</value>
