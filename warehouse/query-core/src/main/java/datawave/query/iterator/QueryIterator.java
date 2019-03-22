@@ -393,7 +393,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             GroupingTransform groupify = getGroupingTransform();
             if (groupify != null && this.groupFieldsBatchSize > 0) {
                 
-                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize);
+                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize, this.yield);
                 
                 if (log.isTraceEnabled()) {
                     pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
