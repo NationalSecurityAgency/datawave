@@ -1351,7 +1351,7 @@ public class CachedResultsBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
-            closeCrqConnection(crq);
+            crq.closeConnection(log);
             // Push metrics
             if (crq != null && crq.getQueryLogic().getCollectQueryMetrics() == true) {
                 try {
@@ -1467,7 +1467,7 @@ public class CachedResultsBean {
                     } finally {
                         // only close connection if the crq changed, because we expect additional actions
                         if (updated) {
-                            closeCrqConnection(crq);
+                            crq.closeConnection(log);
                         }
                     }
                 }
@@ -1660,7 +1660,7 @@ public class CachedResultsBean {
                 synchronized (crq) {
                     
                     if (crq.isActivated() == true) {
-                        closeCrqConnection(crq);
+                        crq.closeConnection(log);
                     }
                     
                     Connection connection = ds.getConnection();
@@ -1939,7 +1939,7 @@ public class CachedResultsBean {
                         log.error(e.getMessage(), e);
                         throw e;
                     } finally {
-                        closeCrqConnection(crq);
+                        crq.closeConnection(log);
                     }
                 }
             } finally {
@@ -2132,7 +2132,7 @@ public class CachedResultsBean {
             }
             if (crq.isActivated()) {
                 synchronized (crq) {
-                    closeCrqConnection(crq);
+                    crq.closeConnection(log);
                 }
                 crq.getMetric().setLifecycle(QueryMetric.Lifecycle.CLOSED);
                 if (crq.getQueryLogic().getCollectQueryMetrics() == true) {
@@ -2475,19 +2475,6 @@ public class CachedResultsBean {
             log.debug("persisting cachedRunningQuery " + queryId + " to database with status " + status);
             CachedRunningQuery.saveToDatabaseByQueryId(queryId, alias, owner, status, statusMessage);
         }
-    }
-    
-    public static void closeCrqConnection(CachedRunningQuery crq) {
-        
-        if (log.isTraceEnabled()) {
-            log.trace("closing connections for query " + crq.getQueryId());
-        }
-        
-        Connection connection = crq.getConnection();
-        Statement statement = crq.getStatement();
-        CachedRowSet crs = crq.getCrs();
-        crq.resetConnection();
-        DbUtils.closeQuietly(connection, statement, crs);
     }
     
     protected boolean createView(String tableName, String viewName, Connection con, boolean viewCreated, Map<String,Integer> fieldMap) throws SQLException {

@@ -54,7 +54,7 @@ configureTest \
         GroupedWithSameGreatgrandparent \
         "Attempt to match specific cousin elements originating from the same JSON 'cast' array" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id
@@ -101,7 +101,7 @@ configureTest \
         GroupedWithSameParent \
         "Attempt to match 'ID' and 'NAME' values that are siblings within 'PERSON' parent object" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id
@@ -142,7 +142,7 @@ configureTest \
         CreateNoMatchForGroupedSiblings \
         "Attempt to find 'NAME' field siblings that are actually cousins. Gets 204 - No results" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id
