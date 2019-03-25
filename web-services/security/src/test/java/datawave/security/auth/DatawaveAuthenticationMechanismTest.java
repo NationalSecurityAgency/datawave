@@ -90,12 +90,7 @@ public class DatawaveAuthenticationMechanismTest {
     @Before
     public void setUp() throws Exception {
         System.setProperty("dw.trusted.header.authentication", "true");
-        datawaveAuthenticationMechanism = new DatawaveAuthenticationMechanism() {
-            @Override
-            protected void replaceAuthenticationManagerCacheIfNecessary(IdentityManager idm) {
-                // do nothing here for tests
-            }
-        };
+        datawaveAuthenticationMechanism = new DatawaveAuthenticationMechanism();
         httpRequestHeaders = new HeaderMap();
         httpResponseHeaders = new HeaderMap();
         

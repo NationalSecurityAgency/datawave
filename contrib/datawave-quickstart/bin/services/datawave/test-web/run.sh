@@ -346,7 +346,7 @@ function prettyPrintTestResponse() {
            # defined in bin/query.sh
            prettyPrintJson "${ACTUAL_RESPONSE_BODY}"
 
-       elif [ "${ACTUAL_RESPONSE_TYPE}" == "application/xml" ] ; then
+       elif [ "${ACTUAL_RESPONSE_TYPE}" == "application/xml;charset=UTF-8" ] ; then
            # defined in bin/query.sh
            prettyPrintXml "${ACTUAL_RESPONSE_BODY}"
        else
@@ -459,7 +459,7 @@ function configureCloseQueryTest() {
     QueryCloseTest \
     "Closes the test query as necessary" \
     "-X PUT ${URI_ROOT}/Query/${1}/close" \
-    application/xml \
+    "application/xml;charset=UTF-8" \
     200
 }
 
@@ -468,10 +468,10 @@ function setQueryIdFromResponse() {
    DW_QUERY_ID=""
 
    case "${ACTUAL_RESPONSE_TYPE}" in
-      application/json)
+      application/json*)
          setQueryIdFromResponseJson "${ACTUAL_RESPONSE_BODY}"
          ;;
-      application/xml)
+      application/xml*)
          setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
          ;;
       *)

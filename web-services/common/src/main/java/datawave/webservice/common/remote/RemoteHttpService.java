@@ -48,7 +48,6 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.Key;
