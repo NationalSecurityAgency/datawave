@@ -15,7 +15,7 @@
         <!-- Guava 15 is needed for Accumulo on the tservers -->
         <version.guava>15.0</version.guava>
         <version.in-memory-accumulo>1.9.2.1</version.in-memory-accumulo>
-        <version.slf4j>1.7.25</version.slf4j>
+        <version.slf4j>1.7.26</version.slf4j>
         <version.spring>5.0.8.RELEASE</version.spring>
     </properties>
     <dependencyManagement>

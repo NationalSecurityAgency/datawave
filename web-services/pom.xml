@@ -120,13 +120,6 @@
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-core</artifactId>
                 <version>${project.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- we already get commons-beanutils-core -->
-                        <groupId>commons-beanutils</groupId>
-                        <artifactId>commons-beanutils</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.protostuff</groupId>

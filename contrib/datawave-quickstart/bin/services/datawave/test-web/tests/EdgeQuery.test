@@ -17,7 +17,7 @@ configureTest \
         CreateAndNext \
         "Creates a JEXL-syntax edge query and gets first page of results with a single REST call" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EdgeQuery/createAndNext" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id
@@ -25,6 +25,6 @@ runTest --set-query-id
 ################################################################
 # Test /Query/${DW_QUERY_ID}/close endpoint
 
-configureCloseQueryTest ${DW_QUERY_ID}
+configureCloseQueryTest ${DW_QUERY_ID} 200
 
 # This last test is executed by run.sh, as usual

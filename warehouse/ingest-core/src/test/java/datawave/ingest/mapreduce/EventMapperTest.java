@@ -15,30 +15,38 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.mrunit.mapreduce.MapDriver;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.easymock.EasyMockRule;
+import org.easymock.Mock;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Map;
 
 public class EventMapperTest {
     
+    @Rule
+    public EasyMockRule easyMockRule = new EasyMockRule(this);
+    
+    @Mock
+    private Mapper.Context mapContext;
+    
     private Configuration conf;
-    private MapDriver<LongWritable,RawRecordContainer,BulkIngestKey,Value> driver;
     private SimpleRawRecord record;
+    private EventMapper<LongWritable,RawRecordContainer,BulkIngestKey,Value> eventMapper;
     
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         long eventTime = System.currentTimeMillis();
         
-        EventMapper<LongWritable,RawRecordContainer,BulkIngestKey,Value> mapper = new EventMapper<>();
-        driver = new MapDriver<>(mapper);
-        
-        conf = driver.getConfiguration();
+        eventMapper = new EventMapper<>();
+        conf = new Configuration();
         conf.setClass(EventMapper.CONTEXT_WRITER_CLASS, TestContextWriter.class, ContextWriter.class);
         
         Type type = new Type("file", null, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
@@ -58,16 +66,40 @@ public class EventMapperTest {
         record.setRawFileName("/some/filename");
         record.setRawData("some data".getBytes());
         record.generateId(null);
+        
+        expect(mapContext.getConfiguration()).andReturn(conf).anyTimes();
+        
+        mapContext.progress();
+        expectLastCall().anyTimes();
+        
+        TestContextWriter<BulkIngestKey,Value> testContextWriter = new TestContextWriter<>();
+        mapContext.write(anyObject(BulkIngestKey.class), anyObject(Value.class));
+        expectLastCall().andDelegateTo(testContextWriter).anyTimes();
+        
+        expect(mapContext.getInputSplit()).andReturn(null);
+        expect(mapContext.getMapOutputValueClass()).andReturn(null);
+        
+        StandaloneTaskAttemptContext standaloneContext = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
+        expect(mapContext.getCounter(anyObject())).andDelegateTo(standaloneContext).anyTimes();
+        expect(mapContext.getCounter(anyString(), anyString())).andDelegateTo(standaloneContext).anyTimes();
+        
+        replay(mapContext);
+    }
+    
+    @After
+    public void checkMock() {
+        verify(mapContext);
     }
     
     @Test
-    public void shouldHandleNullRawData() throws IOException {
+    public void shouldHandleNullRawData() throws IOException, InterruptedException {
         // some RecordReaders may null out raw data entirely because they pass data to their
         // handlers in other ways. Verify that the EventMapper can handle this case.
         record.setRawData(null);
         
-        driver.setInput(new LongWritable(1), record);
-        driver.run();
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
         
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
@@ -76,9 +108,10 @@ public class EventMapperTest {
     }
     
     @Test
-    public void shouldNotWriteMetricsByDefault() throws IOException {
-        driver.setInput(new LongWritable(1), record);
-        driver.run();
+    public void shouldNotWriteMetricsByDefault() throws IOException, InterruptedException {
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
         
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
@@ -91,7 +124,7 @@ public class EventMapperTest {
     }
     
     @Test
-    public void shouldWriteMetricsWhenConfigured() throws IOException {
+    public void shouldWriteMetricsWhenConfigured() throws IOException, InterruptedException {
         String metricsTable = "ingestMetrics";
         
         // configure metrics
@@ -103,8 +136,9 @@ public class EventMapperTest {
         conf.set(MetricsConfiguration.FIELDS_CONFIG, "fileExtension");
         conf.set(MetricsConfiguration.RECEIVERS_CONFIG, TestEventCountMetricsReceiver.class.getName());
         
-        driver.setInput(new LongWritable(1), record);
-        driver.run();
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
         
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
@@ -126,10 +160,11 @@ public class EventMapperTest {
     }
     
     @Test
-    public void shouldNotWriteRawFile() throws IOException {
+    public void shouldNotWriteRawFile() throws IOException, InterruptedException {
         record.setRawFileName("");
-        driver.setInput(new LongWritable(1), record);
-        driver.run();
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), record, mapContext);
+        eventMapper.cleanup(mapContext);
         
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         

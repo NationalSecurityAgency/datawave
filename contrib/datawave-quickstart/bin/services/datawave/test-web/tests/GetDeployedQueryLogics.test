@@ -3,5 +3,5 @@ configureTest \
     ListQueryLogicGET \
     "Gets DataWave's deployed query logics (configured by QueryLogicFactory.xml)" \
     "-X GET ${URI_ROOT}/Query/listQueryLogic" \
-    application/xml \
+    "application/xml;charset=UTF-8" \
     200

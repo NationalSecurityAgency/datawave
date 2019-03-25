@@ -16,7 +16,7 @@
         <version.hadoop>2.6.0</version.hadoop>
         <version.jts>1.13</version.jts>
         <version.protostuff>1.5.5</version.protostuff>
-        <version.slf4j>1.7.25</version.slf4j>
+        <version.slf4j>1.7.26</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>

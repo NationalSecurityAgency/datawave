@@ -19,7 +19,7 @@ configureTest \
       LookupWikipediaByPageId \
       "Performs lookup based on the PAGE_ID field in our wiki data" \
       "-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}" \
-      application/xml \
+      "application/xml;charset=UTF-8" \
       200
 
 runTest
@@ -34,7 +34,7 @@ configureTest \
      LookupWikipediaByPageTitle \
      "Performs lookup based on the PAGE_TITLE field in our wiki data" \
      "-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}" \
-     application/xml \
+     "application/xml;charset=UTF-8" \
      200
 
 runTest
@@ -64,7 +64,7 @@ configureTest \
      LookupUnregisteredUidType \
      "Performs lookup on nonexistent uidType and nonexistent uid" \
      "-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}" \
-     application/xml \
+     "application/xml;charset=UTF-8" \
      500
 
 # This last test is executed by run.sh, as usual
