@@ -591,23 +591,23 @@ public class QueryIteratorIT extends EasyMockSupport {
         index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))", false, addEvent(11, "123.345.457"),
                         Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
-
+    
     @Test
     public void tf_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
         tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))",
-                getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
-
+    
     @Test
     public void tf_exceededValue_trailingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
         tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))",
-                getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
-
+    
     @Test
     public void tf_exceededValue_leadingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull

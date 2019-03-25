@@ -113,9 +113,10 @@ public class TLDQueryIterator extends QueryIterator {
             public boolean apply(@Nullable Map.Entry<Key,String> var1) {
                 return true;
             }
-
+            
             /**
              * Keep any FI that is index only and part of the TLD or is not part of the TLD
+             * 
              * @param k
              * @return
              */

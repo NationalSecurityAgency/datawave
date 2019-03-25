@@ -201,9 +201,10 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
                 // accept all
                 return true;
             }
-
+            
             /**
              * Only keep the tf key if it isn't the root pointer or if it is index only
+             * 
              * @param k
              * @return
              */
@@ -251,9 +252,10 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         filter.addFilter(rootFilter);
         return new TLDTermFrequencyAggregator(fieldsToAggregate, filter, filter != null ? filter.getMaxNextCount() : -1);
     }
-
+    
     /**
      * Range should be build to encompass the entire TLD
+     * 
      * @param range
      *            non-null literal range to generate an FI range from
      * @return

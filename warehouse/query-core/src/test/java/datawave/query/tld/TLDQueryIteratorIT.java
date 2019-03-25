@@ -85,8 +85,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tf_test(seekRange, "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))",
                         getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
     }
-
-
+    
     @Test
     public void tf_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
@@ -96,10 +95,11 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("a b c");
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
-
-        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'r.*'))", expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        
+        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'r.*'))", expectedDocument,
+                        configureTLDTestData(11), Collections.EMPTY_LIST);
     }
-
+    
     @Test
     public void tf_exceededValue_trailingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
@@ -109,11 +109,11 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("a b c");
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
-
-        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'r.*'))", expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        
+        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'r.*'))", expectedDocument,
+                        configureTLDTestData(11), Collections.EMPTY_LIST);
     }
-
-
+    
     @Override
     protected Range getDocumentRange(String row, String dataType, String uid) {
         // not a document range
