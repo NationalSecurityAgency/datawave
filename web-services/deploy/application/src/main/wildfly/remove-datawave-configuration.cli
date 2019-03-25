@@ -122,6 +122,11 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /core-service=management/security-realm=SSLRealm/:remove
 
 #
+# Remove the security infinispan cache
+#
+/subsystem=infinispan/cache-container=security:remove
+
+#
 # Remove our system properties
 #
 /system-property=cluster.name:remove

@@ -102,6 +102,14 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=jexl.function.namespace.registry:add(value="datawave.query.jexl.functions.JexlFunctionNamespaceRegistry.class")
 
 #
+# Add cache container for the security realm
+#
+/subsystem=infinispan/cache-container=security:add
+/subsystem=infinispan/cache-container=security/local-cache=security:add
+/subsystem=infinispan/cache-container=security:write-attribute(name=default-cache,value=security)
+/subsystem=infinispan/cache-container=security/local-cache=security/component=expiration:add(lifespan=300000)
+
+#
 # Add security realm and domain
 #
 /core-service=management/security-realm=SSLRealm/:add
@@ -109,7 +117,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=certificates/ca.jks,keystore-relative-to=jboss.server.config.dir,keystore-provider=JKS,keystore-password="secret")
 /core-service=management/security-realm=SSLRealm/authentication=jaas/:add(name=datawave)
 
-/subsystem=security/security-domain=datawave:add(cache-type=default)
+/subsystem=security/security-domain=datawave:add(cache-type=infinispan)
 /subsystem=security/security-domain=datawave/authentication=classic:add
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
@@ -119,7 +127,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /subsystem=security/security-domain=JmsXARealm/authentication=classic:add
 /subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
 
-/subsystem=security/security-domain=datawave-client:add(cache-type=default)
+/subsystem=security/security-domain=datawave-client:add(cache-type=infinispan)
 /subsystem=security/security-domain=datawave-client/authentication=classic:add
 /subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
