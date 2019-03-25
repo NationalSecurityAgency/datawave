@@ -45,6 +45,7 @@ import static datawave.query.iterator.QueryOptions.QUERY_ID;
 import static datawave.query.iterator.QueryOptions.SERIAL_EVALUATION_PIPELINE;
 import static datawave.query.iterator.QueryOptions.START_TIME;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
+import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
 
 /**
  * Integration tests for the QueryIterator
@@ -590,6 +591,52 @@ public class QueryIteratorIT extends EasyMockSupport {
         index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))", false, addEvent(11, "123.345.457"),
                         Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
+
+    @Test
+    public void tf_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))",
+                getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+
+    @Test
+    public void tf_exceededValue_trailingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", null);
+        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))",
+                getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+
+    @Test
+    public void tf_exceededValue_leadingWildcard_documentSpecific_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b'))",
+                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void tf_exceededValue_leadingWildcard_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", null);
+        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b'))",
+                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void tf_exceededValue_negated_leadingWildcard_documentSpecific_test() throws IOException {
+        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        tf_test(seekRange, "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))",
+                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void tf_exceededValue_negated_leadingWildcard_shardRange_test() throws IOException {
+        Range seekRange = getDocumentRange("row", "dataType1", null);
+        tf_test(seekRange, "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))",
+                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
     
     /**
      * Simulate a full table scan against an event data (only) query
@@ -597,7 +644,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * @param seekRange
      * @throws IOException
      */
-    private void event_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
+    protected void event_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
                     List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
         // configure source
         List<Map.Entry<Key,Value>> listSource = configureTestData(11);
@@ -639,7 +686,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * @param seekRange
      * @throws IOException
      */
-    private void index_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
+    protected void index_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
                     List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
         // configure source
         List<Map.Entry<Key,Value>> listSource = configureTestData(11);
@@ -679,7 +726,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * @param seekRange
      * @throws IOException
      */
-    private void indexOnly_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
+    protected void indexOnly_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
                     List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
         // configure source
         List<Map.Entry<Key,Value>> listSource = configureTestData(11);
@@ -714,6 +761,48 @@ public class QueryIteratorIT extends EasyMockSupport {
             // define the base hit
             Map.Entry<Key,Map<String,List<String>>> hit = getBaseExpectedEvent("123.345.456");
             hit.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
+            hits.add(hit);
+        }
+        
+        hits.addAll(otherHits);
+        eval(hits);
+    }
+    
+    /**
+     * Simulate a TF query
+     *
+     * @throws IOException
+     */
+    protected void tf_test(Range seekRange, String query, Map.Entry<Key,Map<String,List<String>>> hit, List<Map.Entry<Key,Value>> otherData,
+                    List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
+        // configure source
+        List<Map.Entry<Key,Value>> listSource = configureTestData(11);
+        listSource.addAll(otherData);
+        
+        baseIterator = new SortedListKeyValueIterator(listSource);
+        
+        // configure iterator
+        iterator.setEvaluationFilter(filter);
+        iterator.setTypeMetadata(typeMetadata);
+        
+        // configure specific query options
+        options.put(QUERY, query);
+        // we need term frequencies
+        options.put(TERM_FREQUENCIES_REQUIRED, "true");
+        // set to be the index only fields required for the query?
+        options.put(INDEX_ONLY_FIELDS, "INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3");
+        // set t obe the term frequency fields required for the query?
+        options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD1,TF_FIELD2");
+        
+        replayAll();
+        
+        iterator.init(baseIterator, options, environment);
+        iterator.seek(seekRange, Collections.EMPTY_LIST, true);
+        
+        verifyAll();
+        
+        List<Map.Entry<Key,Map<String,List<String>>>> hits = new ArrayList<>();
+        if (hit != null) {
             hits.add(hit);
         }
         

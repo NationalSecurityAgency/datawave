@@ -4,6 +4,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
@@ -13,11 +14,8 @@ import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +23,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -333,95 +330,4 @@ public class TermFrequencyIndexIteratorTest {
         return new Key(row, "tf", dataType + Constants.NULL + uid + Constants.NULL + fieldValue + Constants.NULL + fieldName);
     }
     
-    private static class SortedListKeyValueIterator implements SortedKeyValueIterator {
-        private List<Map.Entry<Key,Value>> sourceList;
-        private int currentIndex;
-        private Collection columnFamilies;
-        private Range range;
-        
-        private boolean initiated = false;
-        
-        public SortedListKeyValueIterator(List<Map.Entry<Key,Value>> sourceList) {
-            this.sourceList = sourceList;
-            currentIndex = 0;
-        }
-        
-        public SortedListKeyValueIterator(SortedListKeyValueIterator source) {
-            this.sourceList = source.sourceList;
-            this.currentIndex = source.currentIndex;
-        }
-        
-        @Override
-        public void init(SortedKeyValueIterator sortedKeyValueIterator, Map map, IteratorEnvironment iteratorEnvironment) throws IOException {
-            throw new IllegalStateException("unsupported");
-        }
-        
-        @Override
-        public boolean hasTop() {
-            if (initiated) {
-                if (sourceList.size() == currentIndex) {
-                    return false;
-                }
-                return sourceList.size() > currentIndex && range.isEndKeyInclusive() ? sourceList.get(currentIndex).getKey().compareTo(range.getEndKey()) <= 0
-                                : sourceList.get(currentIndex).getKey().compareTo(range.getEndKey()) < 0;
-            } else {
-                throw new IllegalStateException("can't do this");
-            }
-        }
-        
-        @Override
-        public void next() throws IOException {
-            if (initiated) {
-                currentIndex++;
-                while (hasTop() && !columnFamilies.contains(sourceList.get(currentIndex).getKey().getColumnFamilyData())) {
-                    currentIndex++;
-                }
-            } else {
-                throw new IllegalStateException("can't do this");
-            }
-        }
-        
-        @Override
-        public WritableComparable<?> getTopKey() {
-            if (initiated && hasTop()) {
-                return sourceList.get(currentIndex).getKey();
-            } else {
-                throw new IllegalStateException("can't do this");
-            }
-        }
-        
-        @Override
-        public Writable getTopValue() {
-            if (initiated && hasTop()) {
-                return sourceList.get(currentIndex).getValue();
-            } else {
-                throw new IllegalStateException("can't do this");
-            }
-        }
-        
-        @Override
-        public SortedKeyValueIterator deepCopy(IteratorEnvironment iteratorEnvironment) {
-            return new SortedListKeyValueIterator(this);
-        }
-        
-        @Override
-        public void seek(Range range, Collection columnFamilies, boolean inclusive) throws IOException {
-            this.columnFamilies = columnFamilies;
-            this.range = range;
-            initiated = true;
-            
-            if (!inclusive) {
-                throw new IllegalStateException("unsupported");
-            }
-            
-            int newIndex = 0;
-            while (sourceList.size() > newIndex && range.isStartKeyInclusive() ? sourceList.get(newIndex).getKey().compareTo(range.getStartKey()) < 0
-                            : sourceList.get(newIndex).getKey().compareTo(range.getStartKey()) <= 0
-                                            && !columnFamilies.contains(sourceList.get(newIndex).getKey().getColumnFamilyData())) {
-                newIndex++;
-            }
-            
-            currentIndex = newIndex;
-        }
-    }
 }

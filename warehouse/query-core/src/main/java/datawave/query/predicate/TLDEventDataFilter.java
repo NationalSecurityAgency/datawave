@@ -237,7 +237,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         return uid;
     }
     
-    protected boolean isRootPointer(Key k) {
+    public static boolean isRootPointer(Key k) {
         ByteSequence cf = k.getColumnFamilyData();
         
         if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
@@ -261,23 +261,26 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             
         } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
             ByteSequence seq = k.getColumnQualifierData();
-            int i = 3;
-            for (; i < seq.length(); i++) {
-                if (seq.byteAt(i) == 0x00) {
-                    break;
-                }
-            }
             
-            for (i += 20; i < seq.length(); i++) {
-                if (seq.byteAt(i) == '.') {
-                    return false;
-                } else if (seq.byteAt(i) == 0x00) {
+            // work front to back, just in case the TF value includes a null byte
+            boolean foundStart = false;
+            int dotCount = 0;
+            for (int i = 0; i < seq.length(); i++) {
+                if (!foundStart && seq.byteAt(i) == 0x00) {
+                    foundStart = true;
+                } else if (foundStart && seq.byteAt(i) == 0x00) {
+                    // end of uid, got here, is root
                     return true;
+                } else if (foundStart && seq.byteAt(i) == '.') {
+                    dotCount++;
+                    if (dotCount > 2) {
+                        return false;
+                    }
                 }
             }
             
-            return true;
-            
+            // can't parse
+            return false;
         } else {
             int i = 0;
             for (i = 0; i < cf.length(); i++) {

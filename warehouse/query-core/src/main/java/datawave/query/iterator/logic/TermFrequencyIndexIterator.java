@@ -114,6 +114,8 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         
         Key startKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + Constants.NULL + startKeyParser.getUid()
                         + Constants.NULL + startKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + startKeyParser.getFieldName()));
+        
+        // must use the start key row so that the scan will be bounded by the specified cf/cq. All these scans are assumed to be across a single row
         Key endKey = new Key(stopKeyParser.getRow(), columnFamily, new Text(stopKeyParser.getDataType() + Constants.NULL + stopKeyParser.getUid()
                         + Constants.NULL + stopKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + stopKeyParser.getFieldName()));
         scanRange = new Range(startKey, startInclusive, endKey, endInclusive);
