@@ -26,6 +26,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-edge-model-configuration-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -392,7 +397,6 @@
                 </plugins>
             </build>
         </profile>
-
         <!--
             When the geoserver profile is active, we will include a geoserver deployment in the ear which includes
             support for the GeoWave datastore.
