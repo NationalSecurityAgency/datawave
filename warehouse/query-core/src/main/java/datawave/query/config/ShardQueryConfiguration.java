@@ -76,6 +76,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String accumuloPassword = "";
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     private boolean collapseUids = false;
+    private int collapseUidsThreshold = -1;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -318,6 +319,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAccumuloPassword(other.getAccumuloPassword());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
+        this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
@@ -1671,6 +1673,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setCollapseUids(boolean collapseUids) {
         this.collapseUids = collapseUids;
+    }
+
+    public int getCollapseUidsThreshold() {
+        return collapseUidsThreshold;
+    }
+
+    public void setCollapseUidsThreshold(int collapseUidsThreshold) {
+        this.collapseUidsThreshold = collapseUidsThreshold;
     }
     
     public boolean getSequentialScheduler() {

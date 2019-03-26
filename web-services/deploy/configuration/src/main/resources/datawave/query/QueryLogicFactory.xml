@@ -148,6 +148,7 @@
         <property name="baseIteratorPriority" value="${beq.baseIteratorPriority}" />
         <property name="maxIndexScanTimeMillis" value="${query.max.index.scan.ms}" />
         <property name="collapseUids" value="${query.collapse.uids}" />
+        <property name="collapseUidsThreshold" value="${query.collapse.uids.threshold}"/>
         <property name="useEnrichers" value="true" />
         <property name="contentFieldNames">
             <list value-type="java.lang.String">
