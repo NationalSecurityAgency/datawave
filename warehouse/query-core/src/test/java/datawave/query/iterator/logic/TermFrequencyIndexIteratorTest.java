@@ -9,6 +9,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
 import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.TLDEventDataFilter;
 import datawave.query.tld.TLDTermFrequencyAggregator;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
@@ -23,6 +24,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -277,7 +279,9 @@ public class TermFrequencyIndexIteratorTest {
         Assert.assertTrue(d.getDictionary().get("FOO") != null);
         Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
         Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
-        Assert.assertTrue(d.getDictionary().get("FOO").getData().equals("buf"));
+        i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
+        Assert.assertTrue(i.next().getValue().equals("buf"));
+        Assert.assertTrue(i.next().getValue().equals("buz"));
         
         iterator.next();
         
@@ -296,6 +300,34 @@ public class TermFrequencyIndexIteratorTest {
     
     @Test
     public void testScanFullRangeExclusiveTLD() throws IOException, ParseException {
+        Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
+        filter = new TLDEventDataFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata, null, null, -1, -1,
+                        Collections.emptyMap(), null, fieldsToKeep);
+        aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        
+        // jump to the first doc
+        iterator.seek(null, null, true);
+        
+        Assert.assertTrue(iterator.hasTop());
+        Document d = iterator.document();
+        Assert.assertTrue(d != null);
+        Assert.assertTrue(d.getDictionary().size() == 2);
+        Assert.assertTrue(d.getDictionary().get("FOO") != null);
+        Assert.assertTrue(d.getDictionary().get("RECORD_ID") != null);
+        Assert.assertTrue(d.getDictionary().get("FOO").getData() != null);
+        Iterator<PreNormalizedAttribute> i = ((Set) d.getDictionary().get("FOO").getData()).iterator();
+        Assert.assertTrue(i.next().getValue().equals("bar"));
+        Assert.assertTrue(i.next().getValue().equals("baz"));
+        Assert.assertTrue(i.next().getValue().equals("buf"));
+        Assert.assertTrue(i.next().getValue().equals("arm"));
+        
+        iterator.next();
+        Assert.assertFalse(iterator.hasTop());
+    }
+    
+    @Test
+    public void testScanFullRangeExclusiveEventDataQueryExpressionFilter() throws IOException, ParseException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
         filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
                         fieldsToKeep);
@@ -316,6 +348,8 @@ public class TermFrequencyIndexIteratorTest {
         Assert.assertTrue(i.next().getValue().equals("bar"));
         Assert.assertTrue(i.next().getValue().equals("baz"));
         Assert.assertTrue(i.next().getValue().equals("buf"));
+        Assert.assertTrue(i.next().getValue().equals("buz"));
+        Assert.assertTrue(i.next().getValue().equals("alf"));
         Assert.assertTrue(i.next().getValue().equals("arm"));
         
         iterator.next();

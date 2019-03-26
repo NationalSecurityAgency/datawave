@@ -197,7 +197,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             // initialize the new parseInfo
             ParseInfo parseInfo = new ParseInfo(current);
             boolean root;
-            if (lastParseInfo != null) {
+            // can only short-cut on CF length when dealing with an event key
+            if (lastParseInfo != null && isEventKey(current)) {
                 int lastLength = lastParseInfo.key.getColumnFamilyData().length();
                 int currentLength = current.getColumnFamilyData().length();
                 if (lastLength == currentLength) {
@@ -235,6 +236,12 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             uid = cf.substring(cf.lastIndexOf('\0') + 1);
         }
         return uid;
+    }
+    
+    private boolean isEventKey(Key k) {
+        ByteSequence cf = k.getColumnFamilyData();
+        return !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0)
+                        && !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 00);
     }
     
     public static boolean isRootPointer(Key k) {

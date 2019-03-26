@@ -62,10 +62,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      */
     @Override
     public boolean keep(Key k) {
-        DatawaveKey key = new DatawaveKey(k);
-        
-        // keep as long as it is part of the event or it is part of the query
-        return !nonEventFields.contains(key.getFieldName()) || projection.apply(key.getFieldName());
+        return true;
     }
     
     @Override

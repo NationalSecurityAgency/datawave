@@ -70,10 +70,7 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     
     @Override
     public boolean keep(Key k) {
-        DatawaveKey key = new DatawaveKey(k);
-        
-        // keep as long as it is part of the event or it is part of the query
-        return !nonEventFields.contains(key.getFieldName()) || apply(new AbstractMap.SimpleEntry<>(k, null));
+        return true;
     }
     
     @Override

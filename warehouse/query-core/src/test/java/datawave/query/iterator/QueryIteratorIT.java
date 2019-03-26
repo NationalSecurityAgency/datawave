@@ -36,6 +36,7 @@ import static datawave.query.iterator.QueryOptions.CONTAINS_INDEX_ONLY_TERMS;
 import static datawave.query.iterator.QueryOptions.END_TIME;
 import static datawave.query.iterator.QueryOptions.FULL_TABLE_SCAN_ONLY;
 import static datawave.query.iterator.QueryOptions.HDFS_SITE_CONFIG_URLS;
+import static datawave.query.iterator.QueryOptions.HIT_LIST;
 import static datawave.query.iterator.QueryOptions.INDEXED_FIELDS;
 import static datawave.query.iterator.QueryOptions.INDEX_ONLY_FIELDS;
 import static datawave.query.iterator.QueryOptions.IVARATOR_CACHE_BASE_URI_ALTERNATIVES;
@@ -189,6 +190,22 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
     
     @Test
+    public void indexOnly_documentSpecific_hitTerm_test() throws IOException {
+        options.put("HIT_TERM", "true");
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'apple'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void indexOnly_shardRange_hitTerm_test() throws IOException {
+        options.put("HIT_TERM", "true");
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", null);
+        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'apple'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
     public void indexOnly_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
@@ -333,6 +350,22 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
     
     @Test
+    public void event_documentSpecific_hitTerm_test() throws IOException {
+        options.put("HIT_TERM", "true");
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void event_shardRange_hitTerm_test() throws IOException {
+        options.put("HIT_TERM", "true");
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", null);
+        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
     public void event_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
@@ -453,6 +486,22 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @Test
     public void index_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", null);
+        index_test(seekRange, "EVENT_FIELD4 == 'd'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void index_documentSpecific_hitTerm_test() throws IOException {
+        options.put("HIT_TERM", "true");
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        index_test(seekRange, "EVENT_FIELD4 == 'd'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void index_shardRange_hitTerm_test() throws IOException {
+        options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
         index_test(seekRange, "EVENT_FIELD4 == 'd'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
@@ -826,6 +875,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         return new AbstractMap.SimpleEntry<>(hitKey, expectedDocument);
     }
     
+    protected boolean isExpectHitTerm() {
+        return options.get(HIT_LIST) != null && Boolean.parseBoolean(options.get(HIT_LIST));
+    }
+    
     protected void eval(List<Map.Entry<Key,Map<String,List<String>>>> toEval) throws IOException {
         Iterator<Map.Entry<Key,Map<String,List<String>>>> evalIterator = toEval.iterator();
         while (evalIterator.hasNext()) {
@@ -863,16 +916,23 @@ public class QueryIteratorIT extends EasyMockSupport {
             Document d = deserializedValue.getValue();
             Assert.assertTrue(d != null);
             
-            // +1 is for RECORD_ID field
-            Assert.assertTrue("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + d.getDictionary() + "\n" + "expected: " + docKeys, docKeys
-                            .keySet().size() + 1 == d.getDictionary().size());
+            // -1 is for RECORD_ID field and -1 for HIT_LIST if configured
+            int baseSize = d.getDictionary().size() - 1;
+            int docSize = isExpectHitTerm() ? baseSize - 1 : baseSize;
+            
+            Assert.assertTrue("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys,
+                            docKeys.keySet().size() == docSize);
+            
+            // validate the hitlist
+            Assert.assertTrue("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get("HIT_TERM") != null), (d
+                            .getDictionary().get("HIT_TERM") != null) == isExpectHitTerm());
             
             // verify hits for each specified field
             for (String field : docKeys.keySet()) {
                 List<String> expected = docKeys.get(field);
                 if (expected.size() == 1) {
                     // verify the only doc
-                    Assert.assertTrue("value: " + d.getDictionary().get(field).getData() + " did not match expected value: " + expected.get(0), d
+                    Assert.assertTrue(field + ": value: " + d.getDictionary().get(field).getData() + " did not match expected value: " + expected.get(0), d
                                     .getDictionary().get(field).getData().toString().equals(expected.get(0)));
                 } else {
                     // the data should be a set, verify it matches expected

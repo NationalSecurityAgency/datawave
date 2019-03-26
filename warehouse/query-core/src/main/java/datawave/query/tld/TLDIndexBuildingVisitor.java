@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
@@ -203,7 +204,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             }
             
             /**
-             * Only keep the tf key if it isn't the root pointer or if it is index only
+             * Only keep the tf key if it isn't the root pointer or if it is index only and contributes to document evaluation
              * 
              * @param k
              * @return
@@ -211,7 +212,8 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             @Override
             public boolean keep(Key k) {
                 DatawaveKey key = new DatawaveKey(k);
-                return !TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName());
+                return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName()))
+                                && attrFilter.apply(new AbstractMap.SimpleEntry(k, null));
             }
             
             @Override
