@@ -17,6 +17,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
@@ -73,7 +74,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 if (!ignore)
                     for (String uid : uidInfo.third()) {
                         if (log.isTraceEnabled())
-                            log.trace("Adding uid " + uid.split("\u0000")[1]);
+                            log.trace("Adding uid " + StringUtils.split(uid, '\u0000')[1]);
                         uids.add(uid);
                     }
                 src.next();
