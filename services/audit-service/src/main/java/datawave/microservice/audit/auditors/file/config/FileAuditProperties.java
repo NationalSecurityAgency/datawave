@@ -5,12 +5,12 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
 import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotEmpty;
 
 @Validated
 public class FileAuditProperties {
     
-    @NotNull
+    @NotEmpty
     private String pathUri;
     private String subpath;
     private String subpathEnvVar;

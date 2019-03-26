@@ -194,8 +194,7 @@ public class AuditController {
         if (!success && fileAuditor != null) {
             success = true;
             try {
-                if (log.isDebugEnabled())
-                    log.debug("[{}] Attempting to log audit to the filesystem", auditParameters.getAuditId());
+                log.debug("[{}] Attempting to log audit to the filesystem", auditParameters.getAuditId());
                 
                 fileAuditor.audit(auditParameters);
             } catch (Exception e) {

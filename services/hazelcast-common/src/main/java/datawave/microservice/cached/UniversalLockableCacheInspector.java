@@ -1,6 +1,4 @@
-package datawave.microservice.audit.replay.util;
-
-import datawave.microservice.cached.CacheInspector;
+package datawave.microservice.cached;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * This cache inspector offers universal locking functionality for any given CacheInspector.
+ * This cache inspector offers universal locking functionality for any given CacheInspector. This should not be used for distributed caches.
  */
 public class UniversalLockableCacheInspector implements CacheInspector, LockableCacheInspector {
     private Map<String,ReentrantLock> lockMap = new HashMap<>();

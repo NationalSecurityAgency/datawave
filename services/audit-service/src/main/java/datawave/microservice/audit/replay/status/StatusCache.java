@@ -1,6 +1,6 @@
 package datawave.microservice.audit.replay.status;
 
-import datawave.microservice.audit.replay.util.LockableCacheInspector;
+import datawave.microservice.cached.LockableCacheInspector;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;

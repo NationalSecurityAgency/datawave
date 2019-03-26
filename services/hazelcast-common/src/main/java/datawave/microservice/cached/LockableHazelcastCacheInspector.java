@@ -1,7 +1,6 @@
-package datawave.microservice.audit.replay.util;
+package datawave.microservice.cached;
 
 import com.hazelcast.core.IMap;
-import datawave.microservice.cached.HazelcastCacheInspector;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 

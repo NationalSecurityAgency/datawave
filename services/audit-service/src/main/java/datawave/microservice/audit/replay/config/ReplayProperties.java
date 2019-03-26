@@ -13,20 +13,27 @@ import java.util.concurrent.TimeUnit;
 @ConfigurationProperties(prefix = "audit.replay")
 public class ReplayProperties {
     private boolean enabled;
+    
+    // Whether events should be published to the event bus for other audit service instances to act on
     private boolean publishEvents = true;
     
+    // The amount of time before an inactive audit replay is considered to be idle
     @PositiveOrZero
     private long idleTimeoutMillis = TimeUnit.SECONDS.toMillis(10);
     
+    // How long to wait before forcefully stopping an audit replay
     @PositiveOrZero
     private long stopGracePeriodMillis = 500L;
     
+    // How often the status should be updated during an audit replay
     @PositiveOrZero
     private long statusUpdateIntervalMillis = TimeUnit.SECONDS.toMillis(1);
     
+    // The amount of time to wait for the lock to be acquired
     @PositiveOrZero
     private long lockWaitTimeMillis = TimeUnit.SECONDS.toMillis(5);
     
+    // The amount of time that the lock will be held before being automatically released
     @PositiveOrZero
     private long lockLeaseTimeMillis = TimeUnit.SECONDS.toMillis(5);
     
