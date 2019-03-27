@@ -9,7 +9,7 @@ DW_DATAWAVE_INGEST_HOME="${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}"
 # ingest reducers. Set to 1 for standalone instance, but typically set to the first prime number that is less than the
 # number of available Accumulo tablet servers...
 
-DW_DATAWAVE_INGEST_NUM_SHARDS=1
+DW_DATAWAVE_INGEST_NUM_SHARDS=${DW_DATAWAVE_INGEST_NUM_SHARDS:-1}
 
 # Ingest job logs, etc
 
@@ -37,38 +37,44 @@ export KEYSTORE_PASSWORD="${DW_ACCUMULO_PASSWORD}"
 
 DW_DATAWAVE_INGEST_FLAGFILE_DIR="${DW_DATAWAVE_DATA_DIR}/flags"
 
-# Configuration for the FlagMaker process(es)
+# Comma-delimited list of configs for the FlagMaker process(es)
 
-DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS="${DW_DATAWAVE_INGEST_CONFIG_HOME}/flag-maker-live.xml"
+DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS=${DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS:-"${DW_DATAWAVE_INGEST_CONFIG_HOME}/flag-maker-live.xml"}
 
 # Dir for ingest-related 'pid' files
 
 DW_DATAWAVE_INGEST_LOCKFILE_DIR="${DW_DATAWAVE_DATA_DIR}/ingest-lock-files"
 
-# Base dir for any ingest-related HDFS IO
+# Base HDFS dir for ingest
 
-DW_DATAWAVE_INGEST_HDFS_BASEDIR="/Ingest"
+DW_DATAWAVE_INGEST_HDFS_BASEDIR=${DW_DATAWAVE_INGEST_HDFS_BASEDIR:-/datawave/ingest}
 
-# Example raw data files
+# Set to any non-empty value other than 'false' to skip ingest of the raw data examples below
 
-DW_DATAWAVE_INGEST_TEST_FILE_WIKI="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"
-DW_DATAWAVE_INGEST_TEST_FILE_CSV="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"
-DW_DATAWAVE_INGEST_TEST_FILE_JSON="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-json/src/test/resources/input/tvmaze-api.json"
+DW_DATAWAVE_INGEST_TEST_SKIP=${DW_DATAWAVE_INGEST_TEST_SKIP:-false}
+
+# Example raw data files to be ingested (unless DW_DATAWAVE_INGEST_TEST_SKIP != 'false')
+
+DW_DATAWAVE_INGEST_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"}
+DW_DATAWAVE_INGEST_TEST_FILE_CSV=${DW_DATAWAVE_INGEST_TEST_FILE_CSV:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"}
+DW_DATAWAVE_INGEST_TEST_FILE_JSON=${DW_DATAWAVE_INGEST_TEST_FILE_JSON:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-json/src/test/resources/input/tvmaze-api.json"}
+
 DW_DATAWAVE_INGEST_FLAGMETRICS_DIR="${DW_DATAWAVE_DATA_DIR}/flagMetrics"
 
-# Spring bean config defining edges to be created during ingest, for building large, Accumulo-based graph via DataWave
+# Spring config defining edges to be created during ingest, for building distributed graph(s) in DW's edge table
+# (For now, this file path must be relative to the ingest home directory)
 
-DW_DATAWAVE_INGEST_EDGE_DEFINITIONS="config/edge-definitions.xml"
+DW_DATAWAVE_INGEST_EDGE_DEFINITIONS=${DW_DATAWAVE_INGEST_EDGE_DEFINITIONS:-"config/edge-definitions.xml"}
 
-# Configured data types to be ingested via "live" ingest, ie via low-latency batch mutations into Accumulo tables
+# Comma-delimited data type identifiers to be ingested via "live" ingest, ie via low-latency batch mutations into Accumulo tables
 
-DW_DATAWAVE_INGEST_LIVE_DATA_TYPES="wikipedia,mycsv,myjson"
+DW_DATAWAVE_INGEST_LIVE_DATA_TYPES=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES:-"wikipedia,mycsv,myjson"}
 
-# Configured data types to be ingested via "bulk" ingest, ie via bulk import of RFiles into Accumulo tables
+# Comma-delimited data type identifiers to be ingested via "bulk" ingest, ie via bulk import of RFiles into Accumulo tables
 
-DW_DATAWAVE_INGEST_BULK_DATA_TYPES=""
+DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-""}
 
-DW_DATAWAVE_MAPRED_INGEST_OPTS="-useInlineCombiner -ingestMetricsDisabled"
+DW_DATAWAVE_MAPRED_INGEST_OPTS=${DW_DATAWAVE_MAPRED_INGEST_OPTS:-"-useInlineCombiner -ingestMetricsDisabled"}
 
 getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
 DW_DATAWAVE_INGEST_DIST="${tarball}"

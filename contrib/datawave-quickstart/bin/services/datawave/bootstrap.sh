@@ -57,13 +57,26 @@ DW_DATAWAVE_TRUSTSTORE_TYPE="${DW_DATAWAVE_TRUSTSTORE_TYPE:-JKS}"
 
 # Accumulo shell script for initializing whatever we may need in Accumulo for DataWave
 
-DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT:-
-createnamespace datawave
-config -s table.classpath.context=datawave
-createtable datawave.queryMetrics_m
-setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}
-quit
-}"
+function createAccumuloShellInitScript() {
+   # Allow user to inject their own script into the env...
+   [ -n "${DW_ACCUMULO_SHELL_INIT_SCRIPT}" ] && return 0
+
+   # Create script and add 'datawave' VFS context, if enabled...
+
+   DW_ACCUMULO_SHELL_INIT_SCRIPT="
+   createnamespace datawave
+   createtable datawave.queryMetrics_m
+   setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}"
+
+   if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
+      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   config -s table.classpath.context=datawave"
+   fi
+
+   DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   quit
+   "
+}
 
 function createBuildPropertiesDirectory() {
    if [ ! -d ${DW_DATAWAVE_BUILD_PROPERTIES_DIR} ] ; then
@@ -160,7 +173,7 @@ function setBuildPropertyOverrides() {
    echo "DATAWAVE_INGEST_HOME=${DW_DATAWAVE_INGEST_HOME}" >> ${BUILD_PROPERTIES_FILE}
    echo "PASSWORD_INGEST_ENV=${DW_DATAWAVE_INGEST_PASSWD_FILE}" >> ${BUILD_PROPERTIES_FILE}
    echo "hdfs.site.config.urls=file://${HADOOP_CONF_DIR}/core-site.xml,file://${HADOOP_CONF_DIR}/hdfs-site.xml" >> ${BUILD_PROPERTIES_FILE}
-   echo "NUM_SHARDS=${DW_DATAWAVE_INGEST_NUM_SHARDS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "table.shard.numShardsPerDay=${DW_DATAWAVE_INGEST_NUM_SHARDS}" >> ${BUILD_PROPERTIES_FILE}
 
    generateTestDatawaveUserServiceConfig
 
