@@ -1156,6 +1156,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             } catch (CannotExpandUnfieldedTermFatalException e) {
                 if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException)
                     throw (DoNotPerformOptimizedQueryException) e.getCause();
+                QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
+                throw new DatawaveFatalQueryException(qe);
             } catch (ExecutionException e) {
                 log.error("Exception while expanding ranges", e);
             }
