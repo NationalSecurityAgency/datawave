@@ -21,6 +21,7 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.TreeHashNode;
 import datawave.query.model.QueryModel;
+import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
@@ -296,6 +297,20 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             }
         }
         
+        // determine whether we have the tools to expand this in the first place
+        try {
+            if (!isExpandable(node)) {
+                if (mustExpand(node)) {
+                    throw new DatawaveFatalQueryException("We must expand but yet cannot expand a regex: " + PrintingVisitor.formattedQueryString(node));
+                }
+                return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
+            }
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException(e);
+        } catch (JavaRegexAnalyzer.JavaRegexParseException e) {
+            throw new DatawaveFatalQueryException(e);
+        }
+        
         // Given the structure of the tree, we don't *have* to expand this regex node
         if (config.getMaxIndexScanTimeMillis() == Long.MAX_VALUE && (!config.isExpandAllTerms() && !shouldProcessRegexFromStructure(node, markedParents))) {
             // However, given the characteristics of the query terms, we may still want to
@@ -551,11 +566,10 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 }
                 
                 if (null != sawException) {
-                    log.error(sawException);
+                    log.error(sawException.getMessage(), sawException);
                     throw new CannotExpandUnfieldedTermFatalException(sawException);
                 }
             }
-            
         } catch (InterruptedException e) {
             throw new CannotExpandUnfieldedTermFatalException(e.getMessage());
         } finally {
@@ -735,6 +749,54 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         // Compute the cost to determine whether or not to expand this regex
         return shouldProcessRegexByCostWithChildren(subTrees, regexCost);
+    }
+    
+    /**
+     * Determine whether we can actually expand this regex based on whether it is indexed appropriately.
+     * 
+     * @param node
+     * @return
+     */
+    public boolean isExpandable(ASTERNode node) throws TableNotFoundException, JavaRegexAnalyzer.JavaRegexParseException {
+        // if full table scan enabled, then we can expand anything
+        if (config.getFullTableScanEnabled()) {
+            return true;
+        }
+        
+        String regex = JexlASTHelper.getLiteralValue(node).toString();
+        JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(regex);
+        
+        // if the regex is double ended, then we cannot expand it
+        if (analyzer.isNgram()) {
+            return false;
+        }
+        
+        String fieldName = JexlASTHelper.getIdentifier(node);
+        
+        if (analyzer.isLeadingLiteral() && helper.isIndexed(fieldName, config.getDatatypeFilter())) {
+            return true;
+        } else if (analyzer.isTrailingLiteral() && helper.isReverseIndexed(fieldName, config.getDatatypeFilter())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    /**
+     * Determine whether we can actually expand this regex based on whether it is indexed appropriately.
+     * 
+     * @param node
+     * @return
+     */
+    public boolean mustExpand(ASTERNode node) throws TableNotFoundException {
+        String fieldName = JexlASTHelper.getIdentifier(node);
+        
+        // if the identifier is a non-event field, then we must expand it
+        if (helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName)) {
+            return true;
+        }
+        
+        return false;
     }
     
     public void collapseAndSubtrees(ASTAndNode node, List<JexlNode> subTrees) {
