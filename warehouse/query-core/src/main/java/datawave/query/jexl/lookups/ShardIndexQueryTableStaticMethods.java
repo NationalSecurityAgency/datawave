@@ -9,6 +9,7 @@ import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
@@ -501,69 +502,80 @@ public class ShardIndexQueryTableStaticMethods {
         
         JavaRegexAnalyzer regex = new JavaRegexAnalyzer(normalizedQueryTerm);
         
-        if (regex.isNgram()) {
-            // If we have wildcards on both sides, then do a full table scan if allowed
-            
-            // if we require a full table scan but it is disabled, then bail
-            if (!fullTableScanEnabled) {
-                PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES, MessageFormat.format(
-                                "Term: {0}", normalizedQueryTerm));
-                log.error(qe);
-                throw new DoNotPerformOptimizedQueryException(qe);
-            }
-            
-            rangeDesc.range = new Range();
-            
-        } else if (shouldUseReverseIndex(regex, fieldName, metadataHelper, config)) {
-            // If we have a leading wildcard, reverse the term and use the global reverse index.
-            
-            StringBuilder buf = new StringBuilder(regex.getTrailingLiteral());
-            String reversedQueryTerm = buf.reverse().toString();
-            
-            if (log.isTraceEnabled()) {
-                StringBuilder sb = new StringBuilder(256);
-                
-                sb.append("For '").append(normalizedQueryTerm).append("'");
-                
-                if (null != fieldName) {
-                    sb.append(" in the field ").append(fieldName);
-                }
-                
-                sb.append(", using the reverse index with the literal: '").append(reversedQueryTerm).append("'");
-                
-                log.trace(sb.toString());
-            }
-            
-            Key startKey = new Key(reversedQueryTerm);
-            Key endKey = new Key(reversedQueryTerm + Constants.MAX_UNICODE_STRING);
-            
-            // set the upper and lower bounds
-            rangeDesc.range = new Range(startKey, false, endKey, false);
+        // If we have a leading wildcard, reverse the term and use the global reverse index.
+        if (shouldUseReverseIndex(regex, fieldName, metadataHelper, config)) {
             rangeDesc.isForReverseIndex = true;
             
-        } else {
-            String queryTerm = regex.getLeadingLiteral();
-            
-            if (log.isTraceEnabled()) {
-                StringBuilder sb = new StringBuilder(256);
+            if (!regex.isTrailingLiteral()) {
+                // if we require a full table scan but it is disabled, then bail
+                if (!fullTableScanEnabled) {
+                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES, MessageFormat.format(
+                                    "Term: {0}", normalizedQueryTerm));
+                    log.error(qe);
+                    throw new DoNotPerformOptimizedQueryException(qe);
+                }
+                rangeDesc.range = new Range();
+            } else {
+                StringBuilder buf = new StringBuilder(regex.getTrailingLiteral());
+                String reversedQueryTerm = buf.reverse().toString();
                 
-                sb.append("For '").append(normalizedQueryTerm).append("'");
-                
-                if (null != fieldName) {
-                    sb.append(" in the field ").append(fieldName);
+                if (log.isTraceEnabled()) {
+                    StringBuilder sb = new StringBuilder(256);
+                    
+                    sb.append("For '").append(normalizedQueryTerm).append("'");
+                    
+                    if (null != fieldName) {
+                        sb.append(" in the field ").append(fieldName);
+                    }
+                    
+                    sb.append(", using the reverse index with the literal: '").append(reversedQueryTerm).append("'");
+                    
+                    log.trace(sb.toString());
                 }
                 
-                sb.append(", using the forward index with the literal: '").append(queryTerm).append("'");
+                Key startKey = new Key(reversedQueryTerm);
+                Key endKey = new Key(reversedQueryTerm + Constants.MAX_UNICODE_STRING);
                 
-                log.trace(sb.toString());
+                // set the upper and lower bounds
+                rangeDesc.range = new Range(startKey, false, endKey, false);
             }
             
-            Key startKey = new Key(queryTerm);
-            Key endKey = new Key(queryTerm + Constants.MAX_UNICODE_STRING);
+        } else {
+            rangeDesc.isForReverseIndex = false;
             
-            // either middle or trailing wildcard, truncate the field value at the wildcard location
-            // for upper bound, tack on the upper bound UTF character
-            rangeDesc.range = new Range(startKey, false, endKey, false);
+            if (!regex.isLeadingLiteral()) {
+                // if we require a full table scan but it is disabled, then bail
+                if (!fullTableScanEnabled) {
+                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES, MessageFormat.format(
+                                    "Term: {0}", normalizedQueryTerm));
+                    log.error(qe);
+                    throw new DoNotPerformOptimizedQueryException(qe);
+                }
+                rangeDesc.range = new Range();
+            } else {
+                String queryTerm = regex.getLeadingLiteral();
+                
+                if (log.isTraceEnabled()) {
+                    StringBuilder sb = new StringBuilder(256);
+                    
+                    sb.append("For '").append(normalizedQueryTerm).append("'");
+                    
+                    if (null != fieldName) {
+                        sb.append(" in the field ").append(fieldName);
+                    }
+                    
+                    sb.append(", using the forward index with the literal: '").append(queryTerm).append("'");
+                    
+                    log.trace(sb.toString());
+                }
+                
+                Key startKey = new Key(queryTerm);
+                Key endKey = new Key(queryTerm + Constants.MAX_UNICODE_STRING);
+                
+                // either middle or trailing wildcard, truncate the field value at the wildcard location
+                // for upper bound, tack on the upper bound UTF character
+                rangeDesc.range = new Range(startKey, false, endKey, false);
+            }
         }
         
         return rangeDesc;
@@ -587,43 +599,59 @@ public class ShardIndexQueryTableStaticMethods {
         return getRegexRange(entry.getKey(), entry.getValue(), fullTableScanEnabled, metadataHelper, config);
     }
     
+    /**
+     * Determine whether a field =~ regex should be run against the reverse index or not.
+     * 
+     * @param analyzer
+     * @param fieldName
+     * @param metadataHelper
+     * @param config
+     * @return
+     * @throws TableNotFoundException
+     * @throws ExecutionException
+     */
     public static boolean shouldUseReverseIndex(JavaRegexAnalyzer analyzer, String fieldName, MetadataHelper metadataHelper, ShardQueryConfiguration config)
                     throws TableNotFoundException, ExecutionException {
         
-        String leadingLiteral = analyzer.getLeadingLiteral(), trailingLiteral = analyzer.getTrailingLiteral();
+        String leadingLiteral = analyzer.getLeadingLiteral();
+        String trailingLiteral = analyzer.getTrailingLiteral();
         
         Set<String> datatypeFilter = config.getDatatypeFilter();
         
-        // Normal case, we have a prefix, use the forward index
+        // TODO Magical handling of a "null" fieldName
+        boolean isForwardIndexed = (null != fieldName) ? indexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
+        boolean isReverseIndexed = (null != fieldName) ? reverseIndexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
+        
+        // if not indexed at all, then error
+        if (!isForwardIndexed && !isReverseIndexed) {
+            throw new DatawaveFatalQueryException("Cannot lookup a non-indexed term");
+        }
+        
+        // if only indexed one way, then choose that one
+        if (isForwardIndexed != isReverseIndexed) {
+            return isReverseIndexed;
+        }
+        
+        // At this point we know isForwardIndexed == isReverseIndex == true
+        
+        // we only have a prefix, use the forward index
         if (null == trailingLiteral && null != leadingLiteral) {
             return false;
-        } else if (null == leadingLiteral && null != trailingLiteral) {
-            // If we have no prefix, we have no option but to use the reverse index (regardless of indexed or not)
+        }
+        // we only have a suffix, use the reverse index
+        else if (null == leadingLiteral && null != trailingLiteral) {
             return true;
-        } else {
-            // TODO Magical handling of a "null" fieldName
-            boolean isReverseIndexed = (null != fieldName) ? reverseIndexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
-            
-            // We have no leading literal, only the trailing, we have to use the reverse index
-            if (null != trailingLiteral && null == leadingLiteral && isReverseIndexed) {
+        }
+        // we have neither leading or trailing, use foward index
+        if (trailingLiteral == null && leadingLiteral == null) {
+            return false;
+        }
+        // we have both leading and trailing. use the biggest one (sans the realm)
+        else {
+            String p = trimRealmFromLiteral(trailingLiteral, config);
+            // Use the reverse if we have a longer 'piece' to search over
+            if (leadingLiteral.length() < p.length()) {
                 return true;
-            }
-            
-            // TODO Magical handling of a "null" fieldName
-            boolean isForwardIndexed = (null != fieldName) ? indexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
-            
-            // If we're only reverse indexed, gotta use the reverse
-            if (!isForwardIndexed && isReverseIndexed) {
-                return true;
-            }
-            
-            // In the case where we have the option
-            if (leadingLiteral != null && isForwardIndexed && isReverseIndexed) {
-                String p = trimRealmFromLiteral(trailingLiteral, config);
-                // Use the reverse if we have a longer 'piece' to search over
-                if (leadingLiteral.length() < p.length()) {
-                    return true;
-                }
             }
         }
         

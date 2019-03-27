@@ -312,7 +312,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         }
         
         Date dataDate = null;
-        long timestamp = document.getTimestamp();
+        long timestamp = documentKey.getTimestamp();
         if (timestamp == Long.MAX_VALUE) {
             String row = documentKey.getRow().toString();
             dataDate = DateHelper.parseWithGMT(row);
