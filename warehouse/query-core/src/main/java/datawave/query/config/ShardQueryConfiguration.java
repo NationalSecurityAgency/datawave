@@ -1674,11 +1674,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setCollapseUids(boolean collapseUids) {
         this.collapseUids = collapseUids;
     }
-
+    
     public int getCollapseUidsThreshold() {
         return collapseUidsThreshold;
     }
-
+    
     public void setCollapseUidsThreshold(int collapseUidsThreshold) {
         this.collapseUidsThreshold = collapseUidsThreshold;
     }

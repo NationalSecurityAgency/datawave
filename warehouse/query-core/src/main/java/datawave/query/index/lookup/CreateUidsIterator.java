@@ -24,6 +24,37 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+/**
+ * <pre>
+ * The CreateUidsIterator runs against the index and collects document specific ranges for specific terms. It has the
+ * option to instead collapse document specific ranges into shard ranges. This is desirable for cases when many document
+ * specific ranges are generated for the same range. Rather than send many single scanners against a range the query
+ * sends one batch scanner against a shard.
+ * 
+ * EXAMPLE: For a given index lookup for terms (doc1,doc2)
+ * 
+ * This example table has data for a single day across two shards. Datatypes are A, B, C. Documents are doc1-4.
+ * Note: The Value is a Protobuf {@link Uid.List}.
+ * 
+ * K:(ROW, COLUMN_FAMILY, SHARD_0\u0000A) V:doc1
+ * K:(ROW, COLUMN_FAMILY, SHARD_0\u0000A) V:doc2
+ * K:(ROW, COLUMN_FAMILY, SHARD_1\u0000B) V:doc3
+ * K:(ROW, COLUMN_FAMILY, SHARD_1\u0000C) V:doc4
+ * 
+ * Normal iterator operation would return two document-specific ranges
+ * K:(ROW, COLUMN_FAMILY, SHARD_0\u0000A) V:doc1
+ * K:(ROW, COLUMN_FAMILY, SHARD_0\u0000A) V:doc2
+ * 
+ * There is an option to collapse these document specific ranges into a single range. Setting COLLAPSE_UIDS to "true"
+ * will return the following range
+ * K:(ROW, COLUMN_FAMILY, SHARD_0)
+ * 
+ * In addition to collapsing the document-specific ranges into a single range, the resulting {@link IndexInfo} object
+ * will not track the document uids, thus reducing memory usage and increasing performance.
+ * 
+ * TODO -- rename this class as the main function when enabled will not in fact create uids.
+ * </pre>
+ */
 public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
     
     private static final Logger log = Logger.getLogger(CreateUidsIterator.class);
@@ -81,7 +112,6 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
             }
             tv = ignore ? new IndexInfo(count) : new IndexInfo(uids);
             tk = reference;
-            
         }
     }
     
@@ -145,11 +175,8 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 return false;
             }
         }
-        if (testCq.byteAt(refCq.length()) == 0x00) {
-            return true;
-        } else {
-            return false;
-        }
+        
+        return testCq.byteAt(refCq.length()) == 0x00;
     }
     
     public static Tuple3<Long,Boolean,List<String>> parseUids(Key k, Value v) throws IOException {
@@ -183,15 +210,14 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
      */
     public static Key makeRootKey(Key k) {
         ByteSequence cq = k.getColumnQualifierData();
-        ByteSequence strippedCq = cq;
-        strippedCq = cq.subSequence(0, lastNull(cq));
+        ByteSequence strippedCq = cq.subSequence(0, lastNull(cq));
         final ByteSequence row = k.getRowData(), cf = k.getColumnFamilyData(), cv = k.getColumnVisibilityData();
         return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), strippedCq.getBackingArray(),
                         strippedCq.offset(), strippedCq.length(), cv.getBackingArray(), cv.offset(), cv.length(), k.getTimestamp());
     }
     
     /*
-     * Te following methods were implemented to allow this iterator to be used in the shell.
+     * The following methods were implemented to allow this iterator to be used in the shell.
      */
     @Override
     public IteratorOptions describeOptions() {
