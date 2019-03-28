@@ -383,7 +383,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 range.updateLower(Constants.NULL_BYTE_STRING, true);
                 range.updateUpper(Constants.MAX_UNICODE_STRING, true);
             } else {
-                range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true);
+                range.updateLower(analyzer.getLeadingLiteral(), true);
                 if (analyzer.hasWildCard()) {
                     range.updateUpper(analyzer.getLeadingLiteral() + Constants.MAX_UNICODE_STRING, true);
                 } else {
