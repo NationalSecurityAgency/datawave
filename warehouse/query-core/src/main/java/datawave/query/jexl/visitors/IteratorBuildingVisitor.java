@@ -14,6 +14,9 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.jexl.functions.TermFrequencyAggregator;
+import datawave.query.predicate.ChainableEventDataQueryFilter;
+import datawave.query.predicate.EventDataQueryExpressionFilter;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
 import datawave.query.iterator.SourceManager;
@@ -91,6 +94,7 @@ import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -299,9 +303,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 
                 NestedIterator<Key> nested = null;
                 if (termFrequencyFields.contains(identifier)) {
-                    
-                    nested = buildExceededFromTermFrequency(identifier, range, data);
-                    
+                    nested = buildExceededFromTermFrequency(identifier, source, range, data);
                 } else {
                     /**
                      * This is okay since 1) We are doc specific 2) We are not index only or tf 3) Therefore, we must evaluate against the document for this
@@ -376,8 +378,18 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             analyzer = new JavaRegexAnalyzer(String.valueOf(JexlASTHelper.getLiteralValue(node)));
             
             LiteralRange<String> range = new LiteralRange<>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
-            range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true);
-            range.updateUpper(analyzer.getLeadingOrTrailingLiteral() + Constants.MAX_UNICODE_STRING, true);
+            if (!analyzer.isLeadingLiteral()) {
+                // if the range is a leading wildcard we have to seek over the whole range since it's forward indexed only
+                range.updateLower(Constants.NULL_BYTE_STRING, true);
+                range.updateUpper(Constants.MAX_UNICODE_STRING, true);
+            } else {
+                range.updateLower(analyzer.getLeadingLiteral(), true);
+                if (analyzer.hasWildCard()) {
+                    range.updateUpper(analyzer.getLeadingLiteral() + Constants.MAX_UNICODE_STRING, true);
+                } else {
+                    range.updateUpper(analyzer.getLeadingLiteral(), true);
+                }
+            }
             return range;
         } catch (JavaRegexParseException | NoSuchElementException e) {
             throw new DatawaveFatalQueryException(e);
@@ -400,11 +412,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * 
-     * @param identifier
+     *
      * @param data
      */
-    private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, LiteralRange<?> range, Object data) {
+    private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode node, LiteralRange<?> range, Object data) {
         if (limitLookup) {
             
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
@@ -414,28 +425,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
+            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(node, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
             
-            Key startKey = rangeLimiter.getStartKey();
+            Range fiRange = getFiRangeForTF(range);
             
-            StringBuilder strBuilder = new StringBuilder("fi");
-            strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
-            Text cf = new Text(strBuilder.toString());
-            
-            strBuilder = new StringBuilder(range.getLower().toString());
-            
-            strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
-            Text cq = new Text(strBuilder.toString());
-            
-            Key seekBeginKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
-            
-            strBuilder = new StringBuilder(range.getUpper().toString());
-            
-            strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
-            cq = new Text(strBuilder.toString());
-            
-            Key seekEndKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
-            
-            builder.setRange(new Range(seekBeginKey, true, seekEndKey, true));
+            builder.setRange(fiRange);
             builder.setField(identifier);
             
             return builder.build();
@@ -444,6 +438,38 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         
+    }
+    
+    /**
+     * Range should be built from the start key of the rangeLimiter only, as the end key likely doesn't parse properly so don't rely on it. rangeLimiter must be
+     * non-null (limitLookup == true)
+     *
+     * @param range
+     *            non-null literal range to generate an FI range from
+     * @return non-null FI based range for the literal range provided
+     */
+    protected Range getFiRangeForTF(LiteralRange<?> range) {
+        Key startKey = rangeLimiter.getStartKey();
+        
+        StringBuilder strBuilder = new StringBuilder("fi");
+        strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
+        Text cf = new Text(strBuilder.toString());
+        
+        strBuilder = new StringBuilder(range.getLower().toString());
+        
+        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        Text cq = new Text(strBuilder.toString());
+        
+        Key seekBeginKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
+        
+        strBuilder = new StringBuilder(range.getUpper().toString());
+        
+        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        cq = new Text(strBuilder.toString());
+        
+        Key seekEndKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
+        
+        return new Range(seekBeginKey, true, seekEndKey, true);
     }
     
     @Override
@@ -1136,6 +1162,34 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         ivarate(builder, source, data);
+    }
+    
+    protected TermFrequencyAggregator getTermFrequencyAggregator(JexlNode node, EventDataQueryFilter attrFilter, int maxNextCount) {
+        ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(node, attrFilter);
+        
+        return buildTermFrequencyAggregator(wrapped, maxNextCount);
+    }
+    
+    protected TermFrequencyAggregator buildTermFrequencyAggregator(ChainableEventDataQueryFilter filter, int maxNextCount) {
+        return new TermFrequencyAggregator(indexOnlyFields, filter, maxNextCount);
+    }
+    
+    protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(JexlNode node, EventDataQueryFilter existing) {
+        // combine index only and term frequency to create non-event fields
+        final Set<String> nonEventFields = new HashSet<>(indexOnlyFields.size() + termFrequencyFields.size());
+        nonEventFields.addAll(indexOnlyFields);
+        nonEventFields.addAll(termFrequencyFields);
+        
+        EventDataQueryFilter expressionFilter = new EventDataQueryExpressionFilter(node, typeMetadata, nonEventFields);
+        
+        ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
+        if (existing != null) {
+            chainableFilter.addFilter(existing);
+        }
+        
+        chainableFilter.addFilter(expressionFilter);
+        
+        return chainableFilter;
     }
     
     public static class FunctionFilter implements Filter {
