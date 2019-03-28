@@ -66,6 +66,25 @@ public class TermFrequencyAggregator extends IdentityAggregator {
         return new Key(current.getRow(), current.getColumnFamily(), new Text(pointer + Constants.NULL_BYTE_STRING + Constants.MAX_UNICODE_STRING));
     }
     
+    /**
+     * Dropping empty documents is explicitly necessary for the negated leading wildcard case when dealing with a document specific range. This generates a scan
+     * over all keys for that field on that document. Without this check if the aggregator runs, but finds no specific matches there will still be a docKey
+     * generated and this will be returned back up through the chain resulting in a missed hit.
+     * 
+     * Consider: '!(FIELD =~ '.*z)'
+     * 
+     * If a document d has FIELD=b, this will in the TermFrequencyIndexIterator must scan against the entire range \0 to MAX for this document. This will cause
+     * a document to be generated for our docKey b even though it doesn't match the entire regex (verified in the filter within the aggregation). If the
+     * document were going all the way to evaluation this wouldn't matter, but it will be skipped when popping off the nestedIterators due to the way NOT is
+     * short circuited. Since in this case the Range must be overly broad to prevent missing a match, we have to rely on the aggregators which employ the filter
+     * logic to protect us.
+     * 
+     * This check ensures that post aggregation (and application of the filter) there was actually something to get. Since the field is negated, the presence of
+     * the docKey will cause the document to be excluded, even though it satisfies the query.
+     * 
+     * An alternative to adding this check in the TermFrequencyAggregator would be to add this check to the TermFrequencyIndexIterator following the
+     * aggregation.
+     **/
     @Override
     public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException {
         Key key = super.apply(itr, doc, attrs);

@@ -387,7 +387,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 if (analyzer.hasWildCard()) {
                     range.updateUpper(analyzer.getLeadingLiteral() + Constants.MAX_UNICODE_STRING, true);
                 } else {
-                    range.updateUpper(analyzer.getLeadingOrTrailingLiteral(), true);
+                    range.updateUpper(analyzer.getLeadingLiteral(), true);
                 }
             }
             return range;
