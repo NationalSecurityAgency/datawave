@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.CountingOutputStream;
@@ -102,7 +104,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.AsyncResult;
 import javax.ejb.Asynchronous;
 import javax.ejb.EJBContext;
-import javax.ejb.EJBException;
 import javax.ejb.LocalBean;
 import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
@@ -155,6 +156,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -237,6 +239,8 @@ public class QueryExecutorBean implements QueryExecutor {
     
     private Multimap<String,PatternWrapper> traceInfos;
     private CacheListener traceCacheListener;
+    
+    private Cache<String,Boolean> oldQueryCache = CacheBuilder.newBuilder().maximumSize(100000).expireAfterWrite(10, TimeUnit.MINUTES).build();
     
     private final int PAGE_TIMEOUT_MIN = 1;
     private final int PAGE_TIMEOUT_MAX = QueryExpirationConfiguration.PAGE_TIMEOUT_MIN_DEFAULT;
@@ -1949,9 +1953,12 @@ public class QueryExecutorBean implements QueryExecutor {
                     RunningQuery query = getQueryById(id, principal);
                     close(query);
                 } catch (NotFoundQueryException e) {
-                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                    if (!connectionRequestCanceled) {
-                        throw e;
+                    // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
+                    if (oldQueryCache.getIfPresent(id) == null) {
+                        // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                        if (!connectionRequestCanceled) {
+                            throw e;
+                        }
                     }
                 }
                 response.addMessage(id + " closed.");
@@ -1965,6 +1972,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
             }
+            
+            // remember that we successfully closed this query
+            oldQueryCache.put(id, Boolean.TRUE);
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
@@ -2002,9 +2013,12 @@ public class QueryExecutorBean implements QueryExecutor {
                     RunningQuery query = adminGetQueryById(id);
                     close(query);
                 } catch (NotFoundQueryException e) {
-                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                    if (!connectionRequestCanceled) {
-                        throw e;
+                    // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
+                    if (oldQueryCache.getIfPresent(id) == null) {
+                        // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                        if (!connectionRequestCanceled) {
+                            throw e;
+                        }
                     }
                 }
                 response.addMessage(id + " closed.");
@@ -2018,6 +2032,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
             }
+            
+            // remember that we successfully closed this query
+            oldQueryCache.put(id, Boolean.TRUE);
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
@@ -2033,7 +2051,13 @@ public class QueryExecutorBean implements QueryExecutor {
     private void close(RunningQuery query) throws Exception {
         
         query.closeConnection(connectionFactory);
-        queryCache.remove(query.getSettings().getId().toString());
+        
+        String queryId = query.getSettings().getId().toString();
+        
+        queryCache.remove(queryId);
+        
+        // remember that we successfully closed this query
+        oldQueryCache.put(queryId, Boolean.TRUE);
         
         // The trace was already stopped, but mark the time we closed it in the trace data.
         TInfo traceInfo = query.getTraceInfo();
@@ -2092,9 +2116,12 @@ public class QueryExecutorBean implements QueryExecutor {
                     query.cancel();
                     close(query);
                 } catch (NotFoundQueryException e) {
-                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                    if (!connectionRequestCanceled) {
-                        throw e;
+                    // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
+                    if (oldQueryCache.getIfPresent(id) == null) {
+                        // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                        if (!connectionRequestCanceled) {
+                            throw e;
+                        }
                     }
                 }
                 response.addMessage(id + " canceled.");
@@ -2108,6 +2135,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
+            
+            // remember that we successfully closed this query
+            oldQueryCache.put(id, Boolean.TRUE);
             
             return response;
         } catch (DatawaveWebApplicationException e) {
@@ -2147,9 +2177,12 @@ public class QueryExecutorBean implements QueryExecutor {
                     query.cancel();
                     close(query);
                 } catch (NotFoundQueryException e) {
-                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                    if (!connectionRequestCanceled) {
-                        throw e;
+                    // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
+                    if (oldQueryCache.getIfPresent(id) == null) {
+                        // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                        if (!connectionRequestCanceled) {
+                            throw e;
+                        }
                     }
                 }
                 response.addMessage(id + " closed.");
@@ -2163,6 +2196,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
+            
+            // remember that we successfully closed this query
+            oldQueryCache.put(id, Boolean.TRUE);
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
@@ -2343,12 +2380,19 @@ public class QueryExecutorBean implements QueryExecutor {
                 close(query);
                 persister.remove(query.getSettings());
             } catch (NotFoundQueryException e) {
-                // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                if (!connectionRequestCanceled) {
-                    throw e;
+                // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
+                if (oldQueryCache.getIfPresent(id) == null) {
+                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                    if (!connectionRequestCanceled) {
+                        throw e;
+                    }
                 }
             }
             response.addMessage(id + " removed.");
+            
+            // remember that we successfully closed this query
+            oldQueryCache.put(id, Boolean.TRUE);
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;

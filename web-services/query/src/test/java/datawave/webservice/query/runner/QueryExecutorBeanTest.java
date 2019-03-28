@@ -651,6 +651,8 @@ public class QueryExecutorBeanTest {
         persister.remove(q);
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
         
+        EasyMock.expect(persister.findById(EasyMock.anyString())).andReturn(null).anyTimes();
+        
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         q.populateMetric(metric);
         EasyMock.expectLastCall();
@@ -678,7 +680,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getAuditType(q)).andReturn(AuditType.NONE);
         EasyMock.expect(logic.getConnPoolName()).andReturn("connPool1");
         
-        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false);
+        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false).anyTimes();
         connectionFactory.returnConnection(EasyMock.isA(Connector.class));
         
         final AtomicBoolean initializeLooping = new AtomicBoolean(false);
@@ -749,8 +751,15 @@ public class QueryExecutorBeanTest {
             pair = qlCache.poll(q.getId().toString());
             Assert.assertNull("Still found an entry in the qlCache: " + pair, pair);
             
+            // Test that we can call close again successfully
+            bean.close(q.getId().toString());
+            
             // Should have already joined by now, but just to be sure
             createQuery.join();
+            
+            // Test that we can call close again successfully
+            bean.close(q.getId().toString());
+            
         } finally {
             if (null != createQuery && createQuery.isAlive()) {
                 createQuery.interrupt();
