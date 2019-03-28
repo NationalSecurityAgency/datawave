@@ -1,7 +1,5 @@
 package datawave.query.index.lookup;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -19,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -61,7 +60,7 @@ public class CreateUidsIteratorTest {
     @Test
     public void testReseek() throws IOException {
         // Setup data for test.
-        TreeMap<Key,Value> data = Maps.newTreeMap();
+        TreeMap<Key,Value> data = new TreeMap<>();
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addAllUID(docIds);
@@ -69,7 +68,7 @@ public class CreateUidsIteratorTest {
         builder.setIGNORE(false);
         Value hasDocs = new Value(builder.build().toByteArray());
         
-        List<String> expectedDocs = Lists.newLinkedList();
+        List<String> expectedDocs = new LinkedList<>();
         for (int ii = 1; ii < 50; ii++) {
             expectedDocs.add("date_" + ii);
             data.put(new Key("row", "cf", "date_" + ii + "\u0000A"), hasDocs);
@@ -114,7 +113,7 @@ public class CreateUidsIteratorTest {
     @Test
     public void testWithIgnore() throws IOException {
         // Setup data for test.
-        TreeMap<Key,Value> data = Maps.newTreeMap();
+        TreeMap<Key,Value> data = new TreeMap<>();
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addAllUID(docIds);
@@ -122,7 +121,7 @@ public class CreateUidsIteratorTest {
         builder.setIGNORE(false);
         Value hasDocs = new Value(builder.build().toByteArray());
         
-        List<IndexMatch> expectedDocs = Lists.newLinkedList();
+        List<IndexMatch> expectedDocs = new LinkedList<>();
         
         data.put(new Key("row", "cf", "date_1\u0000A"), hasDocs);
         addToExpectedDocs("A", docIds, expectedDocs, null);
@@ -160,7 +159,7 @@ public class CreateUidsIteratorTest {
     @Test
     public void testWithoutIgnore() throws IOException {
         // Setup data for test.
-        TreeMap<Key,Value> data = Maps.newTreeMap();
+        TreeMap<Key,Value> data = new TreeMap<>();
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addAllUID(docIds);
@@ -168,7 +167,7 @@ public class CreateUidsIteratorTest {
         builder.setIGNORE(false);
         Value hasDocs = new Value(builder.build().toByteArray());
         
-        List<IndexMatch> expectedDocs = Lists.newLinkedList();
+        List<IndexMatch> expectedDocs = new LinkedList<>();
         
         data.put(new Key("row", "cf", "date_1\u0000A"), hasDocs);
         addToExpectedDocs("A", docIds, expectedDocs, null);
@@ -198,13 +197,13 @@ public class CreateUidsIteratorTest {
     }
     
     /**
-     * Ensure correct iterator behavior with COLLAPSE_UIDS option set to "true". Proper behavior is an accurate UID count but not UIDs added to the resulting
-     * {@link IndexInfo} object.
+     * Ensure correct iterator behavior with COLLAPSE_UIDS option set to "true", should return an {@link IndexInfo} object containing a correct UID count but no
+     * stored UIDs.
      */
     @Test
     public void testWithCollapse() throws IOException {
         // Setup data for test.
-        TreeMap<Key,Value> data = Maps.newTreeMap();
+        TreeMap<Key,Value> data = new TreeMap<>();
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addAllUID(docIds);
@@ -212,7 +211,7 @@ public class CreateUidsIteratorTest {
         builder.setIGNORE(false);
         Value hasDocs = new Value(builder.build().toByteArray());
         
-        List<IndexMatch> expectedDocs = Lists.newLinkedList();
+        List<IndexMatch> expectedDocs = new LinkedList<>();
         
         data.put(new Key("row", "cf", "date_1\u0000A"), hasDocs);
         addToExpectedDocs("A", docIds, expectedDocs, null);
