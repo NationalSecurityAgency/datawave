@@ -1,9 +1,11 @@
 package datawave.query.jexl.functions;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.google.common.collect.Maps;
 import datawave.marking.ColumnVisibilityCache;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
@@ -19,6 +21,7 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 
 /**
@@ -104,8 +107,11 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
             boolean toKeep = (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
                             && (filter == null || filter.keep(topKey));
             attr.setToKeep(toKeep);
-            doc.put(fieldNameValue.first(), attr);
-            key = nextKey;
+            
+            // Anything that is being kept has to be added to the doc to be returned, if we aren't keeping only add to the doc if necessary for evaluation
+            if (toKeep || (filter == null || filter.apply(new AbstractMap.SimpleEntry<>(topKey, null)))) {
+                doc.put(fieldNameValue.first(), attr);
+            }
             itr.next();
             nextKey = (itr.hasTop() ? itr.getTopKey() : null);
         }
@@ -116,6 +122,15 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
         
         return TLD.buildParentKey(row, pointer, parseFieldNameValue(key.getColumnFamilyData(), key.getColumnQualifierData()), key.getColumnVisibility(),
                         key.getTimestamp());
+    }
+    
+    protected boolean toKeep(Key topKey, Tuple2<String,String> fieldNameValue) {
+        return (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
+                        && (filter == null || filter.keep(topKey));
+    }
+    
+    protected boolean addToDoc(Key topKey, Tuple2<String,String> fieldNameValue, boolean toKeep) {
+        return true;
     }
     
     protected ByteSequence parseFieldNameValue(ByteSequence cf, ByteSequence cq) {
