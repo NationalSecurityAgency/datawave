@@ -1,5 +1,6 @@
 package datawave.query.predicate;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -61,9 +62,11 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      */
     private int anyFieldLimit;
     
+    private Set<String> nonEventFields;
+    
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
                     long maxKeysBeforeSeek) {
-        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
+        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null, Collections.EMPTY_SET);
     }
     
     /**
@@ -77,13 +80,14 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @param script
      */
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
-                    long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField) {
-        super(script, attributeFactory);
+                    long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
+        super(script, attributeFactory, nonEventFields);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
         this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
         this.limitFieldsField = limitFieldsField;
+        this.nonEventFields = nonEventFields;
         
         // set the anyFieldLimit once if specified otherwise set to -1
         anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
@@ -110,6 +114,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         limitFieldsField = other.limitFieldsField;
         limitFieldsMap = other.limitFieldsMap;
         anyFieldLimit = other.anyFieldLimit;
+        nonEventFields = other.nonEventFields;
     }
     
     @Override
@@ -160,7 +165,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
     
     /**
-     * Determine if a Key should be kept. If the Key also returns true when called with apply() the Key will be returned to the client
+     * Determine if a Key should be kept. If a Key is a part of the TLD it will always be kept as long as we have not exceeded the key count limit for that
+     * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
+     * for query evaluation (apply()==true)
      * 
      * @see datawave.query.predicate.Filter#keep(Key)
      *
@@ -172,7 +179,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // only keep the data from the top level document with fields that matter
         lastParseInfo = getParseInfo(k);
         boolean root = lastParseInfo.isRoot();
-        return root && (k.getColumnQualifier().getLength() == 0 || keepField(k, false, root));
+        
+        return (root && (k.getColumnQualifier().getLength() == 0 || keepField(k, false, true)))
+                        || (!root && nonEventFields.contains(lastParseInfo.getField()) && keepField(k, false, false) && super
+                                        .apply(new AbstractMap.SimpleEntry<>(k, null)));
     }
     
     /**
@@ -187,7 +197,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             // initialize the new parseInfo
             ParseInfo parseInfo = new ParseInfo(current);
             boolean root;
-            if (lastParseInfo != null) {
+            // can only short-cut on CF length when dealing with an event key
+            if (lastParseInfo != null && isEventKey(current)) {
                 int lastLength = lastParseInfo.key.getColumnFamilyData().length();
                 int currentLength = current.getColumnFamilyData().length();
                 if (lastLength == currentLength) {
@@ -227,7 +238,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         return uid;
     }
     
-    protected boolean isRootPointer(Key k) {
+    private boolean isEventKey(Key k) {
+        ByteSequence cf = k.getColumnFamilyData();
+        return !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0)
+                        && !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 00);
+    }
+    
+    public static boolean isRootPointer(Key k) {
         ByteSequence cf = k.getColumnFamilyData();
         
         if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
@@ -251,23 +268,26 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
             
         } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
             ByteSequence seq = k.getColumnQualifierData();
-            int i = 3;
-            for (; i < seq.length(); i++) {
-                if (seq.byteAt(i) == 0x00) {
-                    break;
-                }
-            }
             
-            for (i += 20; i < seq.length(); i++) {
-                if (seq.byteAt(i) == '.') {
-                    return false;
-                } else if (seq.byteAt(i) == 0x00) {
+            // work front to back, just in case the TF value includes a null byte
+            boolean foundStart = false;
+            int dotCount = 0;
+            for (int i = 0; i < seq.length(); i++) {
+                if (!foundStart && seq.byteAt(i) == 0x00) {
+                    foundStart = true;
+                } else if (foundStart && seq.byteAt(i) == 0x00) {
+                    // end of uid, got here, is root
                     return true;
+                } else if (foundStart && seq.byteAt(i) == '.') {
+                    dotCount++;
+                    if (dotCount > 2) {
+                        return false;
+                    }
                 }
             }
             
-            return true;
-            
+            // can't parse
+            return false;
         } else {
             int i = 0;
             for (i = 0; i < cf.length(); i++) {

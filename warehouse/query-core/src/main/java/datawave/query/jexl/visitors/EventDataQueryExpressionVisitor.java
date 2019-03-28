@@ -302,6 +302,21 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         return v.getFilterMap();
     }
     
+    /**
+     *
+     * @param node
+     *            the node that should be used to build the expression filters
+     * @param factory
+     * @return
+     */
+    public static Map<String,ExpressionFilter> getExpressionFilters(JexlNode node, AttributeFactory factory) {
+        final EventDataQueryExpressionVisitor v = new EventDataQueryExpressionVisitor(factory);
+        
+        node.jjtAccept(v, "");
+        
+        return v.getFilterMap();
+    }
+    
     private final AttributeFactory attributeFactory;
     private final Map<String,ExpressionFilter> filterMap;
     
