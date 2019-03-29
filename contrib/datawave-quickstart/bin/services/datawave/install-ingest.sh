@@ -158,4 +158,4 @@ info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-ingest.sh to view/edit
 
 # Ingest raw data examples, if appropriate...
 
-[ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_SKIP_INGEST_EXAMPLES}" == false ] && ingestExampleData
+[ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_DATAWAVE_INGEST_TEST_SKIP}" == false ] && ingestExampleData
