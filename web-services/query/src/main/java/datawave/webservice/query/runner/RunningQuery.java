@@ -430,6 +430,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             try {
                 addNDC();
                 logic.close();
+            } catch (Exception e) {
+                log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
             } finally {
                 removeNDC();
             }
