@@ -717,8 +717,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     qd.logic.close();
                 }
             } catch (Exception e) {
-                log.error("Error closing query logic", e);
-                response.addException(new QueryException(DatawaveErrorCode.CLOSE_ERROR, e).getBottomQueryException());
+                log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
             }
             
             if (null != connection) {
@@ -1952,7 +1951,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     RunningQuery query = getQueryById(id, principal);
                     close(query);
-                } catch (NotFoundQueryException e) {
+                } catch (Exception e) {
                     // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
                     if (oldQueryCache.getIfPresent(id) == null) {
                         // if connection request was canceled, then the call was successful even if a RunningQuery was not found
@@ -2012,7 +2011,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     RunningQuery query = adminGetQueryById(id);
                     close(query);
-                } catch (NotFoundQueryException e) {
+                } catch (Exception e) {
                     // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
                     if (oldQueryCache.getIfPresent(id) == null) {
                         // if connection request was canceled, then the call was successful even if a RunningQuery was not found
@@ -2050,14 +2049,22 @@ public class QueryExecutorBean implements QueryExecutor {
     
     private void close(RunningQuery query) throws Exception {
         
-        query.closeConnection(connectionFactory);
-        
         String queryId = query.getSettings().getId().toString();
+        
+        log.debug("Closing " + queryId);
+        
+        try {
+            query.closeConnection(connectionFactory);
+        } catch (Exception e) {
+            log.error("Failed to close connection for " + queryId, e);
+        }
         
         queryCache.remove(queryId);
         
         // remember that we successfully closed this query
         oldQueryCache.put(queryId, Boolean.TRUE);
+        
+        log.debug("Closed " + queryId);
         
         // The trace was already stopped, but mark the time we closed it in the trace data.
         TInfo traceInfo = query.getTraceInfo();
@@ -2115,7 +2122,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     RunningQuery query = getQueryById(id);
                     query.cancel();
                     close(query);
-                } catch (NotFoundQueryException e) {
+                } catch (Exception e) {
                     // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
                     if (oldQueryCache.getIfPresent(id) == null) {
                         // if connection request was canceled, then the call was successful even if a RunningQuery was not found
@@ -2176,7 +2183,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     RunningQuery query = adminGetQueryById(id);
                     query.cancel();
                     close(query);
-                } catch (NotFoundQueryException e) {
+                } catch (Exception e) {
                     // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
                     if (oldQueryCache.getIfPresent(id) == null) {
                         // if connection request was canceled, then the call was successful even if a RunningQuery was not found
@@ -2379,7 +2386,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 RunningQuery query = getQueryById(id);
                 close(query);
                 persister.remove(query.getSettings());
-            } catch (NotFoundQueryException e) {
+            } catch (Exception e) {
                 // if this is a query that is in the old query cache, then we have already successfully closed this query so ignore
                 if (oldQueryCache.getIfPresent(id) == null) {
                     // if connection request was canceled, then the call was successful even if a RunningQuery was not found
