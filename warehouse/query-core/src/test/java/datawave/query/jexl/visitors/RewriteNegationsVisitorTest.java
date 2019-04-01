@@ -49,6 +49,18 @@ public class RewriteNegationsVisitorTest {
         assertEquals(errMsg, expectedQuery, negatedQuery);
     }
     
+    // Test AST such that ((!A && !B))
+    @Test
+    public void testConjunctionTwoNestedNE() throws ParseException {
+        String queryString = "(FOO != BAR && BAR != FOO)";
+        String expectedQuery = "(!(FOO == BAR) && !(BAR == FOO))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
+        ASTJexlScript negatedScript = RewriteNegationsVisitor.rewrite(script);
+        String negatedQuery = JexlStringBuildingVisitor.buildQuery(negatedScript);
+        String errMsg = "Failed for query structure like ((!A && !B))";
+        assertEquals(errMsg, expectedQuery, negatedQuery);
+    }
+    
     // Test AST such that (!A & B)
     @Test
     public void testConjunctionOfSingleNEAndEQ() throws ParseException {
@@ -60,27 +72,39 @@ public class RewriteNegationsVisitorTest {
         assertEquals(expectedQuery, negatedQuery);
     }
     
-    // Test AST such that (!A && !B && !C)
+    // Test AST such that (!A && !B && C)
     @Test
-    public void testConjunctionOfMultipleNEAndSingleEQ() throws ParseException {
+    public void testConjunctionOfTwoNEAndSingleEQ() throws ParseException {
         String queryString = "FOO != BAR && BAR != FOO && BAR == CAT";
         String expectedQuery = "!(FOO == BAR) && !(BAR == FOO) && BAR == CAT";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         ASTJexlScript negatedScript = RewriteNegationsVisitor.rewrite(script);
         String negatedQuery = JexlStringBuildingVisitor.buildQuery(negatedScript);
-        String errMsg = "Failed for query structure like (A)";
-        assertEquals(expectedQuery, negatedQuery);
+        String errMsg = "Failed for query structure like (!A && !B && C)";
+        assertEquals(errMsg, expectedQuery, negatedQuery);
     }
     
-    // Test AST such that (!A && (!B && !C))
+    // Test AST such that (!A && (!B && C))
     @Test
-    public void testConjunctionOfMultipleNEAndSingleEQWithWeirdParens() throws ParseException {
+    public void testConjunctionOfNEAndNestedNeAndEQ() throws ParseException {
         String queryString = "FOO != BAR && (BAR != FOO && BAR == CAT)";
         String expectedQuery = "!(FOO == BAR) && (!(BAR == FOO) && BAR == CAT)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         ASTJexlScript negatedScript = RewriteNegationsVisitor.rewrite(script);
         String negatedQuery = JexlStringBuildingVisitor.buildQuery(negatedScript);
         String errMsg = "Failed for query structure like (!A && !B && !C))";
+        assertEquals(errMsg, expectedQuery, negatedQuery);
+    }
+    
+    // Test AST such that (A && (!B && !C))
+    @Test
+    public void testSingleEQWithNestedConjunctionOfTwoNE() throws ParseException {
+        String queryString = "FOO == BAR && (BAR != FOO && BAR != CAT)";
+        String expectedQuery = "FOO == BAR && (!(BAR == FOO) && !(BAR == CAT))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
+        ASTJexlScript negatedScript = RewriteNegationsVisitor.rewrite(script);
+        String negatedQuery = JexlStringBuildingVisitor.buildQuery(negatedScript);
+        String errMsg = "Failed for query structure like (A && (!B && !C))";
         assertEquals(errMsg, expectedQuery, negatedQuery);
     }
     
