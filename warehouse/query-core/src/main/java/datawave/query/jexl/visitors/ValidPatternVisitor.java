@@ -13,7 +13,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import com.google.common.collect.Maps;
 
 /**
- * 
+ * Validates all patterns in a query tree. Uses a cache to avoid parsing the same pattern twice.
  */
 public class ValidPatternVisitor extends BaseVisitor {
     
@@ -25,13 +25,21 @@ public class ValidPatternVisitor extends BaseVisitor {
     
     public static void check(JexlNode node) {
         ValidPatternVisitor visitor = new ValidPatternVisitor();
-        
         node.jjtAccept(visitor, null);
     }
     
+    /**
+     * Visit a Regex Equals node, catches the situation where a users might enter FIELD1 =~ FIELD2.
+     *
+     * @param node
+     *            - an AST Regex Equals node
+     * @param data
+     *            - data
+     * @return the data
+     */
     @Override
     public Object visit(ASTERNode node, Object data) {
-        Object literalValue = null;
+        Object literalValue;
         
         // Catch the situation where a user might enter FIELD1 =~ FIELD2
         try {
@@ -45,18 +53,25 @@ public class ValidPatternVisitor extends BaseVisitor {
             if (patternCache.containsKey(literalString)) {
                 return data;
             }
-            
             patternCache.put(literalString, Pattern.compile(literalString));
         }
-        
         return data;
     }
     
+    /**
+     * Visit a Regex Not Equals node, catches the situation where a user might enter FIELD1 !~ FIELD2
+     * 
+     * @param node
+     *            - an AST Regex Not Equals node
+     * @param data
+     *            - data
+     * @return the data
+     */
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        Object literalValue = null;
+        Object literalValue;
         
-        // Catch the situation where a user might enter FIELD1 =~ FIELD2
+        // Catch the situation where a user might enter FIELD1 !~ FIELD2
         try {
             literalValue = JexlASTHelper.getLiteralValue(node);
         } catch (NoSuchElementException e) {
@@ -68,10 +83,8 @@ public class ValidPatternVisitor extends BaseVisitor {
             if (patternCache.containsKey(literalString)) {
                 return data;
             }
-            
             patternCache.put(literalString, Pattern.compile(literalString));
         }
-        
         return data;
     }
 }
