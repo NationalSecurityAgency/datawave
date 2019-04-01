@@ -28,10 +28,10 @@ import com.google.common.collect.Lists;
  * <pre>
  * The CreateUidsIterator runs against the index and collects document specific ranges for specific terms. It has the
  * option to instead collapse document specific ranges into shard ranges. This is desirable for cases when many document
- * specific ranges are generated for the same range. Rather than send many single scanners against a range the query
- * sends one batch scanner against a shard.
+ * specific ranges are generated for the same shard range. Rather than send many single scanners against the same shard range, the query
+ * sends one batch scanner against one shard range.
  * 
- * EXAMPLE: For a given index lookup for terms (doc1,doc2)
+ * EXAMPLE: For a term that hits in specific documents (doc1,doc2)
  * 
  * This example table has data for a single day across two shards. Datatypes are A, B, C. Documents are doc1-4.
  * Note: The Value is a Protobuf {@link Uid.List}.
@@ -48,6 +48,8 @@ import com.google.common.collect.Lists;
  * There is an option to collapse these document specific ranges into a single range. Setting COLLAPSE_UIDS to "true"
  * will return the following range
  * K:(ROW, COLUMN_FAMILY, SHARD_0)
+ * 
+ * If COLLAPSE_UIDS is set to "false" then this iterator will return as many document specific ranges as there are hits.
  * 
  * In addition to collapsing the document-specific ranges into a single range, the resulting {@link IndexInfo} object
  * will not track the document uids, thus reducing memory usage and increasing performance.
