@@ -159,14 +159,14 @@ DataWave's REST API. Note any test failures, if present, and check logs for erro
 * To learn more about the quickstart environment and its available features, check out the [quickstart reference](quickstart-reference).
 
 
-[dw_blob_env_sh]: https://github.com/NationalSecurityAgency/datawave/blob/master/contrib/datawave-quickstart/bin/env.sh
-[dw_blob_common_sh]: https://github.com/NationalSecurityAgency/datawave/blob/master/contrib/datawave-quickstart/bin/common.sh
-[dw_blob_query_sh]: https://github.com/NationalSecurityAgency/datawave/blob/master/contrib/datawave-quickstart/bin/query.sh
-[dw_blob_datawave_bootstrap_mvn_cmd]: https://github.com/NationalSecurityAgency/datawave/blob/master/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L34
-[dw_blob_datawave_bootstrap]: https://github.com/NationalSecurityAgency/datawave/blob/master/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh
-[dw_blob_datawave_bootstrap_web]: https://github.com/NationalSecurityAgency/datawave/blob/master/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh
-[dw_blob_datawave_bootstrap_ingest]: https://github.com/NationalSecurityAgency/datawave/blob/master/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh
-[dw_blob_datawave_bootstrap_user]: https://github.com/NationalSecurityAgency/datawave/blob/master/contrib/datawave-quickstart/bin/services/datawave/bootstrap-user.sh
-[dw_web_tests]: https://github.com/NationalSecurityAgency/datawave/tree/master/contrib/datawave-quickstart/bin/services/datawave/test-web/tests
-[dw_datawave_home]: https://github.com/NationalSecurityAgency/datawave/tree/master/contrib/datawave-quickstart/bin/services/datawave
-[dw_docker_alternative]: https://github.com/NationalSecurityAgency/datawave/tree/master/contrib/datawave-quickstart/docker
+[dw_blob_env_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/env.sh
+[dw_blob_common_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/common.sh
+[dw_blob_query_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/query.sh
+[dw_blob_datawave_bootstrap_mvn_cmd]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L34
+[dw_blob_datawave_bootstrap]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh
+[dw_blob_datawave_bootstrap_web]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh
+[dw_blob_datawave_bootstrap_ingest]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh
+[dw_blob_datawave_bootstrap_user]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-user.sh
+[dw_web_tests]: https://github.com/NationalSecurityAgency/datawave/tree/{{ site.default_branch }}/contrib/datawave-quickstart/bin/services/datawave/test-web/tests
+[dw_datawave_home]: https://github.com/NationalSecurityAgency/datawave/tree/{{ site.default_branch }}/contrib/datawave-quickstart/bin/services/datawave
+[dw_docker_alternative]: https://github.com/NationalSecurityAgency/datawave/tree/{{ site.default_branch }}/contrib/datawave-quickstart/docker

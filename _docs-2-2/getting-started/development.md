@@ -134,8 +134,8 @@ The **assert-properties** plugin is configured on a per-artifact basis to define
 properties for that artifact. Thus, if any required properties are not set, then the artifact build will fail with a
 descriptive message. See [DW_SOURCE/web-services/pom.xml][dw_blob_web_services_pom] for example usage.
 
-[dw_blob_web_services_pom]: https://github.com/NationalSecurityAgency/datawave/blob/master/web-services/pom.xml#L709
-[dw_assert_properties]: https://github.com/NationalSecurityAgency/datawave/tree/master/contrib/assert-properties
-[dw_read_properties]: https://github.com/NationalSecurityAgency/datawave/tree/master/contrib/read-properties
-[dw_blob_root_pom]: https://github.com/NationalSecurityAgency/datawave/blob/master/pom.xml
-[dw_blob_buildme]: https://github.com/NationalSecurityAgency/datawave/blob/master/BUILDME.md
+[dw_blob_web_services_pom]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/web-services/pom.xml#L709
+[dw_assert_properties]: https://github.com/NationalSecurityAgency/datawave/tree/{{ site.default_branch }}/contrib/assert-properties
+[dw_read_properties]: https://github.com/NationalSecurityAgency/datawave/tree/{{ site.default_branch }}/contrib/read-properties
+[dw_blob_root_pom]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/pom.xml
+[dw_blob_buildme]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/BUILDME.md

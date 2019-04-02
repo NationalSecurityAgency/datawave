@@ -107,4 +107,4 @@ the same YYYYMMDD row partition), and if all of them happen to generate the same
 will be aggregated into a single key/value pair in the DataWave edge table. Therefore, it is possible that more than one
 object ("event") will be returned by *EdgeEventQuery* for a given query tuple for a given date.
 
-[dw_blob_default_properties]: https://github.com/NationalSecurityAgency/datawave/blob/master/properties/default.properties#L440
+[dw_blob_default_properties]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/properties/default.properties#L440

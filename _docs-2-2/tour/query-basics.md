@@ -246,4 +246,4 @@ To release server-side resources, we invoked **DataWave/Query/{ query-id }/close
 </div>
 </div>
 
-[dw_blob_qlf_xml]: https://github.com/NationalSecurityAgency/datawave/blob/master/web-services/deploy/configuration/src/main/resources/datawave/query/QueryLogicFactory.xml#L420
+[dw_blob_qlf_xml]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/web-services/deploy/configuration/src/main/resources/datawave/query/QueryLogicFactory.xml#L420
