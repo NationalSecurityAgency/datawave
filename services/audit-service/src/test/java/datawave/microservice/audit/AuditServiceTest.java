@@ -318,7 +318,7 @@ public class AuditServiceTest {
         
         HashMap<String,String> auditParamsMap = new ObjectMapper().readValue(lines.get(0), new TypeReference<HashMap<String,String>>() {});
         for (String param : map.keySet()) {
-            assertEquals(map.get(param).get(0), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
+            assertEquals(map.get(param).get(0), auditParamsMap.get(param));
             auditParamsMap.remove(param);
         }
         
@@ -418,7 +418,7 @@ public class AuditServiceTest {
         
         HashMap<String,String> auditParamsMap = new ObjectMapper().readValue(lines.get(0), new TypeReference<HashMap<String,String>>() {});
         for (String param : map.keySet()) {
-            assertEquals(map.get(param).get(0), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
+            assertEquals(map.get(param).get(0), auditParamsMap.get(param));
             auditParamsMap.remove(param);
         }
         
@@ -516,7 +516,7 @@ public class AuditServiceTest {
         
         HashMap<String,String> auditParamsMap = new ObjectMapper().readValue(lines.get(0), new TypeReference<HashMap<String,String>>() {});
         for (String param : map.keySet()) {
-            assertEquals(map.get(param).get(0), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
+            assertEquals(map.get(param).get(0), auditParamsMap.get(param));
             auditParamsMap.remove(param);
         }
         
@@ -610,7 +610,7 @@ public class AuditServiceTest {
         
         HashMap<String,String> auditParamsMap = new ObjectMapper().readValue(lines.get(0), new TypeReference<HashMap<String,String>>() {});
         for (String param : map.keySet()) {
-            assertEquals(map.get(param).get(0), ReplayTask.urlDecodeString(auditParamsMap.get(param)));
+            assertEquals(map.get(param).get(0), auditParamsMap.get(param));
             auditParamsMap.remove(param);
         }
         

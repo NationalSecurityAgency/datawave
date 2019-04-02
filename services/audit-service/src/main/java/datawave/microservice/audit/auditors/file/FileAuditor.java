@@ -15,9 +15,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -79,9 +77,7 @@ public class FileAuditor implements Auditor {
     public void audit(AuditParameters auditParameters) throws Exception {
         
         // convert the messages to URL-encoded JSON
-        Map<String,String> auditParamsMap = auditParameters.toMap();
-        auditParamsMap.forEach((key, value) -> auditParamsMap.put(key, urlEncodeString(value)));
-        String jsonAuditParams = mapper.writeValueAsString(auditParamsMap) + "\n";
+        String jsonAuditParams = mapper.writeValueAsString(auditParameters.toMap()) + "\n";
         
         writeLock.lock();
         try {
@@ -93,15 +89,6 @@ public class FileAuditor implements Auditor {
         } finally {
             writeLock.unlock();
         }
-    }
-    
-    protected String urlEncodeString(String value) {
-        try {
-            return URLEncoder.encode(value, "UTF8");
-        } catch (UnsupportedEncodingException e) {
-            log.error("Unable to URL encode value: {}", value);
-        }
-        return value;
     }
     
     protected void writeAudit(String jsonAuditParams) throws Exception {

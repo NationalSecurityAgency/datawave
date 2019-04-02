@@ -16,9 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -171,7 +169,6 @@ public abstract class ReplayTask implements Runnable {
                         }
                         
                         HashMap<String,String> auditParamsMap = mapper.readValue(line, typeRef);
-                        auditParamsMap.forEach((key, value) -> auditParamsMap.put(key, urlDecodeString(value)));
                         
                         // add the audit replay id for tracking purposes
                         auditParamsMap.put("replayId", status.getId());
@@ -252,15 +249,6 @@ public abstract class ReplayTask implements Runnable {
             log.warn("Unable to rename file from \"{}\" using prefix \"{}\"", file, newState);
         }
         return null;
-    }
-    
-    public static String urlDecodeString(String value) {
-        try {
-            return URLDecoder.decode(value, "UTF8");
-        } catch (UnsupportedEncodingException e) {
-            log.error("Unable to decode URL value: {}", value);
-        }
-        return value;
     }
     
     abstract protected boolean audit(Map<String,String> auditParamsMap);
