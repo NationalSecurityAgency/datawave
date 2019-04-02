@@ -9,13 +9,13 @@ repository: NationalSecurityAgency/datawave
 baseurl: /datawave
 
 # project default branch
-default_branch: master
+default_branch: release/version2.6
 
 # latest minor release
-latest_minor_release: 2.3
+latest_minor_release: 2.6
 
 # latest release
-latest_release: 2.3.3
+latest_release: 2.6.2
 
 # max news posts to display on the home page
 num_home_posts: 8
@@ -79,9 +79,13 @@ collections:
     output: true
     permalink: "/docs/2.2/:path"
 
-  docs-latest:
+  docs-2-3:
     output: true
     permalink: "/docs/2.3/:path"
+
+  docs-latest:
+    output: true
+    permalink: "/docs/2.6/:path"
 
 ##########################################################
 # Frontmatter defaults
@@ -161,11 +165,23 @@ defaults:
   -
     scope:
       path: ""
+      type: "docs-2-3"
+    values:
+      layout: "docs"
+      title_prefix: "DataWave 2.3 Docs - "
+      sidebar: docs-2-3-sidebar
+      show_summary: true
+      skip_title_for_h1: false
+      toc: true
+      topnav: topnav
+  -
+    scope:
+      path: ""
       type: "docs-latest"
     values:
       layout: "docs"
       title_prefix: "DataWave Docs - "
-      sidebar: docs-2-3-sidebar
+      sidebar: docs-2-6-sidebar
       show_summary: true
       skip_title_for_h1: false
       toc: true
