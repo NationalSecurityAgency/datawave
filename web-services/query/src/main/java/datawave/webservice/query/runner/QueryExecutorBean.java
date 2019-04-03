@@ -237,7 +237,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     private Multimap<String,PatternWrapper> traceInfos;
     private CacheListener traceCacheListener;
-
+    
     @Inject
     private ClosedQueryCache closedQueryCache;
     
@@ -1876,11 +1876,13 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, MessageFormat.format("query id: {0}", id));
-            log.error(qe, e);
-            response.addException(qe.getBottomQueryException());
             if (e.getCause() instanceof NoResultsException) {
+                log.debug("Got a nested NoResultsException", e);
                 close(id);
                 closedQueryCache.add(id); // remember that we auto-closed this query
+            } else {
+                log.error(qe, e);
+                response.addException(qe.getBottomQueryException());
             }
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -1961,10 +1963,10 @@ public class QueryExecutorBean implements QueryExecutor {
                     RunningQuery query = getQueryById(id, principal);
                     close(query);
                 } catch (Exception e) {
-                    log.warn("Failed to close " + id + ", checking if closed previously");
+                    log.debug("Failed to close " + id + ", checking if closed previously");
                     // if this is a query that is in the closed query cache, then we have already successfully closed this query so ignore
                     if (!closedQueryCache.exists(id)) {
-                        log.warn("Failed to close " + id + ", checking if connection request was canceled");
+                        log.debug("Failed to close " + id + ", checking if connection request was canceled");
                         // if connection request was canceled, then the call was successful even if a RunningQuery was not found
                         if (!connectionRequestCanceled) {
                             log.error("Failed to close " + id, e);
@@ -1983,10 +1985,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
             }
-
+            
             // no longer need to remember this query
             closedQueryCache.remove(id);
-
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
@@ -2024,15 +2026,11 @@ public class QueryExecutorBean implements QueryExecutor {
                     RunningQuery query = adminGetQueryById(id);
                     close(query);
                 } catch (Exception e) {
-                    log.warn("Failed to adminClose " + id + ", checking if closed previously");
-                    // if this is a query that is in the closed query cache, then we have already successfully closed this query so ignore
-                    if (!closedQueryCache.exists(id)) {
-                        log.warn("Failed to adminClose " + id + ", checking if connection request was canceled");
-                        // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                        if (!connectionRequestCanceled) {
-                            log.error("Failed to adminClose " + id, e);
-                            throw e;
-                        }
+                    log.debug("Failed to adminClose " + id + ", checking if connection request was canceled");
+                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                    if (!connectionRequestCanceled) {
+                        log.error("Failed to adminClose " + id, e);
+                        throw e;
                     }
                 }
                 response.addMessage(id + " closed.");
@@ -2046,10 +2044,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
             }
-
-            // no longer need to remember this query
-            closedQueryCache.remove(id);
-
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
@@ -2135,10 +2130,10 @@ public class QueryExecutorBean implements QueryExecutor {
                     query.cancel();
                     close(query);
                 } catch (Exception e) {
-                    log.warn("Failed to cancel " + id + ", checking if closed previously");
+                    log.debug("Failed to cancel " + id + ", checking if closed previously");
                     // if this is a query that is in the closed query cache, then we have already successfully closed this query so ignore
                     if (!closedQueryCache.exists(id)) {
-                        log.warn("Failed to cancel " + id + ", checking if connection request was canceled");
+                        log.debug("Failed to cancel " + id + ", checking if connection request was canceled");
                         // if connection request was canceled, then the call was successful even if a RunningQuery was not found
                         if (!connectionRequestCanceled) {
                             log.error("Failed to cancel " + id, e);
@@ -2157,10 +2152,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
-
+            
             // no longer need to remember this query
             closedQueryCache.remove(id);
-
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
@@ -2199,15 +2194,11 @@ public class QueryExecutorBean implements QueryExecutor {
                     query.cancel();
                     close(query);
                 } catch (Exception e) {
-                    log.warn("Failed to adminCancel " + id + ", checking if closed previously");
-                    // if this is a query that is in the closed query cache, then we have already successfully closed this query so ignore
-                    if (!closedQueryCache.exists(id)) {
-                        log.warn("Failed to adminCancel " + id + ", checking if connection request was canceled");
-                        // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                        if (!connectionRequestCanceled) {
-                            log.error("Failed to adminCancel " + id, e);
-                            throw e;
-                        }
+                    log.debug("Failed to adminCancel " + id + ", checking if connection request was canceled");
+                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                    if (!connectionRequestCanceled) {
+                        log.error("Failed to adminCancel " + id, e);
+                        throw e;
                     }
                 }
                 response.addMessage(id + " closed.");
@@ -2221,10 +2212,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
-
-            // no longer need to remember this query
-            closedQueryCache.remove(id);
-
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
@@ -2405,10 +2393,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 close(query);
                 persister.remove(query.getSettings());
             } catch (Exception e) {
-                log.warn("Failed to remove " + id + ", checking if closed previously");
+                log.debug("Failed to remove " + id + ", checking if closed previously");
                 // if this is a query that is in the closed query cache, then we have already successfully closed this query so ignore
                 if (!closedQueryCache.exists(id)) {
-                    log.warn("Failed to remove " + id + ", checking if connection request was canceled");
+                    log.debug("Failed to remove " + id + ", checking if connection request was canceled");
                     // if connection request was canceled, then the call was successful even if a RunningQuery was not found
                     if (!connectionRequestCanceled) {
                         log.error("Failed to remove " + id, e);
@@ -2417,10 +2405,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             }
             response.addMessage(id + " removed.");
-
+            
             // no longer need to remember this query
             closedQueryCache.remove(id);
-
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
