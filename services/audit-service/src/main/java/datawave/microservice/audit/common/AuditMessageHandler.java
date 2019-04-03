@@ -31,7 +31,7 @@ public class AuditMessageHandler {
                 auditor.audit(ap);
             }
         } catch (Exception e) {
-            log.error("Error processing audit message: " + e.getMessage());
+            log.error("Error processing audit message: {}", e.getMessage());
             throw e;
         }
     }
