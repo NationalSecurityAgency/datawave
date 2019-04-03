@@ -26,6 +26,7 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
+import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import datawave.webservice.query.cache.QueryCache;
@@ -131,6 +132,7 @@ public class QueryExecutorBeanTest {
     
     // QueryExecutorBean dependencies
     private QueryCache cache;
+    private ClosedQueryCache closedCache;
     private AccumuloConnectionRequestBean connectionRequestBean;
     private AccumuloConnectionFactory connectionFactory;
     private AuditBean auditor;
@@ -157,6 +159,8 @@ public class QueryExecutorBeanTest {
         cache = new QueryCache();
         cache.init();
         
+        closedCache = new ClosedQueryCache();
+        
         bean = new QueryExecutorBean();
         
         connectionFactory = createStrictMock(AccumuloConnectionFactory.class);
@@ -177,6 +181,7 @@ public class QueryExecutorBeanTest {
         setInternalState(auditor, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());
         setInternalState(connectionRequestBean, EJBContext.class, ctx);
         setInternalState(bean, QueryCache.class, cache);
+        setInternalState(bean, ClosedQueryCache.class, closedCache);
         setInternalState(bean, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(bean, AuditBean.class, auditor);
         setInternalState(bean, QueryMetricsBean.class, metrics);
@@ -648,10 +653,8 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getAuditType(null)).andReturn(AuditType.NONE);
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
-        persister.remove(q);
-        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
-        
         EasyMock.expect(persister.findById(EasyMock.anyString())).andReturn(null).anyTimes();
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
         
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         q.populateMetric(metric);
@@ -751,14 +754,8 @@ public class QueryExecutorBeanTest {
             pair = qlCache.poll(q.getId().toString());
             Assert.assertNull("Still found an entry in the qlCache: " + pair, pair);
             
-            // Test that we can call close again successfully
-            bean.close(q.getId().toString());
-            
             // Should have already joined by now, but just to be sure
             createQuery.join();
-            
-            // Test that we can call close again successfully
-            bean.close(q.getId().toString());
             
         } finally {
             if (null != createQuery && createQuery.isAlive()) {
