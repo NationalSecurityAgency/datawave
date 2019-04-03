@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * An implementation for {@link Auditor}, which writes URL encoded, JSON formatted audit messages to a file.
+ * An implementation for {@link Auditor}, which writes JSON formatted audit messages to a file.
  */
 public class FileAuditor implements Auditor {
     
@@ -76,7 +76,7 @@ public class FileAuditor implements Auditor {
     @Override
     public void audit(AuditParameters auditParameters) throws Exception {
         
-        // convert the messages to URL-encoded JSON
+        // convert the messages to JSON
         String jsonAuditParams = mapper.writeValueAsString(auditParameters.toMap()) + "\n";
         
         writeLock.lock();

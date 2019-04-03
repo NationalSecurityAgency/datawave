@@ -29,8 +29,7 @@ import static datawave.microservice.audit.replay.status.Status.FileState;
 import static datawave.webservice.common.audit.AuditParameters.AUDIT_ID;
 
 /**
- * The replay task is responsible for reading the audit messages from disk, parsing them from URL-encoded JSON, and processing them through the audit
- * controller.
+ * The replay task is responsible for reading the audit messages from disk, parsing them from JSON, and processing them through the audit controller.
  */
 public abstract class ReplayTask implements Runnable {
     
