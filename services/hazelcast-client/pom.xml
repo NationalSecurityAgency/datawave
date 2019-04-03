@@ -11,7 +11,7 @@
     <version>1.5-SNAPSHOT</version>
     <properties>
         <version.hazelcast-kubernetes>1.4</version.hazelcast-kubernetes>
-        <version.microservice.hazelcast>1.4</version.microservice.hazelcast>
+        <version.microservice.hazelcast>1.5-SNAPSHOT</version.microservice.hazelcast>
     </properties>
     <dependencyManagement>
         <dependencies>
