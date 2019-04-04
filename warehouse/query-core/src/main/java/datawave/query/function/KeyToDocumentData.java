@@ -354,7 +354,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * @return
      */
     protected Key getStopKey(Map.Entry<Key,Document> from) {
-        return new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString() + '\uffff');
+        return filter == null ? from.getKey().followingKey(PartialKey.ROW_COLFAM) : filter.getStopKey(from.getKey());
     }
     
     /**
