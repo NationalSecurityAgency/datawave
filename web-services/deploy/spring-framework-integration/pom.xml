@@ -8,7 +8,6 @@
     </parent>
     <artifactId>spring-framework-integration</artifactId>
     <name>${project.artifactId}</name>
-    <url>http://maven.apache.org</url>
     <dependencies>
         <dependency>
             <groupId>org.easymock</groupId>

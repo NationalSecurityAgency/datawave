@@ -8,11 +8,11 @@
     <name>DataWave Code Formatter</name>
     <description>This pom configures the formatter-maven-plugin to format the code
         according to the DataWave code style.</description>
-    <url>http://code.nsa.gov/datawave</url>
+    <url>https://code.nsa.gov/datawave</url>
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
     <scm>
