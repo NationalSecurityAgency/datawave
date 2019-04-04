@@ -7,11 +7,11 @@
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
-    <url>http://code.nsa.gov/datawave</url>
+    <url>https://code.nsa.gov/datawave</url>
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
     <modules>
@@ -37,20 +37,20 @@
         <version.caffeine>2.6.2</version.caffeine>
         <version.commons-beanutils>1.9.3</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
-        <version.commons-codec>1.10</version.commons-codec>
-        <version.commons-collections>4.2</version.commons-collections>
+        <version.commons-codec>1.12</version.commons-codec>
+        <version.commons-collections>4.3</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
-        <version.commons-io>2.5</version.commons-io>
+        <version.commons-io>2.6</version.commons-io>
         <version.commons-jexl>2.1.1</version.commons-jexl>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
-        <version.curator>2.11.0</version.curator>
+        <version.curator>2.13.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dropwizard-metrics>1.5.0</version.dropwizard-metrics>
         <version.easymock>4.0.2</version.easymock>
-        <version.geoserver>2.10.0</version.geoserver>
-        <version.geotools>16.0</version.geotools>
+        <version.geoserver>2.14.2</version.geoserver>
+        <version.geotools>20.1</version.geotools>
         <version.geowave>0.9.5</version.geowave>
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
@@ -87,7 +87,7 @@
         <version.microservice.type-utils>1.0</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.15</version.mysql-connector>
-        <version.netty>4.0.15.Final</version.netty>
+        <version.netty>4.1.34.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.0</version.powermock>
@@ -1045,7 +1045,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>todo-public</id>
-            <url>http://todo/nexus/content/groups/public</url>
+            <url>https://todo/nexus/content/groups/public</url>
         </repository>
         <repository>
             <releases>
@@ -1055,7 +1055,7 @@
                 <enabled>true</enabled>
             </snapshots>
             <id>todo-public-snapshots</id>
-            <url>http://todo/nexus/content/groups/public-snapshots</url>
+            <url>https://todo/nexus/content/groups/public-snapshots</url>
         </repository>
         -->
         <repository>
@@ -1077,7 +1077,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>jboss</id>
-            <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+            <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
         </repository>
         <repository>
             <snapshots>
@@ -1098,7 +1098,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>boundless</id>
-            <url>http://repo.boundlessgeo.com/main/</url>
+            <url>https://repo.boundlessgeo.com/main/</url>
         </repository>
         <repository>
             <snapshots>
@@ -1106,7 +1106,7 @@
             </snapshots>
             <id>osgeo</id>
             <name>Open Source Geospatial Foundation Repository</name>
-            <url>http://download.osgeo.org/webdav/geotools/</url>
+            <url>https://download.osgeo.org/webdav/geotools/</url>
         </repository>
     </repositories>
     <pluginRepositories>

@@ -41,18 +41,18 @@
         <version.abdera>1.1.3</version.abdera>
         <version.asm>4.0</version.asm>
         <version.axiom>1.2.14</version.axiom>
-        <version.bcprov>1.45</version.bcprov>
-        <version.commons-compress>1.13</version.commons-compress>
-        <version.commons-dbutils>1.6</version.commons-dbutils>
+        <version.bcprov>1.46</version.bcprov>
+        <version.commons-compress>1.18</version.commons-compress>
+        <version.commons-dbutils>1.7</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
-        <version.commons-net>3.5</version.commons-net>
-        <version.commons-pool2>2.4.2</version.commons-pool2>
+        <version.commons-net>3.6</version.commons-net>
+        <version.commons-pool2>2.6.1</version.commons-pool2>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.jms>1.1</version.jms>
         <version.mrunit>1.0.0</version.mrunit>
         <version.protobuf>2.5.0</version.protobuf>
-        <version.stream>2.7.0</version.stream>
+        <version.stream>2.9.6</version.stream>
     </properties>
     <dependencyManagement>
         <dependencies>
