@@ -17,6 +17,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -112,7 +113,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
             DescriptiveStatistics stats = new DescriptiveStatistics();
             final String day = getDay(src.getTopKey());
             Key reference = makeRootKey(src.getTopKey(), day + "_");
-            Set<String> uids = Sets.newHashSet();
+            Set<String> uids;
             long count = 0L;
             boolean ignore = false;
             boolean ignoreDay = false;
@@ -148,8 +149,8 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
                             uids = Sets.newHashSet();
                             for (String uid : uidInfo.third()) {
                                 if (log.isTraceEnabled())
-                                    log.trace("Adding uid " + uid.split("\u0000")[1] + " " + uid + " " + TLD.parseRootPointerFromId(uid) + " "
-                                                    + TLD.parseRootPointerFromId(uid.toString()));
+                                    log.trace("Adding uid " + StringUtils.split(uid, '\u0000')[1] + " " + uid + " " + TLD.parseRootPointerFromId(uid) + " "
+                                                    + TLD.parseRootPointerFromId(uid));
                                 if (isTld) {
                                     uids.add(TLD.parseRootPointerFromId(uid));
                                 } else {
