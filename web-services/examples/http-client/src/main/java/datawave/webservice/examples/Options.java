@@ -22,6 +22,9 @@ class Options {
     @Parameter(names = {"-a", "--auths"}, required = true, description = "Comma-separated list of query authorizations.")
     String auths;
     
+    @Parameter(names = {"-v", "--columnVisibility"}, required = true, description = "Column-visibility expression marking the visibility of the query.")
+    String colVis;
+    
     @Parameter(names = {"-r", "--responseClass"}, description = "The name of the response class.")
     String responseClass = DefaultEventQueryResponse.class.getName();
     
@@ -42,7 +45,7 @@ class Options {
             if (idx < 0) {
                 throw new ParameterException(value + " is not a name:value pair");
             }
-            return new BasicNameValuePair(value.substring(0, idx), value.substring(idx + 1, value.length()));
+            return new BasicNameValuePair(value.substring(0, idx), value.substring(idx + 1));
         }
     }
 }

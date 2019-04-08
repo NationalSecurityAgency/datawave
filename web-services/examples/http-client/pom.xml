@@ -11,6 +11,14 @@
     <name>${project.artifactId}</name>
     <dependencies>
         <dependency>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
@@ -31,6 +39,14 @@
             <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>type-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
             <version>${project.version}</version>
@@ -40,8 +56,20 @@
             <artifactId>protostuff-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
