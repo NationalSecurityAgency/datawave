@@ -1,7 +1,7 @@
 package datawave.webservice.examples;
 
+import java.io.File;
 import java.io.FileInputStream;
-import java.net.URL;
 import java.security.KeyStore;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -22,26 +22,25 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.ssl.SSLContextBuilder;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * An example showing a simple query to the DATAWAVE web service, using the client classes to simplify parsing the query response.
  */
 public class JacksonQueryExample {
-    private static final String CREATE_PATH = "{0}/DataWave/Query/create";
+    private static final String CREATE_PATH = "{0}/DataWave/Query/{1}/create";
     private static final String NEXT_PATH = "{0}/DataWave/Query/{1}/next";
     private static final String CLOSE_PATH = "{0}/DataWave/Query/{1}/close";
     
@@ -68,14 +67,18 @@ public class JacksonQueryExample {
         String baseURI = options.baseURI;
         if (baseURI.endsWith("/"))
             baseURI = baseURI.substring(0, baseURI.length() - 1);
-        URL url = new URL(baseURI);
         
-        KeyStore ks = KeyStore.getInstance(System.getProperty("javax.net.ssl.keyStoreType"));
-        ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), System.getProperty("javax.net.ssl.keyStorePassword").toCharArray());
         KeyStore ts = KeyStore.getInstance(System.getProperty("javax.net.ssl.trustStoreType"));
         ts.load(new FileInputStream(System.getProperty("javax.net.ssl.trustStore")), System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
-        SchemeRegistry schemeRegistry = new SchemeRegistry();
-        schemeRegistry.register(new Scheme("https", url.getPort(), new SSLSocketFactory(ks, System.getProperty("javax.net.ssl.keyStorePassword"), ts)));
+        
+        SSLContext sslContext = SSLContextBuilder
+                        .create()
+                        .setProtocol("TLSv1.2")
+                        .setKeyStoreType(System.getProperty("javax.net.ssl.keyStoreType"))
+                        .loadKeyMaterial(new File(System.getProperty("javax.net.ssl.keyStore")),
+                                        System.getProperty("javax.net.ssl.keyStorePassword").toCharArray(),
+                                        System.getProperty("javax.net.ssl.keyStorePassword").toCharArray())
+                        .loadTrustMaterial(ts, new TrustSelfSignedStrategy()).build();
         
         Class<? extends BaseQueryResponse> responseClass = Class.forName(options.responseClass).asSubclass(BaseQueryResponse.class);
         
@@ -85,28 +88,22 @@ public class JacksonQueryExample {
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
         mapper.setAnnotationIntrospector(introspector);
         
-        HttpClient client = new DefaultHttpClient(new PoolingClientConnectionManager(schemeRegistry));
-        // Use the "browser compatibility" cookie policy, since it fixes an issue we were seeing
-        // with the load balancer where http client was quoting the cookie value (but the server
-        // sent it unquoted) and the load balancer was treating the quoted value differently
-        // than the unquoted value. With this policy, http client no longer quotes the
-        // outgoing cookie.
-        client.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
-        
         // Set default headers so all requests ask for JSON content.
         List<Header> defaultHeaders = new ArrayList<>();
         defaultHeaders.add(new BasicHeader("Accept", "application/json"));
-        client.getParams().setParameter(ClientPNames.DEFAULT_HEADERS, defaultHeaders);
+        
+        CloseableHttpClient client = HttpClients.custom().setDefaultHeaders(defaultHeaders).setSSLContext(sslContext)
+                        .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build();
         
         // Create the query
-        HttpPost create = new HttpPost(MessageFormat.format(CREATE_PATH, baseURI));
+        HttpPost create = new HttpPost(MessageFormat.format(CREATE_PATH, baseURI, options.queryLogic));
         List<NameValuePair> formparams = new ArrayList<>();
         formparams.add(new BasicNameValuePair("pagesize", Integer.toString(options.pageSize)));
         formparams.add(new BasicNameValuePair("query", options.query));
-        formparams.add(new BasicNameValuePair("logicName", options.queryLogic));
         formparams.add(new BasicNameValuePair("auths", options.auths));
         formparams.add(new BasicNameValuePair("queryName", "exampleQuery"));
         formparams.add(new BasicNameValuePair("persistence", "TRANSIENT"));
+        formparams.add(new BasicNameValuePair("columnVisibility", options.colVis));
         for (BasicNameValuePair pair : options.additionalParameters) {
             System.out.println("Adding parameter: " + pair);
             formparams.add(pair);
