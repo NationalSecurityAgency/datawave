@@ -52,8 +52,6 @@ public class TestBaseQueryLogic {
         expect(this.copy.getPrincipal()).andReturn(null);
         RoleManager roleManager = new EasyRoleManager();
         expect(this.copy.getRoleManager()).andReturn(roleManager);
-        expect(this.copy.getMarkingFunctions()).andReturn(null);
-        expect(this.copy.getResponseObjectFactory()).andReturn(null);
         expect(this.copy.getSelectorExtractor()).andReturn(null);
         expect(this.copy.getBypassAccumulo()).andReturn(false);
         
