@@ -1893,6 +1893,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.config.setCollapseUids(collapseUids);
     }
     
+    public int getCollapseUidsThreshold() {
+        return this.config.getCollapseUidsThreshold();
+    }
+    
+    public void setCollapseUidsThreshold(int collapseUidsThreshold) {
+        this.config.setCollapseUidsThreshold(collapseUidsThreshold);
+    }
+    
     public long getMaxIndexScanTimeMillis() {
         return this.config.getMaxIndexScanTimeMillis();
     }
