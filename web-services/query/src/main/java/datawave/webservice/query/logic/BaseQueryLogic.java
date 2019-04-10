@@ -23,7 +23,7 @@ import java.util.Set;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
-    private GenericQueryConfiguration baseConfig = new GenericQueryConfiguration() {};
+    private GenericQueryConfiguration baseConfig;
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
     private AuditType auditType = null;
@@ -45,7 +45,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public static final String BYPASS_ACCUMULO = "rfile.debug";
     
     public BaseQueryLogic() {
-        this.baseConfig.setBaseIteratorPriority(100);
+        getConfig().setBaseIteratorPriority(100);
     }
     
     public BaseQueryLogic(BaseQueryLogic<T> other) {
@@ -76,6 +76,10 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     public GenericQueryConfiguration getConfig() {
+        if (baseConfig == null) {
+            baseConfig = new GenericQueryConfiguration() {};
+        }
+        
         return baseConfig;
     }
     

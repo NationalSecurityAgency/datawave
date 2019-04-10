@@ -167,7 +167,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected ScannerFactory scannerFactory = null;
     protected Scheduler scheduler = null;
     protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
-    protected ShardQueryConfiguration config;
+    private ShardQueryConfiguration config;
     protected MetadataHelperFactory metadataHelperFactory = null;
     protected DateIndexHelperFactory dateIndexHelperFactory = null;
     protected Function<String,String> queryMacroFunction;
@@ -187,8 +187,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      */
     public ShardQueryLogic() {
         super();
-        // super(ShardQueryConfiguration.create());
-        // config = (ShardQueryConfiguration) super.getConfig();
         if (log.isTraceEnabled())
             log.trace("Creating ShardQueryLogic: " + System.identityHashCode(this));
     }
