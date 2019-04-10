@@ -250,12 +250,12 @@ public class FieldAgeOffFilter extends AppliedRule {
         }
         
         isIndextable = false;
-        if (options.getOption("isindextable") == null) {
+        if (options.getOption(AgeOffConfigParams.IS_INDEX_TABLE) == null) {
             if (iterEnv != null && iterEnv.getConfig() != null) {
-                isIndextable = Boolean.parseBoolean(iterEnv.getConfig().get("isindextable"));
+                isIndextable = Boolean.parseBoolean(iterEnv.getConfig().get("table.custom." + AgeOffConfigParams.IS_INDEX_TABLE));
             }
         } else { // legacy
-            isIndextable = Boolean.valueOf(options.getOption("isindextable"));
+            isIndextable = Boolean.valueOf(options.getOption(AgeOffConfigParams.IS_INDEX_TABLE));
         }
         
         long defaultUnitsFactor = 1L; // default to "days" as the unit.
