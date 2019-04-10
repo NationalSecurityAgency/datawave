@@ -5,32 +5,34 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DataWave Docs</title>
-    <link rel="stylesheet" href="css/foundation.css">
+    <link rel="stylesheet" href="/foundation.min.css">
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="css/dwdocs.css">
 </head>
 <body>
     <div class="top-bar">
         <div class="top-bar-left">
-            <ul class="dropdown menu" data-dropdown-menu>
-                <li><img src="images/dwdocs_logo.png" width="50%" height="50%"
+            <ul class="menu">
+                <li><img src="images/dwdocs_logo.png" width="429px" height="38px"
                          style="padding-left: 10px; padding-right: 40px; padding-top: 10px;padding-bottom: 20px"></li>
+           </ul>
+        </div>
+        <div class="top-bar-right">
+            <ul class="dropdown menu" data-dropdown-menu>
                 <li>
                     <a href="#">API Documents</a>
-                    <ul class="menu">
+                    <ul class="menu vertical">
                         <li><a href="javadocs/index.html">Javadoc</a></li>
                         <li><a href="apidocs/index.html">API Docs</a></li>
                     </ul>
                 </li>
-
                 <li>
                     <a href="#">DataWave</a>
-                    <ul class="menu">
+                    <ul class="menu vertical">
                         <li><a href="/DataWave/DataDictionary">Data Dictionary</a></li>
                         <li><a href="/DataWave/EdgeDictionary">Edge Dictionary</a></li>
                         <li><a href="/DataWave/Query/listQueryLogic">Deployed Query Logics</a></li>
-                        <li><a href="/DataWave/Security/User/listEffectiveAuthorizations">My Effective Authorizations</a>
-                        </li>
+                        <li><a href="/DataWave/Security/User/listEffectiveAuthorizations">My Effective Authorizations</a></li>
                         <li><a href="/DataWave/Security/Admin/Credentials/listDNs">Cached Credentials</a></li>
                     </ul>
                 </li>
@@ -45,38 +47,37 @@
         <h1 align="center" style="color: white">Welcome to DataWave</h1>
     </div>
 
-    <div class="row" align="center">
-        <div class="small-4 columns">
+    <div class="grid-x" align="center">
+        <div class="cell small-4">
             <a href="apidocs/index.html"><img src="images/api_icon_finished.png" width="50%"
                                               style="alignment-adjust:central;padding: 20px"></a>
-            <p align="center" style="padding-bottom: 30%">API Documents</p></a>
+            <div style="padding-bottom: 30%">API Documents</div></a>
         </div>
-        <div class="small-4 columns">
+        <div class="cell small-4">
             <a href="query_help.html"><img src="images/userGuide_icon.png" width="50%"
                                            style="alignment-adjust:central;padding: 20px"></a>
-            <p align="center" style="padding-bottom: 30%">Query Help</p>
+            <div style="padding-bottom: 30%">Query Help</div>
         </div>
-        <div class="small-4 columns">
+        <div class="cell small-4">
             <a href="releaseNotes.html"><img src="images/releaseNotes_icon.png" width="50%"
                                              style="alignment-adjust:central;padding: 20px"></a>
-                <p align="center" style="padding-bottom: 30%">Release Notes</p>
+            <div style="padding-bottom: 30%">Release Notes</div>
         </div>
     </div>
 
 
-    <script src="js/vendor/jquery.js"></script>
-    <script src="js/vendor/what-input.js"></script>
-    <script src="js/vendor/foundation.js"></script>
+    <script src="/jquery.min.js"></script>
+    <script src="/foundation.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 <footer>
-    <div class="top-bar" style="background-color: #3c3c3c">
-        <p align="center" style="color:white">
+    <div class="grid-x" style="background-color: #3c3c3c; text-align: center; color: white;">
+        <div class="cell">
             Built By: ${git.build.user.email}<br/>
             Branch: ${git.branch}<br/>
             Commit: ${git.commit.id}<br/>
             Date/Time: ${git.build.time}
-        </p>
+        </div>
     </div>
 </footer>
 </html>

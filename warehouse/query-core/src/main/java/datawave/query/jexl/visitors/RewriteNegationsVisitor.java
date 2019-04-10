@@ -12,12 +12,17 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 /**
- * Rewrites subtrees of the form "A != B" into "!(A == B)". This is destructive on the tree.
+ * <pre>
+ * Rewrites subtrees of Not Equals and Regex Not Equals nodes.
+ * EQ example: "A != B" into "!(A == B)".
+ * RN example: "A !~ B" into "!(A =~ B)".
+ * This rewrite operation is destructive to the query tree.
+ * </pre>
  */
-public class Negations extends BaseVisitor {
+public class RewriteNegationsVisitor extends BaseVisitor {
     
     public static <T extends JexlNode> T rewrite(T node) {
-        node.jjtAccept(new Negations(), null);
+        node.jjtAccept(new RewriteNegationsVisitor(), null);
         return node;
     }
     
