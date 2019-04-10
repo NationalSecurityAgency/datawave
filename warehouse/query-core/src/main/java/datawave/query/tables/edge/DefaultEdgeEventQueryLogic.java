@@ -93,8 +93,8 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         String modelTable = getModelTableName() == null ? "" : getModelTableName();
         if (null == getEdgeQueryModel() && (!model.isEmpty() && !modelTable.isEmpty())) {
             try {
-                setEdgeQueryModel(new EdgeQueryModel(getMetadataHelperFactory().createMetadataHelper(connector, config.getMetadataTableName(), auths)
-                                .getQueryModel(config.getModelTableName(), config.getModelName())));
+                setEdgeQueryModel(new EdgeQueryModel(getMetadataHelperFactory().createMetadataHelper(connector, getConfig().getMetadataTableName(), auths)
+                                .getQueryModel(getConfig().getModelTableName(), getConfig().getModelName())));
             } catch (Throwable t) {
                 log.error("Unable to load edgeQueryModel from metadata table", t);
             }
