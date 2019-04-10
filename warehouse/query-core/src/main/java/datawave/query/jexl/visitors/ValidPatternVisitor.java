@@ -29,7 +29,7 @@ public class ValidPatternVisitor extends BaseVisitor {
     }
     
     /**
-     * Visit a Regex Equals node, catches the situation where a users might enter FIELD1 =~ FIELD2.
+     * Visit a Regex Equals node, catches the situation where a users might enter FIELD1 =~ VALUE1.
      *
      * @param node
      *            - an AST Regex Equals node
@@ -41,14 +41,14 @@ public class ValidPatternVisitor extends BaseVisitor {
     public Object visit(ASTERNode node, Object data) {
         Object literalValue;
         
-        // Catch the situation where a user might enter FIELD1 =~ FIELD2
+        // Catch the situation where a user might enter FIELD1 =~ VALUE1
         try {
             literalValue = JexlASTHelper.getLiteralValue(node);
         } catch (NoSuchElementException e) {
             return data;
         }
         
-        if (String.class.equals(literalValue.getClass())) {
+        if (literalValue != null && String.class.equals(literalValue.getClass())) {
             String literalString = (String) literalValue;
             if (patternCache.containsKey(literalString)) {
                 return data;
@@ -59,7 +59,7 @@ public class ValidPatternVisitor extends BaseVisitor {
     }
     
     /**
-     * Visit a Regex Not Equals node, catches the situation where a user might enter FIELD1 !~ FIELD2
+     * Visit a Regex Not Equals node, catches the situation where a user might enter FIELD1 !~ VALUE1
      * 
      * @param node
      *            - an AST Regex Not Equals node
@@ -71,14 +71,14 @@ public class ValidPatternVisitor extends BaseVisitor {
     public Object visit(ASTNRNode node, Object data) {
         Object literalValue;
         
-        // Catch the situation where a user might enter FIELD1 !~ FIELD2
+        // Catch the situation where a user might enter FIELD1 !~ VALUE1
         try {
             literalValue = JexlASTHelper.getLiteralValue(node);
         } catch (NoSuchElementException e) {
             return data;
         }
         
-        if (String.class.equals(literalValue.getClass())) {
+        if (literalValue != null && String.class.equals(literalValue.getClass())) {
             String literalString = (String) literalValue;
             if (patternCache.containsKey(literalString)) {
                 return data;
