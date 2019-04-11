@@ -8,14 +8,14 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <description>DATAWAVE Dictionary Service</description>
     <properties>
         <start-class>datawave.microservice.dictionary.DictionaryService</start-class>
         <version.microservice.dictionary-api>1.0</version.microservice.dictionary-api>
-        <version.microservice.starter>1.3</version.microservice.starter>
-        <version.webjars.datatables>1.10.16</version.webjars.datatables>
-        <version.webjars.jquery>3.3.1-1</version.webjars.jquery>
+        <version.microservice.starter>1.4</version.microservice.starter>
+        <version.webjars.datatables>1.10.19</version.webjars.datatables>
+        <version.webjars.jquery>3.3.1-2</version.webjars.jquery>
     </properties>
     <dependencyManagement>
         <dependencies>
