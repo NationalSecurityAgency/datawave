@@ -20,6 +20,7 @@ findProvenanceJar (){
 
 
 CONF_DIR=../../config
+DATAWAVE_INDEX_STATS_JAR=$(findJar datawave-index-stats)
 DATAWAVE_INGEST_CSV_JAR=$(findJar datawave-ingest-csv)
 DATAWAVE_INGEST_JSON_JAR=$(findJar datawave-ingest-json)
 DATAWAVE_INGEST_WIKIPEDIA_JAR=$(findJar datawave-ingest-wikipedia)
@@ -33,6 +34,7 @@ DATAWAVE_METADATA_UTILS_JAR=$(findJar metadata-utils)
 DATAWAVE_TYPE_UTILS_JAR=$(findJar type-utils)
 COMMON_UTIL_JAR=$(findWebserviceJar datawave-ws-common-util)
 COMMON_JAR=$(findWebserviceJar datawave-ws-common)
+INMEMORY_ACCUMULO_JAR=$(findJar datawave-in-memory-accumulo)
 DATAWAVE_ACCUMULO_UTILS_JAR=$(findJar accumulo-utils)
 DATAWAVE_BASE_REST_RESPONSES_JAR=$(findJar base-rest-responses)
 DATAWAVE_COMMON_UTILS_JAR=$(findJar common-utils)

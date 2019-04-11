@@ -72,7 +72,7 @@ DW_DATAWAVE_INGEST_LIVE_DATA_TYPES=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES:-"wikipe
 
 # Comma-delimited data type identifiers to be ingested via "bulk" ingest, ie via bulk import of RFiles into Accumulo tables
 
-DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-""}
+DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-"shardStats"}
 
 DW_DATAWAVE_MAPRED_INGEST_OPTS=${DW_DATAWAVE_MAPRED_INGEST_OPTS:-"-useInlineCombiner -ingestMetricsDisabled"}
 
@@ -193,7 +193,7 @@ function datawaveIngestCsv() {
 
    # Same as with datawaveIngestWikipedia, we use live-ingest.sh, but this time to ingest some CSV data.
    # Note that the sample file, my.csv, has records that intentionally generate errors to demonstrate
-   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot 
+   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot
    # data-related errors that arise during ingest. As a result, this job may terminate with warnings
 
    local csvRawFile="${1}"

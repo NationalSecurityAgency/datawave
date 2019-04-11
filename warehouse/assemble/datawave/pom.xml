@@ -53,6 +53,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-index-stats</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
         </dependency>
         <dependency>
@@ -419,9 +424,9 @@
             </build>
         </profile>
         <profile>
-            <!-- 
+            <!--
 				WARNING WARNING WARNING
-				
+
 				If you change anything in this profile regarding which files are included, then you need to make the
 				corresponding change in src/main/assembly/dist.xml.  Unfortunately, there is no way for the RPM and
 				assembly plugins to share the same configuration, so this information must be duplicated.
@@ -503,7 +508,7 @@
                                         <source>
                                             <location>${project.build.directory}/archive</location>
                                             <excludes>
-                                                <!-- Leave out the bin dir since we add that below with different 
+                                                <!-- Leave out the bin dir since we add that below with different
 													permissions -->
                                                 <exclude>bin/**</exclude>
                                             </excludes>
