@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import datawave.util.TableName;
 import datawave.webservice.query.logic.BaseQueryLogic;
 
 import org.apache.accumulo.core.client.BatchScanner;
@@ -40,7 +41,7 @@ public abstract class GenericQueryConfiguration {
     protected int baseIteratorPriority = 100;
     
     // Table name
-    private String tableName = "shard";
+    private String tableName = TableName.SHARD;
     
     private Iterator<QueryData> queries = Iterators.emptyIterator();
     

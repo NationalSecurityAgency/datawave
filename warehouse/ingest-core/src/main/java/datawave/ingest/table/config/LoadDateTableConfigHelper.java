@@ -2,6 +2,7 @@ package datawave.ingest.table.config;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -67,7 +68,7 @@ public class LoadDateTableConfigHelper extends AbstractTableConfigHelper {
     }
     
     public static String getLoadDatesTableName(Configuration conf) {
-        return conf.get(LOAD_DATES_TABLE_NAME_PROP, "LoadDates");
+        return conf.get(LOAD_DATES_TABLE_NAME_PROP, TableName.LOAD_DATES);
     }
     
     public static int getLoadDatesTableLoaderPriority(Configuration conf) {
