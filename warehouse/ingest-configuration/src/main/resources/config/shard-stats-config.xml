@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+  <property>
+    <name>data.name</name>
+    <value>shardStats</value>
+    <description>Data type being ingested</description>
+  </property>
+
+  <property>
+    <name>num.shards</name>
+    <value>${table.shard.numShardsPerDay}</value>
+  </property>
+
+  <property>
+    <name>shardStats.handler.classes</name>
+    <value>datawave.ingest.mapreduce.handler.shard.ShardStatsDataTypeHandler</value>
+  </property>
+
+  <property>
+    <name>shardStats.reader.class</name>
+    <value>datawave.ingest.input.reader.ShardStatsRecordReader</value>
+  </property>
+
+  <property>
+    <name>sharded.table.names</name>
+    <value>${table.name.shard}</value>
+    <description>Comma-separated list of tables that need to pull splits from accumulo</description>
+  </property>
+
+  <property>
+    <name>shardStats.table.name</name>
+    <value>${table.name.shardStats}</value>
+    <description>output table for stats index data</description>
+  </property>
+
+</configuration>
