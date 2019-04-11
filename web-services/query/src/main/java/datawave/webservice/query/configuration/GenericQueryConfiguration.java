@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import datawave.util.TableName;
 import datawave.webservice.query.logic.BaseQueryLogic;
 
 import org.apache.accumulo.core.client.BatchScanner;
@@ -40,7 +41,7 @@ public abstract class GenericQueryConfiguration {
     protected int baseIteratorPriority = 100;
     
     // Table name
-    private String tableName = "shard";
+    private String tableName = TableName.SHARD;
     
     private Iterator<QueryData> queries = Iterators.emptyIterator();
     
@@ -60,19 +61,21 @@ public abstract class GenericQueryConfiguration {
      *            A pre-configured BaseQueryLogic to initialize the Configuration with
      */
     public GenericQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
-        this.setTableName(configuredLogic.getTableName());
-        this.setMaxRowsToScan(configuredLogic.getMaxRowsToScan());
-        this.setUndisplayedVisibilities(configuredLogic.getUndisplayedVisibilities());
-        this.setBaseIteratorPriority(configuredLogic.getBaseIteratorPriority());
-        this.setBypassAccumulo(configuredLogic.getBypassAccumulo());
+        this(configuredLogic.getConfig());
     }
     
     public GenericQueryConfiguration(GenericQueryConfiguration genericConfig) {
-        this.setTableName(genericConfig.getTableName());
-        this.setMaxRowsToScan(genericConfig.getMaxRowsToScan());
-        this.setUndisplayedVisibilities(genericConfig.getUndisplayedVisibilities());
         this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
         this.setBypassAccumulo(genericConfig.getBypassAccumulo());
+        this.setAuthorizations(genericConfig.getAuthorizations());
+        this.setBeginDate(genericConfig.getBeginDate());
+        this.setConnector(genericConfig.getConnector());
+        this.setEndDate(genericConfig.getEndDate());
+        this.setMaxRowsToScan(genericConfig.getMaxRowsToScan());
+        this.setQueries(genericConfig.getQueries());
+        this.setQueryString(genericConfig.getQueryString());
+        this.setTableName(genericConfig.getTableName());
+        this.setUndisplayedVisibilities(genericConfig.getUndisplayedVisibilities());
     }
     
     /**

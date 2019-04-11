@@ -23,13 +23,7 @@ import java.util.Set;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
-    protected GenericQueryConfiguration baseConfig = new GenericQueryConfiguration() {
-        @Override
-        public Iterator<QueryData> getQueries() {
-            return super.getQueries();
-        }
-    };
-    
+    private GenericQueryConfiguration baseConfig;
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
     private AuditType auditType = null;
@@ -51,7 +45,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public static final String BYPASS_ACCUMULO = "rfile.debug";
     
     public BaseQueryLogic() {
-        this.baseConfig.setBaseIteratorPriority(100);
+        getConfig().setBaseIteratorPriority(100);
     }
     
     public BaseQueryLogic(BaseQueryLogic<T> other) {
@@ -64,6 +58,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setBypassAccumulo(other.getBypassAccumulo());
         
         // Other variables
+        setMaxResults(other.maxResults);
         setMarkingFunctions(other.getMarkingFunctions());
         setResponseObjectFactory(other.getResponseObjectFactory());
         setLogicName(other.getLogicName());
@@ -77,9 +72,15 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setConnPoolName(other.getConnPoolName());
         setPrincipal(other.getPrincipal());
         setRoleManager(other.getRoleManager());
-        setMarkingFunctions(other.getMarkingFunctions());
-        setResponseObjectFactory(other.getResponseObjectFactory());
         setSelectorExtractor(other.getSelectorExtractor());
+    }
+    
+    public GenericQueryConfiguration getConfig() {
+        if (baseConfig == null) {
+            baseConfig = new GenericQueryConfiguration() {};
+        }
+        
+        return baseConfig;
     }
     
     public MarkingFunctions getMarkingFunctions() {
@@ -108,7 +109,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     @Override
     public String getTableName() {
-        return this.baseConfig.getTableName();
+        return getConfig().getTableName();
     }
     
     @Override
@@ -118,12 +119,12 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     @Override
     public long getMaxRowsToScan() {
-        return this.baseConfig.getMaxRowsToScan();
+        return getConfig().getMaxRowsToScan();
     }
     
     @Override
     public void setTableName(String tableName) {
-        this.baseConfig.setTableName(tableName);
+        getConfig().setTableName(tableName);
     }
     
     @Override
@@ -133,7 +134,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     @Override
     public void setMaxRowsToScan(long maxRowsToScan) {
-        this.baseConfig.setMaxRowsToScan(maxRowsToScan);
+        getConfig().setMaxRowsToScan(maxRowsToScan);
     }
     
     @Override
@@ -158,12 +159,12 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     @Override
     public int getBaseIteratorPriority() {
-        return this.baseConfig.getBaseIteratorPriority();
+        return getConfig().getBaseIteratorPriority();
     }
     
     @Override
     public void setBaseIteratorPriority(final int baseIteratorPriority) {
-        this.baseConfig.setBaseIteratorPriority(baseIteratorPriority);
+        getConfig().setBaseIteratorPriority(baseIteratorPriority);
     }
     
     @Override
@@ -187,20 +188,20 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     public boolean getBypassAccumulo() {
-        return this.baseConfig.getBypassAccumulo();
+        return getConfig().getBypassAccumulo();
     }
     
     public void setBypassAccumulo(boolean bypassAccumulo) {
-        this.baseConfig.setBypassAccumulo(bypassAccumulo);
+        getConfig().setBypassAccumulo(bypassAccumulo);
     }
     
     @Override
     public Set<String> getUndisplayedVisibilities() {
-        return baseConfig.getUndisplayedVisibilities();
+        return getConfig().getUndisplayedVisibilities();
     }
     
     public void setUndisplayedVisibilities(Set<String> undisplayedVisibilities) {
-        this.baseConfig.setUndisplayedVisibilities(undisplayedVisibilities);
+        getConfig().setUndisplayedVisibilities(undisplayedVisibilities);
     }
     
     @Override

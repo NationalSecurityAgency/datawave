@@ -3,6 +3,7 @@ package datawave.ingest.mapreduce;
 import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.mock.MockInstance;
@@ -24,14 +25,16 @@ public class TableConfigHelperFactoryTest {
     private Connector connector;
     private TableOperations tops;
     
+    private static final String TEST_SHARD_TABLE_NAME = "testShard";
+    
     @Before
     public void setup() throws Exception {
         conf = new Configuration();
         
-        conf.set("shard.table.name", "shard");
+        conf.set("shard.table.name", TableName.SHARD);
         conf.set("shard.table.config.class", ShardTableConfigHelper.class.getName());
         
-        conf.set("test.shard.table.name", "testShard");
+        conf.set("test.shard.table.name", TEST_SHARD_TABLE_NAME);
         conf.set("testShard.table.config.class", ShardTableConfigHelper.class.getName());
         conf.set("testShard.table.config.prefix", "test");
         
@@ -39,8 +42,8 @@ public class TableConfigHelperFactoryTest {
         connector = instance.getConnector("root", new PasswordToken(new byte[0]));
         tops = connector.tableOperations();
         
-        recreateTable(tops, "shard");
-        recreateTable(tops, "testShard");
+        recreateTable(tops, TableName.SHARD);
+        recreateTable(tops, TEST_SHARD_TABLE_NAME);
     }
     
     private void recreateTable(TableOperations tops, String table) throws Exception {
@@ -52,11 +55,11 @@ public class TableConfigHelperFactoryTest {
     
     @Test
     public void shouldSetupTableWithOverrides() throws Exception {
-        TableConfigHelper helper = TableConfigHelperFactory.create("testShard", conf, logger);
+        TableConfigHelper helper = TableConfigHelperFactory.create(TEST_SHARD_TABLE_NAME, conf, logger);
         helper.configure(tops);
         
-        TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, "testShard");
-        TablePropertiesMap shardProperties = new TablePropertiesMap(tops, "shard");
+        TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, TEST_SHARD_TABLE_NAME);
+        TablePropertiesMap shardProperties = new TablePropertiesMap(tops, TableName.SHARD);
         
         assertThat(testShardProperties.get("table.iterator.majc.agg"), is("10,datawave.iterators.PropogatingIterator"));
         assertThat(shardProperties.get("table.iterator.majc.agg"), nullValue());
@@ -64,11 +67,11 @@ public class TableConfigHelperFactoryTest {
     
     @Test
     public void shouldSetupTablesWithoutOverrides() throws Exception {
-        TableConfigHelper helper = TableConfigHelperFactory.create("shard", conf, logger);
+        TableConfigHelper helper = TableConfigHelperFactory.create(TableName.SHARD, conf, logger);
         helper.configure(tops);
         
-        TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, "testShard");
-        TablePropertiesMap shardProperties = new TablePropertiesMap(tops, "shard");
+        TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, TEST_SHARD_TABLE_NAME);
+        TablePropertiesMap shardProperties = new TablePropertiesMap(tops, TableName.SHARD);
         
         assertThat(testShardProperties.get("table.iterator.majc.agg"), nullValue());
         assertThat(shardProperties.get("table.iterator.majc.agg"), is("10,datawave.iterators.PropogatingIterator"));
