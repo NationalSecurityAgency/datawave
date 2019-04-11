@@ -48,12 +48,14 @@ public class GenericQueryConfigurationMockTest {
     
     @Test
     public void testConstructor_WithConfiguredLogic() {
-        // Set expectations
-        expect(this.baseQueryLogic.getTableName()).andReturn("TEST");
-        expect(this.baseQueryLogic.getBaseIteratorPriority()).andReturn(100);
-        expect(this.baseQueryLogic.getMaxRowsToScan()).andReturn(1000L);
-        expect(this.baseQueryLogic.getUndisplayedVisibilities()).andReturn(new HashSet<>(0));
-        expect(this.baseQueryLogic.getBypassAccumulo()).andReturn(false);
+        GenericQueryConfiguration oldConfig = new GenericQueryConfiguration() {};
+        oldConfig.setTableName("TEST");
+        oldConfig.setBaseIteratorPriority(100);
+        oldConfig.setMaxRowsToScan(1000L);
+        oldConfig.setUndisplayedVisibilities(new HashSet<>());
+        oldConfig.setBypassAccumulo(false);
+        
+        expect(this.baseQueryLogic.getConfig()).andReturn(oldConfig).anyTimes();
         
         // Run the test
         PowerMock.replayAll();
