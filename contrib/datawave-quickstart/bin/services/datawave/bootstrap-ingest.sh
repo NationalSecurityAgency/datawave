@@ -103,7 +103,63 @@ function datawaveIngestStop() {
 }
 
 function datawaveIngestStatus() {
-    datawaveIngestIsRunning && echo "DataWave Ingest is running. PIDs: ${DW_DATAWAVE_INGEST_PID_LIST}" || echo "DataWave Ingest is not running"
+    # use a state to parse entries
+    local _opt=pid
+    local _bulkIngest
+    local _liveIngest
+    local _pid
+
+    echo "======  Datawave Ingest Status  ======"
+
+    for _proc in $(pgrep -lf ingest-server.sh); do
+        case ${_opt} in
+            pid)
+                _pid=$_proc
+                _opt=name
+                ;;
+            name)
+                local _name=${_proc%%-ingest-ser}
+                case "${_name}" in
+                    bulk) _bulkIngest=${_pid};;
+                    live) _liveIngest=${_pid};;
+                esac
+                _opt=pid
+                ;;
+        esac
+    done
+
+    if [[ -n "${_bulkIngest}" ]]; then
+        info "bulk ingest server => ${_bulkIngest}"
+    else
+        error "bulk ingest server is not running"
+    fi
+    if [[ -n "${_liveIngest}" ]]; then
+        info "live ingest server => ${_liveIngest}"
+    else
+        error "live ingest server is not running"
+    fi
+
+    local -r _flagMaker=$(pgrep -f 'Dapp=FlagMaker')
+    if [[ -n "${_flagMaker}" ]]; then
+        info "flag maker => ${_flagMaker}"
+    else
+        error "flag maker is not running"
+    fi
+
+    local -r _cleanup=$(pgrep -f 'ingest/cleanup-server.py')
+    if [[ -n "${_cleanup}" ]]; then
+        info "cleanup server => ${_cleanup}"
+    else
+        error "cleanup server is not running"
+    fi
+
+    for _job in BulkIngestMapFileLoader IngestJob; do
+        local _pids=$(pgrep -d ' ' -f datawave.ingest.mapreduce.job.${_job})
+        case ${_job} in
+            BulkIngestMapFileLoader) info "bulk ingest pids: ${_pids}";;
+            IngestJob) info "live ingest pids: ${_pids}";;
+        esac
+    done
 }
 
 function datawaveIngestIsInstalled() {
@@ -193,7 +249,7 @@ function datawaveIngestCsv() {
 
    # Same as with datawaveIngestWikipedia, we use live-ingest.sh, but this time to ingest some CSV data.
    # Note that the sample file, my.csv, has records that intentionally generate errors to demonstrate
-   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot 
+   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot
    # data-related errors that arise during ingest. As a result, this job may terminate with warnings
 
    local csvRawFile="${1}"

@@ -117,7 +117,61 @@ function accumuloStop() {
 }
 
 function accumuloStatus() {
-    accumuloIsRunning && echo "Accumulo is running. PIDs: ${DW_ACCUMULO_PID_LIST} ${DW_ZOOKEEPER_PID_LIST}" || echo "Accumulo is not running"
+    # define vars for accumulo processes
+    local _gc
+    local _master
+    local _monitor
+    local _tracer
+    local _tserver
+
+    echo "======  Accumulo Status  ======"
+    local _opt=pid
+    local _arg
+
+    for _arg in $(jps -lm | grep org.apache.accumulo.start); do
+        case ${_opt} in
+            pid)
+                _pid=${_arg}
+                _opt=class;;
+            class) _opt=component;;
+            component)
+                local _none
+                case "${_arg}" in
+                    gc) _gc=${_pid};;
+                    master) _master=${_pid};;
+                    monitor) _monitor=${_pid};;
+                    tracer) _tracer=${_pid};;
+                    tserver) _tserver=${_pid};;
+                    *) _none=true;;
+                esac
+
+                test -z "${_none}" && info "${_arg} => ${_pid}"
+                _opt=address
+                unset _none
+                _pid=;;
+            address) _opt=addrValue;;
+            addrValue) _opt=pid;;
+        esac
+    done
+
+    test -z "${_gc}" && error "accumulo gc is not running"
+    test -z "${_master}" && error "accumulo master is not running"
+    test -z "${_monitor}" && error "accumulo monitor is not running"
+    test -z "${_tracer}" && error "accumulo tracer is not running"
+    test -z "${_tserver}" && error "accumulo tserver is not running"
+
+    unset _pid
+    local -r _zoo=$(jps -l | grep org.apache.zookeeper)
+    test -n "${_zoo}" && {
+        set -- ${_zoo}
+        _pid=$1
+    }
+    echo "======  Zookeeper Status  ======"
+    if [[ -n "${_pid}" ]]; then
+        info "zookeeper => ${_pid}"
+    else
+        error "zookeeper is not running"
+    fi
 }
 
 function accumuloUninstall() {
