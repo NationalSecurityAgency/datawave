@@ -8,6 +8,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.nyctlc.NYCTLCHelper;
 import datawave.ingest.nyctlc.NYCTLCIngestHelper;
 import datawave.ingest.nyctlc.NYCTLCReader;
+import datawave.util.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -51,9 +52,9 @@ public class NYCTLCColumnBasedHandlerTest {
         TypeRegistry.reset();
         conf = new Configuration();
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 131);
-        conf.set(ShardedDataTypeHandler.SHARD_TNAME, "shard");
-        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex");
-        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex");
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
+        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
     }
     
     @Test
