@@ -1,5 +1,6 @@
 package datawave.microservice.config.web;
 
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import datawave.microservice.config.web.DatawaveServerProperties.Cors;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -44,6 +46,11 @@ public class WebConfig {
     @Bean
     public JaxbAnnotationModule jaxbAnnotationModule() {
         return new JaxbAnnotationModule();
+    }
+    
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer datawaveJacksonCustomizer() {
+        return c -> c.featuresToEnable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
     }
     
     /**

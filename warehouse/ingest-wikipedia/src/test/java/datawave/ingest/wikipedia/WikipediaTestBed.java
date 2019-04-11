@@ -15,6 +15,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
 import datawave.policy.ExampleIngestPolicyEnforcer;
 
+import datawave.util.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -53,10 +54,10 @@ public class WikipediaTestBed {
         conf.addResource(url);
         
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 1);
-        conf.set(ShardedDataTypeHandler.SHARD_TNAME, "shard");
-        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex");
-        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex");
-        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, "DatawaveMetadata");
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
+        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
+        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         conf.set(BaseIngestHelper.DEFAULT_TYPE, LcNoDiacriticsType.class.getName());
         conf.setBoolean(ExtendedContentIndexingColumnBasedHandler.OPT_OFFLINE, true);
         

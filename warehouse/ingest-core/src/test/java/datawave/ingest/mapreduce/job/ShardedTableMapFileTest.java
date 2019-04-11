@@ -41,6 +41,7 @@ import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.time.DateHelper;
+import datawave.util.TableName;
 
 public class ShardedTableMapFileTest {
     private static final Log LOG = LogFactory.getLog(ShardedTableMapFileTest.class);
@@ -55,7 +56,7 @@ public class ShardedTableMapFileTest {
     public static void defineShardLocationsFile() throws IOException {
         conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
-        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard");
+        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD);
     }
     
     @Test
