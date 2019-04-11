@@ -1304,7 +1304,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     @Timed(name = "dw.query.createAndNext", absolute = true)
-    public BaseQueryResponse createQueryAndNext(@PathParam("logicName") String logicName, MultivaluedMap<String,String> queryParameters,
+    public BaseQueryResponse createQueryAndNext(@Required("logicName") @PathParam("logicName") String logicName, MultivaluedMap<String,String> queryParameters,
                     @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         
@@ -1325,7 +1325,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     @Asynchronous
     @Timed(name = "dw.query.createAndNextAsync", absolute = true)
-    public void createQueryAndNextAsync(@PathParam("logicName") String logicName, MultivaluedMap<String,String> queryParameters,
+    public void createQueryAndNextAsync(@Required("logicName") @PathParam("logicName") String logicName, MultivaluedMap<String,String> queryParameters,
                     @Suspended AsyncResponse asyncResponse) {
         try {
             BaseQueryResponse response = createQueryAndNext(logicName, queryParameters);

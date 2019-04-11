@@ -25,8 +25,6 @@ public class TestQueryParameters {
         parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
         parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
         parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
-        parameters.putSingle(QueryParameters.QUERY_BEGIN, "20180928");
-        parameters.putSingle(QueryParameters.QUERY_END, "20180929");
         parameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, "LogicName");
     }
     

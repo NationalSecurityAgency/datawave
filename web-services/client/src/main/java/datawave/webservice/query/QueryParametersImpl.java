@@ -42,7 +42,7 @@ public class QueryParametersImpl implements QueryParameters {
     }
     
     /**
-     * Configure internal variables vi the incoming parameter map, performing validation of values.
+     * Configure internal variables via the incoming parameter map, performing validation of values.
      *
      * QueryParameters are considered valid if the following required parameters are present.
      * <ol>
