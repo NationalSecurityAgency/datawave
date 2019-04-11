@@ -26,6 +26,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.ingest.time.Now;
 import datawave.metadata.protobuf.EdgeMetadata;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -60,11 +61,11 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
-public class ProtubufEdgeDeleteModeTest {
+public class ProtobufEdgeDeleteModeTest {
     
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ProtubufEdgeDeleteModeTest.class);
+    private static Logger log = Logger.getLogger(ProtobufEdgeDeleteModeTest.class);
     private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
     private static Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
@@ -388,10 +389,7 @@ public class ProtubufEdgeDeleteModeTest {
     
     public static class HandlerTestUtil {
         
-        public static final Text shardTableName = new Text("shard");
-        public static final Text shardIndexTableName = new Text("shardIndex");
-        public static final Text shardReverseIndexTableName = new Text("shardReverseIndex");
-        public static final Text edgeTableName = new Text("edge");
+        public static final Text edgeTableName = new Text(TableName.EDGE);
         public static final String NB = "\u0000";
         
         private static Logger log = Logger.getLogger(HandlerTestUtil.class);
@@ -462,6 +460,7 @@ public class ProtubufEdgeDeleteModeTest {
                         log.info(keyString.trim());
                     }
                 }
+                final Text shardTableName = new Text(TableName.SHARD);
                 Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
             }
         }

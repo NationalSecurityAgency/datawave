@@ -36,6 +36,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.PeekingIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -151,7 +152,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     @Override
     public Range buildNextRange(final Key lastKey, final Range previousRange) {
         
-        /**
+        /*
          * This path includes the following key from the shard_id onward. The reason we also append the hex 255 value is because we receive a key not unlike
          * foo:20130101_0. If our next search space is foo:20130101_0\x00 we will hit all data types within that range...again..and again...and again. To
          * account for this, we put \uffff after the null byte so that we start key is technically the last value within the provided shard, moving us to the
@@ -170,7 +171,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     @Override
     public boolean hasNext() {
         
-        /**
+        /*
          * Let's take a moment to look through all states S
          */
         
@@ -185,7 +186,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             while (null == currentEntry && (!finished || !resultQueue.isEmpty() || ((isFlushNeeded = flushNeeded()) == true))) {
                 
                 try {
-                    /**
+                    /*
                      * Poll for one second. We're in a do/while loop that will break iff we are no longer running or there is a current entry available.
                      */
                     currentEntry = resultQueue.poll(getPollTime(), TimeUnit.MILLISECONDS);
@@ -212,7 +213,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 }
             }
             if (uncaughtExceptionHandler.getThrowable() != null) {
-                log.error("Exception discovererd on hasNext call", uncaughtExceptionHandler.getThrowable());
+                log.error("Exception discovered on hasNext call", uncaughtExceptionHandler.getThrowable());
                 Throwables.propagate(uncaughtExceptionHandler.getThrowable());
             }
         }
@@ -280,17 +281,18 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 IndexInfo infos = new IndexInfo();
                 try {
                     infos.readFields(new DataInputStream(new ByteArrayInputStream(currentKeyValue.getValue().get())));
-                    for (IndexMatch match : infos.uids()) {
-                        log.trace("match is " + match.getUid().split("\u0000")[1]);
+                    if (log.isTraceEnabled()) {
+                        for (IndexMatch match : infos.uids()) {
+                            log.trace("match is " + StringUtils.split(match.getUid(), '\u0000')[1]);
+                        }
                     }
                 } catch (IOException e) {
                     log.error(e);
                 }
                 
-                // become a passthrough if we've seen an unexpected key.
+                // become a pass-through if we've seen an unexpected key.
                 if (seenUnexpectedKey) {
                     currentQueue.add(currentKeyValue);
-                    
                     break;
                 }
                 
@@ -375,7 +377,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 
                 Value newValue = null;
                 try {
-                    
                     ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
                     DataOutputStream outDataStream = new DataOutputStream(outByteStream);
                     info.write(outDataStream);
@@ -393,9 +394,10 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 
                 try {
                     if (!resultQueue.offer(myEntry, 1, TimeUnit.SECONDS)) {
-                        log.trace("could not add day! converting " + myEntry + " to " + prevDay);
+                        if (log.isTraceEnabled()) {
+                            log.trace("could not add day! converting " + myEntry + " to " + prevDay);
+                        }
                         prevDay = myEntry;
-                        
                     }
                     
                 } catch (InterruptedException exception) {
@@ -429,7 +431,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             
             if (result) {
                 do {
-                    
                     result = resultQueue.offer(top);
                     
                     if (!result) {
@@ -437,7 +438,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                             log.trace("Failed adding " + resultQueue.size() + " " + forceAll);
                         if (forceAll)
                             continue;
-                        
                     }
                     
                     break;
@@ -457,10 +457,11 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 log.trace("Last key is " + lastSeenKey);
             
             count++;
-            
         }
         
-        log.trace("we have " + currentQueue.size() + " " + kvIter.size());
+        if (log.isTraceEnabled()) {
+            log.trace("we have " + currentQueue.size() + " " + kvIter.size());
+        }
         
         return count;
     }
@@ -541,7 +542,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 return;
             }
             
-            /**
+            /*
              * Even though we were delegated a resource, we have not actually been provided the plumbing to run it. Note, below, that we initialize the resource
              * through the resource factory from a running resource.
              */
@@ -622,16 +623,15 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             }
             
         } catch (IllegalArgumentException e) {
-            /**
+            /*
              * If we get an illegal argument exception, we know that the ScannerSession extending class created a start key after our end key, which means that
              * we've finished with this range. As a result, we set lastSeenKey to null, so that on our next pass through, we pop the next range from the queue
              * and continue or finish. We're going to timeslice and come back as know this range is likely finished.
              */
             if (log.isTraceEnabled())
-                log.trace(lastSeenKey + " is lastseenKey, previous range is " + currentRange, e);
+                log.trace(lastSeenKey + " is lastSeenKey, previous range is " + currentRange, e);
             
             lastSeenKey = null;
-            return;
             
         } catch (Exception e) {
             

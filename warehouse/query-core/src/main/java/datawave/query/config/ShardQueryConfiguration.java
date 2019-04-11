@@ -21,6 +21,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
+import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -76,6 +77,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String accumuloPassword = "";
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     private boolean collapseUids = false;
+    private int collapseUidsThreshold = -1;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -125,12 +127,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
     private int geoWaveMaxEnvelopes = 4;
-    private String shardTableName = "shard";
-    private String indexTableName = "shardIndex";
-    private String reverseIndexTableName = "shardReverseIndex";
-    private String metadataTableName = "DatawaveMetadata";
-    private String dateIndexTableName = "DateIndex";
-    private String indexStatsTableName = "shardIndexStats";
+    private String shardTableName = TableName.SHARD;
+    private String indexTableName = TableName.SHARD_INDEX;
+    private String reverseIndexTableName = TableName.SHARD_RINDEX;
+    private String metadataTableName = TableName.METADATA;
+    private String dateIndexTableName = TableName.DATE_INDEX;
+    private String indexStatsTableName = TableName.INDEX_STATS;
     private String defaultDateTypeName = "EVENT";
     // should we cleanup the shards and days hints that are sent to the tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;
@@ -318,6 +320,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAccumuloPassword(other.getAccumuloPassword());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
+        this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
@@ -1671,6 +1674,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setCollapseUids(boolean collapseUids) {
         this.collapseUids = collapseUids;
+    }
+    
+    public int getCollapseUidsThreshold() {
+        return collapseUidsThreshold;
+    }
+    
+    public void setCollapseUidsThreshold(int collapseUidsThreshold) {
+        this.collapseUidsThreshold = collapseUidsThreshold;
     }
     
     public boolean getSequentialScheduler() {

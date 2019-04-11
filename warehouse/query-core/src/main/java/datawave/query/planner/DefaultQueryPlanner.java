@@ -53,7 +53,7 @@ import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.Negations;
+import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -691,7 +691,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rewrite negated equality operators.");
         
-        Negations.rewrite(queryTree);
+        RewriteNegationsVisitor.rewrite(queryTree);
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after rewriting negated equality operators:");
         }

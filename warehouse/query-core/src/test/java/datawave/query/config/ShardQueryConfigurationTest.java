@@ -18,6 +18,7 @@ import datawave.query.DocumentSerialization;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
+import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
 import org.junit.Before;
@@ -76,12 +77,12 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(100, config.getRangeBufferPollMillis());
         Assert.assertEquals(800, config.getGeoWaveMaxExpansion());
         Assert.assertEquals(4, config.getGeoWaveMaxEnvelopes());
-        Assert.assertEquals("shard", config.getShardTableName());
-        Assert.assertEquals("shardIndex", config.getIndexTableName());
-        Assert.assertEquals("shardReverseIndex", config.getReverseIndexTableName());
-        Assert.assertEquals("DatawaveMetadata", config.getMetadataTableName());
-        Assert.assertEquals("DateIndex", config.getDateIndexTableName());
-        Assert.assertEquals("shardIndexStats", config.getIndexStatsTableName());
+        Assert.assertEquals(TableName.SHARD, config.getShardTableName());
+        Assert.assertEquals(TableName.SHARD_INDEX, config.getIndexTableName());
+        Assert.assertEquals(TableName.SHARD_RINDEX, config.getReverseIndexTableName());
+        Assert.assertEquals(TableName.METADATA, config.getMetadataTableName());
+        Assert.assertEquals(TableName.DATE_INDEX, config.getDateIndexTableName());
+        Assert.assertEquals(TableName.INDEX_STATS, config.getIndexStatsTableName());
         Assert.assertEquals("EVENT", config.getDefaultDateTypeName());
         Assert.assertTrue(config.isCleanupShardsAndDaysQueryHints());
         Assert.assertEquals(new Integer(8), config.getNumQueryThreads());
@@ -168,7 +169,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.isExpandAllTerms());
         Assert.assertNull(config.getQueryModel());
         Assert.assertNull(config.getModelName());
-        Assert.assertEquals("DatawaveMetadata", config.getModelTableName());
+        Assert.assertEquals(TableName.METADATA, config.getModelTableName());
         Assert.assertFalse(config.isExpansionLimitedToModelContents());
         Assert.assertEquals(new QueryImpl(), config.getQuery());
         Assert.assertFalse(config.isCompressServerSideResults());
@@ -425,7 +426,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 158;
+        int expectedObjectCount = 159;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
