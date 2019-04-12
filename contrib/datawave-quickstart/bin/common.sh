@@ -105,8 +105,8 @@ function writeSiteXml() {
    # read the "name value" siteconf properties, one line at a time
    printf '%s\n' "$siteconf" | ( while IFS= read -r nameval ; do
        # parse the name and value from the line
-       local name=${nameval% *}
-       local value=${nameval##* }
+       local name=${nameval%% *}
+       local value=${nameval#* }
        # concatenate the xml into a big blob
        local xml=${xml}$(printf "\n   <property>\n      <name>$name</name>\n      <value>$value</value>\n   </property>\n")
    done
