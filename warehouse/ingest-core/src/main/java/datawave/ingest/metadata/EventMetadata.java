@@ -176,17 +176,17 @@ public class EventMetadata implements RawRecordMetadata {
             
             if (helper.isNormalizedField(fieldName)) {
                 shouldWriteDataType = true;
-                log.debug(fieldName + " is normalized");
+                log.debug("{} is normalized", fieldName);
                 updateMetadata(this.normalizedFieldsInfo, helper, event, fields, fieldName);
             }
             
             if (helper.isDataTypeField(fieldName) || shouldWriteDataType) {
-                log.debug(fieldName + " has a data type");
+                log.debug("{} has a data type", fieldName);
                 // write a dataType entry
                 // using either the assigned dataType or the default dataType
                 update(helper.getDataTypes(fieldName), event, fields.get(fieldName), "", 0, null, this.dataTypeFieldsInfo, null);
             } else {
-                log.debug(fieldName + " apparently has no data type");
+                log.debug("{} apparently has no data type", fieldName);
             }
             
             if (helper.isCompositeField(fieldName)) {
@@ -207,16 +207,16 @@ public class EventMetadata implements RawRecordMetadata {
     protected void addEventField(IngestHelperInterface helper, RawRecordContainer event, String fieldName, long countDelta, boolean frequency) {
         // if only indexing this field, then do not add to event and frequency maps
         if (helper.isIndexOnlyField(fieldName)) {
-            log.debug(fieldName + " is indexonly, not adding to event");
+            log.debug("{} is indexonly, not adding to event", fieldName);
             return;
         }
         
         if (helper.isCompositeField(fieldName) && !helper.isOverloadedCompositeField(fieldName)) {
-            log.debug(fieldName + " is a composite, not adding to event");
+            log.debug("{} is a composite, not adding to event", fieldName);
             return;
         }
         
-        log.debug("createOrUpdate for " + fieldName);
+        log.debug("createOrUpdate for {}", fieldName);
         eventFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
         
         if (frequency) {
