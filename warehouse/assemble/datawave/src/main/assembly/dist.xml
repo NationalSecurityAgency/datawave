@@ -138,6 +138,9 @@
                 <include>mil.nga.giat:geowave-core-ingest</include>
                 <include>com.vividsolutions:jts</include>
                 <include>com.google.uzaygezen:uzaygezen-core</include>
+                <include>com.fasterxml.jackson.core:jackson-databind</include>
+                <include>com.fasterxml.jackson.core:jackson-core</include>
+                <include>com.fasterxml.jackson.core:jackson-annotations</include>
             </includes>
         </dependencySet>
         <!-- Stuff that goes in /opt/accumulo-metrics/current/lib/ext -->

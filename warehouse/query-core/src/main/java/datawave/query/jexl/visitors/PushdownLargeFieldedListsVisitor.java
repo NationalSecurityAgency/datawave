@@ -9,35 +9,49 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.HashMultimap;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.log4j.Logger;
 import org.apache.lucene.store.OutputStreamDataOutput;
 import org.apache.lucene.util.fst.FST;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
 /**
@@ -81,96 +95,168 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         ASTOrNode newNode = newInstanceOfType(node);
         newNode.image = node.image;
         
+        Multimap<String,JexlNode> eqNodesByField = HashMultimap.create();
+        Multimap<String,JexlNode> rangeNodesByField = HashMultimap.create();
+        List<JexlNode> otherNodes = new ArrayList<>();
+        
         // first pull out sets of nodes by field
-        Multimap<String,JexlNode> nodes = getNodesByField(children(node));
+        for (JexlNode childNode : children(node))
+            assignNodeByField(childNode, eqNodesByField, rangeNodesByField, otherNodes);
         
         ArrayList<JexlNode> children = newArrayList();
-        List<String> fields = new ArrayList<>(nodes.keySet());
-        Collections.sort(fields);
+        
+        // if "OTHER_NODES", then simply add the subset back into the children list
+        for (JexlNode child : otherNodes) {
+            JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
+            if (copiedChild != null) {
+                children.add(copiedChild);
+            }
+        }
+        
+        SortedSet<String> fields = new TreeSet<>(eqNodesByField.keySet());
+        fields.addAll(rangeNodesByField.keySet());
+        
         for (String field : fields) {
-            // recurse on the children in this subset
-            Collection<JexlNode> subsetChildren = nodes.get(field);
-            List<JexlNode> subsetChildrenCopies = new ArrayList<>();
-            for (JexlNode child : subsetChildren) {
-                JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
-                if (copiedChild != null) {
-                    subsetChildrenCopies.add(copiedChild);
-                }
-            }
             
-            // if "OTHER_NODES", then simply add the subset back into the children list
-            // or if "_ANYFIELD_" , then simply add the subset back into the children list
-            if (OTHER_NODES.equals(field) || Constants.ANY_FIELD.equals(field) || Constants.NO_FIELD.equals(field)) {
-                children.addAll(subsetChildrenCopies);
-            }
+            Collection<JexlNode> eqNodes = eqNodesByField.get(field);
+            Collection<JexlNode> rangeNodes = rangeNodesByField.get(field);
+            
+            // if "_ANYFIELD_" or "_NOFIELD_", then simply add the subset back into the children list
             // if past our threshold, then add a ExceededValueThresholdMarker with an OR of this subset to the children list
-            else if (subsetChildrenCopies.size() >= config.getMaxOrExpansionThreshold() && isIndexed(field)) {
-                log.info("Pushing down large (" + subsetChildrenCopies.size() + ") fielded list for " + field);
+            if (!Constants.ANY_FIELD.equals(field) && !Constants.NO_FIELD.equals(field)
+                            && (eqNodes.size() >= config.getMaxOrExpansionThreshold() || rangeNodes.size() >= config.getMaxOrRangeThreshold())
+                            && isIndexed(field)) {
+                log.info("Pushing down large (" + eqNodes.size() + ") fielded list for " + field);
                 
                 // turn the subset of children into a list of values
                 SortedSet<String> values = new TreeSet<>();
-                for (JexlNode child : subsetChildrenCopies) {
+                for (JexlNode child : eqNodes) {
                     values.add(String.valueOf(JexlASTHelper.getLiteralValue(child)));
                 }
                 
-                ExceededOrThresholdMarkerJexlNode marker = null;
+                List<JexlNode> markers = new ArrayList<>();
                 
-                // if we have an hdfs cache directory and if past the fst threshold, then create the fst and replace the list with an assignment
-                if (fstHdfsUri != null && (subsetChildrenCopies.size() >= config.getMaxOrExpansionFstThreshold())) {
-                    URI fstPath;
-                    try {
-                        fstPath = createFst(values);
-                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException e) {
-                        QueryException qe = new QueryException(DatawaveErrorCode.FST_CREATE_ERROR, e);
-                        throw new DatawaveFatalQueryException(qe);
+                try {
+                    // if we have an hdfs cache directory and if past the fst threshold, then create the fst and replace the list with an assignment
+                    if (rangeNodesByField.isEmpty() && fstHdfsUri != null && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold())) {
+                        URI fstPath = createFst(values);
+                        markers.add(new ExceededOrThresholdMarkerJexlNode(field, fstPath));
+                        eqNodes = null;
+                    } else if (eqNodes.size() >= config.getMaxOrExpansionThreshold()) {
+                        markers.add(new ExceededOrThresholdMarkerJexlNode(field, values, null));
+                        eqNodes = null;
                     }
                     
-                    marker = new ExceededOrThresholdMarkerJexlNode(field, fstPath);
-                } else {
-                    marker = new ExceededOrThresholdMarkerJexlNode(field, values);
+                    // handle range nodes separately
+                    if (rangeNodes.size() >= config.getMaxOrRangeThreshold()) {
+                        Collection<Range> ranges = new TreeSet<>();
+                        rangeNodes.forEach(rangeNode -> ranges.add(rangeNodeToRange(rangeNode)));
+                        
+                        markers.add(new ExceededOrThresholdMarkerJexlNode(field, null, ranges));
+                        rangeNodes = null;
+                    }
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException e) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.LARGE_FIELDED_LIST_ERROR, e);
+                    throw new DatawaveFatalQueryException(qe);
                 }
-                children.add(marker);
+                
+                // add in any unused eq nodes
+                if (eqNodes != null) {
+                    for (JexlNode child : eqNodes) {
+                        JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
+                        if (copiedChild != null) {
+                            children.add(copiedChild);
+                        }
+                    }
+                }
+                
+                // add in any unused range nodes
+                if (rangeNodes != null) {
+                    for (JexlNode child : rangeNodes) {
+                        JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
+                        if (copiedChild != null) {
+                            children.add(copiedChild);
+                        }
+                    }
+                }
+                
+                children.addAll(markers);
             }
             // else simply add the subset back into the children list
             else {
-                children.addAll(subsetChildrenCopies);
+                // recurse on the eq children in this subset
+                for (JexlNode child : eqNodes) {
+                    JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
+                    if (copiedChild != null) {
+                        children.add(copiedChild);
+                    }
+                }
+                
+                // recurse on the range children in this subset
+                for (JexlNode child : rangeNodes) {
+                    JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
+                    if (copiedChild != null) {
+                        children.add(copiedChild);
+                    }
+                }
             }
         }
         
         return children(newNode, children.toArray(new JexlNode[children.size()]));
     }
     
+    protected Range rangeNodeToRange(JexlNode node) {
+        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
+            return rangeNodeToRange(ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(node));
+        } else if ((node.jjtGetNumChildren() == 1) && (node instanceof ASTReferenceExpression || node instanceof ASTReference || node instanceof ASTAndNode)) {
+            return rangeNodeToRange(node.jjtGetChild(0));
+        } else if ((node.jjtGetNumChildren() == 2) && node instanceof ASTAndNode) {
+            JexlNode leftChild = node.jjtGetChild(0);
+            JexlNode rightChild = node.jjtGetChild(1);
+            return new Range(new Key(String.valueOf(JexlASTHelper.getLiteralValue(leftChild))), leftChild instanceof ASTGENode, new Key(
+                            String.valueOf(JexlASTHelper.getLiteralValue(rightChild))), rightChild instanceof ASTLENode);
+        } else {
+            return null;
+        }
+    }
+    
     protected boolean isIndexed(String field) {
         return config.getIndexedFields().contains(JexlASTHelper.deconstructIdentifier(field));
     }
     
-    /**
-     * Get the nodes mapped by fieldname. Only equality and negated equalities are included. Anything else is placed into the OTHER bucket.
-     * 
-     * @param nodes
-     * @return the nodes mapped by filename
-     */
-    protected Multimap<String,JexlNode> getNodesByField(JexlNode[] nodes) {
-        Multimap<String,JexlNode> nodeMap = ArrayListMultimap.create();
-        for (JexlNode node : nodes) {
-            nodeMap.put(getEqualityIdentifier(node), node);
-        }
-        return nodeMap;
+    protected void assignNodeByField(JexlNode origNode, Multimap<String,JexlNode> eqNodes, Multimap<String,JexlNode> rangeNodes, List<JexlNode> otherNodes) {
+        assignNodeByField(origNode, origNode, eqNodes, rangeNodes, otherNodes);
     }
     
-    /**
-     * Get the identifier from the equality. If this node is anything else then OTHER_NODES is returned.
-     * 
-     * @param node
-     * @return the node's identifier iff EQ node, otherwise OTHER_NODES.
-     */
-    protected String getEqualityIdentifier(JexlNode node) {
-        if (node instanceof ASTEQNode) {
-            return JexlASTHelper.getIdentifier(node);
-        } else if ((node.jjtGetNumChildren() == 1) && (node instanceof ASTReferenceExpression || node instanceof ASTReference)) {
-            return getEqualityIdentifier(node.jjtGetChild(0));
+    protected void assignNodeByField(JexlNode origNode, JexlNode subNode, Multimap<String,JexlNode> eqNodes, Multimap<String,JexlNode> rangeNodes,
+                    List<JexlNode> otherNodes) {
+        if (subNode instanceof ASTEQNode) {
+            eqNodes.put(JexlASTHelper.getIdentifier(subNode), origNode);
+        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(subNode)) {
+            assignNodeByField(origNode, ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(subNode), eqNodes, rangeNodes, otherNodes);
+        }
+        // else if (ASTDelayedPredicate.instanceOf(subNode)) {
+        // assignNodeByField(origNode, ASTDelayedPredicate.getDelayedPredicateSource(subNode), eqNodes, rangeNodes, otherNodes);
+        // }
+        else if ((subNode.jjtGetNumChildren() == 1)
+                        && (subNode instanceof ASTReferenceExpression || subNode instanceof ASTReference || subNode instanceof ASTAndNode)) {
+            assignNodeByField(origNode, subNode.jjtGetChild(0), eqNodes, rangeNodes, otherNodes);
+        } else if ((subNode.jjtGetNumChildren() == 2) && subNode instanceof ASTAndNode) {
+            JexlNode leftChild = subNode.jjtGetChild(0);
+            JexlNode rightChild = subNode.jjtGetChild(1);
+            if ((leftChild instanceof ASTGTNode || leftChild instanceof ASTGENode) && (rightChild instanceof ASTLTNode || rightChild instanceof ASTLENode)) {
+                String leftField = JexlASTHelper.getIdentifier(leftChild);
+                String rightField = JexlASTHelper.getIdentifier(rightChild);
+                if (leftField != null && rightField != null && leftField.equals(rightField)) {
+                    rangeNodes.put(leftField, origNode);
+                } else {
+                    otherNodes.add(origNode);
+                }
+            } else {
+                otherNodes.add(origNode);
+            }
         } else {
-            return OTHER_NODES;
+            otherNodes.add(origNode);
         }
     }
     

@@ -1311,6 +1311,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return getConfig().getMaxOrExpansionFstThreshold();
     }
     
+    public void setMaxOrRangeThreshold(int maxOrRangeThreshold) {
+        this.config.setMaxOrRangeThreshold(maxOrRangeThreshold);
+    }
+    
+    public int getMaxOrRangeThreshold() {
+        return this.config.getMaxOrRangeThreshold();
+    }
+    
     public void setMaxOrExpansionFstThreshold(int maxOrExpansionFstThreshold) {
         getConfig().setMaxOrExpansionFstThreshold(maxOrExpansionFstThreshold);
     }

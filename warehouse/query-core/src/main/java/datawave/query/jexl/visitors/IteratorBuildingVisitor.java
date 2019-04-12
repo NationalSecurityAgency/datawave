@@ -64,6 +64,7 @@ import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.Script;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -100,6 +101,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -221,7 +224,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 JexlNode source = ExceededOrThresholdMarkerJexlNode.getExceededOrThresholdSource(and);
                 // if the parent is our ExceededOrThreshold marker, then use an
                 // Ivarator to get the job done
-                if (source instanceof ASTAndNode) {
+                if (source instanceof ASTAssignment) {
                     try {
                         ivarateList(source, data);
                     } catch (IOException ioe) {
@@ -1055,30 +1058,48 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param data
      */
     public void ivarateList(JexlNode source, Object data) throws IOException {
-        IndexListIteratorBuilder builder = new IndexListIteratorBuilder();
-        builder.negateAsNeeded(data);
+        IvaratorBuilder builder = null;
         
-        Map<String,Object> parameters;
         try {
-            parameters = ExceededOrThresholdMarkerJexlNode.getParameters(source);
-        } catch (URISyntaxException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_URI_PARAMETER, MessageFormat.format("Class: {0}",
+            ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(source);
+            
+            String fieldName = params.getField();
+            
+            if (params.getRanges() != null && !params.getRanges().isEmpty()) {
+                IndexRangeIteratorBuilder rangeIterBuilder = new IndexRangeIteratorBuilder();
+                builder = rangeIterBuilder;
+                
+                SortedSet<Range> ranges = params.getSortedAccumuloRanges();
+                rangeIterBuilder.setSubRanges(params.getSortedAccumuloRanges());
+                
+                LiteralRange<?> fullRange = new LiteralRange<>(String.valueOf(ranges.first().getStartKey().getRow()), ranges.first().isStartKeyInclusive(),
+                                String.valueOf(ranges.last().getEndKey().getRow()), ranges.last().isEndKeyInclusive(), fieldName, NodeOperand.AND);
+                
+                rangeIterBuilder.setRange(fullRange);
+            } else {
+                IndexListIteratorBuilder listIterBuilder = new IndexListIteratorBuilder();
+                builder = listIterBuilder;
+                
+                if (params.getValues() != null && !params.getValues().isEmpty()) {
+                    listIterBuilder.setValues(new TreeSet<>(params.getValues()));
+                }
+                if (params.getFstURI() != null) {
+                    listIterBuilder.setFstURI(new URI(params.getFstURI()));
+                    listIterBuilder.setFstHdfsFileSystem(hdfsFileSystem.getFileSystem(listIterBuilder.getFstURI()));
+                }
+                
+                // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
+                listIterBuilder.setNegated(false);
+            }
+            
+            builder.setField(fieldName);
+        } catch (IOException | URISyntaxException | NullPointerException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, MessageFormat.format("Class: {0}",
                             ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
             throw new DatawaveFatalQueryException(qe);
         }
         
-        builder.setField(String.valueOf(parameters.get(ExceededOrThresholdMarkerJexlNode.FIELD_PROP)));
-        
-        if (parameters.containsKey(ExceededOrThresholdMarkerJexlNode.VALUES_PROP)) {
-            builder.setValues((Set<String>) parameters.get(ExceededOrThresholdMarkerJexlNode.VALUES_PROP));
-        }
-        if (parameters.containsKey(ExceededOrThresholdMarkerJexlNode.FST_URI_PROP)) {
-            builder.setFstURI((URI) parameters.get(ExceededOrThresholdMarkerJexlNode.FST_URI_PROP));
-            builder.setFstHdfsFileSystem(hdfsFileSystem.getFileSystem(builder.getFstURI()));
-        }
-        
-        // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
-        builder.setNegated(false);
+        builder.negateAsNeeded(data);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         
         ivarate(builder, source, data);

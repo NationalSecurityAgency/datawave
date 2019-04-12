@@ -129,36 +129,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     
                     String newQuery = evaluatedPreviously ? previouslyExpanded.get(query) : query;
                     
-                    if (config.getSerializeQueryIterator()) {
-                        serializeQuery(newIteratorSetting);
-                    } else {
-                        // only expand if we have non doc specific ranges.
-                        if (!RangeDefinition.allDocSpecific(input.getRanges())) {
-                            if (!evaluatedPreviously) {
-                                // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
-                                if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
-                                    if (null == script)
-                                        script = JexlASTHelper.parseJexlQuery(query);
-                                    try {
-                                        script = pushdownLargeFieldedLists(config, script);
-                                        madeChange = true;
-                                    } catch (IOException ioe) {
-                                        log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
-                                    }
-                                }
-                            }
-                            
-                        } else {
-                            if (input.getRanges().size() == 1) {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Ensuring max pipelines is set to 1");
-                                    
-                                }
-                                serializeQuery(newIteratorSetting);
-                            }
-                        }
-                    }
-                    
                     List<String> debug = null;
                     if (log.isTraceEnabled())
                         debug = Lists.newArrayList();
@@ -231,11 +201,44 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 DefaultQueryPlanner.logQuery(script, "Query pushing down large fielded lists:");
                             }
                         }
-                        // only recompile the script if changes were made to the query
-                        newQuery = madeChange ? JexlStringBuildingVisitor.buildQuery(script) : query;
-                        previouslyExpanded.put(query, newQuery);
-                        
                     }
+                    
+                    if (config.getSerializeQueryIterator()) {
+                        serializeQuery(newIteratorSetting);
+                    } else {
+                        // only expand if we have non doc specific ranges.
+                        if (!RangeDefinition.allDocSpecific(input.getRanges())) {
+                            if (!evaluatedPreviously) {
+                                // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
+                                if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
+                                    if (null == script)
+                                        script = JexlASTHelper.parseJexlQuery(query);
+                                    try {
+                                        script = pushdownLargeFieldedLists(config, script);
+                                        madeChange = true;
+                                    } catch (IOException ioe) {
+                                        log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
+                                    }
+                                }
+                            }
+                            
+                        } else {
+                            if (input.getRanges().size() == 1) {
+                                if (log.isTraceEnabled()) {
+                                    log.trace("Ensuring max pipelines is set to 1");
+                                    
+                                }
+                                serializeQuery(newIteratorSetting);
+                            }
+                        }
+                    }
+                    
+                    // only recompile the script if changes were made to the query
+                    if (madeChange)
+                        newQuery = JexlStringBuildingVisitor.buildQuery(script);
+                    
+                    previouslyExpanded.put(query, newQuery);
+                    
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
                     newOptions.addScanIterator(newIteratorSetting);

@@ -86,6 +86,7 @@
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="compressOptionMappings" value="true" />
         <property name="queryModelProviderFactory" ref="queryModelProviderFactory" />
+        <property name="sourceLimit" value="4" />
         <!-- the first integer arg is to define the number of ranges per batch -->
         <constructor-arg>
             <value>2611</value>
@@ -195,6 +196,8 @@
         <property name="maxValueExpansionThreshold" value="${beq.valueExpansionThreshold}" />
         <!-- The max value or list expansion for a single field before using an ivarator -->
         <property name="maxOrExpansionThreshold" value="${beq.orExpansionThreshold}" />
+        <!-- The max value or list expansion for a group of ranges against a single field before combining them in an ivarator -->
+        <property name="maxOrRangeThreshold" value="${beq.orRangeThreshold}" />
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="${beq.orExpansionFstThreshold}" />
         <!-- The max number of splits to divide a range into for the ivarators.  They are run in a pool of threads controlled by the tserver.datawave.ivarator.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
@@ -515,6 +518,8 @@
         <property name="maxValueExpansionThreshold" value="${beq.valueExpansionThreshold}" />
         <!-- The max value or list expansion for a single field before using an ivarator -->
         <property name="maxOrExpansionThreshold" value="${beq.orExpansionThreshold}" />
+        <!-- The max value or list expansion for a group of ranges against a single field before combining them in an ivarator -->
+        <property name="maxOrRangeThreshold" value="${beq.orRangeThreshold}" />
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="${beq.orExpansionFstThreshold}" />
         <!-- The max number of splits to divide a range into for the ivarators.  They are run in a pool of threads controlled by the tserver.datawave.ivarator.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
