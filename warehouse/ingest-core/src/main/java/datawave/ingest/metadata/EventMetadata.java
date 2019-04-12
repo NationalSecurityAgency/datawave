@@ -19,12 +19,14 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Object that summarizes the events that are processed by the EventMapper. This object extracts metadata about the events (i.e. fields, indexed fields, field
@@ -89,7 +91,7 @@ public class EventMetadata implements RawRecordMetadata {
     private MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
     private MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
     
-    private static final Logger log = Logger.getLogger(EventMetadata.class);
+    private static final Logger log = getLogger(EventMetadata.class);
     private final Text metadataTableName;
     private final Text loadDatesTableName;
     // stores field name, data type, and most recent event date
@@ -326,7 +328,7 @@ public class EventMetadata implements RawRecordMetadata {
                 }
                 
                 if (contentIndexed) {
-                    log.debug(field + tokenDesignator + " has a data type");
+                    log.debug("{}{} as a data type", field, tokenDesignator);
                     // write a dataType entry
                     // using either the assigned dataType or the default dataType
                     update(helper.getDataTypes(field + tokenDesignator), event, fields.get(field), tokenDesignator, 0, null, this.dataTypeFieldsInfo, null);
