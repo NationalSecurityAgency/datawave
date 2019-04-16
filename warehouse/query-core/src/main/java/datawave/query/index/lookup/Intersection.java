@@ -53,7 +53,7 @@ public class Intersection implements IndexStream {
     private Tuple2<String,IndexInfo> next;
     private JexlNode currNode;
     protected List<JexlNode> delayedNodes;
-    protected boolean isVariable = false;
+    protected boolean isVariable;
     protected UidIntersector uidIntersector;
     
     private static final Logger log = Logger.getLogger(Intersection.class);
@@ -159,7 +159,6 @@ public class Intersection implements IndexStream {
         }
         if (log.isTraceEnabled())
             log.trace("Stream context " + this.context);
-        
     }
     
     private JexlNode buildCurrentNode() {
@@ -186,7 +185,6 @@ public class Intersection implements IndexStream {
                 allNodes.add(nodeColl.iterator().next());
         }
         return JexlNodeFactory.createAndNode(FluentIterable.from(allNodes).filter(Predicates.notNull()).toList());
-        
     }
     
     protected boolean isDelayed(JexlNode testNode) {
@@ -225,11 +223,9 @@ public class Intersection implements IndexStream {
                 }
                 children = nextAll(keys.first(), children.get(keys.first()));
             } else {
-                
                 children = pivot(children);
             }
         }
-        
         return ret;
     }
     
@@ -263,7 +259,6 @@ public class Intersection implements IndexStream {
         IndexInfo merged = infos.next();
         
         nodesMap = ArrayListMultimap.create();
-        
         nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(merged.getNode()), merged.getNode());
         
         boolean childrenAdded = false;
@@ -278,7 +273,7 @@ public class Intersection implements IndexStream {
         }
         
         if (log.isTraceEnabled())
-            log.trace("intserct " + childrenAdded);
+            log.trace("intersect " + childrenAdded);
         
         for (JexlNode node : delayedNodes) {
             nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(node), node);
@@ -289,14 +284,12 @@ public class Intersection implements IndexStream {
         if (!childrenAdded) {
             if (!delayedNodes.isEmpty())
                 childrenAdded = merged.intersect(delayedNodes);
-            
         }
         
         if (!childrenAdded) {
             log.trace("can't add children");
             merged.setNode(currNode);
         }
-        
         return merged;
     }
     
@@ -314,10 +307,10 @@ public class Intersection implements IndexStream {
      * for the special handling of "day" ranges is that multiple shards from a separate stream may match the day range and we need to ensure all of them get a
      * chance. If the key is a "day" range, then all of the streams matched that day so we can safely advance them all. If the iterator `hasNext` after that,
      * then it is added into the returned multimap with the next key it will return. If an iterator ever does not have a have a next, an empty multimap is
-     * returned, singifiying the exhaustion of this intersection.
+     * returned, signifying the exhaustion of this intersection.
      */
     static TreeMultimap<String,IndexStream> nextAll(String key, Collection<IndexStream> streams) {
-        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.<String> natural(), Ordering.arbitrary());
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
         for (IndexStream itr : streams) {
             if (!isDay(key) && isDay(key(itr.peek()))) {
                 newChildren.put(itr.peek().first(), itr);
@@ -326,7 +319,7 @@ public class Intersection implements IndexStream {
                 if (itr.hasNext()) {
                     newChildren.put(itr.peek().first(), itr);
                 } else {
-                    return TreeMultimap.create(Ordering.<String> natural(), Ordering.arbitrary());
+                    return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
                 }
             }
         }
@@ -337,12 +330,12 @@ public class Intersection implements IndexStream {
      * Calls `next()` on all iterators that aren't mapped to the highest key in the multimap until that iterator's next value (as returned by `peek()`) is
      * greater than or equal to the previous max key.
      * 
-     * If an iterator gets exhausted, then an empty multimap is returned singifying the end of this intersection.
+     * If an iterator gets exhausted, then an empty multimap is returned signifying the end of this intersection.
      * 
      * <code>children</code> must be non-empty
      */
     static TreeMultimap<String,IndexStream> pivot(TreeMultimap<String,IndexStream> children) {
-        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.<String> natural(), Ordering.arbitrary());
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
         final String max = children.keySet().last();
         newChildren.putAll(max, children.removeAll(max));
         for (IndexStream itr : children.values()) {
@@ -366,7 +359,7 @@ public class Intersection implements IndexStream {
                 newChildren.put(dayOrShard, itr);
             } else {
                 // nobody has anything past max, so no intersection
-                return TreeMultimap.create(Ordering.<String> natural(), Ordering.arbitrary());
+                return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
             }
         }
         return newChildren;
@@ -424,7 +417,6 @@ public class Intersection implements IndexStream {
         
         public void addChildren(List<ConcurrentScannerInitializer> todo) {
             this.todo.addAll(todo);
-            
         }
         
         public void consume(Builder builder) {
