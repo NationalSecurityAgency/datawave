@@ -38,7 +38,9 @@ public class EventMetadataTest {
     private static final String DATA_TYPE = "xyzabc";
     private static final String FIELD_NAME_FOR_LOAD_DATE = "LOAD_DATE";
     private static final String TF = "tf";
+    private static final String T = "t";
     private static final String VALUE_FOR_LOAD_DATE = "20140404";
+    private static final String NUMBER_TYPE = "datawave.data.type.NumberType";
     private static final Text METADATA_TABLE_NAME = new Text("table123456");
     private static final Text LOADDATES_TABLE_NAME = new Text("loaddates");
     private static final Text INDEX_TABLE_NAME = new Text("index");
@@ -60,8 +62,14 @@ public class EventMetadataTest {
     public void setupAbstractContentIngestHelper() {
         helper = new TestAbstractContentIngestHelper(createEventFields()) {
             @Override
+            public boolean isDataTypeField(String fieldname) {
+                return true;
+            }
+            
+            @Override
             public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
-                return Arrays.asList(new IdentityDataType());
+                datawave.data.type.Type<?> type[] = {datawave.data.type.Type.Factory.createType(NUMBER_TYPE)};
+                return Arrays.asList(type);
             }
         };
     }
@@ -93,6 +101,7 @@ public class EventMetadataTest {
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
         assertTfCountEquals(0L, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
+        assertTCountEquals(0L, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
         Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         
@@ -155,6 +164,12 @@ public class EventMetadataTest {
     private void assertTfCountEquals(long expectedCount, String fieldName, RawRecordMetadata eventMetadata) {
         Text expectedColumnFamily = new Text(TF);
         Text expectedColumnQualifier = new Text(DATA_TYPE);
+        assertCountEquals(expectedCount, fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
+    }
+    
+    private void assertTCountEquals(long expectedCount, String fieldName, RawRecordMetadata eventMetadata) {
+        Text expectedColumnFamily = new Text(T);
+        Text expectedColumnQualifier = new Text(DATA_TYPE + RawRecordMetadata.DELIMITER + NUMBER_TYPE);
         assertCountEquals(expectedCount, fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
     }
     
