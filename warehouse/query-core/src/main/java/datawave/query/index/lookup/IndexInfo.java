@@ -42,7 +42,7 @@ import datawave.query.jexl.visitors.TreeHashVisitor;
  * <p>
  * Hits may be represented by individual document ids or by a simple count.
  * <p>
- * The IndexInfo object supports union & intersection operations with other IndexInfo objects.
+ * The IndexInfo object supports union and intersection operations with other IndexInfo objects.
  */
 public class IndexInfo implements Writable, UidIntersector {
     
