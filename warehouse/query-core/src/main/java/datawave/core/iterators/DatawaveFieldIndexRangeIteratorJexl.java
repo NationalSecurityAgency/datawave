@@ -123,14 +123,10 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
                 Key startFi = new Key(rowId, fiName);
                 Key endFi = new Key(rowId, new Text(fiName.toString() + '\0'));
                 
-                Key startKey = null;
+                Key startKey = startFi;
                 for (Range subRange : subRanges) {
                     Range range;
-                    if (subRange == subRanges.first()) {
-                        range = new Range(startFi, true, createLowerBoundKey(rowId, fiName, subRange.getStartKey().getRow(), subRange.isStartKeyInclusive()),
-                                        true);
-                        startKey = createUpperBoundKey(rowId, fiName, subRange.getEndKey().getRow(), subRange.isEndKeyInclusive());
-                    } else if (subRange == subRanges.last()) {
+                    if (subRange == subRanges.last()) {
                         range = new Range(startKey, true, endFi, true);
                     } else {
                         range = new Range(startKey, true, createLowerBoundKey(rowId, fiName, subRange.getStartKey().getRow(), subRange.isStartKeyInclusive()),
