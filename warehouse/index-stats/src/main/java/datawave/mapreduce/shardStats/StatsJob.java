@@ -9,7 +9,7 @@ import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.query.Constants;
 import datawave.util.StringUtils;
-import mil.nga.giat.geowave.datastore.accumulo.query.VersionIterator;
+import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
@@ -122,7 +122,7 @@ public class StatsJob extends IngestJob {
         BulkInputFormat.setZooKeeperInstance(conf, cbHelper.getInstanceName(), cbHelper.getZooKeepers());
         
         // add the versioning iterator
-        IteratorSetting cfg = new IteratorSetting(100, VersionIterator.class);
+        IteratorSetting cfg = new IteratorSetting(100, VersioningIterator.class);
         BulkInputFormat.addIterator(conf, cfg);
         
         // get authorizations
@@ -201,7 +201,6 @@ public class StatsJob extends IngestJob {
             // if shard is actualy a day, split into shards
             if (shard.indexOf('_') < 0) {
                 // shard should be a day
-                String day = shard;
                 int numShards = conf.getInt(ShardedDataTypeHandler.NUM_SHARDS, -1);
                 if (numShards < 0) {
                     throw new IllegalArgumentException("Cannot determine the number of shards from the configuration.get(" + ShardedDataTypeHandler.NUM_SHARDS
@@ -210,9 +209,9 @@ public class StatsJob extends IngestJob {
                 
                 // create a range for each shard
                 for (int n = 0; n < numShards; n++) {
-                    shard = day + '_' + n;
-                    Key firstKey = new Key(shard, "fi" + '\0');
-                    Key endKey = new Key(shard, "fi" + '\0' + Constants.MAX_UNICODE_STRING);
+                    String shardNum = shard + '_' + n;
+                    Key firstKey = new Key(shardNum, "fi" + '\0');
+                    Key endKey = new Key(shardNum, "fi" + '\0' + Constants.MAX_UNICODE_STRING);
                     
                     Range r = new Range(firstKey, true, endKey, false);
                     ranges.add(r);
