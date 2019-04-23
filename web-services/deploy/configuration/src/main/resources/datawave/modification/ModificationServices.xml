@@ -21,10 +21,6 @@
 	</bean>
 	-->
 
-    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" >
-        <lookup-method name="createMetadataHelper" bean="metadataHelper" />
-    </bean>
-
 	<bean id="ModificationConfiguration" class="datawave.webservice.modification.configuration.ModificationConfiguration">
 		<property name="tableName" value="${metadata.table.name}" />
         <property name="poolName" value="WAREHOUSE" />

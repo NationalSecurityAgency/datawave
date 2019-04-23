@@ -60,7 +60,7 @@ Configuration:
         - ref: File
           level: trace
     Logger:
-      - name: datawave.microservice.audit.log.LogAuditor
+      - name: datawave.microservice.audit.auditors.log.LogAuditor
         level: info
         AppenderRef:
           - ref: QueryFile

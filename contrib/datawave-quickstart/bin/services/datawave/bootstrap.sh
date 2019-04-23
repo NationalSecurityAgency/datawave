@@ -156,7 +156,13 @@ function setBuildPropertyOverrides() {
    echo "TRUSTSTORE_TYPE=${DW_DATAWAVE_TRUSTSTORE_TYPE}" >> ${BUILD_PROPERTIES_FILE}
    echo "accumulo.instance.name=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
    echo "accumulo.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+
    echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "type.metadata.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "mapReduce.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "bulkResults.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "jboss.log.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+
    echo "lock.file.dir=${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" >> ${BUILD_PROPERTIES_FILE}
    echo "server.keystore.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "mysql.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
