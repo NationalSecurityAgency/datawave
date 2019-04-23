@@ -19,7 +19,7 @@ public class StatsHyperLogReducer extends BulkIngestKeyAggregatingReducer<BulkIn
     private static final Logger log = Logger.getLogger(StatsHyperLogReducer.class);
     
     // reducer parameter keys
-    static final String STATS_MIN_COUNT = "stats.minCount";
+    static final String STATS_MIN_COUNT = "shardStats.minCount";
     static final String STATS_REDUCER_COUNTS = "stats.reducer.counts";
     static final String STATS_REDUCER_LOG_LEVEL = "stats.reducer.log.level";
     static final String STATS_REDUCER_VALUE_INTERVAL = "stats.reducer.value.interval";

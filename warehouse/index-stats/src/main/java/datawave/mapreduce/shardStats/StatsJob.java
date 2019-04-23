@@ -9,12 +9,12 @@ import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.query.Constants;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -79,14 +79,13 @@ public class StatsJob extends IngestJob {
     // constants for hyperloglogplus
     static final int HYPERLOG_SPARSE_DEFAULT_VALUE = 24;
     static final int HYPERLOG_NORMAL_DEFAULT_VALUE = 24;
-    static final String HYPERLOG_NORMAL_OPTION = "stats.hyperlog.normal";
-    static final String HYPERLOG_SPARSE_OPTION = "stats.hyperlog.sparse";
+    static final String HYPERLOG_NORMAL_OPTION = "shardStats.hyperlog.normal";
+    static final String HYPERLOG_SPARSE_OPTION = "shardStats.hyperlog.sparse";
     
-    private static final String DEFAULT_INPUT_TABLE = "shard";
-    static final String DEFAULT_OUTPUT_TABLE = "shardStats";
-    static final String OUTPUT_TABLE_NAME = "stats.output.tableName";
-    static final String INPUT_TABLE_NAME = "stats.input.tableName";
+    static final String OUTPUT_TABLE_NAME = "shardStats.table.name";
+    static final String INPUT_TABLE_NAME = "shardStats.input.table";
     static final String STATS_JOB_LOG_LEVEL = "stats.job.log.level";
+    static final String STATS_VISIBILITY = "shardStats.visibility";
     
     // instance members
     private String inputTableName;
@@ -159,12 +158,6 @@ public class StatsJob extends IngestJob {
             if (null != arg) {
                 switch (arg) {
                 // job args
-                    case INPUT_TABLE:
-                        this.inputTableName = args[1];
-                        break;
-                    case OUTPUT_TABLE:
-                        this.outputTableName = args[1];
-                        break;
                     case JOB_LOG_LEVEL:
                         Level level = Level.toLevel(args[1], DEFAULT_LOG_LEVEL);
                         log.setLevel(level);
@@ -178,16 +171,23 @@ public class StatsJob extends IngestJob {
         }
         
         // validate required entries
-        if (null == this.inputTableName) {
-            this.inputTableName = DEFAULT_INPUT_TABLE;
+        String vis = conf.get(STATS_VISIBILITY);
+        if (null == vis) {
+            throw new IllegalStateException("column visibility property (" + STATS_VISIBILITY + ") is not set");
         }
-        if (null == this.outputTableName) {
-            this.outputTableName = DEFAULT_OUTPUT_TABLE;
-        }
+        log.info("column visibility (" + vis + ")");
         
-        conf.set(INPUT_TABLE_NAME, this.inputTableName);
-        conf.set(OUTPUT_TABLE_NAME, this.outputTableName);
-        conf.set(ShardStatsDataTypeHandler.STATS_TABLE, this.outputTableName);
+        this.inputTableName = conf.get(INPUT_TABLE_NAME);
+        if (null == this.inputTableName) {
+            throw new IllegalStateException("input table property (" + INPUT_TABLE_NAME + ") is not set");
+        }
+        log.info("input table(" + this.inputTableName + ")");
+        
+        this.outputTableName = conf.get(OUTPUT_TABLE_NAME);
+        if (null == this.outputTableName) {
+            throw new IllegalStateException("output table property (" + OUTPUT_TABLE_NAME + ") is not set");
+        }
+        log.info("output table(" + this.outputTableName + ")");
     }
     
     private Set<Range> calculateRanges(Configuration conf) {
@@ -235,8 +235,9 @@ public class StatsJob extends IngestJob {
      */
     private enum JobArg {
         // stats job options
-        INPUT_TABLE(INPUT_TABLE_NAME, DEFAULT_INPUT_TABLE),
-        OUTPUT_TABLE(OUTPUT_TABLE_NAME, DEFAULT_OUTPUT_TABLE),
+        INPUT_TABLE(INPUT_TABLE_NAME, ""),
+        OUTPUT_TABLE(OUTPUT_TABLE_NAME, ""),
+        COLUMN_VISIBILITY(STATS_VISIBILITY, ""),
         JOB_LOG_LEVEL(STATS_JOB_LOG_LEVEL, DEFAULT_LOG_LEVEL),
         HYPERLOG_NORMAL_PRECISION(HYPERLOG_NORMAL_OPTION, HYPERLOG_NORMAL_DEFAULT_VALUE),
         HYPERLOG_SPARSE_PRECISION(HYPERLOG_SPARSE_OPTION, HYPERLOG_SPARSE_DEFAULT_VALUE),

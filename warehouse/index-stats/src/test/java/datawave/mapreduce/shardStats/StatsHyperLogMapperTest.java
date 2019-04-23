@@ -86,7 +86,7 @@ public class StatsHyperLogMapperTest {
         conf.set(StatsHyperLogMapper.STATS_MAPPER_INPUT_INTERVAL, "10");
         conf.set(StatsHyperLogMapper.STATS_MAPPER_OUTPUT_INTERVAL, "4");
         conf.set(StatsHyperLogMapper.STATS_MAPPER_UNIQUE_COUNT, "true");
-        conf.set(StatsHyperLogMapper.STATS_VISIBILITY, "vis");
+        conf.set(StatsJob.STATS_VISIBILITY, "vis");
         
         log.debug("=====  MAPPER INPUT  =====");
         // generate input and output entries

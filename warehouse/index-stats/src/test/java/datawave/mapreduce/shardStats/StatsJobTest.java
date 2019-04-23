@@ -37,8 +37,6 @@ public class StatsJobTest {
         Assume.assumeTrue(null != System.getenv("DATAWAVE_INGEST_HOME"));
         log.info("======  testParseArguments  =====");
         Map<String,Object> mapArgs = new HashMap<>();
-        mapArgs.put(StatsJob.INPUT_TABLE_NAME, "input");
-        mapArgs.put(StatsJob.OUTPUT_TABLE_NAME, "output");
         
         // mapper options
         mapArgs.put(StatsHyperLogMapper.STATS_MAPPER_INPUT_INTERVAL, 4);
@@ -78,6 +76,11 @@ public class StatsJobTest {
         addArgs.add("-flagFileDir");
         addArgs.add("/flagDir");
         
+        // add configuration settings
+        wrapper.set(StatsJob.STATS_VISIBILITY, "vis");
+        wrapper.set(StatsJob.INPUT_TABLE_NAME, "input");
+        wrapper.set(StatsJob.OUTPUT_TABLE_NAME, "output");
+        
         return addArgs.toArray(new String[addArgs.size()]);
     }
     
@@ -89,6 +92,10 @@ public class StatsJobTest {
         void parseArguments(String[] args, Map<String,?> values) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
             final Configuration parsed = job.parseArguments(args, conf);
             verifyConfig(parsed, values);
+        }
+        
+        void set(String key, String value) {
+            this.conf.set(key, value);
         }
         
         private void verifyConfig(Configuration conf, Map<String,?> values) {

@@ -4,6 +4,8 @@ import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
+import datawave.mr.bulk.split.FileRangeSplit;
+import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
@@ -23,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static datawave.mapreduce.shardStats.StatsJob.DEFAULT_LOG_LEVEL;
-import static datawave.mapreduce.shardStats.StatsJob.DEFAULT_OUTPUT_TABLE;
 import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_DEFAULT_VALUE;
 import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_OPTION;
 import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_DEFAULT_VALUE;
@@ -38,7 +39,6 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     static final String STATS_MAPPER_LOG_LEVEL = "stats.mapper.log.level";
     static final String STATS_MAPPER_OUTPUT_INTERVAL = "stats.mapper.output.interval";
     static final String STATS_MAPPER_UNIQUE_COUNT = "stats.mapper.uniquecount";
-    static final String STATS_VISIBILITY = "stats.visibility";
     
     static final int DEFAULT_INPUT_INTERVAL = 10_000_000;
     static final int DEFAULT_OUTPUT_INTERVAL = 100;
@@ -84,12 +84,12 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         
         // set log level if configured
         String logLevel = conf.get(STATS_MAPPER_LOG_LEVEL);
-        Level level = Level.toLevel(logLevel, DEFAULT_LOG_LEVEL); // .toLevel(logLevel, StatsJobOptions.DEFAULT_LOG_LEVEL);
+        Level level = Level.toLevel(logLevel, DEFAULT_LOG_LEVEL);
         log.setLevel(level);
         log.info("log level set to " + level.toString());
         
         // set stats configuration data
-        this.outputTable = new Text(conf.get(OUTPUT_TABLE_NAME, DEFAULT_OUTPUT_TABLE));
+        this.outputTable = new Text(conf.get(OUTPUT_TABLE_NAME));
         log.info("output table(" + this.outputTable.toString() + ")");
         
         this.logOutputInterval = conf.getInt(STATS_MAPPER_OUTPUT_INTERVAL, DEFAULT_OUTPUT_INTERVAL);
@@ -105,14 +105,7 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         this.sparsePrecision = conf.getInt(HYPERLOG_SPARSE_OPTION, HYPERLOG_SPARSE_DEFAULT_VALUE);
         log.info("sparse precision(" + this.sparsePrecision + ")");
         
-        this.visibility = new ColumnVisibility(conf.get(STATS_VISIBILITY, "U"));
-        
-        String s = conf.get("yarn.timeline-service.enabled");
-        conf.unset("yarn.timeline-service.reader.class");
-        String v = conf.get("yarn.timeline-service.reader.class", null);
-        if (null != v) {
-            log.error("config yarn.timeline-service.reader.class set to (" + v + "");
-        }
+        this.visibility = new ColumnVisibility(conf.get(StatsJob.STATS_VISIBILITY));
         
         // initialize type registry
         TypeRegistry.getInstance(conf);
@@ -120,13 +113,18 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         InputSplit split = context.getInputSplit();
         log.info("Got a split of type " + split.getClass());
         if (log.isInfoEnabled()) {
-            // if (split instanceof TabletSplitSplit) {
-            // log.info("Has " +
-            // }
+            if (split instanceof TabletSplitSplit) {
+                TabletSplitSplit tabletSplit = (TabletSplitSplit) split;
+                log.info("Has " + tabletSplit.getLength() + " file range splits");
+                for (int i = 0; i < tabletSplit.getLength(); i++) {
+                    FileRangeSplit subSplit = (FileRangeSplit) tabletSplit.get(i);
+                    log.info("Got a file range spit of " + subSplit + " with a range of " + subSplit.getRange());
+                }
+            }
         }
         
         if (log.isTraceEnabled()) {
-            log.trace("Completed set(" + context + ")");
+            log.trace("Completed setup(" + context + ")");
         }
     }
     
