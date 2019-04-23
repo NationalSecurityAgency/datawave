@@ -121,12 +121,12 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
             
         }
         
-        public ExceededOrParams(String field, String fstURI) {
+        ExceededOrParams(String field, String fstURI) {
             this.field = field;
             this.fstURI = fstURI;
         }
         
-        public ExceededOrParams(String field, Collection<String> values, Collection<Range> ranges) {
+        ExceededOrParams(String field, Collection<String> values, Collection<Range> ranges) {
             this.field = field;
             init(values, ranges);
         }
