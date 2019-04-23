@@ -49,29 +49,21 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         super(node);
     }
     
-    public ExceededOrThresholdMarkerJexlNode(String fieldname, URI fstPath) throws JsonProcessingException {
-        
-        ExceededOrParams params = new ExceededOrParams(fieldname, fstPath.toString());
-        
-        // Create an assignment for the params
-        JexlNode paramsNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_PARAMS, objectMapper.writeValueAsString(params)));
-        
-        // now set the source
-        setupSource(paramsNode);
+    public static ExceededOrThresholdMarkerJexlNode createFromFstURI(String fieldName, URI fstPath) throws JsonProcessingException {
+        return new ExceededOrThresholdMarkerJexlNode(fieldName, fstPath, null, null);
     }
     
-    public ExceededOrThresholdMarkerJexlNode(String fieldname, Collection<String> values) throws JsonProcessingException {
-        ExceededOrParams params = new ExceededOrParams(fieldname, values);
-        
-        // Create an assignment for the params
-        JexlNode paramsNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_PARAMS, objectMapper.writeValueAsString(params)));
-        
-        // now set the source
-        setupSource(paramsNode);
+    public static ExceededOrThresholdMarkerJexlNode createFromValues(String fieldName, Collection<String> values) throws JsonProcessingException {
+        return new ExceededOrThresholdMarkerJexlNode(fieldName, null, values, null);
     }
     
-    public ExceededOrThresholdMarkerJexlNode(String fieldname, Collection<String> values, Collection<Range> ranges) throws JsonProcessingException {
-        ExceededOrParams params = new ExceededOrParams(fieldname, values, ranges);
+    public static ExceededOrThresholdMarkerJexlNode createFromRanges(String fieldName, Collection<Range> ranges) throws JsonProcessingException {
+        return new ExceededOrThresholdMarkerJexlNode(fieldName, null, null, ranges);
+    }
+    
+    private ExceededOrThresholdMarkerJexlNode(String fieldName, URI fstPath, Collection<String> values, Collection<Range> ranges)
+                    throws JsonProcessingException {
+        ExceededOrParams params = (fstPath != null) ? new ExceededOrParams(fieldName, fstPath.toString()) : new ExceededOrParams(fieldName, values, ranges);
         
         // Create an assignment for the params
         JexlNode paramsNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_PARAMS, objectMapper.writeValueAsString(params)));
@@ -134,10 +126,6 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
             this.fstURI = fstURI;
         }
         
-        public ExceededOrParams(String field, Collection<String> values) {
-            this(field, values, null);
-        }
-        
         public ExceededOrParams(String field, Collection<String> values, Collection<Range> ranges) {
             this.field = field;
             init(values, ranges);
@@ -150,7 +138,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
                 SortedSet<Range> rangeSet = new TreeSet<>();
                 
                 if (values != null)
-                    values.forEach(value -> rangeSet.add(new Range(new Key(value), new Key(value))));
+                    values.forEach(value -> rangeSet.add(Range.exact(value)));
                 
                 rangeSet.addAll(ranges);
                 
@@ -172,7 +160,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         private Range decodeRange(String[] range) {
             if (range != null) {
                 if (range.length == 1) {
-                    return new Range(new Key(range[0]), new Key(range[0]));
+                    return Range.exact(range[0]);
                 } else if (range.length == 2 && isLowerBoundValid(range[0]) && isUpperBoundValid(range[1])) {
                     return new Range(new Key(range[0].substring(1)), range[0].charAt(0) == '[', new Key(range[1].substring(0, range[1].length() - 1)),
                                     range[1].charAt(range[1].length() - 1) == ']');

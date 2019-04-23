@@ -614,7 +614,7 @@ public abstract class ExecutableExpansionVisitorTest {
         birthdates.add("123");
         birthdates.add("234");
         birthdates.add("345");
-        JexlNode child = new ExceededOrThresholdMarkerJexlNode("BIRTH_DATE", birthdates);
+        JexlNode child = ExceededOrThresholdMarkerJexlNode.createFromValues("BIRTH_DATE", birthdates);
         // unlink the old node
         queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
         // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker

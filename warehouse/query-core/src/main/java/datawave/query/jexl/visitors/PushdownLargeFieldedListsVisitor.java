@@ -140,10 +140,10 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                     // if we have an hdfs cache directory and if past the fst threshold, then create the fst and replace the list with an assignment
                     if (rangeNodesByField.isEmpty() && fstHdfsUri != null && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold())) {
                         URI fstPath = createFst(values);
-                        markers.add(new ExceededOrThresholdMarkerJexlNode(field, fstPath));
+                        markers.add(ExceededOrThresholdMarkerJexlNode.createFromFstURI(field, fstPath));
                         eqNodes = null;
                     } else if (eqNodes.size() >= config.getMaxOrExpansionThreshold()) {
-                        markers.add(new ExceededOrThresholdMarkerJexlNode(field, values, null));
+                        markers.add(ExceededOrThresholdMarkerJexlNode.createFromValues(field, values));
                         eqNodes = null;
                     }
                     
@@ -152,7 +152,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                         Collection<Range> ranges = new TreeSet<>();
                         rangeNodes.forEach(rangeNode -> ranges.add(rangeNodeToRange(rangeNode)));
                         
-                        markers.add(new ExceededOrThresholdMarkerJexlNode(field, null, ranges));
+                        markers.add(ExceededOrThresholdMarkerJexlNode.createFromRanges(field, ranges));
                         rangeNodes = null;
                     }
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException e) {
@@ -234,11 +234,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             eqNodes.put(JexlASTHelper.getIdentifier(subNode), origNode);
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(subNode)) {
             assignNodeByField(origNode, ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(subNode), eqNodes, rangeNodes, otherNodes);
-        }
-        // else if (ASTDelayedPredicate.instanceOf(subNode)) {
-        // assignNodeByField(origNode, ASTDelayedPredicate.getDelayedPredicateSource(subNode), eqNodes, rangeNodes, otherNodes);
-        // }
-        else if ((subNode.jjtGetNumChildren() == 1)
+        } else if ((subNode.jjtGetNumChildren() == 1)
                         && (subNode instanceof ASTReferenceExpression || subNode instanceof ASTReference || subNode instanceof ASTAndNode)) {
             assignNodeByField(origNode, subNode.jjtGetChild(0), eqNodes, rangeNodes, otherNodes);
         } else if ((subNode.jjtGetNumChildren() == 2) && subNode instanceof ASTAndNode) {
