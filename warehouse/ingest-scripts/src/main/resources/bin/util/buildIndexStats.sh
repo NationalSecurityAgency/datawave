@@ -103,28 +103,27 @@ function setupLockFile() {
 function setMapperJVMParameters() {
     local _MapperMemoryMB
     if [[ -n "${_UniqueCounts}" ]]; then
-        # set memory to 6G for calulating the actual unique value
-        # may need higher value depending upon amount of data
-        _MapperMemoryMB=6144
-    elif [[ -z "${BULK_CHILD_MAP_MAX_MEMORY_MB}" ]]; then
-        _MapperMemoryMB=2048
+        # memory setting may need to be adjusted based upon input data
+        # check max container size
+        _MapperMemoryMB=1792
     else
-        _MapperMemoryMB=${BULK_CHILD_MAP_MAX_MEMORY_MB}
+        _MapperMemoryMB=1024
     fi
 
-    # allocate 1/3 memory to mapper io sort buffer but no more tht 1024M
+    # allocate 1/3 memory to mapper io sort buffer but muat be less than 2048
     ((_MapInMemSortBufferMBSize = _MapperMemoryMB / 3))
-    if [[ 1024 < ${_MapInMmeSortBufferMBSize} ]]; then
-        _MapInMemSortBufferMBSize=1024
+    if [[ 1536 -le ${_MapInMemSortBufferMBSize} ]]; then
+        _MapInMemSortBufferMBSize=1536
     fi
 
     # enable GC logging if requested - typically for debug purposes
+    # NOTE: there should only be one mapper; same file is used for all mappers
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
-        local -r _logFile="-xLoggc:${_GCLogDir}/gcMap-$$-${_dateStr}.log"
+        local -r _logFile="-Xloggc:${_GCLogDir}/gcMap-$$-${_dateStr}.log"
         local -r _gcLog="${_GCLogOpts} ${_logFile}"
     fi
 
-    export _ChildMapOpts="\
+    _ChildMapOpts="\
 -Xmx${_MapperMemoryMB}m \
 ${_DefaultJVMArgs} \
 ${CHILD_INGEST_OPTS} \
@@ -133,24 +132,18 @@ ${_gcLog}"
 }
 
 function setReducerJVMParameters() {
-    local _ReducerMemoryMB
-    if [[ -z "${BULK_CHILD_REDUCE_MAX_MEMORY_MB}" ]]; then
-        _ReducerMemoryMB=2048
-    else
-        _ReducerMemoryMB=${BULK_CHILD_REDUCE_MAX_MEMORY_MB}
-    fi
+    local _ReducerMemoryMB=1024
 
     # enable GC logging if requested - typically for debug purposes
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
-        local -r _logFile="-xLoggc:${_GCLogDir}/gcReduce-$$-${_dateStr}.log"
+        local -r _logFile="-Xloggc:${_GCLogDir}/gcReduce-$$-${_dateStr}.log"
         local -r _gcLog="${_GCLogOpts} ${_logFile}"
     fi
 
-    export _ChildReduceOpts="\
+    _ChildReduceOpts="\
 -Xmx${_ReducerMemoryMB}m \
 ${_DefaultJVMArgs} \
 ${CHILD_INGEST_OPTS} \
-${_HeapDumpOpts} \
 ${_gcLog}"
 }
 
@@ -168,31 +161,25 @@ function setStatsParameters() {
     #  -stats.mapper.value.interval=100
     #  -stats.mapper.uniquecount=false
     #  -stats.reducer.value.interval=20
-    # stats.reducer.counts=false
-    local _StatsDebugOpts=
+    #  -stats.reducer.counts=false
+    local _StatsDebugOpts=""
 
     # check for unique counts
     test -n "${_UniqueCounts}" && {
         _StatsDebugOpts="${_StatsDebugOpts} -stats.mapper.uniquecount=true -stats.reducer.counts=true"
     }
 
-    #  ======  optional parameters  ======
-    #  -stats.hyperlog.normal=24
-    #  -stats.hyperlog.sparse=24
-    #  -stats.minCount=0
-    #  -stats.visibiliy=U
-    local -r _StatsOptionalArgs""
+    # runtime parameters are set in shard-stats-config.xml
 
     test -n "${_NumShards}" && {
         local -r _shardOpts="-num.shards=${_NumShards}"
     }
 
     # input and output table names
-    _StatsOpts="-stats.input.tableName=${SHARD_TABLE_NAME} \
--stats.output.tableName=${SHARD_STATS_TABLE_NAME} \
+    _StatsOpts="
 ${_StatsDebugOpts} \
 ${_shardOpts} \
-${_StatsOptionalArgs}"
+"
 }
 
 #==================================
@@ -267,32 +254,28 @@ if (($# >= 1)); then
     fi
 fi
 
-# use MultiTableRange Partitioner
-PART_ARG=
-
 #================================================
 # initialize map/reduce JVM settings
+test -n "${_HeapDump}" && declare -r _heap="-XX:-HeapDumpOnOutOfMemoryError"
 declare -r _DefaultJVMArgs="-XX:+UseConcMarkSweepGC \
 -Dfile.encoding=UTF8 \
 -Duser.timezone=GMT \
 -XX:+UseNUMA \
--XX:+ExitOnOutOfMemoryError \
+${_heap} \
 -XX:NewRatio=2"
 declare -r _dateStr=$(date "+%Y_%m_%d-%H_%M_%S")
-test -n "${_HeapDump}" && {
-    # enable heap dumps
-    declare -r _HeapDumpOpts="-XX:HeapDumpPath=/tmp -XX:+HeapDumpOnOutOfMemoryError"
-}
 declare -r _GCLogOpts="-XX:+PrintGC \
 -XX:+PrintGCTimeStamps \
 -XX:+PrintGCDateStamps \
 -XX:+PrintGCDetails"
 # set mapper/reducer log directory
-_GCLogDir="${_GCLogDir:-${HADOOP_HOME}/userlogs}"
-# contains input options
-declare _StatsOpts
+_GCLogDir="${_GCLogDir:-/tmp}"
+
 # set in memory sort io buffer size
 declare -i _MapInMemorySortBufferMBSize
+declare _StatsOpts
+declare _ChildMapOpts
+declare _ChildReduceOpts
 setMapperJVMParameters
 setReducerJVMParameters
 setStatsParameters
@@ -304,23 +287,25 @@ calculateReducers _NumReducers
 # Hadoop Job JVM Options
 export HADOOP_CLASSPATH=$CLASSPATH
 export HADOOP_OPTS="${_DefaultJVMArgs}"
+# for remote debug of job
 # export HADOOP_CLIENT_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8989"
 
 declare -i TIMEOUT=600000
 
 # map/reduce settings see Hadoop Map/Reduce properties
 _MapReduceOpts="-mapreduce.task.io.sort.mb=${_MapInMemSortBufferMBSize} \
--mapreduce.task.io.sort.factor=100 \
+-mapreduce.task.io.sort.factor=${BULK_CHILD_IO_SORT_MB} \
 -compressionType gz \
--mapreduce.map.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec \
--mapreduce.map.output.compress=org.apache.hadoop.io.compress.GzipCodec \
+-mapreduce.map.output.compression.codec=${BULK_MAP_OUTPUT_COMPRESSION_CODEC} \
+-mapreduce.map.output.compress=${BULK_MAP_OUTPUT_COMPRESS} \
 -mapreduce.output.fileoutputformat.compress=true \
--mapreduce.output.fileoutputformat.compress.type=BLOCK \
+-mapreduce.output.fileoutputformat.compress.type=${BULK_MAP_OUTPUT_COMPRESSION_TYPE} \
 -bulk.ingest.mapper.threads=0 \
 -bulk.ingest.mapper.workqueue.size=10000 \
 -io.file.buffer.size=1048576 \
 -dfs.bytes-per-checksum=4096 \
 -io.sort.record.percent=.10 \
+-mapreduce.map.sort.spill.percent=.50 \
 -mapreduce.job.reduces=${_NumReducers} \
 -mapreduce.task.timeout=${TIMEOUT} \
 -markerFileReducePercentage 0.33 \
@@ -328,9 +313,9 @@ _MapReduceOpts="-mapreduce.task.io.sort.mb=${_MapInMemSortBufferMBSize} \
 -mapreduce.job.queuename=bulkIngestQueue \
 -sequenceialLocationPartitioner \
 -dfs.replication=3 \
--yarn.app.mapreduce.am.resource.mb=1796 \
--yarn.app.mapreduce.am.command-opts=-Xmx1796m \
 "
+#-yarn.app.mapreduce.am.resource.mb=1796 \
+#-yarn.app.mapreduce.am.command-opts=-Xmx1796m \
 
 BATCHWRITER_OPTS="-AccumuloOutputFormat.WriteOpts.BatchWriterConfig=    11#maxMemory=100000000,maxWriteThreads=4"
 
@@ -353,14 +338,15 @@ declare -r _IngestOpts="\
 -flagFilePattern '.*_(indexstats)_*\.flag' \
 -srcHdfs ${_hdfsDir} \
 -destHdfs ${_hdfsDir} \
--writeDirectlyToDest \
 -skipMarkerFileGeneration \
+-writeDirectlyToDest \
 -tableCounters \
 -contextWriterCounters \
 -disableRefreshSplits \
 -distCpConfDir ${WAREHOUSE_HADOOP_CONF} \
 -datawave-ingest.splits.cache.dir=${WAREHOUSE_NAME_BASE_DIR}/data/splitsCache \
 -BulkInputFormat.working.dir=${WAREHOUSE_NAME_BASE_DIR}/tmp/shardStats \
+-ingestMetricsDisabled \
 "
 # replace -disableRefreshSplits for local testing or run generate-splits-file.sh
 # -jobGeneratedSplits \
@@ -371,8 +357,8 @@ ${WAREHOUSE_HADOOP_HOME}/bin/hadoop --config ${WAREHOUSE_HADOOP_CONF} \
 jar ${DATAWAVE_INDEX_STATS_JAR} datawave.mapreduce.shardStats.StatsJob \
 -jt ${WAREHOUSE_JOBTRACKER_NODE} ${_argDate} \
 ${_IngestConfig[@]} \
--mapred.map.child.java.opts="${_ChildMapOpts}" \
--mapred.reduce.child.java.opts="${_ChildReduceOpts}" \
+-mapreduce.map.java.opts="${_ChildMapOpts}" \
+-mapreduce.reduce.java.opts="${_ChildReduceOpts}" \
 ${_IngestOpts} "${BATCHWRITER_OPTS}" ${_MapReduceOpts} ${_StatsOpts}
 declare _rc=$?
 set +x
