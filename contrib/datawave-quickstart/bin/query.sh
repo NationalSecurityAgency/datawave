@@ -450,7 +450,10 @@ function configureUserIdentity() {
     DW_PKI_TMP_DIR="${DW_DATAWAVE_DATA_DIR}"/pki-temp
 
     DW_PKCS12_CLIENT_CERT=${DW_PKCS12_CLIENT_CERT:-"${DW_DATAWAVE_SOURCE_DIR}"/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12}
-    DW_CLIENT_CERT_PASS=${DW_CLIENT_CERT_PASS:-secret}
+    DW_CLIENT_CERT_PASS=${DW_CLIENT_CERT_PASS:-ChangeIt}
+
+    DW_PKCS12_CA_CERT=${DW_PKCS12_CA_CERT:-"${DW_DATAWAVE_SOURCE_DIR}"/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12}
+    DW_CA_CERT_PASS=${DW_CA_CERT_PASS:-ChangeIt}
 
     DW_CURL_CERT="${DW_PKI_TMP_DIR}/testUser.pem"
     DW_CURL_KEY="${DW_PKI_TMP_DIR}/testUser.key"
