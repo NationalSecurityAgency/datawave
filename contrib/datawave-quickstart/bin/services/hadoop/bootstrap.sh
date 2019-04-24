@@ -35,7 +35,7 @@ mapreduce.jobhistory.done-dir ${DW_HADOOP_MR_DONE_DIR}
 mapreduce.map.memory.mb 2048
 mapreduce.reduce.memory.mb 2048
 mapreduce.map.java.opts -Xmx1024m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
-mapreduce.reduce.java.opts -Xmx1792m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:-HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
+mapreduce.reduce.java.opts -Xmx1792m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
 mapreduce.framework.name yarn"
 
 # yarn-site.xml (Format: <property-name><space><property-value>{<newline>})
