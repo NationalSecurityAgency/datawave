@@ -260,6 +260,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return config;
     }
     
+    @Override
+    public String getPlan(Connector connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
+        
+        this.config = ShardQueryConfiguration.create(this, settings);
+        if (log.isTraceEnabled())
+            log.trace("Initializing ShardQueryLogic for plan: " + System.identityHashCode(this) + '('
+                            + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
+        this.config.setExpandFields(expandFields);
+        this.config.setExpandValues(expandValues);
+        initialize(config, connection, settings, auths);
+        return config.getQueryString();
+    }
+    
     protected String expandQueryMacros(String query) throws ParseException {
         log.trace("query macros are :" + this.queryMacroFunction);
         if (this.queryMacroFunction != null) {
