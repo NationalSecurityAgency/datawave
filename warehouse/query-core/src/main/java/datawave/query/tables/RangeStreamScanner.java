@@ -67,14 +67,12 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     
     protected ReentrantReadWriteLock queueLock = new ReentrantReadWriteLock(true);
     
-    protected Lock readLock = null;
-    protected Lock writeLock = null;
+    protected Lock readLock;
+    protected Lock writeLock;
     
     volatile boolean finished = false;
     
-    ExecutorService myExecutor = null;
-    
-    private int threadNum = 1;
+    ExecutorService myExecutor;
     
     protected ScannerFactory scannerFactory;
     
@@ -132,7 +130,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     
     public RangeStreamScanner setScannerFactory(ScannerFactory factory) {
         this.scannerFactory = factory;
-        
         return this;
     }
     
@@ -160,7 +157,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
          */
         return new Range(new Key(lastKey.getRow(), lastKey.getColumnFamily(), new Text(lastKey.getColumnQualifier() + "\uffff")), true,
                         previousRange.getEndKey(), previousRange.isEndKeyInclusive());
-        
     }
     
     /*
@@ -170,20 +166,14 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      */
     @Override
     public boolean hasNext() {
-        
         /*
          * Let's take a moment to look through all states S
          */
-        
-        // isFlushNeeded is only in the case of when we are finished
-        boolean isFlushNeeded = false;
-        
         try {
-            
             if (null != stats)
                 stats.getTimer(TIMERS.HASNEXT).resume();
             
-            while (null == currentEntry && (!finished || !resultQueue.isEmpty() || ((isFlushNeeded = flushNeeded()) == true))) {
+            while (null == currentEntry && (!finished || !resultQueue.isEmpty() || flushNeeded())) {
                 
                 try {
                     /*
@@ -199,8 +189,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 // we can flush if needed and retry
                 if (currentEntry == null && (!finished && resultQueue.isEmpty())) {
                     submitTask();
-                    isFlushNeeded = flushNeeded();
-                } else if (((isFlushNeeded = flushNeeded()) == true)) {
+                } else if (flushNeeded()) {
                     flush();
                 }
             }
@@ -217,7 +206,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 Throwables.propagate(uncaughtExceptionHandler.getThrowable());
             }
         }
-        
         return (null != currentEntry);
     }
     
@@ -229,7 +217,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
-        
     }
     
     /*
@@ -238,10 +225,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      * @see com.google.common.util.concurrent.AbstractExecutionThreadService#run()
      */
     @Override
-    protected void run() throws Exception {
+    protected void run() {
         try {
             findTop();
-            
             flush();
         } catch (Exception e) {
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
@@ -254,7 +240,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         
         int retrievalCount = 0;
         
-        Entry<Key,Value> myEntry = null;
+        Entry<Key,Value> myEntry;
         
         String currentDay = null;
         
@@ -299,9 +285,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 if (null == currentDay) {
                     if (log.isTraceEnabled()) {
                         log.trace("it's a new day!");
-                    }
-                    
-                    if (log.isTraceEnabled()) {
                         log.trace("adding " + currentKeyValue.getKey() + " to queue because it matches" + currentDay);
                     }
                     
@@ -344,7 +327,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                                 log.trace("breaking because our stats are " + stats.getPercentile(50) + " on " + currentQueue.size());
                             }
                             break;
-                            
                         }
                         lastSeenKey = kvIter.next().getKey();
                     } else {
@@ -358,10 +340,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                         if (dequeueCount != queueSize || retrievalCount <= Math.ceil(maxResults * 1.5)) {
                             break;
                         }
-                        
                     }
                 }
-                
             }
             
             if (currentQueue.size() >= shardsPerDayThreshold && stats.getPercentile(50) > MAX_MEDIAN) {
@@ -375,7 +355,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 
                 IndexInfo info = new IndexInfo(-1);
                 
-                Value newValue = null;
+                Value newValue;
                 try {
                     ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
                     DataOutputStream outDataStream = new DataOutputStream(outByteStream);
@@ -399,7 +379,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                         }
                         prevDay = myEntry;
                     }
-                    
                 } catch (InterruptedException exception) {
                     prevDay = myEntry;
                 }
@@ -417,7 +396,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     
     private int dequeue() {
         return dequeue(false);
-        
     }
     
     private int dequeue(boolean forceAll) {
@@ -537,7 +515,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         
         ScannerBase baseScanner = null;
         try {
-            
             if (resultQueue.remainingCapacity() == 0) {
                 return;
             }
@@ -600,10 +577,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             // do not continue if we've reached the end of the corpus
             
             if (!iter.hasNext()) {
-                if (log.isTraceEnabled())
+                if (log.isTraceEnabled()) {
                     log.trace("We've started, but we have nothing to do on " + tableName + " " + auths + " " + currentRange);
-                if (log.isTraceEnabled())
-                    log.trace("We've started, but we have nothing to do");
+                }
                 lastSeenKey = null;
                 return;
             }
@@ -619,9 +595,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                     stats.incrementKeysSeen(retrievalCount);
                     stats.getTimer(TIMERS.SCANNER_ITERATE).suspend();
                 }
-                
             }
-            
         } catch (IllegalArgumentException e) {
             /*
              * If we get an illegal argument exception, we know that the ScannerSession extending class created a start key after our end key, which means that
@@ -648,7 +622,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             if (ranges.isEmpty() && lastSeenKey == null) {
                 finished = true;
             }
-            
         }
     }
     
@@ -660,16 +633,17 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             String cf = lastSeenKey.getColumnQualifier().toString();
             String endCf = endKey.getColumnQualifier().toString();
             
-            log.trace(cf + " " + endCf);
+            if (log.isTraceEnabled()) {
+                log.trace(cf + " " + endCf);
+            }
+            
             if (dateCfLength == cf.length()) {
                 endCf = endCf.substring(0, dateCfLength);
                 if (cf.compareTo(endCf) >= 0) {
-                    
                     return true;
                 }
             }
             return false;
         }
     }
-    
 }
