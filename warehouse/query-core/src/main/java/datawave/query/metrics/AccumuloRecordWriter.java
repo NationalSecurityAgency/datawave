@@ -22,8 +22,8 @@ import org.apache.accumulo.core.client.ZooKeeperInstance;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
-import org.apache.accumulo.core.data.KeyExtent;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import datawave.common.util.ArgumentChecker;
 import org.apache.commons.codec.binary.Base64;
@@ -202,10 +202,10 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         try {
             mtbw.close();
         } catch (MutationsRejectedException e) {
-            if (e.getAuthorizationFailures().size() >= 0) {
+            if (e.getSecurityErrorCodes().size() >= 0) {
                 HashSet<String> tables = new HashSet<>();
-                for (KeyExtent ke : e.getAuthorizationFailures()) {
-                    tables.add(ke.getTableId().toString());
+                for (TabletId tabletId : e.getSecurityErrorCodes().keySet()) {
+                    tables.add(tabletId.getTableId().toString());
                 }
                 
                 log.error("Not authorized to write to tables : " + tables);

@@ -16,7 +16,6 @@ import datawave.webservice.common.connection.WrappedConnector;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
-import org.apache.accumulo.core.Constants;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
@@ -129,7 +128,7 @@ public class ScannerFactory {
     }
     
     public BatchScanner newScanner(String tableName, Query query) throws TableNotFoundException {
-        return newScanner(tableName, Collections.singleton(Constants.NO_AUTHS), query);
+        return newScanner(tableName, Collections.singleton(Authorizations.EMPTY), query);
     }
     
     /**

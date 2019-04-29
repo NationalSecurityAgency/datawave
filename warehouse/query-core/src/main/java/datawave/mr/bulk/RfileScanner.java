@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -164,7 +163,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
                 }
                 String tableId = tableIdMap.getIfPresent(table);
                 if (null == tableId) {
-                    tableId = Tables.getTableId(connector.getInstance(), table);
+                    tableId = connector.tableOperations().tableIdMap().get(table);
                     tableIdMap.put(table, tableId);
                 }
                 AccumuloConfiguration acuTableConf = tableConfigMap.getIfPresent(tableId);
