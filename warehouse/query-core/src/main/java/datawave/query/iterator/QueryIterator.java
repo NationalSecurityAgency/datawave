@@ -220,7 +220,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         
         // Parse the query
         try {
-            
             script = JexlASTHelper.parseJexlQuery(this.getQuery());
             myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
             
@@ -267,7 +266,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         Span s = Trace.start("QueryIterator.next()");
         if (log.isTraceEnabled()) {
             log.trace("next");
-            
         }
         
         try {
@@ -401,7 +399,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                         return true;
                     });
                 }
-                
             }
             
             if (this.getReturnType() == ReturnType.kryo) {
@@ -505,7 +502,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // exit gracefully if we are yielding as an iie is expected in this case
             if ((this.yield != null) && this.yield.hasYielded()) {
                 log.debug("Query yielded " + queryId);
-                return;
             } else {
                 log.debug("Query interrupted " + queryId, e);
                 throw iie;
@@ -540,7 +536,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (batchedQueries >= 1) {
             List<NestedQuery<Key>> nests = Lists.newArrayList();
             
-            int i = 0;
             for (Entry<Range,String> queries : batchStack) {
                 
                 Range myRange = queries.getKey();
@@ -567,7 +562,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                         
                         continue;
                     }
-                    
                 }
                 
                 JexlArithmetic myArithmetic;
@@ -621,8 +615,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             initKeySource = docIter;
             
         } else {
-            // If we had an event-specific range previously, we need to
-            // reset it back
+            // If we had an event-specific range previously, we need to reset it back
             // to the source we created during init
             docIter = getOrSetKeySource(documentRange, script);
             
@@ -641,11 +634,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             // now lets start off the nested iterator
             docIter.initialize();
-            
         }
         
         return docIter;
-        
     }
     
     /**
@@ -980,7 +971,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             return rangeScript;
         }
-        
     }
     
     protected Iterator<Entry<Key,Document>> mapDocument(SortedKeyValueIterator<Key,Value> deepSourceCopy, Iterator<Entry<Key,Document>> documents,
@@ -1009,9 +999,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     retDocuments = Iterators.transform(retDocuments, new DocumentPermutation.DocumentPermutationAggregation(this.getDocumentPermutations()));
                 }
             }
-            
             return retDocuments;
-            
         }
         return documents;
     }
@@ -1111,7 +1099,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             log.error(msg);
             throw new IllegalArgumentException(msg);
         }
-        
     }
     
     protected DocumentProjection getCompositeProjection() {
@@ -1160,7 +1147,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 return false;
             }
         }
-        
         return true;
     }
     
@@ -1400,5 +1386,4 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         return groupingTransform;
     }
-    
 }

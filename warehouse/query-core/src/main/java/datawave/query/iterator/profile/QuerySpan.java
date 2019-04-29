@@ -28,6 +28,8 @@ public class QuerySpan {
     
     protected long seek = 0;
     
+    protected long yield = 0;
+    
     private Map<String,Long> stageTimers = new LinkedHashMap<>();
     
     private long stageTimerTotal = 0;
@@ -53,8 +55,8 @@ public class QuerySpan {
     
     public QuerySpan(QueryStatsDClient client) {
         this.client = client;
-        sources = Lists.newArrayList();
-        sourceCount = 1;
+        this.sources = Lists.newArrayList();
+        this.sourceCount = 1;
     }
     
     public QuerySpan createSource() {
@@ -92,6 +94,14 @@ public class QuerySpan {
             seekCount += subSpan.getSeekCount();
         }
         return seekCount;
+    }
+    
+    public long getYieldCount() {
+        long yieldCount = yield;
+        for (QuerySpan subSpan : sources) {
+            yieldCount += subSpan.getYieldCount();
+        }
+        return yieldCount;
     }
     
     public String toString() {
@@ -132,6 +142,16 @@ public class QuerySpan {
         }
     }
     
+    public synchronized void yield() {
+        yield++;
+        if (client != null) {
+            client.yield();
+        }
+        if (log.isTraceEnabled()) {
+            logStack("yield()");
+        }
+    }
+    
     public void reset() {
         for (QuerySpan source : sources) {
             source.reset();
@@ -152,7 +172,7 @@ public class QuerySpan {
     }
     
     public boolean hasEntries() {
-        if (this.getSeekCount() > 0 || this.getNextCount() > 0 || this.getSourceCount() > 0 || !this.stageTimers.isEmpty()) {
+        if (this.getSeekCount() > 0 || this.getNextCount() > 0 || this.getYieldCount() > 0 || this.getSourceCount() > 0 || !this.stageTimers.isEmpty()) {
             return true;
         } else {
             return false;
@@ -177,6 +197,10 @@ public class QuerySpan {
     
     public void setNext(long next) {
         this.next = next;
+    }
+    
+    public void setYield(long yield) {
+        this.yield = yield;
     }
     
     public void setSourceCount(long sourceCount) {
