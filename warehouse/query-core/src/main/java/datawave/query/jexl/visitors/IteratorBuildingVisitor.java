@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.SourcePool;
 import datawave.core.iterators.ThreadLocalPooledSource;
 import datawave.core.iterators.filesystem.FileSystemCache;
@@ -64,7 +65,6 @@ import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.Script;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -87,6 +87,7 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.apache.lucene.util.fst.FST;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -189,6 +190,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     protected Set<JexlNode> delayedEqNodes = Sets.newHashSet();
     
+    protected Map<String,Object> exceededOrEvaluationCache;
+    
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
             return false;
@@ -224,7 +227,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 JexlNode source = ExceededOrThresholdMarkerJexlNode.getExceededOrThresholdSource(and);
                 // if the parent is our ExceededOrThreshold marker, then use an
                 // Ivarator to get the job done
-                if (source instanceof ASTAssignment) {
+                if (source instanceof ASTAndNode) {
                     try {
                         ivarateList(source, data);
                     } catch (IOException ioe) {
@@ -1061,9 +1064,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         IvaratorBuilder builder = null;
         
         try {
+            String id = ExceededOrThresholdMarkerJexlNode.getId(source);
+            String field = ExceededOrThresholdMarkerJexlNode.getField(source);
             ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(source);
-            
-            String fieldName = params.getField();
             
             if (params.getRanges() != null && !params.getRanges().isEmpty()) {
                 IndexRangeIteratorBuilder rangeIterBuilder = new IndexRangeIteratorBuilder();
@@ -1072,8 +1075,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 SortedSet<Range> ranges = params.getSortedAccumuloRanges();
                 rangeIterBuilder.setSubRanges(params.getSortedAccumuloRanges());
                 
+                // cache these ranges for use during Jexl Evaluation
+                if (exceededOrEvaluationCache != null)
+                    exceededOrEvaluationCache.put(id, ranges);
+                
                 LiteralRange<?> fullRange = new LiteralRange<>(String.valueOf(ranges.first().getStartKey().getRow()), ranges.first().isStartKeyInclusive(),
-                                String.valueOf(ranges.last().getEndKey().getRow()), ranges.last().isEndKeyInclusive(), fieldName, NodeOperand.AND);
+                                String.valueOf(ranges.last().getEndKey().getRow()), ranges.last().isEndKeyInclusive(), field, NodeOperand.AND);
                 
                 rangeIterBuilder.setRange(fullRange);
             } else {
@@ -1081,18 +1088,28 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 builder = listIterBuilder;
                 
                 if (params.getValues() != null && !params.getValues().isEmpty()) {
-                    listIterBuilder.setValues(new TreeSet<>(params.getValues()));
-                }
-                if (params.getFstURI() != null) {
-                    listIterBuilder.setFstURI(new URI(params.getFstURI()));
-                    listIterBuilder.setFstHdfsFileSystem(hdfsFileSystem.getFileSystem(listIterBuilder.getFstURI()));
+                    Set<String> values = new TreeSet<>(params.getValues());
+                    listIterBuilder.setValues(values);
+                    
+                    // cache these values for use during Jexl Evaluation
+                    if (exceededOrEvaluationCache != null)
+                        exceededOrEvaluationCache.put(id, values);
+                } else if (params.getFstURI() != null) {
+                    URI fstUri = new URI(params.getFstURI());
+                    FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
+                                    hdfsFileSystem.getFileSystem(fstUri));
+                    listIterBuilder.setFst(fst);
+                    
+                    // cache this fst for use during JexlEvaluation.
+                    if (exceededOrEvaluationCache != null)
+                        exceededOrEvaluationCache.put(id, fst);
                 }
                 
                 // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
                 listIterBuilder.setNegated(false);
             }
             
-            builder.setField(fieldName);
+            builder.setField(field);
         } catch (IOException | URISyntaxException | NullPointerException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, MessageFormat.format("Class: {0}",
                             ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
@@ -1559,4 +1576,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
+    public IteratorBuildingVisitor setExceededOrEvaluationCache(Map<String,Object> exceededOrEvaluationCache) {
+        this.exceededOrEvaluationCache = exceededOrEvaluationCache;
+        return this;
+    }
 }

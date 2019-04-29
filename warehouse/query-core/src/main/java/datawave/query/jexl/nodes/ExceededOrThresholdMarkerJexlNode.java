@@ -13,12 +13,15 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 
 /**
  * This is a node that can be put in place of or list to denote that the or list threshold was exceeded
@@ -27,6 +30,8 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     
     private static final ObjectMapper objectMapper = new ObjectMapper();
     
+    public static final String EXCEEDED_OR_ID = "id";
+    public static final String EXCEEDED_OR_FIELD = "field";
     public static final String EXCEEDED_OR_PARAMS = "params";
     
     public ExceededOrThresholdMarkerJexlNode(int id) {
@@ -53,7 +58,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         return new ExceededOrThresholdMarkerJexlNode(fieldName, fstPath, null, null);
     }
     
-    public static ExceededOrThresholdMarkerJexlNode createFromValues(String fieldName, Collection<String> values) throws JsonProcessingException {
+    public static ExceededOrThresholdMarkerJexlNode createFromValues(String fieldName, Set<String> values) throws JsonProcessingException {
         return new ExceededOrThresholdMarkerJexlNode(fieldName, null, values, null);
     }
     
@@ -61,15 +66,16 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         return new ExceededOrThresholdMarkerJexlNode(fieldName, null, null, ranges);
     }
     
-    private ExceededOrThresholdMarkerJexlNode(String fieldName, URI fstPath, Collection<String> values, Collection<Range> ranges)
-                    throws JsonProcessingException {
-        ExceededOrParams params = (fstPath != null) ? new ExceededOrParams(fieldName, fstPath.toString()) : new ExceededOrParams(fieldName, values, ranges);
+    private ExceededOrThresholdMarkerJexlNode(String fieldName, URI fstPath, Set<String> values, Collection<Range> ranges) throws JsonProcessingException {
+        ExceededOrParams params = (fstPath != null) ? new ExceededOrParams(fstPath.toString()) : new ExceededOrParams(values, ranges);
         
         // Create an assignment for the params
+        JexlNode idNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_ID, UUID.randomUUID().toString()));
+        JexlNode fieldNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_FIELD, fieldName));
         JexlNode paramsNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_PARAMS, objectMapper.writeValueAsString(params)));
         
         // now set the source
-        setupSource(paramsNode);
+        setupSource(JexlNodeFactory.createAndNode(Arrays.asList(idNode, fieldNode, paramsNode)));
     }
     
     /**
@@ -110,35 +116,64 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
             return null;
     }
     
+    /**
+     * Get the id for this marker node
+     *
+     * @param source
+     * @return The id associated with this ExceededOrThresholdMarker
+     * @throws IOException
+     */
+    public static String getId(JexlNode source) {
+        Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
+        Object paramsObj = parameters.get(EXCEEDED_OR_ID);
+        if (paramsObj != null)
+            return String.valueOf(paramsObj);
+        else
+            return null;
+    }
+    
+    /**
+     * Get the field for this marker node
+     *
+     * @param source
+     * @return The field associated with this ExceededOrThresholdMarker
+     * @throws IOException
+     */
+    public static String getField(JexlNode source) {
+        Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
+        Object paramsObj = parameters.get(EXCEEDED_OR_FIELD);
+        if (paramsObj != null)
+            return String.valueOf(paramsObj);
+        else
+            return null;
+    }
+    
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ExceededOrParams {
-        private String field;
         private String fstURI;
-        private Collection<String> values;
+        private Set<String> values;
         private Collection<String[]> ranges;
         
         private ExceededOrParams() {
             
         }
         
-        ExceededOrParams(String field, String fstURI) {
-            this.field = field;
+        ExceededOrParams(String fstURI) {
             this.fstURI = fstURI;
         }
         
-        ExceededOrParams(String field, Collection<String> values, Collection<Range> ranges) {
-            this.field = field;
+        ExceededOrParams(Set<String> values, Collection<Range> ranges) {
             init(values, ranges);
         }
         
-        private void init(Collection<String> values, Collection<Range> ranges) {
+        private void init(Set<String> values, Collection<Range> ranges) {
             if (ranges == null || ranges.isEmpty()) {
                 this.values = values;
             } else {
                 SortedSet<Range> rangeSet = new TreeSet<>();
                 
                 if (values != null)
-                    values.forEach(value -> rangeSet.add(Range.exact(value)));
+                    values.forEach(value -> rangeSet.add(new Range(new Key(value), new Key(value))));
                 
                 rangeSet.addAll(ranges);
                 
@@ -160,7 +195,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         private Range decodeRange(String[] range) {
             if (range != null) {
                 if (range.length == 1) {
-                    return Range.exact(range[0]);
+                    return new Range(new Key(range[0]), new Key(range[0]));
                 } else if (range.length == 2 && isLowerBoundValid(range[0]) && isUpperBoundValid(range[1])) {
                     return new Range(new Key(range[0].substring(1)), range[0].charAt(0) == '[', new Key(range[1].substring(0, range[1].length() - 1)),
                                     range[1].charAt(range[1].length() - 1) == ']');
@@ -177,10 +212,6 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         @JsonIgnore
         private boolean isUpperBoundValid(String upperBound) {
             return upperBound.length() > 1 && (upperBound.charAt(upperBound.length() - 1) == ']' || upperBound.charAt(upperBound.length() - 1) == ')');
-        }
-        
-        public String getField() {
-            return field;
         }
         
         public String getFstURI() {

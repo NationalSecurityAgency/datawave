@@ -119,23 +119,22 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
         if (subRanges != null && !subRanges.isEmpty()) {
             List<Range> ranges = new ArrayList<>();
+            
+            // Note: The IndexRangeIteratorBuilder hard codes 'negated' to false, so unless that changes, this logic will never be executed.
             if (isNegated()) {
                 Key startFi = new Key(rowId, fiName);
                 Key endFi = new Key(rowId, new Text(fiName.toString() + '\0'));
                 
                 Key startKey = startFi;
                 for (Range subRange : subRanges) {
-                    Range range;
-                    if (subRange == subRanges.last()) {
-                        range = new Range(startKey, true, endFi, true);
-                    } else {
-                        range = new Range(startKey, true, createLowerBoundKey(rowId, fiName, subRange.getStartKey().getRow(), subRange.isStartKeyInclusive()),
-                                        true);
-                        startKey = createUpperBoundKey(rowId, fiName, subRange.getEndKey().getRow(), subRange.isEndKeyInclusive());
-                    }
-                    
+                    Range range = new Range(startKey, true,
+                                    createUpperBoundKey(rowId, fiName, subRange.getStartKey().getRow(), !subRange.isStartKeyInclusive()), true);
+                    startKey = createLowerBoundKey(rowId, fiName, subRange.getEndKey().getRow(), !subRange.isEndKeyInclusive());
                     ranges.add(range);
                 }
+                
+                // add the final range
+                ranges.add(new Range(startKey, true, endFi, true));
             } else {
                 for (Range subRange : subRanges) {
                     Key startKey = createLowerBoundKey(rowId, fiName, subRange.getStartKey().getRow(), subRange.isStartKeyInclusive());
@@ -149,6 +148,7 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
             Key startKey = createLowerBoundKey(rowId, fiName, fieldValue, lowerInclusive);
             Key endKey = createUpperBoundKey(rowId, fiName, upperBound, upperInclusive);
             
+            // Note: The IndexRangeIteratorBuilder hard codes 'negated' to false, so unless that changes, this logic will never be executed.
             if (isNegated()) {
                 Key startFi = new Key(rowId, fiName);
                 Key endFi = new Key(rowId, new Text(fiName.toString() + '\0'));
@@ -211,6 +211,7 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     @Override
     protected boolean matches(Key k) throws IOException {
         boolean matches = false;
+        
         // test that we are in the range
         String colq = k.getColumnQualifier().toString();
         
@@ -219,9 +220,14 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
         index = colq.lastIndexOf('\0', index - 1);
         Text value = new Text(colq.substring(0, index));
         
-        if ((lowerInclusive ? (value.compareTo(getFieldValue()) >= 0) : (value.compareTo(getFieldValue()) > 0))
-                        && (upperInclusive ? (value.compareTo(upperBound) <= 0) : (value.compareTo(upperBound) < 0))) {
-            matches = true;
+        if (subRanges == null) {
+            if ((lowerInclusive ? (value.compareTo(getFieldValue()) >= 0) : (value.compareTo(getFieldValue()) > 0))
+                            && (upperInclusive ? (value.compareTo(upperBound) <= 0) : (value.compareTo(upperBound) < 0))) {
+                matches = true;
+            }
+        } else {
+            // find the first range that contains the key
+            matches = (subRanges.stream().filter(subRange -> subRange.contains(new Key(value))).findFirst().orElse(null) != null);
         }
         return matches;
     }

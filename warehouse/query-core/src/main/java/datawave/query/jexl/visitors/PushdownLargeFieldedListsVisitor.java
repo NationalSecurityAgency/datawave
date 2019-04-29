@@ -123,9 +123,10 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             
             // if "_ANYFIELD_" or "_NOFIELD_", then simply add the subset back into the children list
             // if past our threshold, then add a ExceededValueThresholdMarker with an OR of this subset to the children list
-            if (!Constants.ANY_FIELD.equals(field) && !Constants.NO_FIELD.equals(field)
-                            && (eqNodes.size() >= config.getMaxOrExpansionThreshold() || rangeNodes.size() >= config.getMaxOrRangeThreshold())
-                            && isIndexed(field)) {
+            if (!Constants.ANY_FIELD.equals(field)
+                            && !Constants.NO_FIELD.equals(field)
+                            && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold() || eqNodes.size() >= config.getMaxOrExpansionThreshold() || rangeNodes
+                                            .size() >= config.getMaxOrRangeThreshold()) && isIndexed(field)) {
                 log.info("Pushing down large (" + eqNodes.size() + ") fielded list for " + field);
                 
                 // turn the subset of children into a list of values
