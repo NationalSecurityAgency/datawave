@@ -161,8 +161,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     }
     
     public int getSize() {
-        // Yield calls are not included in the size calculation.
-        return nextCalls.get() + seekCalls.get() + sources.get() + timings.size();
+        return nextCalls.get() + seekCalls.get() + yieldCalls.get() + sources.get() + timings.size();
     }
     
     /**

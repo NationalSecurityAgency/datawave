@@ -28,7 +28,7 @@ public class QuerySpan {
     
     protected long seek = 0;
     
-    protected long yield = 0;
+    protected boolean yield = false;
     
     private Map<String,Long> stageTimers = new LinkedHashMap<>();
     
@@ -96,18 +96,22 @@ public class QuerySpan {
         return seekCount;
     }
     
-    public long getYieldCount() {
-        long yieldCount = yield;
-        for (QuerySpan subSpan : sources) {
-            yieldCount += subSpan.getYieldCount();
+    public boolean getYield() {
+        if (yield) {
+            return true;
         }
-        return yieldCount;
+        for (QuerySpan subSpan : sources) {
+            if (subSpan.getYield()) {
+                return true;
+            }
+        }
+        return true;
     }
     
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(" seek:").append(getSeekCount()).append(" next:").append(getNextCount()).append(" sources:")
-                        .append(getSourceCount());
+        sb.append(super.toString()).append(" sources:").append(getSourceCount()).append(" next:").append(getNextCount()).append(" seek:")
+                        .append(getSeekCount()).append(" yield:").append(getYield());
         return sb.toString();
     }
     
@@ -143,7 +147,7 @@ public class QuerySpan {
     }
     
     public synchronized void yield() {
-        yield++;
+        yield = true;
         if (client != null) {
             client.yield();
         }
@@ -159,6 +163,7 @@ public class QuerySpan {
         sourceCount = 0;
         next = 0;
         seek = 0;
+        yield = false;
         stageTimerTotal = 0;
         stageTimers.clear();
     }
@@ -172,7 +177,7 @@ public class QuerySpan {
     }
     
     public boolean hasEntries() {
-        if (this.getSeekCount() > 0 || this.getNextCount() > 0 || this.getYieldCount() > 0 || this.getSourceCount() > 0 || !this.stageTimers.isEmpty()) {
+        if (this.getSeekCount() > 0 || this.getNextCount() > 0 || this.getYield() || this.getSourceCount() > 0 || !this.stageTimers.isEmpty()) {
             return true;
         } else {
             return false;
@@ -199,7 +204,7 @@ public class QuerySpan {
         this.next = next;
     }
     
-    public void setYield(long yield) {
+    public void setYield(boolean yield) {
         this.yield = yield;
     }
     
