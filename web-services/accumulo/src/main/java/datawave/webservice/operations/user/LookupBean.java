@@ -143,37 +143,7 @@ public class LookupBean {
         MultivaluedMap<String,String> queryParameters = ui.getQueryParameters(true);
         
         // see javadoc on deduplicateQueryParameters for why we are doing this
-        return lookup(table, row, deduplicateQueryParameters(queryParameters));
-    }
-    
-    /**
-     * Takes the queryParameters and removes duplicates values in each key.
-     * <p>
-     * This does not remove duplicate values across keys, only duplicates that exist for a given key.
-     * <p>
-     * When UriInfo is injected into a call, like lookupGet, the query parameters are parsed twice. This results in each key have duplicate values. See
-     * RESTEASY-1308 which is fixed in RESTEASY-1331 and merged into resteasy-jaxrs 3.0.17.
-     * <p>
-     * As a workaround until we upgrade, let's remove the duplication.
-     * 
-     * @param queryParameters
-     * @return {@code MultivalueMap<String, String>} with not duplicate values
-     */
-    
-    public static MultivaluedMap<String,String> deduplicateQueryParameters(MultivaluedMap<String,String> queryParameters) {
-        MultivaluedMap<String,String> fixedQueryParameters = new MultivaluedMapImpl<>();
-        
-        LinkedHashMultimap<String,String> lhmm = LinkedHashMultimap.create();
-        for (Map.Entry<String,List<String>> entry : queryParameters.entrySet()) {
-            // adding them will de-duplicate
-            lhmm.putAll(entry.getKey(), entry.getValue());
-        }
-        // put them back into a MultivaluedMap
-        for (Map.Entry<String,String> entry : lhmm.entries()) {
-            fixedQueryParameters.add(entry.getKey(), entry.getValue());
-        }
-        
-        return fixedQueryParameters;
+        return lookup(table, row, queryParameters);
     }
     
     /**

@@ -18,7 +18,7 @@ configureTest \
         CreateLuceneUnfieldedQuery \
         "Creates a valid, unfielded EventQuery w/ LUCENE query syntax" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id
@@ -30,7 +30,7 @@ configureTest \
         LuceneUnfieldedQueryPage1 \
         "Gets the first page of results for the CreateLuceneUnfieldedQuery test" \
         "-X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest
@@ -63,7 +63,7 @@ configureTest \
         CreateLuceneFieldedQuery \
         "Creates a valid, fielded EventQuery w/ LUCENE query syntax" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id

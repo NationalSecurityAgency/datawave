@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>2.5.17-SNAPSHOT</version>
+        <version>2.6.7-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-web-root</artifactId>
     <packaging>war</packaging>
@@ -27,18 +27,26 @@
                                 <artifactItem>
                                     <groupId>org.webjars</groupId>
                                     <artifactId>datatables</artifactId>
-                                    <version>1.10.9</version>
+                                    <version>1.10.19</version>
                                     <type>jar</type>
                                     <outputDirectory>${project.build.directory}/webjars</outputDirectory>
-                                    <includes>META-INF/resources/webjars/datatables/1.10.9/js/jquery.dataTables.*</includes>
+                                    <includes>META-INF/resources/webjars/datatables/1.10.19/js/jquery.dataTables.*</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.webjars</groupId>
+                                    <artifactId>foundation</artifactId>
+                                    <version>6.4.3-1</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${project.build.directory}/webjars</outputDirectory>
+                                    <includes>META-INF/resources/webjars/foundation/6.4.3-1/dist/js/foundation.*,META-INF/resources/webjars/foundation/6.4.3-1/dist/css/foundation*</includes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.webjars</groupId>
                                     <artifactId>jquery</artifactId>
-                                    <version>2.2.1</version>
+                                    <version>3.3.1-1</version>
                                     <type>jar</type>
                                     <outputDirectory>${project.build.directory}/webjars</outputDirectory>
-                                    <includes>META-INF/resources/webjars/jquery/2.2.1/jquery*</includes>
+                                    <includes>META-INF/resources/webjars/jquery/3.3.1-1/jquery*</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -58,10 +66,16 @@
                     </archive>
                     <webResources>
                         <resource>
-                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/jquery/2.2.1</directory>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/jquery/3.3.1-1</directory>
                         </resource>
                         <resource>
-                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/datatables/1.10.9/js</directory>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/foundation/6.4.3-1/dist/css</directory>
+                        </resource>
+                        <resource>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/foundation/6.4.3-1/dist/js</directory>
+                        </resource>
+                        <resource>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/datatables/1.10.19/js</directory>
                         </resource>
                     </webResources>
                 </configuration>

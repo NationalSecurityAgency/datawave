@@ -181,7 +181,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         // Simulate the initial context
         TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
         
-        final Capture<QueryCall> qcCapture = new Capture<>();
+        final Capture<QueryCall> qcCapture = Capture.newInstance();
         
         // Set expectations for the postProcess
         expect(responseContext.getHeaders()).andReturn(writeHeaders);
@@ -238,7 +238,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         // Simulate the initial context
         TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
         
-        final Capture<QueryCall> qcCapture = new Capture<>();
+        final Capture<QueryCall> qcCapture = Capture.newInstance();
         
         // Set expectations for the postProcess
         expect(responseContext.getHeaders()).andReturn(writeHeaders);
@@ -298,7 +298,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         // Simulate the initial context
         TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
         
-        final Capture<QueryCall> qcCapture = new Capture<>();
+        final Capture<QueryCall> qcCapture = Capture.newInstance();
         
         // Set expectations for the postProcess
         expect(responseContext.getHeaders()).andReturn(writeHeaders);
@@ -363,7 +363,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         // Simulate the initial context
         TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
         
-        final Capture<QueryCall> qcCapture = new Capture<>();
+        final Capture<QueryCall> qcCapture = Capture.newInstance();
         
         // Set expectations for the postProcess
         expect(responseContext.getHeaders()).andReturn(writeHeaders);

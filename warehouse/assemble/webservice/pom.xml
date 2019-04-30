@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>2.5.17-SNAPSHOT</version>
+        <version>2.6.7-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-webservice</artifactId>
     <name>${project.artifactId}</name>
@@ -66,12 +66,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.mrunit</groupId>
-            <artifactId>mrunit</artifactId>
-            <classifier>hadoop2</classifier>
             <scope>test</scope>
         </dependency>
     </dependencies>

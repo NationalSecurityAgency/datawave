@@ -9,11 +9,11 @@
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
         Wildfly web service. Over time, more and more code will be moved out of the web service and
         into microservices.</description>
-    <url>http://code.nsa.gov/datawave</url>
+    <url>https://code.nsa.gov/datawave</url>
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
     <scm>
