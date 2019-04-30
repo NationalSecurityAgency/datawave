@@ -30,7 +30,6 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
@@ -440,8 +439,6 @@ public class RangeStreamTest {
         assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
     }
     
-    // This test does not generate scanners for 20190414_1
-    @Ignore
     @Test
     public void testBothIndexedPrune() throws Exception {
         String originalQuery = "(FOO == 'barter' || FOO == 'baggy')";
@@ -474,11 +471,6 @@ public class RangeStreamTest {
             }
         }
         assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
-        
-        /*
-         * [ [20190414_1 datatype1%00;123: [] 9223372036854775807 false,20190414_1 datatype1%00;123%00;: [] 9223372036854775807 false), [20190414_1
-         * datatype1%00;345: [] 9223372036854775807 false,20190414_1 datatype1%00;345%00;: [] 9223372036854775807 false) ]
-         */
     }
     
     @Test
