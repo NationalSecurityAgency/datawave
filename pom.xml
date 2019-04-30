@@ -1227,8 +1227,8 @@
                     <version>3.0.0</version>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
-			<failsOnError>false</failsOnError>
-			<failOnViolation>false</failOnViolation>
+                        <failsOnError>false</failsOnError>
+                        <failOnViolation>false</failOnViolation>
                     </configuration>
                     <dependencies>
                         <dependency>
