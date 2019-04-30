@@ -19,6 +19,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -248,6 +249,16 @@ public abstract class RemoteHttpService {
         HttpPost postRequest = new HttpPost(builder.build());
         requestCustomizer.accept(postRequest);
         return execute(postRequest, resultConverter, errorSupplier);
+    }
+    
+    protected <T> T executePutMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPut> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        URIBuilder builder = buildURI();
+        builder.setPath(serviceURI() + uriSuffix);
+        uriCustomizer.accept(builder);
+        HttpPut putRequest = new HttpPut(builder.build());
+        requestCustomizer.accept(putRequest);
+        return execute(putRequest, resultConverter, errorSupplier);
     }
     
     protected abstract String serviceHost();

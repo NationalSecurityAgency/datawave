@@ -87,7 +87,12 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.metrics.reporter.host:add(value=${metrics.reporter.host})
 /system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
 /system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
+/system-property=dw.cache.tableNames:add(value="${tables.to.cache}")
+
+# Enable/disable the test authorization service (enable for development use only)
 /system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
+
+# Authorization microservice config
 /system-property=dw.security.use.remoteuserservice:add(value=${security.use.remoteauthservice})
 /system-property=dw.remoteDatawaveUserService.useSrvDnsLookup:add(value=${security.remoteuserservice.srv.lookup.enabled})
 /system-property=dw.remoteDatawaveUserService.srvDnsServers:add(value=${security.remoteuserservice.srv.lookup.servers})
@@ -95,7 +100,14 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.remoteDatawaveUserService.scheme:add(value=${security.remoteuserservice.scheme})
 /system-property=dw.remoteDatawaveUserService.host:add(value=${security.remoteuserservice.host})
 /system-property=dw.remoteDatawaveUserService.port:add(value=${security.remoteuserservice.port})
-/system-property=dw.cache.tableNames:add(value="${tables.to.cache}")
+
+# Accumulo microservice config
+/system-property=dw.remoteAccumuloService.useSrvDnsLookup:add(value=${accumulo.remoteservice.srv.lookup.enabled})
+/system-property=dw.remoteAccumuloService.srvDnsServers:add(value=${accumulo.remoteservice.srv.lookup.servers})
+/system-property=dw.remoteAccumuloService.srvDnsPort:add(value=${accumulo.remoteservice.srv.lookup.port})
+/system-property=dw.remoteAccumuloService.scheme:add(value=${accumulo.remoteservice.scheme})
+/system-property=dw.remoteAccumuloService.host:add(value=${accumulo.remoteservice.host})
+/system-property=dw.remoteAccumuloService.port:add(value=${accumulo.remoteservice.port})
 
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)

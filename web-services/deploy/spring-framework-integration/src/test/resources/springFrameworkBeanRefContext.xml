@@ -17,7 +17,6 @@
                 <value>classpath*:datawave/query/*QueryLogicFactory.xml</value>
                 <value>classpath*:datawave/query/CachedResults*.xml</value>
                 <value>classpath*:datawave/mapreduce/MapReduceJobs.xml</value>
-                <value>classpath*:org/apache/accumulo/operations/LookupBean.xml</value>
             </list>
         </constructor-arg>
     </bean>

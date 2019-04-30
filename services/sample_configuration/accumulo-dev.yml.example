@@ -1,0 +1,59 @@
+server:
+  port: 8843
+
+# If you have your own accumulo instance for testing, edit the accumulo connection info below. You can
+# also test the /v1/lookup endpoint with some canned data by simply enabling the "mock" profile when you
+# launch the accumulo service. The mock profile will automatically spin up an in-memory accumulo instance
+# with a small amount of test data. Also, see authorization-mock.yml for user details associated with the
+# canned data (user dn, roles, auths, etc)
+
+warehouse-cluster:
+  accumulo:
+    zookeepers: 'mock'
+    instanceName: 'mock'
+    username: 'mock'
+    password: 'mock'
+
+# If you want to test with the audit service, enable the audit-client and uncomment the lookup-related
+# audit configs, which are tailored to the mock profile's canned data.
+
+audit-client:
+  enabled: false
+  uri: '${AUDIT_SERVER_URL:https://localhost:8743/audit}'
+
+# Enable 'admin' and 'stats' services, if desired. The admin service should work fine with the 'mock' profile
+# enabled (i.e., with in-memory accumulo), but the stats service will require access to a "real" ZK server
+
+accumulo:
+  admin:
+    enabled: false
+  stats:
+    enabled: false
+  lookup:
+    numQueryThreads: 1
+#    audit:
+#      defaultColumnVisibility: "A&B&C"
+#      defaultAuditType: 'NONE'
+#      tableConfig:
+#
+#        - tableRegex: 'w.*e'
+#          rowRegex: 'row1'
+#          colFamRegex: '.*'
+#          colQualRegex: '.*'
+#          auditType: 'ACTIVE'
+#
+#        - tableRegex: 'warehouseTestTable2'
+#          rowRegex: 'r.*2'
+#          colFamRegex: '.*'
+#          colQualRegex: '.*'
+#          auditType: 'PASSIVE'
+#
+#        - tableRegex: '.*Table'
+#          rowRegex: 'r.*3'
+#          colFamRegex: '.*'
+#          colQualRegex: '.*'
+#          auditType: 'ACTIVE'
+
+logging:
+  level:
+    datawave.microservice.accumulo: DEBUG

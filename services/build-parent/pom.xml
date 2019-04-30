@@ -35,8 +35,11 @@
         <module>../hazelcast-client</module>
         <module>../spring-boot-starter-datawave-cache</module>
         <module>../spring-boot-starter-datawave</module>
+        <module>../spring-boot-starter-datawave-audit</module>
         <module>../config-service</module>
         <module>../hazelcast-service</module>
+        <!--<module>../accumulo-api</module>-->
+        <module>../accumulo-service</module>
         <module>../authorization-service</module>
         <module>../audit-service</module>
         <module>../dictionary-api</module>

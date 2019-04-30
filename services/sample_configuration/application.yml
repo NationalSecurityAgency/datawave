@@ -60,9 +60,6 @@ spring:
   cloud:
     consul:
       enabled: false
-  # Configure jackson mappers so that null properties are not included in the serialized response.
-  jackson:
-    default-property-include: non_null
 
 hazelcast:
   client:
