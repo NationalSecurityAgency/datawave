@@ -69,10 +69,10 @@ undeploy datawave-web-service.ear
 
 # Remove the H2 DataSource used by the DatabaseUserService
 /subsystem=datasources/data-source=DatabaseUserServiceDS:remove
+/subsystem=datasources/jdbc-driver=mysql:remove
 
 # Remove the JDBC DataSource used by CachedResults
 /subsystem=datasources/data-source=CachedResultsDS:remove
-undeploy mysql-connector-java-${version.mysql-connector}.jar
 
 #
 # Remove EJB subsystem configuration changes
@@ -122,10 +122,13 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /core-service=management/security-realm=SSLRealm/:remove
 
 #
+# Remove the security infinispan cache
+#
+/subsystem=infinispan/cache-container=security:remove
+
+#
 # Remove our system properties
 #
-/system-property=user.timezone:remove
-/system-property=file.encoding:remove
 /system-property=cluster.name:remove
 /system-property=dw.warehouse.instanceName:remove
 /system-property=dw.warehouse.zookeepers:remove
@@ -193,6 +196,15 @@ jms-queue remove --queue-address=QueryMetricsQueue
 # Restore default ports to listen only on loopback
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:127.0.0.1}")
 /interface=management/:write-attribute(name=inet-address,value="${jboss.bind.address.management:127.0.0.1}")
+
+# Add the metrics subsystem back in, since we removed it during setup.
+/subsystem=microprofile-metrics-smallrye:add
+
+# Add the Elytron subsystem back in -- we removed it since it's not compatible with our security framework
+/subsystem=elytron:add
+
+# Add the MySQL Connector as a module
+module remove --name=com.mysql.driver
 
 # Shut down Wildfly
 :shutdown(restart=false)

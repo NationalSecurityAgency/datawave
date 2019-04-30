@@ -3,15 +3,15 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>2.5.15-SNAPSHOT</version>
+    <version>2.6.7-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
-    <url>http://code.nsa.gov/datawave</url>
+    <url>https://code.nsa.gov/datawave</url>
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
     <modules>
@@ -31,45 +31,45 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
         <version.accumulo>1.9.2</version.accumulo>
+        <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.avro>1.7.4</version.avro>
         <version.caffeine>2.6.2</version.caffeine>
-        <version.commons-beanutils>1.7.0</version.commons-beanutils>
+        <version.commons-beanutils>1.9.3</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
-        <version.commons-codec>1.10</version.commons-codec>
-        <version.commons-collections>4.2</version.commons-collections>
+        <version.commons-codec>1.12</version.commons-codec>
+        <version.commons-collections>4.3</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
-        <version.commons-io>2.5</version.commons-io>
+        <version.commons-io>2.6</version.commons-io>
         <version.commons-jexl>2.1.1</version.commons-jexl>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
-        <version.curator>2.11.0</version.curator>
-        <version.deltaspike>1.5.4</version.deltaspike>
-        <version.dropwizard-metrics>1.3.3</version.dropwizard-metrics>
-        <version.easymock>3.4</version.easymock>
-        <version.geoserver>2.10.0</version.geoserver>
-        <version.geotools>16.0</version.geotools>
+        <version.curator>2.13.0</version.curator>
+        <version.deltaspike>1.9.0</version.deltaspike>
+        <version.dropwizard-metrics>1.5.0</version.dropwizard-metrics>
+        <version.easymock>4.0.2</version.easymock>
+        <version.geoserver>2.14.2</version.geoserver>
+        <version.geotools>20.1</version.geotools>
         <version.geowave>0.9.5</version.geowave>
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
         <version.hadoop>2.6.0-cdh5.9.1</version.hadoop>
-        <version.hornetq>2.4.7.Final</version.hornetq>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>1.9.2.1</version.in-memory-accumulo>
-        <version.infinispan>8.2.4.Final</version.infinispan>
-        <version.jackson>2.8.11</version.jackson>
-        <version.javassist>3.20.0-GA</version.javassist>
+        <version.infinispan>9.4.8.Final</version.infinispan>
+        <version.jackson>2.9.8</version.jackson>
+        <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
-        <version.javax-validation>1.1.0.Final</version.javax-validation>
+        <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
-        <version.jgroups>3.6.10.Final</version.jgroups>
-        <version.jjwt>0.7.0</version.jjwt>
+        <version.jgroups>4.0.18.Final</version.jgroups>
+        <version.jjwt>0.9.1</version.jjwt>
         <version.junit>4.12</version.junit>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
@@ -86,24 +86,26 @@
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
         <version.microservice.type-utils>1.0</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
-        <version.mysql-connector>5.1.35</version.mysql-connector>
-        <version.netty>4.0.15.Final</version.netty>
+        <version.mysql-connector>8.0.15</version.mysql-connector>
+        <version.netty>4.1.34.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
-        <version.picketbox>4.9.6.Final</version.picketbox>
-        <version.powermock>1.6.6</version.powermock>
+        <version.picketbox>5.0.3.Final</version.picketbox>
+        <version.powermock>2.0.0</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
         <version.protostuff>1.5.5</version.protostuff>
-        <version.slf4j>1.7.5</version.slf4j>
+        <version.slf4j>1.7.26</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.1.0.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.7.0</version.stream>
         <version.surefire.plugin>2.20</version.surefire.plugin>
         <version.thrift>0.9.3</version.thrift>
-        <version.weld>2.3.5.Final</version.weld>
-        <version.weld-se>2.3.5.Final</version.weld-se>
-        <version.wildfly>10.1.0.Final</version.wildfly>
-        <version.xerces>2.11.0.SP4</version.xerces>
+        <version.weld>3.1.0.Final</version.weld>
+        <version.weld-se>3.1.0.Final</version.weld-se>
+        <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
+        <version.weld-test>2.3.5.Final</version.weld-test>
+        <version.wildfly>16.0.0.Final</version.wildfly>
+        <version.xerces>2.12.0.SP02</version.xerces>
         <version.zookeeper>3.4.5-cdh5.9.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
@@ -138,7 +140,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}.2</version>
+                <version>${version.jackson}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -182,7 +184,7 @@
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
-                <artifactId>commons-beanutils-core</artifactId>
+                <artifactId>commons-beanutils</artifactId>
                 <version>${version.commons-beanutils}</version>
                 <exclusions>
                     <exclusion>
@@ -901,56 +903,8 @@
                 <version>${version.xerces}</version>
             </dependency>
             <dependency>
-                <groupId>org.hornetq</groupId>
-                <artifactId>hornetq-commons</artifactId>
-                <version>${version.hornetq}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hornetq</groupId>
-                <artifactId>hornetq-core-client</artifactId>
-                <version>${version.hornetq}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hornetq</groupId>
-                <artifactId>hornetq-jms-client</artifactId>
-                <version>${version.hornetq}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hornetq</groupId>
-                <artifactId>hornetq-server</artifactId>
-                <version>${version.hornetq}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-core</artifactId>
+                <artifactId>weld-core-impl</artifactId>
                 <version>${version.weld}</version>
                 <scope>provided</scope>
             </dependency>
@@ -965,12 +919,6 @@
                 <artifactId>picketbox-infinispan</artifactId>
                 <version>${version.picketbox}</version>
                 <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.transaction</groupId>
-                        <artifactId>jta</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
@@ -983,6 +931,12 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-undertow</artifactId>
+                <version>${version.wildfly}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.deltaspike.core</groupId>
@@ -999,7 +953,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>wildfly-javaee7-with-tools</artifactId>
+                <artifactId>wildfly-javaee8-with-tools</artifactId>
                 <version>${version.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -1056,6 +1010,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-core</artifactId>
+                <version>${version.weld-test}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-easymock</artifactId>
                 <version>${version.powermock}</version>
@@ -1063,7 +1023,7 @@
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito</artifactId>
+                <artifactId>powermock-api-mockito2</artifactId>
                 <version>${version.powermock}</version>
                 <scope>test</scope>
             </dependency>
@@ -1085,7 +1045,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>todo-public</id>
-            <url>http://todo/nexus/content/groups/public</url>
+            <url>https://todo/nexus/content/groups/public</url>
         </repository>
         <repository>
             <releases>
@@ -1095,7 +1055,7 @@
                 <enabled>true</enabled>
             </snapshots>
             <id>todo-public-snapshots</id>
-            <url>http://todo/nexus/content/groups/public-snapshots</url>
+            <url>https://todo/nexus/content/groups/public-snapshots</url>
         </repository>
         -->
         <repository>
@@ -1117,7 +1077,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>jboss</id>
-            <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+            <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
         </repository>
         <repository>
             <snapshots>
@@ -1138,7 +1098,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>boundless</id>
-            <url>http://repo.boundlessgeo.com/main/</url>
+            <url>https://repo.boundlessgeo.com/main/</url>
         </repository>
         <repository>
             <snapshots>
@@ -1146,7 +1106,7 @@
             </snapshots>
             <id>osgeo</id>
             <name>Open Source Geospatial Foundation Repository</name>
-            <url>http://download.osgeo.org/webdav/geotools/</url>
+            <url>https://download.osgeo.org/webdav/geotools/</url>
         </repository>
     </repositories>
     <pluginRepositories>

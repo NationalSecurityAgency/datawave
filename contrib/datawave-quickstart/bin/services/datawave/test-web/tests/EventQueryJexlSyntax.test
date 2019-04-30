@@ -21,7 +21,7 @@ configureTest \
         CreateJexlUnfielded \
         "Creates an equivalent 'unfielded' EventQuery w/JEXL query syntax via '_ANYFIELD_' identifier" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id
@@ -33,7 +33,7 @@ configureTest \
         JexlUnfieldedNext \
         "Gets the first page of results for the CreateJexlUnfielded test" \
         "-X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest
@@ -66,7 +66,7 @@ configureTest \
         CreateJexlFielded \
         "Creates a valid, fielded EventQuery w/ JEXL query syntax" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id

@@ -9,11 +9,11 @@
     <properties>
         <version.accumulo>1.9.2</version.accumulo>
     </properties>
-    <url>http://code.nsa.gov/datawave</url>
+    <url>https://code.nsa.gov/datawave</url>
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
     <scm>

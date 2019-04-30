@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>2.5.15-SNAPSHOT</version>
+        <version>2.6.7-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-atom</artifactId>
     <packaging>ejb</packaging>
@@ -70,7 +70,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.annotation</groupId>
-            <artifactId>jboss-annotations-api_1.2_spec</artifactId>
+            <artifactId>jboss-annotations-api_1.3_spec</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -3,7 +3,7 @@ package datawave.microservice.audit.health.rabbit;
 import com.rabbitmq.http.client.Client;
 import com.rabbitmq.http.client.domain.NodeInfo;
 import com.rabbitmq.http.client.domain.QueueInfo;
-import datawave.microservice.audit.controller.AuditController;
+import datawave.microservice.audit.AuditController;
 import datawave.microservice.audit.health.HealthChecker;
 import datawave.microservice.audit.health.rabbit.config.RabbitHealthProperties;
 import datawave.microservice.audit.health.rabbit.config.RabbitHealthProperties.ClusterProperties;
@@ -458,7 +458,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             // create missing exchanges
             if (rabbitHealthProperties.isFixMissing()) {
                 for (Exchange exchange : missingExchanges) {
-                    log.trace("Creating missing exchange: [" + exchange + "]");
+                    log.trace("Creating missing exchange: [{}]", exchange);
                     try {
                         rabbitManagementTemplate.addExchange(exchange);
                     } catch (Exception e) {
@@ -495,7 +495,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             // recreate invalid queues
             if (rabbitHealthProperties.isFixInvalid()) {
                 for (InvalidPairing<Queue> queues : invalidQueues) {
-                    log.trace("Fixing invalid queue: [" + queues.desired + "]");
+                    log.trace("Fixing invalid queue: [{}]", queues.desired);
                     
                     QueueInfo queueInfo = null;
                     try {
@@ -513,7 +513,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
                                 log.trace("Unable to recreate invalid queue", e);
                             }
                         } else
-                            log.warn("Cannot fix invalid queue [" + queueInfo.getName() + "] containing " + queueInfo.getTotalMessages() + " messages");
+                            log.warn("Cannot fix invalid queue [{}] containing {} messages", queueInfo.getName(), queueInfo.getTotalMessages());
                     }
                 }
             }
@@ -521,7 +521,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             // create missing bindings
             if (rabbitHealthProperties.isFixMissing()) {
                 for (Binding binding : missingBindings) {
-                    log.trace("Creating missing binding: [" + binding + "]");
+                    log.trace("Creating missing binding: [{}]", binding);
                     try {
                         if (binding.getDestinationType().equals(Binding.DestinationType.EXCHANGE))
                             rabbitClient.bindExchange("/", binding.getDestination(), binding.getExchange(), binding.getRoutingKey(), binding.getArguments());
@@ -536,7 +536,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
             // recreate invalid bindings
             if (rabbitHealthProperties.isFixInvalid()) {
                 for (InvalidPairing<Binding> bindings : invalidBindings) {
-                    log.trace("Fixing invalid binding: [" + bindings.desired + "]");
+                    log.trace("Fixing invalid binding: [{}]", bindings.desired);
                     try {
                         // remove invalid bindings
                         if (bindings.detected.getDestinationType().equals(Binding.DestinationType.EXCHANGE))

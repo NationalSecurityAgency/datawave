@@ -28,6 +28,8 @@ spring:
       allowed-callers:
         - "cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us<cn=testcorp ca, ou=security, o=testcorp, c=us>"
 
+hazelcast.client.enabled: false
+
 server:
   port: 0
   non-secure-port: 0
@@ -55,6 +57,8 @@ management:
 
 audit:
   confirmAckEnabled: false
+  fs:
+    pathUri: 'file:///'
 
 logging:
   level:
@@ -67,8 +71,9 @@ spring:
   profiles: log-enabled
 
 audit:
-  log:
-    enabled: true
+  auditors:
+    log:
+      enabled: true
 
 ---
 
@@ -76,8 +81,9 @@ spring:
   profiles: log-disabled
 
 audit:
-  log:
-    enabled: false
+  auditors:
+    log:
+      enabled: false
 
 ---
 
@@ -85,14 +91,15 @@ spring:
   profiles: accumulo-enabled
 
 audit:
-  accumulo:
-    enabled: true
-    tableName: "test"
-    accumuloConfig:
-      zookeepers: "test"
-      instanceName: "test"
-      username: "test"
-      password: "test"
+  auditors:
+    accumulo:
+      enabled: true
+      tableName: "test"
+      accumuloConfig:
+        zookeepers: "test"
+        instanceName: "test"
+        username: "test"
+        password: "test"
 
 ---
 
@@ -100,8 +107,9 @@ spring:
   profiles: accumulo-disabled
 
 audit:
-  accumulo:
-    enabled: false
+  auditors:
+    accumulo:
+      enabled: false
 
 ---
 
@@ -164,3 +172,14 @@ audit:
         port: 15672
         uri: '/api/'
 
+---
+spring:
+  profiles: replay-config
+
+audit:
+  retry:
+    maxAttempts: 1
+  replay:
+    enabled: true
+    publishEvents: false
+    idleTimeoutMillis: 1000

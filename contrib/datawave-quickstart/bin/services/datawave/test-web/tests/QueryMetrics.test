@@ -21,7 +21,7 @@ configureTest \
         CreateAndNext \
         "Creates a JEXL-syntax QueryMetrics query and gets the first page of results" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/QueryMetricsQuery/createAndNext" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 # NOTE:

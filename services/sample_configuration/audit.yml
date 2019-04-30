@@ -9,6 +9,10 @@ spring:
           accumuloAuditSink:
             consumer:
               autoBindDlq: true
+          dumpAuditSink:
+            consumer:
+              autoBindDlq: true
+              bindQueue: false
       bindings:
         auditSource:
           destination: 'audit'
@@ -20,12 +24,18 @@ spring:
         accumuloAuditSink:
           destination: 'audit'
           group: 'accumulo'
+        dumpAuditSink:
+          destination: 'audit'
+          group: 'dump'
+          consumer:
+            concurrency: 5
 
 audit:
-  log:
-    enabled: true
-  accumulo:
-    enabled: false
+  auditors:
+    log:
+      enabled: true
+    accumulo:
+      enabled: false
 
 logging:
   level:

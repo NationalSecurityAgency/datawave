@@ -34,8 +34,8 @@ mapreduce.jobhistory.done-dir ${DW_HADOOP_MR_DONE_DIR}
 mapreduce.admin.map.child.java.opts -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true
 mapreduce.map.memory.mb 2048
 mapreduce.reduce.memory.mb 3072
-mapreduce.map.java.opts: -Xmx1024m
-mapreduce.reduce.java.opts: -Xmx2048m
+mapreduce.map.java.opts -Xmx1024m
+mapreduce.reduce.java.opts -Xmx2048m
 mapreduce.admin.reduce.child.java.opts -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true
 mapreduce.framework.name yarn"
 

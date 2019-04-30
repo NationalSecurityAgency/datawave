@@ -3,5 +3,5 @@ configureTest \
     ListEffectiveAuthsGET \
     "Gets all roles & effective Accumulo auths for the current user (PKI) identity" \
     "-X GET ${URI_ROOT}/Security/User/listEffectiveAuthorizations" \
-    application/xml \
+    "application/xml;charset=UTF-8" \
     200

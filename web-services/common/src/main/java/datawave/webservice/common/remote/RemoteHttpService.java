@@ -1,8 +1,10 @@
 package datawave.webservice.common.remote;
 
 import com.codahale.metrics.Counter;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.LookupResult;
@@ -48,7 +50,6 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.Key;
@@ -103,7 +104,9 @@ public abstract class RemoteHttpService {
     @PostConstruct
     protected void init() {
         objectMapper = new ObjectMapper();
+        objectMapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
         objectMapper.registerModule(new GuavaModule());
+        objectMapper.registerModule(new JaxbAnnotationModule());
         
         if (useSrvDns()) {
             if (srvDnsServers() != null && !srvDnsServers().isEmpty()) {
