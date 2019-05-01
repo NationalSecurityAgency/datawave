@@ -10,7 +10,6 @@ import datawave.microservice.audit.common.AuditMessage;
 import datawave.microservice.audit.config.AuditProperties;
 import datawave.microservice.audit.config.AuditServiceConfig;
 import datawave.microservice.audit.health.HealthChecker;
-import datawave.microservice.audit.replay.runner.ReplayTask;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.DatawaveUser;
@@ -303,7 +302,7 @@ public class AuditServiceTest {
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNull(msg);
         
-        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubpath()).listFiles())
+        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubPath()).listFiles())
                         .filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
         assertEquals(1, files.size());
         
@@ -403,7 +402,7 @@ public class AuditServiceTest {
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNull(msg);
         
-        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubpath()).listFiles())
+        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubPath()).listFiles())
                         .filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
         assertEquals(1, files.size());
         
@@ -501,7 +500,7 @@ public class AuditServiceTest {
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNull(msg);
         
-        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubpath()).listFiles())
+        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubPath()).listFiles())
                         .filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
         assertEquals(1, files.size());
         
@@ -595,7 +594,7 @@ public class AuditServiceTest {
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
         assertNotNull(msg);
         
-        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubpath()).listFiles())
+        List<File> files = Arrays.stream(new File(new File(new URI(fileAuditProperties.getPathUri())), fileAuditProperties.getSubPath()).listFiles())
                         .filter(f -> f.getName().endsWith(".json")).collect(Collectors.toList());
         assertEquals(1, files.size());
         
@@ -634,22 +633,27 @@ public class AuditServiceTest {
             File tempDir = Files.createTempDir();
             tempDir.deleteOnExit();
             fileAuditProperties.setPathUri(tempDir.toURI().toString());
-            fileAuditProperties.setSubpath("audit");
+            fileAuditProperties.setSubPath("audit");
             return fileAuditProperties;
         }
         
         @Bean(name = "fileAuditor")
         public Auditor fileAuditor(AuditProperties auditProperties, @Qualifier("fileAuditProperties") FileAuditProperties fileAuditProperties)
                         throws Exception {
-            List<String> configResources = (fileAuditProperties.getFs().getConfigResources() != null) ? fileAuditProperties.getFs().getConfigResources()
-                            : auditProperties.getFs().getConfigResources();
+            List<String> fsConfigResources = (fileAuditProperties.getFsConfigResources() != null) ? fileAuditProperties.getFsConfigResources()
+                            : auditProperties.getFsConfigResources();
+            
+            String subPath = fileAuditProperties.getSubPath();
+            if (subPath == null && fileAuditProperties.getSubPathEnvVar() != null)
+                subPath = System.getenv(fileAuditProperties.getSubPathEnvVar());
             
             // @formatter:off
             return new TestFileAuditor.Builder()
                     .setPath(fileAuditProperties.getPathUri())
-                    .setMaxFileAgeMillis(fileAuditProperties.getMaxFileAgeMillis())
-                    .setMaxFileLenBytes(fileAuditProperties.getMaxFileLenBytes())
-                    .setConfigResources(configResources)
+                    .setSubPath(subPath)
+                    .setFsConfigResources(fsConfigResources)
+                    .setMaxFileAgeSeconds(fileAuditProperties.getMaxFileAgeSeconds())
+                    .setMaxFileLengthMB(fileAuditProperties.getMaxFileLengthMB())
                     .setPrefix(fileAuditProperties.getPrefix())
                     .build();
             // @formatter:on

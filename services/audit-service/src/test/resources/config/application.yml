@@ -57,8 +57,6 @@ management:
 
 audit:
   confirmAckEnabled: false
-  fs:
-    pathUri: 'file:///'
 
 logging:
   level:

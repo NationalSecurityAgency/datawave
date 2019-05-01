@@ -30,20 +30,20 @@ public class FileAuditConfig {
     
     @Bean(name = "fileAuditor")
     public Auditor fileAuditor(AuditProperties auditProperties, @Qualifier("fileAuditProperties") FileAuditProperties fileAuditProperties) throws Exception {
-        List<String> configResources = (fileAuditProperties.getFs().getConfigResources() != null) ? fileAuditProperties.getFs().getConfigResources()
-                        : auditProperties.getFs().getConfigResources();
+        List<String> fsConfigResources = (fileAuditProperties.getFsConfigResources() != null) ? fileAuditProperties.getFsConfigResources()
+                        : auditProperties.getFsConfigResources();
         
-        String subpath = fileAuditProperties.getSubpath();
-        if (subpath == null && fileAuditProperties.getSubpathEnvVar() != null)
-            subpath = System.getenv(fileAuditProperties.getSubpathEnvVar());
+        String subPath = fileAuditProperties.getSubPath();
+        if (subPath == null && fileAuditProperties.getSubPathEnvVar() != null)
+            subPath = System.getenv(fileAuditProperties.getSubPathEnvVar());
         
         // @formatter:off
         return new FileAuditor.Builder()
                 .setPath(fileAuditProperties.getPathUri())
-                .setSubpath(subpath)
-                .setMaxFileAgeMillis(fileAuditProperties.getMaxFileAgeMillis())
-                .setMaxFileLenBytes(fileAuditProperties.getMaxFileLenBytes())
-                .setConfigResources(configResources)
+                .setSubPath(subPath)
+                .setFsConfigResources(fsConfigResources)
+                .setMaxFileAgeSeconds(fileAuditProperties.getMaxFileAgeSeconds())
+                .setMaxFileLengthMB(fileAuditProperties.getMaxFileLengthMB())
                 .setPrefix(fileAuditProperties.getPrefix())
                 .build();
         // @formatter:on

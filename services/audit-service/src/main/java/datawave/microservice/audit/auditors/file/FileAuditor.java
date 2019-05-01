@@ -18,10 +18,8 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,8 +35,8 @@ public class FileAuditor implements Auditor {
     protected final SimpleDateFormat sdf;
     protected final ReentrantLock writeLock = new ReentrantLock(true);
     
-    protected long maxFileLenBytes;
-    protected long maxFileAgeMillis;
+    protected long maxFileLengthMB;
+    protected long maxFileAgeSeconds;
     
     protected FileSystem fileSystem;
     protected Path path;
@@ -47,30 +45,31 @@ public class FileAuditor implements Auditor {
     protected Date creationDate = null;
     
     protected FileAuditor(Builder<?> builder) throws URISyntaxException, IOException {
-        this.maxFileLenBytes = builder.maxFileLenBytes;
-        this.maxFileAgeMillis = builder.maxFileAgeMillis;
+        this.maxFileLengthMB = builder.maxFileLengthMB;
+        this.maxFileAgeSeconds = builder.maxFileAgeSeconds;
         
         Configuration config = new Configuration();
         
-        if (builder.configResources != null) {
-            for (String resource : builder.configResources)
+        if (builder.fsConfigResources != null) {
+            for (String resource : builder.fsConfigResources)
                 config.addResource(new Path(resource));
         }
         
         path = new Path(builder.path);
         
-        if (builder.subpath != null)
-            path = new Path(path, builder.subpath);
-        
-        if (builder.prefix != null)
-            path = new Path(path, builder.prefix);
+        if (builder.subPath != null)
+            path = new Path(path, builder.subPath);
         
         fileSystem = FileSystem.get(path.toUri(), config);
         
         if (!fileSystem.exists(path))
             fileSystem.mkdirs(path);
         
-        this.sdf = new SimpleDateFormat("yyyyMMdd_HHmmss.SSS'.json'");
+        String sdfString = "yyyyMMdd_HHmmss.SSS'.json'";
+        if (builder.prefix != null && !builder.prefix.isEmpty())
+            sdfString = "'" + builder.prefix + "-'" + sdfString;
+        
+        this.sdf = new SimpleDateFormat(sdfString);
     }
     
     @Override
@@ -108,26 +107,25 @@ public class FileAuditor implements Auditor {
     }
     
     protected boolean isFileTooOld() throws ParseException {
-        return (System.currentTimeMillis() - creationDate.getTime()) >= maxFileAgeMillis;
+        return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - creationDate.getTime()) >= maxFileAgeSeconds;
     }
     
     protected boolean isFileTooBig() throws IOException {
-        return fileSystem.getFileStatus(currentFile).getLen() >= maxFileLenBytes;
+        return ((double) fileSystem.getFileStatus(currentFile).getLen() / (1024L * 1024L)) >= maxFileLengthMB;
     }
     
     public static class Builder<T extends Builder<T>> {
         protected String path;
-        protected String subpath;
+        protected String subPath;
+        protected List<String> fsConfigResources;
         protected String prefix;
-        protected Long maxFileLenBytes;
-        protected Long maxFileAgeMillis;
-        protected List<String> configResources;
+        protected Long maxFileLengthMB;
+        protected Long maxFileAgeSeconds;
         
         public Builder() {
             prefix = "audit";
-            maxFileLenBytes = 1024L * 1024L * 512L;
-            maxFileAgeMillis = TimeUnit.MINUTES.toMillis(30);
-            configResources = new ArrayList<>();
+            maxFileLengthMB = 8192L;
+            maxFileAgeSeconds = TimeUnit.HOURS.toSeconds(6);
         }
         
         public String getPath() {
@@ -140,13 +138,22 @@ public class FileAuditor implements Auditor {
             return (T) this;
         }
         
-        public String getSubpath() {
-            return subpath;
+        public String getSubPath() {
+            return subPath;
         }
         
-        public T setSubpath(String subpath) {
-            if (subpath != null)
-                this.subpath = subpath;
+        public T setSubPath(String subPath) {
+            if (subPath != null)
+                this.subPath = subPath;
+            return (T) this;
+        }
+        
+        public List<String> getFsConfigResources() {
+            return fsConfigResources;
+        }
+        
+        public T setFsConfigResources(List<String> fsConfigResources) {
+            this.fsConfigResources = fsConfigResources;
             return (T) this;
         }
         
@@ -160,33 +167,23 @@ public class FileAuditor implements Auditor {
             return (T) this;
         }
         
-        public Long getMaxFileLenBytes() {
-            return maxFileLenBytes;
+        public Long getMaxFileLengthMB() {
+            return maxFileLengthMB;
         }
         
-        public T setMaxFileLenBytes(Long maxFileLenBytes) {
-            if (maxFileLenBytes != null)
-                this.maxFileLenBytes = maxFileLenBytes;
+        public T setMaxFileLengthMB(Long maxFileLengthMB) {
+            if (maxFileLengthMB != null)
+                this.maxFileLengthMB = maxFileLengthMB;
             return (T) this;
         }
         
-        public Long getMaxFileAgeMillis() {
-            return maxFileAgeMillis;
+        public Long getMaxFileAgeSeconds() {
+            return maxFileAgeSeconds;
         }
         
-        public T setMaxFileAgeMillis(Long maxFileAgeMillis) {
-            if (maxFileAgeMillis != null)
-                this.maxFileAgeMillis = maxFileAgeMillis;
-            return (T) this;
-        }
-        
-        public List<String> getConfigResources() {
-            return configResources;
-        }
-        
-        public T setConfigResources(List<String> configResources) {
-            if (configResources != null)
-                this.configResources = configResources;
+        public T setMaxFileAgeSeconds(Long maxFileAgeSeconds) {
+            if (maxFileAgeSeconds != null)
+                this.maxFileAgeSeconds = maxFileAgeSeconds;
             return (T) this;
         }
         

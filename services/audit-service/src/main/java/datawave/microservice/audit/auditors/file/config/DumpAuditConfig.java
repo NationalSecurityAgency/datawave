@@ -52,20 +52,20 @@ public class DumpAuditConfig {
     
     @Bean
     public Auditor dumpAuditor(AuditProperties auditProperties, @Qualifier("dumpAuditProperties") FileAuditProperties dumpAuditProperties) throws Exception {
-        List<String> configResources = (dumpAuditProperties.getFs().getConfigResources() != null) ? dumpAuditProperties.getFs().getConfigResources()
-                        : auditProperties.getFs().getConfigResources();
+        List<String> fsConfigResources = (dumpAuditProperties.getFsConfigResources() != null) ? dumpAuditProperties.getFsConfigResources()
+                        : auditProperties.getFsConfigResources();
         
-        String subpath = dumpAuditProperties.getSubpath();
-        if (subpath == null && dumpAuditProperties.getSubpathEnvVar() != null)
-            subpath = System.getenv(dumpAuditProperties.getSubpathEnvVar());
+        String subPath = dumpAuditProperties.getSubPath();
+        if (subPath == null && dumpAuditProperties.getSubPathEnvVar() != null)
+            subPath = System.getenv(dumpAuditProperties.getSubPathEnvVar());
         
         // @formatter:off
         return new FileAuditor.Builder()
                 .setPath(dumpAuditProperties.getPathUri())
-                .setSubpath(subpath)
-                .setMaxFileAgeMillis(dumpAuditProperties.getMaxFileAgeMillis())
-                .setMaxFileLenBytes(dumpAuditProperties.getMaxFileLenBytes())
-                .setConfigResources(configResources)
+                .setSubPath(subPath)
+                .setFsConfigResources(fsConfigResources)
+                .setMaxFileAgeSeconds(dumpAuditProperties.getMaxFileAgeSeconds())
+                .setMaxFileLengthMB(dumpAuditProperties.getMaxFileLengthMB())
                 .setPrefix((dumpAuditProperties.getPrefix() != null) ? dumpAuditProperties.getPrefix() : "dump")
                 .build();
         // @formatter:on

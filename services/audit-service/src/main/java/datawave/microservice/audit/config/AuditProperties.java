@@ -5,7 +5,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -17,11 +16,10 @@ public class AuditProperties {
     private boolean confirmAckEnabled = true;
     private long confirmAckTimeoutMillis = 500L;
     
-    @Valid
-    private Retry retry = new Retry();
+    private List<String> fsConfigResources;
     
     @Valid
-    private Filesystem fs = new Filesystem();
+    private Retry retry = new Retry();
     
     public boolean isConfirmAckEnabled() {
         return confirmAckEnabled;
@@ -39,6 +37,14 @@ public class AuditProperties {
         this.confirmAckTimeoutMillis = confirmAckTimeoutMillis;
     }
     
+    public List<String> getFsConfigResources() {
+        return fsConfigResources;
+    }
+    
+    public void setFsConfigResources(List<String> fsConfigResources) {
+        this.fsConfigResources = fsConfigResources;
+    }
+    
     public Retry getRetry() {
         return retry;
     }
@@ -47,14 +53,6 @@ public class AuditProperties {
         if (retry == null)
             throw new NullPointerException("Audit Retry properties must not be null.");
         this.retry = retry;
-    }
-    
-    public Filesystem getFs() {
-        return fs;
-    }
-    
-    public void setFs(Filesystem fs) {
-        this.fs = fs;
     }
     
     @Validated
@@ -90,29 +88,6 @@ public class AuditProperties {
         
         public void setBackoffIntervalMillis(long backoffIntervalMillis) {
             this.backoffIntervalMillis = backoffIntervalMillis;
-        }
-    }
-    
-    @Validated
-    public static class Filesystem {
-        @NotNull
-        protected String pathUri;
-        protected List<String> configResources;
-        
-        public String getPathUri() {
-            return pathUri;
-        }
-        
-        public void setPathUri(String pathUri) {
-            this.pathUri = pathUri;
-        }
-        
-        public List<String> getConfigResources() {
-            return configResources;
-        }
-        
-        public void setConfigResources(List<String> configResources) {
-            this.configResources = configResources;
         }
     }
 }

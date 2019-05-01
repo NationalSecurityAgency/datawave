@@ -31,11 +31,20 @@ spring:
             concurrency: 5
 
 audit:
+  fsConfigResources:
+    - '/etc/hadoop/conf/core-site.xml'
+    - '/etc/hadoop/conf/hdfs-site.xml'
   auditors:
     log:
       enabled: true
     accumulo:
       enabled: false
+    file:
+      enabled: true
+      pathUri: 'file:///audit'
+    dump:
+      enabled: true
+      pathUri: 'file:///audit'
 
 logging:
   level:
