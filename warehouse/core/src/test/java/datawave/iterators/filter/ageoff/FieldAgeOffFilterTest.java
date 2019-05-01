@@ -127,7 +127,7 @@ public class FieldAgeOffFilterTest {
     @Test
     public void testIndexTrueUsesDefaultWhenFieldLacksTtl() {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(AccumuloConfiguration.getDefaultConfiguration());
-        conf.put("isindextable", "true");
+        conf.put("table.custom.isindextable", "true");
         iterEnv.setConf(conf);
         
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
@@ -149,6 +149,33 @@ public class FieldAgeOffFilterTest {
         key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+    }
+    
+    @Test
+    public void testIterEnvNotLostOnDeepCopy() {
+        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(AccumuloConfiguration.getDefaultConfiguration());
+        conf.put("table.custom.isindextable", "true");
+        iterEnv.setConf(conf);
+        
+        long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
+        
+        FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
+        
+        FilterOptions filterOptions = createFilterOptionsWithPattern();
+        // set the default to 5 seconds
+        filterOptions.setTTL(5L);
+        filterOptions.setTTLUnits(AgeOffTtlUnits.SECONDS);
+        // set up ttls for field_y and field_z only, deliberately exclude the ttl for field_y
+        filterOptions.setOption("fields", "field_y,field_z\\x00my-uuid");
+        filterOptions.setOption("field_z\\x00my-uuid.ttl", "2"); // 2 seconds
+        filterOptions.setOption("field_y.ttl", "2"); // 2 seconds
+        
+        ageOffFilter.init(filterOptions, iterEnv);
+        Assert.assertNotNull("IteratorEnvironment should not be null after init!", ageOffFilter.iterEnv);
+        // originally this would cause the iterEnv to be lost and test would fail
+        ageOffFilter = (FieldAgeOffFilter) ageOffFilter.deepCopy(tenSecondsAgo);
+        
+        Assert.assertNotNull("IteratorEnvironment should not be null after deep copy!", ageOffFilter.iterEnv);
     }
     
     @Test
