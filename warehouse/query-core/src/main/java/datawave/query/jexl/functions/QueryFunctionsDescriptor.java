@@ -95,6 +95,11 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         public boolean regexArguments() {
             return true;
         }
+        
+        @Override
+        public boolean allowIvaratorFiltering() {
+            return true;
+        }
     }
     
     @Override

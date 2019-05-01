@@ -65,12 +65,11 @@ public class GeoFunctions {
      */
     public static boolean within_bounding_box(Object field, String lowerLeft, String upperRight) {
         String fieldValue = ValueTuple.getNormalizedStringValue(field);
-        GeoNormalizer geoNormalizer = new GeoNormalizer();
         try {
-            GeoPoint ll = geoNormalizer.isNormalized(lowerLeft) ? normalizedPoints.get(lowerLeft) : unnormalizedPoints.get(lowerLeft);
-            GeoPoint ur = geoNormalizer.isNormalized(upperRight) ? normalizedPoints.get(upperRight) : unnormalizedPoints.get(upperRight);
+            GeoPoint ll = GeoNormalizer.isNormalized(lowerLeft) ? normalizedPoints.get(lowerLeft) : unnormalizedPoints.get(lowerLeft);
+            GeoPoint ur = GeoNormalizer.isNormalized(upperRight) ? normalizedPoints.get(upperRight) : unnormalizedPoints.get(upperRight);
             Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
-            boolean m = pts.stream().filter(geoPt -> geoPt.within(ll, ur)).findAny().isPresent();
+            boolean m = pts.stream().anyMatch(geoPt -> geoPt.within(ll, ur));
             if (log.isTraceEnabled())
                 log.trace("Checking if " + fieldValue + " is within BB " + lowerLeft + ", " + upperRight + ": [" + m + "]");
             return m;
@@ -99,8 +98,8 @@ public class GeoFunctions {
             return false;
         }
         
-        boolean lonMatch = lonValues.stream().filter(lon -> lon >= minLon && lon <= maxLon).findAny().isPresent();
-        boolean latMatch = latValues.stream().filter(lat -> lat >= minLat && lat <= maxLat).findAny().isPresent();
+        boolean lonMatch = lonValues.stream().anyMatch(lon -> lon >= minLon && lon <= maxLon);
+        boolean latMatch = latValues.stream().anyMatch(lat -> lat >= minLat && lat <= maxLat);
         
         return lonMatch && latMatch;
     }
@@ -119,13 +118,12 @@ public class GeoFunctions {
         if (log.isTraceEnabled()) {
             log.trace("Checking if " + fieldValue + " is within circle[center=" + center + ", radius=" + radius + "]");
         }
-        GeoNormalizer geoNormalizer = (GeoNormalizer) Normalizer.GEO_NORMALIZER;
         try {
             Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
-            GeoPoint c = geoNormalizer.isNormalized(center) ? normalizedPoints.get(center) : unnormalizedPoints.get(center);
-            boolean m = pts.stream()
-                            .filter(geoPt -> (Math.pow(geoPt.getLongitude() - c.getLongitude(), 2) + Math.pow(geoPt.getLatitude() - c.getLatitude(), 2)) <= Math
-                                            .pow(radius, 2)).findAny().isPresent();
+            GeoPoint c = GeoNormalizer.isNormalized(center) ? normalizedPoints.get(center) : unnormalizedPoints.get(center);
+            boolean m = pts.stream().anyMatch(
+                            geoPt -> (Math.pow(geoPt.getLongitude() - c.getLongitude(), 2) + Math.pow(geoPt.getLatitude() - c.getLatitude(), 2)) <= Math.pow(
+                                            radius, 2));
             if (log.isTraceEnabled())
                 log.trace("Checking if " + fieldValue + " is within circle[center=" + center + ", radius=" + radius + "]: [" + m + "]");
             return m;
@@ -159,7 +157,6 @@ public class GeoFunctions {
     }
     
     private static Set<GeoPoint> getGeoPointsFromFieldValue(Object fieldValue) throws ExecutionException {
-        GeoNormalizer geoNormalizer = (GeoNormalizer) Normalizer.GEO_NORMALIZER;
         if (fieldValue instanceof GeoPoint) {
             Set<GeoPoint> geoPoints = new HashSet<>();
             geoPoints.add((GeoPoint) fieldValue);
@@ -167,12 +164,12 @@ public class GeoFunctions {
         } else if (fieldValue instanceof String) {
             Set<GeoPoint> geoPoints = new HashSet<>();
             String stringValue = (String) fieldValue;
-            geoPoints.add(geoNormalizer.isNormalized(stringValue) ? normalizedPoints.get(stringValue) : unnormalizedPoints.get(stringValue));
+            geoPoints.add(GeoNormalizer.isNormalized(stringValue) ? normalizedPoints.get(stringValue) : unnormalizedPoints.get(stringValue));
             return geoPoints;
         } else if (fieldValue instanceof ValueTuple) {
             Set<GeoPoint> geoPoints = new HashSet<>();
             String normFieldVal = ValueTuple.getNormalizedStringValue(fieldValue);
-            geoPoints.add(geoNormalizer.isNormalized(normFieldVal) ? normalizedPoints.get(normFieldVal) : unnormalizedPoints.get(normFieldVal));
+            geoPoints.add(GeoNormalizer.isNormalized(normFieldVal) ? normalizedPoints.get(normFieldVal) : unnormalizedPoints.get(normFieldVal));
             return geoPoints;
         } else if (fieldValue instanceof FunctionalSet) {
             Set<GeoPoint> geoPoints = new HashSet<>();

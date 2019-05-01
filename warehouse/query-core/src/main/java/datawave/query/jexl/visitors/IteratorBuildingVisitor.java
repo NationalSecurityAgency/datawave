@@ -15,6 +15,7 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
@@ -104,6 +105,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -286,10 +288,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (!limitLookup || !allowTermFrequencyLookup || (indexOnlyFields.contains(identifier) && !termFrequencyFields.contains(identifier))) {
                 if (source instanceof ASTAndNode) {
                     try {
-                        if (JexlASTHelper.getFunctionNodes(source).isEmpty()) {
+                        List<ASTFunctionNode> functionNodes = JexlASTHelper.getFunctionNodes(source).stream()
+                                        .filter(node -> JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node).allowIvaratorFiltering())
+                                        .collect(Collectors.toList());
+                        if (functionNodes.isEmpty()) {
                             ivarateRange(source, data);
                         } else {
-                            ivarateFilter(source, data);
+                            ivarateFilter(source, data, functionNodes);
                         }
                     } catch (IOException ioe) {
                         throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
@@ -1181,7 +1186,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param source
      * @param data
      */
-    public void ivarateFilter(JexlNode source, Object data) throws IOException {
+    public void ivarateFilter(JexlNode source, Object data, List<ASTFunctionNode> functionNodes) throws IOException {
         IndexFilterIteratorBuilder builder = new IndexFilterIteratorBuilder();
         builder.negateAsNeeded(data);
         // index checking has already been done, otherwise we would not have an
@@ -1193,8 +1198,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            List<ASTFunctionNode> functions = JexlASTHelper.getFunctionNodes(source);
-            builder.setRangeAndFunction(ranges.keySet().iterator().next(), new FunctionFilter(functions));
+            builder.setRangeAndFunction(ranges.keySet().iterator().next(), new FunctionFilter(functionNodes));
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "ASTFunctionNode"));
             throw new DatawaveFatalQueryException(qe);

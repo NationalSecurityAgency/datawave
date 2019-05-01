@@ -31,6 +31,7 @@ datawave:
       metadata-table-name: ${metadata.table.name:DatawaveMetadata}
       num-threads: 8
       normalizer-map:
+        "[datawave.data.type.GeometryType]": "Geometry"
         "[datawave.data.type.GeoLatType]": "Latitude"
         "[datawave.data.type.GeoLonType]": "Longitude"
         "[datawave.data.type.GeoType]": "Combined latitude, longitude"
@@ -40,6 +41,7 @@ datawave:
         "[datawave.data.type.LcType]": "Text"
         "[datawave.data.type.NoOpType]": "Unnormalized Text"
         "[datawave.data.type.NumberType]": "Number"
+        "[datawave.data.type.PointType]": "Point Geometry"
         "[datawave.data.type.TrimLeadingZerosType]": "Text"
 
 server:
