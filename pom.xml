@@ -15,6 +15,8 @@
         </license>
     </licenses>
     <modules>
+        <!-- TODO: Remove this when type-utils 1.1 is released -->
+        <module>services/type-utils</module>
         <!-- TODO: Remove this when the first version of accumulo-api is released -->
         <module>services/accumulo-api</module>
         <module>common-test</module>

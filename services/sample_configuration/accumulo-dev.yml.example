@@ -1,59 +1,59 @@
 server:
-  port: 8843
+  port: 8943
 
-# If you have your own accumulo instance for testing, edit the accumulo connection info below. You can
-# also test the /v1/lookup endpoint with some canned data by simply enabling the "mock" profile when you
-# launch the accumulo service. The mock profile will automatically spin up an in-memory accumulo instance
-# with a small amount of test data. Also, see authorization-mock.yml for user details associated with the
-# canned data (user dn, roles, auths, etc)
+# If you only want to test the "lookup" service with some non-datawave-specific canned data, then simply
+# enable the "mock" profile, since that will automatically spin up an in-memory accumulo instance with
+# a tiny amount of test data. See accumulo-service's bootstrap.yml for mock-specific defaults
 
-warehouse-cluster:
-  accumulo:
-    zookeepers: 'mock'
-    instanceName: 'mock'
-    username: 'mock'
-    password: 'mock'
+# If you have your own accumulo instance that you want to test with, edit this accumulo connection info.
+# If you want to test with DW quickstart's Accumulo instance, simply uncomment
 
-# If you want to test with the audit service, enable the audit-client and uncomment the lookup-related
-# audit configs, which are tailored to the mock profile's canned data.
+#warehouse-cluster:
+#  accumulo:
+#    zookeepers: 'localhost:2181'
+#    instanceName: 'my-instance-01'
+#    username: 'root'
+#    password: 'secret'
 
-audit-client:
-  enabled: false
-  uri: '${AUDIT_SERVER_URL:https://localhost:8743/audit}'
+# Example lookup and lookup-audit config for use with DW quickstart, if desired
 
-# Enable 'admin' and 'stats' services, if desired. The admin service should work fine with the 'mock' profile
-# enabled (i.e., with in-memory accumulo), but the stats service will require access to a "real" ZK server
-
-accumulo:
-  admin:
-    enabled: false
-  stats:
-    enabled: false
-  lookup:
-    numQueryThreads: 1
+#accumulo:
+#  lookup:
+#    numQueryThreads: 5
 #    audit:
-#      defaultColumnVisibility: "A&B&C"
-#      defaultAuditType: 'NONE'
+#      defaultColumnVisibility: 'PRIVATE'
+#      defaultAuditType: 'ACTIVE'
 #      tableConfig:
-#
-#        - tableRegex: 'w.*e'
-#          rowRegex: 'row1'
+#        - tableRegex: 'datawave\.shard'
+#          rowRegex: '2011.*'
 #          colFamRegex: '.*'
 #          colQualRegex: '.*'
-#          auditType: 'ACTIVE'
+#          auditType: 'NONE'
 #
-#        - tableRegex: 'warehouseTestTable2'
-#          rowRegex: 'r.*2'
+#        - tableRegex: 'datawave\.shard'
+#          rowRegex: '2013.*'
 #          colFamRegex: '.*'
 #          colQualRegex: '.*'
 #          auditType: 'PASSIVE'
-#
-#        - tableRegex: '.*Table'
-#          rowRegex: 'r.*3'
-#          colFamRegex: '.*'
-#          colQualRegex: '.*'
-#          auditType: 'ACTIVE'
+
+# Enable auditing for lookup queries only, if desired
+
+#audit-client:
+#  enabled: true
+#  uri: '${AUDIT_SERVER_URL:https://localhost:8743/audit}'
 
 logging:
   level:
     datawave.microservice.accumulo: DEBUG
+
+---
+
+# If the 'remoteauth' profile is activated, then you can authenticate with a client
+# cert directly against this service, assuming you have the auth service running
+
+spring:
+  profiles: 'remoteauth'
+
+datawave:
+  authorization:
+    uri: "https://localhost:8643/authorization/v1/authorize"

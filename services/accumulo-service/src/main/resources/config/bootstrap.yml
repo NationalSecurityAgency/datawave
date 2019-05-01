@@ -15,8 +15,8 @@ spring:
 
 ---
 
-# For the dev profile, check localhost for the config server
-# and turn off query auditing by default
+# For the dev profile, check localhost for the config server and turn off query auditing
+# here by default (re-enable in accumulo-dev.yml if needed)
 
 spring:
   profiles: 'dev'
@@ -62,12 +62,13 @@ warehouse-cluster:
     username: 'mock'
     password: 'mock'
 
-# Lookup service configured with some audit rules that'll match the canned mock data. To
-# actually perform auditing though, you'll need to enable the audit client (audit-client.enabled=true).
-# See the 'dev' profile.
+# The 3 web services associated with this app (accumulo.lookup, accumulo.admin, accumulo.stats) are
+# enabled by default, but may be enabled/disabled as desired via their respective 'enabled' properties
 
-# The stats service needs legitimate ZK and Monitor services, so the mock profile disables
-# it by default
+# Here, the lookup service is configured with some audit rules that'll match the canned mock data. To
+# actually perform auditing though, you'll need to enable the audit client (audit-client.enabled=true).
+
+# The stats service needs legitimate ZK and Monitor services, so the mock profile disables it here
 
 accumulo:
   lookup:
@@ -81,15 +82,20 @@ accumulo:
           colFamRegex: '.*'
           colQualRegex: '.*'
           auditType: 'ACTIVE'
+
         - tableRegex: 'warehouseTestTable2'
           rowRegex: 'r.*2'
           colFamRegex: '.*'
           colQualRegex: '.*'
           auditType: 'PASSIVE'
+
         - tableRegex: '.*Table'
           rowRegex: 'r.*3'
           colFamRegex: '.*'
           colQualRegex: '.*'
           auditType: 'ACTIVE'
+
   stats:
     enabled: false
+
+
