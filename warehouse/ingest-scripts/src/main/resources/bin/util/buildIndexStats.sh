@@ -315,8 +315,6 @@ _MapReduceOpts="-mapreduce.task.io.sort.mb=${_MapInMemSortBufferMBSize} \
 -sequenceialLocationPartitioner \
 -dfs.replication=3 \
 "
-#-yarn.app.mapreduce.am.resource.mb=1796 \
-#-yarn.app.mapreduce.am.command-opts=-Xmx1796m \
 
 BATCHWRITER_OPTS="-AccumuloOutputFormat.WriteOpts.BatchWriterConfig=    11#maxMemory=100000000,maxWriteThreads=4"
 
@@ -326,7 +324,7 @@ declare -r _jarCacheDir=${WAREHOUSE_NAME_BASE_DIR}${JOB_CACHE_DIR}
 declare -r _hdfsDir=${WAREHOUSE_NAME_BASE_DIR:-${WAREHOUSE_HDFS_NAME_NODE}}
 
 
-# define job ingest parmaeters
+# define job ingest parmeters
 declare -r _IngestOpts="\
 -cacheBaseDir ${_jarCacheDir} \
 -cacheJars ${LIBJARS} \
