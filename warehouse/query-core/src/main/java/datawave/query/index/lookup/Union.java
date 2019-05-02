@@ -22,8 +22,8 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-/*
- * This will create a union of global index range streams.
+/**
+ * Creates a union of global index range streams.
  */
 public class Union implements IndexStream {
     protected final PriorityQueue<IndexStream> children;

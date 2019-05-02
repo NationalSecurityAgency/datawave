@@ -28,23 +28,22 @@ import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 @ConditionalOnProperty(value = "spring.rabbitmq.discovery.enabled")
 @Configuration
 @EnableDiscoveryClient
+@EnableConfigurationProperties(RabbitDiscoveryProperties.class)
 public class RabbitDiscoveryConfiguration {
     private static Logger logger = LoggerFactory.getLogger(RabbitDiscoveryConfiguration.class);
     
-    @Autowired
-    private RabbitDiscoveryProperties rabbitProperties;
+    private final RabbitDiscoveryProperties rabbitProperties;
+    private final RabbitDiscoveryInstanceProvider instanceProvider;
+    private final CachingConnectionFactory connectionFactory;
+    private final HeartbeatMonitor monitor;
     
     @Autowired
-    private RabbitDiscoveryInstanceProvider instanceProvider;
-    
-    @Autowired
-    private CachingConnectionFactory connectionFactory;
-    
-    private HeartbeatMonitor monitor = new HeartbeatMonitor();
-    
-    @Bean
-    public RabbitDiscoveryProperties rabbitDiscoveryProperties() {
-        return new RabbitDiscoveryProperties();
+    public RabbitDiscoveryConfiguration(RabbitDiscoveryProperties rabbitProperties, RabbitDiscoveryInstanceProvider instanceProvider,
+                    CachingConnectionFactory connectionFactory) {
+        this.rabbitProperties = rabbitProperties;
+        this.instanceProvider = instanceProvider;
+        this.connectionFactory = connectionFactory;
+        this.monitor = new HeartbeatMonitor();
     }
     
     @Bean

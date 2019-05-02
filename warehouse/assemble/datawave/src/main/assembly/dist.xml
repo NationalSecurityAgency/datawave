@@ -96,13 +96,14 @@
                 <include>${groupId}:datawave-balancers</include>
                 <include>${groupId}:datawave-common</include>
                 <include>${groupId}:datawave-core</include>
+                <include>${groupId}:datawave-data-dictionary-core</include>
                 <include>${groupId}:datawave-edge-dictionary-core</include>
+                <include>${groupId}:datawave-edge-model-configuration-core</include>
                 <include>${groupId}:datawave-ingest-csv</include>
                 <include>${groupId}:datawave-ingest-core</include>
                 <include>${groupId}:datawave-ingest-configuration</include>
                 <include>${groupId}:datawave-metrics-core</include>
                 <include>${groupId}:datawave-query-core</include>
-                <include>${groupId}:datawave-edge-dictionary-core</include>
                 <include>${groupId}:datawave-ingest-wikipedia</include>
                 <include>${groupId}:datawave-ingest-nyctlc</include>
                 <include>${groupId}:datawave-ingest-json</include>

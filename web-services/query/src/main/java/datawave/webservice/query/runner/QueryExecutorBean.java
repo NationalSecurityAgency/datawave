@@ -37,6 +37,7 @@ import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
+import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
@@ -102,7 +103,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.AsyncResult;
 import javax.ejb.Asynchronous;
 import javax.ejb.EJBContext;
-import javax.ejb.EJBException;
 import javax.ejb.LocalBean;
 import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
@@ -165,14 +165,16 @@ import static datawave.webservice.query.cache.QueryTraceCache.CacheListener;
 import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 
 @Path("/Query")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
 @Stateless
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryExecutorBean implements QueryExecutor {
+    
+    private static final String PRIVILEGED_USER = "PrivilegedUser";
     
     private final Logger log = Logger.getLogger(QueryExecutorBean.class);
     
@@ -235,6 +237,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     private Multimap<String,PatternWrapper> traceInfos;
     private CacheListener traceCacheListener;
+    
+    @Inject
+    private ClosedQueryCache closedQueryCache;
     
     private final int PAGE_TIMEOUT_MIN = 1;
     private final int PAGE_TIMEOUT_MAX = QueryExpirationConfiguration.PAGE_TIMEOUT_MIN_DEFAULT;
@@ -331,7 +336,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     d.setResponseClass(l.getResponseClass(q));
                 } catch (QueryException e) {
-                    log.error(e);
+                    log.error(e, e);
                     response.addException(e);
                     d.setResponseClass("unknown");
                 }
@@ -355,7 +360,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 
                 logicConfigurationList.add(d);
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error setting query logic description", e);
             }
         }
         Collections.sort(logicConfigurationList, Comparator.comparing(QueryLogicDescription::getName));
@@ -388,30 +393,6 @@ public class QueryExecutorBean implements QueryExecutor {
         log.debug(queryParameters);
         qp.clear();
         qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
-        qp.validate(queryParameters);
-        
-        // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
-        // Leaving for now until we can test to ensure that is always the case.
-        if (qp.getPagesize() <= 0) {
-            GenericResponse<String> response = new GenericResponse<>();
-            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
-        }
-        
-        if (qp.getPageTimeout() != -1 && (qp.getPageTimeout() < PAGE_TIMEOUT_MIN || qp.getPageTimeout() > PAGE_TIMEOUT_MAX)) {
-            GenericResponse<String> response = new GenericResponse<>();
-            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_TIMEOUT, response);
-        }
-        
-        if (System.currentTimeMillis() >= qp.getExpirationDate().getTime()) {
-            GenericResponse<String> response = new GenericResponse<>();
-            throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
-        }
-        
-        // Ensure begin date does not occur after the end date (if dates are not null)
-        if ((qp.getBeginDate() != null && qp.getEndDate() != null) && qp.getBeginDate().after(qp.getEndDate())) {
-            GenericResponse<String> response = new GenericResponse<>();
-            throwBadRequest(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, response);
-        }
         
         // Pull "params" values into individual query parameters for validation on the query logic.
         // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
@@ -419,17 +400,49 @@ public class QueryExecutorBean implements QueryExecutor {
         String params = queryParameters.getFirst(QueryParameters.QUERY_PARAMS);
         if (params != null) {
             for (Parameter pm : QueryUtil.parseParameters(params)) {
-                queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                if (!queryParameters.containsKey(pm.getParameterName())) {
+                    queryParameters.putSingle(pm.getParameterName(), pm.getParameterValue());
+                }
             }
-            queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
-            queryParameters.remove(AuditParameters.USER_DN);
-            queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
+        }
+        queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
+        queryParameters.remove(AuditParameters.USER_DN);
+        queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
+        
+        qp.validate(queryParameters);
+        
+        // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
+        // Leaving for now until we can test to ensure that is always the case.
+        if (qp.getPagesize() <= 0) {
+            log.error("Invalid page size: " + qp.getPagesize());
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
+        }
+        
+        if (qp.getPageTimeout() != -1 && (qp.getPageTimeout() < PAGE_TIMEOUT_MIN || qp.getPageTimeout() > PAGE_TIMEOUT_MAX)) {
+            log.error("Invalid page timeout: " + qp.getPageTimeout());
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_TIMEOUT, response);
+        }
+        
+        if (System.currentTimeMillis() >= qp.getExpirationDate().getTime()) {
+            log.error("Invalid expiration date: " + qp.getExpirationDate());
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
+        }
+        
+        // Ensure begin date does not occur after the end date (if dates are not null)
+        if ((qp.getBeginDate() != null && qp.getEndDate() != null) && qp.getBeginDate().after(qp.getEndDate())) {
+            log.error("Invalid begin and/or end date: " + qp.getBeginDate() + " - " + qp.getEndDate());
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, response);
         }
         
         // will throw IllegalArgumentException if not defined
         try {
             qd.logic = queryLogicFactory.getQueryLogic(queryLogicName, ctx.getCallerPrincipal());
         } catch (Exception e) {
+            log.error("Failed to get query logic for " + queryLogicName, e);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.QUERY_LOGIC_ERROR, e);
             GenericResponse<String> response = new GenericResponse<>();
             response.addException(qe.getBottomQueryException());
@@ -441,6 +454,7 @@ public class QueryExecutorBean implements QueryExecutor {
             marking.clear();
             marking.validate(queryParameters);
         } catch (IllegalArgumentException e) {
+            log.error("Failed security markings validation", e);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
             GenericResponse<String> response = new GenericResponse<>();
             response.addException(qe);
@@ -465,11 +479,24 @@ public class QueryExecutorBean implements QueryExecutor {
         
         // always check against the max
         if (qd.logic.getMaxPageSize() > 0 && qp.getPagesize() > qd.logic.getMaxPageSize()) {
+            log.error("Invalid page size: " + qp.getPagesize() + " vs " + qd.logic.getMaxPageSize());
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.PAGE_SIZE_TOO_LARGE, MessageFormat.format("Max = {0}.",
                             qd.logic.getMaxPageSize()));
             GenericResponse<String> response = new GenericResponse<>();
             response.addException(qe);
             throw new BadRequestException(qe, response);
+        }
+        
+        // validate the max results override relative to the max results on a query logic
+        // privileged users however can set whatever they want
+        if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
+            if (!ctx.isCallerInRole(PRIVILEGED_USER)) {
+                if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
+                    log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
+                    GenericResponse<String> response = new GenericResponse<>();
+                    throwBadRequest(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE, response);
+                }
+            }
         }
         
         // Set private audit-related parameters, stripping off any that the user might have passed in first.
@@ -542,7 +569,7 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("Error accessing optional query parameters", e);
             QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -625,7 +652,7 @@ public class QueryExecutorBean implements QueryExecutor {
                                 queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
                             }
                         } catch (Exception e) {
-                            log.error(e.getMessage());
+                            log.error("Error accessing query selector", e);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -696,8 +723,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     qd.logic.close();
                 }
             } catch (Exception e) {
-                log.error("Error closing query logic", e);
-                response.addException(new QueryException(DatawaveErrorCode.CLOSE_ERROR, e).getBottomQueryException());
+                log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
             }
             
             if (null != connection) {
@@ -1028,7 +1054,7 @@ public class QueryExecutorBean implements QueryExecutor {
                                 queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
                             }
                         } catch (Exception e) {
-                            log.error(e.getMessage());
+                            log.error("Error accessing query selector", e);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1138,18 +1164,8 @@ public class QueryExecutorBean implements QueryExecutor {
         
         GenericResponse<String> createResponse = createQuery(logicName, queryParameters, httpHeaders);
         String queryId = createResponse.getResult();
-        try {
-            CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
-            return next(queryId, false);
-        } catch (NoResultsException e) {
-            close(queryId);
-            throw e;
-        } catch (EJBException e) {
-            if (e.getCause() instanceof NoResultsException) {
-                close(queryId);
-            }
-            throw e;
-        }
+        CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
+        return next(queryId, false);
     }
     
     @POST
@@ -1551,7 +1567,7 @@ public class QueryExecutorBean implements QueryExecutor {
             log.error("Failed to get query plan", e);
             
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_PLAN_ERROR, e, MessageFormat.format("query id: {0}", id));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -1636,7 +1652,7 @@ public class QueryExecutorBean implements QueryExecutor {
             log.error("Failed to get query predictions", e);
             
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_PREDICTIONS_ERROR, e, MessageFormat.format("query id: {0}", id));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -1815,6 +1831,8 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
             }
+            close(id); // close the query, as there were no results and we are done here
+            closedQueryCache.add(id); // remember that we auto-closed this query
             throw e;
         } catch (DatawaveWebApplicationException e) {
             if (query != null) {
@@ -1824,7 +1842,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     try {
                         metrics.updateMetric(query.getMetric());
                     } catch (Exception e1) {
-                        log.error(e1.getMessage());
+                        log.error("Error updating query metrics", e1);
                     }
                 }
             }
@@ -1832,6 +1850,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 ctx.getUserTransaction().setRollbackOnly();
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
+            }
+            if (e.getCause() instanceof NoResultsException) {
+                close(id);
+                closedQueryCache.add(id); // remember that we auto-closed this query
             }
             throw e;
         } catch (Exception e) {
@@ -1843,7 +1865,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     try {
                         metrics.updateMetric(query.getMetric());
                     } catch (Exception e1) {
-                        log.error(e1.getMessage());
+                        log.error("Error updating query metrics", e1);
                     }
                 }
             }
@@ -1854,8 +1876,14 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, MessageFormat.format("query id: {0}", id));
-            log.error(qe);
-            response.addException(qe.getBottomQueryException());
+            if (e.getCause() instanceof NoResultsException) {
+                log.debug("Got a nested NoResultsException", e);
+                close(id);
+                closedQueryCache.add(id); // remember that we auto-closed this query
+            } else {
+                log.error(qe, e);
+                response.addException(qe.getBottomQueryException());
+            }
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
         } finally {
@@ -1934,10 +1962,16 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     RunningQuery query = getQueryById(id, principal);
                     close(query);
-                } catch (NotFoundQueryException e) {
-                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                    if (!connectionRequestCanceled) {
-                        throw e;
+                } catch (Exception e) {
+                    log.debug("Failed to close " + id + ", checking if closed previously");
+                    // if this is a query that is in the closed query cache, then we have already successfully closed this query so ignore
+                    if (!closedQueryCache.exists(id)) {
+                        log.debug("Failed to close " + id + ", checking if connection request was canceled");
+                        // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                        if (!connectionRequestCanceled) {
+                            log.error("Failed to close " + id, e);
+                            throw e;
+                        }
                     }
                 }
                 response.addMessage(id + " closed.");
@@ -1946,17 +1980,21 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
             }
+            
+            // no longer need to remember this query
+            closedQueryCache.remove(id);
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CLOSE_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -1987,9 +2025,11 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     RunningQuery query = adminGetQueryById(id);
                     close(query);
-                } catch (NotFoundQueryException e) {
+                } catch (Exception e) {
+                    log.debug("Failed to adminClose " + id + ", checking if connection request was canceled");
                     // if connection request was canceled, then the call was successful even if a RunningQuery was not found
                     if (!connectionRequestCanceled) {
+                        log.error("Failed to adminClose " + id, e);
                         throw e;
                     }
                 }
@@ -1999,17 +2039,18 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
             }
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CLOSE_ERROR);
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2018,8 +2059,19 @@ public class QueryExecutorBean implements QueryExecutor {
     
     private void close(RunningQuery query) throws Exception {
         
-        query.closeConnection(connectionFactory);
-        queryCache.remove(query.getSettings().getId().toString());
+        String queryId = query.getSettings().getId().toString();
+        
+        log.debug("Closing " + queryId);
+        
+        try {
+            query.closeConnection(connectionFactory);
+        } catch (Exception e) {
+            log.error("Failed to close connection for " + queryId, e);
+        }
+        
+        queryCache.remove(queryId);
+        
+        log.debug("Closed " + queryId);
         
         // The trace was already stopped, but mark the time we closed it in the trace data.
         TInfo traceInfo = query.getTraceInfo();
@@ -2077,10 +2129,16 @@ public class QueryExecutorBean implements QueryExecutor {
                     RunningQuery query = getQueryById(id);
                     query.cancel();
                     close(query);
-                } catch (NotFoundQueryException e) {
-                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                    if (!connectionRequestCanceled) {
-                        throw e;
+                } catch (Exception e) {
+                    log.debug("Failed to cancel " + id + ", checking if closed previously");
+                    // if this is a query that is in the closed query cache, then we have already successfully closed this query so ignore
+                    if (!closedQueryCache.exists(id)) {
+                        log.debug("Failed to cancel " + id + ", checking if connection request was canceled");
+                        // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                        if (!connectionRequestCanceled) {
+                            log.error("Failed to cancel " + id, e);
+                            throw e;
+                        }
                     }
                 }
                 response.addMessage(id + " canceled.");
@@ -2089,18 +2147,21 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while canceling query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
+            
+            // no longer need to remember this query
+            closedQueryCache.remove(id);
             
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2132,9 +2193,11 @@ public class QueryExecutorBean implements QueryExecutor {
                     RunningQuery query = adminGetQueryById(id);
                     query.cancel();
                     close(query);
-                } catch (NotFoundQueryException e) {
+                } catch (Exception e) {
+                    log.debug("Failed to adminCancel " + id + ", checking if connection request was canceled");
                     // if connection request was canceled, then the call was successful even if a RunningQuery was not found
                     if (!connectionRequestCanceled) {
+                        log.error("Failed to adminCancel " + id, e);
                         throw e;
                     }
                 }
@@ -2144,18 +2207,19 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while canceling query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
             log.error("Error cancelling query: " + id, e);
             QueryException qe = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2198,7 +2262,7 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e);
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2242,7 +2306,7 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_GET_ERROR, e, MessageFormat.format("queryID: {0}", id));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2328,19 +2392,29 @@ public class QueryExecutorBean implements QueryExecutor {
                 RunningQuery query = getQueryById(id);
                 close(query);
                 persister.remove(query.getSettings());
-            } catch (NotFoundQueryException e) {
-                // if connection request was canceled, then the call was successful even if a RunningQuery was not found
-                if (!connectionRequestCanceled) {
-                    throw e;
+            } catch (Exception e) {
+                log.debug("Failed to remove " + id + ", checking if closed previously");
+                // if this is a query that is in the closed query cache, then we have already successfully closed this query so ignore
+                if (!closedQueryCache.exists(id)) {
+                    log.debug("Failed to remove " + id + ", checking if connection request was canceled");
+                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                    if (!connectionRequestCanceled) {
+                        log.error("Failed to remove " + id, e);
+                        throw e;
+                    }
                 }
             }
             response.addMessage(id + " removed.");
+            
+            // no longer need to remember this query
+            closedQueryCache.remove(id);
+            
             return response;
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_REMOVAL_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2372,6 +2446,8 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - defaults to old pagesize, number of results to return on each call to next() (optional)
      * @param newPageTimeout
      *            - specify timeout (in minutes) for each call to next(), defaults to -1 indicating disabled (optional)
+     * @param newMaxResultsOverride
+     *            - specify max results (optional)
      * @param newPersistenceMode
      *            - defaults to PERSISTENT, indicates whether or not the query is persistent (optional)
      * @param newParameters
@@ -2379,7 +2455,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param trace
      *            - optional (defaults to {@code false}) indication of whether or not the query should be traced using the distributed tracing mechanism
      * @see datawave.webservice.query.runner.QueryExecutorBean#duplicateQuery(String, String, String, String, String, Date, Date, String, Date, Integer,
-     *      Integer, QueryPersistence, String, boolean)
+     *      Integer, Long, QueryPersistence, String, boolean)
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2406,8 +2482,8 @@ public class QueryExecutorBean implements QueryExecutor {
                                     defaultTime = "235959", defaultMillisec = "999") Date newEndDate, @FormParam("auths") String newQueryAuthorizations,
                     @FormParam("expiration") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date newExpirationDate,
                     @FormParam("pagesize") Integer newPagesize, @FormParam("pageTimeout") Integer newPageTimeout,
-                    @FormParam("persistence") QueryPersistence newPersistenceMode, @FormParam("params") String newParameters,
-                    @FormParam("trace") @DefaultValue("false") boolean trace) {
+                    @FormParam("maxResultsOverride") Long newMaxResultsOverride, @FormParam("persistence") QueryPersistence newPersistenceMode,
+                    @FormParam("params") String newParameters, @FormParam("trace") @DefaultValue("false") boolean trace) {
         
         GenericResponse<String> response = new GenericResponse<>();
         
@@ -2448,6 +2524,9 @@ public class QueryExecutorBean implements QueryExecutor {
             if (newPagesize != null) {
                 q.setPagesize(newPagesize);
             }
+            if (newMaxResultsOverride != null) {
+                q.setMaxResultsOverride(newMaxResultsOverride);
+            }
             if (newPageTimeout != null) {
                 q.setPageTimeout(newPageTimeout);
             }
@@ -2468,7 +2547,7 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_DUPLICATION_ERROR, e);
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             if (e.getClass() == IllegalArgumentException.class) {
                 throw new BadRequestException(qe, response);
@@ -2500,12 +2579,14 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - number of results to return on each call to next() (optional)
      * @param pageTimeout
      *            - specify timeout (in minutes) for each call to next(), defaults to -1 indicating disabled (optional)
+     * @param maxResultsOverride
+     *            - specify max results (optional)
      * @param persistenceMode
      *            - indicates whether or not the query is persistent (optional)
      * @param parameters
      *            - optional parameters to the query, a semi-colon separated list name=value pairs (optional, auditing required if changed)
      * @see datawave.webservice.query.runner.QueryExecutorBean#updateQuery(String, String, String, String, java.util.Date, java.util.Date, String,
-     *      java.util.Date, Integer, Integer, datawave.webservice.query.QueryPersistence, String)
+     *      java.util.Date, Integer, Integer, Long, datawave.webservice.query.QueryPersistence, String)
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2531,12 +2612,13 @@ public class QueryExecutorBean implements QueryExecutor {
                                     defaultTime = "235959", defaultMillisec = "999") Date endDate, @FormParam("auths") String queryAuthorizations,
                     @FormParam("expiration") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date expirationDate,
                     @FormParam("pagesize") Integer pagesize, @FormParam("pageTimeout") Integer pageTimeout,
-                    @FormParam("persistence") QueryPersistence persistenceMode, @FormParam("params") String parameters) {
+                    @FormParam("maxResultsOverride") Long maxResultsOverride, @FormParam("persistence") QueryPersistence persistenceMode,
+                    @FormParam("params") String parameters) {
         GenericResponse<String> response = new GenericResponse<>();
         try {
             RunningQuery rq = getQueryById(id);
-            updateQuery(response, rq, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode,
-                            parameters);
+            updateQuery(response, rq, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout,
+                            maxResultsOverride, persistenceMode, parameters);
             
             response.setResult(id);
             return response;
@@ -2544,7 +2626,7 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_UPDATE_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             if (e.getClass() == IllegalArgumentException.class) {
                 throw new BadRequestException(qe, response);
@@ -2555,8 +2637,8 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private void updateQuery(GenericResponse<String> response, RunningQuery runningQuery, String queryLogicName, String query, Date beginDate, Date endDate,
-                    String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, QueryPersistence persistenceMode, String parameters)
-                    throws Exception {
+                    String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, Long maxResultsOverride,
+                    QueryPersistence persistenceMode, String parameters) throws Exception {
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String userid = p.getName();
@@ -2590,7 +2672,8 @@ public class QueryExecutorBean implements QueryExecutor {
             Query duplicate = q.duplicate(q.getQueryName());
             duplicate.setId(q.getId());
             
-            updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, parameters);
+            updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout,
+                            maxResultsOverride, parameters);
             
             // Fire off an audit prior to updating
             Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
@@ -2606,7 +2689,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     throw new BadRequestException(qe, response);
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
-                    log.error(qe);
+                    log.error(qe, e);
                     response.addException(qe.getBottomQueryException());
                     throw e;
                 }
@@ -2614,7 +2697,8 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // update the actual running query
-        updateQueryParams(q, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, parameters);
+        updateQueryParams(q, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
+                        parameters);
         
         // update the persistenceMode post audit
         if (persistenceMode != null) {
@@ -2633,7 +2717,7 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private void updateQueryParams(Query q, String queryLogicName, String query, Date beginDate, Date endDate, String queryAuthorizations, Date expirationDate,
-                    Integer pagesize, Integer pageTimeout, String parameters) throws CloneNotSupportedException {
+                    Integer pagesize, Integer pageTimeout, Long maxResultsOverride, String parameters) throws CloneNotSupportedException {
         Principal p = ctx.getCallerPrincipal();
         // TODO: add validation for all these sets
         if (queryLogicName != null) {
@@ -2660,6 +2744,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         if (pageTimeout != null) {
             q.setPageTimeout(pageTimeout);
+        }
+        if (maxResultsOverride != null) {
+            q.setMaxResultsOverride(maxResultsOverride);
         }
         if (parameters != null) {
             Set<Parameter> params = new HashSet<>();
@@ -2708,7 +2795,7 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e, MessageFormat.format("UserId: {0}", userId));
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2741,7 +2828,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_CACHE_PURGE_ERROR, e);
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2987,7 +3074,7 @@ public class QueryExecutorBean implements QueryExecutor {
             responseClass = refResponse.getClass();
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR, e);
-            log.error(qe);
+            log.error(qe, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -3096,7 +3183,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 metrics.updateMetric(rq.getMetric());
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error updating query metric", e);
             }
             
             boolean done = false;
@@ -3145,7 +3232,7 @@ public class QueryExecutorBean implements QueryExecutor {
                         try {
                             metrics.updateMetric(rq.getMetric());
                         } catch (Exception e) {
-                            log.error(e.getMessage(), e);
+                            log.error("Error updating query metric", e);
                         }
                     }
                 }
@@ -3155,7 +3242,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 close(rq);
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error closing query", e);
             }
         }
         
@@ -3202,7 +3289,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     xmlSerializer = jaxbContext.createMarshaller();
                 } catch (JAXBException e1) {
                     QueryException qe = new QueryException(DatawaveErrorCode.JAXB_CONTEXT_ERROR, e1, MessageFormat.format("class: {0}", queryResponseClass));
-                    log.error(qe);
+                    log.error(qe, e1);
                     errorResponse.addException(qe.getBottomQueryException());
                     throw new DatawaveWebApplicationException(qe, errorResponse);
                 }
@@ -3291,7 +3378,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception e) {
                 log.error("ExecuteStreamingOutputResponse write Failed", e);
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, MessageFormat.format("query_id: {0}", rq.getSettings().getId()));
-                log.error(qe);
+                log.error(qe, e);
                 errorResponse.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
                 throw new DatawaveWebApplicationException(qe, errorResponse, statusCode);
@@ -3301,7 +3388,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Error returning connection on failed create", e);
                     QueryException qe = new QueryException(DatawaveErrorCode.CONNECTION_RETURN_ERROR, e);
-                    log.error(qe);
+                    log.error(qe, e);
                     errorResponse.addException(qe.getBottomQueryException());
                 }
             }

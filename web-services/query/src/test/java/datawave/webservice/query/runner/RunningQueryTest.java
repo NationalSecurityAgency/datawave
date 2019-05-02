@@ -66,7 +66,7 @@ public class RunningQueryTest {
     public void setup() throws MalformedURLException, IllegalArgumentException, IllegalAccessException {
         
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         
         settings.setQueryLogicName("testQueryLogic");
         settings.setQuery("FOO == BAR");

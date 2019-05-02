@@ -32,8 +32,8 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected Set<String> fieldsToAggregate;
-    
     protected EventDataQueryFilter attrFilter;
+    protected TermFrequencyAggregator termFrequencyAggregator;
     
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
@@ -99,12 +99,15 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
         this.attrFilter = attrFilter;
     }
     
+    public void setTermFrequencyAggregator(TermFrequencyAggregator termFrequencyAggregator) {
+        this.termFrequencyAggregator = termFrequencyAggregator;
+    }
+    
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
         if (notNull(field, range, source, datatypeFilter, timeFilter)) {
-            IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range.getStartKey(), range.getEndKey(), source, this.timeFilter,
-                            this.typeMetadata, this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter,
-                            new TermFrequencyAggregator(fieldsToAggregate, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1)));
+            IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range, source, this.timeFilter, this.typeMetadata,
+                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, termFrequencyAggregator));
             field = null;
             range = null;
             source = null;

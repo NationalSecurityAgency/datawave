@@ -1,9 +1,49 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.JexlASTHelper.isIndexed;
-import static datawave.query.jexl.JexlASTHelper.isLiteralEquality;
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.JexlNodeFactory.ContainerType;
+import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.TreeHashNode;
+import datawave.query.model.QueryModel;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.planner.pushdown.Cost;
+import datawave.query.planner.pushdown.CostEstimator;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
+import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.Node;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -18,49 +58,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
-import datawave.data.type.Type;
-import datawave.query.model.QueryModel;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.TreeHashNode;
-import datawave.query.planner.pushdown.Cost;
-import datawave.query.planner.pushdown.CostEstimator;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.Query;
-
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
-import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.Node;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import static datawave.query.jexl.JexlASTHelper.isIndexed;
+import static datawave.query.jexl.JexlASTHelper.isLiteralEquality;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 public class ParallelIndexExpansion extends RebuildingVisitor {
     
@@ -197,7 +198,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         if (node.jjtGetNumChildren() == 0) {
             log.warn("Did not find any matches in index for the expansion of unfielded terms.");
-            throw new CannotExpandUnfieldedTermFatalException("Did not find any matches in index for the expansion of unfielded terms.");
+            throw new EmptyUnfieldedTermExpansionException("Did not find any matches in index for the expansion of unfielded terms.");
         }
         
         return node;
@@ -294,6 +295,20 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                                 || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ASTEvaluationOnly.instanceOf(node))
                     return node;
             }
+        }
+        
+        // determine whether we have the tools to expand this in the first place
+        try {
+            if (!isExpandable(node)) {
+                if (mustExpand(node)) {
+                    throw new DatawaveFatalQueryException("We must expand but yet cannot expand a regex: " + PrintingVisitor.formattedQueryString(node));
+                }
+                return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
+            }
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException(e);
+        } catch (JavaRegexAnalyzer.JavaRegexParseException e) {
+            throw new DatawaveFatalQueryException(e);
         }
         
         // Given the structure of the tree, we don't *have* to expand this regex node
@@ -551,11 +566,10 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 }
                 
                 if (null != sawException) {
-                    log.error(sawException);
+                    log.error(sawException.getMessage(), sawException);
                     throw new CannotExpandUnfieldedTermFatalException(sawException);
                 }
             }
-            
         } catch (InterruptedException e) {
             throw new CannotExpandUnfieldedTermFatalException(e.getMessage());
         } finally {
@@ -616,20 +630,19 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             // If we have no children, it's impossible to find any records, so this query returns no results
             if (fieldsToValues.isEmpty()) {
                 
-                // When we're not within an Or, we cannot proceed with this query.
-                // We can proceed an in Or because we can trim this term out of the query
-                // The And (or single term) implies that all results must have this term,
-                // but we don't know which field the term actually appears in.
-                if (!JexlASTHelper.isWithinOr(node)) {
-                    log.warn("Could not convert an 'anyfield' node to an 'or' node");
-                    throw new CannotExpandUnfieldedTermFatalException("Did not find any matches in index for the expansion of unfielded terms");
-                }
-                
                 if (log.isDebugEnabled()) {
                     try {
-                        log.debug("Retaining _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(node) + "\"}");
+                        log.debug("Failed to expand _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(node) + "\"}");
                     } catch (Exception ex) {
                         // it's just a debug statement
+                    }
+                }
+                
+                // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
+                // the query against the document
+                for (ASTIdentifier id : JexlASTHelper.getIdentifiers(node)) {
+                    if (Constants.ANY_FIELD.equals(id.image)) {
+                        id.image = Constants.NO_FIELD;
                     }
                 }
                 newNode = node;
@@ -736,6 +749,54 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         // Compute the cost to determine whether or not to expand this regex
         return shouldProcessRegexByCostWithChildren(subTrees, regexCost);
+    }
+    
+    /**
+     * Determine whether we can actually expand this regex based on whether it is indexed appropriately.
+     * 
+     * @param node
+     * @return
+     */
+    public boolean isExpandable(ASTERNode node) throws TableNotFoundException, JavaRegexAnalyzer.JavaRegexParseException {
+        // if full table scan enabled, then we can expand anything
+        if (config.getFullTableScanEnabled()) {
+            return true;
+        }
+        
+        String regex = JexlASTHelper.getLiteralValue(node).toString();
+        JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(regex);
+        
+        // if the regex is double ended, then we cannot expand it
+        if (analyzer.isNgram()) {
+            return false;
+        }
+        
+        String fieldName = JexlASTHelper.getIdentifier(node);
+        
+        if (analyzer.isLeadingLiteral() && helper.isIndexed(fieldName, config.getDatatypeFilter())) {
+            return true;
+        } else if (analyzer.isTrailingLiteral() && helper.isReverseIndexed(fieldName, config.getDatatypeFilter())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    /**
+     * Determine whether we can actually expand this regex based on whether it is indexed appropriately.
+     * 
+     * @param node
+     * @return
+     */
+    public boolean mustExpand(ASTERNode node) throws TableNotFoundException {
+        String fieldName = JexlASTHelper.getIdentifier(node);
+        
+        // if the identifier is a non-event field, then we must expand it
+        if (helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName)) {
+            return true;
+        }
+        
+        return false;
     }
     
     public void collapseAndSubtrees(ASTAndNode node, List<JexlNode> subTrees) {

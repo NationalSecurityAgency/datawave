@@ -90,6 +90,7 @@ if ! accumuloIsRunning ; then
 fi
 
 # Perform additional Accumulo configs dynamically as needed.
+createAccumuloShellInitScript
 ACCUMULO_TMP_SCRIPT="$(mktemp -t `basename $0`-accumulo-shell.XXXXX)"
 echo "${DW_ACCUMULO_SHELL_INIT_SCRIPT}" > $ACCUMULO_TMP_SCRIPT
 info "Executing the following Accumulo shell script: $ACCUMULO_TMP_SCRIPT"
@@ -155,8 +156,6 @@ echo "    Redeploy command: datawaveBuildDeploy"
 echo
 info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-ingest.sh to view/edit commands as needed"
 
-if [ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_SKIP_INGEST_EXAMPLES}" != true ]; then
-   ingestExampleData
-else
-   info "After deployment, ingest desired datasets manually as needed"
-fi
+# Ingest raw data examples, if appropriate...
+
+[ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_DATAWAVE_INGEST_TEST_SKIP}" == false ] && ingestExampleData

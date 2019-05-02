@@ -1,5 +1,6 @@
 package datawave.query.composite;
 
+import com.google.common.base.Preconditions;
 import datawave.data.ColumnFamilyConstants;
 import datawave.security.util.ScannerHelper;
 import org.apache.accumulo.core.client.Connector;
@@ -11,11 +12,11 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-import org.springframework.cache.annotation.CacheEvict;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
@@ -26,13 +27,11 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-/**
- */
-@Configuration
 @EnableCaching
 @Component("compositeMetadataHelper")
+@Scope("prototype")
 public class CompositeMetadataHelper {
-    private static final Logger log = Logger.getLogger(CompositeMetadataHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(CompositeMetadataHelper.class);
     
     public static final String transitionDateFormat = "yyyyMMdd HHmmss.SSS";
     public static final String NULL_BYTE = "\0";
@@ -40,18 +39,14 @@ public class CompositeMetadataHelper {
     protected final List<Text> metadataCompositeColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI, ColumnFamilyConstants.COLF_CITD,
                     ColumnFamilyConstants.COLF_CISEP);
     
-    protected Connector connector;
-    protected Instance instance;
-    protected String metadataTableName;
-    protected Set<Authorizations> auths;
-    
-    public CompositeMetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        return this.initialize(connector, connector.getInstance(), metadataTableName, auths);
-    }
+    protected final Connector connector;
+    protected final Instance instance;
+    protected final String metadataTableName;
+    protected final Set<Authorizations> auths;
     
     /**
      * Initializes the instance with a provided update interval.
-     * 
+     *
      * @param connector
      *            A Connector to Accumulo
      * @param metadataTableName
@@ -59,20 +54,21 @@ public class CompositeMetadataHelper {
      * @param auths
      *            Any {@link Authorizations} to use
      */
-    public CompositeMetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths) {
-        if (this.connector != null) {
-            throw new RuntimeException("CompositeMetadataHelper may not be re-initialized");
-        }
+    public CompositeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
+        Preconditions.checkNotNull(connector, "A valid Accumulo Connector is required by CompositeMetadataHelper");
         this.connector = connector;
-        this.instance = instance;
+        this.instance = connector.getInstance();
+        
+        Preconditions.checkNotNull(metadataTableName, "The metadata table name is required by CompositeMetadataHelper");
         this.metadataTableName = metadataTableName;
+        
+        Preconditions.checkNotNull(auths, "Accumulo scan Authorizations are required by CompositeMetadataHelper");
         this.auths = auths;
         
         if (log.isTraceEnabled()) {
             log.trace("Constructor  connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths + " and metadata table name: "
                             + metadataTableName);
         }
-        return this;
     }
     
     public Set<Authorizations> getAuths() {
@@ -163,13 +159,5 @@ public class CompositeMetadataHelper {
         bs.close();
         
         return compositeMetadata;
-    }
-    
-    /**
-     * Invalidates all elements in all internal caches
-     */
-    @CacheEvict(value = {"getCompositeMetadata"}, allEntries = true, cacheManager = "metadataHelperCacheManager")
-    public void evictCaches() {
-        log.debug("evictCaches");
     }
 }

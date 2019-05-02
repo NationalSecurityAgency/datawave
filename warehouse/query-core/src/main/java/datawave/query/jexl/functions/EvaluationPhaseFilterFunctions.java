@@ -1498,6 +1498,18 @@ public class EvaluationPhaseFilterFunctions {
         return ValueTuple.toValueTuple(valueTuple);
     }
     
+    /**
+     * <pre>
+     * for a field like:
+     * NAME.GGPARENT.GPARENT.PARENT.CHILD
+     * if the pos is 0, then GGPARENT.GPARENT.PARENT will be returned
+     * if the pos is 2, then GGPARENT will be returned
+     * </pre>
+     * 
+     * @param input
+     * @param pos
+     * @return
+     */
     public static String getMatchToLeftOfPeriod(String input, int pos) {
         // always peel off the fieldName before the first '.'
         input = input.substring(input.indexOf('.') + 1);
@@ -1507,6 +1519,17 @@ public class EvaluationPhaseFilterFunctions {
         return input.substring(0, indices[indices.length - pos - 1]);
     }
     
+    /**
+     * <pre>
+     *     for a field like NAME.NAME_1.5
+     *     if the pos is 0, then '5' will be returned
+     *     if the pos it 1, then NAME_1.5 will be returned
+     * </pre>
+     * 
+     * @param input
+     * @param pos
+     * @return
+     */
     public static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)

@@ -2,7 +2,7 @@ package datawave.query.testframework;
 
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions.NoOp;
+import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -138,20 +138,22 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setIncludeDataTypeAsField(true);
         
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        this.logic.setMarkingFunctions(new NoOp());
+        this.logic.setMarkingFunctions(new Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         
         this.logic.setCollectTimingDetails(true);
         this.logic.setLogTimingDetails(true);
+        this.logic.setMinimumSelectivity(0.03D);
+        this.logic.setMaxIndexScanTimeMillis(5000);
         
         // count logic
         countLogic.setIncludeDataTypeAsField(true);
         countLogic.setFullTableScanEnabled(false);
         
         countLogic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        countLogic.setMarkingFunctions(new NoOp());
+        countLogic.setMarkingFunctions(new Default());
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());
         countLogic.setQueryPlanner(new DefaultQueryPlanner());
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());

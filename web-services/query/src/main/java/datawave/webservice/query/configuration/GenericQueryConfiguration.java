@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import datawave.util.TableName;
 import datawave.webservice.query.logic.BaseQueryLogic;
 
 import org.apache.accumulo.core.client.BatchScanner;
@@ -34,16 +35,17 @@ public abstract class GenericQueryConfiguration {
     private Date beginDate = null;
     private Date endDate = null;
     
-    private Long maxQueryResults = 5000l;
-    private Long maxRowsToScan = 25000l;
+    private Long maxRowsToScan = 25000L;
     
     private Set<String> undisplayedVisibilities = new HashSet<>();
     protected int baseIteratorPriority = 100;
     
     // Table name
-    private String tableName = "shard";
+    private String tableName = TableName.SHARD;
     
     private Iterator<QueryData> queries = Iterators.emptyIterator();
+    
+    protected boolean bypassAccumulo;
     
     /**
      * Empty default constructor
@@ -59,11 +61,21 @@ public abstract class GenericQueryConfiguration {
      *            A pre-configured BaseQueryLogic to initialize the Configuration with
      */
     public GenericQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
-        this.setTableName(configuredLogic.getTableName());
-        this.setMaxQueryResults(configuredLogic.getMaxResults());
-        this.setMaxRowsToScan(configuredLogic.getMaxRowsToScan());
-        this.setUndisplayedVisibilities(configuredLogic.getUndisplayedVisibilities());
-        this.setBaseIteratorPriority(configuredLogic.getBaseIteratorPriority());
+        this(configuredLogic.getConfig());
+    }
+    
+    public GenericQueryConfiguration(GenericQueryConfiguration genericConfig) {
+        this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
+        this.setBypassAccumulo(genericConfig.getBypassAccumulo());
+        this.setAuthorizations(genericConfig.getAuthorizations());
+        this.setBeginDate(genericConfig.getBeginDate());
+        this.setConnector(genericConfig.getConnector());
+        this.setEndDate(genericConfig.getEndDate());
+        this.setMaxRowsToScan(genericConfig.getMaxRowsToScan());
+        this.setQueries(genericConfig.getQueries());
+        this.setQueryString(genericConfig.getQueryString());
+        this.setTableName(genericConfig.getTableName());
+        this.setUndisplayedVisibilities(genericConfig.getUndisplayedVisibilities());
     }
     
     /**
@@ -132,20 +144,12 @@ public abstract class GenericQueryConfiguration {
         this.endDate = endDate;
     }
     
-    public Long getMaxQueryResults() {
-        return maxQueryResults;
-    }
-    
-    public void setMaxQueryResults(Long maxQueryResults) {
-        this.maxQueryResults = maxQueryResults <= 0l ? Long.MAX_VALUE : maxQueryResults;
-    }
-    
     public Long getMaxRowsToScan() {
         return maxRowsToScan;
     }
     
     public void setMaxRowsToScan(Long maxRowsToScan) {
-        this.maxRowsToScan = maxRowsToScan <= 0l ? Long.MAX_VALUE : maxRowsToScan;
+        this.maxRowsToScan = maxRowsToScan <= 0L ? Long.MAX_VALUE : maxRowsToScan;
     }
     
     public String getTableName() {
@@ -162,6 +166,14 @@ public abstract class GenericQueryConfiguration {
     
     public void setUndisplayedVisibilities(Set<String> undisplayedVisibilities) {
         this.undisplayedVisibilities = undisplayedVisibilities;
+    }
+    
+    public boolean getBypassAccumulo() {
+        return bypassAccumulo;
+    }
+    
+    public void setBypassAccumulo(boolean bypassAccumulo) {
+        this.bypassAccumulo = bypassAccumulo;
     }
     
     /**

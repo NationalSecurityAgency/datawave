@@ -15,7 +15,6 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.impl.ClientContext;
 import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.client.impl.MasterClient;
-import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.master.thrift.MasterClientService.Iface;
@@ -548,12 +547,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // not carry block size or replication across. This is especially important because by default the
             // MapReduce jobs produce output with the replication set to 1 and we definitely don't want to preserve
             // that when copying across clusters.
-            DistCpOptions options = new DistCpOptions(srcPath, destPath);
-            options.setLogPath(logPath);
-            options.setSyncFolder(true);
-            options.preserve(DistCpOptions.FileAttribute.USER);
-            options.preserve(DistCpOptions.FileAttribute.GROUP);
-            options.preserve(DistCpOptions.FileAttribute.PERMISSION);
+            //@formatter:off
+            DistCpOptions options = new DistCpOptions.Builder(srcPath, destPath)
+                .withLogPath(logPath)
+                .withSyncFolder(true)
+                .preserve(DistCpOptions.FileAttribute.USER)
+                .preserve(DistCpOptions.FileAttribute.GROUP)
+                .preserve(DistCpOptions.FileAttribute.PERMISSION)
+                .build();
+            //@formatter:on
             String[] args = (jobtracker == null) ? new String[0] : new String[] {"-jt", jobtracker};
             int res = ToolRunner.run(conf, new DistCp(conf, options), args);
             if (res != 0) {
@@ -665,7 +667,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         Instance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
         TableOperations tops = instance.getConnector(credentials.getPrincipal(), credentials.getToken()).tableOperations();
-        Map<String,String> tableIds = Tables.getNameToIdMap(instance);
+        Map<String,String> tableIds = tops.tableIdMap();
         FileStatus[] tableDirs = fs.globStatus(new Path(mapFilesDir, "*"));
         
         // sort the table dirs in priority order based on the configuration

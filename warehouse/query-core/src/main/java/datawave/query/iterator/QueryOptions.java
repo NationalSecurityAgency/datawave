@@ -109,6 +109,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String PROJECTION_FIELDS = "projection.fields";
     public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
     public static final String INDEX_ONLY_FIELDS = "index.only.fields";
+    public static final String INDEXED_FIELDS = "indexed.fields";
     public static final String COMPOSITE_FIELDS = "composite.fields";
     public static final String COMPOSITE_METADATA = "composite.metadata";
     public static final String COMPOSITE_SEEK_THRESHOLD = "composite.seek.threshold";
@@ -219,8 +220,6 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String SORTED_UIDS = "sorted.uids";
     
-    public static final String DATA_QUERY_EXPRESSION_FILTER_ENABLED = "query.data.expression.filter.enabled";
-    
     protected Map<String,String> options;
     
     protected String scanId;
@@ -265,6 +264,7 @@ public class QueryOptions implements OptionDescriber {
     protected int maxPipelineCachedResults = 25;
     
     protected Set<String> indexOnlyFields = Sets.newHashSet();
+    protected Set<String> indexedFields = Sets.newHashSet();
     protected Set<String> ignoreColumnFamilies = Sets.newHashSet();
     
     protected boolean includeGroupingContext = false;
@@ -352,8 +352,6 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean debugMultithreadedSources = false;
     
-    protected boolean dataQueryExpressionFilterEnabled = false;
-    
     /**
      * should document sizes be tracked
      */
@@ -385,6 +383,7 @@ public class QueryOptions implements OptionDescriber {
         this.fiAggregator = other.fiAggregator;
         
         this.indexOnlyFields = other.indexOnlyFields;
+        this.indexedFields = other.indexedFields;
         this.ignoreColumnFamilies = other.ignoreColumnFamilies;
         
         this.includeGroupingContext = other.includeGroupingContext;
@@ -468,8 +467,6 @@ public class QueryOptions implements OptionDescriber {
         this.dateIndexTimeTravel = other.dateIndexTimeTravel;
         
         this.debugMultithreadedSources = other.debugMultithreadedSources;
-        
-        this.dataQueryExpressionFilterEnabled = other.dataQueryExpressionFilterEnabled;
         
         this.trackSizes = other.trackSizes;
     }
@@ -707,6 +704,10 @@ public class QueryOptions implements OptionDescriber {
     
     public Set<String> getIndexOnlyFields() {
         return this.indexOnlyFields;
+    }
+    
+    public Set<String> getIndexedFields() {
+        return this.indexedFields;
     }
     
     public Set<String> getAllIndexOnlyFields() {
@@ -968,14 +969,6 @@ public class QueryOptions implements OptionDescriber {
         this.debugMultithreadedSources = debugMultithreadedSources;
     }
     
-    public boolean isDataQueryExpressionFilterEnabled() {
-        return dataQueryExpressionFilterEnabled;
-    }
-    
-    public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
-        this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
-    }
-    
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1007,6 +1000,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(DATATYPE_FIELDNAME, "The field name to use when inserting the fieldname into the document.");
         options.put(DATATYPE_FILTER, "CSV of data type names that should be included when scanning.");
         options.put(INDEX_ONLY_FIELDS, "The serialized collection of field names that only occur in the index");
+        options.put(INDEXED_FIELDS, "The serialized collection of indexed fields.");
         options.put(COMPOSITE_FIELDS, "The serialized collection of field names that make up composites");
         options.put(START_TIME, "The start time for this query in milliseconds");
         options.put(END_TIME, "The end time for this query in milliseconds");
@@ -1054,7 +1048,6 @@ public class QueryOptions implements OptionDescriber {
                         "Whether the UIDs need to be sorted.  Normally this is true, however in limited circumstances it could be false which allows ivarators to avoid pre-fetching all UIDs and sorting before returning the first one.");
         
         options.put(DEBUG_MULTITHREADED_SOURCES, "If provided, the SourceThreadTrackingIterator will be used");
-        options.put(DATA_QUERY_EXPRESSION_FILTER_ENABLED, "If true, the EventDataQueryExpression filter will be used when performing TLD queries");
         
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
         options.put(LIMIT_FIELDS_PRE_QUERY_EVALUATION, "If true, non-query fields limits will be applied immediately off the iterator");
@@ -1250,10 +1243,14 @@ public class QueryOptions implements OptionDescriber {
         }
         
         if (options.containsKey(INDEX_ONLY_FIELDS)) {
-            this.indexOnlyFields = buildIndexOnlyFieldsSet(options.get(INDEX_ONLY_FIELDS));
+            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
         } else if (!this.fullTableScanOnly) {
             log.error("A list of index only fields must be provided when running an optimized query");
             return false;
+        }
+        
+        if (options.containsKey(INDEXED_FIELDS)) {
+            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
         
         this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
@@ -1486,10 +1483,6 @@ public class QueryOptions implements OptionDescriber {
             this.debugMultithreadedSources = Boolean.parseBoolean(options.get(DEBUG_MULTITHREADED_SOURCES));
         }
         
-        if (options.containsKey(DATA_QUERY_EXPRESSION_FILTER_ENABLED)) {
-            this.dataQueryExpressionFilterEnabled = Boolean.parseBoolean(options.get(DATA_QUERY_EXPRESSION_FILTER_ENABLED));
-        }
-        
         return true;
     }
     
@@ -1565,7 +1558,7 @@ public class QueryOptions implements OptionDescriber {
         
         Map<String,Set<String>> mapping = new HashMap<>();
         
-        if (data != null) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
             String[] entries = StringUtils.split(data, ';');
             for (String entry : entries) {
                 String[] entrySplits = StringUtils.split(entry, ':');
@@ -1589,9 +1582,9 @@ public class QueryOptions implements OptionDescriber {
         return mapping;
     }
     
-    public static Set<String> fetchDatatypeKeys(String data) {
+    public static Set<String> fetchDataTypeKeys(String data) {
         Set<String> keys = Sets.newHashSet();
-        if (data != null) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
             String[] entries = StringUtils.split(data, ';');
             for (String entry : entries) {
                 String[] entrySplits = StringUtils.split(entry, ':');
@@ -1691,7 +1684,7 @@ public class QueryOptions implements OptionDescriber {
         return new String(Base64.encodeBase64(byteStream.toByteArray()));
     }
     
-    public static String buildIndexOnlyFieldsString(Collection<String> fields) {
+    public static String buildFieldStringFromSet(Collection<String> fields) {
         StringBuilder sb = new StringBuilder();
         for (String field : fields) {
             if (sb.length() > 0) {
@@ -1704,11 +1697,11 @@ public class QueryOptions implements OptionDescriber {
         return sb.toString();
     }
     
-    public static Set<String> buildIndexOnlyFieldsSet(String indexOnlyFields) {
+    public static Set<String> buildFieldSetFromString(String fieldStr) {
         Set<String> fields = new HashSet<>();
-        for (String indexOnlyField : StringUtils.split(indexOnlyFields, ',')) {
-            if (!org.apache.commons.lang.StringUtils.isBlank(indexOnlyField)) {
-                fields.add(indexOnlyField);
+        for (String field : StringUtils.split(fieldStr, ',')) {
+            if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
+                fields.add(field);
             }
         }
         return fields;

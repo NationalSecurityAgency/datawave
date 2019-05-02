@@ -13,6 +13,7 @@ import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -1342,4 +1343,18 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     public boolean getShouldAutoActivate() {
         return this.shouldAutoActivate;
     }
+    
+    public void closeConnection(Logger log) {
+        
+        if (log.isTraceEnabled()) {
+            log.trace("closing connections for query " + getQueryId());
+        }
+        
+        Connection connection = getConnection();
+        Statement statement = getStatement();
+        CachedRowSet crs = getCrs();
+        resetConnection();
+        DbUtils.closeQuietly(connection, statement, crs);
+    }
+    
 }

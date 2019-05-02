@@ -338,7 +338,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         STATE state;
-        if (isUnfielded(node)) {
+        if (isUnOrNoFielded(node)) {
             state = STATE.EXECUTABLE;
         } else if (isUnindexed(node)) {
             state = STATE.NON_EXECUTABLE;
@@ -358,7 +358,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNENode node, Object data) {
         STATE state;
-        if (isUnfielded(node)) {
+        if (isUnOrNoFielded(node)) {
             state = STATE.NON_EXECUTABLE;
         } else if (isUnindexed(node)) {
             state = STATE.NON_EXECUTABLE;
@@ -405,7 +405,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTERNode node, Object data) {
         STATE state;
         // if we got here, then we were not wrapped in an ivarator, or in a delayed predicate. So we know it returns 0 results unless unindexed.
-        if (isUnfielded(node)) {
+        if (isUnOrNoFielded(node)) {
             state = STATE.EXECUTABLE;
         } else if (isUnindexed(node)) {
             state = STATE.NON_EXECUTABLE;
@@ -433,10 +433,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return state;
     }
     
-    private boolean isUnfielded(JexlNode node) {
+    private boolean isUnOrNoFielded(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
-            if (identifier.image.equals(Constants.ANY_FIELD)) {
+            if (identifier.image.equals(Constants.ANY_FIELD) || identifier.image.equals(Constants.NO_FIELD)) {
                 return true;
             }
         }
@@ -446,7 +446,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     private boolean isUnindexed(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
-            if (!identifier.image.equals(Constants.ANY_FIELD)) {
+            if (!(identifier.image.equals(Constants.ANY_FIELD) || identifier.image.equals(Constants.NO_FIELD))) {
                 if (this.indexedFields == null) {
                     if (config.getIndexedFields() != null && !config.getIndexedFields().isEmpty()) {
                         this.indexedFields = config.getIndexedFields();

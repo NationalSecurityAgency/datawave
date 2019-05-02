@@ -19,6 +19,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -102,9 +103,9 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         TypeRegistry.reset();
         conf = new Configuration();
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 131);
-        conf.set(ShardedDataTypeHandler.SHARD_TNAME, "shard");
-        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex");
-        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex");
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
+        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
     }
     
     @Test

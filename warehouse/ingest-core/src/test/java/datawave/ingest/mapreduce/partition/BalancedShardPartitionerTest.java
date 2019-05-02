@@ -13,10 +13,10 @@ import java.util.TreeSet;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -49,9 +49,9 @@ public class BalancedShardPartitionerTest {
     public void setUp() throws IOException {
         partitioner = new BalancedShardPartitioner();
         // gotta load this every test, or using different values bleeds into other tests
-        new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
+        new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD);
         partitioner.setConf(conf);
-        assertEquals("shard", conf.get(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES));
+        assertEquals(TableName.SHARD, conf.get(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES));
     }
     
     @After
@@ -70,9 +70,9 @@ public class BalancedShardPartitionerTest {
     @Test
     public void testTwoTablesAreOffsetted() throws Exception {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
-        new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard", "errorShard");
+        new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD, TableName.ERROR_SHARD);
         partitioner.setConf(conf);
-        assertEquals(new HashSet<>(Arrays.asList("shard", "errorShard")),
+        assertEquals(new HashSet<>(Arrays.asList(TableName.SHARD, TableName.ERROR_SHARD)),
                         new HashSet<>(conf.getStringCollection(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)));
         
         // For a shard from today, we can assume that they're well balanced.
@@ -80,9 +80,9 @@ public class BalancedShardPartitionerTest {
         String today = formatDay(0);
         Key shardFromToday = new Key(today + "_1");
         // error shard should be in the first group of partitions
-        verifyOffsetGroup(0, partitioner.getPartition(new BulkIngestKey(new Text("errorShard"), shardFromToday), new Value(), 1000), today);
+        verifyOffsetGroup(0, partitioner.getPartition(new BulkIngestKey(new Text(TableName.ERROR_SHARD), shardFromToday), new Value(), 1000), today);
         // shard should be in the second group of partitions
-        verifyOffsetGroup(1, partitioner.getPartition(new BulkIngestKey(new Text("shard"), shardFromToday), new Value(), 1000), today);
+        verifyOffsetGroup(1, partitioner.getPartition(new BulkIngestKey(new Text(TableName.SHARD), shardFromToday), new Value(), 1000), today);
     }
     
     private void verifyOffsetGroup(int group, int partitionId, String date) {
@@ -194,20 +194,20 @@ public class BalancedShardPartitionerTest {
     private void simulateDifferentNumberShardsPerDay(String missingShardStrategy, String tableName) throws IOException {
         // This emulates today, yesterday and the day before have SHARDS_PER_DAY splits and
         // 3 days ago and 4 days ago only have 2 splits, _0 and _1.
-        SortedMap<KeyExtent,String> locations = new TreeMap<>();
+        SortedMap<Text,String> locations = new TreeMap<>();
         long now = System.currentTimeMillis();
         int tserverId = 1;
         Text prevEndRow = new Text();
         for (int daysAgo = 0; daysAgo <= 2; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard = 0; currShard < SHARDS_PER_DAY; currShard++) {
-                locations.put(new KeyExtent(tableName, new Text(day + "_" + currShard), prevEndRow), Integer.toString(tserverId++));
+                locations.put(new Text(day + "_" + currShard), Integer.toString(tserverId++));
             }
         }
         for (int daysAgo = 3; daysAgo <= 4; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard : Arrays.asList(1, 4)) {
-                locations.put(new KeyExtent(tableName, new Text(day + "_" + currShard), prevEndRow), Integer.toString(tserverId++));
+                locations.put(new Text(day + "_" + currShard), Integer.toString(tserverId++));
             }
         }
         new TestShardGenerator(conf, locations, tableName);
@@ -245,7 +245,7 @@ public class BalancedShardPartitionerTest {
         int collisions = 0;
         for (int i = 1; i < SHARDS_PER_DAY; i++) {
             String shardId = formattedDay + ("_" + i);
-            int partition = partitionerIn.getPartition(new BulkIngestKey(new Text("shard"), new Key(shardId)), new Value(), NUM_REDUCE_TASKS);
+            int partition = partitionerIn.getPartition(new BulkIngestKey(new Text(TableName.SHARD), new Key(shardId)), new Value(), NUM_REDUCE_TASKS);
             if (partitionsUsed.contains(partition)) {
                 collisions++;
             }

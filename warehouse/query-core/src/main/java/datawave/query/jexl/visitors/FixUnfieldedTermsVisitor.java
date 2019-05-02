@@ -2,7 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.lookups.FieldNameLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
@@ -143,7 +143,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         if (node.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
             log.warn(qe);
-            throw new CannotExpandUnfieldedTermFatalException(qe);
+            throw new EmptyUnfieldedTermExpansionException(qe);
         }
         
         return node;
@@ -235,18 +235,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        
-        concurrentExecution();
-        try {
-            Object obj = expandFieldNames(node, false);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            log.error(e);
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
-        }
+        return expandFieldNames(node, false);
     }
     
     @Override
@@ -256,17 +245,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        
-        concurrentExecution();
-        try {
-            Object obj = expandFieldNames(node, false);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
-        }
+        return expandFieldNames(node, false);
     }
     
     @Override
@@ -291,18 +270,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        
-        concurrentExecution();
-        try {
-            Object obj = super.visit(node, data);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            log.error(e);
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
-        }
+        return super.visit(node, data);
     }
     
     @Override

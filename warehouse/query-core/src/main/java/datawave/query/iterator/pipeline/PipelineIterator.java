@@ -72,6 +72,11 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
      */
     @Override
     public boolean hasNext() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return false;
+        }
+        
         Entry<Key,Document> next = getNext(false);
         if (log.isTraceEnabled()) {
             log.trace("QueryIterator.hasNext() -> " + (next == null ? null : next.getKey()));
@@ -86,6 +91,11 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
      */
     @Override
     public Entry<Key,Document> next() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return null;
+        }
+        
         Entry<Key,Document> next = getNext(true);
         if (log.isTraceEnabled()) {
             log.trace("QueryIterator.next() -> " + (next == null ? null : next.getKey()));
@@ -130,10 +140,17 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
                     next = results.peek();
                 }
             }
+            
             return next;
         } catch (Exception e) {
             // cancel out existing executions
             cancel();
+            
+            // if we yielded, then leave gracefully
+            if (yield != null && yield.hasYielded()) {
+                return null;
+            }
+            
             log.error("Failed to retrieve evaluation pipeline result", e);
             throw new RuntimeException("Failed to retrieve evaluation pipeline result", e);
         }
@@ -155,12 +172,16 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
                 long delta = System.currentTimeMillis() - startMs;
                 if (delta > yieldThresholdMs) {
                     yield.yield(lastKeyEvaluated);
+                    if (log.isDebugEnabled())
+                        log.debug("Yielding at " + lastKeyEvaluated);
                     throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
                 }
                 try {
                     result = poll(yieldThresholdMs - delta);
                 } catch (TimeoutException e) {
                     yield.yield(lastKeyEvaluated);
+                    if (log.isDebugEnabled())
+                        log.debug("Yielding at " + lastKeyEvaluated);
                     throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
                 }
             } else {

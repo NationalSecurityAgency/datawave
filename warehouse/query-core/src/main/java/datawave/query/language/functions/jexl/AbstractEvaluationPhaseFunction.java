@@ -60,9 +60,8 @@ public abstract class AbstractEvaluationPhaseFunction extends JexlQueryFunction 
         }
     }
     
-    protected String toString(String prefix, String suffix) {
+    protected String toString(String prefix, String suffix, String operation) {
         StringBuilder sb = new StringBuilder();
-        String operation = (this.type.equals(WildcardFieldedFilter.BooleanType.AND)) ? " && " : " || ";
         
         if (parameterList.size() == 1) {
             sb.append(prefix).append(Constants.ANY_FIELD).append(", ").append(escapeString(parameterList.get(0))).append(suffix);

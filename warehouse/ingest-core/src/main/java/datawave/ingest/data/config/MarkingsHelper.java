@@ -67,14 +67,14 @@ public interface MarkingsHelper {
             String marking = conf.get(dataType.typeName() + DEFAULT_MARKING);
             if (null != marking) {
                 defaultMarkings = new HashMap<>();
-                defaultMarkings.put(MarkingFunctions.NoOp.COLUMN_VISIBILITY, marking);
+                defaultMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, marking);
             }
             for (Entry<String,String> property : conf) {
                 if (property.getKey().endsWith(FIELD_MARKING)) {
                     String fieldName = null;
                     if (null != (fieldName = BaseIngestHelper.getFieldName(dataType, property.getKey(), FIELD_MARKING))) {
                         Map<String,String> fieldMarking = new HashMap<>();
-                        fieldMarking.put(MarkingFunctions.NoOp.COLUMN_VISIBILITY, property.getValue());
+                        fieldMarking.put(MarkingFunctions.Default.COLUMN_VISIBILITY, property.getValue());
                         fieldMarkingMap.put(fieldName, fieldMarking);
                     }
                 }

@@ -6,6 +6,7 @@ import java.util.Properties;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.metrics.QueryMetricQueryLogic;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.planner.BooleanChunkingQueryPlanner;
@@ -22,7 +23,7 @@ import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
-import datawave.webservice.edgedictionary.DefaultDatawaveEdgeDictionaryImpl;
+import datawave.webservice.edgedictionary.EdgeDictionaryResponseTypeProducer;
 import datawave.webservice.operations.configuration.LookupBeanConfiguration;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
 import datawave.webservice.query.logic.DatawaveRoleManager;
@@ -77,7 +78,8 @@ public class LowSideWiredQueryExecutorBeanTest {
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
                                         QueryLogicFactoryImpl.class, NoOpQueryMetricHandler.class, DatawaveRoleManager.class, EasyRoleManager.class,
                                         CachedResultsConfiguration.class, LookupBeanConfiguration.class, DateIndexHelperFactory.class,
-                                        DefaultDatawaveEdgeDictionaryImpl.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+                                        EdgeDictionaryResponseTypeProducer.class, RemoteEdgeDictionary.class)
+                        .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
     
     @Test
@@ -100,12 +102,18 @@ public class LowSideWiredQueryExecutorBeanTest {
     }
     
     private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
+    private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
     
     public static class Producer {
         @Produces
         @CallerPrincipal
         public static DatawavePrincipal produceDatawavePrincipal() {
             return mockDatawavePrincipal;
+        }
+        
+        @Produces
+        public static RemoteEdgeDictionary produceRemoteEdgeDictionary() {
+            return mockRemoteEdgeDictionary;
         }
     }
 }

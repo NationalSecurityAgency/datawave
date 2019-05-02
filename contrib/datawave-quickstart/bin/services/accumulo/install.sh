@@ -82,8 +82,8 @@ if ! zookeeperIsRunning ; then
 fi
 
 # Create VFS classpath directories
-if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ]; then
-   ${HADOOP_HOME}/bin/hdfs dfs -mkdir "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}"
+if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ] && [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
+   ${HADOOP_HOME}/bin/hdfs dfs -mkdir -p "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}"
 fi
 
 # Initialize Accumulo

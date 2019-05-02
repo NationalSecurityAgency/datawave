@@ -27,11 +27,11 @@ import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
-import org.springframework.cache.annotation.CacheEvict;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
@@ -52,17 +52,65 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-/**
- */
-@Configuration
 @EnableCaching
 @Component("allFieldMetadataHelper")
+@Scope("prototype")
 public class AllFieldMetadataHelper {
-    private static final Logger log = Logger.getLogger(AllFieldMetadataHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(AllFieldMetadataHelper.class);
     
     public static final String NULL_BYTE = "\0";
     
     protected static final Function<MetadataEntry,String> toFieldName = new MetadataEntryToFieldName(), toDatatype = new MetadataEntryToDatatype();
+    
+    protected final Metadata metadata = new Metadata();
+    
+    protected final List<Text> metadataIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_I, ColumnFamilyConstants.COLF_RI);
+    protected final List<Text> metadataNormalizedColfs = Arrays.asList(ColumnFamilyConstants.COLF_N);
+    protected final List<Text> metadataTypeColfs = Arrays.asList(ColumnFamilyConstants.COLF_T);
+    protected final List<Text> metadataCompositeIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI);
+    
+    protected final Connector connector;
+    protected final Instance instance;
+    protected final String metadataTableName;
+    protected final Set<Authorizations> auths;
+    protected final Set<Authorizations> fullUserAuths;
+    
+    protected final TypeMetadataHelper typeMetadataHelper;
+    protected final CompositeMetadataHelper compositeMetadataHelper;
+    
+    /**
+     * Initializes the instance with a provided update interval.
+     *
+     * @param connector
+     *            A Connector to Accumulo
+     * @param metadataTableName
+     *            The name of the DatawaveMetadata table
+     * @param auths
+     *            Any {@link Authorizations} to use
+     */
+    public AllFieldMetadataHelper(TypeMetadataHelper typeMetadataHelper, CompositeMetadataHelper compositeMetadataHelper, Connector connector,
+                    String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
+        Preconditions.checkNotNull(typeMetadataHelper, "A TypeMetadataHelper is required by AllFieldMetadataHelper");
+        this.typeMetadataHelper = typeMetadataHelper;
+        
+        Preconditions.checkNotNull(compositeMetadataHelper, "A CompositeMetadataHelper is required by AllFieldMetadataHelper");
+        this.compositeMetadataHelper = compositeMetadataHelper;
+        
+        Preconditions.checkNotNull(connector, "A valid Accumulo Connector is required by AllFieldMetadataHelper");
+        this.connector = connector;
+        this.instance = connector.getInstance();
+        
+        Preconditions.checkNotNull(metadataTableName, "The name of the metadata table is required by AllFieldMetadataHelper");
+        this.metadataTableName = metadataTableName;
+        
+        Preconditions.checkNotNull(auths, "Authorizations are required by AllFieldMetadataHelper");
+        this.auths = auths;
+        
+        Preconditions.checkNotNull(fullUserAuths, "The full set of user authorizations is required by AllFieldMetadataHelper");
+        this.fullUserAuths = fullUserAuths;
+        
+        log.trace("Constructor  connector: {} and metadata table name: {}", connector.getClass().getCanonicalName(), metadataTableName);
+    }
     
     protected String getDatatype(Key k) {
         String datatype = k.getColumnQualifier().toString();
@@ -87,61 +135,6 @@ public class AllFieldMetadataHelper {
         return compositeFieldName;
     }
     
-    protected final Metadata metadata = new Metadata();
-    
-    protected final List<Text> metadataIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_I, ColumnFamilyConstants.COLF_RI);
-    protected final List<Text> metadataNormalizedColfs = Arrays.asList(ColumnFamilyConstants.COLF_N);
-    protected final List<Text> metadataTypeColfs = Arrays.asList(ColumnFamilyConstants.COLF_T);
-    protected final List<Text> metadataCompositeIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI);
-    
-    protected Connector connector;
-    protected Instance instance;
-    protected String metadataTableName;
-    protected Set<Authorizations> auths;
-    protected Set<Authorizations> fullUserAuths;
-    
-    protected TypeMetadataHelper typeMetadataHelper;
-    
-    protected CompositeMetadataHelper compositeMetadataHelper;
-    
-    public AllFieldMetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
-        return this.initialize(connector, connector.getInstance(), metadataTableName, auths, fullUserAuths, false);
-    }
-    
-    public AllFieldMetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths,
-                    boolean useTypeSubstitutions) {
-        return this.initialize(connector, connector.getInstance(), metadataTableName, auths, fullUserAuths, useTypeSubstitutions);
-    }
-    
-    /**
-     * Initializes the instance with a provided update interval.
-     * 
-     * @param connector
-     *            A Connector to Accumulo
-     * @param metadataTableName
-     *            The name of the DatawaveMetadata table
-     * @param auths
-     *            Any {@link Authorizations} to use
-     */
-    public AllFieldMetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths,
-                    Set<Authorizations> fullUserAuths, boolean useTypeSubstitutions) {
-        if (this.connector != null) {
-            throw new RuntimeException("AllFieldMetadataHelper may not be re-initialized");
-        }
-        this.connector = connector;
-        this.instance = instance;
-        this.metadataTableName = metadataTableName;
-        this.auths = auths;
-        this.fullUserAuths = fullUserAuths;
-        this.typeMetadataHelper.initialize(connector, instance, metadataTableName, auths, useTypeSubstitutions);
-        this.compositeMetadataHelper.initialize(connector, instance, metadataTableName, auths);
-        
-        if (log.isTraceEnabled()) {
-            log.trace("Constructor  connector: " + connector.getClass().getCanonicalName() + " and metadata table name: " + metadataTableName);
-        }
-        return this;
-    }
-    
     public Set<Authorizations> getAuths() {
         return auths;
     }
@@ -154,16 +147,8 @@ public class AllFieldMetadataHelper {
         return metadataTableName;
     }
     
-    public void setTypeMetadataHelper(TypeMetadataHelper typeMetadataHelper) {
-        this.typeMetadataHelper = typeMetadataHelper;
-    }
-    
     public TypeMetadataHelper getTypeMetadataHelper() {
         return typeMetadataHelper;
-    }
-    
-    public void setCompositeMetadataHelper(CompositeMetadataHelper compositeMetadataHelper) {
-        this.compositeMetadataHelper = compositeMetadataHelper;
     }
     
     /**
@@ -1018,17 +1003,6 @@ public class AllFieldMetadataHelper {
     @Override
     public String toString() {
         return getKey(this);
-    }
-    
-    /**
-     * Invalidates all elements in all internal caches
-     */
-    @CacheEvict(value = {"loadAllFields", "isIndexed", "getAllDatatypes", "getCompositeToFieldMap", "getFieldsToDatatypes", "getFieldsForDatatype",
-            "getIndexOnlyFields", "loadTermFrequencyFields", "loadIndexedFields", "loadExpansionFields", "loadContentFields", "loadDatatypes"},
-                    allEntries = true, cacheManager = "metadataHelperCacheManager")
-    public void evictCaches() {
-        log.debug("evictCaches");
-        typeMetadataHelper.evictCaches();
     }
     
 }

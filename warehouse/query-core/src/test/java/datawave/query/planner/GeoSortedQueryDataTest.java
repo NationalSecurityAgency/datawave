@@ -14,11 +14,13 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.util.TableName;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
@@ -75,12 +77,6 @@ import static org.junit.Assert.assertTrue;
 public class GeoSortedQueryDataTest {
     
     private static final int NUM_SHARDS = 241;
-    private static final String SHARD_TABLE_NAME = "shard";
-    private static final String KNOWLEDGE_SHARD_TABLE_NAME = "knowledgeShard";
-    private static final String ERROR_SHARD_TABLE_NAME = "errorShard";
-    private static final String SHARD_INDEX_TABLE_NAME = "shardIndex";
-    private static final String SHARD_REVERSE_INDEX_TABLE_NAME = "shardReverseIndex";
-    private static final String METADATA_TABLE_NAME = "DatawaveMetadata";
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     private static final String FIELD_NAME = "GEO_FIELD";
@@ -148,7 +144,8 @@ public class GeoSortedQueryDataTest {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
+                        .deleteClass(DefaultEdgeEventQueryLogic.class)
+                        .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
@@ -208,12 +205,11 @@ public class GeoSortedQueryDataTest {
     public static void setupEnvVariables() {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         System.setProperty("NUM_SHARDS", Integer.toString(NUM_SHARDS));
-        System.setProperty("SHARD_TABLE_NAME", SHARD_TABLE_NAME);
-        System.setProperty("KNOWLEDGE_SHARD_TABLE_NAME", KNOWLEDGE_SHARD_TABLE_NAME);
-        System.setProperty("ERROR_SHARD_TABLE_NAME", ERROR_SHARD_TABLE_NAME);
-        System.setProperty("SHARD_INDEX_TABLE_NAME", SHARD_INDEX_TABLE_NAME);
-        System.setProperty("SHARD_REVERSE_INDEX_TABLE_NAME", SHARD_REVERSE_INDEX_TABLE_NAME);
-        System.setProperty("METADATA_TABLE_NAME", METADATA_TABLE_NAME);
+        System.setProperty("SHARD_TABLE_NAME", TableName.SHARD);
+        System.setProperty("ERROR_SHARD_TABLE_NAME", TableName.ERROR_SHARD);
+        System.setProperty("SHARD_INDEX_TABLE_NAME", TableName.SHARD_INDEX);
+        System.setProperty("SHARD_REVERSE_INDEX_TABLE_NAME", TableName.SHARD_RINDEX);
+        System.setProperty("METADATA_TABLE_NAME", TableName.METADATA);
         System.setProperty("DATA_TYPE_NAME", DATA_TYPE_NAME);
         System.setProperty("INGEST_HELPER_CLASS", INGEST_HELPER_CLASS);
         System.setProperty("FIELD_NAME", FIELD_NAME);

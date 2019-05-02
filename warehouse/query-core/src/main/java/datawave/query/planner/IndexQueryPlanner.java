@@ -1,10 +1,8 @@
 package datawave.query.planner;
 
-import java.util.concurrent.ExecutionException;
-
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
@@ -16,9 +14,10 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -69,10 +68,9 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
     protected ASTJexlScript limitQueryTree(ASTJexlScript script, ShardQueryConfiguration config) throws NoResultsException {
         // Assert that all of the terms in the query are indexed (so we can
         // completely use the field index)
-        // Also removes any spurious _ANYFIELD_ nodes left in from upstream
         try {
             return AllTermsIndexedVisitor.isIndexed(script, config, metadataHelper);
-        } catch (CannotExpandUnfieldedTermFatalException e) {
+        } catch (EmptyUnfieldedTermExpansionException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
             throw new NoResultsException(qe);
         }

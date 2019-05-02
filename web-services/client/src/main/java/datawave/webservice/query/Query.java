@@ -56,6 +56,12 @@ public abstract class Query {
     
     public abstract void setPageTimeout(int pageTimeout);
     
+    public abstract long getMaxResultsOverride();
+    
+    public abstract void setMaxResultsOverride(long maxResults);
+    
+    public abstract boolean isMaxResultsOverridden();
+    
     public abstract Set<Parameter> getParameters();
     
     public abstract void setParameters(Set<Parameter> params);

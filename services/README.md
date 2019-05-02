@@ -4,8 +4,8 @@ This module contains DATAWAVE external services. These are microservices that
 are intended to work in conjunction with, and eventually replace, the Wildfly
 based DATAWAVE web service.
 
-DATAWAVE microservices are built on top of [Spring Cloud](http://cloud.spring.io/spring-cloud-static/Finchley.SR1/single/spring-cloud.html) 
-and [Spring Boot](https://docs.spring.io/spring-boot/docs/2.0.4.RELEASE/reference/htmlsingle/).
+DATAWAVE microservices are built on top of [Spring Cloud](http://cloud.spring.io/spring-cloud-static/Greenwich.RELEASE/single/spring-cloud.html)
+and [Spring Boot](https://docs.spring.io/spring-boot/docs/2.1.3.RELEASE/reference/htmlsingle/).
 
 ## Why Microservices?
 
@@ -89,6 +89,15 @@ store, for example).
 Internally, the audit service simply receives audit messages, validates them,
 and then puts the message onto Spring Cloud streams to handle each of the
 configured audit sinks (e.g., file and Accumulo).
+
+### Dictionary Service
+
+The dictionary service provides access to the data and edge dictionaries that
+were previously contained in the Wildfly monolith. This service extends the
+common service base, and therefore accepts JWTs for authentication. If the
+`remoteauth` profile is activated, then the service will also attempt to contact
+the authorization service in order to authenticate a user when a client
+certificate is provided and no JWT is provided.
 
 ### Service Discovery
 
@@ -215,8 +224,31 @@ following URLs:
 You may see an exception from either the authorization or config service due to
 an "Illegal key size". If you see this exception, it means you JRE/JDK does not
 have the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction
-Policy files installed. See [here](http://cloud.spring.io/spring-cloud-static/Finchley.SR1/single/spring-cloud.html#_cloud_native_applications) 
+Policy files installed. See [here](http://cloud.spring.io/spring-cloud-static/Greenwich.RELEASE/single/spring-cloud.html#_cloud_native_applications)
 for more information.
+
+Now launch the dictionary service, if desired:
+```bash
+cd /path/to/datawave/services
+java -jar dictionary-service/target/dictionary-service*-exec.jar --spring.profiles.active=dev,nomessaging,remoteauth 
+```
+You should be able to retrieve the data and edge dictionaries at the following URLs:
+* `https://localhost:8843/dictionary/data/v1/`
+* `https://localhost:8843/dictionary/edge/v1/`
+
+If you are invoking from a browser, be sure the PKI materials referenced above have
+been loaded into the browser so that the client certificate is sent to the dictionary
+service (and then along to the authorization service). Alternatively, you can retrieve
+a JWT from the authorization service and pass it along to the dictionary service. The
+following example assumes the PKI materials from spring-boot-starter-datawave are used:
+
+```bash
+# Retrieve a JWT:
+cd /path/to/datawave/services
+export PKI_DIR=$PWD/spring-boot-starter-datawave/src/main/resources/pki
+curl --cacert $PKI_DIR/ca.pem -E $PKI_DIR/user.pem https://localhost:8643/authorization/v1/authorize > /tmp/jwt.txt
+curl -H "Authorization: Bearer $(</tmp/jwt.txt)" --cacert $PKI_DIR/ca.pem https://localhost:8843/dictionary/data/v1/
+```
 
 If you wish to run the audit service, it requires RabbitMQ. You must first
 install and run RabbitMQ on your local host. If you have docker on Linux (on
@@ -228,9 +260,9 @@ docker run --rm -d --name rabbitmq --network=host rabbitmq:3.7-management-alpine
 ```
 
 You should do this _before_ running any of the other services above, and when 
-you launch each service (configuration, authorization), remove `,nomessaging`
-from the activated profiles on the command-line for each. Then, you can run the 
-audit service as follows:
+you launch each service (configuration, authorization, dictionary), remove 
+`,nomessaging` from the activated profiles on the command-line for each. Then, you
+can run the audit service as follows:
 
 ```bash
 cd /path/to/datawave/services
@@ -435,14 +467,14 @@ allows scaling with `docker-compose scale`.
 
 # Directory/Build Layout
 
-The external services are organized as follows. Authorization and audit have two
-components: api and service. For example, authorization-api contains the components
-of the Authorization service that a client would use, and authorization-service
+The external services are organized as follows. Authorization, audit, and dictionary
+have two components: api and service. For example, authorization-api contains the
+components of the Authorization service that a client would use, and authorization-service
 contains the implementation of the service. Each of these modules can be versioned
 separately. If only code in authorization-service changes, its version can be
 updated, and a new version of the authorization service deployed with no other
 changes. If code in the authorization-api directory changes, then this is an API
-change and care must be taken. TODO: bfl
+change and care must be taken.
 
 In addition to the common pattern for services, this directory also contains:
 * `config-service`: The configuration service. It has no API (other than that 
@@ -454,8 +486,16 @@ In addition to the common pattern for services, this directory also contains:
 * `hazelcast-common`: This is code required by both `hazelcast-client` and `hazelcast-service`
 * `metrics-reporter`: This contains code to publish metrics from a Dropwizard
   metrics registry to StatsD, NSQ, or Timely.
+* `accumulo-utils`: General utilities for working with Accumulo and datawave marking functions
+* `base-rest-responses`: Base rest response and exception classes that are used by query/service responses
+* `common-utils`: Extremely low level utilities that might be used by any service (e.g., datawave-specific string utils)
+* `type-utils`: Normalizers and data types that are part of the datawave metadata and query system
 * `spring-boot-starter-datawave`: This is a service starter that can be used
   when creating a new microservice. See the "Common Service Starter" section above.
+* `spring-boot-starter-datawave-cache`: This is a service starter that customizes the default
+  spring boot caching layer. Since datawave services declare some named caches, this starter
+  allows another cache configuration to be declared and marked as an @Primary bean in order
+  to configure application-level caching
 * `build-parent`: This contains a parent pom that references everything else in the
   services directory. Although each service/api can be versioned independently,
   it is desirable to be able to build everything together using one Maven command.

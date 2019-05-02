@@ -19,11 +19,14 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Object that summarizes the events that are processed by the EventMapper. This object extracts metadata about the events (i.e. fields, indexed fields, field
@@ -88,7 +91,7 @@ public class EventMetadata implements RawRecordMetadata {
     private MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
     private MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
     
-    private static final Logger log = Logger.getLogger(EventMetadata.class);
+    private static final Logger log = getLogger(EventMetadata.class);
     private final Text metadataTableName;
     private final Text loadDatesTableName;
     // stores field name, data type, and most recent event date
@@ -173,17 +176,17 @@ public class EventMetadata implements RawRecordMetadata {
             
             if (helper.isNormalizedField(fieldName)) {
                 shouldWriteDataType = true;
-                log.debug(fieldName + " is normalized");
+                log.debug("{} is normalized", fieldName);
                 updateMetadata(this.normalizedFieldsInfo, helper, event, fields, fieldName);
             }
             
             if (helper.isDataTypeField(fieldName) || shouldWriteDataType) {
-                log.debug(fieldName + " has a data type");
+                log.debug("{} has a data type", fieldName);
                 // write a dataType entry
                 // using either the assigned dataType or the default dataType
                 update(helper.getDataTypes(fieldName), event, fields.get(fieldName), "", 0, null, this.dataTypeFieldsInfo, null);
             } else {
-                log.debug(fieldName + " apparently has no data type");
+                log.debug("{} apparently has no data type", fieldName);
             }
             
             if (helper.isCompositeField(fieldName)) {
@@ -204,16 +207,16 @@ public class EventMetadata implements RawRecordMetadata {
     protected void addEventField(IngestHelperInterface helper, RawRecordContainer event, String fieldName, long countDelta, boolean frequency) {
         // if only indexing this field, then do not add to event and frequency maps
         if (helper.isIndexOnlyField(fieldName)) {
-            log.debug(fieldName + " is indexonly, not adding to event");
+            log.debug("{} is indexonly, not adding to event", fieldName);
             return;
         }
         
         if (helper.isCompositeField(fieldName) && !helper.isOverloadedCompositeField(fieldName)) {
-            log.debug(fieldName + " is a composite, not adding to event");
+            log.debug("{} is a composite, not adding to event", fieldName);
             return;
         }
         
-        log.debug("createOrUpdate for " + fieldName);
+        log.debug("createOrUpdate for {}", fieldName);
         eventFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
         
         if (frequency) {
@@ -307,17 +310,28 @@ public class EventMetadata implements RawRecordMetadata {
         
         // The ContentIndexingColumnBasedHandler uses helpers with this interface
         if (helper instanceof AbstractContentIngestHelper) {
-            String tokenDesignator = ((AbstractContentIngestHelper) helper).getTokenFieldNameDesignator();
+            String tokenDesignator = Objects.toString(((AbstractContentIngestHelper) helper).getTokenFieldNameDesignator(), "");
             AbstractContentIngestHelper h = (AbstractContentIngestHelper) helper;
+            boolean contentIndexed;
             for (String field : fields.keySet()) {
+                contentIndexed = false;
                 if (h.isContentIndexField(field)) {
                     updateForIndexedField(helper, event, fields, countDelta, loadDate, tokenDesignator, field);
-                    termFrequencyFieldsInfo.createOrUpdate(field, event.getDataType().outputName(), MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS,
-                                    event.getDate());
+                    termFrequencyFieldsInfo.createOrUpdate(field + tokenDesignator, event.getDataType().outputName(),
+                                    MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
+                    contentIndexed = true;
                 }
                 
                 if (h.isReverseContentIndexField(field)) {
                     updateForReverseIndexedField(helper, event, fields, countDelta, loadDate, tokenDesignator, field);
+                    contentIndexed = true;
+                }
+                
+                if (contentIndexed) {
+                    log.debug("{}{} as a data type", field, tokenDesignator);
+                    // write a dataType entry
+                    // using either the assigned dataType or the default dataType
+                    update(helper.getDataTypes(field + tokenDesignator), event, fields.get(field), tokenDesignator, 0, null, this.dataTypeFieldsInfo, null);
                 }
             }
         }

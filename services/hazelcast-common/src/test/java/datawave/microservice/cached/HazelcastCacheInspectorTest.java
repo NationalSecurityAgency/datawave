@@ -3,24 +3,23 @@ package datawave.microservice.cached;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import datawave.autoconfigure.DatawaveCacheAutoConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.cache.CacheType;
 import org.springframework.boot.test.autoconfigure.core.AutoConfigureCache;
-import org.springframework.boot.test.context.SpringBootTestContextBootstrapper;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.BootstrapWith;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -28,8 +27,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(SpringRunner.class)
 @DirtiesContext
 @AutoConfigureCache(cacheProvider = CacheType.HAZELCAST)
-@BootstrapWith(SpringBootTestContextBootstrapper.class)
-@ContextConfiguration(classes = HazelcastCacheInspectorTest.InspectorConfiguration.class)
+@ImportAutoConfiguration(DatawaveCacheAutoConfiguration.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, classes = HazelcastCacheInspectorTest.InspectorConfiguration.class)
 public class HazelcastCacheInspectorTest {
     private static final String CACHE_NAME = "cacheinspector-test";
     

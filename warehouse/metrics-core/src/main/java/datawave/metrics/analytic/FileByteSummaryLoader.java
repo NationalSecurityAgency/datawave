@@ -21,6 +21,7 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.Text;
@@ -107,7 +108,7 @@ public class FileByteSummaryLoader extends Configured implements Tool {
         job.setInputFormatClass(AccumuloInputFormat.class);
         AccumuloInputFormat.setConnectorInfo(job, userName, new PasswordToken(password));
         AccumuloInputFormat.setInputTableName(job, inputTable);
-        AccumuloInputFormat.setScanAuthorizations(job, Constants.NO_AUTHS);
+        AccumuloInputFormat.setScanAuthorizations(job, Authorizations.EMPTY);
         AccumuloInputFormat.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instance.trim()).withZkHosts(zookeepers.trim()));
         AccumuloInputFormat.setRanges(job, Collections.singletonList(dayRange));
         // Ensure all data for a day goes to the same reducer so that we aggregate it correctly before sending to Accumulo

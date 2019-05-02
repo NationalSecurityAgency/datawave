@@ -15,7 +15,7 @@ configureTest \
         QueryMissingDataError \
         "Uses ErrorEventQuery to find events written to DW's error* tables at ingest time due to MISSING_DATA_ERROR" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/ErrorEventQuery/createAndNext" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 runTest --set-query-id
@@ -23,6 +23,6 @@ runTest --set-query-id
 ################################################################
 # Close the query
 
-configureCloseQueryTest ${DW_QUERY_ID}
+configureCloseQueryTest ${DW_QUERY_ID} 200
 
 # Last test is executed by run.sh, as usual

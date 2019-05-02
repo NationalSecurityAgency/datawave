@@ -89,7 +89,7 @@ function downloadTarball() {
    tarball="$( basename ${uri} )"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
-          $( cd "${tarballdir}" && curl -o "./${tarball}" "${uri}" )
+          $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || error "File copy failed for ${uri:7}"
       else
           $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
       fi
@@ -105,8 +105,8 @@ function writeSiteXml() {
    # read the "name value" siteconf properties, one line at a time
    printf '%s\n' "$siteconf" | ( while IFS= read -r nameval ; do
        # parse the name and value from the line
-       local name=${nameval% *}
-       local value=${nameval##* }
+       local name=${nameval%% *}
+       local value=${nameval#* }
        # concatenate the xml into a big blob
        local xml=${xml}$(printf "\n   <property>\n      <name>$name</name>\n      <value>$value</value>\n   </property>\n")
    done

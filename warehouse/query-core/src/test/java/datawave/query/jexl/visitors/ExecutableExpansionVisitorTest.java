@@ -878,4 +878,33 @@ public abstract class ExecutableExpansionVisitorTest {
         Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree), JexlStringBuildingVisitor.buildQuery(newTree).equals(
                         "(QUOTE == 'kind' && UUID == 'capone') || " + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"));
     }
+    
+    @Test
+    public void testIndexOnlyNoType() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        
+        String[] queryStrings = {"(UUID == 'capone' &&  SENTENCE == '11y')"};
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+    
+    @Test
+    public void testTypedAndNotIndexed() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        
+        String[] queryStrings = {"(UUID == 'capone' && BIRTH_DATE == '1910-12-28T00:00:05.000Z')"};
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+    
 }

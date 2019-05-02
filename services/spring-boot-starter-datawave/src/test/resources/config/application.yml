@@ -9,10 +9,19 @@ server:
     key-store: classpath:testServer.p12
     key-store-type: PKCS12
     key-store-password: ChangeIt
+  outbound-ssl:
+    trust-store: ${server.ssl.trust-store}
+    trust-store-type: ${server.ssl.trust-store-type}
+    trust-store-password: ${server.ssl.trust-store-password}
+    key-store: ${server.ssl.key-store}
+    key-store-type: ${server.ssl.key-store-type}
+    key-store-password: ${server.ssl.key-store-password}
 
 ---
 
 spring:
   profiles: 'converterTest'
-
-security.jwt.enabled: false
+  security:
+    datawave:
+      jwt:
+        enabled: false

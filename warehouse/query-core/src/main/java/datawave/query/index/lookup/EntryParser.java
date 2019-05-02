@@ -24,14 +24,21 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 
+/**
+ * Parses entries returned from an index lookup, see {@link RangeStream#visit(ASTEQNode, Object)}.
+ *
+ * An entry is defined as a Tuple of the key's column qualifier and it's {@link IndexInfo}
+ *
+ * A delayed predicate node is build if the IndexInfo does not have any document ids or if the column qualifier indicates a day range.
+ */
 public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,IndexInfo>> {
     protected ASTEQNode currNode;
     
-    protected String fieldName = null;
+    protected String fieldName;
     
-    protected String literal = null;
+    protected String literal;
     
-    private boolean skipNodeDelay = false;
+    private boolean skipNodeDelay;
     
     private Set<String> indexOnlyFields = null;
     private static final Logger log = Logger.getLogger(EntryParser.class);
@@ -73,7 +80,7 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
             }
         }
         
-        if (!skipNodeDelay && Union.isDay(date) && !Union.isShard(date) && info.uids().isEmpty()) {
+        if (!skipNodeDelay && Union.isDay(date) && info.uids().isEmpty()) {
             
             if (isDelayedPredicate(currNode)) {
                 if (log.isTraceEnabled()) {
@@ -91,7 +98,7 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
                     log.trace("delaying " + currNode + " because it is already delayed" + currNode.jjtGetParent() + "<- parent "
                                     + JexlStringBuildingVisitor.buildQuery(currNode) + " " + date + " " + info.uids.size());
                 }
-                info.applyNode(ASTDelayedPredicate.create((ASTEQNode) JexlNodeFactory.buildEQNode(fieldName, literal)));
+                info.applyNode(ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode(fieldName, literal)));
             }
         } else {
             if (log.isTraceEnabled()) {

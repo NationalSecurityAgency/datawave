@@ -78,7 +78,7 @@ import static datawave.query.QueryTestTableHelper.*;
 public class IfThisTestFailsThenHitTermsAreBroken {
     
     enum WhatKindaRange {
-        SHARD, DOCUMENT;
+        SHARD, DOCUMENT
     }
     
     private static final Logger log = Logger.getLogger(IfThisTestFailsThenHitTermsAreBroken.class);
@@ -138,6 +138,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         File tempDir = Files.createTempDir();
         tempDir.deleteOnExit();
         System.setProperty("type.metadata.dir", tempDir.getAbsolutePath());
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
         log.info("using tempFolder " + tempDir);
         
         logic = new ShardQueryLogic();
@@ -150,7 +151,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setModelTableName(MODEL_TABLE_NAME);
         logic.setQueryPlanner(new DefaultQueryPlanner());
         logic.setIncludeGroupingContext(true);
-        logic.setMarkingFunctions(new MarkingFunctions.NoOp());
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);
@@ -189,8 +190,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setupQuery(config);
         
         TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper();
-        typeMetadataHelper.initialize(connector, MODEL_TABLE_NAME, authSet);
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, MODEL_TABLE_NAME, authSet, false);
         Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
         typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         

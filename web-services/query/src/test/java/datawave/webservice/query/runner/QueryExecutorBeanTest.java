@@ -26,6 +26,7 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
+import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import datawave.webservice.query.cache.QueryCache;
@@ -131,6 +132,7 @@ public class QueryExecutorBeanTest {
     
     // QueryExecutorBean dependencies
     private QueryCache cache;
+    private ClosedQueryCache closedCache;
     private AccumuloConnectionRequestBean connectionRequestBean;
     private AccumuloConnectionFactory connectionFactory;
     private AuditBean auditor;
@@ -150,12 +152,14 @@ public class QueryExecutorBeanTest {
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         QueryTraceCache traceCache = new QueryTraceCache();
         Whitebox.invokeMethod(traceCache, "init");
         
         cache = new QueryCache();
         cache.init();
+        
+        closedCache = new ClosedQueryCache();
         
         bean = new QueryExecutorBean();
         
@@ -177,6 +181,7 @@ public class QueryExecutorBeanTest {
         setInternalState(auditor, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());
         setInternalState(connectionRequestBean, EJBContext.class, ctx);
         setInternalState(bean, QueryCache.class, cache);
+        setInternalState(bean, ClosedQueryCache.class, closedCache);
         setInternalState(bean, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(bean, AuditBean.class, auditor);
         setInternalState(bean, QueryMetricsBean.class, metrics);
@@ -648,7 +653,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getAuditType(null)).andReturn(AuditType.NONE);
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
-        persister.remove(q);
+        EasyMock.expect(persister.findById(EasyMock.anyString())).andReturn(null).anyTimes();
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
         
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
@@ -678,7 +683,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getAuditType(q)).andReturn(AuditType.NONE);
         EasyMock.expect(logic.getConnPoolName()).andReturn("connPool1");
         
-        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false);
+        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false).anyTimes();
         connectionFactory.returnConnection(EasyMock.isA(Connector.class));
         
         final AtomicBoolean initializeLooping = new AtomicBoolean(false);
@@ -751,6 +756,7 @@ public class QueryExecutorBeanTest {
             
             // Should have already joined by now, but just to be sure
             createQuery.join();
+            
         } finally {
             if (null != createQuery && createQuery.isAlive()) {
                 createQuery.interrupt();

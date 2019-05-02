@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>2.5.0-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
@@ -15,7 +15,6 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <!-- In mine, but not in upstream...leaving here for now. -->
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-data-dictionary-core</artifactId>
             <version>${project.version}</version>
@@ -23,6 +22,11 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-edge-model-configuration-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -91,13 +95,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-data-dictionary</artifactId>
-            <version>${project.version}</version>
-            <type>ejb</type>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-edge-dictionary</artifactId>
+            <artifactId>datawave-ws-dictionary</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
@@ -297,14 +295,6 @@
                         </ejbModule>
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
-                            <artifactId>datawave-ws-data-dictionary</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>gov.nsa.datawave.webservices</groupId>
-                            <artifactId>datawave-ws-edge-dictionary</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-atom</artifactId>
                         </ejbModule>
                         <ejbModule>
@@ -318,6 +308,10 @@
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-model</artifactId>
+                        </ejbModule>
+                        <ejbModule>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
+                            <artifactId>datawave-ws-dictionary</artifactId>
                         </ejbModule>
                         <webModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -403,7 +397,6 @@
                 </plugins>
             </build>
         </profile>
-
         <!--
             When the geoserver profile is active, we will include a geoserver deployment in the ear which includes
             support for the GeoWave datastore.
@@ -566,12 +559,22 @@
                                             <version>4.0.1-incubating</version>
                                         </artifactItem>
                                         <artifactItem>
+                                            <groupId>com.fasterxml.woodstox</groupId>
+                                            <artifactId>woodstox-core</artifactId>
+                                            <version>${version.woodstox-core}</version>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.codehaus.woodstox</groupId>
+                                            <artifactId>stax2-api</artifactId>
+                                            <version>${version.woodstox-stax2}</version>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>com.google.protobuf</groupId>
                                             <artifactId>protobuf-java</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>commons-configuration</groupId>
-                                            <artifactId>commons-configuration</artifactId>
+                                            <groupId>org.apache.commons</groupId>
+                                            <artifactId>commons-configuration2</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.servlet</groupId>
@@ -612,7 +615,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.annotation</groupId>
-                                            <artifactId>jboss-annotations-api_1.2_spec</artifactId>
+                                            <artifactId>jboss-annotations-api_1.3_spec</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.ejb</groupId>
@@ -636,7 +639,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.servlet</groupId>
-                                            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+                                            <artifactId>jboss-servlet-api_4.0_spec</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.transaction</groupId>

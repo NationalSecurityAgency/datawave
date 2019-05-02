@@ -1,6 +1,7 @@
 package datawave.query.predicate;
 
 import java.util.Map.Entry;
+import java.util.Set;
 
 import datawave.query.Constants;
 import datawave.query.tld.TLD;
@@ -12,14 +13,14 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
  * This filter will filter event data keys by only those fields that are required in the specified query except for the base document in which case all fields
  * are returned.
  */
-public class AncestorEventDataFilter extends ConfigurableEventDataQueryFilter {
+public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
      */
-    public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled) {
-        super(script, metadata, expressionFilterEnabled);
+    public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
+        super(script, metadata, nonEventFields);
     }
     
     public AncestorEventDataFilter(AncestorEventDataFilter other) {

@@ -1,8 +1,24 @@
 server:
   servlet.context-path: /${spring.application.name}
+  cdn-uri: /${spring.application.name}/
   port: 8443
   ssl:
     client-auth: WANT
+  # Default outbound ssl configuration to the server's ssl configuration.
+  # Individual services can override if they want.
+  outbound-ssl:
+    #key-alias: ${server.ssl.key-alias}
+    #key-password: ${server.ssl.key-password}
+    key-store: ${server.ssl.key-store}
+    key-store-password: ${server.ssl.key-store-password}
+    key-store-type: ${server.ssl.key-store-type}
+    #key-store-provider: ${server.ssl.key-store-provider}
+    trust-store: ${server.ssl.trust-store}
+    trust-store-password: ${server.ssl.trust-store-password}
+    trust-store-type: ${server.ssl.trust-store-type}
+    #trust-store-provider: ${server.ssl.trust-store-provider}
+    #protocol: ${server.ssl.protocol:TLS}
+
   undertow:
     accesslog:
       enabled: true
@@ -44,6 +60,9 @@ spring:
   cloud:
     consul:
       enabled: false
+  # Configure jackson mappers so that null properties are not included in the serialized response.
+  jackson:
+    default-property-include: non_null
 
 hazelcast:
   client:

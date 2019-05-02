@@ -110,10 +110,10 @@ public class DefaultKey extends KeyBase {
         }
         this.markings = markingMap;
         
-        if (null == this.markings || !markings.containsKey(MarkingFunctions.NoOp.COLUMN_VISIBILITY)) {
+        if (null == this.markings || !markings.containsKey(MarkingFunctions.Default.COLUMN_VISIBILITY)) {
             setColumnVisibility("");
         } else {
-            setColumnVisibility(markings.get(MarkingFunctions.NoOp.COLUMN_VISIBILITY));
+            setColumnVisibility(markings.get(MarkingFunctions.Default.COLUMN_VISIBILITY));
         }
     }
     
@@ -142,7 +142,7 @@ public class DefaultKey extends KeyBase {
         if (markings == null) {
             markings = new HashMap<String,String>();
         }
-        markings.put(MarkingFunctions.NoOp.COLUMN_VISIBILITY, this.columnVisibility.getValue().toString());
+        markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility.getValue().toString());
         
     }
     

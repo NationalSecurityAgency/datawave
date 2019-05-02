@@ -8,6 +8,8 @@ import datawave.query.util.DateIndexTestIngest;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.MetadataHelperFactory;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -42,11 +44,9 @@ public class DateIndexQueryExpansionVisitorTest {
     
     private static Connector connector = null;
     
-    public static final String DATE_INDEX_TABLE_NAME = "dateIndex";
-    
     protected ShardQueryLogic logic = null;
     
-    private MetadataHelper helper = MetadataHelper.getInstance();
+    private MetadataHelper helper;
     
     @BeforeClass
     public static void before() throws Exception {
@@ -58,10 +58,12 @@ public class DateIndexQueryExpansionVisitorTest {
     @Before
     public void setupTests() throws Exception {
         
+        this.helper = new MetadataHelperFactory().createMetadataHelper(connector, TableName.DATE_INDEX, Collections.singleton(auths));
+        
         this.createTables();
         
         DateIndexTestIngest.writeItAll(connector);
-        PrintUtility.printTable(connector, auths, DATE_INDEX_TABLE_NAME);
+        PrintUtility.printTable(connector, auths, TableName.DATE_INDEX);
     }
     
     @Test
@@ -76,7 +78,7 @@ public class DateIndexQueryExpansionVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
-        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
                         Collections.singleton(auths), 2, 0.9f);
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         
@@ -98,7 +100,7 @@ public class DateIndexQueryExpansionVisitorTest {
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
         
-        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
                         Collections.singleton(auths), 2, 0.9f);
         helper2.setTimeTravel(true);
         
@@ -121,7 +123,7 @@ public class DateIndexQueryExpansionVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
-        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
                         Collections.singleton(auths), 2, 0.9f);
         
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
@@ -142,7 +144,7 @@ public class DateIndexQueryExpansionVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
-        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
                         Collections.singleton(auths), 2, 0.9f);
         
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
@@ -154,7 +156,7 @@ public class DateIndexQueryExpansionVisitorTest {
     
     private void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
         TableOperations tops = connector.tableOperations();
-        deleteAndCreateTable(tops, DATE_INDEX_TABLE_NAME);
+        deleteAndCreateTable(tops, TableName.DATE_INDEX);
     }
     
     private void deleteAndCreateTable(TableOperations tops, String tableName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,

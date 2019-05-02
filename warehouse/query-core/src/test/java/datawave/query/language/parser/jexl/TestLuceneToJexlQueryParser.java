@@ -429,10 +429,12 @@ public class TestLuceneToJexlQueryParser {
         testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(f1, r1, f2, r2)");
         testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(AND, f1, r1, f2, r2)");
         testFunction("(filter:includeRegex(f1, 'r1') || filter:includeRegex(f2, 'r2'))", "#include(OR, f1, r1, f2, r2)");
-        testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) && not(filter:includeRegex(f2, 'test,escaping')))",
-                        "#exclude(f1, see.*jane.*run, f2, test\\,escaping)");
         testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) || not(filter:includeRegex(f2, 'test,escaping')))",
+                        "#exclude(f1, see.*jane.*run, f2, test\\,escaping)");
+        testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) && not(filter:includeRegex(f2, 'test,escaping')))",
                         "#exclude(OR, f1, see.*jane.*run, f2, test\\,escaping)");
+        testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) || not(filter:includeRegex(f2, 'test,escaping')))",
+                        "#exclude(AND, f1, see.*jane.*run, f2, test\\,escaping)");
         testFunction("filter:includeText(_ANYFIELD_, 'r1')", "#text(r1)");
         testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(f1, r1, f2, r2)");
         testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(AND, f1, r1, f2, r2)");

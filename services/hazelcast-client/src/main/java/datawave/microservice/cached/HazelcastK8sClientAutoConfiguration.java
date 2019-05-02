@@ -38,7 +38,8 @@ public class HazelcastK8sClientAutoConfiguration extends HazelcastBaseClientConf
             clientConfig.getNetworkConfig().setConnectionAttemptLimit(120);
             DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(new HazelcastKubernetesDiscoveryStrategyFactory());
             discoveryStrategyConfig.addProperty(KubernetesProperties.SERVICE_DNS.key(), clientProperties.getK8s().getServiceDnsName());
-            discoveryStrategyConfig.addProperty(KubernetesProperties.SERVICE_DNS_TIMEOUT.key(), clientProperties.getK8s().getServiceDnsTimeout());
+            discoveryStrategyConfig.addProperty(KubernetesProperties.SERVICE_DNS_TIMEOUT.key(),
+                            Integer.toString(clientProperties.getK8s().getServiceDnsTimeout()));
             clientConfig.getNetworkConfig().getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
         }
         

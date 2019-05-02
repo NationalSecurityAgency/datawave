@@ -21,6 +21,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
+import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -76,6 +77,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String accumuloPassword = "";
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     private boolean collapseUids = false;
+    private int collapseUidsThreshold = -1;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -102,10 +104,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean debugMultithreadedSources = false;
     /**
-     * Used to enable Event Field Value filtering in the TLD based on Query Expressions
-     */
-    private boolean dataQueryExpressionFilterEnabled = false;
-    /**
      * Used to enable sorting query ranges from most to least granular for queries which contain geowave fields in ThreadedRangeBundler
      */
     private boolean sortGeoWaveQueryRanges = false;
@@ -129,12 +127,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
     private int geoWaveMaxEnvelopes = 4;
-    private String shardTableName = "shard";
-    private String indexTableName = "shardIndex";
-    private String reverseIndexTableName = "shardReverseIndex";
-    private String metadataTableName = "DatawaveMetadata";
-    private String dateIndexTableName = "DateIndex";
-    private String indexStatsTableName = "shardIndexStats";
+    private String shardTableName = TableName.SHARD;
+    private String indexTableName = TableName.SHARD_INDEX;
+    private String reverseIndexTableName = TableName.SHARD_RINDEX;
+    private String metadataTableName = TableName.METADATA;
+    private String dateIndexTableName = TableName.DATE_INDEX;
+    private String indexStatsTableName = TableName.INDEX_STATS;
     private String defaultDateTypeName = "EVENT";
     // should we cleanup the shards and days hints that are sent to the tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;
@@ -227,7 +225,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * By default enable shortcut evaluation
      */
     private volatile boolean allowShortcutEvaluation = true;
-    private boolean bypassAccumulo = false;
+    
     /**
      * By default don't use speculative scanning.
      */
@@ -309,6 +307,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     public ShardQueryConfiguration(ShardQueryConfiguration other) {
         
+        // GenericQueryConfiguration copy first
+        super(other);
+        
+        // ShardQueryConfiguration copy
         this.setTldQuery(other.isTldQuery());
         this.putFilterOptions(other.getFilterOptions());
         this.setDisableIndexOnlyDocuments(other.isDisableIndexOnlyDocuments());
@@ -318,6 +320,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAccumuloPassword(other.getAccumuloPassword());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
+        this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
@@ -331,7 +334,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
         this.setSerializeQueryIterator(other.getSerializeQueryIterator());
         this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
-        this.setDataQueryExpressionFilterEnabled(other.isDataQueryExpressionFilterEnabled());
         this.setSortGeoWaveQueryRanges(other.isSortGeoWaveQueryRanges());
         this.setNumRangesToBuffer(other.getNumRangesToBuffer());
         this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
@@ -400,7 +402,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFilterMaskedValues(other.getFilterMaskedValues());
         this.setReducedResponse(other.isReducedResponse());
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
-        this.setBypassAccumulo(other.getBypassAccumulo());
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setDisableEvaluation(other.isDisableEvaluation());
         this.setContainsIndexOnlyTerms(other.isContainsIndexOnlyTerms());
@@ -456,13 +457,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     public ShardQueryConfiguration(ShardQueryLogic logic) {
         this(logic.getConfig());
-        
-        // Setters that would have been picked up in a super(logic) call
-        this.setTableName(logic.getTableName());
-        this.setMaxQueryResults(logic.getMaxResults());
-        this.setMaxRowsToScan(logic.getMaxRowsToScan());
-        this.setUndisplayedVisibilities(logic.getUndisplayedVisibilities());
-        this.setBaseIteratorPriority(logic.getBaseIteratorPriority());
     }
     
     /**
@@ -495,10 +489,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public static ShardQueryConfiguration create(ShardQueryLogic shardQueryLogic) {
         
         ShardQueryConfiguration config = create(shardQueryLogic.getConfig());
-        
-        if (shardQueryLogic.getMaxResults() < 0) {
-            config.setMaxQueryResults(Long.MAX_VALUE);
-        }
         
         // Lastly, honor overrides passed in via query parameters
         Set<QueryImpl.Parameter> parameterSet = config.getQuery().getParameters();
@@ -761,14 +751,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setDebugMultithreadedSources(boolean debugMultithreadedSources) {
         this.debugMultithreadedSources = debugMultithreadedSources;
-    }
-    
-    public boolean isDataQueryExpressionFilterEnabled() {
-        return dataQueryExpressionFilterEnabled;
-    }
-    
-    public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
-        this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
     }
     
     public boolean isSortGeoWaveQueryRanges() {
@@ -1694,6 +1676,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.collapseUids = collapseUids;
     }
     
+    public int getCollapseUidsThreshold() {
+        return collapseUidsThreshold;
+    }
+    
+    public void setCollapseUidsThreshold(int collapseUidsThreshold) {
+        this.collapseUidsThreshold = collapseUidsThreshold;
+    }
+    
     public boolean getSequentialScheduler() {
         return sequentialScheduler;
     }
@@ -1716,14 +1706,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setAllowShortcutEvaluation(boolean allowShortcutEvaluation) {
         this.allowShortcutEvaluation = allowShortcutEvaluation;
-    }
-    
-    public boolean getBypassAccumulo() {
-        return bypassAccumulo;
-    }
-    
-    public void setBypassAccumulo(boolean bypassAccumulo) {
-        this.bypassAccumulo = bypassAccumulo;
     }
     
     public boolean getAccrueStats() {

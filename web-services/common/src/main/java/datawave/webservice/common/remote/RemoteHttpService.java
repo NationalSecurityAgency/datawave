@@ -1,10 +1,13 @@
 package datawave.webservice.common.remote;
 
 import com.codahale.metrics.Counter;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
+import com.spotify.dns.LookupResult;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.JWTTokenHandler.TtlMode;
 import datawave.security.util.DnUtils;
@@ -14,7 +17,10 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -27,8 +33,12 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.security.JSSESecurityDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xbill.DNS.DClass;
 import org.xbill.DNS.ExtendedResolver;
 import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.TextParseException;
+import org.xbill.DNS.Type;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -40,6 +50,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyManagementException;
@@ -51,6 +62,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -92,7 +104,9 @@ public abstract class RemoteHttpService {
     @PostConstruct
     protected void init() {
         objectMapper = new ObjectMapper();
+        objectMapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
         objectMapper.registerModule(new GuavaModule());
+        objectMapper.registerModule(new JaxbAnnotationModule());
         
         if (useSrvDns()) {
             if (srvDnsServers() != null && !srvDnsServers().isEmpty()) {
@@ -168,6 +182,79 @@ public abstract class RemoteHttpService {
             
         });
     }
+    
+    protected URIBuilder buildURI() throws TextParseException {
+        final String host = serviceHost();
+        final int port = servicePort();
+        URIBuilder builder = new URIBuilder();
+        builder.setScheme(serviceScheme());
+        if (useSrvDns()) {
+            List<LookupResult> results = dnsSrvResolver.resolve(host);
+            if (results != null && !results.isEmpty()) {
+                LookupResult result = results.get(0);
+                builder.setHost(result.host());
+                builder.setPort(result.port());
+                // Consul sends the hostname back in its own namespace. Although the A record is included in the
+                // "ADDITIONAL SECTION", Spotify SRV lookup doesn't translate, so we need to do the lookup manually.
+                if (result.host().endsWith(".consul.")) {
+                    Record[] newResults = new Lookup(result.host(), Type.A, DClass.IN).run();
+                    if (newResults != null && newResults.length > 0) {
+                        builder.setHost(newResults[0].rdataToString());
+                    } else {
+                        throw new IllegalArgumentException("Unable to resolve service host " + host + " -> " + result.host() + " -> ???");
+                    }
+                }
+            } else {
+                throw new IllegalArgumentException("Unable to resolve service host: " + host);
+            }
+        } else {
+            builder.setHost(host);
+            builder.setPort(port);
+        }
+        return builder;
+    }
+    
+    public URIBuilder buildURI(String suffix) throws TextParseException {
+        if (suffix == null)
+            suffix = "";
+        return buildURI().setPath(serviceURI() + suffix);
+    }
+    
+    protected <T> T executeGetMethod(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        return executeGetMethod("", uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
+    }
+    
+    protected <T> T executeGetMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        URIBuilder builder = buildURI();
+        builder.setPath(serviceURI() + uriSuffix);
+        uriCustomizer.accept(builder);
+        HttpGet getRequest = new HttpGet(builder.build());
+        requestCustomizer.accept(getRequest);
+        return execute(getRequest, resultConverter, errorSupplier);
+    }
+    
+    protected <T> T executePostMethod(Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        return executePostMethod("", uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
+    }
+    
+    protected <T> T executePostMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
+                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        URIBuilder builder = buildURI();
+        builder.setPath(serviceURI() + uriSuffix);
+        uriCustomizer.accept(builder);
+        HttpPost postRequest = new HttpPost(builder.build());
+        requestCustomizer.accept(postRequest);
+        return execute(postRequest, resultConverter, errorSupplier);
+    }
+    
+    protected abstract String serviceHost();
+    
+    protected abstract int servicePort();
+    
+    protected abstract String serviceURI();
     
     protected abstract boolean useSrvDns();
     

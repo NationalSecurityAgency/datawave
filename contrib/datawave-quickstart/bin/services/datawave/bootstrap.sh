@@ -19,7 +19,7 @@ DW_DATAWAVE_SOURCE_DIR="$( cd "${DW_DATAWAVE_SERVICE_DIR}/../../../../.." && pwd
 # canned example data. Should be exhaustive for any and all known/required auths. Otherwise, you will not be able to
 # view the data in Accumulo Shell
 
-DW_DATAWAVE_ACCUMULO_AUTHS="${DW_DATAWAVE_ACCUMULO_AUTHS:-PUBLIC,PRIVATE,FOO,BAR,DEF}"
+DW_DATAWAVE_ACCUMULO_AUTHS="${DW_DATAWAVE_ACCUMULO_AUTHS:-PUBLIC,PRIVATE,FOO,BAR,DEF,A,B,C,D,E,F,G,H,I,DW_USER,DW_SERV,DW_ADMIN,JBOSS_ADMIN}"
 
 # Import DataWave Web test user configuration
 
@@ -49,21 +49,38 @@ DW_DATAWAVE_WEB_TARBALL="*/datawave-ws-deploy-application-*-${DW_DATAWAVE_BUILD_
 
 DW_DATAWAVE_KEYSTORE="${DW_DATAWAVE_KEYSTORE:-${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testServer.p12}"
 
+DW_DATAWAVE_KEYSTORE_PASSWORD=${DW_DATAWAVE_KEYSTORE_PASSWORD:-ChangeIt}
+
 DW_DATAWAVE_KEYSTORE_TYPE="${DW_DATAWAVE_KEYSTORE_TYPE:-PKCS12}"
 
 DW_DATAWAVE_TRUSTSTORE="${DW_DATAWAVE_TRUSTSTORE:-${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/ca.jks}"
+
+DW_DATAWAVE_TRUSTSTORE_PASSWORD=${DW_DATAWAVE_TRUSTSTORE_PASSWORD:-ChangeIt}
 
 DW_DATAWAVE_TRUSTSTORE_TYPE="${DW_DATAWAVE_TRUSTSTORE_TYPE:-JKS}"
 
 # Accumulo shell script for initializing whatever we may need in Accumulo for DataWave
 
-DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT:-
-createnamespace datawave
-config -s table.classpath.context=datawave
-createtable datawave.queryMetrics_m
-setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}
-quit
-}"
+function createAccumuloShellInitScript() {
+   # Allow user to inject their own script into the env...
+   [ -n "${DW_ACCUMULO_SHELL_INIT_SCRIPT}" ] && return 0
+
+   # Create script and add 'datawave' VFS context, if enabled...
+
+   DW_ACCUMULO_SHELL_INIT_SCRIPT="
+   createnamespace datawave
+   createtable datawave.queryMetrics_m
+   setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}"
+
+   if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
+      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   config -s table.classpath.context=datawave"
+   fi
+
+   DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   quit
+   "
+}
 
 function createBuildPropertiesDirectory() {
    if [ ! -d ${DW_DATAWAVE_BUILD_PROPERTIES_DIR} ] ; then
@@ -137,17 +154,25 @@ function setBuildPropertyOverrides() {
    echo "BIN_DIR_FOR_FLAGS=${DW_DATAWAVE_INGEST_HOME}/bin" >> ${BUILD_PROPERTIES_FILE}
    echo "KEYSTORE=${DW_DATAWAVE_KEYSTORE}" >> ${BUILD_PROPERTIES_FILE}
    echo "KEYSTORE_TYPE=${DW_DATAWAVE_KEYSTORE_TYPE}" >> ${BUILD_PROPERTIES_FILE}
-   echo "KEYSTORE_PASSWORD=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "KEYSTORE_PASSWORD=${DW_DATAWAVE_KEYSTORE_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "TRUSTSTORE=${DW_DATAWAVE_TRUSTSTORE}" >> ${BUILD_PROPERTIES_FILE}
-   echo "FLAG_METRICS_DIR=${DW_DATAWAVE_INGEST_FLAGMETRICS_DIR}" >> ${BUILD_PROPERTIES_FILE}
+   echo "TRUSTSTORE_PASSWORD=${DW_DATAWAVE_TRUSTSTORE_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "TRUSTSTORE_TYPE=${DW_DATAWAVE_TRUSTSTORE_TYPE}" >> ${BUILD_PROPERTIES_FILE}
+   echo "FLAG_METRICS_DIR=${DW_DATAWAVE_INGEST_FLAGMETRICS_DIR}" >> ${BUILD_PROPERTIES_FILE}
    echo "accumulo.instance.name=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
    echo "accumulo.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+
    echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "type.metadata.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "mapReduce.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "bulkResults.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "jboss.log.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+
    echo "lock.file.dir=${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" >> ${BUILD_PROPERTIES_FILE}
    echo "server.keystore.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "mysql.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "jboss.jmx.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "jboss.managed.executor.service.default.max.threads=${DW_WILDFLY_EE_DEFAULT_MAX_THREADS:-48}" >> ${BUILD_PROPERTIES_FILE}
    echo "hornetq.cluster.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "hornetq.system.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
    echo "mapReduce.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
@@ -159,7 +184,7 @@ function setBuildPropertyOverrides() {
    echo "DATAWAVE_INGEST_HOME=${DW_DATAWAVE_INGEST_HOME}" >> ${BUILD_PROPERTIES_FILE}
    echo "PASSWORD_INGEST_ENV=${DW_DATAWAVE_INGEST_PASSWD_FILE}" >> ${BUILD_PROPERTIES_FILE}
    echo "hdfs.site.config.urls=file://${HADOOP_CONF_DIR}/core-site.xml,file://${HADOOP_CONF_DIR}/hdfs-site.xml" >> ${BUILD_PROPERTIES_FILE}
-   echo "NUM_SHARDS=${DW_DATAWAVE_INGEST_NUM_SHARDS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "table.shard.numShardsPerDay=${DW_DATAWAVE_INGEST_NUM_SHARDS}" >> ${BUILD_PROPERTIES_FILE}
 
    generateTestDatawaveUserServiceConfig
 
