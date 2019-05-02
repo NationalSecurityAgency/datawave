@@ -365,7 +365,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Helper class that, given a {@link Key}, determines which aggregator, if any, should be used to aggregate multiple values for that key.
      */
     protected static class CustomColumnToClassMapping extends ColumnToClassMapping<Combiner> implements Comparable<CustomColumnToClassMapping> {
-        protected static Key ALL_CF_KEY = new Key("", "*");
+        private static final String ALL_CF_STR = "*";
+        protected static final Key ALL_CF_KEY = new Key("", ALL_CF_STR);
         protected Integer priority;
         
         public CustomColumnToClassMapping(Integer priority, Map<String,String> opts) {
@@ -378,7 +379,12 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 final String className = entry.getValue();
                 
-                Pair<Text,Text> pcic = ColumnSet.decodeColumns(column);
+                Pair<Text,Text> pcic;
+                if (ALL_CF_STR.equals(column)) {
+                    pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
+                } else {
+                    pcic = ColumnSet.decodeColumns(column);
+                }
                 
                 Combiner agg = null;
                 
@@ -412,7 +418,12 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 final String className = clazzOptions.getValue();
                 
-                Pair<Text,Text> pcic = ColumnSet.decodeColumns(column);
+                Pair<Text,Text> pcic;
+                if (ALL_CF_STR.equals(column)) {
+                    pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
+                } else {
+                    pcic = ColumnSet.decodeColumns(column);
+                }
                 
                 Combiner agg = null;
                 
