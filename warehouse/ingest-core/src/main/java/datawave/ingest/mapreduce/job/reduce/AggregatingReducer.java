@@ -25,9 +25,10 @@ import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.conf.ColumnSet;
 import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
-import org.apache.accumulo.core.iterators.conf.PerColumnIteratorConfig;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -189,7 +190,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                             Map<String,Entry<Map<String,String>,String>> columnMap = Maps.newHashMap();
                             
                             for (String column : columns) {
-                                columnMap.put(PerColumnIteratorConfig.encodeColumns(new Text(column), null), Maps.immutableEntry(options, clazz));
+                                columnMap.put(ColumnSet.encodeColumns(new Text(column), null), Maps.immutableEntry(options, clazz));
                             }
                             
                             mapping = new CustomColumnToClassMapping(columnMap, priority);
@@ -364,7 +365,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * Helper class that, given a {@link Key}, determines which aggregator, if any, should be used to aggregate multiple values for that key.
      */
     protected static class CustomColumnToClassMapping extends ColumnToClassMapping<Combiner> implements Comparable<CustomColumnToClassMapping> {
-        protected static Key ALL_CF_KEY = new Key("", "*");
+        private static final String ALL_CF_STR = "*";
+        protected static final Key ALL_CF_KEY = new Key("", ALL_CF_STR);
         protected Integer priority;
         
         public CustomColumnToClassMapping(Integer priority, Map<String,String> opts) {
@@ -377,7 +379,12 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 final String className = entry.getValue();
                 
-                PerColumnIteratorConfig pcic = PerColumnIteratorConfig.decodeColumns(column, className);
+                Pair<Text,Text> pcic;
+                if (ALL_CF_STR.equals(column)) {
+                    pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
+                } else {
+                    pcic = ColumnSet.decodeColumns(column);
+                }
                 
                 Combiner agg = null;
                 
@@ -390,10 +397,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     throw new RuntimeException(e);
                 }
                 
-                if (pcic.getColumnQualifier() == null) {
-                    addObject(pcic.getColumnFamily(), agg);
+                if (pcic.getSecond() == null) {
+                    addObject(pcic.getFirst(), agg);
                 } else {
-                    addObject(pcic.getColumnFamily(), pcic.getColumnQualifier(), agg);
+                    addObject(pcic.getFirst(), pcic.getSecond(), agg);
                 }
             }
             
@@ -411,7 +418,12 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 final String className = clazzOptions.getValue();
                 
-                PerColumnIteratorConfig pcic = PerColumnIteratorConfig.decodeColumns(column, className);
+                Pair<Text,Text> pcic;
+                if (ALL_CF_STR.equals(column)) {
+                    pcic = new Pair<>(ALL_CF_KEY.getColumnFamily(), null);
+                } else {
+                    pcic = ColumnSet.decodeColumns(column);
+                }
                 
                 Combiner agg = null;
                 
@@ -471,10 +483,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     throw new RuntimeException(e);
                 }
                 
-                if (pcic.getColumnQualifier() == null) {
-                    addObject(pcic.getColumnFamily(), agg);
+                if (pcic.getSecond() == null) {
+                    addObject(pcic.getFirst(), agg);
                 } else {
-                    addObject(pcic.getColumnFamily(), pcic.getColumnQualifier(), agg);
+                    addObject(pcic.getFirst(), pcic.getSecond(), agg);
                 }
             }
             

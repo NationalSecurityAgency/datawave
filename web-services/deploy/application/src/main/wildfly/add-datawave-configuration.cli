@@ -88,6 +88,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
 /system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
 /system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
+/system-property=dw.security.use.remoteuserservice:add(value=${security.use.remoteauthservice})
 /system-property=dw.remoteDatawaveUserService.useSrvDnsLookup:add(value=${security.remoteuserservice.srv.lookup.enabled})
 /system-property=dw.remoteDatawaveUserService.srvDnsServers:add(value=${security.remoteuserservice.srv.lookup.servers})
 /system-property=dw.remoteDatawaveUserService.srvDnsPort:add(value=${security.remoteuserservice.srv.lookup.port})
@@ -113,8 +114,8 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Add security realm and domain
 #
 /core-service=management/security-realm=SSLRealm/:add
-/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=certificates/testServer.p12,keystore-relative-to=jboss.server.config.dir,keystore-provider=PKCS12,keystore-password="secret")
-/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=certificates/ca.jks,keystore-relative-to=jboss.server.config.dir,keystore-provider=JKS,keystore-password="secret")
+/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=certificates/testServer.p12,keystore-relative-to=jboss.server.config.dir,keystore-provider=PKCS12,keystore-password="ChangeIt")
+/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=certificates/ca.jks,keystore-relative-to=jboss.server.config.dir,keystore-provider=JKS,keystore-password="ChangeIt")
 /core-service=management/security-realm=SSLRealm/authentication=jaas/:add(name=datawave)
 
 /subsystem=security/security-domain=datawave:add(cache-type=infinispan)
@@ -122,7 +123,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=datawave.security.authorization.DatawavePrincipal,verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
-/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="PKCS12",password="secret",url="file://${jboss.server.config.dir}/certificates/testServer.p12"},truststore={type="JKS",password="secret",url="file://${jboss.server.config.dir}/certificates/ca.jks"})
+/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="PKCS12",password="ChangeIt",url="file://${jboss.server.config.dir}/certificates/testServer.p12"},truststore={type="JKS",password="ChangeIt",url="file://${jboss.server.config.dir}/certificates/ca.jks"})
 /subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
 /subsystem=security/security-domain=JmsXARealm/authentication=classic:add
 /subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
