@@ -6,8 +6,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mrunit.mapreduce.ReduceDriver;
-import org.apache.hadoop.mrunit.types.Pair;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -32,38 +30,39 @@ public class StatsHyperLogReducerTest {
         Logger.getLogger(StatsHyperLogReducer.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsHyperLogReducerTest.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
     }
     
     @Test
-    public void testOneValue() throws IOException {
+    public void testOneValue() throws IOException, InterruptedException {
         log.info("-----  testOneValue  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno);
         runDriver(testEntries, 0);
     }
     
     @Test
-    public void testDuplicateInputValues() throws IOException {
+    public void testDuplicateInputValues() throws IOException, InterruptedException {
         log.info("-----  testDuplicateInputValues  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno);
         runDriver(testEntries, 3);
     }
     
     @Test
-    public void testMultiValues() throws IOException {
+    public void testMultiValues() throws IOException, InterruptedException {
         log.info("-----  testMultiValues  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno, StatsTestData.FTwo_VUno_T2);
         runDriver(testEntries, 0);
     }
     
     @Test
-    public void testMultiValuesWithDups() throws IOException {
+    public void testMultiValuesWithDups() throws IOException, InterruptedException {
         log.info("-----  testMultiValuesWithDups  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno, StatsTestData.FTwo_VUno_T2, StatsTestData.FTwo_VDos_T2);
         runDriver(testEntries, 4);
     }
     
     @Test
-    public void testAllWithDups() throws IOException {
+    public void testAllWithDups() throws IOException, InterruptedException {
         log.info("-----  testAllWithDups  ------");
         List<StatsTestData> testEntries = new ArrayList<>(Arrays.asList(StatsTestData.values()));
         runDriver(testEntries, 2);
@@ -71,10 +70,9 @@ public class StatsHyperLogReducerTest {
     
     // =====================================
     // private methods
-    private void runDriver(List<StatsTestData> entries, int dupCount) throws IOException {
-        final ReduceDriver<BulkIngestKey,Value,BulkIngestKey,Value> driver = new ReduceDriver();
+    private void runDriver(List<StatsTestData> entries, int dupCount) throws IOException, InterruptedException {
         final Reducer<BulkIngestKey,Value,BulkIngestKey,Value> reducer = new StatsHyperLogReducer();
-        driver.withReducer(reducer);
+        final MockReduceDriver<BulkIngestKey,Value,BulkIngestKey,Value> driver = new MockReduceDriver(reducer);
         
         // set the output table name
         Configuration conf = driver.getConfiguration();
@@ -100,35 +98,35 @@ public class StatsHyperLogReducerTest {
                 summary.add(entry.getValue());
             }
             
-            log.debug("key(" + inKey + ") value(" + summary.toString() + ")");
-            driver.withInput(inKey, values);
+            log.debug("key(" + inKey.getKey() + ") value(" + summary.toString() + ")");
+            driver.addInput(inKey, values);
             output.put(inKey, summary.toStatsCounters());
         }
         
         log.debug("=====  EXPECTED REDUCER OUTPUT  =====");
         // generate output data
         for (Map.Entry<BulkIngestKey,StatsCounters> entry : output.entrySet()) {
-            log.debug("key(" + entry.getKey() + ") value(" + entry.getValue() + ")");
+            log.debug("key(" + entry.getKey().getKey() + ") value(" + entry.getValue() + ")");
         }
         
-        List<Pair<BulkIngestKey,Value>> fullResults = driver.run();
+        List<MRPair<BulkIngestKey,Value>> fullResults = driver.run();
         log.debug("=====  RESULTS  =====");
         Assert.assertEquals("result size does not match expected", output.size(), fullResults.size());
-        for (Pair<BulkIngestKey,Value> result : fullResults) {
-            BulkIngestKey rKey = result.getFirst();
+        for (MRPair<BulkIngestKey,Value> result : fullResults) {
+            BulkIngestKey rKey = result.key;
             // reset timestamp to 0
             // hashcode for BulkIngestKey is cached - this will not reset hashcode
             // however equals will work correctly
             Key key = rKey.getKey();
             key.setTimestamp(0);
             
-            Value rVal = result.getSecond();
+            Value rVal = result.value;
             StatsCounters counts = new StatsCounters();
             try (InputStream bis = new ByteArrayInputStream(rVal.get())) {
                 DataInput is = new DataInputStream(bis);
                 counts.readFields(is);
             }
-            log.debug("key(" + rKey + ") value(" + counts.toString() + ")");
+            log.debug("key(" + key + ") value(" + counts.toString() + ")");
             
             // iterate output to find matching BulkIngestKey
             for (BulkIngestKey oKey : output.keySet()) {

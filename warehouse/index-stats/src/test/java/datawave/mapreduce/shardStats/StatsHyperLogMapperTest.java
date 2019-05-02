@@ -5,8 +5,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mrunit.mapreduce.MapDriver;
-import org.apache.hadoop.mrunit.types.Pair;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -29,31 +27,32 @@ public class StatsHyperLogMapperTest {
         Logger.getLogger(StatsHyperLogMapper.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsHyperLogMapperTest.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
     }
     
     @Test
-    public void testOneValue() throws IOException {
+    public void testOneValue() throws IOException, InterruptedException {
         log.info("-----  testOneValue  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno);
         runDriver(testEntries);
     }
     
     @Test
-    public void testDuplicateInputValues() throws IOException {
+    public void testDuplicateInputValues() throws IOException, InterruptedException {
         log.info("-----  testDuplicateInputValues  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno, StatsTestData.FOne_VUno);
         runDriver(testEntries);
     }
     
     @Test
-    public void testMultiValues() throws IOException {
+    public void testMultiValues() throws IOException, InterruptedException {
         log.info("-----  testMultiValues  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno, StatsTestData.FTwo_VUno_T2);
         runDriver(testEntries);
     }
     
     @Test
-    public void testMultiValuesWithDups() throws IOException {
+    public void testMultiValuesWithDups() throws IOException, InterruptedException {
         log.info("-----  testMultiValuesWithDups  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno, StatsTestData.FTwo_VUno_T2, StatsTestData.FTwo_VUno_T2,
                         StatsTestData.FTwo_VUno_T2);
@@ -61,7 +60,7 @@ public class StatsHyperLogMapperTest {
     }
     
     @Test
-    public void testAllValuesWithDups() throws IOException {
+    public void testAllValuesWithDups() throws IOException, InterruptedException {
         log.info("-----  testAllValuesWithDups  ------");
         List<StatsTestData> testEntries = new ArrayList<>();
         for (StatsTestData data : StatsTestData.values()) {
@@ -74,10 +73,9 @@ public class StatsHyperLogMapperTest {
     
     // =====================================
     // private methods
-    private void runDriver(List<StatsTestData> entries) throws IOException {
-        final MapDriver<Key,Value,BulkIngestKey,Value> driver = new MapDriver();
+    private void runDriver(List<StatsTestData> entries) throws IOException, InterruptedException {
         final Mapper<Key,Value,BulkIngestKey,Value> mapper = new StatsHyperLogMapper();
-        driver.withMapper(mapper);
+        final MockMapDriver<Key,Value,BulkIngestKey,Value> driver = new MockMapDriver(mapper);
         
         // set output table name
         Configuration conf = driver.getConfiguration();
@@ -93,26 +91,23 @@ public class StatsHyperLogMapperTest {
         List<Key> inputKeys = StatsTestData.generateMapperInput(entries);
         for (Key key : inputKeys) {
             log.debug("key(" + key + ")");
-            driver.withInput(key, EMPTY_VALUE);
+            driver.addInput(key, EMPTY_VALUE);
         }
         
         log.debug("=====  EXPECTED MAPPER OUTPUT  =====");
         Map<BulkIngestKey,Value> output = StatsTestData.generateMapOutput(entries);
         Map<BulkIngestKey,StatsHyperLogSummary> summary = new HashMap<>();
         for (Map.Entry<BulkIngestKey,Value> entry : output.entrySet()) {
-            log.debug("key(" + entry.getKey() + ")");
             StatsHyperLogSummary stats = new StatsHyperLogSummary(entry.getValue());
-            log.debug("value(" + stats + ")");
             summary.put(entry.getKey(), stats);
-            driver.withOutput(entry.getKey(), entry.getValue());
         }
         
         // run test
-        List<Pair<BulkIngestKey,Value>> results = driver.run();
+        List<MRPair<BulkIngestKey,Value>> results = driver.run();
         Assert.assertEquals("results size does not match expected", output.size(), results.size());
         
-        for (Pair<BulkIngestKey,Value> entry : results) {
-            BulkIngestKey rKey = entry.getFirst();
+        for (MRPair<BulkIngestKey,Value> entry : results) {
+            BulkIngestKey rKey = entry.key;
             
             Key k = rKey.getKey();
             k.setTimestamp(0);
@@ -127,10 +122,10 @@ public class StatsHyperLogMapperTest {
                 }
             }
             Assert.assertNotNull(oKey);
-            Value rVal = entry.getSecond();
+            Value rVal = entry.value;
             StatsHyperLogSummary stats = new StatsHyperLogSummary(rVal);
-            log.debug("value(" + stats + ")");
-            Assert.assertEquals(summary.get(oKey), stats);
+            log.debug("key(" + oKey.getKey() + ") value(" + stats + ")");
+            Assert.assertEquals("key(" + oKey.getKey() + ")", summary.get(oKey), stats);
             
             // for small sample size cardinality should math real value
             Assert.assertEquals(stats.getUniqueCount(), stats.getHyperLogPlus().cardinality());

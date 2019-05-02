@@ -21,7 +21,7 @@
 # The HyperlogLogPlus algorithm is utilized to provide an estimate of the cardinality of
 # a dataset. There are two parameters that affect the memory and precision of the
 # algorithm, a sparse and normal precision. These parameters determine how many buckets
-# are allocated to represent the data, which cooresponds to the amount of memory
+# are allocated to represent the data, which corresponds to the amount of memory
 # utilization. Valid values are between 4 and 32 inclusive and the normal precision
 # cannot be greater than the sparse precision. The sparse representation is used for
 # smaller data sets and is automatically converted to the normal precision when the
@@ -43,8 +43,8 @@
 # tests indicate that inconsistent results can occur when the sparse and normal precision
 # values differ. The greater the difference, the larger the error percentage. While most
 # of the generated cardinalities fell within the projected error percentage, in the few
-# instances where it did it was off by very significat factor. Thus when selecting
-# sparse and normal precision values it is best to chose the same value for both.
+# instances where it did it was off by a very significant factor. Thus when selecting
+# sparse and normal precision values it is best to choose the same value for both.
 #
 #+++++++++++++++++++++++++++++++++++++++
 # Optional Debug Environment Variables
@@ -53,12 +53,12 @@
 #           generated cardinality for analysis purposes. The mapper will generate the
 #           the unique count, while the reducer is the best location to view all of the
 #           entries from multiple mappers. The test script hlParse.sh is provided to
-#           parse the lo file of the reducer. This process extracts the analysis data
-#           into a csv format, which can be loaded into a spreadsheet for analyis.
+#           parse the log file of the reducer. This process extracts the analysis data
+#           into a csv format, which can be loaded into a spreadsheet for analysis.
 #   _GCMapperLog => Enables GC logging for the mapper.
 #   _GCReducerLog => Enables GC logging for the reducer.
 #   _GCLog => Enables GC logging for both the mapper and reducer.
-#   _GCLogDir => Specifies the directory for the GC logs (overrides the deault value).
+#   _GCLogDir => Specifies the directory for the GC logs (overrides the default value).
 #   _HeapDump => Enable heap dump for mapper and reducer.
 #========================================================================================
 
@@ -110,7 +110,7 @@ function setMapperJVMParameters() {
         _MapperMemoryMB=1024
     fi
 
-    # allocate 1/3 memory to mapper io sort buffer but muat be less than 2048
+    # allocate 1/3 memory to mapper io sort buffer but must be less than 2048
     ((_MapInMemSortBufferMBSize = _MapperMemoryMB / 3))
     if [[ 1536 -le ${_MapInMemSortBufferMBSize} ]]; then
         _MapInMemSortBufferMBSize=1536
@@ -144,6 +144,7 @@ function setReducerJVMParameters() {
 -Xmx${_ReducerMemoryMB}m \
 ${_DefaultJVMArgs} \
 ${CHILD_INGEST_OPTS} \
+${_HeapDumpOpts} \
 ${_gcLog}"
 }
 
@@ -238,7 +239,7 @@ for f in ../../config/shard-stats-config.xml; do
 done
 
 #
-# transform classpath into a comma seperated list
+# transform classpath into a comma separated list
 LIBJARS=${CLASSPATH//:/,}
 
 
@@ -272,7 +273,7 @@ declare -r _GCLogOpts="-XX:+PrintGC \
 _GCLogDir="${_GCLogDir:-/tmp}"
 
 # set in memory sort io buffer size
-declare -i _MapInMemorySortBufferMBSize
+declare -i _MapInMemSortBufferMBSize
 declare _StatsOpts
 declare _ChildMapOpts
 declare _ChildReduceOpts

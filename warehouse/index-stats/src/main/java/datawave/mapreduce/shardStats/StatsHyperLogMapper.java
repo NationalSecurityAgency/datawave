@@ -82,6 +82,8 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         super.setup(context);
         Configuration conf = context.getConfiguration();
         
+        MultiTableRangePartitioner.setContext(context);
+        
         // set log level if configured
         String logLevel = conf.get(STATS_MAPPER_LOG_LEVEL);
         Level level = Level.toLevel(logLevel, DEFAULT_LOG_LEVEL);
@@ -134,13 +136,6 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             log.trace("map(" + key + ", " + value + ")");
         }
         
-        if (!setPartitionerContext) {
-            // This is a little bit fragile, but there is no other way to get the context
-            // on a partitioner, and we are only using this to set some counters
-            MultiTableRangePartitioner.setContext(context);
-            setPartitionerContext = true;
-        }
-        
         // range should find all field index rows
         String[] colf = StringUtils.split(key.getColumnFamily().toString(), NULL_CHAR);
         if ("fi".equals(colf[0])) {
@@ -165,17 +160,12 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             
             // add value to proper data type
             String dataType = dwKey.getDataType();
-            DataTypeInfo typeInfo = this.dataTypeMapping.get(dataType);
-            if (null == typeInfo) {
-                // add new datatype entry
-                typeInfo = new DataTypeInfo(dwKey, this.sumUniqueCounts, this.normalPrecision, this.sparsePrecision);
-                this.dataTypeMapping.put(dataType, typeInfo);
-            }
+            DataTypeInfo typeInfo = this.dataTypeMapping.computeIfAbsent(dataType, k -> new DataTypeInfo(dwKey, this.sumUniqueCounts, this.normalPrecision,
+                            this.sparsePrecision));
             typeInfo.add(dwKey.getFieldValue());
         }
         
         context.progress();
-        ;
         
         if (log.isTraceEnabled()) {
             log.trace("Completed map(" + key + ", " + value + ")");
@@ -196,30 +186,32 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
         super.cleanup(context);
     }
     
-    private Key generateOutputKey(final DatawaveKey parser) {
-        String row = parser.getRow().toString();
-        int idx = row.indexOf('_');
-        String date = row.substring(0, idx);
-        Text outRow = new Text(parser.getFieldName());
-        Text outFam = new Text(date);
-        Text outQual = new Text(parser.getDataType());
-        // timestamp is set by reducer
-        return new Key(outRow, outFam, outQual, this.visibility, 0);
-    }
-    
     private void flushFieldValues(Context context) throws IOException, InterruptedException {
         if (null != this.currentFieldName) {
+            Text outRow = new Text();
+            Text outFam = new Text();
+            Text outQual = new Text();
+            Value val = new Value();
+            
             for (DataTypeInfo entry : this.dataTypeMapping.values()) {
-                Key key = generateOutputKey(entry.key);
                 this.outputTotal++;
+                
+                outRow.set(entry.key.getFieldName());
+                String row = entry.key.getRow().toString();
+                int idx = row.indexOf('_');
+                String date = row.substring(0, idx);
+                outFam.set(date);
+                outQual.set(entry.key.getDataType());
+                Key key = new Key(outRow, outFam, outQual, this.visibility, 0);
+                
                 BulkIngestKey bulkKey = new BulkIngestKey(this.outputTable, key);
                 StatsHyperLogSummary sum = entry.getStatsSummary();
                 if (log.isDebugEnabled()) {
-                    log.debug("output: key(" + bulkKey + ")");
+                    log.debug("output: key(" + bulkKey.getKey() + ")");
                     log.debug("stats(" + sum.statsString() + ")");
                 }
                 
-                Value val = new Value(sum.toByteArray());
+                val.set(sum.toByteArray());
                 context.write(bulkKey, val);
                 
                 if (0 == (this.outputTotal % this.logOutputInterval)) {

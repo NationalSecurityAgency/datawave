@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * POJO fo summary data for each field name/datatype pair processed by the reducer.
+ * POJO for summary data for each field name/datatype pair processed by the reducer.
  */
 class HyperLogFieldSummary implements FieldSummary {
     
@@ -33,7 +33,7 @@ class HyperLogFieldSummary implements FieldSummary {
             this.logPlus.addAll(hllpAdd);
         } catch (CardinalityMergeException e) {
             // addAll throws an out of scope exception
-            throw new IOException();
+            throw new IOException(e);
         }
     }
     

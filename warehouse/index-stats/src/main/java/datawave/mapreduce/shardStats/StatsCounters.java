@@ -76,8 +76,7 @@ public class StatsCounters implements WritableComparable<StatsCounters> {
     }
     
     public byte[] toByteArray() throws IOException {
-        try (final OutputStream baos = new ByteArrayOutputStream()) {
-            DataOutputStream dataOutput = new DataOutputStream(baos);
+        try (final OutputStream baos = new ByteArrayOutputStream(); DataOutputStream dataOutput = new DataOutputStream(baos)) {
             write(dataOutput);
             return ((ByteArrayOutputStream) baos).toByteArray();
         }

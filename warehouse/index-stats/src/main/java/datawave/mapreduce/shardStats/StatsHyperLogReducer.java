@@ -81,7 +81,7 @@ public class StatsHyperLogReducer extends BulkIngestKeyAggregatingReducer<BulkIn
     @Override
     public void doReduce(BulkIngestKey key, Iterable<Value> values, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
                     InterruptedException {
-        log.info("reduce key(" + key.toString() + ")");
+        log.info("reduce key(" + key.getKey() + ")");
         this.totalKeys++;
         HyperLogLogPlus hllp = new HyperLogLogPlus(this.normalPrecision, this.sparsePrecision);
         HyperLogFieldSummary stats = new HyperLogFieldSummary(hllp);
@@ -92,7 +92,7 @@ public class StatsHyperLogReducer extends BulkIngestKeyAggregatingReducer<BulkIn
             if (0 == (valueCount % this.valueInterval) || this.countsOnly) {
                 if (this.countsOnly) {
                     StatsHyperLogSummary addStats = new StatsHyperLogSummary(val);
-                    log.debug("add values(" + addStats.statsString() + ")");
+                    log.info("add values(" + addStats.statsString() + ")");
                 }
                 log.info("value count(" + valueCount + ")");
             }

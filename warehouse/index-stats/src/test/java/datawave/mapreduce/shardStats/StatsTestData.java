@@ -37,7 +37,7 @@ enum StatsTestData {
     FThree_VDos("20010911", "fn-three", "t-3", "v-dos"),
     FThree_VTres("20010911", "fn-three", "t-3", "v-tres");
     
-    private static final Logger log = Logger.getLogger(StatsHyperLogMapper.class);
+    private static final Logger log = Logger.getLogger(StatsTestData.class);
     
     /**
      * Generates a list of keys for input into the mapper.
@@ -88,7 +88,7 @@ enum StatsTestData {
             Set<String> unique = new TreeSet<>(entry.getValue());
             HyperLogLogPlus logPlus = logPlusEntries.get(entry.getKey());
             StatsHyperLogSummary stats = new StatsHyperLogSummary(values.size(), logPlus, unique.size());
-            log.debug(stats);
+            log.debug("key(" + entry.getKey().getKey() + ") value(" + stats + ")");
             Value serialized = new Value(stats.toByteArray());
             output.put(entry.getKey(), serialized);
         }
