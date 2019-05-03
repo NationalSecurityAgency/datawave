@@ -170,7 +170,7 @@ class StatsHyperLogSummary implements WritableComparable<StatsHyperLogSummary> {
                     ") unique(" + uniqueCount +
                     ") actual select(" + actualSel +
                     ") diff(" + diff +
-                    ") err(" + err +
+                    ") err(" + err + ")" +
                     '}';
             // @formatter:on
         } catch (IOException ioe) {

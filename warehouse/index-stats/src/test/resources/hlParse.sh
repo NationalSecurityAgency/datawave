@@ -18,8 +18,7 @@ function createParseFile() {
     local -r _out=$2
 
     # find all relevant output records, removing all 0 entries
-#    egrep "add values| reduce key" ${_file} | grep -v "err(0.0)" > ${_out}
-    egrep "add values| reduce key" ${_file}  > ${_out}
+    egrep "add values| reduce key" ${_file} | grep -v "err(0.0)" > ${_out}
     echo -en "\tfield count: "
     grep "reduce key" ${_out} | wc -l
     echo -en "\tshard entries: "
