@@ -22,6 +22,18 @@ public class QuerySpanTest {
     }
     
     @Test
+    public void testQuerySpanAggregationWithoutYielding() {
+        
+        QuerySpan qs1 = new QuerySpan(null);
+        advanceIteratorsWithoutYield(qs1);
+        
+        Assert.assertEquals(1, qs1.getSeekCount());
+        Assert.assertEquals(3, qs1.getNextCount());
+        Assert.assertFalse(qs1.getYield());
+        Assert.assertEquals(1, qs1.getSourceCount());
+    }
+    
+    @Test
     public void testMultiThreadedQuerySpanAggregation() {
         
         MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(null);
@@ -112,12 +124,18 @@ public class QuerySpanTest {
         }
     }
     
+    private void advanceIteratorsWithoutYield(QuerySpan qs1) {
+        qs1.seek();
+        qs1.next();
+        qs1.next();
+        qs1.next();
+    }
+    
     private void advanceIterators(QuerySpan qs1) {
         qs1.seek();
         qs1.next();
         qs1.next();
         qs1.next();
-        qs1.yield();
         QuerySpan qs2 = qs1.createSource();
         qs2.seek();
         qs2.next();
