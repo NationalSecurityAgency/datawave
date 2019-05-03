@@ -283,32 +283,9 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             
             for (Object o : set) {
                 if (o != null) {
-                    final IntsRefBuilder irBuilder = new IntsRefBuilder();
-                    Util.toUTF16(o.toString(), irBuilder);
-                    final IntsRef ints = irBuilder.get();
-                    synchronized (fst) {
-                        try {
-                            if (Util.get(fst, ints) != null) {
-                                return true;
-                            }
-                        } catch (IOException e) {
-                            if (log.isTraceEnabled()) {
-                                log.trace("Failed to evaluate " + o.toString() + " against the FST.");
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            if (right != null) {
-                final IntsRefBuilder irBuilder = new IntsRefBuilder();
-                Util.toUTF16(right.toString(), irBuilder);
-                final IntsRef ints = irBuilder.get();
-                synchronized (fst) {
                     try {
-                        if (Util.get(fst, ints) != null) {
+                        if (matchesFst(o, fst))
                             return true;
-                        }
                     } catch (IOException e) {
                         if (log.isTraceEnabled()) {
                             log.trace("Failed to evaluate " + right.toString() + " against the FST.");
@@ -316,9 +293,29 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
                     }
                 }
             }
+        } else {
+            if (right != null) {
+                try {
+                    if (matchesFst(right, fst))
+                        return true;
+                } catch (IOException e) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Failed to evaluate " + right.toString() + " against the FST.");
+                    }
+                }
+            }
         }
         
         return false;
+    }
+    
+    public static boolean matchesFst(Object object, FST fst) throws IOException {
+        final IntsRefBuilder irBuilder = new IntsRefBuilder();
+        Util.toUTF16(object.toString(), irBuilder);
+        final IntsRef ints = irBuilder.get();
+        synchronized (fst) {
+            return Util.get(fst, ints) != null;
+        }
     }
     
     /**

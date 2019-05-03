@@ -106,12 +106,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         ArrayList<JexlNode> children = newArrayList();
         
         // if "OTHER_NODES", then simply add the subset back into the children list
-        for (JexlNode child : otherNodes) {
-            JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
-            if (copiedChild != null) {
-                children.add(copiedChild);
-            }
-        }
+        copyChildren(otherNodes, children, data);
         
         SortedSet<String> fields = new TreeSet<>(eqNodesByField.keySet());
         fields.addAll(rangeNodesByField.keySet());
@@ -163,22 +158,12 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 
                 // add in any unused eq nodes
                 if (eqNodes != null) {
-                    for (JexlNode child : eqNodes) {
-                        JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
-                        if (copiedChild != null) {
-                            children.add(copiedChild);
-                        }
-                    }
+                    copyChildren(eqNodes, children, data);
                 }
                 
                 // add in any unused range nodes
                 if (rangeNodes != null) {
-                    for (JexlNode child : rangeNodes) {
-                        JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
-                        if (copiedChild != null) {
-                            children.add(copiedChild);
-                        }
-                    }
+                    copyChildren(rangeNodes, children, data);
                 }
                 
                 children.addAll(markers);
@@ -186,24 +171,23 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             // else simply add the subset back into the children list
             else {
                 // recurse on the eq children in this subset
-                for (JexlNode child : eqNodes) {
-                    JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
-                    if (copiedChild != null) {
-                        children.add(copiedChild);
-                    }
-                }
+                copyChildren(eqNodes, children, data);
                 
                 // recurse on the range children in this subset
-                for (JexlNode child : rangeNodes) {
-                    JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
-                    if (copiedChild != null) {
-                        children.add(copiedChild);
-                    }
-                }
+                copyChildren(rangeNodes, children, data);
             }
         }
         
         return children(newNode, children.toArray(new JexlNode[children.size()]));
+    }
+    
+    private void copyChildren(Collection<JexlNode> children, Collection<JexlNode> copiedChildren, Object data) {
+        for (JexlNode child : children) {
+            JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
+            if (copiedChild != null) {
+                copiedChildren.add(copiedChild);
+            }
+        }
     }
     
     protected Range rangeNodeToRange(JexlNode node) {
