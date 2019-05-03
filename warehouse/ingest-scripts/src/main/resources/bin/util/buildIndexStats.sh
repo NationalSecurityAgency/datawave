@@ -47,6 +47,10 @@
 # sparse and normal precision values it is best to choose the same value for both.
 #
 #+++++++++++++++++++++++++++++++++++++++
+# Optional Environmental Variables
+# _MapperMemoryMB => memory allocated in MB to each mapper JVM process
+# _ReducerMemoryMB => memory allocated in MB to each reducer JVM process
+#
 # Optional Debug Environment Variables
 # There are several options that will allow for analysis of the debug data:
 #   _UniqueCounts => Collects actual unique counts in addition to the HyperLogLogPlus
@@ -55,6 +59,7 @@
 #           entries from multiple mappers. The test script hlParse.sh is provided to
 #           parse the log file of the reducer. This process extracts the analysis data
 #           into a csv format, which can be loaded into a spreadsheet for analysis.
+#           NOTE: The _MapperMemoryMB may need to be set to avoid an OOM condition.
 #   _GCMapperLog => Enables GC logging for the mapper.
 #   _GCReducerLog => Enables GC logging for the reducer.
 #   _GCLog => Enables GC logging for both the mapper and reducer.
@@ -101,14 +106,9 @@ function setupLockFile() {
 #==================================
 # Sets JVM parameters for Mapper
 function setMapperJVMParameters() {
-    local _MapperMemoryMB
-    if [[ -n "${_UniqueCounts}" ]]; then
-        # memory setting may need to be adjusted based upon input data
-        # check max container size
-        _MapperMemoryMB=1792
-    else
-        _MapperMemoryMB=1024
-    fi
+    _MapperMemoryMB=${_MapperMemoryMB:-1024}
+    # memory setting may need to be adjusted based upon input data
+    # when _CountsOnly debug variable is set; check max container size
 
     # allocate 1/3 memory to mapper io sort buffer but must be less than 2048
     ((_MapInMemSortBufferMBSize = _MapperMemoryMB / 3))
@@ -132,7 +132,7 @@ ${_gcLog}"
 }
 
 function setReducerJVMParameters() {
-    local _ReducerMemoryMB=1024
+    _ReducerMemoryMB=${_ReducerMemoryMB:-1024}
 
     # enable GC logging if requested - typically for debug purposes
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
