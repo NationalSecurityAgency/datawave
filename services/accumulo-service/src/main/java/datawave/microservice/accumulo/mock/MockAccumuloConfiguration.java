@@ -10,7 +10,6 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 
 /**

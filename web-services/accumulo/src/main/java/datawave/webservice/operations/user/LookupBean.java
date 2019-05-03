@@ -37,10 +37,10 @@ import javax.ws.rs.core.UriInfo;
 @TransactionManagement(TransactionManagementType.BEAN)
 @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
 public class LookupBean {
-
+    
     @Inject
     private RemoteLookupService remoteLookupService;
-
+    
     @Path("/Lookup/{table}/{row}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @GET
@@ -49,7 +49,7 @@ public class LookupBean {
         
         return lookup(table, row, ui.getQueryParameters(true));
     }
-
+    
     @Path("/Lookup/{table}/{row}")
     @Consumes("application/x-www-form-urlencoded")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})

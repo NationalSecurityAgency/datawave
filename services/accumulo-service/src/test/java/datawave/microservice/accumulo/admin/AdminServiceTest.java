@@ -46,7 +46,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * These tests exercise the endpoints defined by the AdminController, and thus the respective methods of the underlying AdminService delegate are tested as

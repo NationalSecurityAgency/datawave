@@ -9,6 +9,7 @@ import datawave.microservice.accumulo.lookup.config.LookupProperties;
 import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
@@ -36,11 +37,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -140,6 +141,7 @@ public class LookupService {
                 .withRow(request.row)
                 .withCF(request.colFam)
                 .withCQ(request.colQual)
+                .withAuths(request.auths)
                 .withAuditConfig(lookupAuditProperties)
                 .withParams(request.params)
                 .withProxiedUserDetails(currentUser)
@@ -349,6 +351,7 @@ public class LookupService {
             private String row;
             private String colFam;
             private String colQual;
+            private String auths;
             private LookupAuditProperties auditConfig;
             
             public Builder withTable(String table) {
@@ -358,6 +361,11 @@ public class LookupService {
             
             Builder withRow(String row) {
                 this.row = row;
+                return this;
+            }
+            
+            Builder withAuths(String auths) {
+                this.auths = auths;
                 return this;
             }
             
@@ -387,6 +395,13 @@ public class LookupService {
                 if (this.colQual != null) {
                     sb.append("/").append(this.colQual);
                 }
+                if (null == this.params) {
+                    this.params = new LinkedMultiValueMap<>();
+                }
+                if (StringUtils.isNotBlank(this.auths)) {
+                    this.params.set(AuditParameters.QUERY_AUTHORIZATIONS, this.auths);
+                }
+                
                 withQueryExpression(sb.toString());
                 withQueryLogic("AccumuloLookup");
                 

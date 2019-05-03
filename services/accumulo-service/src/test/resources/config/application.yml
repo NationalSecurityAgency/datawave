@@ -121,6 +121,12 @@ accumulo:
           colQualRegex: '.*'
           auditType: 'ACTIVE'
 
+        - tableRegex: 'local[Oo]nly.*'
+          rowRegex: '.*1'
+          colFamRegex: '.*'
+          colQualRegex: '.*'
+          auditType: 'LOCALONLY'
+
 ---
 
 spring:

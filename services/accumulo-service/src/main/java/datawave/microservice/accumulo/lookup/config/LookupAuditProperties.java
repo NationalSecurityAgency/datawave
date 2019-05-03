@@ -60,8 +60,11 @@ public class LookupAuditProperties {
         // rowRegex, colFamRegex, colQualRegex will match everything if not configured
         @NotBlank
         private String tableRegex = null;
+        @NotBlank
         private String rowRegex = ".*";
+        @NotBlank
         private String colFamRegex = ".*";
+        @NotBlank
         private String colQualRegex = ".*";
         @NotNull
         private AuditType auditType = null;

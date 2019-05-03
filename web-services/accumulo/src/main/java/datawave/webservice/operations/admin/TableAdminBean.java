@@ -3,7 +3,6 @@ package datawave.webservice.operations.admin;
 import datawave.annotation.Required;
 import datawave.webservice.operations.remote.RemoteAdminService;
 import datawave.webservice.result.VoidResponse;
-import org.apache.log4j.Logger;
 
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;

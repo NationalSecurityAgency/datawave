@@ -4,14 +4,18 @@ import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -91,9 +95,29 @@ public class TestHelper {
         return new ProxiedUserDetails(Collections.singleton(dwUser), dwUser.getCreationTime());
     }
     
-    public static String queryString(String... params) {
-        StringBuilder sb = new StringBuilder();
-        Arrays.stream(params).forEach(s -> sb.append(s).append("&"));
-        return sb.toString();
+    /**
+     * Matcher that can be used for both {@link HttpClientErrorException} and {@link HttpServerErrorException}
+     */
+    public static class StatusMatcher extends TypeSafeMatcher<HttpStatusCodeException> {
+        private int status;
+        
+        public StatusMatcher(int status) {
+            this.status = status;
+        }
+        
+        @Override
+        protected boolean matchesSafely(HttpStatusCodeException e) {
+            return e.getStatusCode().value() == status;
+        }
+        
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("expects status code ").appendValue(status);
+        }
+        
+        @Override
+        protected void describeMismatchSafely(HttpStatusCodeException e, Description mismatchDescription) {
+            mismatchDescription.appendText("was ").appendValue(e.getStatusCode().value());
+        }
     }
 }

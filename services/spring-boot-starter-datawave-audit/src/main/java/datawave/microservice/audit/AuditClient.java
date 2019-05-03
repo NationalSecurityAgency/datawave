@@ -16,6 +16,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -67,13 +68,18 @@ public class AuditClient {
         ServiceInstance auditService = serviceProvider.getServiceInstance();
         UriComponents uri = UriComponentsBuilder.fromUri(auditService.getUri())
             .path(auditService.getServiceId() + requestPath)
-            .queryParams(request.getAuditParametersAsMap())
             .build();
 
         log.debug("Submitting audit request to {}", uri);
 
         ResponseEntity<String> response = jwtRestTemplate.exchange(
-            request.getUserDetails(), HttpMethod.POST, uri, String.class);
+            jwtRestTemplate.createRequestEntity(
+                request.getUserDetails(),
+                request.getAuditParametersAsMap(),
+                null,
+                HttpMethod.POST, uri),
+            String.class
+        );
 
         if (response.getStatusCode().value() != HttpStatus.OK.value()) {
             String errorMessage = String.format("Audit request failed. Http Status: (%s, %s)",
@@ -116,13 +122,13 @@ public class AuditClient {
             params.entrySet().removeIf(entry -> entry.getKey().startsWith(INTERNAL_AUDIT_PARAM_PREFIX));
             
             if (null != b.queryExpression) {
-                params.add(AuditParameters.QUERY_STRING, b.queryExpression);
+                params.set(AuditParameters.QUERY_STRING, b.queryExpression);
             }
             if (null != b.proxiedUserDetails) {
                 this.userDetails = b.proxiedUserDetails;
                 final DatawaveUser dwUser = this.getUserDetails().getPrimaryUser();
-                if (null != dwUser.getAuths()) {
-                    params.add(AuditParameters.QUERY_AUTHORIZATIONS, dwUser.getAuths().toString());
+                if (null != dwUser.getAuths() && !params.containsKey(AuditParameters.QUERY_AUTHORIZATIONS)) {
+                    params.set(AuditParameters.QUERY_AUTHORIZATIONS, String.join(", ", dwUser.getAuths()));
                 }
                 if (null != dwUser.getDn()) {
                     params.set(AuditParameters.USER_DN, dwUser.getDn().toString());

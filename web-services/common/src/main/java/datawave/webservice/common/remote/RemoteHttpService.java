@@ -1,16 +1,14 @@
 package datawave.webservice.common.remote;
 
 import com.codahale.metrics.Counter;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.LookupResult;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.JWTTokenHandler.TtlMode;
 import datawave.security.util.DnUtils;
+import datawave.webservice.common.json.ObjectMapperDecorator;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -84,6 +82,9 @@ public abstract class RemoteHttpService {
     @Resource
     private ManagedExecutorService executorService;
     
+    @Inject
+    protected ObjectMapperDecorator objectMapperDecorator;
+    
     protected <T> T execute(HttpRequestBase request, IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws IOException {
         try {
             activeExecutions.incrementAndGet();
@@ -104,10 +105,7 @@ public abstract class RemoteHttpService {
     
     @PostConstruct
     protected void init() {
-        objectMapper = new ObjectMapper();
-        objectMapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new JaxbAnnotationModule());
+        objectMapper = objectMapperDecorator.decorate(new ObjectMapper());
         
         if (useSrvDns()) {
             if (srvDnsServers() != null && !srvDnsServers().isEmpty()) {

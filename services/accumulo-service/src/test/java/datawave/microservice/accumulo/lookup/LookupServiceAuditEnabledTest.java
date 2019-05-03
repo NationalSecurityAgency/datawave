@@ -9,7 +9,9 @@ import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor;
 import org.apache.accumulo.core.client.Connector;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
@@ -33,11 +37,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static org.hamcrest.text.StringContainsInOrder.stringContainsInOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.anything;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -59,15 +64,10 @@ public class LookupServiceAuditEnabledTest {
     
     public static final String BASE_PATH = "/accumulo/v1";
     
-    /**
-     * "Expected" base URI to be invoked on the mocked audit server
-     */
-    private static final String AUDIT_BASE_URI = "http://localhost:11111/audit/v1/audit";
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
-    /**
-     * String.format template for all expected query strings to be invoked on the mocked audit server
-     */
-    private static String EXPECTED_AUDIT_QUERYSTRING_FORMAT = "?%s&%s&query=lookup/%s/%s&auths=[A,%%20B,%%20C,%%20D,%%20E,%%20F,%%20G,%%20H,%%20I]&auditUserDN=userdn%%3Cissuerdn%%3E&%s&%s&logicClass=AccumuloLookup";
+    private static final String EXPECTED_AUDIT_URI = "http://localhost:11111/audit/v1/audit";
     
     @LocalServerPort
     private int webServicePort;
@@ -91,7 +91,7 @@ public class LookupServiceAuditEnabledTest {
     private LookupService lookupService;
     
     private JWTRestTemplate jwtRestTemplate;
-    private MockRestServiceServer mockServer;
+    private MockRestServiceServer mockAuditServer;
     private ProxiedUserDetails defaultUserDetails;
     
     @Before
@@ -132,91 +132,103 @@ public class LookupServiceAuditEnabledTest {
     }
     
     @Test
-    public void testLookupAndVerifyAuditTypeNONE() throws Exception {
-        // Create new table, which will have no audit rule defined and thus default to
-        // AuditType.NONE, i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE.
-        // AuditClient should avoid REST calls to the audit server when audit type is NONE
-        
-        testTableName = "tableWithNoAuditRule";
-        
-        mockDataService.setupMockTable(connector, testTableName);
-        
-        // So, the strategy here is simply to setup URI expectations for successful 'ACTIVE',
-        // 'PASSIVE' and 'NONE' audit requests, and then ensure that 0 requests actually occurred
-        
-        // Verify zero 'ACTIVE' audit requests
-        
-        try {
-            mockServer.expect(anything());
-            testLookupAndVerifyAuditUriWithSuccess(testTableName, "row3", Auditor.AuditType.ACTIVE);
-            fail("This code should never be reached");
-        } catch (AssertionError ae) {
-            assertTrue("Unexpected exception message", ae.getMessage().contains("\n0 request(s) executed"));
-        }
-        
-        // Verify zero 'PASSIVE' audit requests
-        
-        setupMockAuditServer(); // must re-init
-        try {
-            mockServer.expect(anything());
-            testLookupAndVerifyAuditUriWithSuccess(testTableName, "row3", Auditor.AuditType.PASSIVE);
-            fail("This code should never be reached");
-        } catch (AssertionError ae) {
-            assertTrue("Unexpected exception message", ae.getMessage().contains("\n0 request(s) executed"));
-        }
-        
-        // Verify zero 'NONE' audit requests
-        
-        setupMockAuditServer(); // must re-init
-        try {
-            mockServer.expect(anything());
-            testLookupAndVerifyAuditUriWithSuccess(testTableName, "row3", Auditor.AuditType.NONE);
-            fail("This code should never be reached");
-        } catch (AssertionError ae) {
-            assertTrue("Unexpected exception message", ae.getMessage().contains("\n0 request(s) executed"));
-        }
+    public void testLookupAndVerifyLOCALONLY() throws Exception {
+        mockDataService.setupMockTable(connector, "localonlyAuditTable");
+        testLookupAndVerifyAuditUriWithSuccess("localonlyAuditTable", "row1", Auditor.AuditType.LOCALONLY);
+    }
+    
+    /**
+     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE)
+     * AuditClient should avoid REST calls to the audit server when audit type is NONE
+     */
+    @Test
+    public void testAuditTypeACTIVE_VerifyZeroAudits() throws Exception {
+        // All mockAuditServer expectation(s) must fail
+        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(stringContainsInOrder("\n0 request(s) executed"));
+        mockDataService.setupMockTable(connector, "tableWithNoAuditRule1");
+        mockAuditServer.expect(anything());
+        testLookupAndVerifyAuditUriWithSuccess("tableWithNoAuditRule1", "row3", Auditor.AuditType.ACTIVE);
+    }
+    
+    /**
+     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE)
+     * AuditClient should avoid REST calls to the audit server when audit type is NONE
+     */
+    @Test
+    public void testAuditTypePASSIVE_VerifyZeroAudits() throws Exception {
+        // All mockAuditServer expectation(s) must fail
+        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(stringContainsInOrder("\n0 request(s) executed"));
+        mockDataService.setupMockTable(connector, "tableWithNoAuditRule2");
+        mockAuditServer.expect(anything());
+        testLookupAndVerifyAuditUriWithSuccess("tableWithNoAuditRule2", "row3", Auditor.AuditType.PASSIVE);
+    }
+    
+    /**
+     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE)
+     * AuditClient should avoid REST calls to the audit server when audit type is NONE
+     */
+    @Test
+    public void testAuditTypeNONE_VerifyZeroAudits() throws Exception {
+        // All mockAuditServer expectation(s) must fail
+        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(stringContainsInOrder("\n0 request(s) executed"));
+        mockDataService.setupMockTable(connector, "tableWithNoAuditRule3");
+        mockAuditServer.expect(anything());
+        testLookupAndVerifyAuditUriWithSuccess("tableWithNoAuditRule3", "row3", Auditor.AuditType.NONE);
+    }
+    
+    /**
+     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE)
+     * AuditClient should avoid REST calls to the audit server when audit type is NONE
+     */
+    @Test
+    public void testAuditTypeLOCALONLY_VerifyZeroAudits() throws Exception {
+        // All mockAuditServer expectation(s) must fail
+        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage(stringContainsInOrder("\n0 request(s) executed"));
+        mockDataService.setupMockTable(connector, "tableWithNoAuditRule4");
+        mockAuditServer.expect(anything());
+        testLookupAndVerifyAuditUriWithSuccess("tableWithNoAuditRule4", "row3", Auditor.AuditType.LOCALONLY);
     }
     
     @Test
-    public void testErrorOnMissingColVizParam() {
+    public void testErrorOnMissingColVizParam() throws Exception {
+        expectedException.expect(HttpClientErrorException.class);
+        expectedException.expect(new TestHelper.StatusMatcher(400));
         ProxiedUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A"));
-        String queryString = TestHelper.queryString("NotColumnVisibility=foo");
-        try {
-            doLookup(userDetails, path(testTableName + "/row2"), queryString);
-            fail("This code should never be reached");
-        } catch (HttpClientErrorException ex) {
-            assertEquals("Test should have returned 400 status", 400, ex.getStatusCode().value());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            fail("Unexpected throwable type was caught");
-        }
+        doLookup(userDetails, path(testTableName + "/row2"), "NotColumnVisibility=foo");
     }
     
     private void testLookupAndVerifyAuditUriWithSuccess(String targetTable, String targetRow, Auditor.AuditType expectedAuditType) throws Exception {
         
-        String queryUseAuths = "useAuthorizations=A,C,E,G,I";
-        String queryColumnViz = "columnVisibility=foo";
+        String auditColViz = "foo";
+        String queryAuths = "A,C,E,G,I";
+        String queryUseAuths = "useAuthorizations=" + queryAuths;
+        String queryColumnViz = "columnVisibility=" + auditColViz;
         
-        String expectedAuditTypeString = "auditType=" + expectedAuditType.name();
-        String expectedAuditColVizString = "auditColumnVisibility=foo";
+        MultiValueMap<String,String> expectedFormData = new LinkedMultiValueMap<>();
+        expectedFormData.set("useAuthorizations", queryAuths);
+        expectedFormData.set("columnVisibility", auditColViz);
+        expectedFormData.set("query", String.join("/", "lookup", targetTable, targetRow));
+        expectedFormData.set("auths", queryAuths);
+        expectedFormData.set("auditUserDN", defaultUserDetails.getPrimaryUser().getDn().toString());
+        expectedFormData.set("auditType", expectedAuditType.name());
+        expectedFormData.set("auditColumnVisibility", auditColViz);
+        expectedFormData.set("logicClass", "AccumuloLookup");
         
         //@formatter:off
-        String expectedAuditUri = String.format(
-            AUDIT_BASE_URI + EXPECTED_AUDIT_QUERYSTRING_FORMAT,
-                queryUseAuths,
-                queryColumnViz,
-                targetTable,
-                targetRow,
-                expectedAuditTypeString,
-                expectedAuditColVizString);
+        mockAuditServer.expect(requestTo(EXPECTED_AUDIT_URI))
+            .andExpect(content().formData(expectedFormData))
+            .andRespond(withSuccess()
+        );
         //@formatter:on
         
-        mockServer.expect(requestTo(expectedAuditUri)).andRespond(withSuccess());
-        
-        String queryString = TestHelper.queryString(queryUseAuths, queryColumnViz);
+        String queryString = String.join("&", queryUseAuths, queryColumnViz);
         doLookup(defaultUserDetails, path(targetTable + "/" + targetRow), queryString);
         
-        mockServer.verify();
+        mockAuditServer.verify();
     }
     
     private String path(String pathParams) {
@@ -237,7 +249,7 @@ public class LookupServiceAuditEnabledTest {
                 ).getPropertyValue("auditor")
             ).getPropertyValue("jwtRestTemplate");
         //@formatter:on
-        mockServer = MockRestServiceServer.createServer(auditorRestTemplate);
+        mockAuditServer = MockRestServiceServer.createServer(auditorRestTemplate);
     }
     
     /**

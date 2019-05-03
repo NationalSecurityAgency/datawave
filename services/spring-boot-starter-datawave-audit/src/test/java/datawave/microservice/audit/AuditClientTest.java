@@ -6,7 +6,9 @@ import datawave.microservice.audit.config.AuditServiceConfiguration;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +26,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -45,7 +49,10 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 @ActiveProfiles({"AuditClientTest", "audit-enabled"})
 public class AuditClientTest {
     
-    private static final String AUDIT_BASE_URI = "http://localhost:11111/audit/v1/audit";
+    private static final String EXPECTED_AUDIT_URI = "http://localhost:11111/audit/v1/audit";
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     @Autowired
     private AuditClient auditClient;
@@ -87,21 +94,22 @@ public class AuditClientTest {
                 .withMarking(auditTestSecurityMarking)
                 .withAuditType(Auditor.AuditType.LOCALONLY)
                 .withQueryLogic("QueryLogic")
-                .withParams(parameters)
                 .build();
 
-        String expectedAuditUri = AUDIT_BASE_URI +
-            "?paramFoo=paramFooValue&paramBar=paramBarValue&query=FIELD:VALUE1%20OR%20FIELD:VALUE2&auths=[A,%20B,%20C,%20D,%20E,%20F,%20G,%20H,%20I]&auditUserDN=userdn%3Cissuerdn%3E&auditType=LOCALONLY&auditColumnVisibility=BAR%7CFOO&logicClass=QueryLogic";
+        mockServer.expect(requestTo(EXPECTED_AUDIT_URI))
+                .andExpect(content().formData(auditRequest.getAuditParametersAsMap()))
+                .andRespond(withSuccess());
 
-        //@formatter:on
-        
-        mockServer.expect(requestTo(expectedAuditUri)).andRespond(withSuccess());
         auditClient.submit(auditRequest);
         mockServer.verify();
+
+        //@formatter:on
     }
     
-    @Test(expected = RuntimeException.class)
-    public void testAuditURIServerError() throws Exception {
+    @Test
+    public void testAuditURIServerError() {
+        expectedException.expect(HttpServerErrorException.class);
+        expectedException.expect(new TestUtils.StatusMatcher(500));
         
         MultiValueMap<String,String> parameters = new LinkedMultiValueMap<>();
         parameters.add("paramFoo", "paramFooValue");
@@ -109,7 +117,6 @@ public class AuditClientTest {
         
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
-                .withParams(parameters)
                 .withQueryExpression("FIELD:VALUE1 OR FIELD:VALUE2")
                 .withProxiedUserDetails(defaultUserDetails)
                 .withMarking(auditTestSecurityMarking)
@@ -118,14 +125,14 @@ public class AuditClientTest {
                 .withParams(parameters)
                 .build();
 
-        String expectedAuditUri = AUDIT_BASE_URI +
-                "?paramFoo=paramFooValue&paramBar=paramBarValue&query=FIELD:VALUE1%20OR%20FIELD:VALUE2&auths=[A,%20B,%20C,%20D,%20E,%20F,%20G,%20H,%20I]&auditUserDN=userdn%3Cissuerdn%3E&auditType=LOCALONLY&auditColumnVisibility=BAR%7CFOO&logicClass=QueryLogic";
+        mockServer.expect(requestTo(EXPECTED_AUDIT_URI))
+                .andExpect(content().formData(auditRequest.getAuditParametersAsMap()))
+                .andRespond(withServerError());
 
-        //@formatter:on
-        
-        mockServer.expect(requestTo(expectedAuditUri)).andRespond(withServerError());
         auditClient.submit(auditRequest);
         mockServer.verify();
+
+        //@formatter:on
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -135,25 +142,27 @@ public class AuditClientTest {
         
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
-                .withQueryExpression("FIELD:VALUE1 OR FIELD:VALUE2")
-                .withProxiedUserDetails(defaultUserDetails)
-                .withMarking(auditTestSecurityMarking)
-                .withQueryLogic("QueryLogic")
-                .build();
+            .withQueryExpression("FIELD:VALUE1 OR FIELD:VALUE2")
+            .withProxiedUserDetails(defaultUserDetails)
+            .withMarking(auditTestSecurityMarking)
+            .withQueryLogic("QueryLogic")
+            .build();
+        //@formatter:on
     }
-
+    
     @Test(expected = IllegalArgumentException.class)
     public void testBuildMissingAuditParams2() throws Exception {
-
+        
         // No query specified this time
-
+        
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
-                .withAuditType(Auditor.AuditType.PASSIVE)
-                .withProxiedUserDetails(defaultUserDetails)
-                .withMarking(auditTestSecurityMarking)
-                .withQueryLogic("QueryLogic")
-                .build();
+            .withAuditType(Auditor.AuditType.PASSIVE)
+            .withProxiedUserDetails(defaultUserDetails)
+            .withMarking(auditTestSecurityMarking)
+            .withQueryLogic("QueryLogic")
+            .build();
+        //@formatter:on
     }
     
     /**

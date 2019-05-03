@@ -1,10 +1,5 @@
 package datawave.microservice.accumulo.lookup;
 
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import datawave.microservice.accumulo.TestHelper;
 import datawave.microservice.accumulo.mock.MockAccumuloConfiguration;
 import datawave.microservice.accumulo.mock.MockAccumuloDataService;
@@ -12,10 +7,11 @@ import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.webservice.response.LookupResponse;
 import datawave.webservice.response.objects.DefaultKey;
-import datawave.webservice.response.objects.KeyBase;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,21 +21,26 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.xml.bind.JAXB;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests LookupController and LookupService functionality ({@code accumulo.lookup.enabled=true}) with auditing disabled ({@code audit-client.enabled=false}).
@@ -55,6 +56,9 @@ public class LookupServiceAuditDisabledTest {
     
     public static final String BASE_PATH = "/accumulo/v1/lookup";
     
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+    
     @LocalServerPort
     private int webServicePort;
     
@@ -67,9 +71,9 @@ public class LookupServiceAuditDisabledTest {
     @Autowired
     private ApplicationContext context;
     
-    private ObjectMapper objectMapper;
-    
     private JWTRestTemplate jwtRestTemplate;
+    
+    private MultiValueMap<String,String> requestHeaders;
     
     private ProxiedUserDetails defaultUserDetails;
     
@@ -77,10 +81,11 @@ public class LookupServiceAuditDisabledTest {
     
     @Before
     public void setup() throws Exception {
+        requestHeaders = new LinkedMultiValueMap<>();
+        requestHeaders.add("Accept", MediaType.APPLICATION_XML_VALUE);
         defaultUserDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I"));
         jwtRestTemplate = restTemplateBuilder.build(JWTRestTemplate.class);
         testTableName = MockAccumuloDataService.WAREHOUSE_MOCK_TABLE;
-        objectMapperSetup();
     }
     
     @Test
@@ -98,20 +103,10 @@ public class LookupServiceAuditDisabledTest {
         assertFalse("adminController bean should not have been found", context.containsBean("adminController"));
     }
     
-    private void objectMapperSetup() {
-        objectMapper = new ObjectMapper();
-        // Map LookupResponse's abstract KeyBase field to concrete impl
-        SimpleModule module = new SimpleModule("keybase", Version.unknownVersion());
-        module.addAbstractTypeMapping(KeyBase.class, DefaultKey.class);
-        objectMapper.registerModule(module);
-        // Enable json deserialization via jaxb annotations
-        objectMapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector(TypeFactory.defaultInstance()));
-    }
-    
     @Test
     public void testLookupAllRowsAndVerifyResults() throws Exception {
         
-        String queryString = TestHelper.queryString("useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
+        String queryString = String.join("&", "useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
         
         for (String rowid : Arrays.asList("row1", "row2", "row3")) {
             LookupResponse response = doLookup(defaultUserDetails, path(testTableName + "/" + rowid), queryString);
@@ -144,7 +139,7 @@ public class LookupServiceAuditDisabledTest {
     public void testLookupWithColFamAndColQual() throws Exception {
         
         //@formatter:off
-        String queryString = TestHelper.queryString(
+        String queryString = String.join("&",
             "useAuthorizations=B",
             "columnVisibility=foo",
             LookupService.Parameter.CF + "=cf2",
@@ -162,7 +157,7 @@ public class LookupServiceAuditDisabledTest {
     public void testLookupWithBase64Params() throws Exception {
         
         //@formatter:off
-        String queryString = TestHelper.queryString(
+        String queryString = String.join("&",
             "useAuthorizations=B",
             "columnVisibility=foo",
             LookupService.Parameter.CF + "=" + Base64.encodeBase64URLSafeString("cf2".getBytes()),
@@ -181,7 +176,7 @@ public class LookupServiceAuditDisabledTest {
     public void testLookupBeginEndSubset() throws Exception {
         
         //@formatter:off
-        String queryString = TestHelper.queryString(
+        String queryString = String.join("&",
             "useAuthorizations=A,B,C,D,E,F,G,H,I",
             "columnVisibility=foo",
             LookupService.Parameter.CF + "=cf2",
@@ -198,32 +193,24 @@ public class LookupServiceAuditDisabledTest {
     
     @Test
     public void testErrorOnBeginGreaterThanEnd() throws Exception {
-        
+        expectedException.expect(HttpServerErrorException.class);
+        expectedException.expect(new TestHelper.StatusMatcher(500));
         //@formatter:off
-        String queryString = TestHelper.queryString(
+        String queryString = String.join("&",
             "useAuthorizations=A,B,C,D,E,F,G,H,I",
             "columnVisibility=foo",
             LookupService.Parameter.CF + "=cf2",
             LookupService.Parameter.BEGIN_ENTRY + "=7",
             LookupService.Parameter.END_ENTRY + "=5");
+        doLookup(defaultUserDetails, path(testTableName + "/row2"), queryString);
         //@formatter:on
-        
-        try {
-            doLookup(defaultUserDetails, path(testTableName + "/row2"), queryString);
-            fail("This code should never be reached");
-        } catch (HttpServerErrorException ex) {
-            assertEquals("Test should have returned 500 status", 500, ex.getStatusCode().value());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            fail("Unexpected throwable type was caught");
-        }
     }
     
     @Test
     public void testLookupWithBeginEqualToEnd() throws Exception {
         
         //@formatter:off
-        String queryString = TestHelper.queryString(
+        String queryString = String.join("&",
             "useAuthorizations=A,B,C,D,E,F,G,H,I",
             "columnVisibility=foo",
             LookupService.Parameter.CF + "=cf2",
@@ -244,7 +231,7 @@ public class LookupServiceAuditDisabledTest {
         
         // Query with useAuthorizations param with all assigned auths requested. Should get all 12 entries returned
         
-        String queryString = TestHelper.queryString("useAuthorizations=A,B,C,D,E,F,G,H,I", "columnVisibility=foo");
+        String queryString = String.join("&", "useAuthorizations=A,B,C,D,E,F,G,H,I", "columnVisibility=foo");
         for (String row : Arrays.asList("row1", "row2", "row3")) {
             lookupResponse = doLookup(defaultUserDetails, path(testTableName + "/" + row), queryString);
             assertEquals("Lookup should have returned all entries", 12, lookupResponse.getEntries().size());
@@ -254,62 +241,47 @@ public class LookupServiceAuditDisabledTest {
         // (same as above)
         
         for (String row : Arrays.asList("row1", "row2", "row3")) {
-            queryString = TestHelper.queryString("columnVisibility=foo");
+            queryString = "columnVisibility=foo";
             lookupResponse = doLookup(defaultUserDetails, path(testTableName + "/" + row), queryString);
             assertEquals("Lookup should have returned all entries", 12, lookupResponse.getEntries().size());
         }
     }
     
     @Test
-    public void testErrorOnUserWithInsufficientRoles() {
+    public void testErrorOnUserWithInsufficientRoles() throws Exception {
+        expectedException.expect(HttpClientErrorException.class);
+        expectedException.expect(new TestHelper.StatusMatcher(403));
+        
         ProxiedUserDetails userDetails = TestHelper.userDetails(Arrays.asList("ThisRoleIsNoGood", "IAmRoot"),
                         Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I"));
-        String queryString = TestHelper.queryString("useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
-        try {
-            doLookup(userDetails, path(testTableName + "/row1"), queryString);
-            fail("This code should never be reached");
-        } catch (HttpClientErrorException ex) {
-            assertEquals("Test should have returned 403 Forbidden status", 403, ex.getStatusCode().value());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            fail("Unexpected throwable type was caught");
-        }
+        String queryString = String.join("&", "useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
+        doLookup(userDetails, path(testTableName + "/row1"), queryString);
     }
     
     @Test
-    public void testErrorOnUserWithInsufficientAuths() {
+    public void testErrorOnUserWithInsufficientAuths() throws Exception {
+        expectedException.expect(HttpServerErrorException.class);
+        expectedException.expect(new TestHelper.StatusMatcher(500));
+        
         ProxiedUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "C"));
-        String queryString = TestHelper.queryString("useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
-        try {
-            doLookup(userDetails, path(testTableName + "/row2"), queryString);
-            fail("This code should never be reached");
-        } catch (HttpServerErrorException ex) {
-            assertEquals("Test should have returned 500 status", 500, ex.getStatusCode().value());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            fail("Unexpected throwable type was caught");
-        }
+        String queryString = String.join("&", "useAuthorizations=A,C,E,G,I", "columnVisibility=foo");
+        doLookup(userDetails, path(testTableName + "/row2"), queryString);
     }
     
     @Test
-    public void testErrorOnTableDoesNotExist() {
+    public void testErrorOnTableDoesNotExist() throws Exception {
+        expectedException.expect(HttpServerErrorException.class);
+        expectedException.expect(new TestHelper.StatusMatcher(500));
+        
         ProxiedUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "B", "C"));
-        String queryString = TestHelper.queryString("useAuthorizations=A,B,C", "columnVisibility=foo");
-        try {
-            doLookup(userDetails, BASE_PATH + "/THIS_TABLE_DOES_NOT_EXIST/row2", queryString);
-            fail("This code should never be reached");
-        } catch (HttpServerErrorException ex) {
-            assertEquals("Test should have returned 500 status", 500, ex.getStatusCode().value());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            fail("Unexpected throwable type was caught");
-        }
+        String queryString = String.join("&", "useAuthorizations=A,B,C", "columnVisibility=foo");
+        doLookup(userDetails, BASE_PATH + "/THIS_TABLE_DOES_NOT_EXIST/row2", queryString);
     }
     
     @Test
     public void testLookupRowDoesNotExist() throws Exception {
         ProxiedUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "B", "C"));
-        String queryString = TestHelper.queryString("useAuthorizations=A,B,C", "columnVisibility=foo");
+        String queryString = String.join("&", "useAuthorizations=A,B,C", "columnVisibility=foo");
         LookupResponse lr = doLookup(userDetails, path(testTableName + "/ThisRowDoesNotExist"), queryString);
         assertEquals("Test should have returned response with zero entries", 0, lr.getEntries().size());
     }
@@ -319,9 +291,10 @@ public class LookupServiceAuditDisabledTest {
      */
     private LookupResponse doLookup(ProxiedUserDetails authUser, String path, String query) throws Exception {
         UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path(path).query(query).build();
-        ResponseEntity<String> entity = jwtRestTemplate.exchange(authUser, HttpMethod.GET, uri, String.class);
-        assertEquals("Lookup request to " + uri + " did not return 200 status", HttpStatus.OK, entity.getStatusCode());
-        return objectMapper.readValue(entity.getBody(), LookupResponse.class);
+        RequestEntity<?> request = jwtRestTemplate.createRequestEntity(authUser, null, requestHeaders, HttpMethod.GET, uri);
+        ResponseEntity<String> response = jwtRestTemplate.exchange(request, String.class);
+        assertEquals("Lookup request to " + uri + " did not return 200 status", HttpStatus.OK, response.getStatusCode());
+        return JAXB.unmarshal(new StringReader(response.getBody()), LookupResponse.class);
     }
     
     private String path(String pathParams) {

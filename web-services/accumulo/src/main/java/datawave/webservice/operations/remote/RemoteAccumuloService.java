@@ -16,6 +16,8 @@ import org.apache.http.client.utils.URIBuilder;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -135,11 +137,16 @@ public abstract class RemoteAccumuloService extends RemoteHttpService {
                 uriBuilder -> {},
                 httpGet -> {
                     httpGet.setHeader(AUTH_HEADER_NAME, getBearer());
+                    httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
                 },
                 entity -> reader.readValue(entity.getContent()),
                 () -> StringUtils.isEmpty(suffix) ? serviceURI() : suffix
         );
         // @formatter:on
+    }
+
+    protected <T> T execPost(String suffix, ObjectReader reader) {
+        return execPost(suffix, reader, null);
     }
     
     protected <T> T execPost(String suffix, ObjectReader reader, HttpEntity postBody) {
@@ -154,6 +161,7 @@ public abstract class RemoteAccumuloService extends RemoteHttpService {
                 httpPost -> {
                     httpPost.setEntity(postBody);
                     httpPost.setHeader(AUTH_HEADER_NAME, getBearer());
+                    httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
                 },
                 entity -> reader.readValue(entity.getContent()),
                 errorSupplier
