@@ -7,7 +7,12 @@ import datawave.query.attributes.ValueTuple;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.apache.lucene.util.IntsRef;
+import org.apache.lucene.util.IntsRefBuilder;
+import org.apache.lucene.util.fst.FST;
+import org.apache.lucene.util.fst.Util;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
@@ -229,6 +234,88 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             }
         }
         return null;
+    }
+    
+    protected void addAll(Collection<Object> set, Object o) {
+        if (o instanceof Collection) {
+            set.addAll((Collection<?>) o);
+        } else {
+            set.add(o);
+        }
+    }
+    
+    /**
+     * This method deals with the ValueTuple objects and turns them into the normalized value parts
+     *
+     * @param o
+     * @return
+     */
+    protected Object normalizedValues(Object o) {
+        if (o instanceof Set) {
+            Set<Object> normalizedValues = new HashSet<>();
+            for (Object value : ((Set<?>) o)) {
+                addAll(normalizedValues, normalizedValues(value));
+            }
+            if (normalizedValues.size() == 1) {
+                return normalizedValues.iterator().next();
+            } else {
+                return normalizedValues;
+            }
+        } else {
+            return ValueTuple.getNormalizedValue(o);
+        }
+    }
+    
+    /**
+     * Tests whether the right value matches our FST.
+     *
+     * @param fst
+     *            first value
+     * @param right
+     *            second value
+     * @return test result.
+     */
+    public boolean fstMatch(FST fst, Object right) {
+        right = normalizedValues(right);
+        
+        if (right instanceof Set) {
+            Set<Object> set = (Set<Object>) right;
+            
+            for (Object o : set) {
+                if (o != null) {
+                    try {
+                        if (matchesFst(o, fst))
+                            return true;
+                    } catch (IOException e) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Failed to evaluate " + right.toString() + " against the FST.");
+                        }
+                    }
+                }
+            }
+        } else {
+            if (right != null) {
+                try {
+                    if (matchesFst(right, fst))
+                        return true;
+                } catch (IOException e) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Failed to evaluate " + right.toString() + " against the FST.");
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    public static boolean matchesFst(Object object, FST fst) throws IOException {
+        final IntsRefBuilder irBuilder = new IntsRefBuilder();
+        Util.toUTF16(object.toString(), irBuilder);
+        final IntsRef ints = irBuilder.get();
+        synchronized (fst) {
+            return Util.get(fst, ints) != null;
+        }
     }
     
     /**
