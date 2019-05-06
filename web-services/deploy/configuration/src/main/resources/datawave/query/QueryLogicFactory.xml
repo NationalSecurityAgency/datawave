@@ -195,6 +195,8 @@
         <property name="maxValueExpansionThreshold" value="${beq.valueExpansionThreshold}" />
         <!-- The max value or list expansion for a single field before using an ivarator -->
         <property name="maxOrExpansionThreshold" value="${beq.orExpansionThreshold}" />
+        <!-- The max value or list expansion for a group of ranges against a single field before combining them in an ivarator -->
+        <property name="maxOrRangeThreshold" value="${beq.orRangeThreshold}" />
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="${beq.orExpansionFstThreshold}" />
         <!-- The max number of splits to divide a range into for the ivarators.  They are run in a pool of threads controlled by the tserver.datawave.ivarator.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
@@ -515,6 +517,8 @@
         <property name="maxValueExpansionThreshold" value="${beq.valueExpansionThreshold}" />
         <!-- The max value or list expansion for a single field before using an ivarator -->
         <property name="maxOrExpansionThreshold" value="${beq.orExpansionThreshold}" />
+        <!-- The max value or list expansion for a group of ranges against a single field before combining them in an ivarator -->
+        <property name="maxOrRangeThreshold" value="${beq.orRangeThreshold}" />
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="${beq.orExpansionFstThreshold}" />
         <!-- The max number of splits to divide a range into for the ivarators.  They are run in a pool of threads controlled by the tserver.datawave.ivarator.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->

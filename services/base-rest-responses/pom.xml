@@ -7,7 +7,7 @@
         <version>1.3</version>
     </parent>
     <artifactId>base-rest-responses</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2</version>
     <properties>
         <version.commons-lang3>3.7</version.commons-lang3>
         <version.microservice.accumulo-utils>1.2</version.microservice.accumulo-utils>

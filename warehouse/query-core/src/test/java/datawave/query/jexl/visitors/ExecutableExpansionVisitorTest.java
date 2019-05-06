@@ -614,7 +614,7 @@ public abstract class ExecutableExpansionVisitorTest {
         birthdates.add("123");
         birthdates.add("234");
         birthdates.add("345");
-        JexlNode child = new ExceededOrThresholdMarkerJexlNode("BIRTH_DATE", birthdates);
+        JexlNode child = ExceededOrThresholdMarkerJexlNode.createFromValues("BIRTH_DATE", birthdates);
         // unlink the old node
         queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
         // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
@@ -635,29 +635,36 @@ public abstract class ExecutableExpansionVisitorTest {
         
         EasyMock.verify(config, helper);
         
+        String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
+        String id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
+        
         // included ExceededValueThresholdMarker before
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                        "UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
-                                        + "((ExceededOrThresholdMarkerJexlNode = true) && ((fieldName = 'BIRTH_DATE') && (fieldValues = '123,234,345'))))"));
+        Assert.assertTrue(
+                        queryString,
+                        queryString.equals("UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
+                                        + "((ExceededOrThresholdMarkerJexlNode = true) && (((id = '" + id
+                                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}')))))"));
         
         // not executable
         Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
         // what came out is executable
         Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+        
+        queryString = JexlStringBuildingVisitor.buildQuery(newTree);
+        id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
+        
         // it looks like what we'd expect
         Assert.assertTrue(
-                        JexlStringBuildingVisitor.buildQuery(newTree),
-                        JexlStringBuildingVisitor
-                                        .buildQuery(newTree)
-                                        .equals("((QUOTE == 'kind') && UUID == 'capone') || "
-                                                        + "((((ExceededOrThresholdMarkerJexlNode = true) && ((fieldName = 'BIRTH_DATE') && (fieldValues = '123,234,345')))) && UUID == 'capone') || "
-                                                        + "((filter:includeRegex(QUOTE, '.*kind.*')) && UUID == 'capone')"));
+                        queryString,
+                        queryString.equals("((QUOTE == 'kind') && UUID == 'capone') || " + "((((ExceededOrThresholdMarkerJexlNode = true) && (((id = '" + id
+                                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))) && UUID == 'capone') || "
+                                        + "((filter:includeRegex(QUOTE, '.*kind.*')) && UUID == 'capone')"));
     }
     
     @Test
     public void testExceededOrThresholdCannotExpand() throws Exception {
         ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (((ExceededOrThresholdMarkerJexlNode = true) && ((fieldName = 'QUOTE') && (fieldValues = 'a,b,c'))))");
+                        .parseJexlQuery("UUID == 'capone' && (((ExceededOrThresholdMarkerJexlNode = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))");
         
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
@@ -679,7 +686,7 @@ public abstract class ExecutableExpansionVisitorTest {
                         JexlStringBuildingVisitor.buildQuery(queryTree),
                         JexlStringBuildingVisitor
                                         .buildQuery(queryTree)
-                                        .equals("UUID == 'capone' && (((ExceededOrThresholdMarkerJexlNode = true) && ((fieldName = 'QUOTE') && (fieldValues = 'a,b,c'))))"));
+                                        .equals("UUID == 'capone' && (((ExceededOrThresholdMarkerJexlNode = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
         
         // starts off executable
         Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));

@@ -208,6 +208,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     // These are the ranges to scan in the field index
     private final List<Range> boundingFiRanges = new ArrayList<>();
+    protected Range currentFiRange = null;
     private Text fiRow = null;
     
     // This is the fieldname of interest
@@ -815,6 +816,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 if (log.isTraceEnabled()) {
                     log.trace("Seeking fisource to " + this.boundingFiRanges.get(0));
                 }
+                currentFiRange = new Range(this.boundingFiRanges.get(0));
                 this.fiSource.seek(this.boundingFiRanges.get(0), EMPTY_CFS, false);
             }
         }
@@ -830,6 +832,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     if (log.isTraceEnabled()) {
                         log.trace("Seeking fisource to " + this.boundingFiRanges.get(0));
                     }
+                    currentFiRange = new Range(this.boundingFiRanges.get(0));
                     this.fiSource.seek(this.boundingFiRanges.get(0), EMPTY_CFS, false);
                 }
             }
