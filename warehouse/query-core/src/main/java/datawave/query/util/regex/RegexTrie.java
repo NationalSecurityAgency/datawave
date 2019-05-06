@@ -1,5 +1,6 @@
 package datawave.query.util.regex;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,10 @@ public class RegexTrie {
         addAll(strings);
     }
 
+    public RegexTrie(String... strings) {
+        addAll(Arrays.asList(strings));
+    }
+
     /**
      * Add a set of strings into the trie
      * @param strings A list of strings. May contain the empty string.
@@ -37,26 +42,13 @@ public class RegexTrie {
      * @param string A string.  May be the empty string.
      */
     public void add(String string) {
+
         // starting with the root node
         Node current = root;
-        final int length = string.length();
 
         // for each character in the string
-        for (int i = 0; i < length; i++) {
-            // get the node for this character
-            Node next = current.next.get(string.charAt(i));
-
-            // if we have a node, then simply move to it
-            if (next != null) {
-                current = next;
-            } else {
-                // otherwise create a chain of nodes for the remainder of the characters
-                for (; i < length; i++) {
-                    Node newNode = new Node();
-                    current.next.put(string.charAt(i), newNode);
-                    current = newNode;
-                }
-            }
+        for (int i = 0; i < string.length(); i++) {
+            current = current.next.computeIfAbsent(string.charAt(i), n -> new Node());
         }
 
         // mark the last node as a termination point
@@ -140,7 +132,7 @@ public class RegexTrie {
         }
     }
 
-    char[] CHARS_TO_ESCAPE = new char[] {'\\','.','[',']','{','}','(',')','<','>','*','+','-','=','!','?','^','$','|'};
+    private static final char[] CHARS_TO_ESCAPE = new char[] {'\\','.','[',']','{','}','(',')','<','>','*','+','-','=','!','?','^','$','|'};
 
     /**
      * Does this character require escaping
