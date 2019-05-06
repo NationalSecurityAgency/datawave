@@ -1,34 +1,12 @@
 package datawave.query.util.regex;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
 public class RegexTrieTest {
-    private static final Logger log = Logger.getLogger(RegexTrieTest.class);
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        Logger.getRootLogger().setLevel(Level.OFF);
-    }
-
-    @Before
-    public void setUp() {
-        log.setLevel(Level.OFF);
-        Logger.getLogger(RegexTrie.class).setLevel(Level.OFF);
-    }
-
-    public void enableLogging() {
-        log.setLevel(Level.DEBUG);
-        Logger.getLogger(RegexTrie.class).setLevel(Level.TRACE);
-    }
-
     @Test
     public void testTrie() {
         String[] strings = new String[] {"", "A", "AB", "ABCDEF", "BC", "BB"};
