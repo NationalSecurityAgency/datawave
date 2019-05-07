@@ -1,29 +1,26 @@
 package datawave.microservice.audit.auditors.file.config;
 
-import datawave.microservice.audit.config.AuditProperties;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.Valid;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
+import java.util.List;
 
 @Validated
 public class FileAuditProperties {
     
     @NotEmpty
     private String pathUri;
-    private String subpath;
-    private String subpathEnvVar;
+    private String subPath;
+    private String subPathEnvVar;
     private String prefix;
+    private List<String> fsConfigResources;
     
-    @DecimalMin("10485760")
-    private Long maxFileLenBytes;
+    @DecimalMin("10")
+    private Long maxFileLengthMB;
     
-    @DecimalMin("0")
-    private Long maxFileAgeMillis;
-    
-    @Valid
-    private AuditProperties.Filesystem fs = new AuditProperties.Filesystem();
+    @DecimalMin("60")
+    private Long maxFileAgeSeconds;
     
     public String getPathUri() {
         return pathUri;
@@ -33,20 +30,20 @@ public class FileAuditProperties {
         this.pathUri = pathUri;
     }
     
-    public String getSubpath() {
-        return subpath;
+    public String getSubPath() {
+        return subPath;
     }
     
-    public void setSubpath(String subpath) {
-        this.subpath = subpath;
+    public void setSubPath(String subPath) {
+        this.subPath = subPath;
     }
     
-    public String getSubpathEnvVar() {
-        return subpathEnvVar;
+    public String getSubPathEnvVar() {
+        return subPathEnvVar;
     }
     
-    public void setSubpathEnvVar(String subpathEnvVar) {
-        this.subpathEnvVar = subpathEnvVar;
+    public void setSubPathEnvVar(String subPathEnvVar) {
+        this.subPathEnvVar = subPathEnvVar;
     }
     
     public String getPrefix() {
@@ -57,27 +54,27 @@ public class FileAuditProperties {
         this.prefix = prefix;
     }
     
-    public Long getMaxFileLenBytes() {
-        return maxFileLenBytes;
+    public List<String> getFsConfigResources() {
+        return fsConfigResources;
     }
     
-    public void setMaxFileLenBytes(Long maxFileLenBytes) {
-        this.maxFileLenBytes = maxFileLenBytes;
+    public void setFsConfigResources(List<String> fsConfigResources) {
+        this.fsConfigResources = fsConfigResources;
     }
     
-    public Long getMaxFileAgeMillis() {
-        return maxFileAgeMillis;
+    public Long getMaxFileLengthMB() {
+        return maxFileLengthMB;
     }
     
-    public void setMaxFileAgeMillis(Long maxFileAgeMillis) {
-        this.maxFileAgeMillis = maxFileAgeMillis;
+    public void setMaxFileLengthMB(Long maxFileLengthMB) {
+        this.maxFileLengthMB = maxFileLengthMB;
     }
     
-    public AuditProperties.Filesystem getFs() {
-        return fs;
+    public Long getMaxFileAgeSeconds() {
+        return maxFileAgeSeconds;
     }
     
-    public void setFs(AuditProperties.Filesystem fs) {
-        this.fs = fs;
+    public void setMaxFileAgeSeconds(Long maxFileAgeSeconds) {
+        this.maxFileAgeSeconds = maxFileAgeSeconds;
     }
 }

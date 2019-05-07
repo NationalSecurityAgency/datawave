@@ -1,5 +1,6 @@
 package datawave.microservice.audit.replay.status;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.stream.Collectors;
 /**
  * Represents the status of an audit replay. File status is listed on a per-file basis.
  */
-public class Status {
+public class Status implements Serializable {
     
     public enum ReplayState {
         CREATED, RUNNING, IDLE, STOPPED, FINISHED, FAILED
@@ -89,7 +90,7 @@ public class Status {
                         + ", replayUnfinishedFiles:" + replayUnfinishedFiles + "}";
     }
     
-    public static final class FileStatus {
+    public static final class FileStatus implements Serializable {
         private FileState state;
         private String pathUri;
         private long linesRead;
