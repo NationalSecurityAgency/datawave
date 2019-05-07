@@ -19,7 +19,7 @@ public class RegexTrieTest {
             Assert.assertFalse(trie.contains(string));
         }
     }
-
+    
     @Test
     public void testRegex() {
         String[] strings = new String[] {"", "A", "AB", "ABCDEF", "BC", "BB"};
