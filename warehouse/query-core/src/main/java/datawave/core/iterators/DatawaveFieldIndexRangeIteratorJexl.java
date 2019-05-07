@@ -1,6 +1,5 @@
 package datawave.core.iterators;
 
-import datawave.data.type.DiscreteIndexType;
 import datawave.query.Constants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -12,6 +11,7 @@ import org.apache.hadoop.io.Text;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
 
 /**
  * 
@@ -30,6 +30,7 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
         protected Text upperBound = null;
         protected boolean upperInclusive = true;
         protected boolean lowerInclusive = true;
+        protected SortedSet<Range> subRanges = null;
         
         public B withLowerBound(Text lowerBound) {
             return super.withFieldValue(lowerBound);
@@ -58,6 +59,11 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
             return self();
         }
         
+        public B withSubRanges(SortedSet<Range> subRanges) {
+            this.subRanges = subRanges;
+            return self();
+        }
+        
         public DatawaveFieldIndexRangeIteratorJexl build() {
             return new DatawaveFieldIndexRangeIteratorJexl(this);
         }
@@ -72,11 +78,13 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
         this.upperBound = builder.upperBound;
         this.upperInclusive = builder.upperInclusive;
         this.lowerInclusive = builder.lowerInclusive;
+        this.subRanges = builder.subRanges;
     }
     
     protected Text upperBound = null;
     protected boolean upperInclusive = true;
     protected boolean lowerInclusive = true;
+    protected SortedSet<Range> subRanges = null;
     
     // -------------------------------------------------------------------------
     // ------------- Constructors
@@ -109,60 +117,86 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     
     @Override
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
-        Key startKey = null;
-        Key endKey = null;
-        // construct new range
-        
-        // we cannot simply use startKeyInclusive in the Range as the datatype and UID follow the value in the keys
-        // hence we need to compute the min possibly value that would be inclusive
-        this.boundingFiRangeStringBuilder.setLength(0);
-        if (lowerInclusive) {
-            this.boundingFiRangeStringBuilder.append(fieldValue);
-        } else {
-            // in case of composite ranges, use the discrete index type to get the inclusive bound
-            if (compositeSeeker != null && compositeSeeker.getFieldToDiscreteIndexType().get(fiName.toString()) != null) {
-                DiscreteIndexType discreteIndexType = compositeSeeker.getFieldToDiscreteIndexType().get(fiName.toString());
-                this.boundingFiRangeStringBuilder.append(discreteIndexType.incrementIndex(fieldValue.toString()));
+        if (subRanges != null && !subRanges.isEmpty()) {
+            List<Range> ranges = new ArrayList<>();
+            
+            // Note: The IndexRangeIteratorBuilder hard codes 'negated' to false, so unless that changes, this logic will never be executed.
+            if (isNegated()) {
+                Key startFi = new Key(rowId, fiName);
+                Key endFi = new Key(rowId, new Text(fiName.toString() + '\0'));
+                
+                Key startKey = startFi;
+                for (Range subRange : subRanges) {
+                    Range range = new Range(startKey, true,
+                                    createUpperBoundKey(rowId, fiName, subRange.getStartKey().getRow(), !subRange.isStartKeyInclusive()), true);
+                    startKey = createLowerBoundKey(rowId, fiName, subRange.getEndKey().getRow(), !subRange.isEndKeyInclusive());
+                    ranges.add(range);
+                }
+                
+                // add the final range
+                ranges.add(new Range(startKey, true, endFi, true));
             } else {
-                this.boundingFiRangeStringBuilder.append(fieldValue).append(ONE_BYTE);
+                for (Range subRange : subRanges) {
+                    Key startKey = createLowerBoundKey(rowId, fiName, subRange.getStartKey().getRow(), subRange.isStartKeyInclusive());
+                    Key endKey = createUpperBoundKey(rowId, fiName, subRange.getEndKey().getRow(), subRange.isEndKeyInclusive());
+                    ranges.add(new Range(startKey, true, endKey, true));
+                }
             }
-        }
-        this.boundingFiRangeStringBuilder.append(NULL_BYTE);
-        startKey = new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
-        
-        // we cannot simply use endKeyInclusive in the Range as the datatype and UID follow the value in the keys
-        // hence we need to compute the max possibly value that would be inclusive
-        this.boundingFiRangeStringBuilder.setLength(0);
-        if (upperInclusive) {
-            this.boundingFiRangeStringBuilder.append(upperBound).append(ONE_BYTE);
+            
+            return ranges;
         } else {
-            String upperString = upperBound.toString();
-            // in case of composite ranges, use the discrete index type to get the inclusive bound
-            if (compositeSeeker != null && compositeSeeker.getFieldToDiscreteIndexType().get(fiName.toString()) != null) {
-                DiscreteIndexType discreteIndexType = compositeSeeker.getFieldToDiscreteIndexType().get(fiName.toString());
-                this.boundingFiRangeStringBuilder.append(discreteIndexType.decrementIndex(upperString));
+            Key startKey = createLowerBoundKey(rowId, fiName, fieldValue, lowerInclusive);
+            Key endKey = createUpperBoundKey(rowId, fiName, upperBound, upperInclusive);
+            
+            // Note: The IndexRangeIteratorBuilder hard codes 'negated' to false, so unless that changes, this logic will never be executed.
+            if (isNegated()) {
+                Key startFi = new Key(rowId, fiName);
+                Key endFi = new Key(rowId, new Text(fiName.toString() + '\0'));
+                List<Range> rangeList = new ArrayList<>(new RangeSplitter(new Range(startFi, true, startKey, true), getMaxRangeSplit() / 2));
+                rangeList.addAll(new RangeSplitter(new Range(endKey, true, endFi, true), getMaxRangeSplit() / 2));
+                return rangeList;
             } else {
-                this.boundingFiRangeStringBuilder.append(upperString.substring(0, upperString.length() - 1));
-                this.boundingFiRangeStringBuilder.append((char) (upperString.charAt(upperString.length() - 1) - 1));
+                return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());
             }
-            this.boundingFiRangeStringBuilder.append(Constants.MAX_UNICODE_STRING);
-        }
-        endKey = new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
-        if (isNegated()) {
-            Key startFi = new Key(rowId, fiName);
-            Key endFi = new Key(rowId, new Text(fiName.toString() + '\0'));
-            List<Range> rangeList = new ArrayList<>(new RangeSplitter(new Range(startFi, true, startKey, true), getMaxRangeSplit() / 2));
-            rangeList.addAll(new RangeSplitter(new Range(endKey, true, endFi, true), getMaxRangeSplit() / 2));
-            return rangeList;
-        } else {
-            return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());
         }
     }
     
+    private Key createLowerBoundKey(Text rowId, Text fiName, Text lowerBound, boolean isLowerInclusive) {
+        // we cannot simply use startKeyInclusive in the Range as the datatype and UID follow the value in the keys
+        // hence we need to compute the min possibly value that would be inclusive
+        this.boundingFiRangeStringBuilder.setLength(0);
+        if (isLowerInclusive) {
+            this.boundingFiRangeStringBuilder.append(lowerBound);
+        } else {
+            this.boundingFiRangeStringBuilder.append(lowerBound).append(ONE_BYTE);
+        }
+        this.boundingFiRangeStringBuilder.append(NULL_BYTE);
+        return new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
+    }
+    
+    private Key createUpperBoundKey(Text rowId, Text fiName, Text upperBound, boolean isUpperInclusive) {
+        // we cannot simply use endKeyInclusive in the Range as the datatype and UID follow the value in the keys
+        // hence we need to compute the max possibly value that would be inclusive
+        this.boundingFiRangeStringBuilder.setLength(0);
+        if (isUpperInclusive) {
+            this.boundingFiRangeStringBuilder.append(upperBound).append(ONE_BYTE);
+        } else {
+            String upperString = upperBound.toString();
+            this.boundingFiRangeStringBuilder.append(upperString.substring(0, upperString.length() - 1));
+            this.boundingFiRangeStringBuilder.append((char) (upperString.charAt(upperString.length() - 1) - 1));
+            this.boundingFiRangeStringBuilder.append(Constants.MAX_UNICODE_STRING);
+        }
+        return new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
+    }
+    
     protected Range buildCompositeSafeFiRange(Text rowId, Text fiName, Text fieldValue) {
-        Key startKey = new Key(rowId, fiName, new Text(fieldValue));
-        Key endKey = new Key(rowId, fiName, new Text(upperBound));
-        return new Range(startKey, lowerInclusive, endKey, upperInclusive);
+        if (subRanges != null && !subRanges.isEmpty()) {
+            return currentFiRange;
+        } else {
+            Key startKey = new Key(rowId, fiName, new Text(fieldValue));
+            Key endKey = new Key(rowId, fiName, new Text(upperBound));
+            return new Range(startKey, lowerInclusive, endKey, upperInclusive);
+        }
     }
     
     // -------------------------------------------------------------------------
@@ -177,6 +211,7 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     @Override
     protected boolean matches(Key k) throws IOException {
         boolean matches = false;
+        
         // test that we are in the range
         String colq = k.getColumnQualifier().toString();
         
@@ -185,9 +220,14 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
         index = colq.lastIndexOf('\0', index - 1);
         Text value = new Text(colq.substring(0, index));
         
-        if ((lowerInclusive ? (value.compareTo(getFieldValue()) >= 0) : (value.compareTo(getFieldValue()) > 0))
-                        && (upperInclusive ? (value.compareTo(upperBound) <= 0) : (value.compareTo(upperBound) < 0))) {
-            matches = true;
+        if (subRanges == null) {
+            if ((lowerInclusive ? (value.compareTo(getFieldValue()) >= 0) : (value.compareTo(getFieldValue()) > 0))
+                            && (upperInclusive ? (value.compareTo(upperBound) <= 0) : (value.compareTo(upperBound) < 0))) {
+                matches = true;
+            }
+        } else {
+            // find the first range that contains the key
+            matches = (subRanges.stream().filter(subRange -> subRange.contains(new Key(value))).findFirst().orElse(null) != null);
         }
         return matches;
     }

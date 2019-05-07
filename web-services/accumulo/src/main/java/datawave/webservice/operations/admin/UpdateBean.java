@@ -25,11 +25,10 @@ import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
-import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.security.SecurityErrorCode;
 import org.apache.accumulo.core.data.ConstraintViolationSummary;
-import org.apache.accumulo.core.data.KeyExtent;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -245,13 +244,13 @@ public class UpdateBean {
                 }
             }
             
-            Map<KeyExtent,Set<SecurityErrorCode>> authFailures = null;
+            Map<TabletId,Set<SecurityErrorCode>> authFailures = null;
             List<ConstraintViolationSummary> cvs = null;
             
             try {
                 writer.close();
             } catch (MutationsRejectedException e) {
-                authFailures = e.getAuthorizationFailuresMap();
+                authFailures = e.getSecurityErrorCodes();
                 cvs = e.getConstraintViolationSummaries();
             }
             
@@ -260,18 +259,16 @@ public class UpdateBean {
             
             if (authFailures != null) {
                 List<AuthorizationFailure> authorizationFailures = new ArrayList<>();
-                for (Entry<KeyExtent,Set<SecurityErrorCode>> next : authFailures.entrySet()) {
+                Map<String,String> tableIdToNameMap = new HashMap<>();
+                connection.tableOperations().tableIdMap().forEach((k, v) -> tableIdToNameMap.put(v, k));
+                for (TabletId tabletId : authFailures.keySet()) {
                     AuthorizationFailure failure = new AuthorizationFailure();
                     
-                    String mappedTableName = null;
-                    try {
-                        mappedTableName = Tables.getTableName(connection.getInstance(), next.getKey().getTableId().toString());
-                    } catch (TableNotFoundException e) {
-                        mappedTableName = "unknown";
-                    }
+                    String mappedTableName = tableIdToNameMap.getOrDefault(tabletId.getTableId().toString(), "unknown");
+                    
                     failure.setTableName(new OptionallyEncodedString(mappedTableName));
-                    failure.setEndRow(new OptionallyEncodedString(next.getKey().getEndRow().toString()));
-                    failure.setPrevEndRow(new OptionallyEncodedString(next.getKey().getPrevEndRow().toString()));
+                    failure.setEndRow(new OptionallyEncodedString(tabletId.getEndRow().toString()));
+                    failure.setPrevEndRow(new OptionallyEncodedString(tabletId.getPrevEndRow().toString()));
                     // TODO: Add SecurityErrorCode to the AuthorizationFailure object
                     authorizationFailures.add(failure);
                 }

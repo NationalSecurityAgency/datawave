@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>2.6.7-SNAPSHOT</version>
+        <version>2.6.8-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
@@ -591,6 +591,9 @@
                                             <include>org.springframework:spring-context-support</include>
                                             <include>org.springframework:spring-expression</include>
                                             <include>aopalliance:aopalliance</include>
+                                            <include>com.fasterxml.jackson.core:jackson-databind</include>
+                                            <include>com.fasterxml.jackson.core:jackson-core</include>
+                                            <include>com.fasterxml.jackson.core:jackson-annotations</include>
                                         </includes>
                                     </dependency>
                                 </mapping>

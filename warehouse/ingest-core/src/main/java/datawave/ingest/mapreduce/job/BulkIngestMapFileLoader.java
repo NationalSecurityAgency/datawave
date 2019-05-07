@@ -15,7 +15,6 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.impl.ClientContext;
 import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.client.impl.MasterClient;
-import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.master.thrift.MasterClientService.Iface;
@@ -665,7 +664,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         Instance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
         TableOperations tops = instance.getConnector(credentials.getPrincipal(), credentials.getToken()).tableOperations();
-        Map<String,String> tableIds = Tables.getNameToIdMap(instance);
+        Map<String,String> tableIds = tops.tableIdMap();
         FileStatus[] tableDirs = fs.globStatus(new Path(mapFilesDir, "*"));
         
         // sort the table dirs in priority order based on the configuration
