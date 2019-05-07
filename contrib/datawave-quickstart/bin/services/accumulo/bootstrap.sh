@@ -166,12 +166,6 @@ function accumuloStatus() {
     test -z "${_tracer}" && error "accumulo tracer is not running"
     test -z "${_tserver}" && error "accumulo tserver is not running"
 
-    unset _pid
-    local -r _zoo=$(jps -l | grep org.apache.zookeeper)
-    test -n "${_zoo}" && {
-        set -- ${_zoo}
-        _pid=$1
-    }
     echo "======  Zookeeper Status  ======"
     if [[ -n "${DW_ZOOKEEPER_PID_LIST}" ]]; then
         info "zookeeper => ${DW_ZOOKEEPER_PID_LIST}"
