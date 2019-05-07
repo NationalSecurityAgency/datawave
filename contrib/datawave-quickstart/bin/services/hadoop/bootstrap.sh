@@ -122,33 +122,38 @@ function hadoopStatus() {
 
     # use a state to parse jps entries
     echo "======  Hadoop Status  ======"
-    local _pid
-    local _opt=pid
-    for _arg in $(jps -l | grep org.apache.hadoop); do
-        case ${_opt} in
-            pid)
-                _pid=${_arg}
-                _opt=class
-                ;;
-            class)
-                local _none
-                local _name=${_arg##*.}
-                case "${_name}" in
-                    DataNode) _dataNode=${_pid};;
-                    JobHistoryServer) _jobHist=${_pid};;
-                    NameNode) _nameNode=${_pid};;
-                    NodeManager) _nodeMgr=${_pid};;
-                    ResourceManager) _resourceMgr=${_pid};;
-                    SecondaryNameNode) _secNameNode=${_pid};;
-                    *) _none=true;;
-                esac
-                test -z "${_none}" && info "${_name} => ${_pid}"
-                _pid=
-                _opt=pid
-                unset _none
-                ;;
-        esac
-    done
+    hadoopIsRunning && {
+        local _pid
+        local _opt=pid
+
+        local -r _pids=${DW_HADOOP_PID_LIST// /|}
+        echo "pids: ${DW_HADOOP_PID_LIST}"
+        for _arg in $(jps -l | egrep "${_pids}"); do
+            case ${_opt} in
+                pid)
+                    _pid=${_arg}
+                    _opt=class
+                    ;;
+                class)
+                    local _none
+                    local _name=${_arg##*.}
+                    case "${_name}" in
+                        DataNode) _dataNode=${_pid};;
+                        JobHistoryServer) _jobHist=${_pid};;
+                        NameNode) _nameNode=${_pid};;
+                        NodeManager) _nodeMgr=${_pid};;
+                        ResourceManager) _resourceMgr=${_pid};;
+                        SecondaryNameNode) _secNameNode=${_pid};;
+                        *) _none=true;;
+                    esac
+                    test -z "${_none}" && info "${_name} => ${_pid}"
+                    _pid=
+                    _opt=pid
+                    unset _none
+                    ;;
+            esac
+        done
+    }
 
     test -z "${_jobHist}" && error "hadoop job history is not running"
     test -z "${_dataNode}" && error "hadoop data node is not running"

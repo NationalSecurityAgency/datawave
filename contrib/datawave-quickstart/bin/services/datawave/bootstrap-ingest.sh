@@ -110,23 +110,39 @@ function datawaveIngestStatus() {
     local _pid
 
     echo "======  Datawave Ingest Status  ======"
+    datawaveIngestIsRunning && {
+        local -r _pids=${DW_DATAWAVE_INGEST_PID_LIST// /|}
+        echo "pids:${DW_DATAWAVE_INGEST_PID_LIST}"
 
-    for _proc in $(pgrep -lf ingest-server.sh); do
-        case ${_opt} in
-            pid)
-                _pid=$_proc
-                _opt=name
-                ;;
-            name)
-                local _name=${_proc%%-ingest-ser}
-                case "${_name}" in
-                    bulk) _bulkIngest=${_pid};;
-                    live) _liveIngest=${_pid};;
-                esac
-                _opt=pid
-                ;;
-        esac
-    done
+        for _proc in $(pgrep -af ingest-server.sh | egrep ${_pids}); do
+            case ${_opt} in
+                pid)
+                    _pid=$_proc
+                    _opt=name
+                    ;;
+                name)
+                    local _name=${_proc%%-ingest-ser}
+                    case "${_name}" in
+                        bulk) _bulkIngest=${_pid};;
+                        live) _liveIngest=${_pid};;
+                    esac
+                    _opt=pid
+                    ;;
+
+            esac
+        done
+
+        local -r _flagMaker=$(pgrep -f 'Dapp=FlagMaker' | egrep ${_pids})
+        local -r _cleanup=$(pgrep -f 'ingest/cleanup-server.py' | egrep ${_pids} )
+
+        for _job in BulkIngestMapFileLoader IngestJob; do
+            local _mapPids=$(pgrep -d ' ' -f datawave.ingest.mapreduce.job.${_job} | egrep ${_pids})
+            case ${_job} in
+                BulkIngestMapFileLoader) local -r _bulkPids="${_mapPids}";;
+                IngestJob) local -r _livePids="${_mapPids}";;
+            esac
+        done
+    }
 
     if [[ -n "${_bulkIngest}" ]]; then
         info "bulk ingest server => ${_bulkIngest}"
@@ -139,27 +155,20 @@ function datawaveIngestStatus() {
         error "live ingest server is not running"
     fi
 
-    local -r _flagMaker=$(pgrep -f 'Dapp=FlagMaker')
     if [[ -n "${_flagMaker}" ]]; then
         info "flag maker => ${_flagMaker}"
     else
         error "flag maker is not running"
     fi
 
-    local -r _cleanup=$(pgrep -f 'ingest/cleanup-server.py')
     if [[ -n "${_cleanup}" ]]; then
         info "cleanup server => ${_cleanup}"
     else
         error "cleanup server is not running"
     fi
 
-    for _job in BulkIngestMapFileLoader IngestJob; do
-        local _pids=$(pgrep -d ' ' -f datawave.ingest.mapreduce.job.${_job})
-        case ${_job} in
-            BulkIngestMapFileLoader) info "bulk ingest pids: ${_pids}";;
-            IngestJob) info "live ingest pids: ${_pids}";;
-        esac
-    done
+    info "bulk ingest pids: ${_bulkPids}"
+    info "live ingest pids: ${_livePids}"
 }
 
 function datawaveIngestIsInstalled() {

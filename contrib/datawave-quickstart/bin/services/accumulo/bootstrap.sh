@@ -128,31 +128,37 @@ function accumuloStatus() {
     local _opt=pid
     local _arg
 
-    for _arg in $(jps -lm | grep org.apache.accumulo.start); do
-        case ${_opt} in
-            pid)
-                _pid=${_arg}
-                _opt=class;;
-            class) _opt=component;;
-            component)
-                local _none
-                case "${_arg}" in
-                    gc) _gc=${_pid};;
-                    master) _master=${_pid};;
-                    monitor) _monitor=${_pid};;
-                    tracer) _tracer=${_pid};;
-                    tserver) _tserver=${_pid};;
-                    *) _none=true;;
-                esac
+    accumuloIsRunning
+    test -n "${DW_ACCUMULO_PID_LIST}" && {
+        local -r _pids=${DW_ACCUMULO_PID_LIST// /|}
+        echo "pids: ${DW_ACCUMULO_PID_LIST}"
 
-                test -z "${_none}" && info "${_arg} => ${_pid}"
-                _opt=address
-                unset _none
-                _pid=;;
-            address) _opt=addrValue;;
-            addrValue) _opt=pid;;
-        esac
-    done
+        for _arg in $(jps -lm | egrep "${_pids}"); do
+            case ${_opt} in
+                pid)
+                    _pid=${_arg}
+                    _opt=class;;
+                class) _opt=component;;
+                component)
+                    local _none
+                    case "${_arg}" in
+                        gc) _gc=${_pid};;
+                        master) _master=${_pid};;
+                        monitor) _monitor=${_pid};;
+                        tracer) _tracer=${_pid};;
+                        tserver) _tserver=${_pid};;
+                        *) _none=true;;
+                    esac
+
+                    test -z "${_none}" && info "${_arg} => ${_pid}"
+                    _opt=address
+                    unset _none
+                    _pid=;;
+                address) _opt=addrValue;;
+                addrValue) _opt=pid;;
+            esac
+        done
+    }
 
     test -z "${_gc}" && error "accumulo gc is not running"
     test -z "${_master}" && error "accumulo master is not running"
@@ -167,8 +173,8 @@ function accumuloStatus() {
         _pid=$1
     }
     echo "======  Zookeeper Status  ======"
-    if [[ -n "${_pid}" ]]; then
-        info "zookeeper => ${_pid}"
+    if [[ -n "${DW_ZOOKEEPER_PID_LIST}" ]]; then
+        info "zookeeper => ${DW_ZOOKEEPER_PID_LIST}"
     else
         error "zookeeper is not running"
     fi
