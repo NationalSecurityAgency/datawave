@@ -775,6 +775,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     m.setSeekCount(Long.parseLong(fieldValue));
                 }
                 
+                else if (fieldName.equals("YIELD_COUNT")) {
+                    m.setYieldCount(Long.parseLong(fieldValue));
+                }
+                
                 else if (fieldName.equals("DOC_RANGES")) {
                     m.setDocRanges(Long.parseLong(fieldValue));
                 }
