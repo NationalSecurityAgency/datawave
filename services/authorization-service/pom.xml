@@ -12,7 +12,7 @@
     <description>DATAWAVE Authorization Microservice</description>
     <properties>
         <start-class>datawave.microservice.authorization.AuthorizationService</start-class>
-        <version.microservice.hazelcast-client>1.4</version.microservice.hazelcast-client>
+        <version.microservice.hazelcast-client>1.5</version.microservice.hazelcast-client>
         <version.microservice.starter>1.4</version.microservice.starter>
     </properties>
     <dependencyManagement>

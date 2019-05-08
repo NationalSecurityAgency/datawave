@@ -8,12 +8,12 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>audit-service</artifactId>
-    <version>1.7-SNAPSHOT</version>
+    <version>1.7</version>
     <description>DATAWAVE Auditing Microservice</description>
     <properties>
         <version.hadoop>2.6.0</version.hadoop>
         <version.microservice.audit-api>1.4</version.microservice.audit-api>
-        <version.microservice.hazelcast-client>1.5-SNAPSHOT</version.microservice.hazelcast-client>
+        <version.microservice.hazelcast-client>1.5</version.microservice.hazelcast-client>
         <version.microservice.starter>1.4</version.microservice.starter>
     </properties>
     <dependencyManagement>
