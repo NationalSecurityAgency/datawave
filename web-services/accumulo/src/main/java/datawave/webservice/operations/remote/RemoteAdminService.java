@@ -37,7 +37,7 @@ import java.util.Map;
 public class RemoteAdminService extends RemoteAccumuloService {
     
     private enum Suffix {
-
+        
         CREATE_TABLE("admin/createTable/%s"),
         FLUSH_TABLE("admin/flushTable/%s"),
         GRANT_SYSTEM_PERM("admin/grantSystemPermission/%s/%s"),

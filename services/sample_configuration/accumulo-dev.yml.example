@@ -38,11 +38,10 @@ server:
 
 # Enable auditing (for lookup queries only), if desired
 
-#audit-client:
-#  enabled: true
-#  uri: '${AUDIT_SERVER_URL:https://localhost:8743/audit}'
+audit-client:
+  enabled: false
+  uri: '${AUDIT_SERVER_URL:https://localhost:8743/audit}'
 
 logging:
   level:
     datawave.microservice.accumulo: DEBUG
-
