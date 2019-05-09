@@ -34,20 +34,23 @@ the service's endpoints.
 
 ### Lookup API
 
-Enables simple batch scan on a given table/row and supports query auditing
-(i.e., when *audit-client.enabled: true*)  
+Enables simple batch scans on a given table/row to retrieve results,
+and also supports query auditing (i.e., when *audit-client.enabled:
+true*, which is the default)  
 
 | Method | Operation | Description | Request Body |
 |:-------|:----------|:------------|:-------------|
 | `GET`/`POST` | lookup/{tableName}/{row} | Scans the given row and returns scan results | Optional form params |
 
-* Optional parameters can be expressed via query string (GET) or via form param (POST) 
+* Several optional parameters can be expressed via query string (GET) or
+  form param (POST) 
+   
 * See [LookupController] class for details
 
 ### Stats API
 
-May be used as a proxy for the Accumulo Monitor as a convenience, in order to expose the
-monitor's raw stats response to external clients
+May be used as a proxy for the Accumulo Monitor as a convenience, in order to expose
+the monitor's raw stats response to external clients
 
 | Method | Operation | Description | Request Body |
 |:-------|:----------|:------------|:-------------|
@@ -61,11 +64,12 @@ monitor's raw stats response to external clients
    config, authorization, and audit services.
 
    * The authorization service should be launched with the `mock` profile to leverage
-     test PKI and user configs.
+     test PKI materials and associated user configuration (see
+     [authorization-mock.yml][auth-mock-yml]).
 
-2. Launch the accumulo service as follows, with the `remoteauth` profile to enable
-   client cert authentication, and with the `mock` profile to utilize an in-memory
-   Accumulo instance containing test data...
+2. Launch this service as follows, with the `remoteauth` profile to enable client
+   cert authentication, and with the `mock` profile to utilize an in-memory
+   Accumulo instance containing some test data...
     
    ```
    cd datawave/services
@@ -82,8 +86,12 @@ monitor's raw stats response to external clients
    * https://localhost:8943/accumulo/v1/admin/listTables
    * https://localhost:8943/accumulo/v1/admin/listUsers
    * https://localhost:8943/accumulo/v1/admin/listUserPermissions/root
+   * Perform PUT and POST API operations with your preferred HTTP client, as desired
+   
+   *Note*: The `stats` API is not functional when using the `mock` profile, as it
+   requires that ZooKeeper and Accumulo Monitor instances are running
 
-See [sample_configuration/accumulo-dev.yml][accumulo-dev-yml] and configure as desired
+   See [sample_configuration/accumulo-dev.yml][accumulo-dev-yml] and configure as desired
 
 [UpdateRequest]:../accumulo-api/src/main/java/datawave/webservice/request/UpdateRequest.java
 [AdminController]:src/main/java/datawave/microservice/accumulo/admin/AdminController.java
@@ -91,3 +99,4 @@ See [sample_configuration/accumulo-dev.yml][accumulo-dev-yml] and configure as d
 [StatsController]:src/main/java/datawave/microservice/accumulo/stats/StatsController.java
 [testUser]:../spring-boot-starter-datawave/src/main/resources/testUser.p12
 [accumulo-dev-yml]:../sample_configuration/accumulo-dev.yml.example
+[auth-mock-yml]:../sample_configuration/authorization-mock.yml
