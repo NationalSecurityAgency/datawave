@@ -93,7 +93,8 @@ configured audit sinks (e.g., file and Accumulo).
 **Audit Client Starter**
 
 Query services that support auditing integrate with the audit service via the
-*spring-boot-starter-datawave-audit* module.
+*spring-boot-starter-datawave-audit* module. View the starter
+[README](spring-boot-starter-datawave-audit/README.md) for details.
 
 ### Dictionary Service
 
