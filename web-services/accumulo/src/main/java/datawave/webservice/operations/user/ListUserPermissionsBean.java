@@ -1,37 +1,21 @@
 package datawave.webservice.operations.user;
 
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.exception.AccumuloWebApplicationException;
-import datawave.webservice.exception.UnauthorizedException;
+import datawave.webservice.operations.remote.RemoteAdminService;
 import datawave.webservice.response.ListUserPermissionsResponse;
-import datawave.webservice.response.objects.UserPermissions;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.SecurityOperations;
-import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.security.NamespacePermission;
-import org.apache.accumulo.core.security.SystemPermission;
-import org.apache.accumulo.core.security.TablePermission;
-import org.apache.log4j.Logger;
 
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJB;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
 
 @Path("/Accumulo")
 @RolesAllowed({"InternalUser", "Administrator"})
@@ -42,92 +26,15 @@ import java.util.SortedSet;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ListUserPermissionsBean {
     
-    private Logger log = Logger.getLogger(this.getClass());
+    @Inject
+    private RemoteAdminService remoteAdminService;
     
-    @EJB
-    private AccumuloConnectionFactory connectionFactory;
-    
-    /**
-     * <strong>Administrator credentials required.</strong> List of Accumulo authorizations for a specified Accumulo user
-     * 
-     * @RequestHeader X-ProxiedEntitiesChain (optional) for server calls on behalf of a user: &lt;subjectDN&gt;
-     * @RequestHeader X-ProxiedIssuersChain (optional unless X-ProxiedEntitesChain is specified) contains one &lt;issuerDN&gt; per &lt;subjectDN&gt; in
-     *                X-ProxiedEntitesChain
-     * @param userName
-     *            Accumulo user name
-     * @HTTP 200 Success
-     * @HTTP 401 AccumuloSecurityException
-     * @HTTP 500 AccumuloException
-     * @return datawave.webservice.response.ListUserPermissionsResponse
-     */
     @Path("/ListUserPermissions/{userName}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @GET
     public ListUserPermissionsResponse listUserPermissions(@PathParam("userName") String userName) {
         
-        ListUserPermissionsResponse response = new ListUserPermissionsResponse();
-        Connector connection = null;
-        AccumuloConnectionFactory.Priority priority = AccumuloConnectionFactory.Priority.ADMIN;
-        try {
-            Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connection = connectionFactory.getConnection(priority, trackingMap);
-            
-            SecurityOperations ops = connection.securityOperations();
-            
-            List<datawave.webservice.response.objects.SystemPermission> systemPermissions = new ArrayList<>();
-            SystemPermission[] allSystemPerms = SystemPermission.values();
-            for (SystemPermission next : allSystemPerms) {
-                if (ops.hasSystemPermission(userName, next)) {
-                    systemPermissions.add(new datawave.webservice.response.objects.SystemPermission(next.name()));
-                }
-            }
-            
-            List<datawave.webservice.response.objects.TablePermission> tablePermissions = new ArrayList<>();
-            TableOperations tops = connection.tableOperations();
-            SortedSet<String> tables = tops.list();
-            TablePermission[] allTablePerms = TablePermission.values();
-            for (String next : tables) {
-                for (TablePermission nextPerm : allTablePerms) {
-                    if (ops.hasTablePermission(userName, next, nextPerm)) {
-                        tablePermissions.add(new datawave.webservice.response.objects.TablePermission(next, nextPerm.name()));
-                    }
-                }
-            }
-            
-            List<datawave.webservice.response.objects.NamespacePermission> namespacePermissions = new ArrayList<>();
-            NamespaceOperations nops = connection.namespaceOperations();
-            SortedSet<String> namespaces = nops.list();
-            NamespacePermission[] allNamespacePerms = NamespacePermission.values();
-            for (String next : namespaces) {
-                for (NamespacePermission nextPerm : allNamespacePerms) {
-                    if (ops.hasNamespacePermission(userName, next, nextPerm)) {
-                        namespacePermissions.add(new datawave.webservice.response.objects.NamespacePermission(next, nextPerm.name()));
-                    }
-                }
-            }
-            
-            UserPermissions userPermissions = new UserPermissions();
-            userPermissions.setSystemPermissions(systemPermissions);
-            userPermissions.setTablePermissions(tablePermissions);
-            userPermissions.setNamespacePermissions(namespacePermissions);
-            response.setUserPermissions(userPermissions);
-            
-            return response;
-        } catch (AccumuloSecurityException e) {
-            log.error(e.getMessage(), e);
-            response.addException(e);
-            throw new UnauthorizedException(e, response);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            response.addException(e);
-            throw new AccumuloWebApplicationException(e, response);
-        } finally {
-            try {
-                connectionFactory.returnConnection(connection);
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-            }
-        }
+        return remoteAdminService.listUserPermissions(userName);
     }
     
 }

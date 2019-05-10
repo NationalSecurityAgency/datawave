@@ -1,6 +1,5 @@
 package datawave.cache;
 
-import org.apache.log4j.Logger;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.cache.interceptor.SimpleKey;
 
@@ -9,12 +8,15 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * This is a key generator that can be used with a Cacheable spring annotation to create a key out of a methods parameters. This implementation will copy all
  * Collections to ensure that future concurrent modification exceptions do not occur of the collection passed is is subsequently reused.
  */
 public class CollectionSafeKeyGenerator implements KeyGenerator {
-    private static Logger log = Logger.getLogger(CollectionSafeKeyGenerator.class);
+    private static Logger log = LoggerFactory.getLogger(CollectionSafeKeyGenerator.class);
     
     @Override
     public Object generate(Object target, Method method, Object... params) {
