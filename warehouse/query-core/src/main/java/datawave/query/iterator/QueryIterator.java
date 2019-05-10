@@ -96,7 +96,7 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -177,6 +177,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected TypeMetadata typeMetadataWithNonIndexed = null;
     protected TypeMetadata typeMetadata = null;
     
+    protected Map<String,Object> exceededOrEvaluationCache = null;
+    
     public QueryIterator() {}
     
     public QueryIterator(QueryIterator other, IteratorEnvironment env) {
@@ -193,6 +195,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.groupingContextAddedByMe = other.groupingContextAddedByMe;
         this.typeMetadataWithNonIndexed = other.typeMetadataWithNonIndexed;
         this.typeMetadata = other.typeMetadata;
+        this.exceededOrEvaluationCache = other.exceededOrEvaluationCache;
         this.trackingSpan = other.trackingSpan;
         // Defer to QueryOptions to re-set all of the query options
         super.deepCopy(other);
@@ -217,6 +220,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.typeMetadata = new TypeMetadata(this.getTypeMetadata());
         typeMetadataWithNonIndexed = new TypeMetadata(this.typeMetadata);
         typeMetadataWithNonIndexed.addForAllIngestTypes(this.getNonIndexedDataTypeMap());
+        
+        exceededOrEvaluationCache = new HashMap<>();
         
         // Parse the query
         try {
@@ -915,6 +920,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource), typeMetadataForEval,
                             compositeMetadata, this, variables, QueryIterator.this);
             
+            if (exceededOrEvaluationCache != null)
+                contextCreator.addAdditionalEntries(exceededOrEvaluationCache);
+            
             final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
             Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction);
             if (log.isTraceEnabled()) {
@@ -1294,7 +1302,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                         .setSortedUIDs(sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit)
                         .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector)
                         .setIndexOnlyFields(this.getAllIndexOnlyFields()).setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
-                        .setCompositeMetadata(compositeMetadata);
+                        .setCompositeMetadata(compositeMetadata).setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // TODO: .setStatsPort(this.statsdHostAndPort);
     }
     

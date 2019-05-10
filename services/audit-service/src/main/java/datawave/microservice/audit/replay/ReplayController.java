@@ -93,8 +93,8 @@ public class ReplayController {
     }
     
     private void init() {
-        if (auditProperties.getFs().getConfigResources() != null) {
-            for (String resource : auditProperties.getFs().getConfigResources())
+        if (auditProperties.getFsConfigResources() != null) {
+            for (String resource : auditProperties.getFsConfigResources())
                 config.addResource(new Path(resource));
         }
     }

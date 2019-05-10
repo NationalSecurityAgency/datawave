@@ -11,6 +11,8 @@ hazelcast.client.enabled: ${hzClient:false}
 
 # CONFIGURE ME
 # audit:
+#   replay:
+#     enabled: true
 #   health:
 #     rabbit:
 #       enabled: true

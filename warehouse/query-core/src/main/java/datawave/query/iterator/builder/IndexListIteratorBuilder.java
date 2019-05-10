@@ -7,7 +7,6 @@ import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -27,10 +26,9 @@ import java.util.Set;
 public class IndexListIteratorBuilder extends IvaratorBuilder implements IteratorBuilder {
     private static Logger log = Logger.getLogger(IndexListIteratorBuilder.class);
     
-    protected FileSystem fstHdfsFileSystem;
     protected Boolean negated;
     protected Set<String> values;
-    protected URI fstURI;
+    protected FST fst;
     
     public boolean isNegated() {
         return negated;
@@ -53,28 +51,18 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
         this.values = values;
     }
     
-    public FileSystem getFstHdfsFileSystem() {
-        return fstHdfsFileSystem;
+    public FST getFst() {
+        return fst;
     }
     
-    public void setFstHdfsFileSystem(FileSystem fstHdfsFileSystem) {
-        this.fstHdfsFileSystem = fstHdfsFileSystem;
-    }
-    
-    public URI getFstURI() {
-        return fstURI;
-    }
-    
-    public void setFstURI(URI fstURI) {
-        this.fstURI = fstURI;
-        if (null != fstURI)
-            setValue(fstURI.toASCIIString());
+    public void setFst(FST fst) {
+        this.fst = fst;
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(field, (values != null ? values : fstURI), negated, source, datatypeFilter, timeFilter, keyTform, ivaratorCacheDirURI, hdfsFileSystem)) {
+        if (notNull(field, (values != null ? values : fst), negated, source, datatypeFilter, timeFilter, keyTform, ivaratorCacheDirURI, hdfsFileSystem)) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + field + (negated ? "!~" : "=~") + value);
             }
@@ -106,7 +94,6 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                                     .build();
                     
                 } else {
-                    FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstURI), hdfsFileCompressionCodec, fstHdfsFileSystem);
                     listIterator = DatawaveFieldIndexListIteratorJexl.builder().withFieldName(new Text(field)).withFST(fst).withTimeFilter(timeFilter)
                                     .withDatatypeFilter(datatypeFilter).negated(negated).withScanThreshold(ivaratorCacheScanPersistThreshold)
                                     .withScanTimeout(ivaratorCacheScanTimeout).withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
