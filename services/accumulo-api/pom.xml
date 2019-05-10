@@ -7,12 +7,12 @@
         <version>1.3</version>
     </parent>
     <artifactId>accumulo-api</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
     <properties>
         <version.accumulo>1.9.2</version.accumulo>
         <version.base-rest-responses>1.1</version.base-rest-responses>
         <version.microservice.accumulo-utils>1.3</version.microservice.accumulo-utils>
-        <version.microservice.type-utils>1.1-SNAPSHOT</version.microservice.type-utils>
+        <version.microservice.type-utils>1.2</version.microservice.type-utils>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -73,7 +73,7 @@
             <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
-                <version>2.11.0.SP4</version>
+                <version>2.11.0</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
