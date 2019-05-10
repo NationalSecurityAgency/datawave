@@ -38,13 +38,6 @@
                                     <classifier>dist</classifier>
                                     <type>tar.gz</type>
                                 </artifactItem>
-                                <artifactItem>
-                                    <groupId>gov.nsa.datawave.webservices</groupId>
-                                    <artifactId>datawave-ws-accumulo-client</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>dist</classifier>
-                                    <type>tar.gz</type>
-                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>

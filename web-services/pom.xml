@@ -11,14 +11,13 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
+        <module>accumulo</module>
         <module>common-util</module>
         <module>security</module>
         <module>common</module>
         <module>query</module>
         <module>client</module>
         <module>cached-results</module>
-        <module>accumulo-client</module>
-        <module>accumulo</module>
         <module>map-reduce</module>
         <module>map-reduce-status</module>
         <module>map-reduce-embedded</module>
