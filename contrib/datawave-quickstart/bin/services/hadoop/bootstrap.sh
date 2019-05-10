@@ -28,17 +28,16 @@ dfs.datanode.handler.count 10
 dfs.datanode.synconclose true
 dfs.replication 1"
 
+DW_HADOOP_MR_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 # mapred-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address http://localhost:8020
 mapreduce.jobhistory.webapp.address http://localhost:8021
 mapreduce.jobhistory.intermediate-done-dir ${DW_HADOOP_MR_INTER_DIR}
 mapreduce.jobhistory.done-dir ${DW_HADOOP_MR_DONE_DIR}
-mapreduce.admin.map.child.java.opts -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true
 mapreduce.map.memory.mb 2048
-mapreduce.reduce.memory.mb 3072
-mapreduce.map.java.opts -Xmx1024m
-mapreduce.reduce.java.opts -Xmx2048m
-mapreduce.admin.reduce.child.java.opts -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true
+mapreduce.reduce.memory.mb 2048
+mapreduce.map.java.opts -Xmx1024m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
+mapreduce.reduce.java.opts -Xmx1792m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
 mapreduce.framework.name yarn
 yarn.app.mapreduce.am.env HADOOP_MAPRED_HOME=${HADOOP_HOME}
 mapreduce.map.env HADOOP_MAPRED_HOME=${HADOOP_HOME}
