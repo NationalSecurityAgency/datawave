@@ -11,16 +11,15 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.GenericCityFields;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class LuceneQueryPlannerTest extends AbstractFunctionalQuery {
@@ -69,7 +68,8 @@ public class LuceneQueryPlannerTest extends AbstractFunctionalQuery {
         String state = "lazio";
         String phrase = RE_OP + "'" + state + "'";
         String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#INCLUDE(" + state + ")";
-        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "' && filter:includeRegex(" + Constants.ANY_FIELD + ", '" + state + "')";
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + JEXL_AND_OP + "filter:includeRegex(" + Constants.ANY_FIELD + ", '" + state
+                        + "')";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
     }
@@ -81,7 +81,8 @@ public class LuceneQueryPlannerTest extends AbstractFunctionalQuery {
         String state = "lazio";
         String phrase = RE_OP + "'" + state + "'";
         String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#INCLUDE(" + Constants.ANY_FIELD + "," + state + ")";
-        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "' && (filter:includeRegex(" + Constants.ANY_FIELD + ", '" + state + "'))";
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + JEXL_AND_OP + "(filter:includeRegex(" + Constants.ANY_FIELD + ", '" + state
+                        + "'))";
         ;
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
@@ -94,7 +95,8 @@ public class LuceneQueryPlannerTest extends AbstractFunctionalQuery {
         String state = "l.*";
         String phrase = RE_OP + "'" + state + "'";
         String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#INCLUDE(" + Constants.ANY_FIELD + "," + state + ")";
-        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "' && (filter:includeRegex(" + Constants.ANY_FIELD + ", '" + state + "'))";
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + JEXL_AND_OP + "(filter:includeRegex(" + Constants.ANY_FIELD + ", '" + state
+                        + "'))";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
     }
@@ -107,8 +109,8 @@ public class LuceneQueryPlannerTest extends AbstractFunctionalQuery {
         String phrase = RE_OP + "'" + state + "'";
         String query = CityField.CONTINENT.name() + ":\"" + cont + "\"" + AND_OP + CityField.CITY.name() + ":*" + AND_OP + "#INCLUDE(" + Constants.ANY_FIELD
                         + "," + state + ")";
-        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + cont + "' && !(" + CityField.CITY.name() + EQ_OP + "null) && (filter:includeRegex("
-                        + Constants.ANY_FIELD + ", '" + state + "'))";
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + cont + "'" + JEXL_AND_OP + "!(" + CityField.CITY.name() + EQ_OP + "null)" + JEXL_AND_OP
+                        + "(filter:includeRegex(" + Constants.ANY_FIELD + ", '" + state + "'))";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
     }

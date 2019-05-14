@@ -12,16 +12,17 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.GenericCityFields;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
@@ -53,7 +54,7 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
             String cityPhrase = EQ_OP + "'" + city.name() + "'";
             String anyCity = CityField.CITY.name() + cityPhrase;
             if (city.name().equals("london")) {
-                anyCity = "(" + anyCity + " || " + CityField.STATE.name() + cityPhrase + ")";
+                anyCity = "(" + anyCity + JEXL_OR_OP + CityField.STATE.name() + cityPhrase + ")";
             }
             String query = Constants.ANY_FIELD + cityPhrase;
             String plan = getPlan(query, true, true);
@@ -68,7 +69,7 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
             String cityPhrase = " != " + "'" + city.name() + "'";
             String anyCity = "(CITY == '" + city.name() + "'";
             if (city.name().equals("london")) {
-                anyCity = '(' + anyCity + " || STATE == '" + city.name() + "'))";
+                anyCity = '(' + anyCity + JEXL_OR_OP + "STATE == '" + city.name() + "'))";
             } else {
                 anyCity = anyCity + ')';
             }
@@ -101,9 +102,9 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
             String query = Constants.ANY_FIELD + cityPhrase + AND_OP + Constants.ANY_FIELD + contPhrase;
             String anyQuery = CityField.CITY.name() + cityPhrase;
             if (city.name().equals("london")) {
-                anyQuery = "(" + anyQuery + " || " + CityField.STATE.name() + cityPhrase + ")";
+                anyQuery = "(" + anyQuery + JEXL_OR_OP + CityField.STATE.name() + cityPhrase + ")";
             }
-            anyQuery += " && " + CityField.CONTINENT.name() + contPhrase;
+            anyQuery += JEXL_AND_OP + CityField.CONTINENT.name() + contPhrase;
             String plan = getPlan(query, true, true);
             assertPlanEquals(anyQuery, plan);
         }
@@ -119,9 +120,9 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
             String query = Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + statePhrase;
             String anyQuery = CityField.CITY.name() + cityPhrase;
             if (city.name().equals("london")) {
-                anyQuery = anyQuery + " || " + CityField.STATE.name() + cityPhrase;
+                anyQuery = anyQuery + JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
             }
-            anyQuery += " || " + CityField.STATE.name() + statePhrase;
+            anyQuery += JEXL_OR_OP + CityField.STATE.name() + statePhrase;
             String plan = getPlan(query, true, true);
             assertPlanEquals(anyQuery, plan);
         }
@@ -139,10 +140,10 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
             String query = "(" + Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + statePhrase + ")" + OR_OP + Constants.ANY_FIELD + contPhrase;
             String anyQuery = CityField.CITY.name() + cityPhrase;
             if (city.name().equals("london")) {
-                anyQuery = anyQuery + " || " + CityField.STATE.name() + cityPhrase;
+                anyQuery = anyQuery + JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
             }
-            anyQuery += " || " + CityField.STATE.name() + statePhrase;
-            anyQuery += " || _NOFIELD_" + contPhrase;
+            anyQuery += JEXL_OR_OP + CityField.STATE.name() + statePhrase;
+            anyQuery += JEXL_OR_OP + "_NOFIELD_" + contPhrase;
             String plan = getPlan(query, true, true);
             assertPlanEquals(anyQuery, plan);
         }
@@ -160,10 +161,10 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
             String query = Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + statePhrase + AND_OP + Constants.ANY_FIELD + contPhrase;
             String anyQuery = CityField.CITY.name() + cityPhrase;
             if (city.name().equals("london")) {
-                anyQuery = anyQuery + " || " + CityField.STATE.name() + cityPhrase;
+                anyQuery = anyQuery + JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
             }
-            anyQuery += " || (" + CityField.STATE.name() + statePhrase.toLowerCase();
-            anyQuery += " && " + CityField.CONTINENT.name() + contPhrase.toLowerCase() + ")";
+            anyQuery += JEXL_OR_OP + "(" + CityField.STATE.name() + statePhrase.toLowerCase();
+            anyQuery += JEXL_AND_OP + CityField.CONTINENT.name() + contPhrase.toLowerCase() + ")";
             String plan = getPlan(query, true, true);
             assertPlanEquals(anyQuery, plan);
         }
@@ -179,9 +180,9 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
             String statePhrase = EQ_OP + "'" + state + "'";
             String contPhrase = EQ_OP + "'" + cont + "'";
             String query = Constants.ANY_FIELD + cityPhrase + AND_OP + Constants.ANY_FIELD + statePhrase + AND_OP + Constants.ANY_FIELD + contPhrase;
-            String anyQuery = CityField.CONTINENT.name() + contPhrase.toLowerCase() + " && ";
+            String anyQuery = CityField.CONTINENT.name() + contPhrase.toLowerCase() + JEXL_AND_OP;
             if (city.name().equals("london")) {
-                anyQuery += "((" + CityField.STATE.name() + statePhrase.toLowerCase() + " && " + CityField.STATE.name() + cityPhrase + ") || ";
+                anyQuery += "((" + CityField.STATE.name() + statePhrase.toLowerCase() + JEXL_AND_OP + CityField.STATE.name() + cityPhrase + ")" + JEXL_OR_OP;
             }
             anyQuery += CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'" + city.name() + CompositeIngest.DEFAULT_SEPARATOR
                             + state.toLowerCase() + "'";
@@ -219,7 +220,7 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
         String phrase = EQ_OP + "'nothing'";
         String first = CityField.ACCESS.name() + EQ_OP + "'NA'";
         String query = first + AND_OP + Constants.ANY_FIELD + phrase;
-        String expect = '(' + CityField.ACCESS.name() + EQ_OP + "'na' || " + first + ") && _NOFIELD_ == 'nothing'";
+        String expect = '(' + CityField.ACCESS.name() + EQ_OP + "'na'" + JEXL_OR_OP + first + ")" + JEXL_AND_OP + "_NOFIELD_ == 'nothing'";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
     }
@@ -239,7 +240,7 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
         for (TestCities city : TestCities.values()) {
             String qCity = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'";
             String query = qCity + AND_OP + Constants.ANY_FIELD + phrase;
-            String expect = qCity + " && ((ASTDelayedPredicate = true) && (_NOFIELD_" + phrase + "))";
+            String expect = qCity + JEXL_AND_OP + "((ASTDelayedPredicate = true)" + JEXL_AND_OP + "(_NOFIELD_" + phrase + "))";
             String plan = getPlan(query, true, true);
             assertPlanEquals(expect, plan);
         }
@@ -257,8 +258,8 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
         String roPhrase = RE_OP + "'ro.*'";
         String oPhrase = RE_OP + "'.*o'";
         String query = Constants.ANY_FIELD + roPhrase + OR_OP + Constants.ANY_FIELD + oPhrase;
-        String expect = CityField.CITY.name() + EQ_OP + "'rome' || " + CityField.STATE.name() + EQ_OP + "'lazio' || " + CityField.STATE.name() + EQ_OP
-                        + "'ohio'";
+        String expect = CityField.CITY.name() + EQ_OP + "'rome'" + JEXL_OR_OP + CityField.STATE.name() + EQ_OP + "'lazio'" + JEXL_OR_OP
+                        + CityField.STATE.name() + EQ_OP + "'ohio'";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
     }
@@ -269,7 +270,7 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
         String oPhrase = RE_OP + "'.*o'";
         String query = Constants.ANY_FIELD + roPhrase + AND_OP + Constants.ANY_FIELD + oPhrase;
         String compositeField = CityField.CITY.name() + '_' + CityField.STATE.name();
-        String expect = "(" + compositeField + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio' || " + compositeField + EQ_OP + "'rome"
+        String expect = "(" + compositeField + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'" + JEXL_OR_OP + compositeField + EQ_OP + "'rome"
                         + CompositeIngest.DEFAULT_SEPARATOR + "ohio')";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
@@ -280,10 +281,10 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
         String roPhrase = RE_OP + "'ro.*'";
         String oPhrase = RE_OP + "'.*o'";
         String query = Constants.ANY_FIELD + roPhrase + AND_OP + CityField.STATE.name() + oPhrase;
-        String expect = "(" + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio' || "
-                        + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "ohio')"
-                        + " && ((ASTEvaluationOnly = true) && (" + CityField.CITY.name() + " == 'rome'" + " && (" + CityField.STATE.name() + " == 'lazio' || "
-                        + CityField.STATE.name() + " == 'ohio')))";
+        String expect = "(" + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'"
+                        + JEXL_OR_OP + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "ohio')"
+                        + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + "(" + CityField.CITY.name() + " == 'rome'" + JEXL_AND_OP + "("
+                        + CityField.STATE.name() + " == 'lazio'" + JEXL_OR_OP + CityField.STATE.name() + " == 'ohio')))";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
     }
@@ -338,9 +339,9 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
                 String query = Constants.ANY_FIELD + cityPhrase + AND_OP + Constants.ANY_FIELD + regPhrase;
                 String expect = CityField.CITY.name() + cityPhrase;
                 if (city.name().equals("london")) {
-                    expect = "(" + expect + " || " + CityField.STATE.name() + cityPhrase + ")";
+                    expect = "(" + expect + JEXL_OR_OP + CityField.STATE.name() + cityPhrase + ")";
                 }
-                expect += " && !(" + CityField.CONTINENT.name() + EQ_OP + "'north america')";
+                expect += JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + EQ_OP + "'north america')";
                 String plan = getPlan(query, true, true);
                 assertPlanEquals(expect, plan);
             }
@@ -359,9 +360,9 @@ public class AnyFieldQueryPlannerTest extends AbstractFunctionalQuery {
                 String query = Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + regPhrase;
                 String expect = CityField.CITY.name() + cityPhrase;
                 if (city.name().equals("london")) {
-                    expect += " || " + CityField.STATE.name() + cityPhrase;
+                    expect += JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
                 }
-                expect += " || !(" + CityField.CONTINENT + EQ_OP + "'north america')";
+                expect += JEXL_OR_OP + "!(" + CityField.CONTINENT + EQ_OP + "'north america')";
                 String plan = getPlan(query, true, true);
                 assertPlanEquals(expect, plan);
             }

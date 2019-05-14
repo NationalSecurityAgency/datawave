@@ -11,16 +11,17 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.GenericCityFields;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
@@ -89,7 +90,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
             String cityPhrase = EQ_OP + "'" + city.name() + "'";
             String contPhrase = EQ_OP + "'" + cont + "'";
             String query = Constants.ANY_FIELD + cityPhrase + AND_OP + Constants.ANY_FIELD + contPhrase;
-            String anyQuery = Constants.ANY_FIELD + cityPhrase + " && " + Constants.ANY_FIELD + contPhrase;
+            String anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_AND_OP + Constants.ANY_FIELD + contPhrase;
             String plan = getPlan(query, false, true);
             assertPlanEquals(anyQuery, plan);
         }
@@ -103,7 +104,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
             String cityPhrase = EQ_OP + "'" + city.name() + "'";
             String statePhrase = EQ_OP + "'" + state + "'";
             String query = Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + statePhrase;
-            String anyQuery = Constants.ANY_FIELD + cityPhrase + " || " + Constants.ANY_FIELD + statePhrase;
+            String anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + Constants.ANY_FIELD + statePhrase;
             String plan = getPlan(query, false, true);
             assertPlanEquals(anyQuery, plan);
         }
@@ -119,7 +120,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
             String statePhrase = EQ_OP + "'" + state + "'";
             String contPhrase = EQ_OP + "'" + cont + "'";
             String query = "(" + Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + statePhrase + ")" + OR_OP + Constants.ANY_FIELD + contPhrase;
-            String anyQuery = Constants.ANY_FIELD + cityPhrase + " || " + Constants.ANY_FIELD + statePhrase + " || " + Constants.NO_FIELD + contPhrase;
+            String anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + Constants.ANY_FIELD + statePhrase + JEXL_OR_OP + Constants.NO_FIELD + contPhrase;
             String plan = getPlan(query, false, true);
             assertPlanEquals(anyQuery, plan);
         }
@@ -135,7 +136,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
             String statePhrase = EQ_OP + "'" + state + "'";
             String contPhrase = EQ_OP + "'" + cont + "'";
             String query = Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + statePhrase + AND_OP + Constants.ANY_FIELD + contPhrase;
-            String anyQuery = Constants.ANY_FIELD + cityPhrase.toLowerCase() + " || (" + Constants.ANY_FIELD + statePhrase.toLowerCase() + " && "
+            String anyQuery = Constants.ANY_FIELD + cityPhrase.toLowerCase() + JEXL_OR_OP + "(" + Constants.ANY_FIELD + statePhrase.toLowerCase() + JEXL_AND_OP
                             + Constants.ANY_FIELD + contPhrase.toLowerCase() + ")";
             String plan = getPlan(query, false, true);
             assertPlanEquals(anyQuery, plan);
@@ -152,8 +153,8 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
             String statePhrase = EQ_OP + "'" + state + "'";
             String contPhrase = EQ_OP + "'" + cont + "'";
             String query = Constants.ANY_FIELD + cityPhrase + AND_OP + Constants.ANY_FIELD + statePhrase + AND_OP + Constants.ANY_FIELD + contPhrase;
-            String anyQuery = Constants.ANY_FIELD + cityPhrase + " && " + Constants.ANY_FIELD + statePhrase.toLowerCase() + " && " + Constants.ANY_FIELD
-                            + contPhrase.toLowerCase();
+            String anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_AND_OP + Constants.ANY_FIELD + statePhrase.toLowerCase() + JEXL_AND_OP
+                            + Constants.ANY_FIELD + contPhrase.toLowerCase();
             String plan = getPlan(query, false, true);
             assertPlanEquals(anyQuery, plan);
         }
@@ -185,7 +186,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
         String phrase = EQ_OP + "'nothing'";
         String first = CityField.ACCESS.name() + EQ_OP + "'NA'";
         String query = first + AND_OP + Constants.ANY_FIELD + phrase;
-        String expect = '(' + CityField.ACCESS.name() + EQ_OP + "'na' || " + first + ") && " + Constants.NO_FIELD + phrase;
+        String expect = '(' + CityField.ACCESS.name() + EQ_OP + "'na'" + JEXL_OR_OP + first + ")" + JEXL_AND_OP + Constants.NO_FIELD + phrase;
         String plan = getPlan(query, false, true);
         assertPlanEquals(expect, plan);
     }
@@ -205,7 +206,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
         for (TestCities city : TestCities.values()) {
             String qCity = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'";
             String query = qCity + AND_OP + Constants.ANY_FIELD + phrase;
-            String expect = qCity + " && " + "((ASTDelayedPredicate = true) && (" + Constants.NO_FIELD + phrase + "))";
+            String expect = qCity + JEXL_AND_OP + "((ASTDelayedPredicate = true)" + JEXL_AND_OP + "(" + Constants.NO_FIELD + phrase + "))";
             String plan = getPlan(query, false, true);
             assertPlanEquals(expect, plan);
         }
@@ -223,8 +224,8 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
         String roPhrase = RE_OP + "'ro.*'";
         String oPhrase = RE_OP + "'.*o'";
         String query = Constants.ANY_FIELD + roPhrase + OR_OP + Constants.ANY_FIELD + oPhrase;
-        String expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + " || " + Constants.ANY_FIELD + EQ_OP + "'lazio'" + " || " + Constants.ANY_FIELD + EQ_OP
-                        + "'ohio'";
+        String expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + JEXL_OR_OP + Constants.ANY_FIELD + EQ_OP + "'lazio'" + JEXL_OR_OP + Constants.ANY_FIELD
+                        + EQ_OP + "'ohio'";
         String plan = getPlan(query, false, true);
         assertPlanEquals(expect, plan);
     }
@@ -234,8 +235,8 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
         String roPhrase = RE_OP + "'ro.*'";
         String oPhrase = RE_OP + "'.*o'";
         String query = Constants.ANY_FIELD + roPhrase + AND_OP + Constants.ANY_FIELD + oPhrase;
-        String expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + " && (" + Constants.ANY_FIELD + EQ_OP + "'lazio'" + " || " + Constants.ANY_FIELD + EQ_OP
-                        + "'ohio')";
+        String expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + EQ_OP + "'lazio'" + JEXL_OR_OP + Constants.ANY_FIELD
+                        + EQ_OP + "'ohio')";
         String plan = getPlan(query, false, true);
         assertPlanEquals(expect, plan);
     }
@@ -245,8 +246,8 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
         String roPhrase = RE_OP + "'ro.*'";
         String oPhrase = RE_OP + "'.*o'";
         String query = Constants.ANY_FIELD + roPhrase + AND_OP + CityField.STATE.name() + oPhrase;
-        String expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + " && (" + CityField.STATE.name() + EQ_OP + "'lazio'" + " || " + CityField.STATE.name() + EQ_OP
-                        + "'ohio')";
+        String expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + JEXL_AND_OP + "(" + CityField.STATE.name() + EQ_OP + "'lazio'" + JEXL_OR_OP
+                        + CityField.STATE.name() + EQ_OP + "'ohio')";
         String plan = getPlan(query, false, true);
         assertPlanEquals(expect, plan);
     }
@@ -256,7 +257,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
         String roPhrase = RE_OP + "'ro.*'";
         String oPhrase = EQ_OP + "'ohio'";
         String query = Constants.ANY_FIELD + roPhrase + AND_OP + CityField.STATE.name() + oPhrase;
-        String expect = Constants.ANY_FIELD + EQ_OP + "'rome' && " + CityField.STATE.name() + oPhrase;
+        String expect = Constants.ANY_FIELD + EQ_OP + "'rome'" + JEXL_AND_OP + CityField.STATE.name() + oPhrase;
         String plan = getPlan(query, false, true);
         assertPlanEquals(expect, plan);
     }
@@ -299,7 +300,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
             for (final TestCities city : TestCities.values()) {
                 String cityPhrase = EQ_OP + "'" + city.name() + "'";
                 String query = Constants.ANY_FIELD + cityPhrase + AND_OP + Constants.ANY_FIELD + regPhrase;
-                String expect = Constants.ANY_FIELD + cityPhrase + " && " + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america')";
+                String expect = Constants.ANY_FIELD + cityPhrase + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america')";
                 String plan = getPlan(query, false, true);
                 assertPlanEquals(expect, plan);
             }
@@ -316,7 +317,7 @@ public class AnyFieldQueryPlannerNoFieldExpansionTest extends AbstractFunctional
             for (final TestCities city : TestCities.values()) {
                 String cityPhrase = EQ_OP + "'" + city.name() + "'";
                 String query = Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + regPhrase;
-                String expect = Constants.ANY_FIELD + cityPhrase + " || !(" + Constants.ANY_FIELD + EQ_OP + "'north america')";
+                String expect = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america')";
                 String plan = getPlan(query, false, true);
                 assertPlanEquals(expect, plan);
             }

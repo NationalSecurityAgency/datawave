@@ -39,15 +39,8 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @param expandValues
      *            - should regex/ranges be expanded into discrete values
      */
-    default String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
-                    throws Exception {
-        if (expandFields && expandValues) {
-            GenericQueryConfiguration configuration = initialize(connection, settings, runtimeQueryAuthorizations);
-            return configuration.getQueryString();
-        } else {
-            return settings.getQuery();
-        }
-    }
+    String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                    throws Exception;
     
     /**
      * Implementations create a configuration using the connection, settings, and runtimeQueryAuthorizations.

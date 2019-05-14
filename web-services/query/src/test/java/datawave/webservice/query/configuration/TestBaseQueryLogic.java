@@ -16,6 +16,7 @@ import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.RoleManager;
 
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -83,6 +84,12 @@ public class TestBaseQueryLogic {
         @Override
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
             // No op
+        }
+        
+        @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
         }
         
         @Override

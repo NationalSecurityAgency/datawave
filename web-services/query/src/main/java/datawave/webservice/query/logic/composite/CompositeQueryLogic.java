@@ -210,6 +210,21 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     }
     
     @Override
+    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                    throws Exception {
+        
+        StringBuilder plans = new StringBuilder();
+        int count = 1;
+        String separator = Integer.toString(count++) + ": ";
+        for (Entry<BaseQueryLogic<?>,QueryLogicHolder> entry : logicState.entrySet()) {
+            plans.append(separator);
+            plans.append(entry.getKey().getPlan(connection, settings, runtimeQueryAuthorizations, expandFields, expandValues));
+            separator = "\n" + Integer.toString(count++) + ": ";
+        }
+        return plans.toString();
+    }
+    
+    @Override
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
         for (Entry<BaseQueryLogic<?>,QueryLogicHolder> entry : logicState.entrySet()) {
             entry.getKey().setupQuery(entry.getValue().getConfig());

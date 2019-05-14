@@ -9,16 +9,17 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.GenericCityFields;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.GTE_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 import static datawave.query.testframework.RawDataManager.LTE_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 
@@ -49,7 +50,7 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
         log.info("------  testSingleValue  ------");
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name() + "'";
-            String expected = CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + " && " + CityField.CITY.name() + GTE_OP + "'" + city.name() + "'";
+            String expected = CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name() + "'";
             String plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
         }
@@ -60,7 +61,7 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
         for (final TestCities city : TestCities.values()) {
             String query = "((" + CityField.NUM.name() + LTE_OP + "100)" + AND_OP + "(" + CityField.NUM.name() + GTE_OP + "100))" + AND_OP
                             + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'";
-            String expected = "((" + CityField.NUM.name() + LTE_OP + "'+cE1')" + " && " + "(" + CityField.NUM.name() + GTE_OP + "'+cE1'))" + " && "
+            String expected = "((" + CityField.NUM.name() + LTE_OP + "'+cE1')" + JEXL_AND_OP + "(" + CityField.NUM.name() + GTE_OP + "'+cE1'))" + JEXL_AND_OP
                             + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'";
             String plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
@@ -72,8 +73,8 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
         for (final TestCities city : TestCities.values()) {
             String query = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name() + "')"
                             + AND_OP + "(" + CityField.NUM.name() + LTE_OP + "20" + AND_OP + CityField.NUM.name() + GTE_OP + "20)";
-            String expected = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + " && " + CityField.CITY.name() + GTE_OP + "'" + city.name()
-                            + "')" + AND_OP + "(" + CityField.NUM.name() + LTE_OP + "'+bE2'" + " && " + CityField.NUM.name() + GTE_OP + "'+bE2')";
+            String expected = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name()
+                            + "')" + AND_OP + "(" + CityField.NUM.name() + LTE_OP + "'+bE2'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP + "'+bE2')";
             String plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
         }
@@ -85,8 +86,8 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name() + "'"
                             + AND_OP + CityField.NUM.name() + LTE_OP + "20" + AND_OP + CityField.NUM.name() + GTE_OP + "20";
-            String expected = CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + " && " + CityField.CITY.name() + GTE_OP + "'" + city.name() + "'"
-                            + " && " + CityField.NUM.name() + LTE_OP + "'+bE2'" + " && " + CityField.NUM.name() + GTE_OP + "'+bE2'";
+            String expected = CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name() + "'"
+                            + JEXL_AND_OP + CityField.NUM.name() + LTE_OP + "'+bE2'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP + "'+bE2'";
             String plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
         }
@@ -98,8 +99,8 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
         for (final TestCities city : TestCities.values()) {
             String query = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name() + "')"
                             + OR_OP + "(" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100)";
-            String expected = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + " && " + CityField.CITY.name() + GTE_OP + "'" + city.name()
-                            + "')" + OR_OP + "(" + CityField.NUM.name() + LTE_OP + "'+cE1'" + " && " + CityField.NUM.name() + GTE_OP + "'+cE1')";
+            String expected = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name()
+                            + "')" + OR_OP + "(" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP + "'+cE1')";
             String plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
         }
@@ -110,17 +111,17 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
         log.info("------  testMultiFieldsNoResults  ------");
         String state = "'ohio'";
         String qState = "(" + CityField.STATE.name() + LTE_OP + state + AND_OP + CityField.STATE.name() + GTE_OP + state + ")";
-        String expectedState = "(" + CityField.STATE.name() + LTE_OP + state + " && " + CityField.STATE.name() + GTE_OP + state + ")";
+        String expectedState = "(" + CityField.STATE.name() + LTE_OP + state + JEXL_AND_OP + CityField.STATE.name() + GTE_OP + state + ")";
         
         String cont = "'europe'";
         String qCont = "(" + CityField.CONTINENT.name() + LTE_OP + cont + AND_OP + CityField.CONTINENT.name() + GTE_OP + cont + ")";
-        String expectedCont = "(" + CityField.CONTINENT.name() + LTE_OP + cont + " && " + CityField.CONTINENT.name() + GTE_OP + cont + ")";
+        String expectedCont = "(" + CityField.CONTINENT.name() + LTE_OP + cont + JEXL_AND_OP + CityField.CONTINENT.name() + GTE_OP + cont + ")";
         String qNum = "(" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100)";
-        String expectedNum = "(" + CityField.NUM.name() + LTE_OP + "'+cE1'" + " && " + CityField.NUM.name() + GTE_OP + "'+cE1')";
+        String expectedNum = "(" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP + "'+cE1')";
         for (final TestCities city : TestCities.values()) {
             String query = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name() + "')"
                             + AND_OP + qState + AND_OP + qCont + AND_OP + qNum;
-            String expected = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + " && " + CityField.CITY.name() + GTE_OP + "'" + city.name()
+            String expected = "(" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP + "'" + city.name()
                             + "')" + AND_OP + expectedState + AND_OP + expectedCont + AND_OP + expectedNum;
             String plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
@@ -133,8 +134,8 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
         String city = TestCities.rome.name();
         String query = "(" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.CITY.name() + EQ_OP + "'" + city + "')" + AND_OP + CityField.NUM.name()
                         + GTE_OP + "100";
-        String expected = CityField.NUM.name() + LTE_OP + "'+cE1'" + " && " + CityField.CITY.name() + EQ_OP + "'" + city + "'" + " && " + CityField.NUM.name()
-                        + GTE_OP + "'+cE1'";
+        String expected = CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP
+                        + CityField.NUM.name() + GTE_OP + "'+cE1'";
         String plan = getPlan(query, true, false);
         assertPlanEquals(expected, plan);
     }
@@ -143,7 +144,7 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
     public void testRangeInOut() throws Exception {
         log.info("------  testRangeInOut  ------");
         String query = "(" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100)";
-        String expected = "(" + CityField.NUM.name() + LTE_OP + "'+cE1'" + " && " + CityField.NUM.name() + GTE_OP + "'+cE1')";
+        String expected = "(" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP + "'+cE1')";
         this.logic.setMaxValueExpansionThreshold(2);
         String plan = getPlan(query, true, false);
         assertPlanEquals(expected, plan);
@@ -165,8 +166,8 @@ public class RangeQueryPlannerNoValueExpansionTest extends AbstractFunctionalQue
         String city = TestCities.rome.name();
         String query = CityField.NUM.name() + LTE_OP + "100" + AND_OP + "(" + CityField.CITY.name() + EQ_OP + "'" + city + "'" + OR_OP + CityField.NUM.name()
                         + GTE_OP + "100)";
-        String expected = "(" + CityField.CITY.name() + EQ_OP + "'" + city + "'" + " && " + CityField.NUM.name() + LTE_OP + "'+cE1')" + " || " + '('
-                        + CityField.NUM.name() + LTE_OP + "'+cE1'" + " && " + CityField.NUM.name() + GTE_OP + "'+cE1')";
+        String expected = "(" + CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + CityField.NUM.name() + LTE_OP + "'+cE1')" + JEXL_OR_OP + '('
+                        + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP + "'+cE1')";
         String plan = getPlan(query, true, false);
         assertPlanEquals(expected, plan);
     }

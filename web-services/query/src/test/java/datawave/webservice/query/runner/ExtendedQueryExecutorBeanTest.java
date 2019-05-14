@@ -3818,6 +3818,12 @@ public class ExtendedQueryExecutorBeanTest {
         }
         
         @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
+        }
+        
+        @Override
         public Priority getConnectionPriority() {
             return null;
         }

@@ -338,7 +338,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
                     List<DocumentChecker> checkers) throws Exception {
-        log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
+        if (log.isDebugEnabled()) {
+            log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
+        }
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);
@@ -351,7 +353,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         
         GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
         this.logic.setupQuery(config);
-        log.debug("Plan: " + config.getQueryString());
+        if (log.isDebugEnabled()) {
+            log.debug("Plan: " + config.getQueryString());
+        }
         testHarness.assertLogicResults(this.logic, expected, checkers);
     }
     
@@ -365,7 +369,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runCountTest(String query) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        log.debug("  count query[" + query + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");
+        if (log.isDebugEnabled()) {
+            log.debug("  count query[" + query + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1])
+                            + ")");
+        }
         
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startEndDate[0]);
@@ -391,7 +398,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         Assert.assertEquals(1, fields.size());
         FieldBase<?> count = (FieldBase) fields.get(0);
         String val = count.getValueString();
-        log.debug("expected count(" + expect.size() + ") actual count(" + val + ")");
+        if (log.isDebugEnabled()) {
+            log.debug("expected count(" + expect.size() + ") actual count(" + val + ")");
+        }
         Assert.assertEquals("" + expect.size(), val);
     }
     
@@ -406,7 +415,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected GenericQueryConfiguration setupConfig(final String queryStr) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");
+        if (log.isDebugEnabled()) {
+            log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");
+        }
         
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startEndDate[0]);
@@ -435,7 +446,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected String getPlan(final String queryStr, boolean expandFields, boolean expandValues) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");
+        if (log.isDebugEnabled()) {
+            log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");
+        }
         
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startEndDate[0]);
