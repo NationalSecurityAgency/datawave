@@ -165,9 +165,9 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         // query should work without OR thresholds
         runTest(query, query);
         
+        // must have collapsible uids for pushdown to occur
         this.logic.setCollapseUids(true);
         this.logic.setMaxOrExpansionFstThreshold(1);
-        ivaratorConfig();
         ivaratorFstConfig();
         runTest(query, query);
     }
@@ -194,9 +194,9 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         // query should work without OR thresholds
         runTest(query, query);
         
+        // must have collapsible uids for pushdown to occur
         this.logic.setCollapseUids(true);
         this.logic.setMaxOrExpansionFstThreshold(1);
-        ivaratorConfig();
         ivaratorFstConfig();
         runTest(query, query);
     }
@@ -339,7 +339,6 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testNumericRange() throws Exception {
-        String city = TestCities.rome.name();
         String query = "(" + CityField.NUM.name() + GTE_OP + "99" + AND_OP + CityField.NUM.name() + LTE_OP + "131)";
         // should expand to EQNODES for 100, 110, 120, 130
         this.logic.setMaxValueExpansionThreshold(20);

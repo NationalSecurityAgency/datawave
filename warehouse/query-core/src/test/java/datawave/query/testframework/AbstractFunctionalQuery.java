@@ -478,20 +478,25 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         Assert.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
         
-        final String fstCache = (fst ? "fst-" : "");
         final List<String> dirs = new ArrayList<>();
+        final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
             // avoid threading issues by using a random number as part of the directory path to create a distinct directory
             int rand = rVal.nextInt(Integer.MAX_VALUE);
-            File ivCache = this.tmpDir.newFolder("ivarator.cache-" + fstCache + rand);
+            File ivCache = this.tmpDir.newFolder("ivarator.cache-" + rand);
             dirs.add(ivCache.toURI().toString());
+            if (fst) {
+                ivCache = this.tmpDir.newFolder("ivarator.cache-" + "fst-" + rand);
+                fstDirs.add(ivCache.toURI().toString());
+            }
         }
         String uriList = String.join(",", dirs);
         log.info("hdfs dirs(" + uriList + ")");
+        this.logic.setIvaratorCacheBaseURIs(uriList);
         if (fst) {
+            uriList = String.join(",", fstDirs);
+            log.info("fst dirs(" + uriList + ")");
             this.logic.setIvaratorFstHdfsBaseURIs(uriList);
-        } else {
-            this.logic.setIvaratorCacheBaseURIs(uriList);
         }
     }
 }
