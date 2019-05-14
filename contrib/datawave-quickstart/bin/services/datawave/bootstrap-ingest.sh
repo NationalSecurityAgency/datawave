@@ -147,24 +147,24 @@ function datawaveIngestStatus() {
     if [[ -n "${_bulkIngest}" ]]; then
         info "bulk ingest server => ${_bulkIngest}"
     else
-        error "bulk ingest server is not running"
+        info "bulk ingest server is not running"
     fi
     if [[ -n "${_liveIngest}" ]]; then
         info "live ingest server => ${_liveIngest}"
     else
-        error "live ingest server is not running"
+        info "live ingest server is not running"
     fi
 
     if [[ -n "${_flagMaker}" ]]; then
         info "flag maker => ${_flagMaker}"
     else
-        error "flag maker is not running"
+        info "flag maker is not running"
     fi
 
     if [[ -n "${_cleanup}" ]]; then
         info "cleanup server => ${_cleanup}"
     else
-        error "cleanup server is not running"
+        info "cleanup server is not running"
     fi
 
     info "bulk ingest pids: ${_bulkPids}"
