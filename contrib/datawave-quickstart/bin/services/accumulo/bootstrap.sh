@@ -162,8 +162,8 @@ function accumuloStatus() {
 
     test -z "${_gc}" && error "accumulo gc is not running"
     test -z "${_master}" && error "accumulo master is not running"
-    test -z "${_monitor}" && error "accumulo monitor is not running"
-    test -z "${_tracer}" && error "accumulo tracer is not running"
+    test -z "${_monitor}" && info "accumulo monitor is not running"
+    test -z "${_tracer}" && info "accumulo tracer is not running"
     test -z "${_tserver}" && error "accumulo tserver is not running"
 
     echo "======  Zookeeper Status  ======"
