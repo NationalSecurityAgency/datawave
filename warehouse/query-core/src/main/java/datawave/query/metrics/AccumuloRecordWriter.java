@@ -134,7 +134,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         try {
             bws.get(table).addMutation(mutation);
         } catch (MutationsRejectedException e) {
-            throw new IOException(e);
+            throw new IOException("MutationsRejectedException - ConstraintViolations: " + e.getConstraintViolationSummaries(), e);
         }
     }
     
@@ -212,19 +212,30 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             }
             
             if (!e.getConstraintViolationSummaries().isEmpty()) {
-                log.error("Constraint violations : " + e.getConstraintViolationSummaries().size());
+                log.error("Constraint violations : " + e.getConstraintViolationSummaries());
             }
         } finally {
-            if (null != this.connFactory) {
-                log.debug("Non-null connection factory");
-                if (null != this.conn) {
-                    log.debug("Non-null connector to return");
-                    try {
-                        this.connFactory.returnConnection(this.conn);
-                    } catch (Exception e) {
-                        log.warn("Could not return connection to pool", e);
-                    }
+            returnConnector();
+        }
+    }
+    
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        returnConnector();
+    }
+    
+    public void returnConnector() {
+        if (null != this.connFactory) {
+            log.debug("Non-null connection factory");
+            if (null != this.conn) {
+                log.debug("Non-null connector to return");
+                try {
+                    this.connFactory.returnConnection(this.conn);
+                } catch (Exception e) {
+                    log.warn("Could not return connection to pool", e);
                 }
+                this.conn = null;
             }
         }
     }
