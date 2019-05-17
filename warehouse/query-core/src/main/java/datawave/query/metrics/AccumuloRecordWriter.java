@@ -134,7 +134,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         try {
             bws.get(table).addMutation(mutation);
         } catch (MutationsRejectedException e) {
-            throw new IOException(e);
+            throw new IOException("MutationsRejectedException - ConstraintViolations: " + e.getConstraintViolationSummaries(), e);
         }
     }
     
@@ -212,7 +212,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             }
             
             if (!e.getConstraintViolationSummaries().isEmpty()) {
-                log.error("Constraint violations : " + e.getConstraintViolationSummaries().size());
+                log.error("Constraint violations : " + e.getConstraintViolationSummaries());
             }
         } finally {
             returnConnector();
