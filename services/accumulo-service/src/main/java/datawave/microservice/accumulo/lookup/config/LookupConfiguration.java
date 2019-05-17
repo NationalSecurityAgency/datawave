@@ -8,12 +8,20 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.context.annotation.RequestScope;
 
+@Lazy
 @Configuration
 @EnableConfigurationProperties({LookupProperties.class, LookupAuditProperties.class})
 @ConditionalOnProperty(name = "accumulo.lookup.enabled", havingValue = "true", matchIfMissing = true)
 public class LookupConfiguration {
+    
+    @Bean
+    @ConditionalOnMissingBean
+    public ResponseObjectFactory responseObjectFactory() {
+        return new ResponseObjectFactory() {};
+    }
     
     @Bean
     @RefreshScope
