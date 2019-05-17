@@ -59,4 +59,25 @@ public class TestAbstractContentIngestHelper extends AbstractContentIngestHelper
     public String getRawDocumentViewName() {
         return null;
     }
+    
+    @Override
+    public boolean isIndexListField(String field) {
+        return false;
+    };
+    
+    @Override
+    public boolean isReverseIndexListField(String field) {
+        return false;
+    };
+    
+    @Override
+    public String getListDelimiter() {
+        return ",";
+    }
+    
+    @Override
+    public String getListFieldNameDesignator() {
+        return "_ENTRY";
+    };
+    
 }

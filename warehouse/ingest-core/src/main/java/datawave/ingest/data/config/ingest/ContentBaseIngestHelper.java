@@ -31,6 +31,9 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     private final Set<String> contentIndexBlacklist = new HashSet<>();
     private final Set<String> contentReverseIndexBlacklist = new HashSet<>();
     
+    private final Set<String> indexListEtriesFields = new HashSet<>();
+    private final Set<String> reverseIndexListEtriesFields = new HashSet<>();
+    
     /**
      * If we are using a tokenization blacklist but want to include-only certain fields from specific subtypes we can declare that here. For example say we only
      * want one field tokenized from a subtype. We'd need to enumerate all of the unwanted fields in the blacklist, and that could be a lot of fields to
@@ -55,6 +58,11 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     public static final String TOKEN_FIELDNAME_DESIGNATOR = ".data.category.token.fieldname.designator";
     public static final String TOKEN_FIELDNAME_DESIGNATOR_ENABLED = ".data.category.token.fieldname.designator.enabled";
     
+    public static final String INDEX_LIST_FIELDS = ".data.category.index.list.fields";
+    public static final String REV_INDEX_LIST_FIELDS = ".data.category.index.reverse.list.fields";
+    public static final String LIST_FIELDNAME_DESIGNATOR = ".data.category.list.fieldname.designator";
+    public static final String LIST_DELIMITERS = ".data.category.list.delimiters";
+    
     /**
      * option to save raw data in the document column family.
      */
@@ -62,6 +70,10 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     public static final String RAW_DOCUMENT_VIEW_NAME = ".data.rawDocumentViewName";
     
     private String tokenFieldNameDesignator = "_TOKEN";
+    
+    private String listFieldNameDesignator = "_ENTRY";
+    private String listDelimiter = ",";
+    
     private boolean saveRawDataOption = false;
     private String rawDocumentViewName = "RAW"; // default value
     
@@ -99,6 +111,11 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         contentReverseIndexWhitelist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_REV_INDEX_WHITELIST));
         contentIndexBlacklist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_INDEX_BLACKLIST));
         contentReverseIndexBlacklist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_REV_INDEX_BLACKLIST));
+        
+        listFieldNameDesignator = config.get(getType().typeName() + LIST_FIELDNAME_DESIGNATOR, listFieldNameDesignator);
+        listDelimiter = config.get(getType().typeName() + LIST_DELIMITERS, listDelimiter);
+        indexListEtriesFields.addAll(trimConfigStrings(config, getType().typeName() + INDEX_LIST_FIELDS));
+        reverseIndexListEtriesFields.addAll(trimConfigStrings(config, getType().typeName() + REV_INDEX_LIST_FIELDS));
         
         String subtypeMapArg = config.get(getType().typeName() + SUBTYPE_TOKENIZATION_WHITELIST_MAP);
         if (StringUtils.isNotEmpty(subtypeMapArg)) {
@@ -142,6 +159,16 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         return contentReverseIndexBlacklist.isEmpty() ? contentReverseIndexWhitelist.contains(field) : !contentReverseIndexBlacklist.contains(field);
     }
     
+    @Override
+    public boolean isIndexListField(String field) {
+        return indexListEtriesFields.contains(field);
+    }
+    
+    @Override
+    public boolean isReverseIndexListField(String field) {
+        return reverseIndexListEtriesFields.contains(field);
+    }
+    
     @VisibleForTesting
     public FieldConfigHelper getFieldConfigHelper() {
         return fieldHelper;
@@ -150,6 +177,16 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     @Override
     public String getTokenFieldNameDesignator() {
         return tokenFieldNameDesignator;
+    }
+    
+    @Override
+    public String getListFieldNameDesignator() {
+        return listFieldNameDesignator;
+    }
+    
+    @Override
+    public String getListDelimiter() {
+        return listDelimiter;
     }
     
     /**
