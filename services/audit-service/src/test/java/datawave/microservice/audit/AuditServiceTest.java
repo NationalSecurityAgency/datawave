@@ -360,7 +360,7 @@ public class AuditServiceTest {
         jwtRestTemplate.exchange(requestEntity, String.class);
         long stopTimeMillis = System.currentTimeMillis();
         
-        assertTrue((stopTimeMillis - startTimeMillis) >= (maxAttempts * backoffIntervalMillis));
+        assertTrue((stopTimeMillis - startTimeMillis) >= ((maxAttempts - 1) * backoffIntervalMillis));
     }
     
     @DirtiesContext
@@ -396,7 +396,7 @@ public class AuditServiceTest {
         long stopTimeMillis = System.currentTimeMillis();
         
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
-        assertTrue((stopTimeMillis - startTimeMillis) >= (maxAttempts * backoffIntervalMillis));
+        assertTrue((stopTimeMillis - startTimeMillis) >= ((maxAttempts - 1) * backoffIntervalMillis));
         
         @SuppressWarnings("unchecked")
         Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
