@@ -215,16 +215,27 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
                 log.error("Constraint violations : " + e.getConstraintViolationSummaries().size());
             }
         } finally {
-            if (null != this.connFactory) {
-                log.debug("Non-null connection factory");
-                if (null != this.conn) {
-                    log.debug("Non-null connector to return");
-                    try {
-                        this.connFactory.returnConnection(this.conn);
-                    } catch (Exception e) {
-                        log.warn("Could not return connection to pool", e);
-                    }
+            returnConnector();
+        }
+    }
+    
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        returnConnector();
+    }
+    
+    public void returnConnector() {
+        if (null != this.connFactory) {
+            log.debug("Non-null connection factory");
+            if (null != this.conn) {
+                log.debug("Non-null connector to return");
+                try {
+                    this.connFactory.returnConnection(this.conn);
+                } catch (Exception e) {
+                    log.warn("Could not return connection to pool", e);
                 }
+                this.conn = null;
             }
         }
     }
