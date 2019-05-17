@@ -75,13 +75,15 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     public AccumuloRecordWriter(AccumuloConnectionFactory connectionFactory, Configuration conf) throws AccumuloException, AccumuloSecurityException,
                     IOException {
         Level l = getLogLevel(conf);
-        if (l != null)
+        if (l != null) {
             log.setLevel(getLogLevel(conf));
+        }
         this.simulate = getSimulationMode(conf);
         this.createTables = canCreateTables(conf);
         
-        if (simulate)
+        if (simulate) {
             log.info("Simulating output only. No writes to tables will occur");
+        }
         
         this.bws = new HashMap<>();
         
@@ -110,30 +112,36 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
      */
     @Override
     public void write(Text table, Mutation mutation) throws IOException {
-        if (table == null || table.toString().isEmpty())
+        if (table == null || table.toString().isEmpty()) {
             table = this.defaultTableName;
+        }
         
-        if (!simulate && table == null)
+        if (!simulate && table == null) {
             throw new IOException("No table or default table specified. Try simulation mode next time");
+        }
         
         ++mutCount;
         valCount += mutation.size();
         printMutation(table, mutation);
         
-        if (simulate)
+        if (simulate) {
             return;
+        }
         
-        if (!bws.containsKey(table))
+        if (!bws.containsKey(table)) {
             try {
                 addTable(table);
             } catch (Exception e) {
                 log.error(e);
                 throw new IOException(e);
             }
+        }
         
         try {
             bws.get(table).addMutation(mutation);
         } catch (MutationsRejectedException e) {
+            log.error("Mutation rejected with constraint violations: " + e.getConstraintViolationSummaries() + " row: " + mutation.getRow() + " updates: "
+                            + mutation.getUpdates());
             throw new IOException("MutationsRejectedException - ConstraintViolations: " + e.getConstraintViolationSummaries(), e);
         }
     }
@@ -166,8 +174,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             throw new AccumuloException(e);
         }
         
-        if (bw != null)
+        if (bw != null) {
             bws.put(tableName, bw);
+        }
     }
     
     private int printMutation(Text table, Mutation m) {
@@ -185,10 +194,11 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private String hexDump(byte[] ba) {
         StringBuilder sb = new StringBuilder();
         for (byte b : ba) {
-            if ((b > 0x20) && (b < 0x7e))
+            if ((b > 0x20) && (b < 0x7e)) {
                 sb.append((char) b);
-            else
+            } else {
                 sb.append(String.format("x%02x", b));
+            }
         }
         return sb.toString();
     }
@@ -196,8 +206,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     @Override
     public void close(TaskAttemptContext attempt) throws IOException, InterruptedException {
         log.debug("mutations written: " + mutCount + ", values written: " + valCount);
-        if (simulate)
+        if (simulate) {
             return;
+        }
         
         try {
             mtbw.close();
@@ -241,8 +252,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     }
     
     public static void setZooKeeperInstance(Configuration conf, String instanceName, String zooKeepers) {
-        if (conf.getBoolean(INSTANCE_HAS_BEEN_SET, false))
+        if (conf.getBoolean(INSTANCE_HAS_BEEN_SET, false)) {
             throw new IllegalStateException("Instance info can only be set once per job");
+        }
         conf.setBoolean(INSTANCE_HAS_BEEN_SET, true);
         
         ArgumentChecker.notNull(instanceName, zooKeepers);
@@ -298,8 +310,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     }
     
     protected static Instance getInstance(Configuration conf) {
-        if (conf.getBoolean(MOCK, false))
+        if (conf.getBoolean(MOCK, false)) {
             return new InMemoryInstance(conf.get(INSTANCE_NAME));
+        }
         return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME)).withZkHosts(conf.get(ZOOKEEPERS)));
     }
     
@@ -316,8 +329,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     }
     
     protected static Level getLogLevel(Configuration conf) {
-        if (conf.get(LOGLEVEL) != null)
+        if (conf.get(LOGLEVEL) != null) {
             return Level.toLevel(conf.getInt(LOGLEVEL, Level.INFO.toInt()));
+        }
         return null;
     }
     
