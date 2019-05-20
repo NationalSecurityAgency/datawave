@@ -56,6 +56,8 @@ public class EventErrorSummary implements Cloneable, JexlContext {
     protected Multimap<Text,KeyValue> keyValues = HashMultimap.create();
     // the set of original field names and field values
     protected Multimap<String,String> eventFields = HashMultimap.create();
+    // the number of times this event was processed
+    protected int processedCount = 0;
     
     public static final Text EVENT = ErrorDataTypeHandler.EVENT_COLF;
     public static final Text INFO = ErrorDataTypeHandler.INFO_COLF;
@@ -76,6 +78,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
         this.events.addAll(summary.getEvents());
         this.errors.putAll(summary.getErrors());
         this.keyValues.putAll(summary.getKeyValues());
+        this.processedCount = summary.processedCount;
     }
     
     public EventErrorSummary(Text tableName) {
@@ -98,6 +101,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
         this.events.clear();
         this.errors.clear();
         this.keyValues.clear();
+        this.processedCount = 0;
     }
     
     public boolean isEmpty() {
@@ -135,6 +139,15 @@ public class EventErrorSummary implements Cloneable, JexlContext {
                 this.errorDate = DateHelper.parse(info[1]);
             } catch (DateTimeParseException pe) {
                 throw new IllegalArgumentException("Failed to parse error info date " + key, pe);
+            }
+        } else if (cf.equals(FIELD)) {
+            // look for the processedCount
+            String cq = key.getColumnQualifier().toString();
+            if (cq.equals(ErrorDataTypeHandler.PROCESSED_COUNT)) {
+                String val = value.toString();
+                int index = val.indexOf('\0');
+                String pcStr = val.substring(0, index);
+                this.processedCount = Integer.parseInt(pcStr);
             }
         }
     }
@@ -209,6 +222,14 @@ public class EventErrorSummary implements Cloneable, JexlContext {
         return eventFields;
     }
     
+    public int getProcessedCount() {
+        return processedCount;
+    }
+    
+    public void setProcessedCount(int processedCount) {
+        this.processedCount = processedCount;
+    }
+    
     /**
      * Validate whether this event error summary is complete
      */
@@ -242,10 +263,13 @@ public class EventErrorSummary implements Cloneable, JexlContext {
      * @param jexlQuery
      * @return true if matches, false otherwise
      */
-    public boolean matches(String jobName, String dataType, String uid, Set<String> specifiedUUIDs, String errorType, Date[] dateRange, String jexlQuery) {
+    public boolean matches(String jobName, String dataType, String uid, Set<String> specifiedUUIDs, String errorType, Date[] dateRange, String jexlQuery,
+                    int maxProcessCount) {
         boolean matches = true;
         
-        if (jobName != null && !jobName.equals(this.jobName)) {
+        if (maxProcessCount > 0 && processedCount > maxProcessCount) {
+            matches = false;
+        } else if (jobName != null && !jobName.equals(this.jobName)) {
             matches = false;
         } else if (dataType != null && !dataType.equals(this.datatype)) {
             matches = false;
@@ -383,6 +407,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
         toString.append("Uuids", uuids);
         toString.append("Error Date", errorDate);
         toString.append("Errors", errors);
+        toString.append("Processed Count", processedCount);
         return toString.toString();
     }
     
@@ -415,6 +440,8 @@ public class EventErrorSummary implements Cloneable, JexlContext {
                 value = this.uuids;
             } else if (name.equals("errors")) {
                 value = this.errors;
+            } else if (name.equals("processedCount")) {
+                value = this.processedCount;
             }
         }
         return value;
