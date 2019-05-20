@@ -112,6 +112,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
     public static final String ERROR_FIELD = "ERROR";
     public static final String STACK_TRACE_FIELD = "STACKTRACE";
     public static final String EVENT_CONTENT_FIELD = "EVENT";
+    public static final String PROCESSED_COUNT = ErrorDataTypeHandler.PROCESSED_COUNT;
     
     protected MarkingsHelper markingsHelper;
     protected MarkingFunctions markingFunctions;
@@ -257,6 +258,11 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
             for (String uuid : record.getAltIds()) {
                 allFields.put(UUID_FIELD, new NormalizedFieldAndValue(UUID_FIELD, uuid));
             }
+        }
+        
+        // processed count if any
+        if (record.getAuxProperty(PROCESSED_COUNT) != null) {
+            allFields.put(PROCESSED_COUNT, new NormalizedFieldAndValue(PROCESSED_COUNT, record.getAuxProperty(PROCESSED_COUNT)));
         }
         
         // event errors
