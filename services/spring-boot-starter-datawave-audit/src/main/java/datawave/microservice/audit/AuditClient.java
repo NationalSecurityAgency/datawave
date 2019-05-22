@@ -16,7 +16,6 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -143,9 +142,13 @@ public class AuditClient {
             if (null != b.queryLogic) {
                 params.set(AuditParameters.QUERY_LOGIC_CLASS, b.queryLogic);
             }
-            this.auditParameters = new AuditParameters();
+            this.auditParameters = createAuditParameters();
             this.auditParameters.validate(params);
             this.paramMap = params;
+        }
+        
+        protected AuditParameters createAuditParameters() {
+            return new AuditParameters();
         }
         
         public AuditParameters getAuditParameters() {
