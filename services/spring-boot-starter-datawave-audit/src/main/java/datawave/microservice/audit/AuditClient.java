@@ -8,9 +8,11 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.ServiceInstance;
@@ -22,6 +24,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.function.Supplier;
 
 /**
  * Simple rest client for submitting requests to the audit service
@@ -39,6 +43,8 @@ public class AuditClient {
     private final AuditServiceProvider serviceProvider;
     private final JWTRestTemplate jwtRestTemplate;
     
+    private Supplier<AuditParameters> validationSupplier;
+    
     @Autowired
     public AuditClient(RestTemplateBuilder builder, AuditServiceProvider serviceProvider) {
         this.jwtRestTemplate = builder.build(JWTRestTemplate.class);
@@ -54,14 +60,19 @@ public class AuditClient {
         Preconditions.checkNotNull(request, "request cannot be null");
         Preconditions.checkNotNull(requestPath, "requestPath cannot be null");
         
-        log.debug("Submitting audit request: {}", request.getAuditParameters());
-        
-        if (AuditType.NONE.equals(request.getAuditType())) {
+        if (AuditType.NONE.equals(request.auditType)) {
             if (serviceProvider.getProperties().isSuppressAuditTypeNone()) {
                 log.debug("Audit request with AuditType == {} was suppressed", AuditType.NONE);
                 return;
             }
         }
+        
+        if (serviceProvider.getProperties().isFailFastAudit()) {
+            Preconditions.checkNotNull(validationSupplier, "failFast validation enabled, but validationSupplier is null");
+            validate(request, validationSupplier.get());
+        }
+        
+        log.debug("Submitting audit request: {}", request);
         
         //@formatter:off
         ServiceInstance auditService = serviceProvider.getServiceInstance();
@@ -73,8 +84,8 @@ public class AuditClient {
 
         ResponseEntity<String> response = jwtRestTemplate.exchange(
             jwtRestTemplate.createRequestEntity(
-                request.getUserDetails(),
-                request.getAuditParametersAsMap(),
+                request.userDetails,
+                request.paramMap,
                 null,
                 HttpMethod.POST, uri),
             String.class
@@ -90,6 +101,20 @@ public class AuditClient {
         //@formatter:on
     }
     
+    @Autowired
+    @Qualifier("auditRequestValidator")
+    public void setValidationSupplier(Supplier<AuditParameters> validationSupplier) {
+        this.validationSupplier = validationSupplier;
+    }
+    
+    public static AuditParameters validate(Request request, AuditParameters validator) {
+        Preconditions.checkNotNull(request, "request cannot be null");
+        Preconditions.checkNotNull(validator, "validator cannot be null");
+        validator.clear();
+        validator.validate(request.paramMap);
+        return validator;
+    }
+    
     /**
      * Audit request for a given query
      *
@@ -99,9 +124,9 @@ public class AuditClient {
         
         static final String INTERNAL_AUDIT_PARAM_PREFIX = "audit.";
         
-        protected AuditParameters auditParameters;
         protected MultiValueMap<String,String> paramMap;
         protected ProxiedUserDetails userDetails;
+        protected AuditType auditType;
         
         private Request() {}
         
@@ -125,7 +150,7 @@ public class AuditClient {
             }
             if (null != b.proxiedUserDetails) {
                 this.userDetails = b.proxiedUserDetails;
-                final DatawaveUser dwUser = this.getUserDetails().getPrimaryUser();
+                final DatawaveUser dwUser = this.userDetails.getPrimaryUser();
                 if (null != dwUser.getAuths() && !params.containsKey(AuditParameters.QUERY_AUTHORIZATIONS)) {
                     params.set(AuditParameters.QUERY_AUTHORIZATIONS, String.join(", ", dwUser.getAuths()));
                 }
@@ -134,6 +159,7 @@ public class AuditClient {
                 }
             }
             if (null != b.auditType) {
+                this.auditType = b.auditType;
                 params.set(AuditParameters.QUERY_AUDIT_TYPE, b.auditType.name());
             }
             if (null != b.marking) {
@@ -142,29 +168,17 @@ public class AuditClient {
             if (null != b.queryLogic) {
                 params.set(AuditParameters.QUERY_LOGIC_CLASS, b.queryLogic);
             }
-            this.auditParameters = createAuditParameters();
-            this.auditParameters.validate(params);
+            
             this.paramMap = params;
         }
         
-        protected AuditParameters createAuditParameters() {
-            return new AuditParameters();
+        public AuditType getAuditType() {
+            return this.auditType;
         }
         
-        public AuditParameters getAuditParameters() {
-            return auditParameters;
-        }
-        
-        public Auditor.AuditType getAuditType() {
-            return auditParameters.getAuditType();
-        }
-        
-        public ProxiedUserDetails getUserDetails() {
-            return userDetails;
-        }
-        
-        protected MultiValueMap<String,String> getAuditParametersAsMap() {
-            return paramMap;
+        @Override
+        public String toString() {
+            return ToStringBuilder.reflectionToString(this).toString();
         }
         
         /**
