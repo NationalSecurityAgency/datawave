@@ -51,7 +51,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public BaseQueryLogic(BaseQueryLogic<T> other) {
         // Generic Query Config variables
         setTableName(other.getTableName());
-        setMaxRowsToScan(other.getMaxRowsToScan());
+        setMaxWork(other.getMaxWork());
         setMaxResults(other.getMaxResults());
         setUndisplayedVisibilities(other.getUndisplayedVisibilities());
         setBaseIteratorPriority(other.getBaseIteratorPriority());
@@ -118,8 +118,14 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
+    @Deprecated
     public long getMaxRowsToScan() {
-        return getConfig().getMaxRowsToScan();
+        return getMaxWork();
+    }
+    
+    @Override
+    public long getMaxWork() {
+        return getConfig().getMaxWork();
     }
     
     @Override
@@ -133,8 +139,14 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
+    @Deprecated
     public void setMaxRowsToScan(long maxRowsToScan) {
-        getConfig().setMaxRowsToScan(maxRowsToScan);
+        setMaxWork(maxRowsToScan);
+    }
+    
+    @Override
+    public void setMaxWork(long maxWork) {
+        getConfig().setMaxWork(maxWork);
     }
     
     @Override

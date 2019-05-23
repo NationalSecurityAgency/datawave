@@ -584,7 +584,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public enum Lifecycle {
         
-        NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN
+        NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN, MAXWORK
     }
     
     public String getQueryType() {

@@ -102,9 +102,15 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     long getMaxResults();
     
     /**
-     * @return max number of rows to scan from the iterator
+     * @return the results of getMaxWork
      */
+    @Deprecated
     long getMaxRowsToScan();
+    
+    /**
+     * @return max number of nexts + seeks performed by the underlying iterators in total
+     */
+    long getMaxWork();
     
     /**
      * @return max number of records to return in a page (max pagesize allowed)
@@ -137,9 +143,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * @param maxRowsToScan
-     *            max number of rows to scan from the iterator
+     *            This is now deprecated and setMaxWork should be used instead. This is equivalent to setMaxWork.
      */
+    @Deprecated
     void setMaxRowsToScan(long maxRowsToScan);
+    
+    /**
+     * @param maxWork
+     *            max work which is normally calculated as the number of next + seek calls made by the underlying iterators
+     */
+    void setMaxWork(long maxWork);
     
     /**
      * @param maxPageSize

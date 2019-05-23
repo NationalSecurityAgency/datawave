@@ -89,7 +89,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         TestQueryLogic<?> logic = (TestQueryLogic<?>) bean.getQueryLogic("TestQuery", principal);
         assertEquals("MyMetadataTable", logic.getTableName());
         assertEquals(12345, logic.getMaxResults());
-        assertEquals(98765, logic.getMaxRowsToScan());
+        assertEquals(98765, logic.getMaxWork());
     }
     
     @Test
