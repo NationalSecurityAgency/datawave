@@ -102,9 +102,15 @@ public interface RawRecordContainer {
     
     void setRawData(byte[] rawData);
     
+    // Aux data is not intended to survive serialization
     Object getAuxData();
     
     void setAuxData(Object auxData);
+    
+    // Aux properties are not intended to survive serialization
+    String getAuxProperty(String prop);
+    
+    void setAuxProperty(String prop, String value);
     
     RawRecordContainer copy();
     
