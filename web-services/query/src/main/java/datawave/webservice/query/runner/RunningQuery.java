@@ -53,7 +53,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private AccumuloConnectionFactory.Priority connectionPriority = null;
     private transient QueryLogic<?> logic = null;
     private Query settings = null;
-    private long scanned = 0;
     private long numResults = 0;
     private long lastPageNumber = 0;
     private transient TransformIterator iter = null;
@@ -223,11 +222,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hitPageByteTrigger = true;
                     break;
                 }
-                // if the logic had a max rows to scan (across all pages) and we have reached that, then break out
-                if (this.logic.getMaxRowsToScan() > 0 && scanned >= this.logic.getMaxRowsToScan()) {
-                    log.info("Query logic max rows to scan has been reached, aborting query.next call");
-                    break;
-                }
                 // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
                 if (this.settings.isMaxResultsOverridden()) {
                     if (this.settings.getMaxResultsOverride() >= 0 && numResults >= this.settings.getMaxResultsOverride()) {
@@ -238,6 +232,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 } else if (this.logic.getMaxResults() >= 0 && numResults >= this.logic.getMaxResults()) {
                     log.info("Query logic max results has been reached, aborting query.next call");
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                    break;
+                }
+                if (this.logic.getMaxWork() >= 0 && (this.getMetric().getNextCount() + this.getMetric().getSeekCount()) >= this.logic.getMaxWork()) {
+                    log.info("Query logic max work has been reached, aborting query.next call");
+                    this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXWORK);
                     break;
                 }
                 // if we are the specified amount on the way to timing out on this call and we have results,
@@ -253,7 +252,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hitPageTimeTrigger = true;
                     break;
                 }
-                scanned++;
                 
                 Object o = null;
                 if (executor != null) {
@@ -276,6 +274,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 } else {
                     o = iter.next();
                 }
+                
+                // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+                if (iter.getTransformer() instanceof WritesQueryMetrics) {
+                    ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
+                }
+                
                 // if not still waiting on a future, then process the result (or lack thereof)
                 if (future == null) {
                     if (null == o) {
@@ -315,9 +319,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             
             if (this.queryMetrics != null) {
                 try {
-                    if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                        ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-                    }
                     this.queryMetrics.updateMetric(this.getMetric());
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);

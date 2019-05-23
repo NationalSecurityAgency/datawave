@@ -36,7 +36,7 @@ public class TestQueryLogic<T> extends BaseQueryLogic<T> {
         TestQueryLogic<Object> other = new TestQueryLogic<>();
         other.setTableName(this.getTableName());
         other.setMaxResults(this.getMaxResults());
-        other.setMaxRowsToScan(this.getMaxRowsToScan());
+        other.setMaxWork(this.getMaxWork());
         return other;
     }
     

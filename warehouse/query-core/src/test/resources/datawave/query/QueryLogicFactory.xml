@@ -49,7 +49,7 @@
 <!--         <property name="tableName" value="${edge.table.name}" /> -->
 		<property name="tableName" value="edge" />
         <property name="maxResults" value="25000" />
-        <property name="maxRowsToScan" value="-1" />
+        <property name="maxWork" value="-1" />
         <property name="undisplayedVisibilities">
             <util:set>
             </util:set>
