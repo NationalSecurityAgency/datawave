@@ -256,6 +256,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
+        this.config.setExpandFields(true);
+        this.config.setExpandValues(true);
         initialize(config, connection, settings, auths);
         return config;
     }
