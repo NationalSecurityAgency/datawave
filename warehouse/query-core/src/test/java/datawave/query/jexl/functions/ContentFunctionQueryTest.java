@@ -535,10 +535,5 @@ public class ContentFunctionQueryTest {
             return ",";
         }
         
-        @Override
-        public String getListFieldNameDesignator() {
-            return "_ENTRY";
-        };
-        
     }
 }

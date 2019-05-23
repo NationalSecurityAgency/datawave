@@ -672,7 +672,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
             values.add(value);
             if (log.isDebugEnabled()) {
-                log.debug("added normalized field " + normalizedContent + " to values " + values);
+                log.debug("added normalized field " + value + " to values set.");
             }
         }
         return values;

@@ -31,8 +31,8 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     private final Set<String> contentIndexBlacklist = new HashSet<>();
     private final Set<String> contentReverseIndexBlacklist = new HashSet<>();
     
-    private final Set<String> indexListEtriesFields = new HashSet<>();
-    private final Set<String> reverseIndexListEtriesFields = new HashSet<>();
+    private final Set<String> indexListEntriesFields = new HashSet<>();
+    private final Set<String> reverseIndexListEntriesFields = new HashSet<>();
     
     /**
      * If we are using a tokenization blacklist but want to include-only certain fields from specific subtypes we can declare that here. For example say we only
@@ -60,7 +60,6 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     
     public static final String INDEX_LIST_FIELDS = ".data.category.index.list.fields";
     public static final String REV_INDEX_LIST_FIELDS = ".data.category.index.reverse.list.fields";
-    public static final String LIST_FIELDNAME_DESIGNATOR = ".data.category.list.fieldname.designator";
     public static final String LIST_DELIMITERS = ".data.category.list.delimiters";
     
     /**
@@ -71,7 +70,6 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     
     private String tokenFieldNameDesignator = "_TOKEN";
     
-    private String listFieldNameDesignator = "_ENTRY";
     private String listDelimiter = ",";
     
     private boolean saveRawDataOption = false;
@@ -112,10 +110,9 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         contentIndexBlacklist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_INDEX_BLACKLIST));
         contentReverseIndexBlacklist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_REV_INDEX_BLACKLIST));
         
-        listFieldNameDesignator = config.get(getType().typeName() + LIST_FIELDNAME_DESIGNATOR, listFieldNameDesignator);
         listDelimiter = config.get(getType().typeName() + LIST_DELIMITERS, listDelimiter);
-        indexListEtriesFields.addAll(trimConfigStrings(config, getType().typeName() + INDEX_LIST_FIELDS));
-        reverseIndexListEtriesFields.addAll(trimConfigStrings(config, getType().typeName() + REV_INDEX_LIST_FIELDS));
+        indexListEntriesFields.addAll(trimConfigStrings(config, getType().typeName() + INDEX_LIST_FIELDS));
+        reverseIndexListEntriesFields.addAll(trimConfigStrings(config, getType().typeName() + REV_INDEX_LIST_FIELDS));
         
         String subtypeMapArg = config.get(getType().typeName() + SUBTYPE_TOKENIZATION_WHITELIST_MAP);
         if (StringUtils.isNotEmpty(subtypeMapArg)) {
@@ -161,12 +158,12 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     
     @Override
     public boolean isIndexListField(String field) {
-        return indexListEtriesFields.contains(field);
+        return indexListEntriesFields.contains(field);
     }
     
     @Override
     public boolean isReverseIndexListField(String field) {
-        return reverseIndexListEtriesFields.contains(field);
+        return reverseIndexListEntriesFields.contains(field);
     }
     
     @VisibleForTesting
@@ -177,11 +174,6 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     @Override
     public String getTokenFieldNameDesignator() {
         return tokenFieldNameDesignator;
-    }
-    
-    @Override
-    public String getListFieldNameDesignator() {
-        return listFieldNameDesignator;
     }
     
     @Override

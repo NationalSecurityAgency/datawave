@@ -42,7 +42,7 @@ public class TestAbstractContentIngestHelper extends AbstractContentIngestHelper
     
     @Override
     public boolean isContentIndexField(String field) {
-        return true;
+        return false;
     }
     
     @Override
@@ -74,10 +74,5 @@ public class TestAbstractContentIngestHelper extends AbstractContentIngestHelper
     public String getListDelimiter() {
         return ",";
     }
-    
-    @Override
-    public String getListFieldNameDesignator() {
-        return "_ENTRY";
-    };
     
 }

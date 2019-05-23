@@ -32,14 +32,6 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
     public abstract boolean isReverseContentIndexField(String field);
     
     /**
-     * Obtain the designator used for list entries of fields that contain a list of values, implementations should never return null, rather an empty string to
-     * indicate that no suffix should be used.
-     *
-     * @return
-     */
-    public abstract String getListFieldNameDesignator();
-    
-    /**
      * Return true if the specified field values should be indexed as a list of values. The names passed to this method should not include the list field name
      * designator if any is specified.
      *

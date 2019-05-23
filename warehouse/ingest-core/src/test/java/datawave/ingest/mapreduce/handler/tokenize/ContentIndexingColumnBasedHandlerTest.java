@@ -33,7 +33,6 @@ public class ContentIndexingColumnBasedHandlerTest {
     private TaskAttemptContext ctx = null;
     private final String LIST_DELIMITERS = ",;";
     private static final String TOKEN_DESIGNATOR = "_TOKEN";
-    private static final String LIST_DESIGNATOR = "_ENTRY";
     
     private static final String NUMERIC_LIST = "NUMERIC_LIST";
     private static final String ALPHANUM_LIST = "APLHANUM_LIST";
@@ -83,9 +82,9 @@ public class ContentIndexingColumnBasedHandlerTest {
     public static void setUpExpectedResults() {
         SetExpectedMap(ALPHANUM_LIST + TOKEN_DESIGNATOR, tokenizeAlphanumResults, tokenizeAlphanumReverseResults, tokenizedExpectedFields,
                         tokenizedExpectedIndex, tokenizedExpectedReverse);
-        SetExpectedMap(ALPHANUM_LIST + LIST_DESIGNATOR, listAlphanumResults, listAlphanumReverseResults, listExpectedAlpahnumFields, listExpectedAlpahnumIndex,
+        SetExpectedMap(ALPHANUM_LIST, listAlphanumResults, listAlphanumReverseResults, listExpectedAlpahnumFields, listExpectedAlpahnumIndex,
                         listExpectedAlpahnumReverse);
-        SetExpectedMap(NUMERIC_LIST + LIST_DESIGNATOR, listNumericResults, listNumericReverseResults, listExpectedNumericFields, listExpectedNumericIndex,
+        SetExpectedMap(NUMERIC_LIST, listNumericResults, listNumericReverseResults, listExpectedNumericFields, listExpectedNumericIndex,
                         listExpectedNumericReverse);
     }
     
@@ -137,9 +136,8 @@ public class ContentIndexingColumnBasedHandlerTest {
     @Test
     public void testHandlerListNormalizedNumbers() {
         
-        ctx.getConfiguration().set("test" + "." + NUMERIC_LIST + "_ENTRY" + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
+        ctx.getConfiguration().set("test" + "." + NUMERIC_LIST + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
         ctx.getConfiguration().set("test" + "." + ContentBaseIngestHelper.LIST_DELIMITERS, LIST_DELIMITERS);
-        ctx.getConfiguration().set("test" + "." + ContentBaseIngestHelper.LIST_FIELDNAME_DESIGNATOR, LIST_DESIGNATOR);
         
         TestContentIndexingColumnBasedHandler handler = new TestContentIndexingColumnBasedHandler();
         
@@ -165,9 +163,8 @@ public class ContentIndexingColumnBasedHandlerTest {
     @Test
     public void testHandlerListNormalizedAlphanum() {
         
-        ctx.getConfiguration().set("test" + "." + ALPHANUM_LIST + "_ENTRY" + BaseIngestHelper.FIELD_TYPE, LcNoDiacriticsType.class.getName());
+        ctx.getConfiguration().set("test" + "." + ALPHANUM_LIST + BaseIngestHelper.FIELD_TYPE, LcNoDiacriticsType.class.getName());
         ctx.getConfiguration().set("test" + "." + ContentBaseIngestHelper.LIST_DELIMITERS, LIST_DELIMITERS);
-        ctx.getConfiguration().set("test" + "." + ContentBaseIngestHelper.LIST_FIELDNAME_DESIGNATOR, LIST_DESIGNATOR);
         
         TestContentIndexingColumnBasedHandler handler = new TestContentIndexingColumnBasedHandler();
         
