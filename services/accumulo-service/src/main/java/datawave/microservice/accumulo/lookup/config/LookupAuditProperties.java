@@ -14,12 +14,6 @@ import java.util.List;
 public class LookupAuditProperties {
     
     /**
-     * Default visibility to be applied to lookup audit records
-     */
-    @NotBlank
-    private String defaultColumnVisibility = "PRIVATE";
-    
-    /**
      * Default audit type to be assigned to lookup audit records
      */
     @NotNull
@@ -29,14 +23,6 @@ public class LookupAuditProperties {
      * Audit configs to be applied on a per-table/row/col basis, as matched against incoming query
      */
     private List<AuditConfiguration> tableConfig = new ArrayList<>();
-    
-    public String getDefaultColumnVisibility() {
-        return defaultColumnVisibility;
-    }
-    
-    public void setDefaultColumnVisibility(String defaultColumnVisibility) {
-        this.defaultColumnVisibility = defaultColumnVisibility;
-    }
     
     public AuditType getDefaultAuditType() {
         return defaultAuditType;

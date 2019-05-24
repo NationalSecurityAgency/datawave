@@ -74,7 +74,6 @@ accumulo:
   lookup:
     numQueryThreads: 1
     audit:
-      defaultColumnVisibility: 'BAR'
       defaultAuditType: 'NONE'
       tableConfig:
         - tableRegex: 'w.*e'

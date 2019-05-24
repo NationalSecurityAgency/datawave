@@ -138,7 +138,7 @@ public class LookupServiceAuditEnabledTest {
     }
     
     /**
-     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE)
+     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultAuditType = NONE)
      * AuditClient should avoid REST calls to the audit server when audit type is NONE
      */
     @Test
@@ -152,7 +152,7 @@ public class LookupServiceAuditEnabledTest {
     }
     
     /**
-     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE)
+     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultAuditType = NONE)
      * AuditClient should avoid REST calls to the audit server when audit type is NONE
      */
     @Test
@@ -166,7 +166,7 @@ public class LookupServiceAuditEnabledTest {
     }
     
     /**
-     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE)
+     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultAuditType = NONE)
      * AuditClient should avoid REST calls to the audit server when audit type is NONE
      */
     @Test
@@ -180,7 +180,7 @@ public class LookupServiceAuditEnabledTest {
     }
     
     /**
-     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultColumnVisibility = NONE)
+     * Create new table, which will have no audit rule defined and thus default to AuditType.NONE (i.e., accumulo.lookup.audit.defaultAuditType = NONE)
      * AuditClient should avoid REST calls to the audit server when audit type is NONE
      */
     @Test
