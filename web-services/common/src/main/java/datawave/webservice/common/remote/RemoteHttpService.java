@@ -1,16 +1,14 @@
 package datawave.webservice.common.remote;
 
 import com.codahale.metrics.Counter;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import com.spotify.dns.LookupResult;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.JWTTokenHandler.TtlMode;
 import datawave.security.util.DnUtils;
+import datawave.webservice.common.json.ObjectMapperDecorator;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -19,6 +17,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -83,6 +82,9 @@ public abstract class RemoteHttpService {
     @Resource
     private ManagedExecutorService executorService;
     
+    @Inject
+    protected ObjectMapperDecorator objectMapperDecorator;
+    
     protected <T> T execute(HttpRequestBase request, IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws IOException {
         try {
             activeExecutions.incrementAndGet();
@@ -103,10 +105,7 @@ public abstract class RemoteHttpService {
     
     @PostConstruct
     protected void init() {
-        objectMapper = new ObjectMapper();
-        objectMapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new JaxbAnnotationModule());
+        objectMapper = objectMapperDecorator.decorate(new ObjectMapper());
         
         if (useSrvDns()) {
             if (srvDnsServers() != null && !srvDnsServers().isEmpty()) {
@@ -248,6 +247,16 @@ public abstract class RemoteHttpService {
         HttpPost postRequest = new HttpPost(builder.build());
         requestCustomizer.accept(postRequest);
         return execute(postRequest, resultConverter, errorSupplier);
+    }
+    
+    protected <T> T executePutMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPut> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        URIBuilder builder = buildURI();
+        builder.setPath(serviceURI() + uriSuffix);
+        uriCustomizer.accept(builder);
+        HttpPut putRequest = new HttpPut(builder.build());
+        requestCustomizer.accept(putRequest);
+        return execute(putRequest, resultConverter, errorSupplier);
     }
     
     protected abstract String serviceHost();

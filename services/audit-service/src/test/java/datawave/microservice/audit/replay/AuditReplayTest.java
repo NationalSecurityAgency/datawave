@@ -1058,6 +1058,20 @@ public class AuditReplayTest {
         // Get the status of the audit replay request
         statuses = toStatuses(jwtRestTemplate.exchange(authUser, HttpMethod.GET, statusAllUri, String.class));
         
+        numRetries = 20;
+        while (numRetries-- > 0) {
+            Thread.sleep(250);
+            
+            boolean shouldBreak = true;
+            for (Status theStatus : statuses)
+                shouldBreak &= theStatus.getFiles().size() != 0 && theStatus.getFiles().get(0).getState() == Status.FileState.RUNNING;
+            
+            if (shouldBreak)
+                break;
+            
+            statuses = toStatuses(jwtRestTemplate.exchange(authUser, HttpMethod.GET, statusAllUri, String.class));
+        }
+        
         status = statuses.stream().filter(s -> s.getId().equals(replayId1)).findAny().orElse(null);
         Assert.assertNotNull(status);
         // @formatter:off
@@ -2544,6 +2558,20 @@ public class AuditReplayTest {
         UriComponents statusAllUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
                         .path("/audit/v1/replay/statusAll").build();
         List<Status> statuses = toStatuses(jwtRestTemplate.exchange(authUser, HttpMethod.GET, statusAllUri, String.class));
+        
+        int numRetries = 20;
+        while (numRetries-- > 0) {
+            Thread.sleep(250);
+            
+            boolean shouldBreak = true;
+            for (Status theStatus : statuses)
+                shouldBreak &= theStatus.getFiles().size() != 0 && theStatus.getFiles().get(0).getState() == Status.FileState.RUNNING;
+            
+            if (shouldBreak)
+                break;
+            
+            statuses = toStatuses(jwtRestTemplate.exchange(authUser, HttpMethod.GET, statusAllUri, String.class));
+        }
         
         Status status = statuses.stream().filter(s -> s.getId().equals(replayId1)).findAny().orElse(null);
         Assert.assertNotNull(status);

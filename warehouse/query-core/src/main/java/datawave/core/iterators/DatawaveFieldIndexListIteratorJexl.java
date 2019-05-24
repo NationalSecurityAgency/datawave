@@ -162,7 +162,7 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         index = colq.lastIndexOf('\0', index - 1);
         String value = colq.substring(0, index);
         
-        return (this.fst != null) ? DatawaveArithmetic.matchesFst(value, fst) : value.contains(value);
+        return (this.fst != null) ? DatawaveArithmetic.matchesFst(value, fst) : values.contains(value);
     }
     
     public static FST<?> getFST(SortedSet<String> values) throws IOException {

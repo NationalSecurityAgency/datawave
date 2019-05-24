@@ -10,6 +10,8 @@ NUM_DATE_INDEX_SHARDS=${table.dateIndex.numShardsPerDay}
 
 SHARD_TABLE_NAME="${table.name.shard}"
 SHARD_TABLE_NAME="${SHARD_TABLE_NAME:-shard}"
+SHARD_STATS_TABLE_NAME="${table.name.shardStats}"
+SHARD_STATS_TABLE_NAME="${SHARD_STATS_TABLE_NAME:-shardStats}"
 SHARD_INDEX_TABLE_NAME="${table.name.shardIndex}"
 SHARD_INDEX_TABLE_NAME="${SHARD_INDEX_TABLE_NAME:-shardIndex}"
 SHARD_REVERSE_INDEX_TABLE_NAME="${table.name.shardReverseIndex}"

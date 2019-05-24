@@ -73,6 +73,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     private byte[] rawData = null;
     private boolean requiresMasking = false;
     private Object auxData = null;
+    private Map<String,String> auxMap = null;
     
     // RawRecordContainer support
     Map<String,String> securityMarkings = null;
@@ -376,6 +377,25 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     }
     
     /**
+     * Gets any auxiliary properties stored with this raw record container. Note that aux properties are not serialized with the raw record container.
+     */
+    @Override
+    public String getAuxProperty(String prop) {
+        return (auxMap == null ? null : auxMap.get(prop));
+    }
+    
+    /**
+     * Sets an auxiliary property for this raw record container. Note that aux properties are not serialized with the raw record container.
+     */
+    @Override
+    public void setAuxProperty(String prop, String value) {
+        if (auxMap == null) {
+            auxMap = new HashMap<>();
+        }
+        auxMap.put(prop, value);
+    }
+    
+    /**
      * @return Copy of this RwaRecordContainerImpl object.
      */
     @Override
@@ -412,6 +432,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         equals.append(this.ids, e.ids);
         equals.append(this.rawData, e.rawData);
         equals.append(this.auxData, e.auxData);
+        equals.append(this.auxMap, e.auxMap);
         equals.append(this.securityMarkings, e.securityMarkings);
         return equals.isEquals();
     }
@@ -438,6 +459,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         rrci.rawData = this.rawData;
         rrci.requiresMasking = this.requiresMasking;
         rrci.auxData = auxData;
+        rrci.auxMap = (auxMap == null ? null : new HashMap<>(auxMap));
         return rrci;
     }
     
@@ -685,6 +707,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         rawData = null;
         requiresMasking = false;
         auxData = null;
+        auxMap = null;
         dataOutputSize = -1;
     }
     

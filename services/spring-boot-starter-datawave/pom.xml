@@ -8,7 +8,7 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave</artifactId>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.6-SNAPSHOT</version>
     <properties>
         <version.accumulo>1.9.2</version.accumulo>
         <version.dropwizard-metrics>3.1.5</version.dropwizard-metrics>

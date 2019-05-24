@@ -18,6 +18,7 @@ import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.input.reader.event.EventErrorSummary;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.error.ErrorDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.ConstraintChecker;
 import datawave.ingest.mapreduce.job.metrics.KeyValueCountingContextWriter;
@@ -421,6 +422,9 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             EventErrorSummary errorSummary = (EventErrorSummary) (value.getAuxData());
             value.setAuxData(null);
             
+            // pass the processedCount through via the aux properties
+            value.setAuxProperty(ErrorDataTypeHandler.PROCESSED_COUNT, Integer.toString(errorSummary.getProcessedCount() + 1));
+            
             // delete these keys from the error table. If this fails then nothing will have changed
             if (log.isInfoEnabled())
                 log.info("Purging event from the " + errorSummary.getTableName() + " table");
@@ -447,6 +451,9 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 contextWriter.commit(context);
                 context.progress();
             }
+        } else {
+            // pass the processedCount through via the aux properties
+            value.setAuxProperty(ErrorDataTypeHandler.PROCESSED_COUNT, "1");
         }
         
         // Determine whether the event date is greater than the interval.
