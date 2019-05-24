@@ -24,6 +24,25 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidator {
     
     /**
+     * A mechanism to get the normalized query without actually setting up the query. This can be called with having to call initialize.
+     *
+     * The default implementation is to return the query string as the normalized query
+     *
+     * @param connection
+     *            - Accumulo connector to use for this query
+     * @param settings
+     *            - query settings (query, begin date, end date, etc.)
+     * @param runtimeQueryAuthorizations
+     *            - authorizations that have been calculated for this query based on the caller and server.
+     * @param expandFields
+     *            - should unfielded terms be expanded
+     * @param expandValues
+     *            - should regex/ranges be expanded into discrete values
+     */
+    String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                    throws Exception;
+    
+    /**
      * Implementations create a configuration using the connection, settings, and runtimeQueryAuthorizations.
      * 
      * @param connection
@@ -47,7 +66,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     SelectorExtractor getSelectorExtractor();
     
     /**
-     * Implementations use the configuration to run their query
+     * Implementations use the configuration to run their query. It is expected that initialize has already been called.
      * 
      * @param configuration
      *            Encapsulates all information needed to run a query (whether the query is a BatchScanner, a MapReduce job, etc)
