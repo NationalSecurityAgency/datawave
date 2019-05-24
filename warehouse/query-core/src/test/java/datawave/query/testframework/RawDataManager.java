@@ -23,6 +23,8 @@ public interface RawDataManager {
     // and/or logical strings for use by unit tests
     String AND_OP = " and ";
     String OR_OP = " or ";
+    String JEXL_AND_OP = " && ";
+    String JEXL_OR_OP = " || ";
     // relationship operators
     String GTE_OP = " >= ";
     String LTE_OP = " <= ";

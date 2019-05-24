@@ -28,8 +28,6 @@ public class LookupConfiguration {
     @RequestScope
     @ConditionalOnMissingBean
     public SecurityMarking auditLookupSecurityMarking(LookupAuditProperties lookupAuditProperties) {
-        ColumnVisibilitySecurityMarking auditCVSM = new ColumnVisibilitySecurityMarking();
-        auditCVSM.setColumnVisibility(lookupAuditProperties.getDefaultColumnVisibility());
-        return auditCVSM;
+        return new ColumnVisibilitySecurityMarking();
     }
 }

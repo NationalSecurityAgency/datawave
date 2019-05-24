@@ -114,7 +114,55 @@ function hadoopStop() {
 }
 
 function hadoopStatus() {
-    hadoopIsRunning && echo "Hadoop is running. PIDs: ${DW_HADOOP_PID_LIST}" || echo "Hadoop is not running"
+    # define local variables for hadoop processes
+    local _jobHist
+    local _dataNode
+    local _nameNode
+    local _secNameNode
+    local _resourceMgr
+    local _nodeMgr
+
+    # use a state to parse jps entries
+    echo "======  Hadoop Status  ======"
+    hadoopIsRunning && {
+        local _pid
+        local _opt=pid
+
+        local -r _pids=${DW_HADOOP_PID_LIST// /|}
+        echo "pids: ${DW_HADOOP_PID_LIST}"
+        for _arg in $(jps -l | egrep "${_pids}"); do
+            case ${_opt} in
+                pid)
+                    _pid=${_arg}
+                    _opt=class
+                    ;;
+                class)
+                    local _none
+                    local _name=${_arg##*.}
+                    case "${_name}" in
+                        DataNode) _dataNode=${_pid};;
+                        JobHistoryServer) _jobHist=${_pid};;
+                        NameNode) _nameNode=${_pid};;
+                        NodeManager) _nodeMgr=${_pid};;
+                        ResourceManager) _resourceMgr=${_pid};;
+                        SecondaryNameNode) _secNameNode=${_pid};;
+                        *) _none=true;;
+                    esac
+                    test -z "${_none}" && info "${_name} => ${_pid}"
+                    _pid=
+                    _opt=pid
+                    unset _none
+                    ;;
+            esac
+        done
+    }
+
+    test -z "${_jobHist}" && error "hadoop job history is not running"
+    test -z "${_dataNode}" && error "hadoop data node is not running"
+    test -z "${_nameNode}" && error "hadoop name node is not running"
+    test -z "${_secNameNode}" && error "hadoop secondary name node is not running"
+    test -z "${_nodeMgr}" && error "hadoop node manager is not running"
+    test -z "${_resourceMgr}" && error "hadoop resource maanger is not running"
 }
 
 function hadoopIsInstalled() {

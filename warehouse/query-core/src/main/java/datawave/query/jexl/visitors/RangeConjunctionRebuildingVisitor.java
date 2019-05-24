@@ -65,9 +65,11 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
     protected Set<String> indexOnlyFields;
     protected Set<String> allFields;
     protected MetadataHelper helper;
+    protected boolean expandFields;
+    protected boolean expandValues;
     
-    public RangeConjunctionRebuildingVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
-                    throws TableNotFoundException, ExecutionException {
+    public RangeConjunctionRebuildingVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, boolean expandFields,
+                    boolean expandValues) throws TableNotFoundException, ExecutionException {
         this.config = config;
         this.helper = helper;
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
@@ -75,6 +77,8 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         this.scannerFactory = scannerFactory;
         stats = new IndexStatsClient(this.config.getConnector(), this.config.getIndexStatsTableName());
         costAnalysis = new CostEstimator(config, scannerFactory, helper);
+        this.expandFields = expandFields;
+        this.expandValues = expandValues;
     }
     
     /**
@@ -89,16 +93,21 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
      * @throws ExecutionException
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-                    throws TableNotFoundException, ExecutionException {
-        RangeConjunctionRebuildingVisitor visitor = new RangeConjunctionRebuildingVisitor(config, scannerFactory, helper);
-        
-        if (null == visitor.config.getQueryFieldsDatatypes()) {
-            QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
-            throw new DatawaveFatalQueryException(qe);
+    public static <T extends JexlNode> T expandRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script,
+                    boolean expandFields, boolean expandValues) throws TableNotFoundException, ExecutionException {
+        // if not expanding fields or values, then this is a noop
+        if (expandFields || expandValues) {
+            RangeConjunctionRebuildingVisitor visitor = new RangeConjunctionRebuildingVisitor(config, scannerFactory, helper, expandFields, expandValues);
+            
+            if (null == visitor.config.getQueryFieldsDatatypes()) {
+                QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
+                throw new DatawaveFatalQueryException(qe);
+            }
+            
+            return (T) (script.jjtAccept(visitor, null));
+        } else {
+            return script;
         }
-        
-        return (T) (script.jjtAccept(visitor, null));
     }
     
     @Override
@@ -201,7 +210,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
             }
             
             JexlNode orNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, new ASTEQNode(
-                            ParserTreeConstants.JJTEQNODE), onlyRangeNodes, fieldsToTerms);
+                            ParserTreeConstants.JJTEQNODE), onlyRangeNodes, fieldsToTerms, expandFields, expandValues);
             
             // Set the parent and child pointers accordingly
             orNode.jjtSetParent(newNode);
