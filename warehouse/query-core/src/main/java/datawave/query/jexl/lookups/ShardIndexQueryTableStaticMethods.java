@@ -472,7 +472,7 @@ public class ShardIndexQueryTableStaticMethods {
         
         cfg.addOption(GlobalIndexTermMatchingFilter.REVERSE_INDEX, Boolean.toString(reverseIndex));
         if (limitToUniqueTerms) {
-            cfg.addOption(GlobalIndexTermMatchingIterator.UNIQE_TERMS_IN_FIELD, Boolean.toString(limitToUniqueTerms));
+            cfg.addOption(GlobalIndexTermMatchingIterator.UNIQUE_TERMS_IN_FIELD, Boolean.toString(limitToUniqueTerms));
         }
         
         return cfg;
