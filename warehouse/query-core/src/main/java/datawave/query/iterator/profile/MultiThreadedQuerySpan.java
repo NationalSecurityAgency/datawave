@@ -47,6 +47,10 @@ public class MultiThreadedQuerySpan extends QuerySpan {
         return getThreadSpecificQuerySpan().getSeekCount();
     }
     
+    public boolean getYield() {
+        return getThreadSpecificQuerySpan().getYield();
+    }
+    
     @Override
     public synchronized void next() {
         getThreadSpecificQuerySpan().next();
@@ -55,6 +59,11 @@ public class MultiThreadedQuerySpan extends QuerySpan {
     @Override
     public synchronized void seek() {
         getThreadSpecificQuerySpan().seek();
+    }
+    
+    @Override
+    public synchronized void yield() {
+        getThreadSpecificQuerySpan().yield();
     }
     
     @Override
@@ -91,6 +100,11 @@ public class MultiThreadedQuerySpan extends QuerySpan {
     @Override
     public void setNext(long next) {
         getThreadSpecificQuerySpan().setNext(next);
+    }
+    
+    @Override
+    public void setYield(boolean yield) {
+        getThreadSpecificQuerySpan().setYield(yield);
     }
     
     @Override

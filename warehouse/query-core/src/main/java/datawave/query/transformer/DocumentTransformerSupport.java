@@ -69,6 +69,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     private long sourceCount = 0;
     private long nextCount = 0;
     private long seekCount = 0;
+    private long yieldCount = 0L;
     private long docRanges = 0;
     private long fiRanges = 0;
     private boolean logTimingDetails = false;
@@ -216,10 +217,12 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             long currentSourceCount = timingMetadata.getSourceCount();
             long currentNextCount = timingMetadata.getNextCount();
             long currentSeekCount = timingMetadata.getSeekCount();
+            long currentYieldCount = timingMetadata.getYieldCount();
             String host = timingMetadata.getHost();
             sourceCount += currentSourceCount;
             nextCount += currentNextCount;
             seekCount += currentSeekCount;
+            yieldCount += currentYieldCount;
             Map<String,Long> stageTimers = timingMetadata.getStageTimers();
             if (stageTimers.containsKey(QuerySpan.Stage.DocumentSpecificTree.toString())) {
                 docRanges++;
@@ -232,7 +235,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                 sb.append("retrieved document from host:").append(host).append(" at key:").append(documentKey.toStringNoTime()).append(" stageTimers:")
                                 .append(stageTimers);
                 sb.append(" sourceCount:").append(currentSourceCount).append(" nextCount:").append(currentNextCount).append(" seekCount:")
-                                .append(currentSeekCount);
+                                .append(currentSeekCount).append(" yieldCount:").append(currentYieldCount);
                 if (log.isTraceEnabled()) {
                     log.trace(sb.toString());
                 } else {
@@ -253,6 +256,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             metric.setSourceCount(sourceCount);
             metric.setNextCount(nextCount);
             metric.setSeekCount(seekCount);
+            metric.setYieldCount(yieldCount);
             metric.setDocRanges(docRanges);
             metric.setFiRanges(fiRanges);
         }

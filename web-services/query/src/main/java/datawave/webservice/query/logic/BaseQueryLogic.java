@@ -5,21 +5,21 @@ import datawave.marking.MarkingFunctions;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.springframework.beans.factory.annotation.Required;
-
-import javax.inject.Inject;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.inject.Inject;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.springframework.beans.factory.annotation.Required;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
@@ -51,7 +51,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public BaseQueryLogic(BaseQueryLogic<T> other) {
         // Generic Query Config variables
         setTableName(other.getTableName());
-        setMaxRowsToScan(other.getMaxRowsToScan());
+        setMaxWork(other.getMaxWork());
         setMaxResults(other.getMaxResults());
         setUndisplayedVisibilities(other.getUndisplayedVisibilities());
         setBaseIteratorPriority(other.getBaseIteratorPriority());
@@ -81,6 +81,13 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         }
         
         return baseConfig;
+    }
+    
+    @Override
+    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                    throws Exception {
+        // for many query logics, the query is what it is
+        return settings.getQuery();
     }
     
     public MarkingFunctions getMarkingFunctions() {
@@ -118,8 +125,14 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
+    @Deprecated
     public long getMaxRowsToScan() {
-        return getConfig().getMaxRowsToScan();
+        return getMaxWork();
+    }
+    
+    @Override
+    public long getMaxWork() {
+        return getConfig().getMaxWork();
     }
     
     @Override
@@ -133,8 +146,14 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
+    @Deprecated
     public void setMaxRowsToScan(long maxRowsToScan) {
-        getConfig().setMaxRowsToScan(maxRowsToScan);
+        setMaxWork(maxRowsToScan);
+    }
+    
+    @Override
+    public void setMaxWork(long maxWork) {
+        getConfig().setMaxWork(maxWork);
     }
     
     @Override

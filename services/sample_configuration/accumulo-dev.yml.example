@@ -21,7 +21,6 @@ server:
 #  lookup:
 #    numQueryThreads: 5
 #    audit:
-#      defaultColumnVisibility: 'PRIVATE'
 #      defaultAuditType: 'ACTIVE'
 #      tableConfig:
 #        - tableRegex: 'datawave\.shard'

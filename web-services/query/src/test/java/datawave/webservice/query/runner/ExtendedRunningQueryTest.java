@@ -136,7 +136,7 @@ public class ExtendedRunningQueryTest {
         int pageSize = 3;
         int maxPageSize = 10;
         long pageByteTrigger = 4 * 1024L;
-        long maxRowsToScan = Long.MAX_VALUE;
+        long maxWork = Long.MAX_VALUE;
         long maxResults = 100L;
         List<Object> resultObjects = Arrays.asList(new Object(), "resultObject1", null);
         
@@ -164,11 +164,12 @@ public class ExtendedRunningQueryTest {
         while (iterator.hasNext()) {
             expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
             expect(this.transformIterator.next()).andReturn(iterator.next());
+            expect(this.transformIterator.getTransformer()).andReturn(transformer);
         }
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
-        expect(this.queryLogic.getMaxRowsToScan()).andReturn(maxRowsToScan).anyTimes();
+        expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         
@@ -215,7 +216,7 @@ public class ExtendedRunningQueryTest {
         int maxPageSize = 5;
         
         long pageByteTrigger = 4 * 1024L;
-        long maxRowsToScan = Long.MAX_VALUE;
+        long maxWork = Long.MAX_VALUE;
         long maxResults = 4L;
         List<Object> resultObjects = Arrays.asList(new Object(), "resultObject1", "resultObject2", "resultObject3", "resultObject4", "resultObject5");
         
@@ -248,11 +249,12 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
+        expect(this.transformIterator.getTransformer()).andReturn(transformer).times(count);
         
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
-        expect(this.queryLogic.getMaxRowsToScan()).andReturn(maxRowsToScan).anyTimes();
+        expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         
@@ -295,7 +297,6 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getUserDN()).andReturn(userDN).times(2);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
-        expect(this.transformIterator.getTransformer()).andReturn(transformer);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(3);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);

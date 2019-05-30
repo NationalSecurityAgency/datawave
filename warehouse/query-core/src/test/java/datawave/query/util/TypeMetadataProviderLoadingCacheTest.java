@@ -136,20 +136,24 @@ public class TypeMetadataProviderLoadingCacheTest {
         for (Future<TypeMetadata> future : futures) {
             log.debug("pass1 typeMetadata:" + future.get());
         }
+        Set<String> resultStrings = Sets.newHashSet();
+        for (Future<TypeMetadata> future : futures) {
+            resultStrings.add(future.get().toString());
+        }
+        Assert.assertTrue(resultStrings.contains("field1:[ingest2:DateType;ingest1:LcType];field2:[ingest2:LcType;ingest1:IntegerType]"));
         futures.clear();
         
         // create a different TypeMetadataMap and write it to the file
         typeMetadataMap = getChangedTypeMetadataMap();
         typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, QueryTestTableHelper.MODEL_TABLE_NAME);
-        // will fire a TypemetadataProvider::fileChanged event
+        try {
+            Thread.sleep(5000);
+        } // give the DefaultFileMonitor (poller) enough time (> 3 sec) to fire the event (TypeMetadataProvider::fileChanged)
+        catch (InterruptedException ex) {} // ignore
         
-        // immediately let 15 workers read the typemetadata from the singleton. One will refresh the singleton,
+        // let 15 workers read the typemetadata from the singleton. One will refresh the singleton,
         // some will read the previous data (while the refresh is happening) and others will see the new data
         for (int i = 0; i < 15; i++) {
-            try {
-                Thread.sleep(100);
-            } catch (Exception ex) {} // ignore
-            
             Future<TypeMetadata> result = executor.submit(() -> {
                 Set<String> authSet = Sets.newHashSet("AUTHA", "AUTHB");
                 try {
@@ -166,7 +170,6 @@ public class TypeMetadataProviderLoadingCacheTest {
             log.debug("pass2 typeMetadata:" + future.get());
         }
         
-        Set<String> resultStrings = Sets.newHashSet();
         for (Future<TypeMetadata> future : futures) {
             resultStrings.add(future.get().toString());
         }

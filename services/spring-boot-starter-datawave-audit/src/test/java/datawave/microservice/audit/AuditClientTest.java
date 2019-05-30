@@ -4,6 +4,7 @@ import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.audit.config.AuditServiceConfiguration;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,6 +32,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
@@ -83,8 +86,8 @@ public class AuditClientTest {
     public void testAuditURISuccess() throws Exception {
         
         MultiValueMap<String,String> parameters = new LinkedMultiValueMap<>();
-        parameters.add("paramFoo", "paramFooValue");
-        parameters.add("paramBar", "paramBarValue");
+        parameters.add(TestAuditParameters.TEST_PARAM_1, "tp1Value");
+        parameters.add(TestAuditParameters.TEST_PARAM_2, "tp2Value");
         
         //@formatter:off
         final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
@@ -97,13 +100,34 @@ public class AuditClientTest {
                 .build();
 
         mockServer.expect(requestTo(EXPECTED_AUDIT_URI))
-                .andExpect(content().formData(auditRequest.getAuditParametersAsMap()))
+                .andExpect(content().formData(auditRequest.paramMap))
                 .andRespond(withSuccess());
 
         auditClient.submit(auditRequest);
         mockServer.verify();
 
         //@formatter:on
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testMissingTestParam2() throws Exception {
+        
+        MultiValueMap<String,String> parameters = new LinkedMultiValueMap<>();
+        parameters.add(TestAuditParameters.TEST_PARAM_1, "tp1Value");
+        
+        // Missing TestAuditParameters.TEST_PARAM_2 this time
+        
+        //@formatter:off
+        final AuditClient.Request auditRequest = new AuditClient.Request.Builder()
+                .withParams(parameters)
+                .withQueryExpression("FIELD:VALUE1 OR FIELD:VALUE2")
+                .withProxiedUserDetails(defaultUserDetails)
+                .withMarking(auditTestSecurityMarking)
+                .withAuditType(Auditor.AuditType.LOCALONLY)
+                .withQueryLogic("QueryLogic")
+                .build();
+        //@formatter:on
+        AuditClient.validate(auditRequest, new TestAuditParameters());
     }
     
     @Test
@@ -126,7 +150,7 @@ public class AuditClientTest {
                 .build();
 
         mockServer.expect(requestTo(EXPECTED_AUDIT_URI))
-                .andExpect(content().formData(auditRequest.getAuditParametersAsMap()))
+                .andExpect(content().formData(auditRequest.paramMap))
                 .andRespond(withServerError());
 
         auditClient.submit(auditRequest);
@@ -148,6 +172,7 @@ public class AuditClientTest {
             .withQueryLogic("QueryLogic")
             .build();
         //@formatter:on
+        AuditClient.validate(auditRequest, new AuditParameters());
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -163,6 +188,7 @@ public class AuditClientTest {
             .withQueryLogic("QueryLogic")
             .build();
         //@formatter:on
+        AuditClient.validate(auditRequest, new AuditParameters());
     }
     
     /**
@@ -171,6 +197,23 @@ public class AuditClientTest {
     private void setupMockAuditServer() {
         RestTemplate auditorRestTemplate = (RestTemplate) new DirectFieldAccessor(auditClient).getPropertyValue("jwtRestTemplate");
         mockServer = MockRestServiceServer.createServer(auditorRestTemplate);
+    }
+    
+    public static class TestAuditParameters extends AuditParameters {
+        public static final String TEST_PARAM_1 = "PARAM1";
+        public static final String TEST_PARAM_2 = "PARAM2";
+        private static final List<String> REQUIRED_TEST_PARAMS = Arrays.asList(TEST_PARAM_1, TEST_PARAM_2);
+        
+        @Override
+        public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
+            super.validate(parameters);
+            for (String param : REQUIRED_TEST_PARAMS) {
+                List<String> values = parameters.get(param);
+                if (null == values) {
+                    throw new IllegalArgumentException("Required parameter " + param + " not found");
+                }
+            }
+        }
     }
     
     @Configuration
