@@ -1,7 +1,6 @@
 package datawave.iterators;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -11,13 +10,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -40,98 +37,14 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
-import datawave.ingest.table.aggregator.PropogatingCombiner;
 
 /**
  * 
  */
 @SuppressWarnings("deprecation")
 public class PropogatingIteratorTest {
-    
-    protected static final boolean[] defaultHasTopResults = new boolean[] {false};
-    protected static final Key[] defaultTopKeyResults = new Key[] {null};
-    protected static final Value[] defaultTopValueResults = new Value[] {null};
-    
-    protected static boolean[] propogateKeyResults = PropogatingIteratorTest.defaultHasTopResults;
-    
-    protected boolean[] hasTopResults = PropogatingIteratorTest.defaultHasTopResults;
-    protected Key[] topKeyResults = PropogatingIteratorTest.defaultTopKeyResults;
-    protected Value[] topValueResults = PropogatingIteratorTest.defaultTopValueResults;
     protected IteratorScope getIteratorScopeResults = IteratorScope.majc;
     protected boolean isFullMajorCompactionResults = false;
-    
-    protected static byte[] getExpectedValue(String... uids) {
-        Uid.List.Builder b = Uid.List.newBuilder();
-        b.setCOUNT(uids.length);
-        b.setIGNORE(false);
-        for (String uid : uids) {
-            b.addUID(uid);
-        }
-        return b.build().toByteArray();
-    }
-    
-    public static class WrappedPropogatingAggregator extends GlobalIndexUidAggregator {
-        
-        protected int callCount = 0;
-        
-        @Override
-        public boolean propogateKey() {
-            // TODO Auto-generated method stub
-            return propogateKeyResults[callCount++];
-        }
-        
-    }
-    
-    private static class PrivateWrappedAggregator extends PropogatingCombiner {
-        
-        @Override
-        public void reset() {
-            // TODO Auto-generated method stub
-            
-        }
-        
-        @Override
-        public void collect(Value value) {
-            // TODO Auto-generated method stub
-            
-        }
-        
-        @Override
-        public Value aggregate() {
-            // TODO Auto-generated method stub
-            return null;
-        }
-        
-    }
-    
-    public static class WrappedPropogatingIterator extends PropogatingIterator {
-        
-        public WrappedPropogatingIterator() {
-            super();
-        }
-        
-        public WrappedPropogatingIterator(PropogatingIterator clone) {
-            
-            this.env = clone.env;
-            this.defaultAgg = clone.defaultAgg;
-        }
-        
-        public PropogatingCombiner getPropAgg() {
-            
-            return defaultAgg;
-        }
-        
-        public void setPropAgg(PropogatingCombiner pa) {
-            
-            defaultAgg = pa;
-        }
-        
-        public IteratorEnvironment getIteratorEnvironment() {
-            
-            return env;
-        }
-        
-    }
     
     /**
      * @param topValue
@@ -167,10 +80,6 @@ public class PropogatingIteratorTest {
         
         AccumuloConfiguration conf;
         private boolean major;
-        
-        public MockIteratorEnvironment(AccumuloConfiguration conf) {
-            this.conf = conf;
-        }
         
         public MockIteratorEnvironment(boolean major) {
             this.conf = AccumuloConfiguration.getDefaultConfiguration();
@@ -233,12 +142,6 @@ public class PropogatingIteratorTest {
         
     }
     
-    protected IteratorEnvironment createMockIteratorEnvironment(boolean activateIteratorScope, boolean activateIsFullCompaction) {
-        
-        return createMockIteratorEnvironment(activateIteratorScope, (activateIteratorScope ? 1 : 0), activateIsFullCompaction, (activateIsFullCompaction ? 1
-                        : 0));
-    }
-    
     protected IteratorEnvironment createMockIteratorEnvironment(boolean activateIteratorScope, int iteratorScopeCallCount, boolean activateIsFullCompaction,
                     int compactionCallCount) {
         IteratorEnvironment mock = PowerMock.createMock(IteratorEnvironment.class);
@@ -258,68 +161,6 @@ public class PropogatingIteratorTest {
         PowerMock.replay(mock);
         
         return mock;
-    }
-    
-    protected SortedKeyValueIterator<Key,Value> createMockSortedKeyValueIterator() {
-        
-        return createMockSortedKeyValueIterator(PropogatingIteratorTest.defaultHasTopResults, PropogatingIteratorTest.defaultTopKeyResults,
-                        PropogatingIteratorTest.defaultTopValueResults, new AtomicInteger(0));
-    }
-    
-    protected SortedKeyValueIterator<Key,Value> createMockSortedKeyValueIterator(boolean[] htr, Key[] gtk, Value[] gtv, final AtomicInteger callCounter) {
-        
-        callCounter.set(0);
-        hasTopResults = new boolean[htr.length];
-        System.arraycopy(htr, 0, hasTopResults, 0, htr.length);
-        topKeyResults = new Key[gtk.length];
-        System.arraycopy(gtk, 0, topKeyResults, 0, gtk.length);
-        topValueResults = new Value[gtv.length];
-        System.arraycopy(gtv, 0, topValueResults, 0, gtv.length);
-        
-        return new SortedKeyValueIterator<Key,Value>() {
-            
-            @Override
-            public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
-                // TODO Auto-generated method stub
-                
-            }
-            
-            @Override
-            public boolean hasTop() {
-                
-                return hasTopResults[callCounter.get()];
-            }
-            
-            @Override
-            public void next() throws IOException {
-                
-                callCounter.incrementAndGet();
-            }
-            
-            @Override
-            public Key getTopKey() {
-                
-                return topKeyResults[callCounter.get()];
-            }
-            
-            @Override
-            public Value getTopValue() {
-                
-                return topValueResults[callCounter.get()];
-            }
-            
-            @Override
-            public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
-                // TODO Auto-generated method stub
-                return this;
-            }
-            
-            @Override
-            public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-                // TODO Auto-generated method stub
-                
-            }
-        };
     }
     
     long ts = 1349541830;
