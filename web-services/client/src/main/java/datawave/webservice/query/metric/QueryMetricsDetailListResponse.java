@@ -119,6 +119,7 @@ public class QueryMetricsDetailListResponse extends QueryMetricListResponse {
             builder.append("<td>").append(metric.getSourceCount()).append("</td>");
             builder.append("<td>").append(metric.getNextCount()).append("</td>");
             builder.append("<td>").append(metric.getSeekCount()).append("</td>");
+            builder.append("<td>").append(metric.getYieldCount()).append("</td>");
             
             long count = 0l;
             long callTime = 0l;
