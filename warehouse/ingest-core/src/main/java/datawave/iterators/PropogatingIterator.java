@@ -323,7 +323,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         try {
             return this.getClass().getClassLoader().loadClass(className).newInstance();
         } catch (Exception e) {
-            throw new IllegalArgumentException("Exception while attempting to create : " + className);
+            throw new IllegalArgumentException("Exception while attempting to create : " + className, e);
         }
     }
 }
