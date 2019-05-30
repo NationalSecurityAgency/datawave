@@ -36,7 +36,7 @@ public class PropogatingIteratorTest {
     private static final String SHARD = "20121002_1";
     private static final String FIELD_TO_AGGREGATE = "UUID";
     private static final long TIMESTAMP = 1349541830;
-
+    
     private void validateUids(Value topValue, String... uids) throws InvalidProtocolBufferException {
         Uid.List v = Uid.List.parseFrom(topValue.get());
         
@@ -45,7 +45,7 @@ public class PropogatingIteratorTest {
             v.getUIDList().contains(uid);
         }
     }
-
+    
     private void validateRemoval(Value topValue, String... uids) throws InvalidProtocolBufferException {
         Uid.List v = Uid.List.parseFrom(topValue.get());
         
@@ -54,22 +54,22 @@ public class PropogatingIteratorTest {
             v.getREMOVEDUIDList().contains(uid);
         }
     }
-
+    
     private Uid.List.Builder createValueWithUid(String uid) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setIGNORE(false);
         builder.setCOUNT(1);
         builder.addUID(uid);
-
+        
         return builder;
     }
-
+    
     private Uid.List.Builder createValueWithRemoveUid(String uid) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setIGNORE(false);
         builder.setCOUNT(-1);
         builder.addREMOVEDUID(uid);
-
+        
         return builder;
     }
     
@@ -124,13 +124,12 @@ public class PropogatingIteratorTest {
         public SamplerConfiguration getSamplerConfiguration() {
             return null;
         }
-
+        
         @Override
         public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String arg0) throws IOException {
             return null;
         }
     }
-
     
     protected Key newKey(String row, String field, String uid, boolean delete) {
         Key key = new Key(uid, field, "dataType\0" + row, new ColumnVisibility("PUBLIC"), TIMESTAMP);
@@ -216,7 +215,7 @@ public class PropogatingIteratorTest {
     
     @Test(expected = NullPointerException.class)
     public void testNullOptions() throws IOException {
-
+        
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
         
@@ -228,21 +227,21 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
     }
-
+    
     private SortedMultiMapIterator createSourceWithTestData() {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
-
+        
         map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), new Value(createValueWithUid("abc.0").build().toByteArray()));
         map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
         map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
         map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
-
+        
         map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
-
+        
         return new SortedMultiMapIterator(map);
     }
-
+    
     @Test(expected = NullPointerException.class)
     public void testNullEnvironment() throws IOException {
         PropogatingIterator iter = new PropogatingIterator();
@@ -352,7 +351,7 @@ public class PropogatingIteratorTest {
     
     @Test
     public void testDeleteFullMajc() throws IOException {
-
+        
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
         
@@ -381,7 +380,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator uut = new PropogatingIterator();
         uut.deepCopy(new MockIteratorEnvironment(false));
     }
-
+    
     @Test
     public void testAggregateThreeWithDeepCopy() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
@@ -646,9 +645,9 @@ public class PropogatingIteratorTest {
     @Test
     public void testDeepCopyOnDefaultConstructor() throws IOException {
         SortedKeyValueIterator source = createSourceWithTestData();
-        HashMap<String, String> emptyOptions = new HashMap<>();
+        HashMap<String,String> emptyOptions = new HashMap<>();
         MockIteratorEnvironment env = new MockIteratorEnvironment(true);
-
+        
         PropogatingIterator propogatingIterator = new PropogatingIterator();
         propogatingIterator.init(source, emptyOptions, env);
         PropogatingIterator deepCopiedPropogatingIterator = propogatingIterator.deepCopy(env);
@@ -658,21 +657,21 @@ public class PropogatingIteratorTest {
     @Test
     public void testDeepCopyOnConstructor() throws IOException {
         SortedKeyValueIterator source = createSourceWithTestData();
-        HashMap<String, String> emptyOptions = new HashMap<>();
+        HashMap<String,String> emptyOptions = new HashMap<>();
         MockIteratorEnvironment env = new MockIteratorEnvironment(true);
-
+        
         PropogatingIterator propogatingIterator = new PropogatingIterator(source, null);
         propogatingIterator.init(source, emptyOptions, env);
         PropogatingIterator deepCopiedPropogatingIterator = propogatingIterator.deepCopy(env);
         Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", deepCopiedPropogatingIterator);
     }
-
+    
     @Test
     public void testDefaultConstructor() {
         PropogatingIterator uut = new PropogatingIterator();
         Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", uut);
     }
-
+    
     @Test
     public void testConstructor() throws IOException {
         PropogatingIterator uut = new PropogatingIterator(createSourceWithTestData(), null);
