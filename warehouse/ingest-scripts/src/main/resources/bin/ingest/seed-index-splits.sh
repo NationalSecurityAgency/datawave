@@ -22,6 +22,7 @@ done
 
 script=`$MKTEMP`
 echo "addsplits -t ${SHARD_INDEX_TABLE_NAME} -sf $file
+addsplits -t ${SHARD_STATS_TABLE_NAME} -sf $file
 addsplits -t ${SHARD_REVERSE_INDEX_TABLE_NAME} -sf $file
 quit" > $script
 

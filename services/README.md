@@ -90,6 +90,12 @@ Internally, the audit service simply receives audit messages, validates them,
 and then puts the message onto Spring Cloud streams to handle each of the
 configured audit sinks (e.g., file and Accumulo).
 
+**Audit Client Starter**
+
+Query services that support auditing integrate with the audit service via the
+*spring-boot-starter-datawave-audit* module. View the starter
+[README](spring-boot-starter-datawave-audit/README.md) for details.
+
 ### Dictionary Service
 
 The dictionary service provides access to the data and edge dictionaries that
@@ -98,6 +104,12 @@ common service base, and therefore accepts JWTs for authentication. If the
 `remoteauth` profile is activated, then the service will also attempt to contact
 the authorization service in order to authenticate a user when a client
 certificate is provided and no JWT is provided.
+
+### Accumulo Service
+
+The Accumulo service is an administrator utility that provides a simple rest
+API for performing basic table and security operations on Accumulo. View the
+service [README](accumulo-service/README.md) for details.
 
 ### Service Discovery
 
@@ -118,7 +130,7 @@ located service.
 
 The DNS-based service discovery is useful for non-Spring applications. For
 example, the Wildfly-based DATAWAVE web service needs to contact microservices.
-By running Consul on port 53, only the nae of the service needs to be 
+By running Consul on port 53, only the name of the service needs to be 
 configured and lookup will happen automatically without any additional glue
 code. Or, if Consul is run on its default port of 8600, a small amount of
 glue code can be used to contact the non-standard port and locate the service.

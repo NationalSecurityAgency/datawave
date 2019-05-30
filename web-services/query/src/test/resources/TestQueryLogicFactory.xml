@@ -27,7 +27,7 @@
 	<bean id="TestQuery" class="datawave.webservice.query.logic.TestQueryLogic">
 		<property name="tableName" value="${metadata.table.name}" />
 		<property name="maxResults" value="12345" />
-		<property name="maxRowsToScan" value="98765" />
+		<property name="maxWork" value="98765" />
 		<property name="roleManager" ref="easyRoleManager" />
 	</bean>
 	
@@ -38,7 +38,7 @@
 	<bean id="TestQuery2" class="datawave.webservice.query.logic.TestQueryLogic">
 		<property name="tableName" value="${metadata.table.name}" />
 		<property name="maxResults" value="12345" />
-		<property name="maxRowsToScan" value="98765" />
+		<property name="maxWork" value="98765" />
 	</bean>
 
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />

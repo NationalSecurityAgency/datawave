@@ -775,6 +775,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     m.setSeekCount(Long.parseLong(fieldValue));
                 }
                 
+                else if (fieldName.equals("YIELD_COUNT")) {
+                    m.setYieldCount(Long.parseLong(fieldValue));
+                }
+                
                 else if (fieldName.equals("DOC_RANGES")) {
                     m.setDocRanges(Long.parseLong(fieldValue));
                 }
@@ -885,6 +889,11 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     @Override
     public void reload() {
         try {
+            if (this.recordWriter != null) {
+                // don't try to flush the mtbw (close). If recordWriter != null then this method is being called
+                // because of an Exception and the metrics have been saved off to be added to the new recordWriter.
+                this.recordWriter.returnConnector();
+            }
             recordWriter = new AccumuloRecordWriter(this.connectionFactory, conf);
         } catch (AccumuloException | AccumuloSecurityException | IOException e) {
             log.error(e.getMessage(), e);

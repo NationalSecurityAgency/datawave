@@ -72,7 +72,7 @@ DW_DATAWAVE_INGEST_LIVE_DATA_TYPES=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES:-"wikipe
 
 # Comma-delimited data type identifiers to be ingested via "bulk" ingest, ie via bulk import of RFiles into Accumulo tables
 
-DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-""}
+DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-"shardStats"}
 
 DW_DATAWAVE_MAPRED_INGEST_OPTS=${DW_DATAWAVE_MAPRED_INGEST_OPTS:-"-useInlineCombiner -ingestMetricsDisabled"}
 
@@ -103,7 +103,72 @@ function datawaveIngestStop() {
 }
 
 function datawaveIngestStatus() {
-    datawaveIngestIsRunning && echo "DataWave Ingest is running. PIDs: ${DW_DATAWAVE_INGEST_PID_LIST}" || echo "DataWave Ingest is not running"
+    # use a state to parse entries
+    local _opt=pid
+    local _bulkIngest
+    local _liveIngest
+    local _pid
+
+    echo "======  Datawave Ingest Status  ======"
+    datawaveIngestIsRunning && {
+        local -r _pids=${DW_DATAWAVE_INGEST_PID_LIST// /|}
+        echo "pids:${DW_DATAWAVE_INGEST_PID_LIST}"
+
+        for _proc in $(pgrep -af ingest-server.sh | egrep ${_pids}); do
+            case ${_opt} in
+                pid)
+                    _pid=$_proc
+                    _opt=name
+                    ;;
+                name)
+                    local _name=${_proc%%-ingest-ser}
+                    case "${_name}" in
+                        bulk) _bulkIngest=${_pid};;
+                        live) _liveIngest=${_pid};;
+                    esac
+                    _opt=pid
+                    ;;
+
+            esac
+        done
+
+        local -r _flagMaker=$(pgrep -f 'Dapp=FlagMaker' | egrep ${_pids})
+        local -r _cleanup=$(pgrep -f 'ingest/cleanup-server.py' | egrep ${_pids} )
+
+        for _job in BulkIngestMapFileLoader IngestJob; do
+            local _mapPids=$(pgrep -d ' ' -f datawave.ingest.mapreduce.job.${_job} | egrep ${_pids})
+            case ${_job} in
+                BulkIngestMapFileLoader) local -r _bulkPids="${_mapPids}";;
+                IngestJob) local -r _livePids="${_mapPids}";;
+            esac
+        done
+    }
+
+    if [[ -n "${_bulkIngest}" ]]; then
+        info "bulk ingest server => ${_bulkIngest}"
+    else
+        info "bulk ingest server is not running"
+    fi
+    if [[ -n "${_liveIngest}" ]]; then
+        info "live ingest server => ${_liveIngest}"
+    else
+        info "live ingest server is not running"
+    fi
+
+    if [[ -n "${_flagMaker}" ]]; then
+        info "flag maker => ${_flagMaker}"
+    else
+        info "flag maker is not running"
+    fi
+
+    if [[ -n "${_cleanup}" ]]; then
+        info "cleanup server => ${_cleanup}"
+    else
+        info "cleanup server is not running"
+    fi
+
+    info "bulk ingest pids: ${_bulkPids}"
+    info "live ingest pids: ${_livePids}"
 }
 
 function datawaveIngestIsInstalled() {
@@ -193,7 +258,7 @@ function datawaveIngestCsv() {
 
    # Same as with datawaveIngestWikipedia, we use live-ingest.sh, but this time to ingest some CSV data.
    # Note that the sample file, my.csv, has records that intentionally generate errors to demonstrate
-   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot 
+   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot
    # data-related errors that arise during ingest. As a result, this job may terminate with warnings
 
    local csvRawFile="${1}"

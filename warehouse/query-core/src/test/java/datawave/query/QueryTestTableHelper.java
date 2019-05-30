@@ -165,6 +165,6 @@ public final class QueryTestTableHelper {
         logic.setReverseIndexTableName(SHARD_RINDEX_TABLE_NAME);
         logic.setModelTableName(MODEL_TABLE_NAME);
         logic.setMaxResults(5000);
-        logic.setMaxRowsToScan(25000);
+        logic.setMaxWork(25000);
     }
 }

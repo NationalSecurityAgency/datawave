@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -36,6 +37,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private long rawRecordTimestamp = 0;
     private byte[] rawData = null;
     private Object auxData;
+    private Map<String,String> auxMap;
     private ColumnVisibility visibility;
     
     @Override
@@ -201,6 +203,25 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     @Override
     public void setAuxData(Object auxData) {
         this.auxData = auxData;
+    }
+    
+    /**
+     * Gets any auxiliary properties stored with this raw record container. Note that aux properties are not serialized with the raw record container.
+     */
+    @Override
+    public String getAuxProperty(String prop) {
+        return (auxMap == null ? null : auxMap.get(prop));
+    }
+    
+    /**
+     * Sets an auxiliary property for this raw record container. Note that aux properties are not serialized with the raw record container.
+     */
+    @Override
+    public void setAuxProperty(String prop, String value) {
+        if (auxMap == null) {
+            auxMap = new HashMap<>();
+        }
+        auxMap.put(prop, value);
     }
     
     @Override

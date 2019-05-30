@@ -17,7 +17,20 @@ public class QuerySpanTest {
         
         Assert.assertEquals(7, qs1.getSeekCount());
         Assert.assertEquals(16, qs1.getNextCount());
+        Assert.assertTrue(qs1.getYield());
         Assert.assertEquals(4, qs1.getSourceCount());
+    }
+    
+    @Test
+    public void testQuerySpanAggregationWithoutYielding() {
+        
+        QuerySpan qs1 = new QuerySpan(null);
+        advanceIteratorsWithoutYield(qs1);
+        
+        Assert.assertEquals(1, qs1.getSeekCount());
+        Assert.assertEquals(3, qs1.getNextCount());
+        Assert.assertFalse(qs1.getYield());
+        Assert.assertEquals(1, qs1.getSourceCount());
     }
     
     @Test
@@ -28,6 +41,7 @@ public class QuerySpanTest {
         
         Assert.assertEquals(7, qs1.getSeekCount());
         Assert.assertEquals(16, qs1.getNextCount());
+        Assert.assertTrue(qs1.getYield());
         Assert.assertEquals(4, qs1.getSourceCount());
     }
     
@@ -49,6 +63,7 @@ public class QuerySpanTest {
         
         Assert.assertEquals(21, qs4.getSeekCount());
         Assert.assertEquals(48, qs4.getNextCount());
+        Assert.assertTrue(qs4.getYield());
         Assert.assertEquals(12, qs4.getSourceCount());
     }
     
@@ -83,6 +98,7 @@ public class QuerySpanTest {
         
         Assert.assertEquals(21, qs4.getSeekCount());
         Assert.assertEquals(48, qs4.getNextCount());
+        Assert.assertTrue(qs4.getYield());
         Assert.assertEquals(12, qs4.getSourceCount());
     }
     
@@ -108,6 +124,13 @@ public class QuerySpanTest {
         }
     }
     
+    private void advanceIteratorsWithoutYield(QuerySpan qs1) {
+        qs1.seek();
+        qs1.next();
+        qs1.next();
+        qs1.next();
+    }
+    
     private void advanceIterators(QuerySpan qs1) {
         qs1.seek();
         qs1.next();
@@ -119,6 +142,7 @@ public class QuerySpanTest {
         qs2.next();
         qs2.next();
         qs2.next();
+        qs2.yield();
         QuerySpan qs3 = qs1.createSource();
         qs3.seek();
         qs3.seek();
@@ -129,12 +153,14 @@ public class QuerySpanTest {
         qs3.next();
         qs3.next();
         qs3.next();
+        qs3.yield();
         QuerySpan qs4 = qs3.createSource();
         qs4.seek();
         qs4.next();
         qs4.next();
         qs4.next();
         qs4.next();
+        qs4.yield();
     }
     
 }

@@ -16,6 +16,7 @@ import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.RoleManager;
 
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +43,7 @@ public class TestBaseQueryLogic {
         expect(this.copy.getAuditType(null)).andReturn(Auditor.AuditType.ACTIVE);
         expect(this.copy.getTableName()).andReturn("tableName");
         expect(this.copy.getMaxResults()).andReturn(Long.MAX_VALUE);
-        expect(this.copy.getMaxRowsToScan()).andReturn(10L);
+        expect(this.copy.getMaxWork()).andReturn(10L);
         expect(this.copy.getUndisplayedVisibilities()).andReturn(new HashSet<>());
         expect(this.copy.getMaxPageSize()).andReturn(25);
         expect(this.copy.getPageByteTrigger()).andReturn(1024L);
@@ -83,6 +84,12 @@ public class TestBaseQueryLogic {
         @Override
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
             // No op
+        }
+        
+        @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
         }
         
         @Override

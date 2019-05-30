@@ -26,17 +26,16 @@ dfs.datanode.handler.count 10
 dfs.datanode.synconclose true
 dfs.replication 1"
 
+DW_HADOOP_MR_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 # mapred-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address http://localhost:8020
 mapreduce.jobhistory.webapp.address http://localhost:8021
 mapreduce.jobhistory.intermediate-done-dir ${DW_HADOOP_MR_INTER_DIR}
 mapreduce.jobhistory.done-dir ${DW_HADOOP_MR_DONE_DIR}
-mapreduce.admin.map.child.java.opts -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true
 mapreduce.map.memory.mb 2048
-mapreduce.reduce.memory.mb 3072
-mapreduce.map.java.opts -Xmx1024m
-mapreduce.reduce.java.opts -Xmx2048m
-mapreduce.admin.reduce.child.java.opts -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true
+mapreduce.reduce.memory.mb 2048
+mapreduce.map.java.opts -Xmx1024m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
+mapreduce.reduce.java.opts -Xmx1792m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
 mapreduce.framework.name yarn"
 
 # yarn-site.xml (Format: <property-name><space><property-value>{<newline>})
@@ -112,7 +111,55 @@ function hadoopStop() {
 }
 
 function hadoopStatus() {
-    hadoopIsRunning && echo "Hadoop is running. PIDs: ${DW_HADOOP_PID_LIST}" || echo "Hadoop is not running"
+    # define local variables for hadoop processes
+    local _jobHist
+    local _dataNode
+    local _nameNode
+    local _secNameNode
+    local _resourceMgr
+    local _nodeMgr
+
+    # use a state to parse jps entries
+    echo "======  Hadoop Status  ======"
+    hadoopIsRunning && {
+        local _pid
+        local _opt=pid
+
+        local -r _pids=${DW_HADOOP_PID_LIST// /|}
+        echo "pids: ${DW_HADOOP_PID_LIST}"
+        for _arg in $(jps -l | egrep "${_pids}"); do
+            case ${_opt} in
+                pid)
+                    _pid=${_arg}
+                    _opt=class
+                    ;;
+                class)
+                    local _none
+                    local _name=${_arg##*.}
+                    case "${_name}" in
+                        DataNode) _dataNode=${_pid};;
+                        JobHistoryServer) _jobHist=${_pid};;
+                        NameNode) _nameNode=${_pid};;
+                        NodeManager) _nodeMgr=${_pid};;
+                        ResourceManager) _resourceMgr=${_pid};;
+                        SecondaryNameNode) _secNameNode=${_pid};;
+                        *) _none=true;;
+                    esac
+                    test -z "${_none}" && info "${_name} => ${_pid}"
+                    _pid=
+                    _opt=pid
+                    unset _none
+                    ;;
+            esac
+        done
+    }
+
+    test -z "${_jobHist}" && error "hadoop job history is not running"
+    test -z "${_dataNode}" && error "hadoop data node is not running"
+    test -z "${_nameNode}" && error "hadoop name node is not running"
+    test -z "${_secNameNode}" && error "hadoop secondary name node is not running"
+    test -z "${_nodeMgr}" && error "hadoop node manager is not running"
+    test -z "${_resourceMgr}" && error "hadoop resource maanger is not running"
 }
 
 function hadoopIsInstalled() {

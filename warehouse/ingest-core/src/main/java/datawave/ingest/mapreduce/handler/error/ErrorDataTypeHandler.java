@@ -103,6 +103,8 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     public static final String ERROR_TABLE_NAME = ERROR_TABLE + ".name";
     public static final String ERROR_TABLE_LOADER_PRIORITY = ERROR_TABLE + ".loader.priority";
     
+    public static final String PROCESSED_COUNT = "EDTH.processedCount";
+    
     private byte[] defaultVisibility = null;
     protected MarkingsHelper markingsHelper;
     protected MarkingFunctions markingFunctions;
@@ -241,6 +243,21 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
                 count++;
             }
         }
+        
+        // also create the processingCount field
+        if (event.getAuxProperty(PROCESSED_COUNT) != null) {
+            colq = safeAppend(null, PROCESSED_COUNT);
+            Text valueText = safeAppend(null, event.getAuxProperty(PROCESSED_COUNT));
+            safeAppend(valueText, PROCESSED_COUNT);
+            safeAppend(valueText, event.getAuxProperty(PROCESSED_COUNT));
+            value = new Value(valueText.getBytes(), 0, valueText.getLength());
+            
+            eKey = createKey(row, FIELD_COLF, colq, getVisibility(event, null), ts);
+            ebKey = new BulkIngestKey(tname, eKey);
+            contextWriter.write(ebKey, value, context);
+            count++;
+        }
+        
         return count;
     }
     

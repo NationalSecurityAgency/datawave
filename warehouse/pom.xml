@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>2.6.8-SNAPSHOT</version>
+        <version>2.6.12-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
@@ -19,6 +19,7 @@
         <module>ingest-configuration</module>
         <module>ingest-csv</module>
         <module>ingest-json</module>
+        <module>index-stats</module>
         <module>regression-testing</module>
         <module>ingest-scripts</module>
         <module>assemble</module>
