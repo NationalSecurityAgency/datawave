@@ -444,9 +444,9 @@ public class QueryExecutorBeanTest {
                                     .append(this.getLifecycle(), other.getLifecycle()).append(this.getErrorMessage(), other.getErrorMessage())
                                     .append(this.getErrorCode(), other.getErrorCode()).append(this.getSourceCount(), other.getSourceCount())
                                     .append(this.getNextCount(), other.getNextCount()).append(this.getSeekCount(), other.getSeekCount())
-                                    .append(this.getDocRanges(), other.getDocRanges()).append(this.getFiRanges(), other.getFiRanges())
-                                    .append(this.getPlan(), other.getPlan()).append(this.getLoginTime(), other.getLoginTime())
-                                    .append(this.getPredictions(), other.getPredictions()).isEquals();
+                                    .append(this.getYieldCount(), other.getYieldCount()).append(this.getDocRanges(), other.getDocRanges())
+                                    .append(this.getFiRanges(), other.getFiRanges()).append(this.getPlan(), other.getPlan())
+                                    .append(this.getLoginTime(), other.getLoginTime()).append(this.getPredictions(), other.getPredictions()).isEquals();
                 } else {
                     return false;
                 }
@@ -528,7 +528,7 @@ public class QueryExecutorBeanTest {
     }
     
     // @Test
-    public void testListWithNoName() throws URISyntaxException, CloneNotSupportedException {
+    public void testListWithNoName() throws URISyntaxException {
         // setup test
         request = MockHttpRequest.get("/DataWave/Query/list");
         
@@ -641,12 +641,6 @@ public class QueryExecutorBeanTest {
         Connector c = instance.getConnector("root", new PasswordToken(""));
         
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);
-        // QueryParameters qp = new QueryParametersImpl();
-        // qp.validate(queryParameters);
-        // MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(queryParameters);
-        // optionalParameters.putSingle(AuditParameters.USER_DN, principal.getUserDN().subjectDN());
-        // optionalParameters.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, q.getColumnVisibility());
-        // optionalParameters.putSingle("logicClass", queryLogicName);
         
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
@@ -654,7 +648,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
         EasyMock.expect(persister.findById(EasyMock.anyString())).andReturn(null).anyTimes();
-        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
+        EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(Maps.newHashMap()).anyTimes();
         
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         q.populateMetric(metric);
@@ -669,8 +663,7 @@ public class QueryExecutorBeanTest {
         
         connectionRequestBean.requestBegin(q.getId().toString());
         EasyMock.expectLastCall();
-        EasyMock.expect(connectionFactory.getConnection(eq("connPool1"), (AccumuloConnectionFactory.Priority) anyObject(), (Map<String,String>) anyObject()))
-                        .andReturn(c).anyTimes();
+        EasyMock.expect(connectionFactory.getConnection(eq("connPool1"), anyObject(), anyObject())).andReturn(c).anyTimes();
         connectionRequestBean.requestEnd(q.getId().toString());
         EasyMock.expectLastCall();
         connectionFactory.returnConnection(c);

@@ -29,7 +29,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
     private static final Logger log = Logger.getLogger(FilterFunctionQueryTest.class);
     
     private static final String IncludeRegex = "filter:includeRegex(";
-    private static final String ExcludeRegex = "filter:excludeRegex(";
+    private static final String ExcludeRegex = FILTER_EXCLUDE_REGEX + "(";
     private static final String GetAllMatches = "filter:getAllMatches(";
     private static final String IsNull = "filter:isNull(";
     private static final String IsNotNull = "filter:isNotNull(";

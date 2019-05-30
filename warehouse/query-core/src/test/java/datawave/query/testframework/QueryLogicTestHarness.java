@@ -69,6 +69,13 @@ public class QueryLogicTestHarness {
     public void assertLogicResults(BaseQueryLogic<Map.Entry<Key,Value>> logic, Collection<String> expected, List<DocumentChecker> checkers) {
         Set<String> actualResults = new HashSet<>();
         
+        if (log.isDebugEnabled()) {
+            log.debug("    ======  expected id(s)  ======");
+            for (String e : expected) {
+                log.debug("id(" + e + ")");
+            }
+        }
+        
         for (Map.Entry<Key,Value> entry : logic) {
             final Document document = this.deserializer.apply(entry).getValue();
             
@@ -132,6 +139,7 @@ public class QueryLogicTestHarness {
                 log.error("unexpected result(" + r + ")");
             }
         }
+        
         Assert.assertEquals("results do not match expected", expected.size(), actualResults.size());
         Assert.assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
         Assert.assertTrue("expected and actual values do not match", actualResults.containsAll(expected));

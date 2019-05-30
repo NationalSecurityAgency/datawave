@@ -7,9 +7,9 @@ import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -63,8 +63,8 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         for (String field : idx) {
             paris.addReverseIndexField(field);
         }
-        paris.addIndexOnlyField(CityField.COUNTRY.name());
-        paris.addIndexOnlyField(CityField.CODE.name());
+        italy.addIndexOnlyField(CityField.COUNTRY.name());
+        italy.addIndexOnlyField(CityField.CODE.name());
         dataTypes.add(new CitiesDataType(CityEntry.italy, italy));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
@@ -86,6 +86,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         
         this.logic.setMaxUnfieldedExpansionThreshold(5);
         runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxUnfieldedExpansionThreshold(1);
         try {
@@ -97,62 +98,50 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void testMaxValueRegexIndexOnly() throws Exception {
-        log.info("------  testMaxValueRegexIndexOnly  ------");
-        // set regex to match multiple fields
-        String city = EQ_OP + "'rome'";
-        String code = RE_OP + "'.*a'";
-        String query = CityField.CITY.name() + city + AND_OP + CityField.CODE.name() + code;
+    public void testMaxValueOrState() throws Exception {
+        log.info("------  testMaxValueOr  ------");
+        String ohio = "'ohio'";
+        String texas = "'texas'";
+        String oregon = "'oregon'";
+        String maine = "'maine'";
+        // @formatter:off
+        String query = CityField.STATE.name() + EQ_OP + ohio + OR_OP +
+                CityField.STATE.name() + EQ_OP + texas + OR_OP +
+                CityField.STATE.name() + EQ_OP + oregon + OR_OP +
+                CityField.STATE.name() + EQ_OP + maine;
+        // @formatter:on
         
-        this.logic.setMaxValueExpansionThreshold(3);
+        // query should work without OR thresholds
         runTest(query, query);
         
-        this.logic.setMaxValueExpansionThreshold(2);
-        try {
-            runTest(query, query);
-            Assert.fail("exception expected");
-        } catch (DatawaveFatalQueryException e) {
-            // expected
-        }
+        this.logic.setCollapseUids(true);
+        this.logic.setMaxOrExpansionThreshold(1);
         
+        // ExceededOrThresholdMarkerJexlNode marker is added in PushdownLargeFieldedListsVistor when an ivarator is configured
+        // the query does not change - to verify look at the log file for push down entries in log file
         ivaratorConfig();
         runTest(query, query);
     }
     
     @Test
-    public void testMaxValueRegexAnyField() throws Exception {
-        log.info("------  testMaxValueRegexAnyField  ------");
-        // set regex to match multiple fields
-        String regPhrase = RE_OP + "'.*e'";
-        String expect = this.dataManager.convertAnyField(regPhrase);
-        String query = Constants.ANY_FIELD + regPhrase;
-        
-        this.logic.setMaxValueExpansionThreshold(5);
-        runTest(query, expect);
-        
-        this.logic.setMaxValueExpansionThreshold(1);
-        // set regex to match more fields than are specified for the unified expansion
-        try {
-            runTest(query, expect);
-            Assert.fail("exception condition expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
-    }
-    
-    @Test
-    public void testMaxValueOr() throws Exception {
-        log.info("------  testMaxValueOr  ------");
+    public void testMaxValueOrCountry() throws Exception {
+        log.info("------  testMaxValueOrCountry  ------");
         String spain = "'spain'";
         String france = "'france'";
         String usa = "'united states'";
         String italy = "'maine'";
-        String query = CityField.COUNTRY.name() + EQ_OP + spain + OR_OP + CityField.COUNTRY.name() + EQ_OP + france + OR_OP + CityField.COUNTRY.name() + EQ_OP
-                        + usa + OR_OP + CityField.COUNTRY.name() + EQ_OP + italy;
+        // @formatter:off
+        String query = CityField.COUNTRY.name() + EQ_OP + spain + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + france + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + usa + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + italy;
+        // @formatter:on
         
         // query should work without OR thresholds
         runTest(query, query);
         
+        // ExceededOrThresholdMarkerJexlNode marker is added in PushdownLargeFieldedListsVistor
+        // to verify look at the log file for push down entries in log file
         this.logic.setCollapseUids(true);
         this.logic.setMaxOrExpansionThreshold(1);
         ivaratorConfig();
@@ -161,21 +150,53 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testMaxValueOrFst() throws Exception {
-        log.info("------  testMaxValueOr  ------");
+        log.info("------  testMaxValueOrFst  ------");
         String spain = "'spain'";
         String france = "'france'";
         String usa = "'united states'";
         String italy = "'italy'";
-        String query = CityField.COUNTRY.name() + EQ_OP + spain + OR_OP + CityField.COUNTRY.name() + EQ_OP + france + OR_OP + CityField.COUNTRY.name() + EQ_OP
-                        + usa + OR_OP + CityField.COUNTRY.name() + EQ_OP + italy;
+        // @formatter:off
+        String query = CityField.COUNTRY.name() + EQ_OP + spain + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + france + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + usa + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + italy;
+        // @formatter:on
         
         // query should work without OR thresholds
         runTest(query, query);
         
+        // must have collapsible uids for pushdown to occur
         this.logic.setCollapseUids(true);
-        this.logic.setMaxOrExpansionThreshold(1);
         this.logic.setMaxOrExpansionFstThreshold(1);
-        ivaratorConfig();
+        ivaratorFstConfig();
+        runTest(query, query);
+    }
+    
+    @Test
+    public void testMaxValueOrFstNonIndexed() throws Exception {
+        log.info("------  testMaxValueOrFstNonIndexed  ------");
+        String spain = "'spain'";
+        String france = "'france'";
+        String usa = "'united states'";
+        String italy = "'italy'";
+        String paris = "'ParIs'";
+        String venice = "'veNiCe'";
+        String turin = "'TuriN'";
+        // @formatter:off
+        String query = "(" + CityField.CITY.name() + EQ_OP + paris + OR_OP +
+                CityField.CITY.name() + EQ_OP + venice + OR_OP +
+                CityField.CITY.name() + EQ_OP + turin + ")" + AND_OP +
+                "(" + CityField.COUNTRY.name() + EQ_OP + spain + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + france + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + usa + OR_OP +
+                CityField.COUNTRY.name() + EQ_OP + italy + ")";
+        // @formatter:on
+        // query should work without OR thresholds
+        runTest(query, query);
+        
+        // must have collapsible uids for pushdown to occur
+        this.logic.setCollapseUids(true);
+        this.logic.setMaxOrExpansionFstThreshold(1);
         ivaratorFstConfig();
         runTest(query, query);
     }
@@ -187,6 +208,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxValueExpansionThreshold(1);
         try {
@@ -198,6 +220,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         
         ivaratorConfig();
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
     
     @Test
@@ -207,6 +230,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxValueExpansionThreshold(1);
         try {
@@ -218,6 +242,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         
         ivaratorConfig();
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
     
     @Test
@@ -227,6 +252,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxValueExpansionThreshold(1);
         try {
@@ -237,9 +263,8 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         }
         
         ivaratorConfig(3, false);
-        this.logic.setMaxOrExpansionThreshold(1);
-        this.logic.setMaxOrExpansionFstThreshold(1);
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
     
     @Test
@@ -252,6 +277,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         
         this.logic.setMaxValueExpansionThreshold(3);
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxValueExpansionThreshold(1);
         try {
@@ -260,6 +286,10 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         } catch (DatawaveFatalQueryException e) {
             // expected
         }
+        
+        ivaratorConfig();
+        runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
     
     @Test
@@ -269,10 +299,19 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         String expect = CityField.STATE.name() + LTE_OP + "'m~'" + AND_OP + CityField.STATE.name() + GTE_OP + "'m'";
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxValueExpansionThreshold(1);
+        try {
+            runTest(query, expect);
+            Assert.fail("exception expected");
+        } catch (FullTableScansDisallowedException e) {
+            // expected
+        }
+        
         ivaratorConfig();
         runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
     
     @Test
@@ -283,139 +322,28 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
                         + LTE_OP + "'s'" + AND_OP + CityField.STATE.name() + GTE_OP + "'mc')";
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxValueExpansionThreshold(1);
+        try {
+            runTest(query, expect);
+            Assert.fail("exception expected");
+        } catch (FullTableScansDisallowedException e) {
+            // expected
+        }
+        
         ivaratorConfig();
         runTest(query, expect);
-    }
-    
-    @Test
-    public void testMaxValueAnyFieldRegexExclude() throws Exception {
-        log.info("------  testMaxValueAnyFieldRegexExclude  ------");
-        String regexPhrase = RE_OP + "'m.*'";
-        String exclude = "'Mississippi'";
-        String query = Constants.ANY_FIELD + regexPhrase + " and filter:excludeRegex(" + CityField.STATE.name() + "," + exclude + ")";
-        String anyState = this.dataManager.convertAnyField(regexPhrase);
-        String expect = anyState + AND_OP + CityField.STATE.name() + " !~ " + exclude;
-        
-        this.logic.setMaxValueExpansionThreshold(10);
-        runTest(query, expect);
-        
-        this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
-        runTest(query, expect);
-    }
-    
-    @Test
-    public void testMaxValueAnyFieldOne() throws Exception {
-        log.info("------  testMaxValueAnyFieldOne  ------");
-        String regexPhrase = RE_OP + "'ma.*'";
-        String state = "'Maine'";
-        String query = Constants.ANY_FIELD + regexPhrase + AND_OP + Constants.ANY_FIELD + EQ_OP + state;
-        String anyState = this.dataManager.convertAnyField(regexPhrase);
-        String expect = anyState + AND_OP + CityField.STATE.name() + EQ_OP + state;
-        
-        this.logic.setMaxValueExpansionThreshold(5);
-        runTest(query, expect);
-        
-        this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
-        runTest(query, expect);
-    }
-    
-    @Test
-    public void testMaxValueAnyFieldTwo() throws Exception {
-        log.info("------  testMaxValueAnyFieldTwo  ------");
-        String regexPhrase = RE_OP + "'m.*'";
-        String state = "'Missouri'";
-        String query = Constants.ANY_FIELD + regexPhrase + AND_OP + Constants.ANY_FIELD + EQ_OP + state;
-        String anyState = this.dataManager.convertAnyField(regexPhrase);
-        String expect = anyState + AND_OP + CityField.STATE.name() + EQ_OP + state;
-        
-        this.logic.setMaxValueExpansionThreshold(5);
-        runTest(query, expect);
-        
-        this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
-        runTest(query, expect);
-    }
-    
-    @Test
-    public void testMaxValueAnyFieldNegRegex() throws Exception {
-        log.info("------  testMaxValueAnyFieldNegRegex  ------");
-        String regexPhrase = " !~ 'o.*'";
-        String state = "'Missouri'";
-        String query = Constants.ANY_FIELD + regexPhrase + AND_OP + Constants.ANY_FIELD + EQ_OP + state;
-        String anyState = this.dataManager.convertAnyField(regexPhrase, AND_OP);
-        String expect = anyState + AND_OP + CityField.STATE.name() + EQ_OP + state;
-        
-        this.logic.setMaxValueExpansionThreshold(5);
-        runTest(query, expect);
-        
-        this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
-        runTest(query, expect);
-    }
-    
-    @Test
-    public void testMaxValueAnyFieldIndexOnly() throws Exception {
-        log.info("------  testMaxValueAnyFieldIndexOnly  ------");
-        String regexPhrase = RE_OP + "'p.*'";
-        String country = "'FrancE'";
-        String query = Constants.ANY_FIELD + regexPhrase + AND_OP + Constants.ANY_FIELD + EQ_OP + country;
-        String anyState = this.dataManager.convertAnyField(regexPhrase);
-        String expect = anyState + AND_OP + CityField.COUNTRY.name() + EQ_OP + country;
-        
-        this.logic.setQueryThreads(1);
-        this.logic.setMaxValueExpansionThreshold(5);
-        runTest(query, expect);
-        
-        // this.logic.setMaxValueExpansionThreshold(1);
-        // ivaratorConfig();
-        // runTest(query, expect);
-    }
-    
-    @Test
-    public void testMaxValueNegAnyFieldIndexOnlyOne() throws Exception {
-        log.info("------  testMaxValueNegAnyFieldIndexOnlyOne  ------");
-        String regexPhrase = RE_OP + "'unit.*'";
-        String country = "'FrancE'";
-        String query = Constants.ANY_FIELD + EQ_OP + country + AND_OP + "not(" + Constants.ANY_FIELD + regexPhrase + ")";
-        String anyState = this.dataManager.convertAnyField(regexPhrase);
-        String expect = CityField.COUNTRY.name() + EQ_OP + country + AND_OP + "not(" + anyState + ")";
-        
-        this.logic.setMaxValueExpansionThreshold(5);
-        runTest(query, expect);
-        
-        this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
-        runTest(query, expect);
-    }
-    
-    @Test
-    public void testMaxValueNegAnyFieldIndexOnlyTwo() throws Exception {
-        log.info("------  testMaxValueNegAnyFieldIndexOnlyTwo  ------");
-        String regexPhrase = RE_OP + "'u.*'";
-        String country = "'FrancE'";
-        String query = Constants.ANY_FIELD + EQ_OP + country + AND_OP + "not(" + Constants.ANY_FIELD + regexPhrase + ")";
-        String anyState = this.dataManager.convertAnyField(regexPhrase);
-        String expect = CityField.COUNTRY.name() + EQ_OP + country + AND_OP + "not(" + anyState + ")";
-        
-        this.logic.setMaxValueExpansionThreshold(5);
-        runTest(query, expect);
-        
-        this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
-        runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
     
     @Test
     public void testNumericRange() throws Exception {
-        String city = TestCities.rome.name();
         String query = "(" + CityField.NUM.name() + GTE_OP + "99" + AND_OP + CityField.NUM.name() + LTE_OP + "131)";
         // should expand to EQNODES for 100, 110, 120, 130
-        this.logic.setMaxValueExpansionThreshold(4);
+        this.logic.setMaxValueExpansionThreshold(20);
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxValueExpansionThreshold(3);
         try {
@@ -427,6 +355,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         
         ivaratorConfig();
         runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
     
     // ============================================

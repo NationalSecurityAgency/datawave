@@ -6,7 +6,9 @@ import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -70,6 +72,9 @@ import java.util.UUID;
  * </ul>
  */
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
+    
+    protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.class.getSimpleName();
+    protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
     
@@ -214,6 +219,30 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     // ============================================
     // basic test execution methods
+    
+    /**
+     * This method should be called to determine if a marker node exists in the generated query, such as a ExceededValueThresholdMarkerJexlNode or
+     * ASTDelayedPredicate.
+     * 
+     * @param subStr
+     *            substring to find in the plan (maker node class name)
+     * @param expect
+     *            number of instances to find in the plan (use 0 for exclusion)
+     */
+    protected void parsePlan(String subStr, int expect) {
+        ShardQueryConfiguration config = this.logic.getConfig();
+        String plan = config.getQueryString();
+        int idx;
+        int total = 0;
+        do {
+            idx = plan.indexOf(subStr);
+            if (-1 < idx) {
+                total++;
+                plan = plan.substring(idx + subStr.length());
+            }
+        } while (-1 < idx);
+        Assert.assertEquals("marker (" + subStr + ")", expect, total);
+    }
     
     /**
      * Helper method for determining the expected results for a query.
@@ -497,20 +526,25 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         Assert.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
         
-        final String fstCache = (fst ? "fst-" : "");
         final List<String> dirs = new ArrayList<>();
+        final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
             // avoid threading issues by using a random number as part of the directory path to create a distinct directory
             int rand = rVal.nextInt(Integer.MAX_VALUE);
-            File ivCache = this.tmpDir.newFolder("ivarator.cache-" + fstCache + rand);
+            File ivCache = this.tmpDir.newFolder("ivarator.cache-" + rand);
             dirs.add(ivCache.toURI().toString());
+            if (fst) {
+                ivCache = this.tmpDir.newFolder("ivarator.cache-" + "fst-" + rand);
+                fstDirs.add(ivCache.toURI().toString());
+            }
         }
         String uriList = String.join(",", dirs);
         log.info("hdfs dirs(" + uriList + ")");
+        this.logic.setIvaratorCacheBaseURIs(uriList);
         if (fst) {
+            uriList = String.join(",", fstDirs);
+            log.info("fst dirs(" + uriList + ")");
             this.logic.setIvaratorFstHdfsBaseURIs(uriList);
-        } else {
-            this.logic.setIvaratorCacheBaseURIs(uriList);
         }
     }
     
