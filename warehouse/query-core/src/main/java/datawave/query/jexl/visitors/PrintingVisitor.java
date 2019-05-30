@@ -62,6 +62,7 @@ import org.apache.commons.jexl2.parser.ParserVisitor;
 import org.apache.commons.jexl2.parser.SimpleNode;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.jexl2.parser.TokenMgrError;
 
 /**
  * Does a pretty print out of a depth first traversal.
@@ -151,7 +152,11 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
         Parser parser = new Parser(new StringReader(";"));
         
         // Parse the query
-        printQuery(parser.parse(new StringReader(query), null));
+        try {
+            printQuery(parser.parse(new StringReader(query), null));
+        } catch (TokenMgrError e) {
+            throw new ParseException(e.getMessage());
+        }
     }
     
     /**
@@ -200,7 +205,11 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
         Parser parser = new Parser(new StringReader(";"));
         
         // Parse the query
-        return formattedQueryString(parser.parse(new StringReader(query), null), maxChildNodes);
+        try {
+            return formattedQueryString(parser.parse(new StringReader(query), null), maxChildNodes);
+        } catch (TokenMgrError e) {
+            throw new ParseException(e.getMessage());
+        }
     }
     
     /**

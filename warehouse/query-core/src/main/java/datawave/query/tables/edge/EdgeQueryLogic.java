@@ -43,6 +43,7 @@ import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
+import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -230,7 +231,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         ASTJexlScript script;
         try {
             script = parser.parse(new StringReader(queryString), null);
-        } catch (Exception e) {
+        } catch (TokenMgrError | Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
         

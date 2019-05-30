@@ -18,6 +18,7 @@ import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -143,7 +144,7 @@ public class QueryJexl {
             Deque<SimpleNode> nodes = new LinkedList<>();
             normalizeScript(script, nodes);
             return new NormalizedExpression(jEngine, query, script);
-        } catch (org.apache.commons.jexl2.parser.ParseException pe) {
+        } catch (TokenMgrError | org.apache.commons.jexl2.parser.ParseException pe) {
             throw new AssertionError(pe);
         }
     }
