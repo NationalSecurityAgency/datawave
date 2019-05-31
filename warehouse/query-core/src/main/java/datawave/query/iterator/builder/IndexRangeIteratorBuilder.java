@@ -96,7 +96,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                     canBuildDocument = true;
                 }
                 
-                // Add an interator to aggregate documents. This is needed for index only fields.
+                // Add an iterator to aggregate documents. This is needed for index only fields.
                 DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(rangeIterator, null, null);
                 
