@@ -38,18 +38,17 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
         
         cleanTestDirs();
     }
-
-
+    
     @Test
     public void testWrite() throws IOException {
         final String METRICS_DIR = "target/test/metrics";
-
+        
         FlagMetrics metrics = new FlagMetrics(this.fs, false);
         metrics.updateCounter(this.getClass().getSimpleName(), "COUNTER_ONE", System.currentTimeMillis());
         metrics.writeMetrics(METRICS_DIR, "base");
-
+        
     }
-
+    
     /**
      * Test of call method, of class FlagEntryMover.
      */

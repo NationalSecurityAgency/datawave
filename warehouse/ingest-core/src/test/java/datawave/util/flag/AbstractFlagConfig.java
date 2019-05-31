@@ -25,7 +25,7 @@ import org.apache.hadoop.fs.RemoteIterator;
 public class AbstractFlagConfig {
     
     protected static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
-
+    
     protected FlagMakerConfig fmc;
     
     protected void cleanTestDirs() throws IOException {

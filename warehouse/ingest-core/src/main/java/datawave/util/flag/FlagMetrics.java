@@ -34,8 +34,10 @@ public class FlagMetrics {
     
     /**
      *
-     * @param hadoopFS HDFS file system object
-     * @param enableMetrics enable write of metrics
+     * @param hadoopFS
+     *            HDFS file system object
+     * @param enableMetrics
+     *            enable write of metrics
      */
     FlagMetrics(FileSystem hadoopFS, boolean enableMetrics) {
         this.fs = hadoopFS;
@@ -43,7 +45,7 @@ public class FlagMetrics {
         this.ctx = new StandaloneTaskAttemptContext<>(new Configuration(), new StandaloneStatusReporter());
         ctx.putIfAbsent(datawave.metrics.util.flag.InputFile.FLAGMAKER_START_TIME, System.currentTimeMillis());
     }
-
+    
     protected void updateCounter(String groupName, String counterName, long val) {
         ctx.getCounter(groupName, counterName).setValue(val);
     }

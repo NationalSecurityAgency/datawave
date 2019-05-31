@@ -193,12 +193,56 @@ class IngestConfig {
      */
     private boolean validate() {
         // all int values must be > 0 and source directory must exist
-        boolean valid = false;
-        if (0 < this.workers && 0 < duration && 0 < this.minChunks && 0 < this.maxChunks && 0 < this.minInterval && 0 < this.maxInterval) {
-            if (0 < this.hdfs.trim().length() && 0 < this.hdfsIngestDir.trim().length() && 0 < this.sourceDir.trim().length()) {
-                final File d = new File(this.sourceDir);
-                valid = d.isDirectory();
+        boolean valid = true;
+        if (0 >= this.workers) {
+            logger.error("invalid workers({})", this.workers);
+            valid = false;
+        }
+        if (0 >= this.duration) {
+            logger.error("invalid duration({})", this.duration);
+            valid = false;
+        }
+        if (0 >= this.minChunks) {
+            logger.error("invalid minChunks({})", this.minChunks);
+            valid = false;
+        }
+        if (0 >= this.maxChunks) {
+            logger.error("invalid maxChunks({})", this.maxChunks);
+            valid = false;
+        }
+        if (0 >= this.minInterval) {
+            logger.error("invalid minInterval({})", this.minInterval);
+            valid = false;
+        }
+        if (0 >= this.maxInterval) {
+            logger.error("invalid mmaxInterval({})", this.maxInterval);
+            valid = false;
+        }
+        if (this.minInterval > this.maxInterval) {
+            logger.error("minInterval is > maxInterval");
+            valid = false;
+        }
+        if (null == this.hdfs || 0 == this.hdfs.trim().length()) {
+            logger.error("hdfs path is null or empty");
+            valid = false;
+        }
+        if (null == this.hdfsIngestDir || 0 == this.hdfsIngestDir.trim().length()) {
+            logger.error("hdfsIngestDir is null or empty");
+            valid = false;
+        }
+        if (null == this.sourceDir || 0 == this.sourceDir.trim().length()) {
+            logger.error("source directory is null or empty");
+            valid = false;
+        } else {
+            final File d = new File(this.sourceDir);
+            if (!d.isDirectory()) {
+                valid = false;
+                logger.error("invalid source directory ({})", this.sourceDir);
             }
+        }
+        
+        if (!valid) {
+            logger.trace("configuration is valid");
         }
         
         return valid;

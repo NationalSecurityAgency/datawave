@@ -24,7 +24,7 @@ class IngestWorker implements Callable<Void> {
         final FileSystem fs = cfg.getHdfs();
         final Path dst = new Path(cfg.getHdfsIngestDir());
         final long endTime = cfg.getDurtion() + System.currentTimeMillis();
-        logger.info("starting task thread " + Thread.currentThread().getId() + " duration(" + cfg.getDurtion() + ")ms");
+        logger.info("starting task thread(" + Thread.currentThread().getId() + ") duration(" + cfg.getDurtion() + ")ms");
         while (endTime >= System.currentTimeMillis()) {
             final List<Path> moveFiles = cfg.getRandomIngestFiles();
             Path[] srcFiles = new Path[moveFiles.size()];
@@ -32,13 +32,13 @@ class IngestWorker implements Callable<Void> {
             try {
                 fs.copyFromLocalFile(false, false, srcFiles, dst);
             } catch (IOException ioe) {
-                Log.error("unable to copy ingest files", ioe);
+                Log.error("thread(" + Thread.currentThread().getId() + ") unable to copy ingest files: " + ioe.getMessage());
             }
             final int waitDur = cfg.getRandomInterval();
             Thread.sleep(waitDur);
         }
         
-        logger.info("task thread complete " + Thread.currentThread().getId());
+        logger.info("task thread(" + Thread.currentThread().getId() + ") completed");
         return null;
     }
 }

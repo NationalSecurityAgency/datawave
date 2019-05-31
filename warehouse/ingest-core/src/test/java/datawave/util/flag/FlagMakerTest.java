@@ -60,7 +60,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         }
         f.mkdirs();
     }
-
+    
     private File setUpFlagDir() throws Exception {
         File f = new File(FLAG_DIR);
         if (f.exists())

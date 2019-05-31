@@ -227,7 +227,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             loadFilesForDistributor(fc, fs);
             
             while (fd.hasNext(shouldOnlyCreateFullFlags(fc)) && running) {
-                // initStats(startTime);
                 writeFlagFile(fc, fd.next(this));
             }
         }
@@ -458,13 +457,17 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     }
     
     /**
-     * Creates the flag file using all of the
+     * Creates the flag file using all of the valid ingest files.
      * 
      * @param flagging
+     *            ingest files
      * @param fc
+     *            data type for ingest
      * @param baseName
-     * @return
+     *            base name for flag file
+     * @return handle for flag file
      * @throws IOException
+     *             error creating flag file
      */
     protected File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName) throws IOException {
         // create the flag.generating file
@@ -504,11 +507,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                     sb.append(inFile.getFlagged().toUri()).append('\n');
                 }
             }
-            
-            // bmw - ? do we care about length
-            // if (estSize != sb.length()) {
-            // log.error("Estimated size is not accurate: {} vs {}", estSize, sb.length());
-            // }
             
             flagOS.write(sb.toString().getBytes());
         }
