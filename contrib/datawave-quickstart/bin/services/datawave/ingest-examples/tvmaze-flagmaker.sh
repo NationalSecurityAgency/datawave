@@ -13,7 +13,7 @@ function usage() {
     echo -e "\tc: download cast data"
     echo -e "\td: output directory for TVMaze files (default => ${_DefaultOutputDir})"
     echo -e "\tn: number of entries to download (default => ${_DefaultEntryCount})"
-    echo -e "\ts: dowload show data"
+    echo -e "\ts: download show data"
 
     exit 1
 }
@@ -50,7 +50,7 @@ function download() {
 function downloadShows() {
     local -ir _max=$1
 
-    local -i _num=2501
+    local -i _num=1
     local -ir _Interval=50
     while [[ "${_num}" -le "${_max}" ]]; do
         download "shows/${_num}" "shows-${_num}.json"
