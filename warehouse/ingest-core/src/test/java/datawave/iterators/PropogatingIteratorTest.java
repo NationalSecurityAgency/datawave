@@ -1,37 +1,27 @@
 package datawave.iterators;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -40,104 +30,13 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
-import datawave.ingest.table.aggregator.PropogatingCombiner;
 
-/**
- * 
- */
 @SuppressWarnings("deprecation")
 public class PropogatingIteratorTest {
+    private static final String SHARD = "20121002_1";
+    private static final String FIELD_TO_AGGREGATE = "UUID";
+    private static final long TIMESTAMP = 1349541830;
     
-    protected static final boolean[] defaultHasTopResults = new boolean[] {false};
-    protected static final Key[] defaultTopKeyResults = new Key[] {null};
-    protected static final Value[] defaultTopValueResults = new Value[] {null};
-    
-    protected static boolean[] propogateKeyResults = PropogatingIteratorTest.defaultHasTopResults;
-    
-    protected boolean[] hasTopResults = PropogatingIteratorTest.defaultHasTopResults;
-    protected Key[] topKeyResults = PropogatingIteratorTest.defaultTopKeyResults;
-    protected Value[] topValueResults = PropogatingIteratorTest.defaultTopValueResults;
-    protected IteratorScope getIteratorScopeResults = IteratorScope.majc;
-    protected boolean isFullMajorCompactionResults = false;
-    
-    protected static byte[] getExpectedValue(String... uids) {
-        Uid.List.Builder b = Uid.List.newBuilder();
-        b.setCOUNT(uids.length);
-        b.setIGNORE(false);
-        for (String uid : uids) {
-            b.addUID(uid);
-        }
-        return b.build().toByteArray();
-    }
-    
-    public static class WrappedPropogatingAggregator extends GlobalIndexUidAggregator {
-        
-        protected int callCount = 0;
-        
-        @Override
-        public boolean propogateKey() {
-            // TODO Auto-generated method stub
-            return propogateKeyResults[callCount++];
-        }
-        
-    }
-    
-    private static class PrivateWrappedAggregator extends PropogatingCombiner {
-        
-        @Override
-        public void reset() {
-            // TODO Auto-generated method stub
-            
-        }
-        
-        @Override
-        public void collect(Value value) {
-            // TODO Auto-generated method stub
-            
-        }
-        
-        @Override
-        public Value aggregate() {
-            // TODO Auto-generated method stub
-            return null;
-        }
-        
-    }
-    
-    public static class WrappedPropogatingIterator extends PropogatingIterator {
-        
-        public WrappedPropogatingIterator() {
-            super();
-        }
-        
-        public WrappedPropogatingIterator(PropogatingIterator clone) {
-            
-            this.env = clone.env;
-            this.defaultAgg = clone.defaultAgg;
-        }
-        
-        public PropogatingCombiner getPropAgg() {
-            
-            return defaultAgg;
-        }
-        
-        public void setPropAgg(PropogatingCombiner pa) {
-            
-            defaultAgg = pa;
-        }
-        
-        public IteratorEnvironment getIteratorEnvironment() {
-            
-            return env;
-        }
-        
-    }
-    
-    /**
-     * @param topValue
-     * @param uids
-     * @throws InvalidProtocolBufferException
-     */
     private void validateUids(Value topValue, String... uids) throws InvalidProtocolBufferException {
         Uid.List v = Uid.List.parseFrom(topValue.get());
         
@@ -145,14 +44,8 @@ public class PropogatingIteratorTest {
         for (String uid : uids) {
             v.getUIDList().contains(uid);
         }
-        
     }
     
-    /**
-     * @param topValue
-     * @param uids
-     * @throws InvalidProtocolBufferException
-     */
     private void validateRemoval(Value topValue, String... uids) throws InvalidProtocolBufferException {
         Uid.List v = Uid.List.parseFrom(topValue.get());
         
@@ -160,17 +53,29 @@ public class PropogatingIteratorTest {
         for (String uid : uids) {
             v.getREMOVEDUIDList().contains(uid);
         }
+    }
+    
+    private Uid.List.Builder createValueWithUid(String uid) {
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.setIGNORE(false);
+        builder.setCOUNT(1);
+        builder.addUID(uid);
         
+        return builder;
+    }
+    
+    private Uid.List.Builder createValueWithRemoveUid(String uid) {
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.setIGNORE(false);
+        builder.setCOUNT(-1);
+        builder.addREMOVEDUID(uid);
+        
+        return builder;
     }
     
     public class MockIteratorEnvironment implements IteratorEnvironment {
-        
         AccumuloConfiguration conf;
         private boolean major;
-        
-        public MockIteratorEnvironment(AccumuloConfiguration conf) {
-            this.conf = conf;
-        }
         
         public MockIteratorEnvironment(boolean major) {
             this.conf = AccumuloConfiguration.getDefaultConfiguration();
@@ -220,133 +125,16 @@ public class PropogatingIteratorTest {
             return null;
         }
         
-        /*
-         * (non-Javadoc)
-         * 
-         * @see org.apache.accumulo.core.iterators.IteratorEnvironment# reserveMapFileReader(java.lang.String)
-         */
         @Override
         public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String arg0) throws IOException {
-            // TODO Auto-generated method stub
             return null;
         }
-        
-    }
-    
-    protected IteratorEnvironment createMockIteratorEnvironment(boolean activateIteratorScope, boolean activateIsFullCompaction) {
-        
-        return createMockIteratorEnvironment(activateIteratorScope, (activateIteratorScope ? 1 : 0), activateIsFullCompaction, (activateIsFullCompaction ? 1
-                        : 0));
-    }
-    
-    protected IteratorEnvironment createMockIteratorEnvironment(boolean activateIteratorScope, int iteratorScopeCallCount, boolean activateIsFullCompaction,
-                    int compactionCallCount) {
-        IteratorEnvironment mock = PowerMock.createMock(IteratorEnvironment.class);
-        EasyMock.expect(mock.getConfig()).andReturn(null);
-        if (activateIteratorScope) {
-            
-            mock.getIteratorScope();
-            EasyMock.expectLastCall().andAnswer(() -> getIteratorScopeResults).times(iteratorScopeCallCount);
-        }
-        
-        if (activateIsFullCompaction) {
-            
-            mock.isFullMajorCompaction();
-            EasyMock.expectLastCall().andAnswer(() -> isFullMajorCompactionResults).times(compactionCallCount);
-        }
-        
-        PowerMock.replay(mock);
-        
-        return mock;
-    }
-    
-    protected SortedKeyValueIterator<Key,Value> createMockSortedKeyValueIterator() {
-        
-        return createMockSortedKeyValueIterator(PropogatingIteratorTest.defaultHasTopResults, PropogatingIteratorTest.defaultTopKeyResults,
-                        PropogatingIteratorTest.defaultTopValueResults, new AtomicInteger(0));
-    }
-    
-    protected SortedKeyValueIterator<Key,Value> createMockSortedKeyValueIterator(boolean[] htr, Key[] gtk, Value[] gtv, final AtomicInteger callCounter) {
-        
-        callCounter.set(0);
-        hasTopResults = new boolean[htr.length];
-        System.arraycopy(htr, 0, hasTopResults, 0, htr.length);
-        topKeyResults = new Key[gtk.length];
-        System.arraycopy(gtk, 0, topKeyResults, 0, gtk.length);
-        topValueResults = new Value[gtv.length];
-        System.arraycopy(gtv, 0, topValueResults, 0, gtv.length);
-        
-        return new SortedKeyValueIterator<Key,Value>() {
-            
-            @Override
-            public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
-                // TODO Auto-generated method stub
-                
-            }
-            
-            @Override
-            public boolean hasTop() {
-                
-                return hasTopResults[callCounter.get()];
-            }
-            
-            @Override
-            public void next() throws IOException {
-                
-                callCounter.incrementAndGet();
-            }
-            
-            @Override
-            public Key getTopKey() {
-                
-                return topKeyResults[callCounter.get()];
-            }
-            
-            @Override
-            public Value getTopValue() {
-                
-                return topValueResults[callCounter.get()];
-            }
-            
-            @Override
-            public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
-                // TODO Auto-generated method stub
-                return this;
-            }
-            
-            @Override
-            public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-                // TODO Auto-generated method stub
-                
-            }
-        };
-    }
-    
-    long ts = 1349541830;
-    
-    private Uid.List.Builder createNewUidList(String uid) {
-        Uid.List.Builder builder = Uid.List.newBuilder();
-        builder.setIGNORE(false);
-        builder.setCOUNT(1);
-        builder.addUID(uid);
-        
-        return builder;
-    }
-    
-    private Uid.List.Builder createremove(String uid) {
-        Uid.List.Builder builder = Uid.List.newBuilder();
-        builder.setIGNORE(false);
-        builder.setCOUNT(-1);
-        builder.addREMOVEDUID(uid);
-        
-        return builder;
     }
     
     protected Key newKey(String row, String field, String uid, boolean delete) {
-        Key key = new Key(uid, field, "dataType\0" + row, new ColumnVisibility("PUBLIC"), ts);
+        Key key = new Key(uid, field, "dataType\0" + row, new ColumnVisibility("PUBLIC"), TIMESTAMP);
         key.setDeleted(delete);
         return key;
-        
     }
     
     protected Key newKey(String row, String field, String uid) {
@@ -357,11 +145,11 @@ public class PropogatingIteratorTest {
     public void testAggregateThree() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -380,11 +168,11 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
@@ -392,12 +180,12 @@ public class PropogatingIteratorTest {
     public void testAggregateFour() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -416,11 +204,11 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         validateUids(iter.getTopValue(), "abc.3");
         
     }
@@ -428,18 +216,6 @@ public class PropogatingIteratorTest {
     @Test(expected = NullPointerException.class)
     public void testNullOptions() throws IOException {
         
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
         
@@ -447,26 +223,27 @@ public class PropogatingIteratorTest {
         
         IteratorEnvironment env = new MockIteratorEnvironment(false);
         
-        iter.init(data, null, env);
+        iter.init(createSourceWithTestData(), null, env);
         
         iter.seek(new Range(), Collections.emptyList(), false);
     }
     
-    @Test(expected = NullPointerException.class)
-    public void testNullEnvironment() throws IOException {
-        
+    private SortedMultiMapIterator createSourceWithTestData() {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), new Value(createValueWithUid("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
+        return new SortedMultiMapIterator(map);
+    }
+    
+    @Test(expected = NullPointerException.class)
+    public void testNullEnvironment() throws IOException {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
         
@@ -474,7 +251,7 @@ public class PropogatingIteratorTest {
         
         IteratorEnvironment env = new MockIteratorEnvironment(false);
         
-        iter.init(data, options, null);
+        iter.init(createSourceWithTestData(), options, null);
         
         iter.seek(new Range(), Collections.emptyList(), false);
     }
@@ -483,10 +260,10 @@ public class PropogatingIteratorTest {
     public void testForceNoPropogate() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createremove("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithRemoveUid("abc.0").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -506,7 +283,7 @@ public class PropogatingIteratorTest {
         Key topKey = iter.getTopKey();
         
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
@@ -514,10 +291,10 @@ public class PropogatingIteratorTest {
     public void testNoAggregator() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createremove("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithRemoveUid("abc.0").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -534,30 +311,20 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.0");
         iter.next();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateRemoval(iter.getTopValue(), "abc.0");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
     @Test
     public void testDeleteAggregateFour() throws IOException {
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
+        SortedMultiMapIterator data = createSourceWithTestData();
         
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
@@ -574,27 +341,16 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc", true), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
         validateUids(iter.getTopValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
     @Test
     public void testDeleteFullMajc() throws IOException {
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
@@ -603,7 +359,7 @@ public class PropogatingIteratorTest {
         
         IteratorEnvironment env = new MockIteratorEnvironment(true);
         
-        iter.init(data, options, env);
+        iter.init(createSourceWithTestData(), options, env);
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
@@ -611,82 +367,29 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc", true), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
         validateUids(iter.getTopValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
     @Test(expected = NullPointerException.class)
     public void testDeepCopyCannotCopyUninitialized() {
-        
         PropogatingIterator uut = new PropogatingIterator();
-        IteratorEnvironment env = new PropogatingIteratorTest.MockIteratorEnvironment(false);
-        
-        uut.deepCopy(env);
-    }
-    
-    @Test
-    public void testCtor() throws IOException {
-        
-        PropogatingIterator uut = new PropogatingIterator();
-        
-        Assert.assertNotNull("ProgpatingIterator constructor failed to create a valid instance.", uut);
-        
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
-        ColumnToClassMapping<Combiner> Aggregators = null;
-        
-        uut = new PropogatingIterator(data, Aggregators);
-        
-        Assert.assertNotNull("ProgpatingIterator constructor failed to create a valid instance.", uut);
-        
-    }
-    
-    @Test
-    public void test2ArgCtor() throws IOException {
-        
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
-        ColumnToClassMapping<Combiner> Aggregators = null;
-        
-        PropogatingIterator uut = new PropogatingIterator(data, Aggregators);
-        
-        Assert.assertNotNull("ProgpatingIterator constructor failed to create a valid instance.", uut);
-        
+        uut.deepCopy(new MockIteratorEnvironment(false));
     }
     
     @Test
     public void testAggregateThreeWithDeepCopy() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -706,11 +409,11 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
@@ -718,12 +421,12 @@ public class PropogatingIteratorTest {
     public void testAggregateFourWithDeepCopy() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -743,77 +446,38 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         validateUids(iter.getTopValue(), "abc.3");
         
     }
     
     @Test(expected = NullPointerException.class)
-    public void testNullOptionsWithDeepCopy() throws IOException {
-        
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
-        PropogatingIterator iter = new PropogatingIterator();
+    public void testNullOptionsWithInit() throws IOException {
         Map<String,String> options = Maps.newHashMap();
-        
         options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
-        
         IteratorEnvironment env = new MockIteratorEnvironment(false);
-        
-        iter.init(data, null, env);
-        
-        iter.seek(new Range(), Collections.emptyList(), false);
+        new PropogatingIterator().init(createSourceWithTestData(), null, env);
     }
     
     @Test(expected = NullPointerException.class)
-    public void testNullEnvironmentWithDeepCopy() throws IOException {
-        
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
-        PropogatingIterator iter = new PropogatingIterator();
+    public void testNullEnvironmentWithInit() throws IOException {
         Map<String,String> options = Maps.newHashMap();
-        
         options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
-        
-        IteratorEnvironment env = new MockIteratorEnvironment(false);
-        
-        iter.init(data, options, null);
-        
-        iter.seek(new Range(), Collections.emptyList(), false);
+        new PropogatingIterator().init(createSourceWithTestData(), options, null);
     }
     
     @Test
     public void testForceNoPropogateWithDeepCopy() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createremove("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithRemoveUid("abc.0").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -834,7 +498,7 @@ public class PropogatingIteratorTest {
         Key topKey = iter.getTopKey();
         
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
@@ -842,10 +506,10 @@ public class PropogatingIteratorTest {
     public void testNoAggregatorWithDeepCopy() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
         
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createremove("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.0").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithRemoveUid("abc.0").build().toByteArray()));
         
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
         
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
         
@@ -863,31 +527,19 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.0");
         iter.next();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateRemoval(iter.getTopValue(), "abc.0");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
     @Test
     public void testDeleteAggregateFourWithDeepCopy() throws IOException {
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
         
@@ -895,7 +547,7 @@ public class PropogatingIteratorTest {
         
         IteratorEnvironment env = new MockIteratorEnvironment(false);
         
-        iter.init(data, options, env);
+        iter.init(createSourceWithTestData(), options, env);
         iter = iter.deepCopy(env);
         
         iter.seek(new Range(), Collections.emptyList(), false);
@@ -904,28 +556,16 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc", true), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
         validateUids(iter.getTopValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
     @Test
     public void testDeleteFullMajcWithDeepCopy() throws IOException {
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
         
@@ -933,7 +573,7 @@ public class PropogatingIteratorTest {
         
         IteratorEnvironment env = new MockIteratorEnvironment(true);
         
-        iter.init(data, options, env);
+        iter.init(createSourceWithTestData(), options, env);
         iter = iter.deepCopy(env);
         
         iter.seek(new Range(), Collections.emptyList(), false);
@@ -942,27 +582,17 @@ public class PropogatingIteratorTest {
         
         Key topKey = iter.getTopKey();
         
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abc", true), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
         validateUids(iter.getTopValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), topKey);
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
     
     @Test
     public void testDeleteFullMajcWithDeepCopyThreaded() throws IOException, InterruptedException, ExecutionException {
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
+        SortedMultiMapIterator data = createSourceWithTestData();
         
         final PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
@@ -1004,62 +634,47 @@ public class PropogatingIteratorTest {
             Entry<Key,Value> kv1 = kvList.get(0);
             Entry<Key,Value> kv2 = kvList.get(1);
             
-            Assert.assertEquals(newKey("20121002_1", "UUID", "abc", true), kv1.getKey());
+            Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), kv1.getKey());
             validateUids(kv1.getValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
-            Assert.assertEquals(newKey("20121002_1", "UUID", "abd"), kv2.getKey());
+            Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), kv2.getKey());
         }
         exec.shutdownNow();
         
     }
     
     @Test
-    public void testCtorWithDeepCopy() throws IOException {
+    public void testDeepCopyOnDefaultConstructor() throws IOException {
+        SortedKeyValueIterator source = createSourceWithTestData();
+        HashMap<String,String> emptyOptions = new HashMap<>();
+        MockIteratorEnvironment env = new MockIteratorEnvironment(true);
         
-        PropogatingIterator uut = new PropogatingIterator();
-        
-        Assert.assertNotNull("ProgpatingIterator constructor failed to create a valid instance.", uut);
-        
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
-        ColumnToClassMapping<Combiner> Aggregators = null;
-        
-        uut = new PropogatingIterator(data, Aggregators);
-        
-        Assert.assertNotNull("ProgpatingIterator constructor failed to create a valid instance.", uut);
-        
+        PropogatingIterator propogatingIterator = new PropogatingIterator();
+        propogatingIterator.init(source, emptyOptions, env);
+        PropogatingIterator deepCopiedPropogatingIterator = propogatingIterator.deepCopy(env);
+        Assert.assertNotNull("PropogatingIterator default constructor failed to create a valid instance.", deepCopiedPropogatingIterator);
     }
     
     @Test
-    public void test2ArgCtorWithDeepCopy() throws IOException {
+    public void testDeepCopyOnConstructor() throws IOException {
+        SortedKeyValueIterator source = createSourceWithTestData();
+        HashMap<String,String> emptyOptions = new HashMap<>();
+        MockIteratorEnvironment env = new MockIteratorEnvironment(true);
         
-        TreeMultimap<Key,Value> map = TreeMultimap.create();
-        
-        map.put(newKey("20121002_1", "UUID", "abc", true), new Value(createNewUidList("abc.0").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.1").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.2").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        map.put(newKey("20121002_1", "UUID", "abc"), new Value(createNewUidList("abc.4").build().toByteArray()));
-        
-        map.put(newKey("20121002_1", "UUID", "abd"), new Value(createNewUidList("abc.3").build().toByteArray()));
-        
-        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
-        
-        ColumnToClassMapping<Combiner> Aggregators = null;
-        
-        PropogatingIterator uut = new PropogatingIterator(data, Aggregators);
-        
-        Assert.assertNotNull("ProgpatingIterator constructor failed to create a valid instance.", uut);
-        
+        PropogatingIterator propogatingIterator = new PropogatingIterator(source, null);
+        propogatingIterator.init(source, emptyOptions, env);
+        PropogatingIterator deepCopiedPropogatingIterator = propogatingIterator.deepCopy(env);
+        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", deepCopiedPropogatingIterator);
     }
     
+    @Test
+    public void testDefaultConstructor() {
+        PropogatingIterator uut = new PropogatingIterator();
+        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", uut);
+    }
+    
+    @Test
+    public void testConstructor() throws IOException {
+        PropogatingIterator uut = new PropogatingIterator(createSourceWithTestData(), null);
+        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", uut);
+    }
 }
