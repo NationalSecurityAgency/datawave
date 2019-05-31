@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 
 /**
  * This is the descriptor class for performing geowave functions. It supports basic spatial relationships, and decomposes the bounding box of the relationship
- * geometry into a set of geowave ranges. It currently caps this range decomposition to 8 ranges per tier.
+ * geometry into a set of geowave ranges. It currently caps this range decomposition to 8 ranges per tier for GeometryType and 32 ranges total for PointType.
  *
  */
 public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
