@@ -48,7 +48,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
         IndexInfo indexInfo = tuple.second();
         
         JexlNode queryNode = currentScript;
-        if (indexInfo.getNode() != null && log.isTraceEnabled()) {
+        if (log.isTraceEnabled() && indexInfo.getNode() != null) {
             log.trace("Got it from tuple " + JexlStringBuildingVisitor.buildQuery(indexInfo.getNode()));
         }
         
