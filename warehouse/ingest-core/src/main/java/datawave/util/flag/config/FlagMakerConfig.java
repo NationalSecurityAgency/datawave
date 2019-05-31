@@ -330,9 +330,6 @@ public class FlagMakerConfig {
             }
             cfg.setFolder(fixedFolders);
         }
-        
-        // configure the executor per the FlagMakerConfig input
-        // executor = Executors.newFixedThreadPool(this.maxHdfsThreads);
     }
     
     @Override
