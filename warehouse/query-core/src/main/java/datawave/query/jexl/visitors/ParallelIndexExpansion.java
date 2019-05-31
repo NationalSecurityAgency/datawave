@@ -149,7 +149,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     
     protected void setupThreadResources() {
         int threads = this.config.getNumIndexLookupThreads().intValue();
-        executor = Executors.newFixedThreadPool((int) Math.max(Math.ceil(threads), 10), new ParallelExpansionFactory(this.config.getQuery(), this.threadName));
+        executor = Executors.newFixedThreadPool((int) Math.max(threads, 10), new ParallelExpansionFactory(this.config.getQuery(), this.threadName));
     }
     
     @Override

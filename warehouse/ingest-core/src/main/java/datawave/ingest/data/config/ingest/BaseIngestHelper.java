@@ -160,8 +160,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                                                                      // all
                                                                      // types
     
-    protected FieldNameAliaserNormalizer aliaser = new FieldNameAliaserNormalizer();
-    
     private CompositeIngest compositeIngest;
     private VirtualIngest virtualIngest;
     
@@ -367,8 +365,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 }
             }
         }
-        
-        aliaser.setup(this.getType(), config);
         
         // Support for excluding specific fields from being inserted into the
         // Shard table

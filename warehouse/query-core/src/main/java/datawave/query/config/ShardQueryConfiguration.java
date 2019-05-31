@@ -69,7 +69,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,String> filterOptions = new HashMap<>();
     private boolean disableIndexOnlyDocuments = false;
     @JsonIgnore
-    private QueryStopwatch timers = new QueryStopwatch();
+    private transient QueryStopwatch timers = new QueryStopwatch();
     private int maxScannerBatchSize = 1000;
     /**
      * Index batch size is the size of results use for each index lookup
@@ -1274,7 +1274,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setIndexedFields(Set<String> indexedFields) {
-        this.indexedFields = Sets.newHashSet(indexedFields);
+        this.indexedFields = (null == indexedFields) ? Collections.emptySet() : Sets.newHashSet(indexedFields);
     }
     
     public Set<String> getReverseIndexedFields() {
@@ -1363,8 +1363,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setNormalizedFieldsDatatypes(Multimap<String,Type<?>> normalizedFieldsDatatypes) {
-        this.normalizedFieldsDatatypes = normalizedFieldsDatatypes;
-        this.normalizedFields = Sets.newHashSet(normalizedFieldsDatatypes.keySet());
+        this.normalizedFieldsDatatypes = (null == normalizedFieldsDatatypes) ? HashMultimap.create() : normalizedFieldsDatatypes;
+        this.normalizedFields = Sets.newHashSet(this.normalizedFieldsDatatypes.keySet());
     }
     
     public Set<String> getLimitFields() {
@@ -1556,8 +1556,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setDocumentPermutations(List<String> documentPermutations) {
+        List<String> permutations = (null == documentPermutations) ? Collections.emptyList() : documentPermutations;
         // validate we have instances of DocumentPermutation
-        for (String perm : documentPermutations) {
+        for (String perm : permutations) {
             try {
                 Class<?> clazz = Class.forName(perm);
                 if (!DocumentPermutation.class.isAssignableFrom(clazz)) {
@@ -1567,7 +1568,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 throw new IllegalArgumentException("Unable to load " + perm + " as a DocumentPermutation");
             }
         }
-        this.documentPermutations = documentPermutations;
+        this.documentPermutations = permutations;
     }
     
     public boolean isReducedResponse() {

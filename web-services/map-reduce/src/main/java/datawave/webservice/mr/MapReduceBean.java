@@ -695,9 +695,10 @@ public class MapReduceBean {
     @GZIP
     public MapReduceInfoResponseList list(@PathParam("jobId") String jobId) {
         MapReduceInfoResponseList response = mapReduceState.findById(jobId);
-        if (null == response || null == response.getResults() || response.getResults().isEmpty()) {
-            if (null == response)
-                response = new MapReduceInfoResponseList();
+        if (null == response) {
+            response = new MapReduceInfoResponseList();
+        }
+        if (null == response.getResults() || response.getResults().isEmpty()) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
             response.addException(qe);
             throw new NotFoundException(qe, response);

@@ -94,8 +94,8 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
             final String shardsToEvaluateMaxStr = options.get(MAX_IDS);
             
             if (null != shardsToEvaluateStr && null != shardsToEvaluateMaxStr) {
-                shardsToEvaluate = Integer.valueOf(shardsToEvaluateStr);
-                maxIds = Integer.valueOf(shardsToEvaluateMaxStr);
+                shardsToEvaluate = Integer.parseInt(shardsToEvaluateStr);
+                maxIds = Integer.parseInt(shardsToEvaluateMaxStr);
             }
         }
     }

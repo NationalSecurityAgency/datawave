@@ -1086,7 +1086,7 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(LIMIT_SOURCES)) {
             try {
-                this.sourceLimit = Long.valueOf(options.get(LIMIT_SOURCES));
+                this.sourceLimit = Long.parseLong(options.get(LIMIT_SOURCES));
             } catch (NumberFormatException nfe) {
                 this.sourceLimit = -1;
             }

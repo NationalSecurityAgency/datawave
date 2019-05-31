@@ -412,7 +412,6 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
                 builder.append(literal.substring(begin, index));
                 builder.append(BACKSLASH).append(STRING_QUOTE);
                 begin = index + 1;
-                literal.substring(index + 1, literal.length());
                 index = literal.indexOf(STRING_QUOTE, begin);
             }
             

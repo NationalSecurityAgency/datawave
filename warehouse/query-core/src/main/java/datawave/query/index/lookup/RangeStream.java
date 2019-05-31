@@ -147,7 +147,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         this.config = config;
         this.scanners = scanners;
         this.metadataHelper = metadataHelper;
-        int maxLookup = (int) Math.max(Math.ceil(config.getNumIndexLookupThreads()), 1);
+        int maxLookup = Math.max(config.getNumIndexLookupThreads(), 1);
         executor = Executors.newFixedThreadPool(maxLookup);
         runnables = new LinkedBlockingDeque<>();
         int executeLookupMin = (int) Math.max(maxLookup / 2, 1);
@@ -238,20 +238,18 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 }
                 if (queryStream.context() == StreamContext.VARIABLE) {
                     context = StreamContext.PRESENT;
-                } else
+                } else {
                     context = queryStream.context();
+                }
                 
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
-                    if (queryStream != null) {
-                        for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
-                            log.debug(line);
-                        }
+                    for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                        log.debug(line);
                     }
                 }
                 
-                this.itr = queryStream == null ? Collections.<QueryPlan> emptySet().iterator() : filter(
-                                concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), new EmptyPlanPruner());
+                this.itr = filter(concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), new EmptyPlanPruner());
             }
         } finally {
             // shut down the executor as all threads have completed
@@ -478,15 +476,15 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     
                     final IteratorSetting uidSetting = new IteratorSetting(stackStart++, iterClazz);
                     // Set condense-specific options
-                    uidSetting.addOption(CondensedUidIterator.SHARDS_TO_EVALUATE, Integer.valueOf(config.getShardsPerDayThreshold()).toString());
-                    uidSetting.addOption(CondensedUidIterator.MAX_IDS, Integer.valueOf(MAX_MEDIAN).toString());
-                    uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.valueOf(compressUidsInRangeStream).toString());
+                    uidSetting.addOption(CondensedUidIterator.SHARDS_TO_EVALUATE, Integer.toString(config.getShardsPerDayThreshold()));
+                    uidSetting.addOption(CondensedUidIterator.MAX_IDS, Integer.toString(MAX_MEDIAN));
+                    uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.toString(compressUidsInRangeStream));
                     
                     // Add TLD option, if applicable
                     if (condensedTld) {
-                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(condensedTld).toString());
+                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.toString(condensedTld));
                     }
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
                     
                     options.addScanIterator(uidSetting);
                     String queryString = fieldName + "=='" + literal + "'";
@@ -512,7 +510,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     options.addScanIterator(makeDataTypeFilter(config, stackStart++));
                     
                     final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
                     options.addScanIterator(uidSetting);
                     
                     String queryString = fieldName + "=='" + literal + "'";
@@ -531,7 +529,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 scanner.addScanIterator(makeDataTypeFilter(config, stackStart++));
                 
                 final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
                 scanner.addScanIterator(uidSetting);
                 
                 itr = Iterators.transform(scanner.iterator(), new EntryParser(node, fieldName, literal, indexOnlyFields));

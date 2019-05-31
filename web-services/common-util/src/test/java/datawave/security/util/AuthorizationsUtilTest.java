@@ -49,6 +49,15 @@ public class AuthorizationsUtilTest {
         DatawaveUser p2 = new DatawaveUser(p2dn, UserType.SERVER, Sets.newHashSet("A", "F", "G"), null, null, System.currentTimeMillis());
         
         principal = new DatawavePrincipal(Lists.newArrayList(user, p1, p2));
+        
+        Collection<Collection<String>> cbAuths = new HashSet<>();
+        cbAuths.addAll(principal.getAuthorizations());
+        Collection<Collection<String>> m = new HashSet<>();
+        Set<String> methodAuths = new HashSet<>(Arrays.asList("A , C, D".split("\\s*,\\s*")));
+        m.add(methodAuths);
+        // cbAuths.retainAll(Collections.unmodifiableCollection(methodAuths));
+        cbAuths.retainAll(methodAuths);
+        cbAuths.toString();
     }
     
     @Test

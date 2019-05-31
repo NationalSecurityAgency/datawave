@@ -239,7 +239,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             
             @Override
             public EventDataQueryFilter clone() {
-                return this.clone();
+                return this;
             }
             
             @Override
@@ -258,7 +258,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             }
         };
         filter.addFilter(rootFilter);
-        return new TLDTermFrequencyAggregator(fieldsToAggregate, filter, filter != null ? filter.getMaxNextCount() : -1);
+        return new TLDTermFrequencyAggregator(fieldsToAggregate, filter, filter.getMaxNextCount());
     }
     
     /**
