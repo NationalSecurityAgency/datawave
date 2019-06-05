@@ -209,7 +209,7 @@
                                     <pluginExecutionFilter>
                                         <groupId>org.apache.maven.plugins</groupId>
                                         <artifactId>maven-checkstyle-plugin</artifactId>
-                                        <versionRange>[3.0.0,)</versionRange>
+                                        <versionRange>[0,)</versionRange>
                                         <goals>
                                             <goal>check</goal>
                                         </goals>

@@ -1243,7 +1243,7 @@
                     <!-- This was added to ensure project only uses public API -->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.1.0</version>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
                         <failsOnError>false</failsOnError>
@@ -1253,7 +1253,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>8.16</version>
+                            <version>8.21</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1488,6 +1488,10 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
             <?SORTPOM IGNORE?>
             <!--
                 We need datawave.root to be set before the read/assert properties plugins run.
@@ -1526,6 +1530,7 @@
             </plugin>
             <?SORTPOM RESUME?>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
         </plugins>
