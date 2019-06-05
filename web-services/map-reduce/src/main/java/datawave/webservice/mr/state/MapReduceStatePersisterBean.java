@@ -471,9 +471,9 @@ public class MapReduceStatePersisterBean {
                 conf.set("fs.defaultFS", hdfs);
                 // If we can't talk to HDFS then I want to fail fast, default is to retry 10 times.
                 conf.setInt("ipc.client.connect.max.retries", 0);
-                FileSystem fs = FileSystem.get(conf);
                 Path resultDirectoryPath = new Path(result.getResultsDirectory());
                 int resultDirectoryPathLength = resultDirectoryPath.toUri().getPath().length();
+                FileSystem fs = FileSystem.get(resultDirectoryPath.toUri(), conf);
                 
                 List<FileStatus> stats = new ArrayList<>();
                 // recurse through the directory to find all files
