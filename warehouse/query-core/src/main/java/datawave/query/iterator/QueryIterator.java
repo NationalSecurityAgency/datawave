@@ -1168,11 +1168,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     /**
-     * Convert the given key's row & column family to a string.
+     * Convert the given key's row &amp; column family to a string.
      *
      * @param k
      *            - a {@link Key}
-     * @return - a string representation of the given key's row & column family.
+     * @return - a string representation of the given key's row &amp; column family.
      */
     public static String rowColfamToString(Key k) {
         if (null == k) {
