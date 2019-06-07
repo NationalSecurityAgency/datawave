@@ -22,7 +22,7 @@ public class MetadataTableSplitsCacheStatus {
         Path splitsPath = MetadataTableSplits.getSplitsPath(conf);
         FileStatus fileStatus = null;
         try {
-            fileStatus = FileSystem.get(conf).getFileStatus(splitsPath);
+            fileStatus = FileSystem.get(splitsPath.toUri(), conf).getFileStatus(splitsPath);
         } catch (IOException ex) {
             log.warn("Could not get the FileStatus of the splits file " + splitsPath);
         }

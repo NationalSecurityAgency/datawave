@@ -3,6 +3,7 @@ package datawave.mr.bulk;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -220,6 +221,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             Path work = new Path(workingDirectory);
             Path file = new Path(work, conf.get("mapreduce.job.name") + System.currentTimeMillis() + ".pw");
             conf.set(PASSWORD_PATH, file.toString());
+            fs = FileSystem.get(file.toUri(), conf);
             FSDataOutputStream fos = fs.create(file, false);
             fs.setPermission(file, new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
             fs.deleteOnExit(file);
@@ -294,6 +296,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             String workingDirectory = conf.get(WORKING_DIRECTORY, fs.getWorkingDirectory().toString());
             Path work = new Path(workingDirectory);
             Path tempPath = new Path(work, UUID.randomUUID() + ".cache");
+            fs = FileSystem.get(tempPath.toUri(), conf);
             FSDataOutputStream outStream = fs.create(tempPath);
             try {
                 
@@ -534,10 +537,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * @see #setRanges(Job, Collection)
      */
     protected static List<Range> getRanges(Configuration conf) throws IOException {
-        String rangesPath = conf.get(RANGES);
-        FileSystem fs = FileSystem.get(conf);
+        Path rangesPath = new Path(conf.get(RANGES));
+        FileSystem fs = FileSystem.get(rangesPath.toUri(), conf);
         
-        FSDataInputStream inputStream = fs.open(new Path(rangesPath));
+        FSDataInputStream inputStream = fs.open(rangesPath);
         int size = inputStream.readInt();
         ArrayList<Range> ranges = new ArrayList<>();
         for (int i = 0; i < size; i++) {
@@ -655,8 +658,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      */
     protected static byte[] getPassword(Configuration conf) throws IOException {
         if (null != conf.get(PASSWORD_PATH)) {
-            FileSystem fs = FileSystem.get(conf);
             Path file = new Path(conf.get(PASSWORD_PATH));
+            FileSystem fs = FileSystem.get(file.toUri(), conf);
             
             FSDataInputStream fdis = fs.open(file);
             int length = fdis.readInt();

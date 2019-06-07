@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 import datawave.query.jexl.JexlNodeFactory;
@@ -14,7 +15,6 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 
 public class IndexMatch implements WritableComparable<IndexMatch> {
     
@@ -43,30 +43,29 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     
     public IndexMatch(final String uid, final JexlNode myNode, final IndexMatchType type) {
         this.uid = uid;
-        this.myNodes = Sets.newHashSet();
-        nodeStrings = Sets.newHashSet();
+        this.myNodes = new HashSet<>();
+        this.nodeStrings = new HashSet<>();
         if (null != myNode)
             add(myNode);
         this.type = type;
-        shard = "";
+        this.shard = "";
     }
     
     public IndexMatch(Set<JexlNode> nodes, String uid, final IndexMatchType type) {
         this.uid = uid;
-        this.myNodes = Sets.newHashSet();
-        this.nodeStrings = Sets.newHashSet();
+        this.myNodes = new HashSet<>(nodes.size());
+        this.nodeStrings = new HashSet<>(nodes.size());
         if (null != nodes) {
             for (JexlNode node : nodes) {
                 add(node);
             }
         }
         this.type = type;
-        shard = "";
+        this.shard = "";
     }
     
     private boolean contains(JexlNode node) {
         return nodeStrings.contains(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
-        
     }
     
     public String getUid() {
@@ -87,7 +86,6 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
             default:
                 return JexlNodeFactory.createUnwrappedOrNode(myNodes);
         }
-        
     }
     
     @Override
@@ -149,7 +147,6 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
             nodeStrings.add(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
             myNodes.add(node);
         }
-        
     }
     
     @Override

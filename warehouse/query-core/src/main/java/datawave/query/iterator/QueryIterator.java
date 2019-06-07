@@ -218,15 +218,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // We want to add in spoofed dataTypes for Aggregation/Evaluation to
         // ensure proper numeric evaluation.
         this.typeMetadata = new TypeMetadata(this.getTypeMetadata());
-        typeMetadataWithNonIndexed = new TypeMetadata(this.typeMetadata);
-        typeMetadataWithNonIndexed.addForAllIngestTypes(this.getNonIndexedDataTypeMap());
+        this.typeMetadataWithNonIndexed = new TypeMetadata(this.typeMetadata);
+        this.typeMetadataWithNonIndexed.addForAllIngestTypes(this.getNonIndexedDataTypeMap());
         
-        exceededOrEvaluationCache = new HashMap<>();
+        this.exceededOrEvaluationCache = new HashMap<>();
         
         // Parse the query
         try {
-            script = JexlASTHelper.parseJexlQuery(this.getQuery());
-            myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
+            this.script = JexlASTHelper.parseJexlQuery(this.getQuery());
+            this.myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
             
         } catch (Exception e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -236,7 +236,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.myEnvironment = env;
         
         if (gatherTimingDetails()) {
-            trackingSpan = new MultiThreadedQuerySpan(getStatsdClient());
+            this.trackingSpan = new MultiThreadedQuerySpan(getStatsdClient());
             this.source = new SourceTrackingIterator(trackingSpan, source);
         } else {
             this.source = source;
@@ -665,8 +665,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     /**
-     * Returns the elements of {@code unfiltered} that satisfy a predicate. This is used instead of the google commons Iterators.filter to create a
-     * non-statefull filtering iterator.
+     * Returns the elements of {@code unfiltered} that satisfy a predicate. This is used instead of the google commons Iterators.filter to create a non-stateful
+     * filtering iterator.
      */
     public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate) {
         checkNotNull(unfiltered);
@@ -1122,42 +1122,58 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return projection;
     }
     
+    /**
+     * Determines if a range is document specific according to the following criteria
+     * 
+     * <pre>
+     *     1. Cannot have a null start or end key
+     *     2. Cannot span multiple rows
+     *     3. ColumnFamily must contain a null byte separator
+     * </pre>
+     *
+     * @param r
+     *            - {@link Range} to be evaluated
+     * @return - true if this is a document specific range, false if not.
+     */
     public static boolean isDocumentSpecificRange(Range r) {
         Preconditions.checkNotNull(r);
         
-        // A Range for a document...
-        
-        // Cannot have a null start or end key
-        //
         // Also @see datawave.query.index.lookup.TupleToRange
         // We have already made the assertion that the client is sending us
         // an inclusive start key due to the inability to ascertain the
-        // difference
-        // between and event-specific range and a continueMultiScan.
+        // difference between and event-specific range and a continueMultiScan.
         //
         // As such, it is acceptable for us to make the same assertion on the
-        // inclusivity
-        // of the start key.
+        // inclusivity of the start key.
+        
+        // Cannot have a null start or end key
         if (r.isInfiniteStartKey() || r.isInfiniteStopKey()) {
             return false;
-        } else {
-            Key startKey = r.getStartKey(), endKey = r.getEndKey();
-            
-            // Cannot span multiple rows
-            if (!startKey.getRowData().equals(endKey.getRowData())) {
-                return false;
-            }
-            
-            Text startColfam = startKey.getColumnFamily(), endColfam = endKey.getColumnFamily();
-            
-            // must contain a null byte separator in the column family
-            if (startColfam.find(Constants.NULL) == -1 || endColfam.find(Constants.NULL) == -1) {
-                return false;
-            }
+        }
+        
+        // Cannot span multiple rows.
+        Key startKey = r.getStartKey();
+        Key endKey = r.getEndKey();
+        if (!startKey.getRowData().equals(endKey.getRowData())) {
+            return false;
+        }
+        
+        // Column Family must contain a null byte separator.
+        Text startCF = startKey.getColumnFamily();
+        Text endCF = endKey.getColumnFamily();
+        if (startCF.find(Constants.NULL) == -1 || endCF.find(Constants.NULL) == -1) {
+            return false;
         }
         return true;
     }
     
+    /**
+     * Convert the given key's row &amp; column family to a string.
+     *
+     * @param k
+     *            - a {@link Key}
+     * @return - a string representation of the given key's row &amp; column family.
+     */
     public static String rowColfamToString(Key k) {
         if (null == k) {
             return "null";
