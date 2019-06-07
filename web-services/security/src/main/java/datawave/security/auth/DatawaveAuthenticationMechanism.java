@@ -52,6 +52,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     protected final String SUBJECT_DN_HEADER;
     protected final String ISSUER_DN_HEADER;
     private final boolean trustedHeaderAuthentication;
+    private final boolean jwtHeaderAuthentication;
     
     @SuppressWarnings("UnusedDeclaration")
     public DatawaveAuthenticationMechanism() {
@@ -73,6 +74,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         this.forceRenegotiation = forceRenegotiation;
         this.identityManager = identityManager;
         trustedHeaderAuthentication = Boolean.valueOf(System.getProperty("dw.trusted.header.authentication", "false"));
+        jwtHeaderAuthentication = Boolean.valueOf(System.getProperty("dw.jwt.header.authentication", "false"));
         SUBJECT_DN_HEADER = System.getProperty("dw.trusted.header.subjectDn", "X-SSL-ClientCert-Subject".toLowerCase());
         ISSUER_DN_HEADER = System.getProperty("dw.trusted.header.issuerDn", "X-SSL-ClientCert-Issuer".toLowerCase());
     }
@@ -106,6 +108,17 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
                 }
             } catch (SSLPeerUnverifiedException e) {
                 // No action - this mechanism can not attempt authentication without peer certificates, so allow it to drop out to NOT_ATTEMPTED
+            }
+        }
+        // If we're using JWT authentication, then trust the JWT in the header.
+        if (jwtHeaderAuthentication) {
+            try {
+                String authorizationHeader = getSingleHeader(exchange.getRequestHeaders(), "Authorization");
+                if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                    credential = new DatawaveCredential(authorizationHeader.substring(7));
+                }
+            } catch (MultipleHeaderException e) {
+                return notAuthenticated(exchange, securityContext, e.getMessage());
             }
         }
         // If we're either not using SSL and/or didn't get user info from the SSL session, then get it from the trusted headers, if we're configured to do so.

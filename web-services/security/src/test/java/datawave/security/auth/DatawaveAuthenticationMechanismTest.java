@@ -387,4 +387,31 @@ public class DatawaveAuthenticationMechanismTest {
         
         verifyAll();
     }
+    
+    @Test
+    public void testJWTHeaderAuthentication() throws Exception {
+        Whitebox.setInternalState(datawaveAuthenticationMechanism, "trustedHeaderAuthentication", false);
+        Whitebox.setInternalState(datawaveAuthenticationMechanism, "jwtHeaderAuthentication", true);
+        
+        httpRequestHeaders.add(new HttpString("Authorization"), "Bearer 1234");
+        
+        String expectedID = "1234";
+        
+        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
+        expect(serverConnection.getSslSessionInfo()).andReturn(null);
+        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        expect(securityContext.getIdentityManager()).andReturn(identityManager);
+        expect(identityManager.verify(eq(expectedID), isA(Credential.class))).andReturn(account);
+        securityContext.authenticationComplete(account, "DATAWAVE-AUTH", false);
+        expect(httpServerExchange.getRequestStartTime()).andReturn(System.nanoTime());
+        expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
+        
+        replayAll();
+        
+        AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
+        assertEquals(AuthenticationMechanismOutcome.AUTHENTICATED, outcome);
+        
+        verifyAll();
+    }
 }
