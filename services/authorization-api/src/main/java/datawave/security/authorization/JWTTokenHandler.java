@@ -34,6 +34,7 @@ public class JWTTokenHandler {
     
     private final String issuer;
     private final Key signingKey;
+    private final Key signatureCheckKey;
     private final TtlMode ttlMode;
     private final long jwtTtl;
     private final ObjectMapper objectMapper;
@@ -42,9 +43,10 @@ public class JWTTokenHandler {
      * Creates a new JWTTokenHandler.
      *
      * @param cert
-     *            the certificate to use for retrieving the JWT issuer name to use when creating JWTs. {@code DATAWAVE} is used if null is passed
+     *            the certificate to use for retrieving the JWT issuer name to use when creating JWTs. {@code DATAWAVE} is used if null is passed. If a valid
+     *            certificate is passed, then its public key will be used to verify the signature of signed JWTs.
      * @param signingKey
-     *            the key to use for signing new JWTs or checking the signature of existing JWTs
+     *            the key to use for signing new JWTs (and checking the signature of existing JWTs if no cert is passed)
      * @param jwtTtl
      *            the length of time, relative to the oldest creation time of the {@link DatawaveUser} being converted to a JWT, for which a signed JWT will be
      *            valid
@@ -61,9 +63,10 @@ public class JWTTokenHandler {
      * Creates a new JWTTokenHandler.
      *
      * @param cert
-     *            the certificate to use for retrieving the JWT issuer name to use when creating JWTs. {@code DATAWAVE} is used if null is passed
+     *            the certificate to use for retrieving the JWT issuer name to use when creating JWTs. {@code DATAWAVE} is used if null is passed. If a valid *
+     *            certificate is passed, then its public key will be used to verify the signature of signed JWTs.
      * @param signingKey
-     *            the key to use for signing new JWTs or checking the signature of existing JWTs
+     *            the key to use for signing new JWTs (and checking the signature of existing JWTs if no cert is passed)
      * @param jwtTtl
      *            the length of time (relative to either {@link DatawaveUser} creation time or now, based on the value of {@code ttlMode}) for which generated
      *            JWTs will be valid
@@ -83,8 +86,10 @@ public class JWTTokenHandler {
         this.objectMapper = objectMapper;
         if (cert instanceof X509Certificate) {
             issuer = ((X509Certificate) cert).getSubjectDN().getName();
+            signatureCheckKey = cert.getPublicKey();
         } else {
             issuer = "DATAWAVE";
+            signatureCheckKey = signingKey;
         }
     }
     
@@ -110,7 +115,7 @@ public class JWTTokenHandler {
     
     public Collection<DatawaveUser> createUsersFromToken(String token) {
         logger.trace("Attempting to parse JWT {}", token);
-        Jws<Claims> claimsJws = Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token);
+        Jws<Claims> claimsJws = Jwts.parser().setSigningKey(signatureCheckKey).parseClaimsJws(token);
         Claims claims = claimsJws.getBody();
         logger.trace("Resulting claims: {}", claims);
         List<?> principalsClaim = claims.get(PRINCIPALS_CLAIM, List.class);
