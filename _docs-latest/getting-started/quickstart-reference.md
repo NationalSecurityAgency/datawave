@@ -172,7 +172,7 @@ self-signed materials are used...
 | [testServer.p12][dw_blob_server_p12] | PKCS12 | Server Keystore for the Wildfly JEE Application Server |
 | [testUser.p12][dw_blob_user_p12] | PKCS12 | Test user client cert |
         
-* Passwords for all of the above: *`secret`*
+* Passwords for all of the above: *`ChangeIt`*
 
 * To access DataWave Web endpoints in a browser, you'll need to import the client cert into the browser's certificate store
 
