@@ -712,7 +712,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     private Set<String> deconstruct(Collection<String> fields) {
-        return fields.stream().map(field -> JexlASTHelper.deconstructIdentifier(field)).collect(Collectors.toSet());
+        return fields == null ? null : fields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
     }
     
     public Set<String> getProjectFields() {
@@ -866,7 +866,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
     
-    @SuppressWarnings("unchecked")
     public Map<String,String> getFilterOptions() {
         return Collections.unmodifiableMap(filterOptions);
     }
@@ -1291,7 +1290,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setReverseIndexedFields(Set<String> reverseIndexedFields) {
-        this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFields);
+        this.reverseIndexedFields = reverseIndexedFields == null ? new HashSet<>() : Sets.newHashSet(reverseIndexedFields);
     }
     
     public Set<String> getNormalizedFields() {

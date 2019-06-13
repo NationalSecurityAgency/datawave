@@ -154,5 +154,10 @@
         <Method name="load" />
         <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
     </Match>
+    <Match>
+        <Class name="datawave.query.index.lookup.TupleToRange" />
+        <Method name="createDayRange" />
+        <Bug pattern="NP_NULL_PARAM_DEREF" />
+    </Match>
 
 </FindBugsFilter>

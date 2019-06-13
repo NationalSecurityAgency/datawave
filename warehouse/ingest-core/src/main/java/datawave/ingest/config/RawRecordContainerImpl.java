@@ -446,6 +446,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         result = 31 * result + (ids != null ? ids.hashCode() : 0);
         result = 31 * result + Arrays.hashCode(rawData);
         result = 31 * result + (auxData != null ? auxData.hashCode() : 0);
+        result = 31 * result + (auxMap != null ? auxMap.hashCode() : 0);
         result = 31 * result + (securityMarkings != null ? securityMarkings.hashCode() : 0);
         return result;
     }
