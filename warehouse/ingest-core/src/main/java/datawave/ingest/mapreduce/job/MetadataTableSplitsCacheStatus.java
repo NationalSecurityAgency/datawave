@@ -25,6 +25,7 @@ public class MetadataTableSplitsCacheStatus {
             fileStatus = FileSystem.get(splitsPath.toUri(), conf).getFileStatus(splitsPath);
         } catch (IOException ex) {
             log.warn("Could not get the FileStatus of the splits file " + splitsPath);
+            return false;
         }
         long expirationTime = System.currentTimeMillis() - conf.getLong(SPLITS_CACHE_TIMEOUT_MS, DEFAULT_CACHE_TIMEOUT);
         boolean isFileAgeValid = fileStatus.getModificationTime() >= expirationTime;
