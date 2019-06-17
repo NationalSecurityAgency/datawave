@@ -90,7 +90,7 @@ public class AccumuloSetupHelper {
      */
     public Connector loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
                     TableExistsException, TableNotFoundException, URISyntaxException {
-        return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER);
+        return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.ALWAYS);
     }
     
     /**

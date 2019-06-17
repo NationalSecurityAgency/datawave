@@ -5,6 +5,8 @@ import datawave.accumulo.inmemory.InMemoryConnector;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.InMemoryScanner;
 import datawave.accumulo.inmemory.ScannerRebuilder;
+import datawave.query.attributes.Document;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -104,6 +106,7 @@ public class RebuildingScannerTestHelper {
         private final TeardownListener teardown;
         private Map.Entry<Key,Value> next = null;
         private Map.Entry<Key,Value> lastKey = null;
+        private KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
         
         public RebuildingIterator(Iterator<Map.Entry<Key,Value>> delegate, ScannerRebuilder scanner, TeardownListener teardown) {
             this.delegate = delegate;
@@ -157,7 +160,13 @@ public class RebuildingScannerTestHelper {
                                 throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext);
                             }
                         } else if (!next.getKey().equals(rebuildNext.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
-                            throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext);
+                            final Document rebuildDocument = deserializer.apply(rebuildNext).getValue();
+                            final Document lastDocument = deserializer.apply(lastKey).getValue();
+                            // if the keys don't match but are returning the previous document and using a new key this is okay
+                            if (!lastDocument.get("RECORD_ID").getData().toString().equals(rebuildDocument.get("RECORD_ID").getData().toString())
+                                            && !lastKey.getKey().equals(rebuildNext.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
+                                throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext);
+                            }
                         }
                     }
                 }
