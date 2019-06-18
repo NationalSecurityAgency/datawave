@@ -1,6 +1,11 @@
 package datawave.util.flag.config;
 
+import datawave.util.StringUtils;
+import datawave.util.flag.processor.DateFlagDistributor;
+import datawave.util.flag.processor.DateFolderFlagDistributor;
 import datawave.util.flag.processor.DateUtils;
+import datawave.util.flag.processor.FlagDistributor;
+import datawave.util.flag.processor.SimpleFlagDistributor;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -218,6 +223,113 @@ public class FlagMakerConfig {
     
     public String getFlagMetricsDirectory() {
         return flagMetricsDirectory;
+    }
+    
+    public FlagDistributor getFlagDistributor() {
+        FlagDistributor fd = null;
+        if ("simple".equals(this.distributorType)) {
+            fd = new SimpleFlagDistributor();
+        } else if ("date".equals(this.distributorType)) {
+            fd = new DateFlagDistributor();
+        } else if ("folderdate".equals(this.distributorType)) {
+            fd = new DateFolderFlagDistributor();
+        }
+        
+        return fd;
+    }
+    
+    /**
+     * Validate config and set up folders for each data type. Here we have a few rules:
+     * <ul>
+     * <li>if you provide no folders, then we will assume that the folder is the data type which will be appended to the base directory (e.g.
+     * /data/ShardIngest).</li>
+     * <li>Users can provide absolute file paths by leading with a slash ("/")</li>
+     * </ul>
+     */
+    public void validate() {
+        String prefix = this.getClass().getSimpleName() + " Error: ";
+        // validate the config
+        if (this.defaultCfg.getScript() == null) {
+            throw new IllegalArgumentException(prefix + "default script is required");
+        }
+        if (this.baseHDFSDir == null) {
+            throw new IllegalArgumentException(prefix + "baseHDFSDir is required");
+        }
+        
+        if (!this.baseHDFSDir.endsWith("/")) {
+            setBaseHDFSDir(this.baseHDFSDir + "/");
+        }
+        
+        if (this.socketPort < 1025 || socketPort > 65534) {
+            throw new IllegalArgumentException(prefix + "socketPort is required and must be greater than 1024 and less than 65535");
+        }
+        
+        if (this.flagFileDirectory == null) {
+            throw new IllegalArgumentException(prefix + "flagFileDirectory is required");
+        }
+        
+        if (this.defaultCfg.getMaxFlags() < 1) {
+            throw new IllegalArgumentException(prefix + "Default Max Flags must be set.");
+        }
+        
+        if (this.distributorType == null || !this.distributorType.matches("(simple|date|folderdate)")) {
+            throw new IllegalArgumentException("Invalid Distributor type provided: " + this.distributorType
+                            + ". Must be one of the following: simple|date|folderdate");
+        }
+        
+        for (FlagDataTypeConfig cfg : this.flagCfg) {
+            if (cfg.getInputFormat() == null)
+                throw new IllegalArgumentException("Input Format Class must be specified for data type: " + cfg.getDataName());
+            if (cfg.getIngestPool() == null)
+                throw new IllegalArgumentException("Ingest Pool must be specified for data type: " + cfg.getDataName());
+            if (cfg.getFlagCountThreshold() == FlagMakerConfig.UNSET) {
+                cfg.setFlagCountThreshold(this.flagCountThreshold);
+            }
+            if (cfg.getTimeoutMilliSecs() == FlagMakerConfig.UNSET) {
+                cfg.setTimeoutMilliSecs(this.timeoutMilliSecs);
+            }
+            cfg.setLast(System.currentTimeMillis() + cfg.getTimeoutMilliSecs());
+            if (cfg.getMaxFlags() < 1) {
+                cfg.setMaxFlags(this.defaultCfg.getMaxFlags());
+            }
+            if (cfg.getReducers() < 1) {
+                cfg.setReducers(this.defaultCfg.getReducers());
+            }
+            if (cfg.getScript() == null || "".equals(cfg.getScript())) {
+                cfg.setScript(this.defaultCfg.getScript());
+            }
+            if (cfg.getFileListMarker() == null || "".equals(cfg.getFileListMarker())) {
+                cfg.setFileListMarker(this.defaultCfg.getFileListMarker());
+            }
+            if (cfg.getFileListMarker() != null) {
+                if (cfg.getFileListMarker().indexOf(' ') >= 0) {
+                    throw new IllegalArgumentException(prefix + "fileListMarker cannot contain spaces");
+                }
+            }
+            if (cfg.getCollectMetrics() == null || "".equals(cfg.getCollectMetrics())) {
+                cfg.setCollectMetrics(this.defaultCfg.getCollectMetrics());
+            }
+            List<String> folders = cfg.getFolder();
+            if (folders == null || folders.isEmpty()) {
+                folders = new ArrayList<>();
+                cfg.setFolder(folders);
+                // add the default path. we'll bomb later if it's not there.
+                folders.add(cfg.getDataName());
+            }
+            List<String> fixedFolders = new ArrayList<>();
+            for (int i = 0; i < folders.size(); i++) {
+                for (String folder : StringUtils.split(folders.get(i), ',')) {
+                    folder = folder.trim();
+                    // let someone specify an absolute path.
+                    if (!folder.startsWith("/")) {
+                        fixedFolders.add(this.baseHDFSDir + folder);
+                    } else {
+                        fixedFolders.add(folder);
+                    }
+                }
+            }
+            cfg.setFolder(fixedFolders);
+        }
     }
     
     @Override

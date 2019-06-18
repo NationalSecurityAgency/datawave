@@ -1,58 +1,54 @@
 package datawave.util.flag;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import datawave.util.StringUtils;
-import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.util.flag.config.ConfigUtil;
 import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 import datawave.util.flag.processor.DateUtils;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapred.JobConf;
-import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.JAXBException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  */
-public class FlagMakerTest {
+public class FlagMakerTest extends AbstractFlagConfig {
     
-    static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
-    static final String FLAG_DIR = "target/test/flags";
-    static final int COUNTER_LIMIT = 102;
-    public static final String CONFIG_BASE_HDFS_DIR = "target/test/BulkIngest";
-    public static final String CONFIG_FLAG_FILE_DIR = "target/test/flags";
-    public static final Object CONFIG_EXTRA_INGEST_ARGS = null;
-    private FlagMakerConfig fmc;
+    private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
+    
+    private static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
+    private static final String FLAG_DIR = "target/test/flags";
+    private static final int COUNTER_LIMIT = 102;
+    private static final String CONFIG_BASE_HDFS_DIR = "target/test/BulkIngest";
+    private static final String CONFIG_FLAG_FILE_DIR = "target/test/flags";
+    private static final Object CONFIG_EXTRA_INGEST_ARGS = null;
+    
+    // private FlagMakerConfig fmc;
     
     @Before
     public void setUp() throws Exception {
@@ -64,9 +60,6 @@ public class FlagMakerTest {
         }
         f.mkdirs();
     }
-    
-    @After
-    public void tearDown() {}
     
     private File setUpFlagDir() throws Exception {
         File f = new File(FLAG_DIR);
@@ -81,6 +74,7 @@ public class FlagMakerTest {
      */
     @Test
     public void testGetHadoopFS() throws Exception {
+        log.info("-----  testGetHadoopFS  -----");
         File fdir = new File(FLAG_DIR);
         if (fdir.exists())
             fdir.delete();
@@ -93,6 +87,7 @@ public class FlagMakerTest {
     
     @Test
     public void testFlagMakerConfigArg() throws JAXBException, IOException {
+        log.info("-----  testFlagMakerConfigArg  -----");
         FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG});
         assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
         assertEquals(CONFIG_BASE_HDFS_DIR, flagMakerConfig.getBaseHDFSDir());
@@ -101,6 +96,7 @@ public class FlagMakerTest {
     
     @Test
     public void testFlagMakerConfigWithFlagFileDirectoryOverride() throws JAXBException, IOException {
+        log.info("-----  testFlagMakerConfigWithFlagFileDirectoryOverride  -----");
         final String overrideValue = "/srv/data/somewhere/else/";
         FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-flagFileDirectoryOverride", overrideValue});
         assertEquals(overrideValue, flagMakerConfig.getFlagFileDirectory());
@@ -110,6 +106,7 @@ public class FlagMakerTest {
     
     @Test
     public void testFlagMakerConfigWithHdfsOverride() throws JAXBException, IOException {
+        log.info("-----  testFlagMakerConfigWithHdfsOverride  -----");
         String overrideValue = "testDir/BulkIngest";
         FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-baseHDFSDirOverride", overrideValue});
         assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
@@ -119,6 +116,7 @@ public class FlagMakerTest {
     
     @Test
     public void testFlagMakerConfigWithExtraArgsOverride() throws JAXBException, IOException {
+        log.info("-----  testFlagMakerConfigWithExtraArgsOverride  -----");
         final String overrideValue = "-fastMode -topSpeed=MAX";
         FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-extraIngestArgsOverride", overrideValue});
         assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
@@ -131,13 +129,13 @@ public class FlagMakerTest {
      */
     @Test
     public void testProcessFlags() throws Exception {
+        log.info("-----  testProcessFlags  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
         LongRange range = createTestFiles(2, 5);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
-        // should have made 2 flag files per
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+        
         // ensure the flag files endings
         int flagCnt = 0;
         int cleanCnt = 0;
@@ -158,12 +156,14 @@ public class FlagMakerTest {
      */
     @Test
     public void testFlagFileTimeStamps() throws Exception {
+        log.info("-----  testFlagFileTimeStamps  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
         LongRange range = createTestFiles(2, 5);
         fmc.setSetFlagFileTimestamp(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
+        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
             if (file.getName().endsWith(".flag")) {
@@ -177,12 +177,15 @@ public class FlagMakerTest {
      */
     @Test
     public void testUnsetFlagFileTimeStamps() throws Exception {
+        log.info("-----  testUnsetFlagFileTimeStamps  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
         LongRange range = createTestFiles(2, 5);
         fmc.setSetFlagFileTimestamp(false);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
+        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+        
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
             if (file.getName().endsWith(".flag")) {
@@ -196,6 +199,7 @@ public class FlagMakerTest {
      */
     @Test
     public void testFolderTimeStamps() throws Exception {
+        log.info("-----  testFolderTimeStamps  -----");
         File f = setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
         LongRange range = createTestFiles(2, 5, true);
@@ -203,6 +207,8 @@ public class FlagMakerTest {
         fmc.setUseFolderTimestamp(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
+        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+        
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
             if (file.getName().endsWith(".flag")) {
@@ -213,6 +219,7 @@ public class FlagMakerTest {
     
     @Test
     public void testCounterLimitExceeded() throws Exception {
+        log.info("-----  testCounterLimitExceeded  -----");
         int expectedMax = (COUNTER_LIMIT - 2) / 2;
         File f = setUpFlagDir();
         // two days, expectedMax + 20 files each day
@@ -240,6 +247,7 @@ public class FlagMakerTest {
      */
     @Test
     public void testFlagCountExceeded() throws Exception {
+        log.info("-----  testFlagCountExceeded  -----");
         File f = setUpFlagDir();
         
         fmc.setTimeoutMilliSecs(0);
@@ -274,6 +282,7 @@ public class FlagMakerTest {
     
     @Test
     public void testMaxFileLength() throws Exception {
+        log.info("-----  testMaxFileLength  -----");
         File f = setUpFlagDir();
         // two days, expectedMax + 20 files each day
         LongRange range = createTestFiles(2, 20, true);
@@ -311,6 +320,7 @@ public class FlagMakerTest {
      */
     @Test
     public void testProcessFlagsOrder() throws Exception {
+        log.info("-----  testProcessFlagsOrder  -----");
         setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
         createTestFiles(2, 5);
@@ -340,6 +350,7 @@ public class FlagMakerTest {
      */
     @Test
     public void testProcessFlagsOrderLifo() throws Exception {
+        log.info("-----  testProcessFlagsOrderLifo  -----");
         setUpFlagDir();
         // two days, 5 files each day, two folders in fmc = 20 flags
         createTestFiles(2, 5);
@@ -370,6 +381,7 @@ public class FlagMakerTest {
      */
     @Test
     public void testDateFolderDistributor() throws Exception {
+        log.info("-----  testDateFolderDistributor  -----");
         File f = setUpFlagDir();
         // 5 days, 5 files each day, two folders in fmc = 50 flags
         createTestFiles(5, 5);
@@ -383,146 +395,133 @@ public class FlagMakerTest {
         HashSet<Long> buckets = new HashSet<>();
         DateUtils du = new DateUtils();
         for (File file : flags) {
-            BufferedReader r = new BufferedReader(new FileReader(file));
-            String[] files = r.readLine().split(" ")[1].split(",");
-            // 10 inputs per flag file
-            assertEquals("Incorrect number of files: " + Arrays.toString(files), 10, files.length);
-            Map<String,Integer> folderCounts = new HashMap<>();
-            Map<String,Integer> dateCounts = new HashMap<>();
-            for (String string : files) {
-                assertTrue(string.startsWith("target/test/BulkIngest/flagged"));
-                // pull off the sub folder
-                String folder = string.substring(31, 34);
-                folderCounts.put(folder, (folderCounts.containsKey(folder) ? folderCounts.get(folder) : 0) + 1);
-                String date = string.substring(35, 45);
-                dateCounts.put(date, (dateCounts.containsKey(date) ? dateCounts.get(date) : 0) + 1);
-                buckets.add(du.getBucket("day", string));
+            try (BufferedReader r = new BufferedReader(new FileReader(file))) {
+                String[] files = r.readLine().split(" ")[1].split(",");
+                
+                // 10 inputs per flag file
+                assertEquals("Incorrect number of files: " + Arrays.toString(files), 10, files.length);
+                Map<String,Integer> folderCounts = new HashMap<>();
+                Map<String,Integer> dateCounts = new HashMap<>();
+                for (String string : files) {
+                    assertTrue(string.startsWith("target/test/BulkIngest/flagged"));
+                    // pull off the sub folder
+                    String folder = string.substring(31, 34);
+                    folderCounts.put(folder, (folderCounts.containsKey(folder) ? folderCounts.get(folder) : 0) + 1);
+                    String date = string.substring(35, 45);
+                    dateCounts.put(date, (dateCounts.containsKey(date) ? dateCounts.get(date) : 0) + 1);
+                    buckets.add(DateUtils.getBucket("day", string));
+                }
+                assertEquals(2, folderCounts.size());
+                for (String folder : folderCounts.keySet()) {
+                    assertEquals(5, folderCounts.get(folder).intValue());
+                }
+                assertEquals(5, dateCounts.size());
+                for (String date : dateCounts.keySet()) {
+                    assertEquals(2, dateCounts.get(date).intValue());
+                }
+                // 2 from each folder for each day
+                assertEquals("Incorrect number of buckets: " + buckets, 5, buckets.size());
+                buckets.clear();
             }
-            assertEquals(2, folderCounts.size());
-            for (String folder : folderCounts.keySet()) {
-                assertEquals(5, folderCounts.get(folder).intValue());
-            }
-            assertEquals(5, dateCounts.size());
-            for (String date : dateCounts.keySet()) {
-                assertEquals(2, dateCounts.get(date).intValue());
-            }
-            // 2 from each folder for each day
-            assertEquals("Incorrect number of buckets: " + buckets, 5, buckets.size());
-            buckets.clear();
-            r.close();
         }
         
     }
     
-    private static final String data = "data";
+    // ======================================
+    // file list marker tests
     
-    private LongRange createTestFiles(int days, int filesPerDay) throws Exception {
-        return createTestFiles(days, filesPerDay, false);
+    private static final String FLAG_MARKER = "XXXX--test-marker--XXXX";
+    private static final String INVALID_MARKER = "xxxx  invalid-marker  xxxx";
+    // this needs to be in sync
+    private static final String FLAG_PRE = " ${JOB_FILE} 10 -inputFormat datawave.ingest.input.reader.event.EventSequenceFileInputFormat -inputFileLists -inputFileListMarker "
+                    + FLAG_MARKER + " \n" + FLAG_MARKER;
+    
+    @Test
+    public void testFlagFileMarkerError() throws Exception {
+        log.info("-----  testFlagFileMarkerError  -----");
+        File f = setUpFlagDir();
+        // two days, 5 files each day, two folders in fmc = 20 flags
+        LongRange range = createTestFiles(2, 5);
+        fmc.setSetFlagFileTimestamp(true);
+        List<FlagDataTypeConfig> cfgs = fmc.getFlagConfigs();
+        FlagDataTypeConfig cfg = cfgs.get(0);
+        cfg.setFileListMarker(INVALID_MARKER);
+        try {
+            FlagMaker instance = new TestWrappedFlagMaker(fmc);
+            Assert.fail("invalid marker expected");
+        } catch (IllegalArgumentException ie) {
+            // expected
+        }
     }
     
-    private LongRange createTestFiles(int days, int filesPerDay, boolean folderRange) throws Exception {
-        return createTestFiles(days, filesPerDay, "2013/01", folderRange, "");
-    }
-    
-    private LongRange createBogusTestFiles(int days, int filesPerDay) throws Exception {
-        return createTestFiles(days, filesPerDay, "20xx/dd", false, "");
-    }
-    
-    private LongRange createCopyingTestFiles(int days, int filesPerDay) throws Exception {
-        return createTestFiles(days, filesPerDay, "2013/01", false, "._COPYING_");
-    }
-    
-    private LongRange createTestFiles(int days, int filesPerDay, String datepath, boolean folderRange, String postfix) throws Exception {
-        Calendar c = Calendar.getInstance();
-        c.set(Calendar.HOUR_OF_DAY, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        c.set(Calendar.YEAR, 2013);
-        c.set(Calendar.MONTH, Calendar.JANUARY);
-        if (days < 1 || days > 9)
-            throw new IllegalArgumentException("days argument must be [1-9]. Incorrect value was: " + days);
-        // there should only be relative paths for testing!
-        ArrayList<File> inputdirs = new ArrayList<>(10);
-        for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
-            for (String s : fc.getFolder()) {
-                for (String folder : StringUtils.split(s, ',')) {
-                    folder = folder.trim();
-                    if (!folder.startsWith(fmc.getBaseHDFSDir())) {
-                        // we do this conditionally because once the FileMaker is created and the setup call is made, this
-                        // is already done.
-                        folder = fmc.getBaseHDFSDir() + File.separator + folder;
-                    }
-                    inputdirs.add(new File(folder));
-                }
+    @Test
+    public void testFlagFileMarker() throws Exception {
+        log.info("-----  testFlagFileMarker  -----");
+        File f = setUpFlagDir();
+        // two days, 5 files each day, two folders in fmc = 20 flags
+        LongRange range = createTestFiles(2, 5);
+        // fmc.setSetFlagFileTimestamp(true);
+        List<FlagDataTypeConfig> cfgs = fmc.getFlagConfigs();
+        FlagDataTypeConfig cfg = cfgs.get(0);
+        cfg.setFileListMarker("XXXX--test-marker--XXXX");
+        FlagMaker instance = new TestWrappedFlagMaker(fmc);
+        instance.processFlags();
+        // ensure the flag files have appropriate dates
+        for (File file : f.listFiles()) {
+            if (file.getName().endsWith(".flag")) {
+                assertTrue(range.containsLong(file.lastModified()));
             }
         }
-        LongRange range = null;
-        for (File file : inputdirs) {
-            for (int i = 0; i < days;) {
-                File one = new File(file.getAbsolutePath() + File.separator + datepath + File.separator + "0" + ++i);
-                // set a day that is 10 days past the folder date
-                c.set(Calendar.DAY_OF_MONTH, i + 10);
-                range = merge(range, writeTestFiles(one, filesPerDay, c.getTimeInMillis(), folderRange, postfix));
-            }
-        }
-        return range;
+        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
     }
     
-    private LongRange merge(LongRange range1, LongRange range2) {
-        if (range1 == null) {
-            return range2;
-        } else if (range2 == null) {
-            return range1;
-        } else {
-            long min = Math.min(range1.getMinimumLong(), range2.getMinimumLong());
-            long max = Math.max(range1.getMaximumLong(), range2.getMaximumLong());
-            return new LongRange(min, max);
+    /**
+     * Tests the flag file output when the file list marker is set.
+     * 
+     * @throws Exception
+     *             test error condition
+     */
+    @Test
+    public void testFlagFileWriter() throws Exception {
+        log.info("-----  testFlagFileWriter  -----");
+        File f = setUpFlagDir();
+        
+        FlagMaker instance = new TestWrappedFlagMaker(fmc);
+        FlagDataTypeConfig fc = fmc.getFlagConfigs().get(0);
+        createTestFiles(1, 5);
+        instance.fd.setup(fc);
+        instance.loadFilesForDistributor(fc, instance.getHadoopFS());
+        Collection<InputFile> inFiles = instance.fd.next(instance);
+        List<FlagDataTypeConfig> cfgs = fmc.getFlagConfigs();
+        FlagDataTypeConfig cfg = cfgs.get(0);
+        cfg.setFileListMarker(FLAG_MARKER);
+        
+        assertTrue("Should be 10 InputFiles", inFiles != null && inFiles.size() == 10);
+        File flag = instance.write(inFiles, fc, FLAG_DIR + "/testflagwriter");
+        flag.deleteOnExit();
+        String b;
+        try (BufferedReader br = new BufferedReader(new FileReader(flag))) {
+            b = br.lines().collect(Collectors.joining("\n"));
         }
-    }
-    
-    private LongRange writeTestFiles(File f, int count, long time, boolean folderRange, String postfix) throws Exception {
-        if (!f.exists()) {
-            f.mkdirs();
+        
+        StringBuilder expected = new StringBuilder(fmc.getDatawaveHome());
+        expected.append(File.separatorChar).append(fc.getScript()).append(FLAG_PRE);
+        for (InputFile inFile : inFiles) {
+            expected.append('\n').append(inFile.getFlagged().toUri());
         }
-        for (int i = 0; i < count; i++) {
-            File testFile = new File(f.getAbsolutePath() + File.separator + UUID.randomUUID() + postfix);
-            if (testFile.exists()) {
-                testFile.delete();
-            }
-            FileOutputStream fos = new FileOutputStream(testFile);
-            fos.write(data.getBytes());
-            fos.close();
-            testFile.setLastModified(time + (i * 1000));
-        }
-        if (folderRange) {
-            Calendar c = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-            c.set(Calendar.HOUR_OF_DAY, 0);
-            c.set(Calendar.MINUTE, 0);
-            c.set(Calendar.SECOND, 0);
-            c.set(Calendar.MILLISECOND, 0);
-            String[] dir = StringUtils.split(f.getAbsolutePath(), File.separatorChar);
-            c.set(Calendar.YEAR, Integer.parseInt(dir[dir.length - 3]));
-            c.set(Calendar.MONTH, Integer.parseInt(dir[dir.length - 2]) - 1);
-            c.set(Calendar.DAY_OF_MONTH, Integer.parseInt(dir[dir.length - 1]));
-            return new LongRange(c.getTimeInMillis(), c.getTimeInMillis());
-        } else {
-            return new LongRange(time, time + ((count - 1) * 1000));
+        
+        Assert.assertEquals(expected.length(), b.length());
+        for (int n = 0; n < b.length(); n++) {
+            Assert.assertEquals("flag file char mismatch at char #" + n, expected.charAt(n), b.charAt(n));
         }
     }
     
-    public static class TestWrappedFlagMaker extends FlagMaker {
-        public TestWrappedFlagMaker(FlagMakerConfig fmc) {
+    static class TestWrappedFlagMaker extends FlagMaker {
+        TestWrappedFlagMaker(FlagMakerConfig fmc) {
             super(fmc);
             Configuration conf = new Configuration();
             conf.set("mapreduce.job.counters.max", Integer.toString(COUNTER_LIMIT));
             this.config = new JobConf(conf);
-        }
-        
-        @Override
-        protected void writeMetrics(final StandaloneStatusReporter reporter, final String metricsDirectory, final String dataTypeName,
-                        final CompressionType ct, final CompressionCodec cc) throws IOException {
-            // Do Nothing
         }
     }
 }
