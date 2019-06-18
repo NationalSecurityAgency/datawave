@@ -90,7 +90,7 @@ public class AccumuloSetupHelper {
      */
     public Connector loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
                     TableExistsException, TableNotFoundException, URISyntaxException {
-        return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER);
+        return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
     }
     
     /**
@@ -102,8 +102,9 @@ public class AccumuloSetupHelper {
      * @throws AccumuloException
      *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
      */
-    public Connector loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown) throws AccumuloException,
-                    AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException, URISyntaxException {
+    public Connector loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
+                    throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException,
+                    URISyntaxException {
         log.debug("------------- loadTables -------------");
         
         if (this.fileFormat != FileType.GROUPING) {
@@ -111,7 +112,7 @@ public class AccumuloSetupHelper {
             Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
         }
         
-        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetupHelper.class.getName(), parentLog, teardown);
+        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetupHelper.class.getName(), parentLog, teardown, interrupt);
         final Connector connector = tableHelper.connector;
         tableHelper.configureTables(this.recordWriter);
         
