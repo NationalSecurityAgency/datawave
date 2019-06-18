@@ -1,21 +1,29 @@
 package datawave.query.function;
 
-import datawave.data.hash.UIDConstants;
 import org.apache.accumulo.core.data.Key;
 
+import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
+
 /**
- * A key equality implementation that compares to the root pointers of two doc Ids together.
- * 
- * For example, two IDs `h1.h2.h3.a.b.c.d` and `h1.h2.h3.e.f` would be considered equal by this check.
- * 
+ * A key equality implementation that compares key prefixes to determine ancestor equality.
  *
+ * For example, given a parent key "h1.h2.h3.a.b.c" a valid ancestor would be key "h1.h2.h3.a.b.c.d.e"
  */
 public class AncestorEquality implements Equality {
     
+    /**
+     * Determines if the first key is an ancestor of the other key by checking for a common prefix.
+     *
+     * @param key
+     *            - current key
+     * @param other
+     *            - candidate for ancestor check
+     * @return - true if the provided key is an ancestor of the other key
+     */
     @Override
-    public boolean partOf(Key docKey, Key test) {
-        return docKey.getColumnFamily().toString().startsWith(test.getColumnFamily().toString() + UIDConstants.DEFAULT_SEPARATOR)
-                        || docKey.getColumnFamily().toString().equals(test.getColumnFamily().toString());
+    public boolean partOf(Key key, Key other) {
+        String docId = key.getColumnFamily().toString();
+        String otherId = other.getColumnFamily().toString();
+        return docId.startsWith(otherId + DEFAULT_SEPARATOR) || docId.equals(otherId);
     }
-    
 }
