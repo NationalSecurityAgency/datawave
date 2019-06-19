@@ -350,7 +350,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * Write the flag file. This is done in several steps to ensure we can easily recover if we are killed somewhere in-between.
      *
      * <ul>
-     *     <li>>move the files to the flagging directory for those that do not already exist in flagging, flagged, or loaded</li>
+     *     <li>move the files to the flagging directory for those that do not already exist in flagging, flagged, or loaded</li>
      *     <li>create the flag.generating file for those files we were able to move, and do not exist elsewhere</li>
      *     <li>set the timestamp of the flag file to that of the most recent file</li>
      *     <li>move the flagging files to the flagged directory</li>
