@@ -8,7 +8,7 @@ DW_WILDFLY_SYMLINK="wildfly"
 export WILDFLY_HOME="$(readlink -f ${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK})"
 export JBOSS_HOME="${WILDFLY_HOME}"
 export PATH="${WILDFLY_HOME}/bin:${PATH}"
-export DW_DATAWAVE_WEB_JAVA_OPTS="-Duser.timezone=GMT -Dfile.encoding=UTF-8"
+export DW_DATAWAVE_WEB_JAVA_OPTS=${DW_DATAWAVE_WEB_JAVA_OPTS:-"-Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true"}
 
 DW_DATAWAVE_WEB_CMD_START="( cd "${WILDFLY_HOME}/bin" && JAVA_OPTS=\"$DW_DATAWAVE_WEB_JAVA_OPTS\" nohup ./standalone.sh -c standalone-full.xml & )"
 DW_DATAWAVE_WEB_CMD_START_DEBUG="( cd "${WILDFLY_HOME}/bin" && JAVA_OPTS=\"$DW_DATAWAVE_WEB_JAVA_OPTS\" nohup ./standalone.sh --debug -c standalone-full.xml & )"
