@@ -102,13 +102,13 @@ public class JavaRegexAnalyzer {
     
     // Non digit matching regex chars
     private static final String NON_DIGIT_ESCAPED_REGEX_CHARS = "tnrfaecDsw";
-
+    
     // Quoting regex chars
     private static final String QUOTING_REGEX_CHARS = "QE";
-
+    
     // Boundary regex chars
     private static final String BOUNDARY_REGEX_CHARS = "bBAGzZ";
-
+    
     // Boundary chars
     private static final String BOUNDARY_CHARS = "^$";
     
@@ -501,7 +501,7 @@ public class JavaRegexAnalyzer {
             if (part.nonCapturing) {
                 continue;
             }
-
+            
             // ignore the ignorable
             if (part.type.equals(RegexType.IGNORABLE_REGEX)) {
                 continue;
@@ -576,12 +576,12 @@ public class JavaRegexAnalyzer {
             if (part.nonCapturing) {
                 continue;
             }
-
+            
             // ignore the ignorable
             if (part.type.equals(RegexType.IGNORABLE_REGEX)) {
                 continue;
             }
-
+            
             // ignore quantifiers
             if (part.type == RegexType.REGEX_QUANTIFIER) {
                 // if we may have none of the preceding value, then we are done

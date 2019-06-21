@@ -914,11 +914,11 @@ public class JavaRegexAnalyzerTest {
         exception.expect(JavaRegexParseException.class);
         JavaRegexAnalyzer wcd = new JavaRegexAnalyzer(value);
     }
-
+    
     @Test
     public void testRegexAnalyzerQuoting() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzerQuoting");
-        Map<String, String> values = new HashMap<>();
+        Map<String,String> values = new HashMap<>();
         values.put("\\Q+ae4\\E", "+ae4");
         values.put("abc\\Q+ae4\\E", "abc+ae4");
         values.put("\\Q+ae4\\Edef", "+ae4def");
@@ -939,11 +939,11 @@ public class JavaRegexAnalyzerTest {
             Assert.assertEquals(values.get(value), wcd.getTrailingLiteral());
         }
     }
-
+    
     @Test
     public void testRegexAnalyzerBoundary() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzerQuoting");
-        Map<String, String> values = new HashMap<>();
+        Map<String,String> values = new HashMap<>();
         values.put("\\Bae4\\b", "ae4");
         values.put("\\Zae4\\z", "ae4");
         values.put("abc\\Gae4", "abcae4");
@@ -966,7 +966,7 @@ public class JavaRegexAnalyzerTest {
             Assert.assertEquals(values.get(value), wcd.getTrailingLiteral());
         }
     }
-
+    
     @Test
     public void testZeroPadIpRegex() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer18");
