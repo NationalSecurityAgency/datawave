@@ -40,12 +40,10 @@ public class TupleToRangeTest {
     public void testIsDocumentRange() {
         Set<String> docIds = Sets.newHashSet("docId0", "docId1", "docId2");
         IndexInfo indexInfo = new IndexInfo(docIds);
-        
-        TupleToRange tupleToRange = new TupleToRange(null, null);
-        assertTrue(tupleToRange.isDocumentRange(indexInfo));
+        assertTrue(TupleToRange.isDocumentRange(indexInfo));
         
         IndexInfo otherInfo = new IndexInfo(3L);
-        assertFalse(tupleToRange.isDocumentRange(otherInfo));
+        assertFalse(TupleToRange.isDocumentRange(otherInfo));
     }
     
     @Test
@@ -53,9 +51,8 @@ public class TupleToRangeTest {
         String shardRange = "20190314_0";
         String dayRange = "20190314";
         
-        TupleToRange tupleToRange = new TupleToRange(null, null);
-        assertTrue(tupleToRange.isShardRange(shardRange));
-        assertFalse(tupleToRange.isShardRange(dayRange));
+        assertTrue(TupleToRange.isShardRange(shardRange));
+        assertFalse(TupleToRange.isShardRange(dayRange));
     }
     
     @Test
@@ -72,8 +69,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeTestRange(shard, "docId2"));
         
         // Create the ranges
-        TupleToRange tupleToRange = new TupleToRange(queryNode, config);
-        Iterator<QueryPlan> ranges = tupleToRange.createDocumentRanges(queryNode, shard, indexInfo);
+        Iterator<QueryPlan> ranges = TupleToRange.createDocumentRanges(queryNode, shard, indexInfo, config.isTldQuery());
         
         // Assert ranges against expected ranges
         eval(expectedRanges, ranges);
@@ -94,8 +90,7 @@ public class TupleToRangeTest {
         
         // Create the ranges
         config.setTldQuery(true);
-        TupleToRange tupleToRange = new TupleToRange(queryNode, config);
-        Iterator<QueryPlan> ranges = tupleToRange.createDocumentRanges(queryNode, shard, indexInfo);
+        Iterator<QueryPlan> ranges = TupleToRange.createDocumentRanges(queryNode, shard, indexInfo, config.isTldQuery());
         
         // Assert ranges against expected ranges
         eval(expectedRanges, ranges);
@@ -112,8 +107,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeShardedRange(shard));
         
         // Create the ranges
-        TupleToRange tupleToRange = new TupleToRange(queryNode, config);
-        Iterator<QueryPlan> ranges = tupleToRange.createShardRange(queryNode, shard, indexInfo);
+        Iterator<QueryPlan> ranges = TupleToRange.createShardRange(queryNode, shard, indexInfo);
         
         // Assert ranges against expected ranges
         eval(expectedRanges, ranges);
@@ -130,8 +124,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeDayRange(shard));
         
         // Create the ranges
-        TupleToRange tupleToRange = new TupleToRange(queryNode, config);
-        Iterator<QueryPlan> ranges = tupleToRange.createDayRange(queryNode, shard, indexInfo);
+        Iterator<QueryPlan> ranges = TupleToRange.createDayRange(queryNode, shard, indexInfo);
         
         // Assert ranges against expected ranges
         eval(expectedRanges, ranges);
@@ -225,8 +218,12 @@ public class TupleToRangeTest {
         while (expectedIter.hasNext()) {
             
             Range expectedRange = expectedIter.next();
-            Range generatedRange = ranges.next().getRanges().iterator().next();
+            
+            Iterator<Range> generatedIter = ranges.next().getRanges().iterator();
+            Range generatedRange = generatedIter.next();
             assertEquals(expectedRange, generatedRange);
+            
+            assertFalse("Query plan generated unexpected ranges", generatedIter.hasNext());
         }
         
         assertFalse(expectedIter.hasNext());

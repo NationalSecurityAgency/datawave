@@ -54,7 +54,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
         
         if (isDocumentRange(indexInfo)) {
             
-            return createDocumentRanges(queryNode, shard, indexInfo);
+            return createDocumentRanges(queryNode, shard, indexInfo, config.isTldQuery());
             
         } else if (isShardRange(shard)) {
             
@@ -73,7 +73,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
      *            - object built from matches in the index.
      * @return - true if we can build document range(s).
      */
-    public boolean isDocumentRange(IndexInfo indexInfo) {
+    public static boolean isDocumentRange(IndexInfo indexInfo) {
         return !indexInfo.uids().isEmpty();
     }
     
@@ -82,7 +82,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
      * @param shard
      * @return - true if the shard string is a shard range
      */
-    public boolean isShardRange(String shard) {
+    public static boolean isShardRange(String shard) {
         return shard.indexOf('_') >= 0;
     }
     
@@ -92,16 +92,17 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
      * @param queryNode
      * @param shard
      * @param indexMatches
+     * @param isTldQuery
      * @return
      */
-    public Iterator<QueryPlan> createDocumentRanges(JexlNode queryNode, String shard, IndexInfo indexMatches) {
+    public static Iterator<QueryPlan> createDocumentRanges(JexlNode queryNode, String shard, IndexInfo indexMatches, boolean isTldQuery) {
         List<QueryPlan> ranges = Lists.newArrayListWithCapacity(indexMatches.uids().size());
         
         for (IndexMatch indexMatch : indexMatches.uids()) {
             
             String docId = indexMatch.getUid();
             Range range;
-            if (config.isTldQuery()) {
+            if (isTldQuery) {
                 range = RangeFactory.createTldDocumentSpecificRange(shard, docId);
             } else {
                 range = RangeFactory.createDocumentSpecificRange(shard, docId);
@@ -125,7 +126,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
         return ranges.iterator();
     }
     
-    public Iterator<QueryPlan> createShardRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
+    public static Iterator<QueryPlan> createShardRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
         JexlNode myNode = queryNode;
         if (indexInfo.getNode() != null) {
             myNode = indexInfo.getNode();
@@ -140,7 +141,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
         return Collections.singleton(new QueryPlan(myNode, range)).iterator();
     }
     
-    public Iterator<QueryPlan> createDayRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
+    public static Iterator<QueryPlan> createDayRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
         JexlNode myNode = queryNode;
         if (indexInfo.getNode() != null) {
             myNode = indexInfo.getNode();
