@@ -14,7 +14,7 @@ public class RangeFactory {
     private static final String FIRST_SHARD = "_0";
     
     /**
-     * Builds a tld document range that can be passed to the {@link datawave.query.iterator.QueryIterator}
+     * Builds a document range that can be passed to the {@link datawave.query.iterator.QueryIterator}
      *
      * Example: Given shard 20190314_4 and document docId0, will return tld doc range [20190314_4 docId0, 20190314_4 docId0x00)
      *
