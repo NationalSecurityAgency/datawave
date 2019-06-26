@@ -4,7 +4,11 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 
-public class RangeFactory {
+/**
+ * Utility class that generates ranges for unit tests.
+ */
+public class RangeFactoryForTests {
+    
     public static final String NULL_BYTE_STRING = "\u0000";
     public static final String MAX_UNICODE_STRING = new String(Character.toChars(Character.MAX_CODE_POINT));
     

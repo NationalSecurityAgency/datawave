@@ -7,10 +7,9 @@ import java.util.List;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
+import datawave.query.ranges.RangeFactory;
 import datawave.query.util.Tuple2;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
@@ -18,15 +17,16 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
+/**
+ * Transforms information from the index into ranges used to search the shard table.
+ *
+ */
 public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<QueryPlan>> {
     
-    public static final String NULL_BYTE_STRING = "\u0000";
-    public static final String MAX_UNICODE_STRING = new String(Character.toChars(Character.MAX_CODE_POINT));
-    
     private static final Logger log = Logger.getLogger(TupleToRange.class);
-    protected JexlNode currentScript = null;
+    protected JexlNode currentScript;
     protected JexlNode tree = null;
-    protected ShardQueryConfiguration config = null;
+    protected ShardQueryConfiguration config;
     
     /**
      * @param currentNode
@@ -35,79 +35,121 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     public TupleToRange(JexlNode currentNode, ShardQueryConfiguration config) {
         this.currentScript = currentNode;
         this.config = config;
-        
     }
     
+    /**
+     * Transform the index information into a QueryPlan by building ranges.
+     *
+     * @param tuple
+     * @return
+     */
     public Iterator<QueryPlan> apply(Tuple2<String,IndexInfo> tuple) {
-        IndexInfo ii = tuple.second();
+        String shard = tuple.first();
+        IndexInfo indexInfo = tuple.second();
         
         JexlNode queryNode = currentScript;
-        if (ii.getNode() != null) {
-            if (log.isTraceEnabled()) {
-                log.trace("Got it from tuple " + JexlStringBuildingVisitor.buildQuery(ii.getNode()));
-            }
-            
+        if (log.isTraceEnabled() && indexInfo.getNode() != null) {
+            log.trace("Got it from tuple " + JexlStringBuildingVisitor.buildQuery(indexInfo.getNode()));
         }
         
-        if (!ii.uids().isEmpty()) {
-            List<QueryPlan> ranges = Lists.newArrayListWithCapacity(ii.uids().size());
-            for (IndexMatch uid : ii.uids()) {
-                Key start = new Key(tuple.first(), uid.getUid());
-                Key end = start.followingKey(PartialKey.ROW_COLFAM);
-                
-                if (config.isTldQuery()) {
-                    // so we need an end key that includes all of the children, and allows for the
-                    // final document (@see FinalDocumentTrackingIterator) but does not allow for the next doc
-                    end = new Key(tuple.first(), uid.getUid() + MAX_UNICODE_STRING);
-                }
-                
-                // Technically, we don't want to be inclusive of the start key,
-                // however if we mark the startKey as non-inclusive, when we create
-                // the fi\x00 range in IndexIterator, we lost the context of "do we
-                // want a single event" or "did we get restarted and this is the last
-                // event we returned.
-                Range r = new Range(start, true, end, false);
-                
-                if (log.isTraceEnabled())
-                    log.trace(queryNode + " " + uid.getNode());
-                
-                // don't really want log statement if uid.getNode is null
-                if (log.isTraceEnabled() && null != uid.getNode()) {
-                    
-                    // query node can be null in this case
-                    log.trace("Building " + r + " from " + (null == queryNode ? "NoQueryNode" : JexlStringBuildingVisitor.buildQuery(queryNode)) + " actually "
-                                    + JexlStringBuildingVisitor.buildQuery(uid.getNode()));
-                }
-                
-                ranges.add(new QueryPlan(uid.getNode(), r));
-            }
-            return ranges.iterator();
-        }
-        // else if this is a shard, then range from <shard> to <shard>\x00
-        else if (tuple.first().indexOf('_') >= 0) {
-            JexlNode myNode = queryNode;
-            if (ii.getNode() != null) {
-                myNode = ii.getNode();
-            }
-            if (log.isTraceEnabled() && null != myNode)
-                log.trace("Building shard " + new Range(tuple.first(), true, tuple.first() + NULL_BYTE_STRING, false) + " From "
-                                + (null == myNode ? "NoQueryNode" : JexlStringBuildingVisitor.buildQuery(myNode)));
+        if (isDocumentRange(indexInfo)) {
             
-            return Collections.singleton(new QueryPlan(myNode, new Range(tuple.first(), true, tuple.first() + NULL_BYTE_STRING, false))).iterator();
-        }
-        // else assume this a day range, then range from <day> to <day>\xff...
-        else {
+            return createDocumentRanges(queryNode, shard, indexInfo, config.isTldQuery());
             
-            JexlNode myNode = queryNode;
-            if (ii.getNode() != null) {
-                myNode = ii.getNode();
-            }
+        } else if (isShardRange(shard)) {
             
-            Range myRange = new Range(tuple.first() + "_0", true, tuple.first() + MAX_UNICODE_STRING, false);
-            if (log.isTraceEnabled())
-                log.trace("Building day" + myRange + " from " + (null == myNode ? "NoQueryNode" : JexlStringBuildingVisitor.buildQuery(myNode)));
-            return Collections.singleton(new QueryPlan(myNode, myRange)).iterator();
+            return createShardRange(queryNode, shard, indexInfo);
+            
+        } else {
+            
+            return createDayRange(queryNode, shard, indexInfo);
         }
     }
     
+    /**
+     * Building document ranges is only possible if the IndexInfo object contains document ids.
+     *
+     * @param indexInfo
+     *            - object built from matches in the index.
+     * @return - true if we can build document range(s).
+     */
+    public static boolean isDocumentRange(IndexInfo indexInfo) {
+        return !indexInfo.uids().isEmpty();
+    }
+    
+    /**
+     *
+     * @param shard
+     * @return - true if the shard string is a shard range
+     */
+    public static boolean isShardRange(String shard) {
+        return shard.indexOf('_') >= 0;
+    }
+    
+    /**
+     *
+     *
+     * @param queryNode
+     * @param shard
+     * @param indexMatches
+     * @param isTldQuery
+     * @return
+     */
+    public static Iterator<QueryPlan> createDocumentRanges(JexlNode queryNode, String shard, IndexInfo indexMatches, boolean isTldQuery) {
+        List<QueryPlan> ranges = Lists.newArrayListWithCapacity(indexMatches.uids().size());
+        
+        for (IndexMatch indexMatch : indexMatches.uids()) {
+            
+            String docId = indexMatch.getUid();
+            Range range;
+            if (isTldQuery) {
+                range = RangeFactory.createTldDocumentSpecificRange(shard, docId);
+            } else {
+                range = RangeFactory.createDocumentSpecificRange(shard, docId);
+            }
+            
+            if (log.isTraceEnabled())
+                log.trace(queryNode + " " + indexMatch.getNode());
+            
+            // don't really want log statement if uid.getNode is null
+            
+            // Log info if indexMatch is not null
+            if (log.isTraceEnabled() && null != indexMatch.getNode()) {
+                
+                // query node can be null in this case
+                log.trace("Building " + range + " from " + (null == queryNode ? "NoQueryNode" : JexlStringBuildingVisitor.buildQuery(queryNode)) + " actually "
+                                + JexlStringBuildingVisitor.buildQuery(indexMatch.getNode()));
+            }
+            
+            ranges.add(new QueryPlan(indexMatch.getNode(), range));
+        }
+        return ranges.iterator();
+    }
+    
+    public static Iterator<QueryPlan> createShardRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
+        JexlNode myNode = queryNode;
+        if (indexInfo.getNode() != null) {
+            myNode = indexInfo.getNode();
+        }
+        
+        Range range = RangeFactory.createShardRange(shard);
+        
+        if (log.isTraceEnabled() && null != myNode) {
+            log.trace("Building shard " + range + " From " + JexlStringBuildingVisitor.buildQuery(myNode));
+        }
+        
+        return Collections.singleton(new QueryPlan(myNode, range)).iterator();
+    }
+    
+    public static Iterator<QueryPlan> createDayRange(JexlNode queryNode, String shard, IndexInfo indexInfo) {
+        JexlNode myNode = queryNode;
+        if (indexInfo.getNode() != null) {
+            myNode = indexInfo.getNode();
+        }
+        
+        Range range = RangeFactory.createDayRange(shard);
+        if (log.isTraceEnabled())
+            log.trace("Building day" + range + " from " + (null == myNode ? "NoQueryNode" : JexlStringBuildingVisitor.buildQuery(myNode)));
+        return Collections.singleton(new QueryPlan(myNode, range)).iterator();
+    }
 }
