@@ -27,3 +27,14 @@ build_and_test:
       su -l -p datawave << EOS
       mvn $MAVEN_CLI_OPTS clean install -Ddist -Dservices -Pdev,examples,assemble -T1C
       EOS
+
+deploy_and_test:
+  stage: deploy
+  image: kratcliffe/datawave-staging:accumulo-1.9.3-v1.0
+  variables:
+    MVN_OVERRIDE: "mvn ${MAVEN_CLI_OPTS} -Pdev -DskipTests -Ddeploy -Dtar -Dservices clean install"
+  script:
+    - |
+      su -l datawave << EOS
+      /datawave-staging/deploy-and-test.sh "${CI_PROJECT_DIR}" "${MVN_OVERRIDE}"
+      EOS
