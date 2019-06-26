@@ -38,17 +38,18 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -125,8 +126,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
-    @Rule
-    public final TemporaryFolder tmpDir = new TemporaryFolder();
+    protected Path temporaryFolder;
     
     private final Set<Authorizations> authSet = new HashSet<>();
     
@@ -139,7 +139,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     }
     
     @Before
-    public void querySetUp() {
+    public void querySetUp() throws IOException {
+        temporaryFolder = Files.createTempDirectory("tmp");
+        
         log.debug("---------  querySetUp  ---------");
         
         this.logic = createQueryLogic();
@@ -186,6 +188,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             return this.parse(key, document);
         };
         this.testHarness = new QueryLogicTestHarness(this);
+    }
+    
+    @After
+    public void cleanUp() {
+        temporaryFolder.toFile().deleteOnExit();
     }
     
     // ============================================
@@ -531,11 +538,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         for (int d = 1; d <= hdfsLocations; d++) {
             // avoid threading issues by using a random number as part of the directory path to create a distinct directory
             int rand = rVal.nextInt(Integer.MAX_VALUE);
-            File ivCache = this.tmpDir.newFolder("ivarator.cache-" + rand);
-            dirs.add(ivCache.toURI().toString());
+            Path ivCache = Files.createTempDirectory("ivarator.cache-" + rand);
+            dirs.add(ivCache.toAbsolutePath().toString());
             if (fst) {
-                ivCache = this.tmpDir.newFolder("ivarator.cache-" + "fst-" + rand);
-                fstDirs.add(ivCache.toURI().toString());
+                ivCache = Files.createTempDirectory("ivarator.cache-" + "fst-" + rand);
+                fstDirs.add(ivCache.toAbsolutePath().toString());
             }
         }
         String uriList = String.join(",", dirs);
