@@ -356,8 +356,9 @@ public class ShardedTableMapFile {
                 // made it here, no errors so break out
                 keepRetrying = false;
             } catch (Exception e) {
-                log.warn(e.getMessage() + " ... retrying ...");
+                log.warn(e.getClass().getName() + ":" + e.getMessage() + " ... retrying ...", e);
                 UtilWaitThread.sleep(3000);
+                splitToLocation.clear();
             }
         }
         
