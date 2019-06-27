@@ -14,11 +14,8 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
-import datawave.ingest.input.reader.ValueReader;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.policy.IngestPolicyEnforcer;
-import datawave.webservice.results.cached.result.CachedresultMessages;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
@@ -58,6 +55,7 @@ public class ContentIndexingColumnBasedHandlerTest {
     private static final String ALPHANUM_LIST = "APLHANUM_LIST";
     private static final String LIST_VALUE = "12.34,56.78";
     private static final String LIST_VALUE_WITH_SPACE = "12.34, 56.78";
+    private static final String LIST_VALUE_WITH_EMPTY_ENTRY = "12.34, , 56.78";
     private static final String SHARD_ID = "SHARD1";
     private static final Text SHARD_TABLE_NAME = new Text("shard");
     private static final String TF = "tf";
@@ -304,6 +302,26 @@ public class ContentIndexingColumnBasedHandlerTest {
         helper.setup(ctx.getConfiguration());
         
         testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_SPACE, listExpectedAlpahnumFields, listExpectedAlpahnumIndex, listExpectedAlpahnumReverse,
+                        listExpectedAlphanumTfValues, false);
+    }
+    
+    @Test
+    public void testHandlerListNormalizedAlphanumWithEmptyEntry() throws Exception {
+        
+        ctx.getConfiguration().set("test" + "." + ALPHANUM_LIST + BaseIngestHelper.FIELD_TYPE, LcNoDiacriticsType.class.getName());
+        ctx.getConfiguration().set("test" + "." + ContentBaseIngestHelper.LIST_DELIMITERS, LIST_DELIMITERS);
+        
+        TypeRegistry.reset();
+        TypeRegistry.getInstance(ctx.getConfiguration());
+        
+        setupMocks();
+        
+        TestContentIndexingColumnBasedHandler handler = new TestContentIndexingColumnBasedHandler();
+        handler.setup(ctx);
+        
+        helper.setup(ctx.getConfiguration());
+        
+        testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_EMPTY_ENTRY, listExpectedAlpahnumFields, listExpectedAlpahnumIndex, listExpectedAlpahnumReverse,
                         listExpectedAlphanumTfValues, false);
     }
     

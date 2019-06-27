@@ -675,6 +675,9 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         int position = 0;
         for (String token : tokens) {
             String trimmedToken = StringUtils.trim(token);
+            if (StringUtils.isEmpty(trimmedToken)) {
+                continue;
+            }
             
             // Track the number of tokens processed
             counters.increment(ContentIndexCounters.ORIGINAL_PROCESSED_COUNTER, reporter);
