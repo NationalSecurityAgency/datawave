@@ -202,14 +202,12 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
         builder.append("<div>");
         builder.append("<p style=\"width:60%; margin-left: auto; margin-right: auto;\">When a value is present in the forward index types, this means that a field is indexed and informs you how your ");
         builder.append("query terms will be treated (e.g. text, number, IPv4 address, etc). The same applies for the reverse index types with ");
-        builder.append("the caveat that you can also query these fields using leading wildcards. Fields that are marked as 'Index only' will not ");
-        builder.append("appear in a result set unless explicitly queried on. Index only fields are typically composite fields, derived from actual data, ");
-        builder.append("created by the software to make querying easier.</p>");
+        builder.append("the caveat that you can also query these fields using leading wildcards. </p>");
         builder.append("</div>");
         builder.append("<table id=\"myTable\">\n");
         
         builder.append("<thead><tr><th>FieldName</th><th>Internal FieldName</th><th>DataType</th>");
-        builder.append("<th>Index only</th><th>Forward Indexed</th><th>Reverse Indexed</th><th>Normalized</th><th>Types</th><th>Description</th><th>LastUpdated</th></tr></thead>");
+        builder.append("<th>Forward Indexed</th><th>Reverse Indexed</th><th>Normalized</th><th>Types</th><th>Description</th><th>LastUpdated</th></tr></thead>");
         
         builder.append("<tbody>");
         for (DefaultMetadataField f : this.getFields()) {
@@ -232,7 +230,6 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
             builder.append("<td>").append(fieldName).append("</td>");
             builder.append("<td>").append(internalFieldName).append("</td>");
             builder.append("<td>").append(datatype).append("</td>");
-            builder.append("<td>").append(f.isIndexOnly()).append("</td>");
             builder.append("<td>").append(f.isForwardIndexed() ? true : "").append("</td>");
             builder.append("<td>").append(f.isReverseIndexed() ? true : "").append("</td>");
             builder.append("<td>").append(f.isNormalized() ? true : "").append("</td>");
