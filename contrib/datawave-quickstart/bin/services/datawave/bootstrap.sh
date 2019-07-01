@@ -70,6 +70,7 @@ function createAccumuloShellInitScript() {
    DW_ACCUMULO_SHELL_INIT_SCRIPT="
    createnamespace datawave
    createtable datawave.queryMetrics_m
+   createtable datawave.queryMetrics_s
    setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}"
 
    if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
@@ -292,11 +293,6 @@ function getDataWaveTarball() {
       tarball="$( basename "${tarballPath}" )"
       return 0;
    fi
-
-   # Ensure that java is installed and JAVA_HOME set before we try to clean/build
-   source "${DW_CLOUD_HOME}/bin/services/java/bootstrap.sh"
-   ! javaIsInstalled && javaInstall
-   javaIsInstalled || error "Java bootstrap failed. DataWave build may not succeed"
 
    ! buildDataWave --verbose && error "Please correct this issue before continuing" && return 1
 

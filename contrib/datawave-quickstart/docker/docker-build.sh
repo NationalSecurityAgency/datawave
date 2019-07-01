@@ -121,8 +121,7 @@ function overrideBuildProperties() {
     # See services/datawave/bootstrap.sh, setBuildPropertyOverrides function
 
     export DW_ROOT_DIRECTORY_OVERRIDE=/opt/datawave
-    export DW_JAVA_HOME_OVERRIDE=${DW_ROOT_DIRECTORY_OVERRIDE}/contrib/datawave-quickstart/java
-
+    export DW_JAVA_HOME_OVERRIDE=/usr/lib/jvm/java-1.8-openjdk
 }
 
 function prepareBuildContext() {
@@ -143,17 +142,14 @@ function prepareBuildContext() {
 
     ln -s "${THIS_DIR}/.dockerignore" "${DATAWAVE_SOURCE_DIR}/.dockerignore" || fatal "Failed to set .dockerignore symlink"
 
-    sanityCheckTarball "${QUICKSTART_DIR}/bin/services/java" "*.tar.gz" "${DW_JAVA_DIST_URI}"
     sanityCheckTarball "${QUICKSTART_DIR}/bin/services/maven" "apache-maven*.tar.gz" "${DW_MAVEN_DIST_URI}"
 }
 
 function sanityCheckTarball() {
-    #
-    # This is intended to verify that certain tarballs, such as those for java and maven,
-    # are staged and ready to be copied into the image context. That is, the java and maven
-    # bootstrap scripts *may* have favored preexisting local installs, regardless of the
-    # configured 'DW_*_DIST_URI' variable's advice
-    #
+    # This is intended to verify that certain tarballs are staged and ready to be copied into
+    # the image context as required. E.g., the maven bootstrap script *may* have favored a
+    # preexisting local install, regardless of the configured 'DW_*_DIST_URI' variable's advice
+
     local serviceDir="${1}"
     local tarballPattern="${2}"
     local tarballDistUri="${3}"
@@ -194,6 +190,7 @@ function buildDockerImage() {
     docker build ${docker_opts} -f ${THIS_DIR}/Dockerfile -t ${IMAGE_NAME} \
          --build-arg DATAWAVE_COMMIT_ID=$( git rev-parse --verify HEAD ) \
          --build-arg DATAWAVE_BRANCH_NAME=$( git rev-parse --abbrev-ref HEAD ) \
+         --build-arg DATAWAVE_JAVA_HOME="${DW_JAVA_HOME_OVERRIDE}" \
          ${DATAWAVE_SOURCE_DIR} || fatal "Docker image creation for DataWave Quickstart failed"
 }
 

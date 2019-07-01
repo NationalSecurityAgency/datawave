@@ -91,7 +91,7 @@ fi
 
 # Perform additional Accumulo configs dynamically as needed.
 createAccumuloShellInitScript
-ACCUMULO_TMP_SCRIPT="$(mktemp -t `basename $0`-accumulo-shell.XXXXX)"
+ACCUMULO_TMP_SCRIPT="$(mktemp -t `basename $0`-accumulo-shell.XXXXXX)"
 echo "${DW_ACCUMULO_SHELL_INIT_SCRIPT}" > $ACCUMULO_TMP_SCRIPT
 info "Executing the following Accumulo shell script: $ACCUMULO_TMP_SCRIPT"
 info "${ACCUMULO_TMP_SCRIPT} contents... "
