@@ -110,7 +110,7 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
         
         builder.append("<table>\n");
         
-        builder.append("<tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th><th>IndexOnly</th></tr>");
+        builder.append("<tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th></tr>");
         
         int x = 0;
         for (FieldMapping f : this.getFields()) {
@@ -127,7 +127,6 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
             builder.append("<td>").append(f.getDatatype()).append("</td>");
             builder.append("<td>").append(f.getModelFieldName()).append("</td>");
             builder.append("<td>").append(f.getDirection()).append("</td>");
-            builder.append("<td>").append(f.getIndexOnly()).append("</td>");
             builder.append("</tr>");
         }
         
