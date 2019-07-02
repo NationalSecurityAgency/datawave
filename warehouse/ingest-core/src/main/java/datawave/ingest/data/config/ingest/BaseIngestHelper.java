@@ -604,7 +604,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (types.isEmpty()) {
             types.addAll(typeFieldMap.get(null));
         } else {
-            synchronized (typeFieldMap) {
+            synchronized (this) {
                 typeFieldMap.putAll(typeFieldName, types);
             }
         }
