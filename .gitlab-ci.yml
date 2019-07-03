@@ -36,5 +36,5 @@ deploy_and_test:
   script:
     - |
       su -l datawave << EOS
-      /datawave-staging/deploy-and-test.sh "${CI_PROJECT_DIR}" "${MVN_OVERRIDE}"
+      /quickstart-staging/deploy-and-test.sh "${CI_PROJECT_DIR}" "${MVN_OVERRIDE}"
       EOS
