@@ -16,4 +16,9 @@ public interface Constants {
      * The response header which will be used to report the system/server name of the server that processed the request.
      */
     String RESPONSE_ORIGIN_HEADER = "X-Response-Origin";
+    
+    /**
+     * The name of the response header that contains the error code when there is a datawave-specific exception.
+     */
+    String ERROR_CODE_HEADER = "X-ErrorCode";
 }

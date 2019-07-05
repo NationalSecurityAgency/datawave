@@ -1,5 +1,6 @@
 package datawave.microservice.rest.exception;
 
+import datawave.microservice.config.web.Constants;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
 import org.slf4j.Logger;
@@ -35,15 +36,32 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException ex, HttpHeaders headers, HttpStatus status,
                     WebRequest request) {
+        // Overrides the parent in order to include the exception message in the body.
         return handleExceptionInternal(ex, ex.getMessage(), headers, status, request);
     }
     
+    /**
+     * Handle exceptions of type {@link QueryException}. We will pull out the error code from the exception and add a header with the code. Then the exception
+     * will be turned into a {@link VoidResponse} and returned.
+     */
     @ExceptionHandler({QueryException.class})
     protected ResponseEntity<Object> handleQueryException(QueryException e, WebRequest request) {
-        HttpStatus status = HttpStatus.resolve(e.getStatusCode());
+        HttpStatus status = HttpStatus.resolve(e.getBottomQueryException().getStatusCode());
         if (status == null) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
         }
-        return handleExceptionInternal(e, null, new HttpHeaders(), status, request);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(Constants.ERROR_CODE_HEADER, e.getBottomQueryException().getErrorCode());
+        
+        return handleExceptionInternal(e, null, headers, status, request);
+    }
+    
+    /**
+     * This is a catch-all handler for exceptions that aren't caught anywhere else. We simply turn the exception into a {@link VoidResponse} and return it.
+     */
+    @ExceptionHandler({Exception.class})
+    public ResponseEntity<Object> handleGenericException(Exception ex, WebRequest request) {
+        return handleExceptionInternal(ex, null, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 }

@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: starter-test
   cloud:
     bus:
       enabled: false
