@@ -1338,6 +1338,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setMaxOrExpansionFstThreshold(maxOrExpansionFstThreshold);
     }
     
+    public int getMaxRangesPerRangeIvarator() {
+        return getConfig().getMaxRangesPerRangeIvarator();
+    }
+    
+    public void setMaxRangesPerRangeIvarator(int maxRangesPerRangeIvarator) {
+        this.config.setMaxRangesPerRangeIvarator(maxRangesPerRangeIvarator);
+    }
+    
+    public int getMaxOrRangeIvarators() {
+        return this.config.getMaxOrRangeIvarators();
+    }
+    
+    public void setMaxOrRangeIvarators(int maxOrRangeIvarators) {
+        this.config.setMaxOrRangeIvarators(maxOrRangeIvarators);
+    }
+    
     public long getYieldThresholdMs() {
         return getConfig().getYieldThresholdMs();
     }
