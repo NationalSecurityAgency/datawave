@@ -27,6 +27,7 @@ datawave:
       normalizer-map:
         "[datawave.data.type.GeoLatType]": "Latitude"
         "[datawave.data.type.GeoLonType]": "Longitude"
+        "[datawave.data.type.GeometryType]": "Geometry (WKT)"
         "[datawave.data.type.GeoType]": "Combined latitude, longitude"
         "[datawave.data.type.IpAddressType]": "IP address"
         "[datawave.data.type.MacAddressType]": "MAC address"
@@ -34,4 +35,5 @@ datawave:
         "[datawave.data.type.LcType]": "Text"
         "[datawave.data.type.NoOpType]": "Unnormalized Text"
         "[datawave.data.type.NumberType]": "Number"
+        "[datawave.data.type.PointType]": "Point Geometry (WKT)"
         "[datawave.data.type.TrimLeadingZerosType]": "Text"

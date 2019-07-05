@@ -41,4 +41,9 @@ public interface Constants {
      */
     String PARTIAL_RESULTS = "X-Partial-Results";
     
+    /**
+     * The name of the response header that contains the error code when there is a datawave-specific exception.
+     */
+    String ERROR_CODE = "X-ErrorCode";
+    
 }

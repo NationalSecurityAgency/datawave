@@ -44,7 +44,7 @@ public class ResponseInterceptor implements ContainerResponseFilter {
         if (isResponseObject) {
             Response result = (Response) r;
             long end = System.currentTimeMillis();
-            result.getMetadata().add(Constants.OPERATION_TIME, (end - start));
+            result.getHeaders().add(Constants.OPERATION_TIME, (end - start));
             if (result.getEntity() instanceof BaseResponse)
                 ((BaseResponse) result.getEntity()).setOperationTimeMS((end - start));
             return result;

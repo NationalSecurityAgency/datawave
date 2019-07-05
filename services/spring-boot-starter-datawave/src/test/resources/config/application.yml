@@ -1,3 +1,7 @@
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+
 server:
   port: 0
   non-secure-port: 0
@@ -25,3 +29,17 @@ spring:
     datawave:
       jwt:
         enabled: false
+
+---
+
+spring:
+  profiles: 'exceptionMapperTest'
+  security:
+    datawave:
+      enforce-allowed-callers: false
+      jwt:
+        enabled: false
+
+server:
+  servlet:
+    context-path: /${spring.application.name}

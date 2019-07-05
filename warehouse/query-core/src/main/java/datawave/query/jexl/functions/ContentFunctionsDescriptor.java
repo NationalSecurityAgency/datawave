@@ -354,6 +354,11 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public boolean regexArguments() {
             return false;
         }
+        
+        @Override
+        public boolean allowIvaratorFiltering() {
+            return true;
+        }
     }
     
     @Override

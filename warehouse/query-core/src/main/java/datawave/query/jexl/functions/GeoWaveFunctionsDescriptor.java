@@ -6,19 +6,25 @@ import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.data.normalizer.GeometryNormalizer;
+import datawave.data.normalizer.PointNormalizer;
+import datawave.data.type.PointType;
+import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import mil.nga.giat.geowave.core.geotime.GeometryUtils;
 import mil.nga.giat.geowave.core.index.ByteArrayRange;
+import mil.nga.giat.geowave.core.index.NumericIndexStrategy;
 import mil.nga.giat.geowave.core.index.sfc.data.MultiDimensionalNumericData;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -38,7 +44,7 @@ import java.util.stream.Collectors;
 
 /**
  * This is the descriptor class for performing geowave functions. It supports basic spatial relationships, and decomposes the bounding box of the relationship
- * geometry into a set of geowave ranges. It currently caps this range decomposition to 800 ranges and in practice should be considerably less.
+ * geometry into a set of geowave ranges. It currently caps this range decomposition to 8 ranges per tier for GeometryType and 32 ranges total for PointType.
  *
  */
 public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
@@ -63,67 +69,93 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
-            int maxExpansion = config.getGeoWaveMaxExpansion();
             int maxEnvelopes = Math.max(1, config.getGeoWaveMaxEnvelopes());
             if (isSpatialRelationship(name)) {
-                Geometry geom = GeometryNormalizer.parseGeometry(args.get(1).image);
+                Geometry geom = AbstractGeometryNormalizer.parseGeometry(args.get(1).image);
                 List<Envelope> envelopes = getSeparateEnvelopes(geom, maxEnvelopes);
-                if (!envelopes.isEmpty())
-                    return (envelopes.size() == 1) ? getIndexNode(args.get(0), envelopes.get(0), maxExpansion) : getIndexNode(args.get(0), envelopes,
-                                    maxExpansion);
+                if (!envelopes.isEmpty()) {
+                    
+                    JexlNode indexNode;
+                    if (envelopes.size() == 1) {
+                        indexNode = getIndexNode(args.get(0), envelopes.get(0), config, helper);
+                    } else {
+                        indexNode = getIndexNode(args.get(0), envelopes, config, helper);
+                    }
+                    
+                    return indexNode;
+                }
             }
             // return the true node if unable to parse arguments
             return TRUE_NODE;
         }
         
-        protected static JexlNode getIndexNode(JexlNode node, Envelope env, int maxExpansion) {
+        private static boolean isOnlyPointType(String field, MetadataHelper helper) {
+            try {
+                Set<Type<?>> dataTypes = helper.getDatatypesForField(field);
+                return !dataTypes.isEmpty() && dataTypes.stream().allMatch(type -> type instanceof PointType);
+            } catch (IllegalAccessException | InstantiationException | TableNotFoundException e) {
+                return false;
+            }
+        }
+        
+        protected static JexlNode getIndexNode(JexlNode node, Envelope env, ShardQueryConfiguration config, MetadataHelper helper) {
             if (node.jjtGetNumChildren() > 0) {
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = node.jjtGetChild(i);
                     if (kid.image != null) {
-                        list.add(getIndexNode(kid.image, env, maxExpansion));
+                        list.add(getIndexNode(kid.image, env, config, helper));
                     }
                 }
                 if (!list.isEmpty()) {
                     return JexlNodeFactory.createOrNode(list);
                 }
             } else if (node.image != null) {
-                return getIndexNode(node.image, env, maxExpansion);
+                return getIndexNode(node.image, env, config, helper);
             }
             return node;
         }
         
-        protected static JexlNode getIndexNode(JexlNode node, List<Envelope> envs, int maxExpansion) {
+        protected static JexlNode getIndexNode(JexlNode node, List<Envelope> envs, ShardQueryConfiguration config, MetadataHelper helper) {
             if (node.jjtGetNumChildren() > 0) {
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = node.jjtGetChild(i);
                     if (kid.image != null) {
-                        list.add(getIndexNode(kid.image, envs, maxExpansion));
+                        list.add(getIndexNode(kid.image, envs, config, helper));
                     }
                 }
                 if (!list.isEmpty()) {
                     return JexlNodeFactory.createOrNode(list);
                 }
             } else if (node.image != null) {
-                return getIndexNode(node.image, envs, maxExpansion);
+                return getIndexNode(node.image, envs, config, helper);
             }
             return node;
         }
         
-        protected static JexlNode getIndexNode(String fieldName, Envelope env, int maxExpansion) {
+        protected static JexlNode getIndexNode(String fieldName, Envelope env, ShardQueryConfiguration config, MetadataHelper helper) {
             List<Envelope> envs = new ArrayList<>();
             envs.add(env);
-            return getIndexNode(fieldName, envs, maxExpansion);
+            return getIndexNode(fieldName, envs, config, helper);
         }
         
-        protected static JexlNode getIndexNode(String fieldName, List<Envelope> envs, int maxExpansion) {
+        protected static JexlNode getIndexNode(String fieldName, List<Envelope> envs, ShardQueryConfiguration config, MetadataHelper helper) {
+            NumericIndexStrategy indexStrategy;
+            int maxExpansion;
+            if (isOnlyPointType(fieldName, helper)) {
+                indexStrategy = PointNormalizer.indexStrategy;
+                maxExpansion = config.getPointMaxExpansion();
+            } else {
+                indexStrategy = GeometryNormalizer.indexStrategy;
+                maxExpansion = config.getGeometryMaxExpansion();
+            }
+            
             List<ByteArrayRange> allRanges = new ArrayList<>();
             int maxRanges = maxExpansion / envs.size();
             for (Envelope env : envs) {
-                for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(env).getIndexConstraints(GeometryNormalizer.indexStrategy)) {
-                    allRanges.addAll(GeometryNormalizer.indexStrategy.getQueryRanges(range, maxRanges));
+                for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(env).getIndexConstraints(indexStrategy)) {
+                    allRanges.addAll(indexStrategy.getQueryRanges(range, maxRanges));
                 }
             }
             allRanges = ByteArrayRange.mergeIntersections(allRanges, ByteArrayRange.MergeOperation.UNION);
@@ -162,6 +194,11 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         
         @Override
         public boolean regexArguments() {
+            return false;
+        }
+        
+        @Override
+        public boolean allowIvaratorFiltering() {
             return false;
         }
     }
@@ -230,12 +267,12 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public JexlNode apply(ByteArrayRange input) {
             if (input.getStart().equals(input.getEnd())) {
                 return JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), fieldName,
-                                GeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
+                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
             } else {
                 JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName,
-                                GeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
+                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName,
-                                GeometryNormalizer.getEncodedStringFromIndexBytes(input.getEnd()));
+                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getEnd()));
                 // now link em up
                 return JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
             }
