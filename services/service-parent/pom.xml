@@ -7,7 +7,7 @@
         <version>1.4</version>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
-    <version>1.4</version>
+    <version>1.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Spring Boot Service Parent</name>
     <properties>
