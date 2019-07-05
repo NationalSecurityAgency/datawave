@@ -584,8 +584,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         // Test the plan with all expansions
         String expect = "(" + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "lazio'"
                         + JEXL_OR_OP + CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'rome" + CompositeIngest.DEFAULT_SEPARATOR + "ohio')"
-                        + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + "(" + CityField.CITY.name() + " == 'rome'" + JEXL_AND_OP + "("
-                        + CityField.STATE.name() + " == 'lazio'" + JEXL_OR_OP + CityField.STATE.name() + " == 'ohio')))";
+                        + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + "(" + CityField.CITY.name() + " == 'rome'" + JEXL_AND_OP
+                        + CityField.STATE.name() + oPhrase + "))";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
         

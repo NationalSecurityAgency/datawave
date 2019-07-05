@@ -30,11 +30,11 @@ build_and_test:
 
 deploy_and_test:
   stage: deploy
-  image: 674433211256.dkr.ecr.us-east-1.amazonaws.com/datawave-staging:accumulo-1.9.3-v1.0
+  image: 674433211256.dkr.ecr.us-east-1.amazonaws.com/quickstart-staging:accumulo-1.9.3-v1.0
   variables:
     MVN_OVERRIDE: "mvn ${MAVEN_CLI_OPTS} -Pdev -DskipTests -Ddeploy -Dtar -Dservices clean install"
   script:
     - |
       su -l datawave << EOS
-      /datawave-staging/deploy-and-test.sh "${CI_PROJECT_DIR}" "${MVN_OVERRIDE}"
+      /quickstart-staging/deploy-and-test.sh "${CI_PROJECT_DIR}" "${MVN_OVERRIDE}"
       EOS

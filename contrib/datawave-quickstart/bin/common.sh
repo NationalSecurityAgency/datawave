@@ -305,3 +305,34 @@ function servicesAreRunning() {
    return 1 # Nothing running
 }
 
+function jdkIsConfigured() {
+   local javacBinary="$(which javac)"
+   local requiredVersion="javac 1.8.0"
+   local foundIt=""
+
+   # Check JAVA_HOME
+   if [[ -n "${JAVA_HOME}" ]] ; then
+      foundIt="$( "${JAVA_HOME}"/bin/javac -version 2>&1 | grep "${requiredVersion}" )"
+      if [[ -n "${foundIt}" ]] ; then
+         # Ensure that PATH and JAVA_HOME are in agreement
+         if [[ "$(readlink -f "${JAVA_HOME}"/bin/javac)" != "$(readlink -f "${javacBinary}")" ]] ; then
+            export PATH="${JAVA_HOME}/bin:${PATH}"
+         fi
+         return 0
+      fi
+   fi
+
+   # Check PATH
+   if [ -n "${javacBinary}" ] ; then
+      foundIt="$( "${javacBinary}" -version 2>&1 | grep "${requiredVersion}" )"
+      if [[ -n "${foundIt}" ]] ; then
+         # Ensure that JAVA_HOME is in agreement with javac path
+         export JAVA_HOME="$(dirname $(dirname $(readlink -f "${javacBinary}")))"
+         info "Found '${requiredVersion}', setting JAVA_HOME to '${JAVA_HOME}'"
+         return 0
+      fi
+   fi
+
+   error "'${requiredVersion}' not found. Please install/configure a compatible JDK"
+   return 1
+}
