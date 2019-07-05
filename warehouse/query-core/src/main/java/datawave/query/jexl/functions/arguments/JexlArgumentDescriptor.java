@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -87,6 +88,13 @@ public interface JexlArgumentDescriptor {
      * @return true if literal arguments are regexes
      */
     boolean regexArguments();
+    
+    /**
+     * Is this JexlFunction allowed to be run against values from the field index in the filtering ivarator? (see {@link DatawaveFieldIndexFilterIteratorJexl})
+     *
+     * @return true if this function can be used to filter inside an ivarator
+     */
+    boolean allowIvaratorFiltering();
     
     /**
      * This class of functions can be used to support the fieldSets method implementation. They look for nested OR nodes and then produce a product of the

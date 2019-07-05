@@ -660,6 +660,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     }
                 } else if (fieldName.equals("QUERY")) {
                     m.setQuery(fieldValue);
+                } else if (fieldName.equals("PLAN")) {
+                    m.setPlan(fieldValue);
                 } else if (fieldName.equals("QUERY_LOGIC")) {
                     m.setQueryLogic(fieldValue);
                 } else if (fieldName.equals("QUERY_ID")) {

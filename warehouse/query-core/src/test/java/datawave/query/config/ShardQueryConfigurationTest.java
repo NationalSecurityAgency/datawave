@@ -75,7 +75,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(0, config.getNumRangesToBuffer());
         Assert.assertEquals(0, config.getRangeBufferTimeoutMillis());
         Assert.assertEquals(100, config.getRangeBufferPollMillis());
-        Assert.assertEquals(8, config.getGeoWaveMaxExpansion());
+        Assert.assertEquals(8, config.getGeometryMaxExpansion());
+        Assert.assertEquals(32, config.getPointMaxExpansion());
         Assert.assertEquals(4, config.getGeoWaveMaxEnvelopes());
         Assert.assertEquals(TableName.SHARD, config.getShardTableName());
         Assert.assertEquals(TableName.SHARD_INDEX, config.getIndexTableName());
@@ -429,7 +430,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 164;
+        int expectedObjectCount = 165;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

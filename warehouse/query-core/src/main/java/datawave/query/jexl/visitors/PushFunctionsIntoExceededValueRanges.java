@@ -4,6 +4,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -23,6 +25,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
@@ -98,16 +101,26 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
             for (String field : fields) {
                 boolean copyFunction = exceededValueRangeNodes.get(field).size() > 1;
                 for (JexlNode range : exceededValueRangeNodes.removeAll(field)) {
-                    Collection<JexlNode> functions = functionNodesByField.get(field);
-                    functionNodes.removeAll(functions);
+                    
+                    // filter out functions which disallow ivarator filtering
+                    Collection<JexlNode> filterableFunctions = functionNodesByField
+                                    .get(field)
+                                    .stream()
+                                    .filter(functionNode -> {
+                                        JexlArgumentDescriptor argDesc = JexlFunctionArgumentDescriptorFactory.F
+                                                        .getArgumentDescriptor((ASTFunctionNode) JexlASTHelper.dereference(functionNode));
+                                        return argDesc != null && argDesc.allowIvaratorFiltering();
+                                    }).collect(Collectors.toList());
+                    
+                    functionNodes.removeAll(filterableFunctions);
                     if (copyFunction) {
-                        functions = new HashSet<>();
+                        filterableFunctions = new HashSet<>();
                         for (JexlNode function : functionNodesByField.get(field)) {
-                            functions.add(super.copy(function));
+                            filterableFunctions.add(super.copy(function));
                         }
                     }
-                    children.add(pushFunctionIntoExceededValueRange(functions, range));
-                    functionNodes.removeAll(functions);
+                    children.add(pushFunctionIntoExceededValueRange(filterableFunctions, range));
+                    functionNodes.removeAll(filterableFunctions);
                 }
             }
             

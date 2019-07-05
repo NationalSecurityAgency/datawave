@@ -1,8 +1,9 @@
 package datawave.query.jexl.functions;
 
 import com.vividsolutions.jts.geom.Geometry;
-import datawave.data.normalizer.GeometryNormalizer;
-import datawave.data.type.GeometryType;
+import datawave.data.normalizer.AbstractGeometryNormalizer;
+import datawave.data.type.AbstractGeometryType;
+import datawave.data.type.util.AbstractGeometry;
 import datawave.query.attributes.ValueTuple;
 
 /**
@@ -56,20 +57,20 @@ public class GeoWaveFunctions {
         if (fieldValue instanceof Geometry) {
             return (Geometry) fieldValue;
         } else if (fieldValue instanceof String) {
-            return GeometryNormalizer.parseGeometry((String) fieldValue);
+            return AbstractGeometryNormalizer.parseGeometry((String) fieldValue);
         } else if (fieldValue instanceof ValueTuple) {
             ValueTuple t = (ValueTuple) fieldValue;
             Object o = t.second();
-            if (o instanceof GeometryType) {
-                GeometryType gt = (GeometryType) o;
-                return gt.getDelegate().getJTSGeometry();
+            if (o instanceof AbstractGeometryType) {
+                AbstractGeometryType gt = (AbstractGeometryType) o;
+                return ((AbstractGeometry) gt.getDelegate()).getJTSGeometry();
             }
         }
         throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
     }
     
     public static boolean contains(Object fieldValue, String geoString) {
-        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
+        Geometry otherGeom = AbstractGeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.contains(otherGeom);
     }
@@ -96,7 +97,7 @@ public class GeoWaveFunctions {
     }
     
     public static boolean covers(Object fieldValue, String geoString) {
-        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
+        Geometry otherGeom = AbstractGeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.covers(otherGeom);
     }
@@ -123,7 +124,7 @@ public class GeoWaveFunctions {
     }
     
     public static boolean covered_by(Object fieldValue, String geoString) {
-        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
+        Geometry otherGeom = AbstractGeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.coveredBy(otherGeom);
     }
@@ -150,7 +151,7 @@ public class GeoWaveFunctions {
     }
     
     public static boolean crosses(Object fieldValue, String geoString) {
-        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
+        Geometry otherGeom = AbstractGeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.crosses(otherGeom);
     }
@@ -177,7 +178,7 @@ public class GeoWaveFunctions {
     }
     
     public static boolean intersects(Object fieldValue, String geoString) {
-        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
+        Geometry otherGeom = AbstractGeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.intersects(otherGeom);
     }
@@ -204,7 +205,7 @@ public class GeoWaveFunctions {
     }
     
     public static boolean overlaps(Object fieldValue, String geoString) {
-        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
+        Geometry otherGeom = AbstractGeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.overlaps(otherGeom);
     }
@@ -231,7 +232,7 @@ public class GeoWaveFunctions {
     }
     
     public static boolean within(Object fieldValue, String geoString) {
-        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
+        Geometry otherGeom = AbstractGeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.within(otherGeom);
     }

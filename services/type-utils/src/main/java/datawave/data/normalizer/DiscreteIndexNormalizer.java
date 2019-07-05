@@ -7,7 +7,7 @@ import java.util.List;
  *
  * @param <T>
  */
-public interface DiscreteIndexNormalizer<T extends Comparable<T>> extends Normalizer<T> {
+public interface DiscreteIndexNormalizer<T> extends Normalizer<T> {
     
     /**
      * Increments the given index to the next logical value.

@@ -2125,12 +2125,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setRangeBufferPollMillis(rangeBufferPollMillis);
     }
     
-    public int getGeoWaveMaxExpansion() {
-        return getConfig().getGeoWaveMaxExpansion();
+    public int getGeometryMaxExpansion() {
+        return getConfig().getGeometryMaxExpansion();
     }
     
-    public void setGeoWaveMaxExpansion(int geoWaveMaxExpansion) {
-        getConfig().setGeoWaveMaxExpansion(geoWaveMaxExpansion);
+    public void setGeometryMaxExpansion(int geometryMaxExpansion) {
+        getConfig().setGeometryMaxExpansion(geometryMaxExpansion);
+    }
+    
+    public int getPointMaxExpansion() {
+        return getConfig().getPointMaxExpansion();
+    }
+    
+    public void setPointMaxExpansion(int pointMaxExpansion) {
+        getConfig().setPointMaxExpansion(pointMaxExpansion);
     }
     
     public int getGeoWaveMaxEnvelopes() {
