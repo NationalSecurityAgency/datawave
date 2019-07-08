@@ -27,8 +27,7 @@ build_and_test:
       su -l -p datawave << EOS
       mvn $MAVEN_CLI_OPTS clean install -Ddist -Dservices -Pdev,examples,assemble -T1C
       EOS
-  retry:
-    max: 2
+  retry: 2
 
 deploy_and_test:
   stage: deploy
@@ -40,5 +39,4 @@ deploy_and_test:
       su -l datawave << EOS
       /quickstart-staging/deploy-and-test.sh "${CI_PROJECT_DIR}" "${MVN_OVERRIDE}"
       EOS
-  retry:
-    max: 2
+  retry: 2
