@@ -16,6 +16,7 @@ summary: |
 ### Prerequisites
 
 * Linux, Bash, and an Internet connection to `wget` tarballs
+* JDK 8 must be installed with JAVA_HOME and PATH configured accordingly
 * You should be able to [ssh to localhost without a passphrase](https://hadoop.apache.org/docs/r2.9.1/hadoop-project-dist/hadoop-common/SingleCluster.html#Setup_passphraseless_ssh)
   * Note that the quickstart's Hadoop install will set up passphrase-less ssh for you automatically, *unless* it detects that you already have a private/public key pair generated
 
@@ -101,7 +102,6 @@ as shown below. URIs may be local or remote. Local file URI values must be prefi
      export DW_ACCUMULO_DIST_URI=http://some.apache.mirror/accumulo/1.x/accumulo-1.x-bin.tar.gz
      export DW_ZOOKEEPER_DIST_URI=http://some.apache.mirror/zookeeper/x.y/zookeeper-x.y.z.tar.gz
      export DW_WILDFLY_DIST_URI=file:///my/local/binaries/wildfly-10.x.tar.gz
-     export DW_JAVA_DIST_URI=file:///my/local/binaries/jdk-8-update-x.tar.gz
      export DW_MAVEN_DIST_URI=file:///my/local/binaries/apache-maven-x.y.z.tar.gz
 
      source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh     # Added by Step 1
