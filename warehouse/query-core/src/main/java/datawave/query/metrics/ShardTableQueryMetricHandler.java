@@ -395,7 +395,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
             
             List<QueryMetric> queryMetrics = new ArrayList<>();
-            queryMetrics.add(new QueryMetric());
             
             if (cachedQueryMetric == null) {
                 // if numPages > 0 or Lifecycle > DEFINED, then we should have a metric cached already
