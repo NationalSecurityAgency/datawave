@@ -192,6 +192,13 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         runTest(query, query);
     }
     
+    @Test
+    public void testBackslashEdgeCase() throws Exception {
+        String term = "'\\\\\\\\Edge-City'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
     // ============================================
     // error conditions
     @Test(expected = FullTableScansDisallowedException.class)
