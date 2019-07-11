@@ -8,9 +8,9 @@ import com.google.common.collect.Sets;
 
 public class TreeHashNode {
     
-    int size = 0;
-    HashCodeBuilder builder;
-    SortedSet<String> nodes;
+    private int size = 0;
+    private HashCodeBuilder builder;
+    private SortedSet<String> nodes;
     
     public TreeHashNode() {
         nodes = Sets.newTreeSet();

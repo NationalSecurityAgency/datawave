@@ -27,7 +27,7 @@ public class JexlNodes {
      * Returns the internal {id} of the supplied node.
      *
      * Refer to ParserTreeConstants for a mapping of id number to a label.
-     * 
+     *
      * @param n
      * @return
      */
@@ -37,7 +37,7 @@ public class JexlNodes {
     
     /**
      * Returns a new instance of type of node supplied to this method.
-     * 
+     *
      * @param node
      * @return
      */
@@ -78,7 +78,7 @@ public class JexlNodes {
     
     /**
      * Wraps any node in a reference node. This is useful for getting rid of the boilerplate associated with wrapping an {ASTStringLiteral}.
-     * 
+     *
      * @param node
      * @return
      */
@@ -93,6 +93,33 @@ public class JexlNodes {
     public static ASTReferenceExpression wrap(JexlNode node) {
         ASTReferenceExpression ref = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
         return children(ref, node);
+    }
+    
+    public static boolean isWrapped(JexlNode node) {
+        return id(node.jjtGetParent()) == ParserTreeConstants.JJTREFERENCEEXPRESSION;
+    }
+    
+    /**
+     * <pre>
+     * From
+     *  JexlScript -> Reference -> ReferenceExpression -> EQNode
+     * To
+     *  JexlScript -> EQNode
+     * </pre>
+     *
+     * @param node
+     * @param child
+     * @return
+     */
+    public static JexlNode unwrap(JexlNode node, JexlNode child) {
+        if (isWrapped(node)) {
+            if (node.jjtGetParent().jjtGetParent() != null && node.jjtGetParent().jjtGetParent().jjtGetParent() != null) {
+                JexlNode ggp = node.jjtGetParent().jjtGetParent().jjtGetParent();
+                JexlNode gp = node.jjtGetParent().jjtGetParent();
+                replaceChild(ggp, gp, child);
+            }
+        }
+        return node;
     }
     
     /**
@@ -146,7 +173,7 @@ public class JexlNodes {
     
     /**
      * Sets the -
-     * 
+     *
      * @param literal
      * @param value
      */
