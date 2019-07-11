@@ -5,7 +5,6 @@ import static datawave.query.tld.TLD.parseRootPointerFromFI;
 
 import java.io.IOException;
 
-import java.util.AbstractMap;
 import java.util.Set;
 
 import datawave.marking.ColumnVisibilityCache;
