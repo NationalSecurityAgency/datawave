@@ -186,8 +186,6 @@ public class MapReduceStatePersisterBean {
         }
         
         Connector c = null;
-        BatchWriter tableWriter = null;
-        BatchWriter indexWriter = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
@@ -195,32 +193,26 @@ public class MapReduceStatePersisterBean {
             // Not using a MultiTableBatchWriter here because its not implemented yet
             // in Mock Accumulo.
             BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1);
-            tableWriter = c.createBatchWriter(TABLE_NAME, bwCfg);
-            indexWriter = c.createBatchWriter(INDEX_TABLE_NAME, bwCfg);
-            Mutation m = new Mutation(id);
-            m.put(sid, WORKING_DIRECTORY, workingDirectory);
-            m.put(sid, HDFS, hdfsUri);
-            m.put(sid, JT, jobTracker);
-            m.put(sid, NAME, jobName);
-            m.put(sid, RESULTS_LOCATION, resultsDirectory);
-            m.put(sid, PARAMS, runtimeParameters);
-            m.put(sid, STATE + NULL + mapReduceJobId, new Value(MapReduceState.STARTED.toString().getBytes()));
-            tableWriter.addMutation(m);
-            Mutation i = new Mutation(mapReduceJobId);
-            i.put(sid, id, NULL_VALUE);
-            indexWriter.addMutation(i);
-            tableWriter.flush();
-            indexWriter.flush();
+            try (BatchWriter tableWriter = c.createBatchWriter(TABLE_NAME, bwCfg); BatchWriter indexWriter = c.createBatchWriter(INDEX_TABLE_NAME, bwCfg)) {
+                Mutation m = new Mutation(id);
+                m.put(sid, WORKING_DIRECTORY, workingDirectory);
+                m.put(sid, HDFS, hdfsUri);
+                m.put(sid, JT, jobTracker);
+                m.put(sid, NAME, jobName);
+                m.put(sid, RESULTS_LOCATION, resultsDirectory);
+                m.put(sid, PARAMS, runtimeParameters);
+                m.put(sid, STATE + NULL + mapReduceJobId, new Value(MapReduceState.STARTED.toString().getBytes()));
+                tableWriter.addMutation(m);
+                Mutation i = new Mutation(mapReduceJobId);
+                i.put(sid, id, NULL_VALUE);
+                indexWriter.addMutation(i);
+            }
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.BULK_RESULTS_ENTRY_ERROR, e);
             log.error(qe);
             throw qe;
         } finally {
             try {
-                if (null != tableWriter)
-                    tableWriter.close();
-                if (null != indexWriter)
-                    indexWriter.close();
                 connectionFactory.returnConnection(c);
             } catch (Exception e) {
                 log.error("Error closing writers", e);
@@ -245,19 +237,19 @@ public class MapReduceStatePersisterBean {
         List<MapReduceServiceJobIndex> results = null;
         // Find the index entry for the jobid
         Connector c = null;
-        Scanner scanner;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
-            scanner = ScannerHelper.createScanner(c, INDEX_TABLE_NAME, Collections.singleton(new Authorizations()));
-            Range range = new Range(mapReduceJobId, mapReduceJobId);
-            scanner.setRange(range);
-            
-            for (Entry<Key,Value> entry : scanner) {
-                if (null == results)
-                    results = new ArrayList<>();
-                results.add(MapReduceServiceJobIndex.parse(entry.getKey(), state));
+            try (Scanner scanner = ScannerHelper.createScanner(c, INDEX_TABLE_NAME, Collections.singleton(new Authorizations()))) {
+                Range range = new Range(mapReduceJobId, mapReduceJobId);
+                scanner.setRange(range);
+                
+                for (Entry<Key,Value> entry : scanner) {
+                    if (null == results)
+                        results = new ArrayList<>();
+                    results.add(MapReduceServiceJobIndex.parse(entry.getKey(), state));
+                }
             }
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.JOB_ID_LOOKUP_ERROR, e, MessageFormat.format("job_id: {0}", mapReduceJobId));
@@ -327,35 +319,35 @@ public class MapReduceStatePersisterBean {
         
         MapReduceInfoResponseList result = new MapReduceInfoResponseList();
         Connector c = null;
-        Scanner scanner;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
-            scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths);
-            scanner.fetchColumnFamily(new Text(sid));
-            
-            // We need to create a response for each job
-            String previousRow = sid;
-            Map<Key,Value> batch = new HashMap<>();
-            for (Entry<Key,Value> entry : scanner) {
-                if (!previousRow.equals(entry.getKey().getRow().toString()) && !batch.isEmpty()) {
+            try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
+                scanner.fetchColumnFamily(new Text(sid));
+                
+                // We need to create a response for each job
+                String previousRow = sid;
+                Map<Key,Value> batch = new HashMap<>();
+                for (Entry<Key,Value> entry : scanner) {
+                    if (!previousRow.equals(entry.getKey().getRow().toString()) && !batch.isEmpty()) {
+                        MapReduceInfoResponse response = populateResponse(batch.entrySet());
+                        if (null != response)
+                            result.getResults().add(response);
+                        batch.clear();
+                    } else {
+                        batch.put(entry.getKey(), entry.getValue());
+                    }
+                    previousRow = entry.getKey().getRow().toString();
+                }
+                if (!batch.isEmpty()) {
                     MapReduceInfoResponse response = populateResponse(batch.entrySet());
                     if (null != response)
                         result.getResults().add(response);
                     batch.clear();
-                } else {
-                    batch.put(entry.getKey(), entry.getValue());
                 }
-                previousRow = entry.getKey().getRow().toString();
+                return result;
             }
-            if (!batch.isEmpty()) {
-                MapReduceInfoResponse response = populateResponse(batch.entrySet());
-                if (null != response)
-                    result.getResults().add(response);
-                batch.clear();
-            }
-            return result;
         } catch (IOException ioe) {
             QueryException qe = new QueryException(DatawaveErrorCode.RESPONSE_POPULATION_ERROR, ioe);
             log.error(qe);
@@ -397,19 +389,19 @@ public class MapReduceStatePersisterBean {
         
         MapReduceInfoResponseList result = new MapReduceInfoResponseList();
         Connector c = null;
-        Scanner scanner;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
-            scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths);
-            Range range = new Range(id);
-            scanner.setRange(range);
-            scanner.fetchColumnFamily(new Text(sid));
-            MapReduceInfoResponse response = populateResponse(scanner);
-            if (null != response)
-                result.getResults().add(response);
-            return result;
+            try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
+                Range range = new Range(id);
+                scanner.setRange(range);
+                scanner.fetchColumnFamily(new Text(sid));
+                MapReduceInfoResponse response = populateResponse(scanner);
+                if (null != response)
+                    result.getResults().add(response);
+                return result;
+            }
         } catch (IOException ioe) {
             QueryException qe = new QueryException(DatawaveErrorCode.RESPONSE_POPULATION_ERROR, ioe);
             log.error(qe);
@@ -531,8 +523,6 @@ public class MapReduceStatePersisterBean {
         }
         
         Connector c = null;
-        BatchWriter tableWriter = null;
-        BatchWriter indexWriter = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
@@ -540,26 +530,20 @@ public class MapReduceStatePersisterBean {
             // Not using a MultiTableBatchWriter here because its not implemented yet
             // in Mock Accumulo.
             BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1);
-            tableWriter = c.createBatchWriter(TABLE_NAME, bwCfg);
-            indexWriter = c.createBatchWriter(INDEX_TABLE_NAME, bwCfg);
-            Mutation m = new Mutation(id);
-            m.put(sid, STATE + NULL + mapReduceJobId, new Value(MapReduceState.STARTED.toString().getBytes()));
-            tableWriter.addMutation(m);
-            Mutation i = new Mutation(mapReduceJobId);
-            i.put(sid, id, NULL_VALUE);
-            indexWriter.addMutation(i);
-            tableWriter.flush();
-            indexWriter.flush();
+            try (BatchWriter tableWriter = c.createBatchWriter(TABLE_NAME, bwCfg); BatchWriter indexWriter = c.createBatchWriter(INDEX_TABLE_NAME, bwCfg)) {
+                Mutation m = new Mutation(id);
+                m.put(sid, STATE + NULL + mapReduceJobId, new Value(MapReduceState.STARTED.toString().getBytes()));
+                tableWriter.addMutation(m);
+                Mutation i = new Mutation(mapReduceJobId);
+                i.put(sid, id, NULL_VALUE);
+                indexWriter.addMutation(i);
+            }
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.BULK_RESULTS_ENTRY_ERROR, e);
             log.error(qe);
             throw qe;
         } finally {
             try {
-                if (null != tableWriter)
-                    tableWriter.close();
-                if (null != indexWriter)
-                    indexWriter.close();
                 connectionFactory.returnConnection(c);
             } catch (Exception e) {
                 log.error("Error closing writers", e);
@@ -622,8 +606,6 @@ public class MapReduceStatePersisterBean {
                 indexEntries.add(i);
             }
             Connector c = null;
-            BatchWriter tableWriter = null;
-            BatchWriter indexWriter = null;
             try {
                 Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
                 c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
@@ -631,13 +613,11 @@ public class MapReduceStatePersisterBean {
                 // using BatchWriter instead of MultiTableBatchWriter because Mock CB does not support
                 // MultiTableBatchWriter
                 BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1);
-                tableWriter = c.createBatchWriter(TABLE_NAME, bwCfg);
-                indexWriter = c.createBatchWriter(INDEX_TABLE_NAME, bwCfg);
-                tableWriter.addMutation(m);
-                for (Mutation i : indexEntries)
-                    indexWriter.addMutation(i);
-                tableWriter.flush();
-                indexWriter.flush();
+                try (BatchWriter tableWriter = c.createBatchWriter(TABLE_NAME, bwCfg); BatchWriter indexWriter = c.createBatchWriter(INDEX_TABLE_NAME, bwCfg)) {
+                    tableWriter.addMutation(m);
+                    for (Mutation i : indexEntries)
+                        indexWriter.addMutation(i);
+                }
             } catch (RuntimeException re) {
                 throw re;
             } catch (Exception e) {
@@ -646,10 +626,6 @@ public class MapReduceStatePersisterBean {
                 throw new QueryException(qe);
             } finally {
                 try {
-                    if (null != tableWriter)
-                        tableWriter.close();
-                    if (null != indexWriter)
-                        indexWriter.close();
                     connectionFactory.returnConnection(c);
                 } catch (Exception e) {
                     log.error("Error creating query", e);

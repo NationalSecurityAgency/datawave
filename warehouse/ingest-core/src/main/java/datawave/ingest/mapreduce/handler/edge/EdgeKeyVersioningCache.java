@@ -149,12 +149,11 @@ public class EdgeKeyVersioningCache {
         
         // now attempt to write them out
         try {
-            PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpVersionFile)));
-            
-            for (Map.Entry<Integer,String> pair : versionDates.entrySet()) {
-                out.println(pair.getKey() + "\t" + pair.getValue());
+            try(PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpVersionFile)))) {
+                for (Map.Entry<Integer, String> pair : versionDates.entrySet()) {
+                    out.println(pair.getKey() + "\t" + pair.getValue());
+                }
             }
-            out.close();
             
             // now move the temporary file to the file cache
             try {
@@ -251,25 +250,20 @@ public class EdgeKeyVersioningCache {
     
     private String seedMetadataTable(Connector connector, long time, int keyVersionNum) throws TableNotFoundException, MutationsRejectedException {
         Value emptyVal = new Value();
-        BatchWriter recordWriter = connector.createBatchWriter(metadataTableName, new BatchWriterConfig());
-        
         SimpleDateFormat dateFormat = new SimpleDateFormat(DateNormalizer.ISO_8601_FORMAT_STRING);
-        
-        String normalizedVersionNum = NumericalEncoder.encode(Integer.toString(keyVersionNum));
-        
-        String dateString = dateFormat.format(new Date(time));
-        String rowID = "edge_key";
-        String columnFamily = "version";
-        String columnQualifier = normalizedVersionNum + "/" + dateString;
-        
-        Mutation m = new Mutation(rowID);
-        
-        m.put(new Text(columnFamily), new Text(columnQualifier), emptyVal);
-        
-        recordWriter.addMutation(m);
-        
-        recordWriter.close();
-        
+        String dateString = dateFormat.format(new Date(time));;
+        try (BatchWriter recordWriter = connector.createBatchWriter(metadataTableName, new BatchWriterConfig())) {
+            String normalizedVersionNum = NumericalEncoder.encode(Integer.toString(keyVersionNum));
+            String rowID = "edge_key";
+            String columnFamily = "version";
+            String columnQualifier = normalizedVersionNum + "/" + dateString;
+            
+            Mutation m = new Mutation(rowID);
+            
+            m.put(new Text(columnFamily), new Text(columnQualifier), emptyVal);
+            
+            recordWriter.addMutation(m);
+        }
         return dateString;
     }
     

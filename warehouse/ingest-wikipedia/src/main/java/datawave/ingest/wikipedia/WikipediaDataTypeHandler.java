@@ -239,28 +239,29 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
                 }
             }
             
-            WikipediaTokenizer wikiTokenizer = new WikipediaTokenizer();
-            wikiTokenizer.setReader(contentReader);
-            CharTermAttribute termAttr = wikiTokenizer.addAttribute(CharTermAttribute.class);
-            wikiTokenizer.reset();
-            
-            while (wikiTokenizer.incrementToken()) {
-                String term = termAttr.toString();
+            try (WikipediaTokenizer wikiTokenizer = new WikipediaTokenizer()) {
+                wikiTokenizer.setReader(contentReader);
+                CharTermAttribute termAttr = wikiTokenizer.addAttribute(CharTermAttribute.class);
+                wikiTokenizer.reset();
                 
-                // getting the next token can take a long time depending on the compexity of the data...
-                // so lets report progress to hadoop on each round
-                if (context != null)
-                    context.progress();
-                
-                if (StringUtils.isBlank(term)) {
-                    context.getCounter("Tokenization", "Blank tokens (null, empty, or whitespace)").increment(1l);
-                    continue;
+                while (wikiTokenizer.incrementToken()) {
+                    String term = termAttr.toString();
+                    
+                    // getting the next token can take a long time depending on the compexity of the data...
+                    // so lets report progress to hadoop on each round
+                    if (context != null)
+                        context.progress();
+                    
+                    if (StringUtils.isBlank(term)) {
+                        context.getCounter("Tokenization", "Blank tokens (null, empty, or whitespace)").increment(1l);
+                        continue;
+                    }
+                    
+                    processTerm(event, position, term, null, context, contextWriter, fieldName, fieldNameToken, reporter);
+                    
+                    // Get the word position for this term
+                    position++;
                 }
-                
-                processTerm(event, position, term, null, context, contextWriter, fieldName, fieldNameToken, reporter);
-                
-                // Get the word position for this term
-                position++;
             }
             
             // now flush out the offset queue
