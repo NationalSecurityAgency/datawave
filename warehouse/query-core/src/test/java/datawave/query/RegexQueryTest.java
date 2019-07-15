@@ -193,8 +193,22 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void testBackslashEdgeCase() throws Exception {
-        String term = "'\\\\\\\\Edge-City'";
+    public void testBackslashEdgeCase1() throws Exception {
+        String term = "'\\\\Edge-City-1'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+
+    @Test
+    public void testBackslashEdgeCase2() throws Exception {
+        String term = "'\\\\\\\\Edge-City-2'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+
+    @Test
+    public void testBackslashEdgeCase3() throws Exception {
+        String term = "'\\\\\\\\\\\\Edge-City-3'";
         String query = CityField.CITY.name() + EQ_OP + term;
         runTest(query, query);
     }
