@@ -40,24 +40,14 @@ SHELL ["/bin/bash", "-c"]
 
 WORKDIR /opt/datawave
 
-# Create new Git repo for convenience...
+# Create new Git repo and configure environment...
 
 RUN rm -f .dockerignore && \
     git init && \
     git add . && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
-    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
-
-# This works exactly like the setup for a non-containerized instance of the datawave-quickstart
-# environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
-# the quickstart environment. Likewise, 'allInstall' and 'datawaveStart' wrapper functions are
-# used to initialize services and their log dirs. Finally, web services are tested, services are
-# stopped gracefully, and any cruft is purged.
-
-# By design, if 'datawaveWebTest' exits with non-zero status, the docker build will fail
-
-RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
+    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
     echo "export DW_ACCUMULO_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz')" >> ~/.bashrc && \
     echo "export DW_ZOOKEEPER_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'zookeeper*.tar.gz')" >> ~/.bashrc && \
     echo "export DW_MAVEN_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz')" >> ~/.bashrc && \
@@ -65,8 +55,16 @@ RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
     echo "export DW_WILDFLY_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/datawave -name 'wildfly*.tar.gz')" >> ~/.bashrc && \
     echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
     echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc && \
-    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
-    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --verbose && allStop" && \
+    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
+
+# This works exactly like the setup for a non-containerized instance of the datawave-quickstart
+# environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
+# the quickstart environment. Likewise, 'allInstall' and 'datawaveStart' wrapper functions are
+# used to initialize services and their log dirs. Finally, web services are tested, services are
+# stopped gracefully, and any cruft is purged.
+
+RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
+    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest && allStop" && \
     echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
