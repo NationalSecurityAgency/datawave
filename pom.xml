@@ -34,7 +34,7 @@
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.avro>1.7.4</version.avro>
-        <version.caffeine>2.6.2</version.caffeine>
+        <version.caffeine>2.7.0</version.caffeine>
         <version.commons-beanutils>1.9.3</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.12</version.commons-codec>
@@ -47,7 +47,7 @@
         <version.commons-pool>1.6</version.commons-pool>
         <version.curator>2.13.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
-        <version.dropwizard-metrics>1.5.0</version.dropwizard-metrics>
+        <version.dropwizard-metrics>1.6.0</version.dropwizard-metrics>
         <version.easymock>4.0.2</version.easymock>
         <version.geoserver>2.14.2</version.geoserver>
         <version.geotools>20.1</version.geotools>
@@ -61,14 +61,14 @@
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>1.9.2.1</version.in-memory-accumulo>
-        <version.infinispan>9.4.8.Final</version.infinispan>
-        <version.jackson>2.9.8</version.jackson>
+        <version.infinispan>9.4.14.Final</version.infinispan>
+        <version.jackson>2.9.9</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
         <version.javax-validation>2.0.1.Final</version.javax-validation>
         <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
-        <version.jgroups>4.0.18.Final</version.jgroups>
+        <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.9.1</version.jjwt>
         <version.junit>4.12</version.junit>
         <version.kryo>2.20</version.kryo>
@@ -91,21 +91,21 @@
         <version.netty>4.1.34.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
-        <version.powermock>2.0.0</version.powermock>
+        <version.powermock>2.0.2</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
         <version.protostuff>1.5.5</version.protostuff>
         <version.slf4j>1.7.26</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>5.1.0.RELEASE</version.spring>
+        <version.spring>5.1.8.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
-        <version.stream>2.7.0</version.stream>
-        <version.surefire.plugin>2.20</version.surefire.plugin>
+        <version.stream>2.9.6</version.stream>
+        <version.surefire.plugin>2.22.1</version.surefire.plugin>
         <version.thrift>0.9.3</version.thrift>
-        <version.weld>3.1.0.Final</version.weld>
-        <version.weld-se>3.1.0.Final</version.weld-se>
+        <version.weld>3.1.1.Final</version.weld>
+        <version.weld-se>3.1.1.Final</version.weld-se>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
-        <version.wildfly>16.0.0.Final</version.wildfly>
+        <version.wildfly>17.0.1.Final</version.wildfly>
         <version.xerces>2.12.0.SP02</version.xerces>
         <version.zookeeper>3.4.5-cdh5.9.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
@@ -762,6 +762,21 @@
                 <version>${version.httpcomponents-httpcore}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-analyzers-common</artifactId>
+                <version>${version.lucene}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${version.lucene}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-queryparser</artifactId>
+                <version>${version.lucene}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${version.zookeeper}</version>
@@ -1362,7 +1377,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>3.1.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
