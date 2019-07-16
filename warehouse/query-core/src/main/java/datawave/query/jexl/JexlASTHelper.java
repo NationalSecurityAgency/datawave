@@ -110,12 +110,10 @@ public class JexlASTHelper {
      *
      * @param query
      *            The query string in JEXL syntax to parse
-     * @param preserveEscapes
-     *            True if escape characters should be left as-is, and not interpreted
      * @return Root node of the query parse tree.
      * @throws ParseException
      */
-    public static ASTJexlScript parseJexlQuery(String query, boolean preserveEscapes) throws ParseException {
+    public static ASTJexlScript parseJexlQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
         Parser parser = new Parser(new StringReader(";"));
         
@@ -123,29 +121,12 @@ public class JexlASTHelper {
         caseFixQuery = caseFixQuery.replaceAll("\\s+[Oo][Rr]\\s+", " or ");
         caseFixQuery = caseFixQuery.replaceAll("\\s+[Nn][Oo][Tt]\\s+", " not ");
         
-        if (preserveEscapes) {
-            caseFixQuery = caseFixQuery.replace("\\\\", "\\\\\\\\");
-        }
-        
         // Parse the query
         try {
             return parser.parse(new StringReader(caseFixQuery), null);
         } catch (TokenMgrError e) {
             throw new ParseException(e.getMessage());
         }
-    }
-    
-    /**
-     * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
-     * the analyzer provides.
-     * 
-     * @param query
-     *            The query string in JEXL syntax to parse
-     * @return Root node of the query parse tree.
-     * @throws ParseException
-     */
-    public static ASTJexlScript parseJexlQuery(String query) throws ParseException {
-        return parseJexlQuery(query, true);
     }
     
     /**

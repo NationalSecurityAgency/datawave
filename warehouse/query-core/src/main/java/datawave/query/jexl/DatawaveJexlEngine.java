@@ -38,10 +38,4 @@ public class DatawaveJexlEngine extends JexlEngine {
     public ASTJexlScript parse(CharSequence expression) {
         return super.parse(expression, null, null);
     }
-    
-    @Override
-    protected ASTJexlScript parse(CharSequence expression, JexlInfo info, Scope frame) {
-        expression = expression.toString().replace("\\\\", "\\\\\\\\");
-        return super.parse(expression, info, frame);
-    }
 }
