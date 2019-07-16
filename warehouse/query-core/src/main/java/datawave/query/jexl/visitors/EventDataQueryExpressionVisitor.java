@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
+import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeBag;
@@ -154,6 +155,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                 
                 final String keyFieldValue = datawaveKey.getFieldValue();
                 final Set<Type> types = EventDataQueryExpressionVisitor.extractTypes(attributeFactory, keyFieldName, keyFieldValue, key);
+                // always add the NoOpType to ensure the original value gets propagated through
+                types.add(new NoOpType(keyFieldValue));
                 final Set<Matcher> normalizedPatternMatchers = new HashSet<>();
                 final Set<String> normalizedFieldValues = new HashSet<>();
                 final Set<LiteralRange> normalizedRanges = new HashSet<>();
