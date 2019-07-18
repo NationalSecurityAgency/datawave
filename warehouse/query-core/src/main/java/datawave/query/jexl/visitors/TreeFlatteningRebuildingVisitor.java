@@ -1,12 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
@@ -25,13 +20,19 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. NOTE: If you remove reference
- * expressions and references, this will adversly affect the jexl evaluation of the query.
+ * expressions and references, this will adversely affect the jexl evaluation of the query.
  */
 public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(TreeFlatteningRebuildingVisitor.class);
-    private boolean removeReferences = false;
+    
+    private final boolean removeReferences;
     
     public TreeFlatteningRebuildingVisitor(boolean removeReferences) {
         this.removeReferences = removeReferences;
@@ -69,17 +70,14 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     public Object visit(ASTOrNode node, Object data) {
         ASTOrNode orNode = JexlNodes.newInstanceOfType(node);
         orNode.image = node.image;
-        
-        return flattenTree(node, orNode, data);
+        flattenTree(node, orNode);
+        return orNode;
     }
     
-    private boolean isBoundedRange(ASTAndNode node) {
+    private static boolean isBoundedRange(ASTAndNode node) {
         List<JexlNode> otherNodes = new ArrayList<>();
         Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, false);
-        if (ranges.size() == 1 && otherNodes.isEmpty()) {
-            return true;
-        }
-        return false;
+        return ranges.size() == 1 && otherNodes.isEmpty();
     }
     
     @Override
@@ -87,27 +85,30 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
                         || ExceededOrThresholdMarkerJexlNode.instanceOf(node) || ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             return super.visit(node, data);
-        } else {
-            ASTAndNode andNode = JexlNodes.newInstanceOfType(node);
-            andNode.image = node.image;
-            
-            return flattenTree(node, andNode, data);
         }
         
+        ASTAndNode andNode = JexlNodes.newInstanceOfType(node);
+        andNode.image = node.image;
+        flattenTree(node, andNode);
+        return andNode;
     }
     
     @Override
     public Object visit(ASTReference node, Object data) {
         if (!removeReferences) {
             return super.visit(node, data);
-        } else if (ASTDelayedPredicate.instanceOf(node) || IndexHoleMarkerJexlNode.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
+        }
+        if (ASTDelayedPredicate.instanceOf(node) || IndexHoleMarkerJexlNode.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             return super.visit(node, data);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
+        }
+        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
                         || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
             return super.visit(node, data);
-        } else if (JexlASTHelper.dereference(node) instanceof ASTAssignment) {
+        }
+        if (JexlASTHelper.dereference(node) instanceof ASTAssignment) {
             return super.visit(node, data);
-        } else if (node.jjtGetParent() instanceof ASTAndNode) {
+        }
+        if (node.jjtGetParent() instanceof ASTAndNode) {
             ASTAndNode andNode = JexlNodes.newInstanceOfType(((ASTAndNode) (node.jjtGetParent())));
             andNode.image = node.jjtGetParent().image;
             
@@ -118,7 +119,8 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             }
             
             return andNode;
-        } else if (node.jjtGetParent() instanceof ASTOrNode) {
+        }
+        if (node.jjtGetParent() instanceof ASTOrNode) {
             ASTOrNode orNode = JexlNodes.newInstanceOfType(((ASTOrNode) (node.jjtGetParent())));
             orNode.image = node.jjtGetParent().image;
             
@@ -130,23 +132,24 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             
             return orNode;
             
-        } else if (node.jjtGetParent() instanceof ASTNotNode) {
+        }
+        if (node.jjtGetParent() instanceof ASTNotNode) {
             // ensure we keep negated expressions
             return super.visit(node, data);
-        } else {
-            JexlNode newNode = (JexlNode) super.visit(node, data);
-            JexlNode childNode = null;
-            /**
-             * Explore the possibility that we have an unnecessary top level ASTReference expression. Could walk up the tree, but this will be less work as
-             * we're checking if we're the root, then advance to see if we've within a Reference expression.
-             */
-            if (null == newNode.jjtGetParent() && (childNode = advanceReferenceExpression(newNode)) != null) {
-                if (childNode.jjtGetNumChildren() == 1)
-                    return childNode.jjtGetChild(0);
-                
-            }
-            return newNode;
         }
+        
+        JexlNode newNode = (JexlNode) super.visit(node, data);
+        JexlNode childNode = null;
+        /**
+         * Explore the possibility that we have an unnecessary top level ASTReference expression. Could walk up the tree, but this will be less work as we're
+         * checking if we're the root, then advance to see if we've within a Reference expression.
+         */
+        if (null == newNode.jjtGetParent() && (childNode = advanceReferenceExpression(newNode)) != null) {
+            if (childNode.jjtGetNumChildren() == 1) {
+                return childNode.jjtGetChild(0);
+            }
+        }
+        return newNode;
     }
     
     @Override
@@ -154,12 +157,15 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         ASTReferenceExpression newExpressive = null;
         if (!removeReferences) {
             return super.visit(node, data);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
+        }
+        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
                         || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
             return super.visit(node, data);
-        } else if (JexlASTHelper.dereference(node) instanceof ASTAssignment) {
+        }
+        if (JexlASTHelper.dereference(node) instanceof ASTAssignment) {
             return super.visit(node, data);
-        } else if (node.jjtGetParent() instanceof ASTAndNode) {
+        }
+        if (node.jjtGetParent() instanceof ASTAndNode) {
             ASTAndNode andNode = JexlNodes.newInstanceOfType(((ASTAndNode) (node.jjtGetParent())));
             andNode.image = node.jjtGetParent().image;
             
@@ -170,7 +176,8 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             }
             
             return andNode;
-        } else if (node.jjtGetParent() instanceof ASTOrNode) {
+        }
+        if (node.jjtGetParent() instanceof ASTOrNode) {
             ASTOrNode orNode = JexlNodes.newInstanceOfType(((ASTOrNode) (node.jjtGetParent())));
             orNode.image = node.jjtGetParent().image;
             
@@ -181,15 +188,16 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             }
             
             return orNode;
-        } else if (node.jjtGetParent() instanceof ASTNotNode || node.jjtGetParent() instanceof ASTReference) {
+        }
+        if (node.jjtGetParent() instanceof ASTNotNode || node.jjtGetParent() instanceof ASTReference) {
             // ensure we keep negated expressions
             return super.visit(node, data);
-        } else if (node.jjtGetNumChildren() == 1 && (newExpressive = advanceReferenceExpression(node.jjtGetChild(0))) != null) {
+        }
+        if (node.jjtGetNumChildren() == 1 && (newExpressive = advanceReferenceExpression(node.jjtGetChild(0))) != null) {
             return visit(newExpressive, data);
         }
         
         return super.visit(node, data);
-        
     }
     
     /**
@@ -204,15 +212,14 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
      * @return
      */
     protected ASTReferenceExpression advanceReferenceExpression(JexlNode jexlNode) {
-        
         if (jexlNode instanceof ASTReference) {
-            
             if (jexlNode.jjtGetNumChildren() == 1 && jexlNode.jjtGetChild(0) instanceof ASTReferenceExpression) {
                 ASTReferenceExpression expression = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-                if (null != jexlNode.jjtGetParent())
+                if (null != jexlNode.jjtGetParent()) {
                     expression.image = jexlNode.jjtGetParent().image;
-                else
+                } else {
                     expression.image = null;
+                }
                 
                 JexlNode node = jexlNode.jjtGetChild(0);
                 
@@ -228,34 +235,39 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         return null;
     }
     
-    protected JexlNode flattenTree(JexlNode currentNode, JexlNode newNode, Object data) {
+    protected void flattenTree(JexlNode currentNode, JexlNode newNode) {
         if (!currentNode.getClass().equals(newNode.getClass())) {
             log.warn("newNode is not the same type as currentNode ... something has probably gone horribly wrong");
         }
         
-        for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
-            JexlNode node = (JexlNode) currentNode.jjtGetChild(i).jjtAccept(this, null);
-            JexlNode dereferenced = JexlASTHelper.dereference(node);
-            
-            if (acceptableNodesToCombine(currentNode, dereferenced, !node.equals(dereferenced))) {
-                flattenTree(dereferenced, newNode, data);
-            } else {
-                newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
-                node.jjtSetParent(newNode);
+        final LinkedList<JexlNode> toCombine = new LinkedList<>();
+        do {
+            for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
+                final JexlNode child = currentNode.jjtGetChild(i);
+                final JexlNode node;
+                final JexlNode dereferenced;
+                if (child instanceof ASTOrNode) {
+                    node = child;
+                    dereferenced = JexlASTHelper.dereference(child);
+                } else {
+                    node = (JexlNode) child.jjtAccept(this, null);
+                    dereferenced = JexlASTHelper.dereference(node);
+                }
+                if (acceptableNodesToCombine(currentNode, dereferenced, !node.equals(dereferenced))) {
+                    toCombine.addFirst(dereferenced);
+                } else {
+                    newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
+                    node.jjtSetParent(newNode);
+                }
             }
-        }
-        
-        return newNode;
+        } while ((currentNode = toCombine.pollFirst()) != null);
     }
     
-    protected boolean acceptableNodesToCombine(JexlNode currentNode, JexlNode newNode, boolean isWrapped) {
+    protected static boolean acceptableNodesToCombine(JexlNode currentNode, JexlNode newNode, boolean isWrapped) {
         if (currentNode.getClass().equals(newNode.getClass())) {
             // if this is a bounded range or marker node, then to not combine
-            if (newNode instanceof ASTAndNode && isBoundedRange((ASTAndNode) newNode)) {
-                return false;
-            }
             // don't allow combination of a marker node UNLESS it's already unwrapped
-            else if (newNode instanceof ASTAndNode && QueryPropertyMarker.instanceOf(newNode, null) && isWrapped) {
+            if (newNode instanceof ASTAndNode && (isBoundedRange((ASTAndNode) newNode) || (QueryPropertyMarker.instanceOf(newNode, null) && isWrapped))) {
                 return false;
             }
             
@@ -264,4 +276,5 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         
         return false;
     }
+    
 }
