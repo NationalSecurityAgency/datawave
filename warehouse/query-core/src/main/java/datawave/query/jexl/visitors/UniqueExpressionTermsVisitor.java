@@ -1,7 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -38,20 +36,6 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(UniqueExpressionTermsVisitor.class);
     
     /**
-     * Entry point without query executability check.
-     *
-     * @param node
-     * @param maxIterations
-     * @param <T>
-     * @return
-     */
-    public static <T extends JexlNode> T enforce(T node, int maxIterations) {
-        return enforce(node, maxIterations, null, null, null, null, null, null);
-    }
-    
-    /**
-     * Entry point with query executability check.
-     *
      * Apply this visitor until the query tree stops changing or the maximum number of iterations is exceeded.
      *
      * @param node
@@ -59,27 +43,9 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
      * @param <T>
      * @return
      */
-    public static <T extends JexlNode> T enforce(T node, int maxIterations, ShardQueryConfiguration config, Set<String> indexedFields,
-                    Set<String> indexOnlyFields, Set<String> nonEventFields, List<String> debugOutput, MetadataHelper metadataHelper) {
+    public static <T extends JexlNode> T enforce(T node, int maxIterations) {
         if (node == null)
             return null;
-        
-        boolean checkForExecutability = (config != null && indexedFields != null && indexOnlyFields != null && nonEventFields != null && metadataHelper != null);
-        boolean isExecutable;
-        if (checkForExecutability) {
-            isExecutable = ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput,
-                            metadataHelper);
-            
-            if (!isExecutable) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Tried to a visit a query that is not executable. Returning original query tree.");
-                }
-                return node;
-            }
-        } else {
-            // Assume query is executable, let a later visitor make the actual determination.
-            isExecutable = true;
-        }
         
         // Operate on copy of query tree
         T copy = (T) copy(node);
@@ -87,7 +53,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
         UniqueExpressionTermsVisitor visitor = new UniqueExpressionTermsVisitor();
         boolean changesMade = true;
         
-        while (visitor.iterations < maxIterations && changesMade && isExecutable) {
+        while (visitor.iterations < maxIterations && changesMade) {
             visitor.iterations++;
             
             copy = TreeFlatteningRebuildingVisitor.flatten(copy);
@@ -95,20 +61,6 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
             
             // Changes were made if the two trees are not equals
             changesMade = !TreeEqualityVisitor.isEqual((ASTJexlScript) node, (ASTJexlScript) copy, new TreeEqualityVisitor.Reason());
-            
-            // Check to see if query is still executable.
-            if (checkForExecutability) {
-                isExecutable = ExecutableDeterminationVisitor.isExecutable(copy, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput,
-                                metadataHelper);
-                
-                if (!isExecutable) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("UniqueExpressionTermsVisitor reduced query to a query that will not execute. Returning last query known to execute.");
-                    }
-                    return node;
-                }
-            }
-            
             node = copy;
         }
         
