@@ -4,7 +4,6 @@ import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -14,6 +13,8 @@ import java.util.Set;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.replaceChild;
 import static org.apache.commons.jexl2.parser.JexlNodes.swap;
+import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
+import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
 
 /**
  * Visitor that enforces node uniqueness within AND or OR expressions. Nodes can be single nodes or subtrees.
@@ -79,57 +80,55 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
     }
     
     @Override
-    public Object visit(ASTOrNode orNode, Object data) {
+    public Object visit(ASTOrNode node, Object data) {
         
         // Post-order traversal
-        orNode.childrenAccept(this, data);
+        node.childrenAccept(this, data);
         
-        List<JexlNode> children = removeDuplicateChildNodes(orNode);
-        
-        if (children.size() == 1) {
-            // If only one child remains, swap child node for current node.
-            JexlNode child = children.get(0);
-            replaceChild(orNode.jjtGetParent(), orNode, child);
-            return child;
-        } else {
-            // If two or more children remain, replace current children with new children
-            ASTOrNode copy = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            copy.image = orNode.image;
-            copy.jjtSetParent(orNode.jjtGetParent());
-            for (int ii = 0; ii < children.size(); ii++) {
-                copy.jjtAddChild(children.get(ii), ii);
-            }
-            replaceChild(orNode.jjtGetParent(), orNode, copy);
-            orNode = copy;
-        }
-        return orNode;
+        return removeDuplicateNodes(node, JJTORNODE);
     }
     
     @Override
-    public Object visit(ASTAndNode andNode, Object data) {
+    public Object visit(ASTAndNode node, Object data) {
         
         // Post-order traversal
-        andNode.childrenAccept(this, data);
+        node.childrenAccept(this, data);
         
-        List<JexlNode> children = removeDuplicateChildNodes(andNode);
+        return removeDuplicateNodes(node, JJTANDNODE);
+    }
+    
+    private JexlNode removeDuplicateNodes(JexlNode node, int nodeId) {
+        
+        List<JexlNode> children = removeDuplicateChildNodes(node);
         
         if (children.size() == 1) {
             // If only one child remains, swap child node for current node.
             JexlNode child = children.get(0);
-            swap(andNode.jjtGetParent(), andNode, child);
+            swap(node.jjtGetParent(), node, child);
             return child;
         } else {
             // If two or more children remain, replace current children with new children
-            ASTAndNode copy = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-            copy.image = andNode.image;
-            copy.jjtSetParent(andNode.jjtGetParent());
+            JexlNode copy;
+            if (nodeId == JJTORNODE) {
+                copy = new ASTOrNode(JJTORNODE);
+            } else if (nodeId == JJTANDNODE) {
+                copy = new ASTAndNode(JJTANDNODE);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Tried to remove duplicates from a node that was not an AND/OR node.");
+                }
+                return node;
+            }
+            
+            copy.image = node.image;
+            copy.jjtSetParent(node.jjtGetParent());
             for (int ii = 0; ii < children.size(); ii++) {
                 copy.jjtAddChild(children.get(ii), ii);
             }
-            replaceChild(andNode.jjtGetParent(), andNode, copy);
-            andNode = copy;
+            replaceChild(node.jjtGetParent(), node, copy);
+            node = copy;
         }
-        return andNode;
+        return node;
     }
     
     /**

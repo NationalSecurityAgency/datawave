@@ -100,29 +100,6 @@ public class JexlNodes {
     }
     
     /**
-     * <pre>
-     * From
-     *  JexlScript -> Reference -> ReferenceExpression -> EQNode
-     * To
-     *  JexlScript -> EQNode
-     * </pre>
-     *
-     * @param node
-     * @param child
-     * @return
-     */
-    public static JexlNode unwrap(JexlNode node, JexlNode child) {
-        if (isWrapped(node)) {
-            if (node.jjtGetParent().jjtGetParent() != null && node.jjtGetParent().jjtGetParent().jjtGetParent() != null) {
-                JexlNode ggp = node.jjtGetParent().jjtGetParent().jjtGetParent();
-                JexlNode gp = node.jjtGetParent().jjtGetParent();
-                replaceChild(ggp, gp, child);
-            }
-        }
-        return node;
-    }
-    
-    /**
      * Fluid wrapper for calling {child.jjtSetParent(parent)}.
      *
      * @param child

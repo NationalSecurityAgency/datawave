@@ -118,37 +118,14 @@ public class TreeHashVisitor extends BaseVisitor {
     }
     
     public Object visit(ASTOrNode node, Object data) {
-        
-        int numChildren = node.jjtGetNumChildren();
-        
-        TreeHashNode inte = (TreeHashNode) (data);
-        int lastsize = inte.length();
-        
-        // Build keys for child node map
-        List<String> keys = new ArrayList<>();
-        TreeMap<String,JexlNode> nodeMap = new TreeMap<>();
-        for (int ii = 0; ii < numChildren; ii++) {
-            JexlNode child = node.jjtGetChild(ii);
-            String key = TreeHashVisitor.getNodeHash(child).toString();
-            nodeMap.put(key, child);
-            keys.add(key);
-        }
-        
-        // Sort the list of keys, append child node in order
-        Collections.sort(keys);
-        for (String key : keys) {
-            JexlNode child = nodeMap.get(key);
-            if (inte.length() != lastsize) {
-                inte.append(ORNODE);
-            }
-            lastsize = inte.length();
-            child.jjtAccept(this, inte);
-        }
-        return inte;
+        return visitAndOrChildren(node, data, ORNODE);
     }
     
     public Object visit(ASTAndNode node, Object data) {
-        
+        return visitAndOrChildren(node, data, ANDNODE);
+    }
+    
+    private Object visitAndOrChildren(JexlNode node, Object data, String joinTerm) {
         int numChildren = node.jjtGetNumChildren();
         
         TreeHashNode inte = (TreeHashNode) (data);
@@ -169,7 +146,7 @@ public class TreeHashVisitor extends BaseVisitor {
         for (String key : keys) {
             JexlNode child = nodeMap.get(key);
             if (inte.length() != lastsize) {
-                inte.append(ANDNODE);
+                inte.append(joinTerm);
             }
             lastsize = inte.length();
             child.jjtAccept(this, inte);
