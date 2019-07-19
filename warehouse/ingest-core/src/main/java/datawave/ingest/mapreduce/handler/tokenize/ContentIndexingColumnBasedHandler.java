@@ -294,13 +294,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 
                 if (indexField || reverseIndexField) {
                     try {
-                        if (isTokenizationBySubtypeEnabled()) {
-                            if (determineTokenizationBySubtype(nci.getIndexedFieldName())) {
-                                tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
-                            }
-                        } else {
-                            tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
-                        }
+                        tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
@@ -320,14 +314,6 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         validateIndexedFields(createGlobalIndexTerms, createGlobalReverseIndexTerms, reporter);
         
         return fields;
-    }
-    
-    protected boolean isTokenizationBySubtypeEnabled() {
-        return false;
-    }
-    
-    protected boolean determineTokenizationBySubtype(String field) {
-        return false;
     }
     
     public boolean isTokenizerTimeWarned() {
@@ -678,6 +664,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             if (StringUtils.isEmpty(trimmedToken)) {
                 continue;
             }
+            
             // Track the number of tokens processed
             counters.increment(ContentIndexCounters.ORIGINAL_PROCESSED_COUNTER, reporter);
             
