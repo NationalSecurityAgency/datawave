@@ -26,6 +26,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     
     protected MultiSetBackedSortedSet<E> set = new MultiSetBackedSortedSet<>();
     protected int maxOpenFiles = 10000;
+    protected int compactionRounds = 1;
     protected FileSortedSet<E> buffer = null;
     protected Comparator<? super E> comparator = null;
     protected boolean sizeModified = false;
@@ -77,6 +78,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
         if (buffer != null) {
             buffer.persist();
             buffer = null;
+            compact(maxOpenFiles, compactionRounds);
         }
     }
     
@@ -156,56 +158,92 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
             if (set.getSets().size() > 1) {
                 persist();
             }
-            compact(maxOpenFiles);
         } catch (IOException ioe) {
-            throw new RuntimeException("Unable to compact file backed sorted set", ioe);
+            throw new RuntimeException("Unable to persist or compact file backed sorted set", ioe);
         }
         return set.iterator();
     }
     
-    public void compact(int maxFiles) throws IOException {
+    /**
+     * If the number of sets if over maxFiles, then start compacting those files down. The goal is to get the number of files down around 50% of maxFiles in N
+     * rounds.
+     * 
+     * @param maxFiles
+     * @param rounds
+     * @throws IOException
+     */
+    public void compact(int maxFiles, int rounds) throws IOException {
         // if we have more sets than we are allowed, then we need to compact this down
         if (maxFiles > 0 && set.getSets().size() > maxFiles) {
             if (log.isDebugEnabled()) {
                 log.debug("Compacting " + handlerFactory);
             }
-            while (set.getSets().size() > maxFiles) {
-                List<SortedSet<E>> sets = set.getSets();
-                int numSets = sets.size();
-                // we want to do layers of compactions up to ivaratorMaxOpenFiles at a time until the total
-                // number of files is under maxFiles
-                int setsPerCompaction = Math.max(2, Math.min(maxOpenFiles, Math.round((float) numSets / maxFiles)));
-                int iterationsWithExtra = numSets / setsPerCompaction;
+            // create a copy of the set list (sorting below)
+            List<SortedSet<E>> sets = new ArrayList<>(set.getSets());
+            
+            // calculate the number of sets to compact per round
+            int numSets = sets.size();
+            int excessSets = numSets - (maxFiles / 2); // those over 50% of maxFiles
+            int filesToCompact = excessSets + rounds; // Add in a few extra to account for the compacted sets being added back in
+            int setsPerCompaction = (filesToCompact + rounds - 1) / rounds; // divide into sets to compact, rounding up
+            
+            // sort the sets by size (compact up smaller sets first)
+            sets.sort(new Comparator<SortedSet<E>>() {
+                @Override
+                public int compare(SortedSet<E> o1, SortedSet<E> o2) {
+                    int size1 = o1.size();
+                    int size2 = o2.size();
+                    if (size1 > size2) {
+                        return 1;
+                    } else if (size1 == size2) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                }
+            });
+            
+            // newSet will be the final multiset
+            MultiSetBackedSortedSet<E> newSet = new MultiSetBackedSortedSet<>();
+            
+            for (int r = 0; r < rounds; r++) {
                 
-                MultiSetBackedSortedSet<E> newSet = new MultiSetBackedSortedSet<>();
+                // create the
                 MultiSetBackedSortedSet<E> setToCompact = new MultiSetBackedSortedSet<>();
                 
-                int iteration = 0;
-                byte subtraction = (byte) (iteration < iterationsWithExtra ? 0 : 1);
-                for (int i = 0; i < numSets; i++) {
+                for (int i = 0; i < setsPerCompaction; i++) {
                     setToCompact.addSet(sets.get(i));
-                    if (setToCompact.getSets().size() == (setsPerCompaction - subtraction)) {
-                        newSet.addSet(compact(setToCompact));
-                        setToCompact.clear();
-                        iteration++;
-                        subtraction = (byte) (iteration < iterationsWithExtra ? 0 : 1);
-                    }
                 }
-                if (!setToCompact.isEmpty()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Starting compaction for " + setToCompact);
-                    }
-                    long start = System.currentTimeMillis();
-                    FileSortedSet<E> compaction = compact(setToCompact);
-                    if (log.isDebugEnabled()) {
-                        long delta = System.currentTimeMillis() - start;
-                        log.debug("Compacted " + setToCompact + " -> " + compaction + " in " + delta + "ms");
-                    }
-                    newSet.addSet(compaction);
-                    setToCompact.clear();
+                
+                // remove the sets being compacted from our list
+                // creating new array list to allow previous list to be GC'ed
+                sets = new ArrayList<>(sets.subList(setsPerCompaction, sets.size()));
+                
+                // compact it
+                if (log.isDebugEnabled()) {
+                    log.debug("Starting compaction for " + setToCompact);
                 }
-                this.set = newSet;
+                long start = System.currentTimeMillis();
+                FileSortedSet<E> compaction = compact(setToCompact);
+                if (log.isDebugEnabled()) {
+                    long delta = System.currentTimeMillis() - start;
+                    log.debug("Compacted " + setToCompact + " -> " + compaction + " in " + delta + "ms");
+                }
+                
+                // add the compacted set to our final multiset
+                newSet.addSet(compaction);
+                
+                // clear the compactions set to remove the files that were compacted
+                setToCompact.clear();
             }
+            
+            // now add in the sets we did not compact
+            for (int i = 0; i < sets.size(); i++) {
+                newSet.addSet(sets.get(i));
+            }
+            
+            // and replace our set
+            this.set = newSet;
         }
     }
     
@@ -238,11 +276,10 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
             sizeModified = true;
             if (buffer.size() >= bufferPersistThreshold) {
                 try {
-                    buffer.persist();
+                    persist();
                 } catch (Exception ex) {
-                    throw new IllegalStateException("Unable to persist FileSortedSet", ex);
+                    throw new IllegalStateException("Unable to persist or compact FileSortedSet", ex);
                 }
-                buffer = null;
             }
             return true;
         }
@@ -263,11 +300,10 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
             sizeModified = true;
             if (buffer.size() >= bufferPersistThreshold) {
                 try {
-                    buffer.persist();
+                    persist();
                 } catch (Exception ex) {
-                    throw new IllegalStateException("Unable to persist FileSortedSet", ex);
+                    throw new IllegalStateException("Unable to persist or compact FileSortedSet", ex);
                 }
-                buffer = null;
             }
             return true;
         }
