@@ -235,7 +235,7 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
             builder.append("<td>").append(f.isIndexOnly()).append("</td>");
             builder.append("<td>").append(f.isForwardIndexed() ? true : "").append("</td>");
             builder.append("<td>").append(f.isReverseIndexed() ? true : "").append("</td>");
-            builder.append("<td>").append(f.isNormalized() ? true : "").append("</td>");
+            builder.append("<td>").append(f.getTypes() != null && f.getTypes().size() > 0 ? "true" : "false").append("</td>");
             builder.append("<td>").append(types).append("</td>");
             builder.append("<td>");
             
