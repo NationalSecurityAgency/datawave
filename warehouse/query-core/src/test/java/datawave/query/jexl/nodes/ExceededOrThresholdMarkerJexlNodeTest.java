@@ -1,6 +1,7 @@
 package datawave.query.jexl.nodes;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -23,6 +24,9 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -43,6 +47,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
@@ -94,7 +99,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
     
     private static final String BEGIN_DATE = "20000101 000000.000";
-    private static final String END_DATE = "20020101 000000.000";
+    private static final String END_DATE = "20000101 000001.000";
     
     private static final String USER = "testcorp";
     private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
@@ -148,6 +153,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private int maxOrExpansionThreshold = 1;
     private int maxOrFstThreshold = 1;
     private int maxOrRangeThreshold = 1;
+    private int maxOrRangeIvarators = 1;
+    private int maxRangesPerRangeIvarator = 1;
     
     @Inject
     @SpringBean(name = "EventQuery")
@@ -270,7 +277,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     }
     
     @Test
-    public void combinedRangesTest() throws Exception {
+    public void combinedRangesOneIvaratorTest() throws Exception {
         // @formatter:off
         String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_3 + "') || " +
                 "(" + GEO_FIELD + " >= '" + INDEX_5 + "' && " + GEO_FIELD + " <= '" + INDEX_7 + "') || " +
@@ -280,6 +287,63 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrExpansionThreshold = 100;
         maxOrFstThreshold = 100;
         maxOrRangeThreshold = 1;
+        maxOrRangeIvarators = 1;
+        maxRangesPerRangeIvarator = 1;
+        
+        List<String> queryRanges = getQueryRanges(query);
+        
+        Assert.assertEquals(1, queryRanges.size());
+        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6, queryRanges.get(0).indexOf("') && (field = 'GEO')"));
+        Assert.assertEquals(
+                        "((ExceededOrThresholdMarkerJexlNode = true) && (((id = '"
+                                        + id
+                                        + "') && (field = 'GEO') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}'))))",
+                        queryRanges.get(0));
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(9, events.size());
+        
+        List<String> pointList = new ArrayList<>();
+        pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
+        
+        for (DefaultEvent event : events) {
+            String wkt = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD))
+                    wkt = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(pointList.remove(wkt));
+        }
+        
+        Assert.assertEquals(0, pointList.size());
+    }
+    
+    @Test
+    public void combinedRangesTwoIvaratorsTest() throws Exception {
+        // @formatter:off
+        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_3 + "') || " +
+                "(" + GEO_FIELD + " >= '" + INDEX_5 + "' && " + GEO_FIELD + " <= '" + INDEX_7 + "') || " +
+                "(" + GEO_FIELD + " >= '" + INDEX_9 + "' && " + GEO_FIELD + " <= '" + INDEX_11 + "')";
+        // @formatter:on
+        
+        maxOrExpansionThreshold = 100;
+        maxOrFstThreshold = 100;
+        maxOrRangeIvarators = 10;
+        maxOrRangeThreshold = 1;
+        maxRangesPerRangeIvarator = 2;
+        
+        List<String> queryRanges = getQueryRanges(query);
+        
+        Assert.assertEquals(1, queryRanges.size());
+        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6, queryRanges.get(0).indexOf("') && (field = 'GEO')"));
+        Assert.assertEquals(
+                        "(((((ExceededValueThresholdMarkerJexlNode = true) && (GEO >= '1f200364bda9c63d03' && GEO <= '1f35553ac3ffb0ebff'))))) || ((ExceededOrThresholdMarkerJexlNode = true) && (((id = '"
+                                        + id
+                                        + "') && (field = 'GEO') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}'))))",
+                        queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(9, events.size());
@@ -314,6 +378,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrExpansionThreshold = 100;
         maxOrFstThreshold = 100;
         maxOrRangeThreshold = 1;
+        maxOrRangeIvarators = 10;
+        maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(3, events.size());
@@ -347,6 +413,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrExpansionThreshold = 1;
         maxOrFstThreshold = 100;
         maxOrRangeThreshold = 100;
+        maxOrRangeIvarators = 1;
+        maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(9, events.size());
@@ -381,6 +449,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrExpansionThreshold = 1;
         maxOrFstThreshold = 100;
         maxOrRangeThreshold = 100;
+        maxOrRangeIvarators = 1;
+        maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(3, events.size());
@@ -414,6 +484,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrExpansionThreshold = 100;
         maxOrFstThreshold = 1;
         maxOrRangeThreshold = 100;
+        maxOrRangeIvarators = 1;
+        maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(9, events.size());
@@ -448,6 +520,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrExpansionThreshold = 100;
         maxOrFstThreshold = 1;
         maxOrRangeThreshold = 100;
+        maxOrRangeIvarators = 1;
+        maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(3, events.size());
@@ -470,6 +544,16 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         Assert.assertEquals(0, pointList.size());
     }
     
+    private List<String> getQueryRanges(String queryString) throws Exception {
+        ShardQueryLogic logic = getShardQueryLogic();
+        
+        Iterator iter = getQueryRangesIterator(queryString, logic);
+        List<String> queryData = new ArrayList<>();
+        while (iter.hasNext())
+            queryData.add((String) iter.next());
+        return queryData;
+    }
+    
     private List<DefaultEvent> getQueryResults(String queryString) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic();
         
@@ -478,6 +562,43 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         while (iter.hasNext())
             events.add((DefaultEvent) iter.next());
         return events;
+    }
+    
+    private Iterator getQueryRangesIterator(String queryString, ShardQueryLogic logic) throws Exception {
+        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
+        params.putSingle(QUERY_STRING, queryString);
+        params.putSingle(QUERY_NAME, "geoQuery");
+        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
+        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
+        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
+        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
+        params.putSingle(QUERY_END, END_DATE);
+        
+        QueryParameters queryParams = new QueryParametersImpl();
+        queryParams.validate(params);
+        
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations(AUTHS));
+        
+        Query query = new QueryImpl();
+        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
+        
+        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
+        
+        logic.setupQuery(config);
+        
+        return Iterators.transform(
+                        config.getQueries(),
+                        queryData -> {
+                            try {
+                                return JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config,
+                                                JexlASTHelper.parseJexlQuery(queryData.getQuery()), null, null));
+                            } catch (ParseException e) {
+                                return null;
+                            }
+                        });
     }
     
     private Iterator getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {
@@ -535,6 +656,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         logic.setMaxOrExpansionThreshold(maxOrExpansionThreshold);
         logic.setMaxOrExpansionFstThreshold(maxOrFstThreshold);
         logic.setMaxOrRangeThreshold(maxOrRangeThreshold);
+        logic.setMaxOrRangeIvarators(maxOrRangeIvarators);
+        logic.setMaxRangesPerRangeIvarator(maxRangesPerRangeIvarator);
         logic.setIvaratorFstHdfsBaseURIs(fstUri);
         logic.setIvaratorCacheScanPersistThreshold(1);
     }

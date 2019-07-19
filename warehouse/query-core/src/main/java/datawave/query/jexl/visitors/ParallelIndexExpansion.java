@@ -297,7 +297,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         if (markedParents != null) {
             for (JexlNode markedParent : markedParents) {
                 if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ExceededOrThresholdMarkerJexlNode.instanceOf(markedParent)
-                                || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ASTEvaluationOnly.instanceOf(node))
+                                || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ASTEvaluationOnly.instanceOf(markedParent))
                     return node;
             }
         }

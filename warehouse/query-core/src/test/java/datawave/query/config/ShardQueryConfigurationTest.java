@@ -75,7 +75,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(0, config.getNumRangesToBuffer());
         Assert.assertEquals(0, config.getRangeBufferTimeoutMillis());
         Assert.assertEquals(100, config.getRangeBufferPollMillis());
-        Assert.assertEquals(8, config.getGeoWaveMaxExpansion());
+        Assert.assertEquals(8, config.getGeometryMaxExpansion());
+        Assert.assertEquals(32, config.getPointMaxExpansion());
         Assert.assertEquals(4, config.getGeoWaveMaxEnvelopes());
         Assert.assertEquals(TableName.SHARD, config.getShardTableName());
         Assert.assertEquals(TableName.SHARD_INDEX, config.getIndexTableName());
@@ -151,7 +152,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(500, config.getMaxUnfieldedExpansionThreshold());
         Assert.assertEquals(5000, config.getMaxValueExpansionThreshold());
         Assert.assertEquals(500, config.getMaxOrExpansionThreshold());
-        Assert.assertEquals(1, config.getMaxOrRangeThreshold());
+        Assert.assertEquals(10, config.getMaxOrRangeThreshold());
+        Assert.assertEquals(10, config.getMaxOrRangeIvarators());
+        Assert.assertEquals(5, config.getMaxRangesPerRangeIvarator());
         Assert.assertEquals(750, config.getMaxOrExpansionFstThreshold());
         Assert.assertEquals(Long.MAX_VALUE, config.getYieldThresholdMs());
         Assert.assertNull(config.getHdfsSiteConfigURLs());
@@ -427,7 +430,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 162;
+        int expectedObjectCount = 165;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

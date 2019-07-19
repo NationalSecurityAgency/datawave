@@ -182,12 +182,12 @@
     <!-- Normalization for Derived Fields -->
     <property>
         <name>nyctlc.PICKUP_LOCATION.data.field.type.class</name>
-        <value>datawave.data.type.GeometryType</value>
+        <value>datawave.data.type.PointType</value>
     </property>
 
     <property>
         <name>nyctlc.DROPOFF_LOCATION.data.field.type.class</name>
-        <value>datawave.data.type.GeometryType</value>
+        <value>datawave.data.type.PointType</value>
     </property>
 
     <property>
@@ -197,7 +197,7 @@
 
     <property>
         <name>nyctlc.ALL_POINTS.data.field.type.class</name>
-        <value>datawave.data.type.GeometryType</value>
+        <value>datawave.data.type.PointType</value>
     </property>
 
     <property>

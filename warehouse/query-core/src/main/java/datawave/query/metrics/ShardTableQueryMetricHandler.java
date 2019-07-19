@@ -395,7 +395,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
             
             List<QueryMetric> queryMetrics = new ArrayList<>();
-            queryMetrics.add(new QueryMetric());
             
             if (cachedQueryMetric == null) {
                 // if numPages > 0 or Lifecycle > DEFINED, then we should have a metric cached already
@@ -660,6 +659,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     }
                 } else if (fieldName.equals("QUERY")) {
                     m.setQuery(fieldValue);
+                } else if (fieldName.equals("PLAN")) {
+                    m.setPlan(fieldValue);
                 } else if (fieldName.equals("QUERY_LOGIC")) {
                     m.setQueryLogic(fieldValue);
                 } else if (fieldName.equals("QUERY_ID")) {

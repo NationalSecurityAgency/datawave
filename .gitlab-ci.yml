@@ -27,3 +27,28 @@ build_and_test:
       su -l -p datawave << EOS
       mvn $MAVEN_CLI_OPTS clean install -Ddist -Dservices -Pdev,examples,assemble -T1C
       EOS
+  retry: 2
+
+deploy_and_test:
+  stage: deploy
+  variables:
+    DW_DATAWAVE_BUILD_COMMAND: "mvn ${MAVEN_CLI_OPTS} -Pdev -Ddeploy -Dtar -Dservices -DskipTests clean install"
+    IMAGE_REGISTRY: "674433211256.dkr.ecr.us-east-1.amazonaws.com"
+    IMAGE_NAME: "datawave/quickstart"
+    REMOTE_IMAGE_NAME: "${IMAGE_REGISTRY}/${IMAGE_NAME}"
+    DOCKER_BUILD_OPTS: "--squash --force-rm"
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+     - contrib/datawave-quickstart/bin/services/*/*.tar.gz
+     - .m2/repository
+  script:
+    - |
+      export DW_DATAWAVE_BUILD_COMMAND
+      TAG="$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)"
+      contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
+      docker tag ${IMAGE_NAME}:${TAG} ${REMOTE_IMAGE_NAME}:${TAG}
+      docker push ${REMOTE_IMAGE_NAME}:${TAG}
+  tags:
+    - datawave
+    - shell-executor

@@ -12,14 +12,17 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.easymock.EasyMockSupport;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,14 +62,13 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected IteratorEnvironment environment;
     protected EventDataQueryFilter filter;
     protected TypeMetadata typeMetadata;
-    
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    protected Path temporaryFolder;
     
     @Before
     public void setup() throws IOException {
         iterator = new QueryIterator();
         options = new HashMap<>();
+        temporaryFolder = Files.createTempDirectory("tmp");
         
         // global options
         
@@ -85,7 +87,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(QUERY_ID, "000001");
         
         // setup ivarator settings
-        options.put(IVARATOR_CACHE_BASE_URI_ALTERNATIVES, "file://" + temporaryFolder.newFolder().getAbsolutePath());
+        options.put(IVARATOR_CACHE_BASE_URI_ALTERNATIVES, "file://" + temporaryFolder.toAbsolutePath().toString());
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         options.put(HDFS_SITE_CONFIG_URLS, hdfsSiteConfig.toExternalForm());
         
@@ -106,6 +108,11 @@ public class QueryIteratorIT extends EasyMockSupport {
         
         environment = createMock(IteratorEnvironment.class);
         filter = createMock(EventDataQueryFilter.class);
+    }
+    
+    @After
+    public void cleanUp() {
+        temporaryFolder.toFile().deleteOnExit();
     }
     
     private List<Map.Entry<Key,Value>> addEvent(long eventTime, String uid) {

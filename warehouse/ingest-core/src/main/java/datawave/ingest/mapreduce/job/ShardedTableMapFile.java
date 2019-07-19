@@ -349,13 +349,16 @@ public class ShardedTableMapFile {
                     Range range = new Range();
                     Locations locations = tableOps.locate(shardedTableName, Collections.singletonList(range));
                     List<TabletId> tabletIds = locations.groupByRange().get(range);
-                    tabletIds.forEach(tId -> splitToLocation.put(tId.getEndRow(), locations.getTabletLocation(tId)));
+                    
+                    tabletIds.stream().filter(tId -> tId.getEndRow() != null)
+                                    .forEach(tId -> splitToLocation.put(tId.getEndRow(), locations.getTabletLocation(tId)));
                 }
                 // made it here, no errors so break out
                 keepRetrying = false;
             } catch (Exception e) {
-                log.warn(e.getMessage() + " ... retrying ...");
+                log.warn(e.getClass().getName() + ":" + e.getMessage() + " ... retrying ...", e);
                 UtilWaitThread.sleep(3000);
+                splitToLocation.clear();
             }
         }
         

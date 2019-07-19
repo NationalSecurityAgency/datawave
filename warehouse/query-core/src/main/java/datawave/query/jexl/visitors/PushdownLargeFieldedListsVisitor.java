@@ -38,8 +38,11 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
@@ -136,11 +139,23 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                     
                     // handle range nodes separately
                     if (rangeNodes.size() >= config.getMaxOrRangeThreshold()) {
-                        Collection<Range> ranges = new TreeSet<>();
-                        rangeNodes.forEach(rangeNode -> ranges.add(rangeNodeToRange(rangeNode)));
+                        TreeMap<Range,JexlNode> ranges = new TreeMap<>();
+                        rangeNodes.forEach(rangeNode -> ranges.put(rangeNodeToRange(rangeNode), rangeNode));
                         
-                        markers.add(ExceededOrThresholdMarkerJexlNode.createFromRanges(field, ranges));
-                        rangeNodes = null;
+                        int numBatches = (int) Math.ceil(rangeNodes.size() / (double) Math.max(1, config.getMaxRangesPerRangeIvarator()));
+                        numBatches = Math.min(Math.max(1, config.getMaxOrRangeIvarators()), numBatches);
+                        
+                        List<List<Map.Entry<Range,JexlNode>>> batchedRanges = batchRanges(ranges, numBatches);
+                        
+                        rangeNodes = new ArrayList<>();
+                        for (List<Map.Entry<Range,JexlNode>> rangeList : batchedRanges) {
+                            if (rangeList.size() > 1) {
+                                markers.add(ExceededOrThresholdMarkerJexlNode.createFromRanges(field,
+                                                rangeList.stream().map(Map.Entry::getKey).collect(Collectors.toList())));
+                            } else {
+                                rangeNodes.add(rangeList.get(0).getValue());
+                            }
+                        }
                     }
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.LARGE_FIELDED_LIST_ERROR, e);
@@ -153,9 +168,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 }
                 
                 // add in any unused range nodes
-                if (rangeNodes != null) {
-                    copyChildren(rangeNodes, children, data);
-                }
+                copyChildren(rangeNodes, children, data);
                 
                 children.addAll(markers);
             }
@@ -170,6 +183,27 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         }
         
         return children(newNode, children.toArray(new JexlNode[children.size()]));
+    }
+    
+    private List<List<Map.Entry<Range,JexlNode>>> batchRanges(TreeMap<Range,JexlNode> ranges, int numBatches) {
+        List<List<Map.Entry<Range,JexlNode>>> batchedRanges = new ArrayList<>();
+        double rangesPerBatch = ((double) ranges.size()) / ((double) numBatches);
+        double total = rangesPerBatch;
+        List<Map.Entry<Range,JexlNode>> rangeList = new ArrayList<>();
+        int rangeIdx = 0;
+        for (Map.Entry<Range,JexlNode> range : ranges.entrySet()) {
+            if (rangeIdx++ >= total) {
+                total += rangesPerBatch;
+                batchedRanges.add(rangeList);
+                rangeList = new ArrayList<>();
+            }
+            rangeList.add(range);
+        }
+        
+        if (!rangeList.isEmpty())
+            batchedRanges.add(rangeList);
+        
+        return batchedRanges;
     }
     
     private void copyChildren(Collection<JexlNode> children, Collection<JexlNode> copiedChildren, Object data) {

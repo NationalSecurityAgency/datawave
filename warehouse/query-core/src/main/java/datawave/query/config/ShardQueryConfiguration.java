@@ -120,9 +120,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private long rangeBufferPollMillis = 100;
     /**
-     * Used to determine the maximum number of query ranges to generate per tier when performing a geowave query.
+     * Used to determine the maximum number of query ranges to generate per tier when performing a geowave query against a GeometryType field.
      */
-    private int geoWaveMaxExpansion = 8;
+    private int geometryMaxExpansion = 8;
+    /**
+     * Used to determine the maximum number of query ranges to generate when performing a geowave query against a PointType field.
+     */
+    private int pointMaxExpansion = 32;
     /**
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
@@ -252,7 +256,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean expandValues = true;
     private int maxValueExpansionThreshold = 5000;
     private int maxOrExpansionThreshold = 500;
-    private int maxOrRangeThreshold = 1;
+    private int maxOrRangeThreshold = 10;
+    private int maxOrRangeIvarators = 10;
+    private int maxRangesPerRangeIvarator = 5;
     private int maxOrExpansionFstThreshold = 750;
     private long yieldThresholdMs = Long.MAX_VALUE;
     private String hdfsSiteConfigURLs = null;
@@ -341,7 +347,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setNumRangesToBuffer(other.getNumRangesToBuffer());
         this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
-        this.setGeoWaveMaxExpansion(other.getGeoWaveMaxExpansion());
+        this.setGeometryMaxExpansion(other.getGeometryMaxExpansion());
+        this.setPointMaxExpansion(other.getPointMaxExpansion());
         this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
         this.setShardTableName(other.getShardTableName());
         this.setIndexTableName(other.getIndexTableName());
@@ -422,6 +429,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExpandValues(other.isExpandValues());
         this.setMaxOrExpansionThreshold(other.getMaxOrExpansionThreshold());
         this.setMaxOrRangeThreshold(other.getMaxOrRangeThreshold());
+        this.setMaxOrRangeIvarators(other.getMaxOrRangeIvarators());
+        this.setMaxRangesPerRangeIvarator(other.getMaxRangesPerRangeIvarator());
         this.setMaxOrExpansionFstThreshold(other.getMaxOrExpansionFstThreshold());
         this.setYieldThresholdMs(other.getYieldThresholdMs());
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
@@ -791,12 +800,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rangeBufferPollMillis = rangeBufferPollMillis;
     }
     
-    public int getGeoWaveMaxExpansion() {
-        return geoWaveMaxExpansion;
+    public int getGeometryMaxExpansion() {
+        return geometryMaxExpansion;
     }
     
-    public void setGeoWaveMaxExpansion(int geoWaveMaxExpansion) {
-        this.geoWaveMaxExpansion = geoWaveMaxExpansion;
+    public void setGeometryMaxExpansion(int geometryMaxExpansion) {
+        this.geometryMaxExpansion = geometryMaxExpansion;
+    }
+    
+    public int getPointMaxExpansion() {
+        return pointMaxExpansion;
+    }
+    
+    public void setPointMaxExpansion(int pointMaxExpansion) {
+        this.pointMaxExpansion = pointMaxExpansion;
     }
     
     public int getGeoWaveMaxEnvelopes() {
@@ -1038,6 +1055,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setMaxOrRangeThreshold(int maxOrRangeThreshold) {
         this.maxOrRangeThreshold = maxOrRangeThreshold;
+    }
+    
+    public int getMaxOrRangeIvarators() {
+        return maxOrRangeIvarators;
+    }
+    
+    public void setMaxOrRangeIvarators(int maxOrRangeIvarators) {
+        this.maxOrRangeIvarators = maxOrRangeIvarators;
+    }
+    
+    public int getMaxRangesPerRangeIvarator() {
+        return maxRangesPerRangeIvarator;
+    }
+    
+    public void setMaxRangesPerRangeIvarator(int maxRangesPerRangeIvarator) {
+        this.maxRangesPerRangeIvarator = maxRangesPerRangeIvarator;
     }
     
     public int getMaxOrExpansionFstThreshold() {

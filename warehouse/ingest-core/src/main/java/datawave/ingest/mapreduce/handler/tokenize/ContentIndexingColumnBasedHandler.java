@@ -157,6 +157,15 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         // get the typical shard/index information
         values.putAll(super.processBulk(key, event, eventFields, reporter));
         
+        flushTokenOffsetCache(event, values);
+        
+        counters.flush(reporter);
+        
+        return values;
+    }
+    
+    protected void flushTokenOffsetCache(RawRecordContainer event, Multimap<BulkIngestKey,Value> values) {
+        
         // now flush out the offset queue
         if (tokenOffsetCache != null) {
             int termCount = 0;
@@ -191,9 +200,6 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             tokenOffsetCache.clear();
         }
         
-        counters.flush(reporter);
-        
-        return values;
     }
     
     /**
@@ -666,8 +672,12 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         String content = nci.getIndexedFieldValue();
         
         String[] tokens = StringUtils.split(content, listDelimiter);
-        
+        int position = 0;
         for (String token : tokens) {
+            String trimmedToken = StringUtils.trim(token);
+            if (StringUtils.isEmpty(trimmedToken)) {
+                continue;
+            }
             
             // Track the number of tokens processed
             counters.increment(ContentIndexCounters.ORIGINAL_PROCESSED_COUNTER, reporter);
@@ -680,7 +690,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 newField.setFieldName(indexedFieldName);
                 // don't put tokens in the event.
                 newField.setEventFieldValue(null);
-                newField.setIndexedFieldValue(token);
+                newField.setIndexedFieldValue(trimmedToken);
                 
                 // normalize the value
                 normalizedValueFields = contentHelper.normalizeFieldValue(indexedFieldName, newField, true);
@@ -692,14 +702,24 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     // 'indexOnly' list so it won't show up in
                     // the event
                     fields.putAll(indexedFieldName, normalizedValueFields);
+                    
+                    if (tokenOffsetCache != null) {
+                        for (NormalizedContentInterface normalizedNci : normalizedValueFields) {
+                            tokenOffsetCache.addOffset(new TermAndZone(normalizedNci.getIndexedFieldValue(), indexedFieldName), position);
+                        }
+                    }
                 } else {
                     index.put(indexedFieldName, newField);
                     fields.put(indexedFieldName, newField);
+                    if (tokenOffsetCache != null) {
+                        tokenOffsetCache.addOffset(new TermAndZone(trimmedToken, indexedFieldName), position);
+                    }
                 }
+                position++;
             }
             
             if (reverseIndexField) {
-                String rToken = StringUtils.reverse(token);
+                String rToken = StringUtils.reverse(trimmedToken);
                 NormalizedContentInterface newField;
                 newField = (NormalizedContentInterface) (nci.clone());
                 newField.setFieldName(indexedFieldName);

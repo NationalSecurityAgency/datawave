@@ -108,6 +108,19 @@ public class EventDataQueryExpressionVisitorTest {
         }
     }
     
+    /**
+     * Create a circumstance where the sole type available for BAZ fails to normalize the field pattern so that the comparison must be done against the NoOpType
+     */
+    @Test
+    public void testBothNormalizedAndNonNormalized() {
+        ExpressionFilter f = new ExpressionFilter(attrFactory, "BAZ");
+        f.addFieldPattern("1|2|3");
+        
+        Key k1 = createKey("BAZ", "1");
+        
+        assertTrue(f.apply(k1));
+    }
+    
     @Test
     public void testNormalizedValuesMatching() {
         ExpressionFilter f = new ExpressionFilter(attrFactory, "FOO");

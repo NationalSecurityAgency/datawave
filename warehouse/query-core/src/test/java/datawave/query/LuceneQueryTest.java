@@ -23,6 +23,7 @@ import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.Assert.assertEquals;
 
 public class LuceneQueryTest extends AbstractFunctionalQuery {
     
@@ -117,6 +118,69 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         assertPlanEquals(expect, plan);
         
         expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + this.dataManager.convertAnyField(phrase);
+        runTest(query, expect);
+    }
+    
+    @Test
+    public void testExplicitFieldEvaluationOnlyWithRegex() throws Exception {
+        log.info("------  testExplicitFieldRegexEvaluationOnly  ------");
+        String code = "europe";
+        String state = "l.*";
+        String phrase = RE_OP + "'" + state + "'";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
+                        + " =~ '" + state + "')\")";
+        
+        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
+                        + " =~ '" + state + "')";
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+        
+        expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + this.dataManager.convertAnyField(phrase);
+        runTest(query, expect);
+    }
+    
+    @Test
+    public void testExplicitFieldEvaluationOnlyWithRange() throws Exception {
+        log.info("------  testExplicitFieldRange  ------");
+        String code = "europe";
+        String startState = "alabama";
+        String endState = "wyoming";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
+                        + " >= '" + startState + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState + "')\")";
+        
+        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
+                        + " >= '" + startState + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState + "')";
+        String plan = getPlan(query, true, true);
+        assertEquals(expect, plan);
+        assertPlanEquals(expect, plan);
+        
+        expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + CityField.STATE.name() + " >= '" + startState + "'" + AND_OP
+                        + CityField.STATE.name() + " <= '" + endState + "'";
+        runTest(query, expect);
+    }
+    
+    @Test
+    public void testExplicitFieldEvaluationOnlyWithRanges() throws Exception {
+        log.info("------  testExplicitFieldRanges  ------");
+        String code = "europe";
+        String startState1 = "alabama";
+        String endState1 = "connecticut";
+        String startState2 = "iowa";
+        String endState2 = "wyoming";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
+                        + " >= '" + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "'" + JEXL_AND_OP + CityField.STATE.name()
+                        + " >= '" + startState2 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "'" + ")\")";
+        
+        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
+                        + " >= '" + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "'" + JEXL_AND_OP + CityField.STATE.name()
+                        + " >= '" + startState2 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "'" + ")";
+        String plan = getPlan(query, true, true);
+        assertEquals(expect, plan);
+        assertPlanEquals(expect, plan);
+        
+        expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + CityField.STATE.name() + " >= '" + startState1 + "'" + AND_OP
+                        + CityField.STATE.name() + " <= '" + endState1 + "'" + AND_OP + CityField.STATE.name() + " >= '" + startState2 + "'" + AND_OP
+                        + CityField.STATE.name() + " <= '" + endState2 + "'";
         runTest(query, expect);
     }
     

@@ -6,6 +6,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKBReader;
 import com.vividsolutions.jts.io.WKBWriter;
+import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.normalizer.Normalizer;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -63,7 +64,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
     }
     
     public void setGeometryFromGeoString(String geoString) {
-        geometry = GeometryNormalizer.parseGeometry(geoString);
+        geometry = AbstractGeometryNormalizer.parseGeometry(geoString);
     }
     
     @Override

@@ -265,6 +265,11 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             node.jjtAccept(functionMetadata, null);
             return regexFunctions.contains(functionMetadata.name());
         }
+        
+        @Override
+        public boolean allowIvaratorFiltering() {
+            return true;
+        }
     }
     
     @Override

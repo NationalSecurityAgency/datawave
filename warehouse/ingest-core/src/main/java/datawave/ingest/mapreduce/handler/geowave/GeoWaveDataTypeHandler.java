@@ -6,7 +6,7 @@ import com.google.common.collect.Multimap;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.io.ParseException;
-import datawave.data.normalizer.GeometryNormalizer;
+import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.data.type.DateType;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -368,7 +368,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
                         }
                     }
                 } else if (Geometry.class.isAssignableFrom(binding)) {
-                    builder.set(attrib.getName(), GeometryNormalizer.parseGeometry(stringValue));
+                    builder.set(attrib.getName(), AbstractGeometryNormalizer.parseGeometry(stringValue));
                 } else {
                     log.error("Unable to map field [" + attrib.getLocalName() + "] to desired type [" + binding.getName() + "]");
                 }
@@ -378,7 +378,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
                 } else if (Geometry.class.isAssignableFrom(binding)) {
                     final ArrayList<Geometry> geomList = new ArrayList<>(stringValues.size());
                     for (final String stringValue : stringValues)
-                        geomList.add(GeometryNormalizer.parseGeometry(stringValue));
+                        geomList.add(AbstractGeometryNormalizer.parseGeometry(stringValue));
                     builder.set(attrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[geomList.size()])));
                 } else {
                     log.warn("Multi-value support for field [" + attrib.getLocalName() + "] with type [" + binding.getName()
@@ -395,14 +395,14 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
             // create a unique feature per geometry
             for (final String geomValue : geomValues) {
                 builder.init(baseFeature);
-                builder.set(geomAttrib.getName(), GeometryNormalizer.parseGeometry(geomValue));
+                builder.set(geomAttrib.getName(), AbstractGeometryNormalizer.parseGeometry(geomValue));
                 features.add(builder.buildFeature(Joiner.on(";").skipNulls().join(baseFeature.getID(), (geomValues.size() == 1) ? null : geomValue)));
             }
         } else {
             // create a single feature with all geometries
             final ArrayList<Geometry> geomList = new ArrayList<>(geomValues.size());
             for (final String geomValue : geomValues)
-                geomList.add(GeometryNormalizer.parseGeometry(geomValue));
+                geomList.add(AbstractGeometryNormalizer.parseGeometry(geomValue));
             builder.set(geomAttrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[geomList.size()])));
             features.add(builder.buildFeature(baseFeature.getID()));
         }

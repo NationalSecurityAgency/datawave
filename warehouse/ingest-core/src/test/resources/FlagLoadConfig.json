@@ -1,0 +1,11 @@
+{
+    "hdfs": "hdfs://localhost:9000",
+    "hdfsIngestDir": "/datawave/ingest/myjson",
+    "sourceDir": "<PATH>/datawave/contrib/datawave-quickstart/bin/services/datawave/ingest-examples/tvmaze",
+    "duration": 1,
+    "workers": 1,
+    "minChunks": 4,
+    "maxChunks": 12,
+    "minInterval": 20000,
+    "maxInterval": 30000
+}
