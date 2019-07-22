@@ -33,7 +33,7 @@
         <version.accumulo>1.9.2</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
-        <version.avro>1.7.4</version.avro>
+        <version.avro>1.8.2</version.avro>
         <version.caffeine>2.7.0</version.caffeine>
         <version.commons-beanutils>1.9.3</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
