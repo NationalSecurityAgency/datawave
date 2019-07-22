@@ -33,7 +33,7 @@
         <version.accumulo>1.9.2</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
-        <version.avro>1.7.4</version.avro>
+        <version.avro>1.8.2</version.avro>
         <version.caffeine>2.7.0</version.caffeine>
         <version.commons-beanutils>1.9.3</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
@@ -57,7 +57,7 @@
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
-        <version.hadoop>3.0.0-cdh6.1.0</version.hadoop>
+        <version.hadoop>3.0.0-cdh6.2.0</version.hadoop>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>

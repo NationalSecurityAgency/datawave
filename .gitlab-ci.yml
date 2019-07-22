@@ -51,4 +51,4 @@ deploy_and_test:
       docker push ${REMOTE_IMAGE_NAME}:${TAG}
   tags:
     - datawave
-    - shell-executor
+    - hadoop3-executor
