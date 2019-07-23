@@ -63,6 +63,7 @@ td {
 	padding-bottom: 0.15em;
 	color: #333333;
     font-size: 10pt;
+    word-wrap:break-all
 }
 
 th {
