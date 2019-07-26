@@ -43,8 +43,8 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
         
         buf = QueueUtils.synchronizedQueue(new CircularFifoQueue(1));
         
-        startAndWait();
-        
+        startAsync();
+        awaitRunning();
     }
     
     /*
@@ -105,7 +105,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
      */
     @Override
     public void close() throws IOException {
-        stop();
+        stopAsync();
         
         if (log.isTraceEnabled()) {
             log.trace("Closing thread");

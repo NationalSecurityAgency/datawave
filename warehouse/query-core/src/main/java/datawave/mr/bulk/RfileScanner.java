@@ -116,7 +116,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     
     protected Iterator<Entry<Key,Value>> getIterator(List<InputSplit> splits, AccumuloConfiguration acuTableConf) {
         // optimization for single tablets
-        Iterator<Entry<Key,Value>> kv = Iterators.emptyIterator();
+        Iterator<Entry<Key,Value>> kv = Collections.emptyIterator();
         for (InputSplit split : splits) {
             RecordIterator recordIter = null;
             
@@ -139,7 +139,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
             if (resought.get()) {
                 resought.set(false);
                 
-                kv = Iterators.emptyIterator();
+                kv = Collections.emptyIterator();
                 
                 for (RecordIterator recordIterator : iterators) {
                     kv = Iterators.concat(kv, new RfileIterator(recordIterator));

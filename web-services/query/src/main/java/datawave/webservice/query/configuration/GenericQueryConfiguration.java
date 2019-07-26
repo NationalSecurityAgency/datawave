@@ -43,7 +43,7 @@ public abstract class GenericQueryConfiguration {
     // Table name
     private String tableName = TableName.SHARD;
     
-    private Iterator<QueryData> queries = Iterators.emptyIterator();
+    private Iterator<QueryData> queries = Collections.emptyIterator();
     
     protected boolean bypassAccumulo;
     
