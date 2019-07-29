@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.6-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
@@ -95,17 +95,17 @@
                             <goals>
                                 <goal>sort</goal>
                             </goals>
-                            <configuration>
-                                <createBackupFile>false</createBackupFile>
-                                <lineSeparator>\n</lineSeparator>
-                                <expandEmptyElements>false</expandEmptyElements>
-                                <nrOfIndentSpace>4</nrOfIndentSpace>
-                                <sortDependencies>scope,groupId,artifactId</sortDependencies>
-                                <sortPlugins>groupId,artifactId</sortPlugins>
-                                <sortProperties>true</sortProperties>
-                            </configuration>
                         </execution>
                     </executions>
+                    <configuration>
+                        <createBackupFile>false</createBackupFile>
+                        <lineSeparator>\n</lineSeparator>
+                        <expandEmptyElements>false</expandEmptyElements>
+                        <nrOfIndentSpace>4</nrOfIndentSpace>
+                        <sortDependencies>scope,groupId,artifactId</sortDependencies>
+                        <sortPlugins>groupId,artifactId</sortPlugins>
+                        <sortProperties>true</sortProperties>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.spotify</groupId>
@@ -281,6 +281,15 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <tagNameFormat>svc_@{project.artifactId}_@{project.version}</tagNameFormat>
+                    <releaseProfiles>dist</releaseProfiles>
+                </configuration>
             </plugin>
         </plugins>
     </build>
