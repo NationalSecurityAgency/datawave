@@ -95,17 +95,17 @@
                             <goals>
                                 <goal>sort</goal>
                             </goals>
-                            <configuration>
-                                <createBackupFile>false</createBackupFile>
-                                <lineSeparator>\n</lineSeparator>
-                                <expandEmptyElements>false</expandEmptyElements>
-                                <nrOfIndentSpace>4</nrOfIndentSpace>
-                                <sortDependencies>scope,groupId,artifactId</sortDependencies>
-                                <sortPlugins>groupId,artifactId</sortPlugins>
-                                <sortProperties>true</sortProperties>
-                            </configuration>
                         </execution>
                     </executions>
+                    <configuration>
+                        <createBackupFile>false</createBackupFile>
+                        <lineSeparator>\n</lineSeparator>
+                        <expandEmptyElements>false</expandEmptyElements>
+                        <nrOfIndentSpace>4</nrOfIndentSpace>
+                        <sortDependencies>scope,groupId,artifactId</sortDependencies>
+                        <sortPlugins>groupId,artifactId</sortPlugins>
+                        <sortProperties>true</sortProperties>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.spotify</groupId>
