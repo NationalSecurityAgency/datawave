@@ -4,7 +4,7 @@
     <parent>
         <artifactId>datawave-microservice-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.4</version>
+        <version>1.5</version>
     </parent>
     <artifactId>authorization-api</artifactId>
     <version>1.5-SNAPSHOT</version>
