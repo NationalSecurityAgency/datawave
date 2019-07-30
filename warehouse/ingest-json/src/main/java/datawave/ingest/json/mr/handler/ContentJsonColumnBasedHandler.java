@@ -17,10 +17,4 @@ public class ContentJsonColumnBasedHandler<KEYIN> extends ContentIndexingColumnB
     public AbstractContentIngestHelper getContentIndexingDataTypeHelper() {
         return (JsonIngestHelper) helper;
     }
-    
-    @Override
-    protected boolean isTokenizationBySubtypeEnabled() {
-        return false;
-    }
-    
 }
