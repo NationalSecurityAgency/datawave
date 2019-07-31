@@ -27,6 +27,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 
+import datawave.webservice.query.data.ObjectSizeOf;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -82,7 +83,7 @@ public class TypedValue implements Serializable, Message<TypedValue> {
         // 8 for the object overhead
         // 20 for the object references
         // all rounded up to the nearest multiple of 8
-        size += (base64Encoded == null ? 0 : 16) + sizeInBytes(type) + sizeInBytes(value == null ? null : value.toString()) + sizeInBytes(marshalledValue);
+        size += (base64Encoded == null ? 0 : 16) + sizeInBytes(type) + ObjectSizeOf.Sizer.getObjectSize(value) + sizeInBytes(marshalledValue);
         // note we are ignoring Class object
         return size;
     }
