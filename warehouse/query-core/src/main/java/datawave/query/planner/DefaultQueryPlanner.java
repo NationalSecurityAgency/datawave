@@ -150,11 +150,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
     private boolean enforceUniqueTermsWithinExpressions = false;
     
     /**
-     * Allows developers to limit the number of times the UniqueExpressionTermsVisitor is applied to the query tree.
-     */
-    private int enforceUniqueTermsMaxIterations = 10;
-    
-    /**
      * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
      */
     protected boolean disableBoundedLookup = false;
@@ -729,7 +724,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         if (enforceUniqueTermsWithinExpressions) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique terms within AND and OR expressions");
-            queryTree = UniqueExpressionTermsVisitor.enforce(queryTree, enforceUniqueTermsMaxIterations);
+            queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after duplicate terms removed from AND and OR expressions:");
             }
@@ -2330,13 +2325,5 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
-    }
-    
-    public int getEnforceUniqueTermsMaxIterations() {
-        return enforceUniqueTermsMaxIterations;
-    }
-    
-    public void setEnforceUniqueTermsMaxIterations(int enforceUniqueTermsMaxIterations) {
-        this.enforceUniqueTermsMaxIterations = enforceUniqueTermsMaxIterations;
     }
 }

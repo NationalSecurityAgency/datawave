@@ -177,15 +177,15 @@ public class UniqueExpressionTermsVisitorTest {
     
     @Test
     public void testDuplicateInNonLeafDisjunction() throws ParseException {
-        String original = "FOO == 'bar' && FOO == 'bar' && (FOO == 'bar' || FOO == 'baz')";
-        String expected = "FOO == 'bar' && (FOO == 'bar' || FOO == 'baz')";
+        String original = "FOO == 'bar' || FOO == 'bar' || (FOO == 'bar' && FOO == 'baz')";
+        String expected = "FOO == 'bar' || (FOO == 'bar' && FOO == 'baz')";
         visitAndValidate(original, expected);
     }
     
     @Test
     public void testDuplicateInWrappedNonLeafDisjunction() throws ParseException {
-        String original = "(FOO == 'bar' && FOO == 'bar' && (FOO == 'bar' || FOO == 'baz'))";
-        String expected = "(FOO == 'bar' && (FOO == 'bar' || FOO == 'baz'))";
+        String original = "(FOO == 'bar' || FOO == 'bar' || (FOO == 'bar' && FOO == 'baz'))";
+        String expected = "(FOO == 'bar' || (FOO == 'bar' && FOO == 'baz'))";
         visitAndValidate(original, expected);
     }
     
@@ -247,7 +247,7 @@ public class UniqueExpressionTermsVisitorTest {
         assertEquals("Expected query did not parse cleanly" + expected, expected, JexlStringBuildingVisitor.buildQuery(expectedScript));
         
         // Remove duplicate terms from within expressions.
-        ASTJexlScript visitedScript = UniqueExpressionTermsVisitor.enforce(originalScript, 5);
+        ASTJexlScript visitedScript = UniqueExpressionTermsVisitor.enforce(originalScript);
         
         // De-duped query should match expected
         assertEquals(expected, JexlStringBuildingVisitor.buildQuery(visitedScript));

@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
@@ -21,8 +20,8 @@ import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
  * 
  * <pre>
  * For example:
- * (A || A) => (A)
- * (A && A) => (A)
+ * {@code (A || A) => (A)}
+ * {@code (A && A) => (A)}
  * </pre>
  * 
  * This visitor returns a copy of the original query tree, and flattens the copy via the {@link TreeFlatteningRebuildingVisitor}
@@ -31,7 +30,6 @@ import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
  */
 public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
     
-    private int iterations = 0;
     private int duplicates = 0;
     
     private static final Logger log = Logger.getLogger(UniqueExpressionTermsVisitor.class);
@@ -44,39 +42,24 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
      * @param <T>
      * @return
      */
-    public static <T extends JexlNode> T enforce(T node, int maxIterations) {
+    public static <T extends JexlNode> T enforce(T node) {
         if (node == null)
             return null;
         
-        // Operate on copy of query tree
+        // Operate on copy of query tree.
         T copy = (T) copy(node);
         
+        // Flatten query tree prior to visit.
+        copy = TreeFlatteningRebuildingVisitor.flatten(copy);
+        
+        // Visit and enforce unique nodes within expressions.
         UniqueExpressionTermsVisitor visitor = new UniqueExpressionTermsVisitor();
-        boolean changesMade = true;
-        
-        while (visitor.iterations < maxIterations && changesMade) {
-            visitor.iterations++;
-            
-            copy = TreeFlatteningRebuildingVisitor.flatten(copy);
-            copy.jjtAccept(visitor, null);
-            
-            // Changes were made if the two trees are not equals
-            changesMade = !TreeEqualityVisitor.isEqual((ASTJexlScript) node, (ASTJexlScript) copy, new TreeEqualityVisitor.Reason());
-            node = copy;
-        }
-        
-        // Log if we stopped visiting due to exceeding the max iterations
-        if (visitor.iterations >= maxIterations && visitor.iterations > 0) {
-            if (log.isDebugEnabled()) {
-                log.debug("UniqueExpressionTermsVisitor exceeded maximum iteration (" + maxIterations + ").");
-            }
-        }
+        copy.jjtAccept(visitor, null);
         
         if (log.isDebugEnabled()) {
-            log.debug("UniqueExpressionTermsVisitor took " + visitor.iterations + " iterations to fully process query tree.");
             log.debug("UniqueExpressionTermsVisitor removed " + visitor.duplicates + " duplicate terms");
         }
-        return node;
+        return copy;
     }
     
     @Override
