@@ -35,18 +35,6 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     private final Set<String> reverseIndexListEntriesFields = new HashSet<>();
     
     /**
-     * If we are using a tokenization blacklist but want to include-only certain fields from specific subtypes we can declare that here. For example say we only
-     * want one field tokenized from a subtype. We'd need to enumerate all of the unwanted fields in the blacklist, and that could be a lot of fields to
-     * configure. Instead we can do a whitelist on a per subtype basis.
-     *
-     * ONLY USE IN CONJUNCTION WITH A TOKENIZATION BLACKLIST
-     *
-     * If the TYPE=; is empty, then no fields will be tokenized
-     */
-    private Map<String,Set<String>> subtypeFieldTokenizationWhitelistMap = new HashMap<>();
-    public static final String SUBTYPE_TOKENIZATION_WHITELIST_MAP = ".data.category.index.tokenize.whitelist.subtype.map";
-    
-    /**
      * Fields that we want to perform content indexing and reverse indexing (i.e. token and then index the tokens)
      */
     public static final String TOKEN_INDEX_WHITELIST = ".data.category.index.tokenize.whitelist";
@@ -113,11 +101,6 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         listDelimiter = config.get(getType().typeName() + LIST_DELIMITERS, listDelimiter);
         indexListEntriesFields.addAll(trimConfigStrings(config, getType().typeName() + INDEX_LIST_FIELDS));
         reverseIndexListEntriesFields.addAll(trimConfigStrings(config, getType().typeName() + REV_INDEX_LIST_FIELDS));
-        
-        String subtypeMapArg = config.get(getType().typeName() + SUBTYPE_TOKENIZATION_WHITELIST_MAP);
-        if (StringUtils.isNotEmpty(subtypeMapArg)) {
-            this.subtypeFieldTokenizationWhitelistMap = buildSubtypeTokenizationWhitelist(parseMultiLineConfigValue(subtypeMapArg, Pattern.compile(";")));
-        }
         
         this.saveRawDataOption = (null != config.get(getType().typeName() + SAVE_RAW_DATA_AS_DOCUMENT)) ? Boolean.parseBoolean(config.get(getType().typeName()
                         + SAVE_RAW_DATA_AS_DOCUMENT)) : saveRawDataOption;
@@ -216,46 +199,5 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
             }
         }
         return itemSet;
-    }
-    
-    private static final String EQUALS = "=";
-    private static final String COMMA = ",";
-    
-    /**
-     *
-     * @param items
-     *            Set of strings where each item is of the {@code pattern-> SUBTYPE=field1,field2,...,fieldN}
-     * @return {@code Map<String,Set<String>} which is a map of SUBTYPE to a set of fields to tokenize
-     */
-    public static Map<String,Set<String>> buildSubtypeTokenizationWhitelist(Set<String> items) {
-        Map<String,Set<String>> subtypeTokenizationMap = Maps.newHashMap();
-        for (String item : items) {
-            
-            // each item is SUBTYPE=field1,field2,...,fieldN
-            // split it up into SUBTYPE and fields
-            String[] parts = item.split(EQUALS);
-            String subtype = parts[0].trim().toLowerCase();
-            Set<String> fieldSet = Sets.newHashSet(); // SUBTYPE= We interpret as an empty whitelist
-            
-            // split the fields on comma and update the field set
-            if (parts.length == 2) {
-                String[] fields = parts[1].split(COMMA);
-                for (String field : fields) {
-                    fieldSet.add(field.trim().toUpperCase());
-                }
-            }
-            
-            // now push these into the subtype map
-            if (subtypeTokenizationMap.containsKey(subtype)) {
-                subtypeTokenizationMap.get(subtype).addAll(fieldSet);
-            } else {
-                subtypeTokenizationMap.put(subtype, fieldSet);
-            }
-        }
-        return subtypeTokenizationMap;
-    }
-    
-    public Map<String,Set<String>> getSubtypeFieldTokenizationWhitelistMap() {
-        return subtypeFieldTokenizationWhitelistMap;
     }
 }
