@@ -16,7 +16,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 /**
  * Upper case all identifier nodes as our field names are always upper case
  * <p>
- * Example: (foo == 'bar') -> (FOO == 'bar')
+ * Example: {@code (foo == 'bar') -> (FOO == 'bar')}
  */
 public class CaseSensitivityVisitor extends BaseVisitor {
     
