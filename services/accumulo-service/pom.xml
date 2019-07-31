@@ -8,11 +8,11 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>accumulo-service</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2-SNAPSHOT</version>
     <description>DATAWAVE Accumulo Microservice</description>
     <properties>
         <start-class>datawave.microservice.accumulo.AccumuloService</start-class>
-        <version.microservice.accumulo-api>1.0</version.microservice.accumulo-api>
+        <version.microservice.accumulo-api>1.1</version.microservice.accumulo-api>
         <version.microservice.starter-datawave>1.5</version.microservice.starter-datawave>
         <version.microservice.starter-datawave-audit>1.0</version.microservice.starter-datawave-audit>
     </properties>
