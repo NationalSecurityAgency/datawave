@@ -35,7 +35,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(UniqueExpressionTermsVisitor.class);
     
     /**
-     * Apply this visitor until the query tree stops changing or the maximum number of iterations is exceeded.
+     * Apply this visitor to the query tree.
      *
      * @param node
      *            - the root node for a query tree
