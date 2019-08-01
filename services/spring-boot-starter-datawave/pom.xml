@@ -13,7 +13,7 @@
         <version.accumulo>1.9.2</version.accumulo>
         <version.dropwizard-metrics>3.1.5</version.dropwizard-metrics>
         <version.in-memory-accumulo>1.9.2.1</version.in-memory-accumulo>
-        <version.jackson>2.9.6</version.jackson>
+        <version.jackson>2.10.0.pr1</version.jackson>
         <version.jzlib>1.1.3</version.jzlib>
         <version.log4j-1.2-api>2.11.2</version.log4j-1.2-api>
         <version.metrics-spring>3.1.3</version.metrics-spring>
