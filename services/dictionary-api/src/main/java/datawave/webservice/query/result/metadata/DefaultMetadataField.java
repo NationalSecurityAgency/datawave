@@ -30,7 +30,8 @@ import io.protostuff.Schema;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @XmlAccessorType(XmlAccessType.NONE)
-@XmlType(propOrder = {"fieldName", "internalFieldName", "dataType", "descriptions", "indexOnly", "forwardIndexed", "reverseIndexed", "normalized", "types"})
+@XmlType(propOrder = {"fieldName", "internalFieldName", "dataType", "descriptions", "indexOnly", "forwardIndexed", "reverseIndexed", "normalized", "tokenized",
+        "types"})
 public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField,DefaultDescription> implements Serializable, Message<DefaultMetadataField> {
     private static final long serialVersionUID = 2050632989270455091L;
     
@@ -51,8 +52,12 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
     
     @XmlAttribute
     private Boolean normalized = false;
+    
     @XmlAttribute
     private Boolean reverseIndexed = false;
+    
+    @XmlAttribute
+    private Boolean tokenized = false;
     
     @XmlElementWrapper(name = "Types")
     @XmlElement(name = "Types")
@@ -119,6 +124,14 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
     
     public void setNormalized(Boolean normalized) {
         this.normalized = normalized;
+    }
+    
+    public Boolean isTokenized() {
+        return tokenized;
+    }
+    
+    public void setTokenized(Boolean tokenized) {
+        this.tokenized = tokenized;
     }
     
     public void addType(String type) {

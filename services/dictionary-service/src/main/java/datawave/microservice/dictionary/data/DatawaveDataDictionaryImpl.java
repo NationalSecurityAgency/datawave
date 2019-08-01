@@ -126,6 +126,7 @@ public class DatawaveDataDictionaryImpl implements DatawaveDataDictionary<Defaul
         bs.fetchColumnFamily(ColumnFamilyConstants.COLF_DESC);
         bs.fetchColumnFamily(ColumnFamilyConstants.COLF_H);
         bs.fetchColumnFamily(ColumnFamilyConstants.COLF_T);
+        bs.fetchColumnFamily(ColumnFamilyConstants.COLF_TF);
         
         return bs;
     }
@@ -189,6 +190,8 @@ public class DatawaveDataDictionaryImpl implements DatawaveDataDictionary<Defaul
                             field.getDescriptions().add(desc);
                         } else if (ColumnFamilyConstants.COLF_T.equals(holder)) {
                             field.addType(translate(cq.substring(nullPos + 1)));
+                        } else if (ColumnFamilyConstants.COLF_TF.equals(holder)) {
+                            field.setTokenized(true);
                         } else {
                             log.warn("Unknown entry with key=" + key + ", value=" + value);
                         }
