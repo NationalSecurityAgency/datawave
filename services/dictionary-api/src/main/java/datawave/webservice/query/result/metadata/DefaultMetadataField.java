@@ -194,6 +194,7 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
             fieldMap.put("types", 8);
             fieldMap.put("descriptions", 9);
             fieldMap.put("lastUpdated", 10);
+            fieldMap.put("tokenized", 11);
         }
         
         @Override
@@ -219,6 +220,8 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
                     return "descriptions";
                 case 10:
                     return "lastUpdated";
+                case 11:
+                    return "tokenized";
                 default:
                     return null;
             }
@@ -299,6 +302,9 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
                     case 10:
                         message.lastUpdated = input.readString();
                         break;
+                    case 11:
+                        message.tokenized = input.readBool();
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -336,6 +342,7 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
                 output.writeObject(9, desc.getMarkings(), MapSchema.SCHEMA, false);
             }
             output.writeString(10, message.lastUpdated, false);
+            output.writeBool(11, message.tokenized, false);
         }
         
     };
@@ -344,6 +351,6 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
     public String toString() {
         return "MetadataField [fieldName=" + fieldName + ", internalFieldName=" + internalFieldName + ",dataType=" + dataType + ", descriptions= "
                         + descriptions + ", indexOnly=" + indexOnly + ", indexed=" + forwardIndexed + ", reverseIndexed=" + reverseIndexed + ", normalized="
-                        + normalized + ", types=" + types + ", lastUpdated=" + lastUpdated + "]";
+                        + normalized + ", tokenized" + tokenized + ", types=" + types + ", lastUpdated=" + lastUpdated + "]";
     }
 }
