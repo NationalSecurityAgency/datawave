@@ -351,6 +351,6 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
     public String toString() {
         return "MetadataField [fieldName=" + fieldName + ", internalFieldName=" + internalFieldName + ",dataType=" + dataType + ", descriptions= "
                         + descriptions + ", indexOnly=" + indexOnly + ", indexed=" + forwardIndexed + ", reverseIndexed=" + reverseIndexed + ", normalized="
-                        + normalized + ", tokenized" + tokenized + ", types=" + types + ", lastUpdated=" + lastUpdated + "]";
+                        + normalized + ", tokenized=" + tokenized + ", types=" + types + ", lastUpdated=" + lastUpdated + "]";
     }
 }
