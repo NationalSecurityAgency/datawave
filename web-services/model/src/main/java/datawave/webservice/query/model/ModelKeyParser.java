@@ -107,6 +107,8 @@ public class ModelKeyParser {
         } else {
             m = new Mutation(mapping.getModelFieldName());
             m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
+            m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + "index_only" + NULL_BYTE + mapping.getDirection().getValue(), cv,
+                            System.currentTimeMillis());
             return m;
         }
     }
