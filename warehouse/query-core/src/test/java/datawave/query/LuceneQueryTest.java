@@ -2,7 +2,6 @@ package datawave.query;
 
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -11,7 +10,6 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -60,10 +58,28 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
     public void testSimpleAndEq() throws Exception {
         log.info("------  testSimpleAndEq  ------");
         String city = "rome";
-        String state = "italy";
+        String state = "lazio";
         String query = CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + CityField.STATE.name() + ":\"" + state + "\"";
         
         String expect = CityField.CITY.name() + '_' + CityField.STATE.name() + EQ_OP + "'" + city + CompositeIngest.DEFAULT_SEPARATOR + state + "'";
+        String plan = getPlan(query, true, true);
+        assertPlanEquals(expect, plan);
+        
+        // The expected results generator can't handle composite queries, so we'll just run the non-composite form of the query to compare results
+        String expectNonComposite = CityField.CITY.name() + EQ_OP + "\"" + city + "\"" + JEXL_AND_OP + CityField.STATE.name() + EQ_OP + "\"" + state + "\"";
+        
+        runTest(query, expectNonComposite);
+    }
+    
+    @Test
+    public void testSimpleAndEqEvalOnly() throws Exception {
+        log.info("------  testSimpleAndEqEvalOnly  ------");
+        String city = "rome";
+        String country = "italy";
+        String query = CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CityField.COUNTRY.name() + ":\"" + country + "\"')";
+        
+        String expect = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + "((ASTEvaluationOnly = true) && " + CityField.COUNTRY.name() + EQ_OP + "'"
+                        + country + "')";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
         

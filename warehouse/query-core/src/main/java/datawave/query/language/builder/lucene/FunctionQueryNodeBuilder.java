@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import datawave.query.language.functions.lucene.EvaluationOnly;
 import datawave.query.language.functions.lucene.Exclude;
 import datawave.query.language.functions.lucene.Include;
 import datawave.query.language.functions.lucene.IsNotNull;
@@ -56,6 +57,7 @@ public class FunctionQueryNodeBuilder implements QueryBuilder {
         addFunction(new Exclude());
         addFunction(new Text());
         addFunction(new Occurrence());
+        addFunction(new EvaluationOnly());
     }
     
     public FunctionQueryNodeBuilder(List<LuceneQueryFunction> allowedFunctions) {
