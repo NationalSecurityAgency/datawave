@@ -188,29 +188,15 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
             int setsPerCompaction = (filesToCompact + rounds - 1) / rounds; // divide into sets to compact, rounding up
             
             // sort the sets by size (compact up smaller sets first)
-            sets.sort(new Comparator<SortedSet<E>>() {
-                @Override
-                public int compare(SortedSet<E> o1, SortedSet<E> o2) {
-                    int size1 = o1.size();
-                    int size2 = o2.size();
-                    if (size1 > size2) {
-                        return 1;
-                    } else if (size1 == size2) {
-                        return 0;
-                    } else {
-                        return -1;
-                    }
-                }
-            });
-            
+            sets.sort(Comparator.comparing((SortedSet<E> s) -> s.size()));
+
             // newSet will be the final multiset
             MultiSetBackedSortedSet<E> newSet = new MultiSetBackedSortedSet<>();
             
             for (int r = 0; r < rounds; r++) {
                 
-                // create the
+                // create a set for those sets to be compacted into one file
                 MultiSetBackedSortedSet<E> setToCompact = new MultiSetBackedSortedSet<>();
-                
                 for (int i = 0; i < setsPerCompaction; i++) {
                     setToCompact.addSet(sets.get(i));
                 }
