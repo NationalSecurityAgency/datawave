@@ -11,6 +11,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.jexl2.parser.TokenMgrError;
 
 /**
  * Extracts all of the identifier names from a query. This exists only because the getVariables() method in JexlEngine is broken in the released versions of
@@ -32,7 +33,11 @@ public class VariableNameVisitor extends BaseVisitor {
         Parser parser = new Parser(new StringReader(";"));
         
         // Parse the query
-        return parseQuery(parser.parse(new StringReader(query), null));
+        try {
+            return parseQuery(parser.parse(new StringReader(query), null));
+        } catch (TokenMgrError e) {
+            throw new ParseException(e.getMessage());
+        }
     }
     
     /**

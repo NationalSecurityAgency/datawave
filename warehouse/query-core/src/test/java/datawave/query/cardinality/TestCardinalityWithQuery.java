@@ -1,6 +1,8 @@
 package datawave.query.cardinality;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -21,11 +23,11 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.Sets;
 
@@ -67,6 +69,8 @@ public class TestCardinalityWithQuery {
     
     private static final Value NULL_VALUE = new Value(new byte[0]);
     
+    private Path temporaryFolder;
+    
     @BeforeClass
     public static void setUp() throws Exception {
         instance = new InMemoryInstance();
@@ -85,6 +89,7 @@ public class TestCardinalityWithQuery {
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        temporaryFolder = Files.createTempDirectory("tmp");
         
         logic = new ShardQueryLogic();
         logic.setMarkingFunctions(new MarkingFunctions.Default());
@@ -98,6 +103,11 @@ public class TestCardinalityWithQuery {
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
         datawavePrincipal = new DatawavePrincipal(Collections.singleton(user));
+    }
+    
+    @After
+    public void cleanUp() {
+        temporaryFolder.toFile().deleteOnExit();
     }
     
     private void loadData() throws Exception {
@@ -184,9 +194,7 @@ public class TestCardinalityWithQuery {
         cmap.put("ID", "ID");
         cconf.setCardinalityFieldReverseMapping(cmap);
         
-        TemporaryFolder tmpDir = new TemporaryFolder();
-        tmpDir.create();
-        String path = tmpDir.getRoot().getPath();
+        String path = temporaryFolder.toAbsolutePath().toString();
         
         cconf.setOutputFileDirectory(path);
         cconf.setCardinalityUidField("ID");

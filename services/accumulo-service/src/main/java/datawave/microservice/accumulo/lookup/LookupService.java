@@ -6,6 +6,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.accumulo.lookup.config.LookupAuditProperties;
 import datawave.microservice.accumulo.lookup.config.LookupProperties;
+import datawave.microservice.accumulo.lookup.config.ResponseObjectFactory;
 import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.util.ScannerHelper;
@@ -15,7 +16,6 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.response.LookupResponse;
-import datawave.webservice.response.objects.DefaultKey;
 import datawave.webservice.response.objects.Entry;
 import datawave.webservice.response.objects.KeyBase;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -83,6 +83,7 @@ public class LookupService {
     private final LookupAuditProperties lookupAuditProperties;
     private final LookupProperties lookupProperties;
     private final UserAuthFunctions userAuthFunctions;
+    private final ResponseObjectFactory responseObjectFactory;
     
     // Optional, thus using setter injection
     private AuditClient auditor;
@@ -97,13 +98,15 @@ public class LookupService {
         Connector connection,
         LookupAuditProperties lookupAuditProperties,
         LookupProperties lookupProperties,
-        UserAuthFunctions userAuthFunctions) {
+        UserAuthFunctions userAuthFunctions,
+        ResponseObjectFactory responseObjectFactory) {
             this.auditSecurityMarking = auditSecurityMarking;
             this.markingFunctions = markingFunctions;
             this.connection = connection;
             this.lookupAuditProperties = lookupAuditProperties;
             this.lookupProperties = lookupProperties;
             this.userAuthFunctions = userAuthFunctions;
+            this.responseObjectFactory = responseObjectFactory;
             this.auditor = null;
     }
     //@formatter:on
@@ -130,7 +133,7 @@ public class LookupService {
         Preconditions.checkNotNull(request, "Request argument cannot be null");
         Preconditions.checkNotNull(currentUser, "User argument cannot be null");
         
-        final LookupResponse response = new LookupResponse();
+        final LookupResponse response = responseObjectFactory.createLookupResponse();
         
         validateRequest(request, response);
         
@@ -218,13 +221,13 @@ public class LookupService {
                 );
                 //@formatter:on
                 
-                final KeyBase responseKey = new DefaultKey();
+                final KeyBase responseKey = responseObjectFactory.createKey();
                 responseKey.setRow(currRow);
                 responseKey.setColFam(currCf);
                 responseKey.setColQual(currCq);
                 responseKey.setMarkings(markings);
                 responseKey.setTimestamp(k.getTimestamp());
-                entryList.add(new Entry(responseKey, v.get()));
+                entryList.add(responseObjectFactory.createEntry(responseKey, v.get()));
                 
                 if (currEntry == request.endEntry) {
                     break;

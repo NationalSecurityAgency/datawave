@@ -12,32 +12,13 @@ import java.util.Set;
 
 public class ContentCSVColumnBasedHandler<KEYIN> extends ContentIndexingColumnBasedHandler<KEYIN> {
     
-    private Map<String,Set<String>> subtypeFieldTokenizationWhitelistMap = new HashMap<>();
-    
     @Override
     public void setup(TaskAttemptContext context) {
         super.setup(context);
-        ExtendedCSVIngestHelper myHelper = (ExtendedCSVIngestHelper) helper;
-        this.subtypeFieldTokenizationWhitelistMap = myHelper.getSubtypeFieldTokenizationWhitelistMap();
     }
     
     @Override
     public AbstractContentIngestHelper getContentIndexingDataTypeHelper() {
         return (ExtendedCSVIngestHelper) helper;
-    }
-    
-    @Override
-    protected boolean isTokenizationBySubtypeEnabled() {
-        return true;
-    }
-    
-    @Override
-    protected boolean determineTokenizationBySubtype(String field) {
-        
-        if (this.subtypeFieldTokenizationWhitelistMap.containsKey(this.eventDataTypeName)) {
-            return this.subtypeFieldTokenizationWhitelistMap.get(this.eventDataTypeName).contains(field.toUpperCase().trim());
-        }
-        
-        return true;
     }
 }

@@ -254,7 +254,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ASTJexlScript script;
         try {
             Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
-            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields);
+            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields,
+                            config.isExpandFields(), config.isExpandValues());
         } catch (EmptyUnfieldedTermExpansionException e) {
             Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             config.setNormalizedTerms(emptyMap);
@@ -730,13 +731,13 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     
     @Override
     public Set<String> getOptionalQueryParameters() {
-        Set<String> params = new TreeSet<>();
-        params.add(QueryParameters.PARAMETER_MODEL_NAME);
-        params.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
-        params.add(QueryParameters.DATATYPE_FILTER_SET);
-        params.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        params.add(datawave.webservice.query.QueryParameters.QUERY_END);
-        return params;
+        Set<String> optionalParams = new TreeSet<>();
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
+        optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        return optionalParams;
     }
     
     @Override

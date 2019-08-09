@@ -38,6 +38,6 @@ public class MultiValueCityFields extends AbstractFields {
     
     @Override
     public String toString() {
-        return "GenericCityFields{" + super.toString() + "}";
+        return "MultiValueCityFields{" + super.toString() + "}";
     }
 }

@@ -28,7 +28,8 @@ public class JavaRegexAnalyzer {
         ESCAPED_LITERAL(true), // an escaped literal (e.g. \[ or \.)
         REGEX(false), // a regex
         REGEX_QUANTIFIER(false), // a regex quantifier like * or +
-        ESCAPED_REGEX(false); // an escaped regex construct
+        ESCAPED_REGEX(false), // an escaped regex construct
+        IGNORABLE_REGEX(false); // an ignorable regex construct (e.g. boundary or quoting)
         
         private boolean literal = false;
         
@@ -101,6 +102,15 @@ public class JavaRegexAnalyzer {
     
     // Non digit matching regex chars
     private static final String NON_DIGIT_ESCAPED_REGEX_CHARS = "tnrfaecDsw";
+    
+    // Quoting regex chars
+    private static final String QUOTING_REGEX_CHARS = "QE";
+    
+    // Boundary regex chars
+    private static final String BOUNDARY_REGEX_CHARS = "bBAGzZ";
+    
+    // Boundary chars
+    private static final String BOUNDARY_CHARS = "^$";
     
     // digit character classes
     private static final List<String> DIGIT_CHARACTER_CLASSES = Arrays.asList("\\P{Lower}", "\\P{Upper}", "\\p{ASCII}", "\\P{Alpha}", "\\p{Digit}",
@@ -313,9 +323,16 @@ public class JavaRegexAnalyzer {
                         // if we are in a bracket, then its a regex
                         type = (bracketCount > 0 ? RegexType.REGEX : RegexType.ESCAPED_LITERAL);
                     }
-                    // check for quoting while we are here
-                    else if (expression.equals("Q")) {
-                        quoted = true;
+                    // check for quoting chars
+                    else if (QUOTING_REGEX_CHARS.indexOf(expression.charAt(0)) >= 0) {
+                        if (expression.equals("Q")) {
+                            quoted = true;
+                        }
+                        type = RegexType.IGNORABLE_REGEX;
+                    }
+                    // check for boundary chars
+                    else if (BOUNDARY_REGEX_CHARS.indexOf(expression.charAt(0)) >= 0) {
+                        type = RegexType.IGNORABLE_REGEX;
                     }
                 }
                 
@@ -420,6 +437,9 @@ public class JavaRegexAnalyzer {
                             } else if (QUANTIFIERS.indexOf(character) >= 0) {
                                 partList.add(new RegexPart(Character.toString(character), RegexType.REGEX_QUANTIFIER, nonCapturing));
                                 column += 1;
+                            } else if (BOUNDARY_CHARS.indexOf(character) >= 0) {
+                                partList.add(new RegexPart(Character.toString(character), RegexType.IGNORABLE_REGEX, nonCapturing));
+                                column += 1;
                             } else {
                                 partList.add(new RegexPart(Character.toString(character), RegexType.REGEX, nonCapturing));
                                 column += 1;
@@ -479,6 +499,11 @@ public class JavaRegexAnalyzer {
             
             // simply ignore nonCapturing portions
             if (part.nonCapturing) {
+                continue;
+            }
+            
+            // ignore the ignorable
+            if (part.type.equals(RegexType.IGNORABLE_REGEX)) {
                 continue;
             }
             
@@ -549,6 +574,11 @@ public class JavaRegexAnalyzer {
             
             // simply ignore nonCapturing portions
             if (part.nonCapturing) {
+                continue;
+            }
+            
+            // ignore the ignorable
+            if (part.type.equals(RegexType.IGNORABLE_REGEX)) {
                 continue;
             }
             
@@ -809,9 +839,17 @@ public class JavaRegexAnalyzer {
         // create the part
         RegexType type = (escaped ? RegexType.ESCAPED_LITERAL : RegexType.LITERAL);
         if (escaped && (ESCAPED_REGEX_CHARS.indexOf(character) >= 0)) {
-            type = RegexType.ESCAPED_REGEX;
+            if (QUOTING_REGEX_CHARS.indexOf(character) >= 0 || BOUNDARY_REGEX_CHARS.indexOf(character) >= 0) {
+                type = RegexType.IGNORABLE_REGEX;
+            } else {
+                type = RegexType.ESCAPED_REGEX;
+            }
         } else if (!escaped && (RESERVED_CHARS.indexOf(character) >= 0)) {
-            type = RegexType.REGEX;
+            if (BOUNDARY_CHARS.indexOf(character) >= 0) {
+                type = RegexType.IGNORABLE_REGEX;
+            } else {
+                type = RegexType.REGEX;
+            }
         }
         List<RegexPart[]> parts = splitParts(this.regexParts, new RegexPart(Character.toString(character), type, false));
         List<String> regex = new ArrayList<>();
@@ -1007,6 +1045,9 @@ public class JavaRegexAnalyzer {
                         break;
                     case REGEX_QUANTIFIER:
                         // already handled in updateBounds....skip
+                        break;
+                    case IGNORABLE_REGEX:
+                        // ignore the ignorable
                         break;
                 }
             }

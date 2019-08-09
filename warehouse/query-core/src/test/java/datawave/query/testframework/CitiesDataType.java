@@ -46,7 +46,9 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         // used to create a index hole when used in conjunction with generic
         hole("input/index-hole.csv", "hole"),
         // contains multivalue entries for city and state
-        multivalue("input/multivalue-cities.csv", "multi");
+        multivalue("input/multivalue-cities.csv", "multi"),
+        // values for max expansion tests
+        maxExp("input/max-expansion-cities.csv", "max-exp");
         
         private final String ingestFile;
         private final String cityName; // also serves as datatype

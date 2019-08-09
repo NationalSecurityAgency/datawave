@@ -22,6 +22,12 @@ public class TestQueryLogic<T> extends BaseQueryLogic<T> {
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
     
     @Override
+    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                    throws Exception {
+        return "";
+    }
+    
+    @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return AccumuloConnectionFactory.Priority.LOW;
     }
@@ -36,7 +42,7 @@ public class TestQueryLogic<T> extends BaseQueryLogic<T> {
         TestQueryLogic<Object> other = new TestQueryLogic<>();
         other.setTableName(this.getTableName());
         other.setMaxResults(this.getMaxResults());
-        other.setMaxRowsToScan(this.getMaxRowsToScan());
+        other.setMaxWork(this.getMaxWork());
         return other;
     }
     

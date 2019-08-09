@@ -24,6 +24,25 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidator {
     
     /**
+     * A mechanism to get the normalized query without actually setting up the query. This can be called with having to call initialize.
+     *
+     * The default implementation is to return the query string as the normalized query
+     *
+     * @param connection
+     *            - Accumulo connector to use for this query
+     * @param settings
+     *            - query settings (query, begin date, end date, etc.)
+     * @param runtimeQueryAuthorizations
+     *            - authorizations that have been calculated for this query based on the caller and server.
+     * @param expandFields
+     *            - should unfielded terms be expanded
+     * @param expandValues
+     *            - should regex/ranges be expanded into discrete values
+     */
+    String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                    throws Exception;
+    
+    /**
      * Implementations create a configuration using the connection, settings, and runtimeQueryAuthorizations.
      * 
      * @param connection
@@ -47,7 +66,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     SelectorExtractor getSelectorExtractor();
     
     /**
-     * Implementations use the configuration to run their query
+     * Implementations use the configuration to run their query. It is expected that initialize has already been called.
      * 
      * @param configuration
      *            Encapsulates all information needed to run a query (whether the query is a BatchScanner, a MapReduce job, etc)
@@ -102,9 +121,15 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     long getMaxResults();
     
     /**
-     * @return max number of rows to scan from the iterator
+     * @return the results of getMaxWork
      */
+    @Deprecated
     long getMaxRowsToScan();
+    
+    /**
+     * @return max number of nexts + seeks performed by the underlying iterators in total
+     */
+    long getMaxWork();
     
     /**
      * @return max number of records to return in a page (max pagesize allowed)
@@ -137,9 +162,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * @param maxRowsToScan
-     *            max number of rows to scan from the iterator
+     *            This is now deprecated and setMaxWork should be used instead. This is equivalent to setMaxWork.
      */
+    @Deprecated
     void setMaxRowsToScan(long maxRowsToScan);
+    
+    /**
+     * @param maxWork
+     *            max work which is normally calculated as the number of next + seek calls made by the underlying iterators
+     */
+    void setMaxWork(long maxWork);
     
     /**
      * @param maxPageSize

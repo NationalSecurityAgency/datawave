@@ -39,7 +39,7 @@ import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.common.test.utils.query.RangeFactory.makeTestRange;
+import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

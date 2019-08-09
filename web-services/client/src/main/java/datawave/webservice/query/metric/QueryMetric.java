@@ -92,6 +92,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         this.sourceCount = other.sourceCount;
         this.nextCount = other.nextCount;
         this.seekCount = other.seekCount;
+        this.yieldCount = other.yieldCount;
         this.docRanges = other.docRanges;
         this.fiRanges = other.fiRanges;
         this.plan = other.plan;
@@ -117,7 +118,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                         .append(this.getHost()).append(this.getPageTimes()).append(this.getProxyServers()).append(this.getLifecycle())
                         .append(this.getErrorMessage()).append(this.getCreateCallTime()).append(this.getErrorCode()).append(this.getQueryName())
                         .append(this.getParameters()).append(this.getSourceCount()).append(this.getNextCount()).append(this.getSeekCount())
-                        .append(this.getDocRanges()).append(this.getFiRanges()).append(this.getPlan()).append(this.getLoginTime())
+                        .append(this.getYieldCount()).append(this.getDocRanges()).append(this.getFiRanges()).append(this.getPlan()).append(this.getLoginTime())
                         .append(this.getPredictions()).toHashCode();
     }
     
@@ -143,9 +144,9 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                             .append(this.getLifecycle(), other.getLifecycle()).append(this.getErrorMessage(), other.getErrorMessage())
                             .append(this.getErrorCode(), other.getErrorCode()).append(this.getSourceCount(), other.getSourceCount())
                             .append(this.getNextCount(), other.getNextCount()).append(this.getSeekCount(), other.getSeekCount())
-                            .append(this.getDocRanges(), other.getDocRanges()).append(this.getFiRanges(), other.getFiRanges())
-                            .append(this.getPlan(), other.getPlan()).append(this.getLoginTime(), other.getLoginTime())
-                            .append(this.getPredictions(), other.getPredictions()).isEquals();
+                            .append(this.getYieldCount(), other.getYieldCount()).append(this.getDocRanges(), other.getDocRanges())
+                            .append(this.getFiRanges(), other.getFiRanges()).append(this.getPlan(), other.getPlan())
+                            .append(this.getLoginTime(), other.getLoginTime()).append(this.getPredictions(), other.getPredictions()).isEquals();
         } else {
             return false;
         }
@@ -180,6 +181,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         buf.append(" Source Count: ").append(this.getSourceCount());
         buf.append(" NextCount: ").append(this.getNextCount());
         buf.append(" Seek Count: ").append(this.getSeekCount());
+        buf.append(" Yield Count: ").append(this.getYieldCount());
         buf.append(" Doc Ranges: ").append(this.getDocRanges());
         buf.append(" FI Ranges: ").append(this.getFiRanges());
         buf.append(" Login Time: ").append(this.getLoginTime());
@@ -347,21 +349,22 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             output.writeInt64(28, message.sourceCount, false);
             output.writeInt64(29, message.nextCount, false);
             output.writeInt64(30, message.seekCount, false);
-            output.writeInt64(31, message.docRanges, false);
-            output.writeInt64(32, message.fiRanges, false);
+            output.writeInt64(31, message.yieldCount, false);
+            output.writeInt64(32, message.docRanges, false);
+            output.writeInt64(33, message.fiRanges, false);
             
             if (message.plan != null) {
-                output.writeString(33, message.plan, false);
+                output.writeString(34, message.plan, false);
             }
             
             if (message.loginTime != -1) {
-                output.writeUInt64(34, message.loginTime, false);
+                output.writeUInt64(35, message.loginTime, false);
             }
             
             if (message.predictions != null) {
                 for (Prediction prediction : message.predictions) {
                     if (prediction != null) {
-                        output.writeObject(35, prediction, Prediction.getSchema(), true);
+                        output.writeObject(36, prediction, Prediction.getSchema(), true);
                     }
                 }
             }
@@ -478,18 +481,21 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                         message.seekCount = input.readInt64();
                         break;
                     case 31:
-                        message.docRanges = input.readInt64();
+                        message.yieldCount = input.readInt64();
                         break;
                     case 32:
-                        message.fiRanges = input.readInt64();
+                        message.docRanges = input.readInt64();
                         break;
                     case 33:
-                        message.plan = input.readString();
+                        message.fiRanges = input.readInt64();
                         break;
                     case 34:
-                        message.loginTime = input.readUInt64();
+                        message.plan = input.readString();
                         break;
                     case 35:
+                        message.loginTime = input.readUInt64();
+                        break;
+                    case 36:
                         if (message.predictions == null) {
                             message.predictions = new HashSet<Prediction>();
                         }
@@ -566,14 +572,16 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                 case 30:
                     return "seekCount";
                 case 31:
-                    return "docRanges";
+                    return "yieldCount";
                 case 32:
-                    return "fiRanges";
+                    return "docRanges";
                 case 33:
-                    return "plan";
+                    return "fiRanges";
                 case 34:
-                    return "loginTime";
+                    return "plan";
                 case 35:
+                    return "loginTime";
+                case 36:
                     return "predictions";
                 default:
                     return null;
@@ -618,15 +626,16 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             fieldMap.put("sourceCount", 28);
             fieldMap.put("nextCount", 29);
             fieldMap.put("seekCount", 30);
-            fieldMap.put("docRanges", 31);
-            fieldMap.put("fiRanges", 32);
-            fieldMap.put("plan", 33);
-            fieldMap.put("loginTime", 34);
-            fieldMap.put("predictions", 35);
+            fieldMap.put("yieldCount", 31);
+            fieldMap.put("docRanges", 32);
+            fieldMap.put("fiRanges", 33);
+            fieldMap.put("plan", 34);
+            fieldMap.put("loginTime", 35);
+            fieldMap.put("predictions", 36);
         }
     };
     
-    public Schema<? extends BaseQueryMetric> geteSchemaInstance() {
+    public Schema<? extends BaseQueryMetric> getSchemaInstance() {
         return getSchema();
     }
 }

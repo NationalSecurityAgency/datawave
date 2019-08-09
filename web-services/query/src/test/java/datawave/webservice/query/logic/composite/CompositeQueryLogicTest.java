@@ -221,6 +221,12 @@ public class CompositeQueryLogicTest {
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
         
         @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
+        }
+        
+        @Override
         public Priority getConnectionPriority() {
             return Priority.NORMAL;
         }
@@ -309,6 +315,12 @@ public class CompositeQueryLogicTest {
         
         @Override
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
+        
+        @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
+        }
         
         @Override
         public Priority getConnectionPriority() {

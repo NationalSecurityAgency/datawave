@@ -237,7 +237,7 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             JexlNode node = (JexlNode) currentNode.jjtGetChild(i).jjtAccept(this, null);
             JexlNode dereferenced = JexlASTHelper.dereference(node);
             
-            if (acceptableNodesToCombine(currentNode, dereferenced)) {
+            if (acceptableNodesToCombine(currentNode, dereferenced, !node.equals(dereferenced))) {
                 flattenTree(dereferenced, newNode, data);
             } else {
                 newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
@@ -248,12 +248,14 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         return newNode;
     }
     
-    protected boolean acceptableNodesToCombine(JexlNode currentNode, JexlNode newNode) {
+    protected boolean acceptableNodesToCombine(JexlNode currentNode, JexlNode newNode, boolean isWrapped) {
         if (currentNode.getClass().equals(newNode.getClass())) {
             // if this is a bounded range or marker node, then to not combine
             if (newNode instanceof ASTAndNode && isBoundedRange((ASTAndNode) newNode)) {
                 return false;
-            } else if (newNode instanceof ASTAndNode && QueryPropertyMarker.instanceOf(newNode, null)) {
+            }
+            // don't allow combination of a marker node UNLESS it's already unwrapped
+            else if (newNode instanceof ASTAndNode && QueryPropertyMarker.instanceOf(newNode, null) && isWrapped) {
                 return false;
             }
             

@@ -1,40 +1,20 @@
 package datawave.query.jexl.visitors;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
-
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -46,13 +26,27 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.log4j.Logger;
 import org.apache.lucene.store.OutputStreamDataOutput;
 import org.apache.lucene.util.fst.FST;
 
-import com.google.common.collect.Multimap;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import static com.google.common.collect.Lists.newArrayList;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
 
 /**
  * Visits a JexlNode tree, and take large (defined by config.getFieldedListThreshold) lists of values against a single field into an FST ivarator (bypass the
@@ -95,8 +89,8 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         ASTOrNode newNode = newInstanceOfType(node);
         newNode.image = node.image;
         
-        Multimap<String,JexlNode> eqNodesByField = HashMultimap.create();
-        Multimap<String,JexlNode> rangeNodesByField = HashMultimap.create();
+        Multimap<String,JexlNode> eqNodesByField = LinkedListMultimap.create();
+        Multimap<String,JexlNode> rangeNodesByField = LinkedListMultimap.create();
         List<JexlNode> otherNodes = new ArrayList<>();
         
         // first pull out sets of nodes by field
@@ -145,11 +139,23 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                     
                     // handle range nodes separately
                     if (rangeNodes.size() >= config.getMaxOrRangeThreshold()) {
-                        Collection<Range> ranges = new TreeSet<>();
-                        rangeNodes.forEach(rangeNode -> ranges.add(rangeNodeToRange(rangeNode)));
+                        TreeMap<Range,JexlNode> ranges = new TreeMap<>();
+                        rangeNodes.forEach(rangeNode -> ranges.put(rangeNodeToRange(rangeNode), rangeNode));
                         
-                        markers.add(ExceededOrThresholdMarkerJexlNode.createFromRanges(field, ranges));
-                        rangeNodes = null;
+                        int numBatches = (int) Math.ceil(rangeNodes.size() / (double) Math.max(1, config.getMaxRangesPerRangeIvarator()));
+                        numBatches = Math.min(Math.max(1, config.getMaxOrRangeIvarators()), numBatches);
+                        
+                        List<List<Map.Entry<Range,JexlNode>>> batchedRanges = batchRanges(ranges, numBatches);
+                        
+                        rangeNodes = new ArrayList<>();
+                        for (List<Map.Entry<Range,JexlNode>> rangeList : batchedRanges) {
+                            if (rangeList.size() > 1) {
+                                markers.add(ExceededOrThresholdMarkerJexlNode.createFromRanges(field,
+                                                rangeList.stream().map(Map.Entry::getKey).collect(Collectors.toList())));
+                            } else {
+                                rangeNodes.add(rangeList.get(0).getValue());
+                            }
+                        }
                     }
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.LARGE_FIELDED_LIST_ERROR, e);
@@ -162,9 +168,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 }
                 
                 // add in any unused range nodes
-                if (rangeNodes != null) {
-                    copyChildren(rangeNodes, children, data);
-                }
+                copyChildren(rangeNodes, children, data);
                 
                 children.addAll(markers);
             }
@@ -179,6 +183,27 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         }
         
         return children(newNode, children.toArray(new JexlNode[children.size()]));
+    }
+    
+    private List<List<Map.Entry<Range,JexlNode>>> batchRanges(TreeMap<Range,JexlNode> ranges, int numBatches) {
+        List<List<Map.Entry<Range,JexlNode>>> batchedRanges = new ArrayList<>();
+        double rangesPerBatch = ((double) ranges.size()) / ((double) numBatches);
+        double total = rangesPerBatch;
+        List<Map.Entry<Range,JexlNode>> rangeList = new ArrayList<>();
+        int rangeIdx = 0;
+        for (Map.Entry<Range,JexlNode> range : ranges.entrySet()) {
+            if (rangeIdx++ >= total) {
+                total += rangesPerBatch;
+                batchedRanges.add(rangeList);
+                rangeList = new ArrayList<>();
+            }
+            rangeList.add(range);
+        }
+        
+        if (!rangeList.isEmpty())
+            batchedRanges.add(rangeList);
+        
+        return batchedRanges;
     }
     
     private void copyChildren(Collection<JexlNode> children, Collection<JexlNode> copiedChildren, Object data) {

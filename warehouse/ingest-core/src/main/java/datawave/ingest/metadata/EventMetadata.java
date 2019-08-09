@@ -312,26 +312,24 @@ public class EventMetadata implements RawRecordMetadata {
         if (helper instanceof AbstractContentIngestHelper) {
             String tokenDesignator = Objects.toString(((AbstractContentIngestHelper) helper).getTokenFieldNameDesignator(), "");
             AbstractContentIngestHelper h = (AbstractContentIngestHelper) helper;
-            boolean contentIndexed;
             for (String field : fields.keySet()) {
-                contentIndexed = false;
-                if (h.isContentIndexField(field)) {
-                    updateForIndexedField(helper, event, fields, countDelta, loadDate, tokenDesignator, field);
-                    termFrequencyFieldsInfo.createOrUpdate(field + tokenDesignator, event.getDataType().outputName(),
+                String fieldTokenDesignator = h.isContentIndexField(field) ? tokenDesignator : "";
+                if (h.isContentIndexField(field) || h.isIndexListField(field)) {
+                    updateForIndexedField(helper, event, fields, countDelta, loadDate, fieldTokenDesignator, field);
+                    termFrequencyFieldsInfo.createOrUpdate(field + fieldTokenDesignator, event.getDataType().outputName(),
                                     MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
-                    contentIndexed = true;
                 }
                 
-                if (h.isReverseContentIndexField(field)) {
-                    updateForReverseIndexedField(helper, event, fields, countDelta, loadDate, tokenDesignator, field);
-                    contentIndexed = true;
+                if (h.isReverseContentIndexField(field) || h.isReverseIndexListField(field)) {
+                    updateForReverseIndexedField(helper, event, fields, countDelta, loadDate, fieldTokenDesignator, field);
                 }
                 
-                if (contentIndexed) {
-                    log.debug("{}{} as a data type", field, tokenDesignator);
+                // Add T record only for and indexed list field. Tokenized fields are always text and is not normalized in the handler
+                if (h.isIndexListField(field)) {
+                    log.debug("{} as a data type", field);
                     // write a dataType entry
                     // using either the assigned dataType or the default dataType
-                    update(helper.getDataTypes(field + tokenDesignator), event, fields.get(field), tokenDesignator, 0, null, this.dataTypeFieldsInfo, null);
+                    update(helper.getDataTypes(field), event, fields.get(field), "", 0, null, this.dataTypeFieldsInfo, null);
                 }
             }
         }

@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,7 +61,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
     }
     
     @Before
-    public void querySetUp() {
+    public void querySetUp() throws IOException {
         log.debug("---------  querySetUp  ---------");
         
         // Super call to pick up authSet initialization

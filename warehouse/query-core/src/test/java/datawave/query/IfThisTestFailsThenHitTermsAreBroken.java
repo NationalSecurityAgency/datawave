@@ -147,7 +147,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setIndexTableName(SHARD_INDEX_TABLE_NAME);
         logic.setReverseIndexTableName(SHARD_RINDEX_TABLE_NAME);
         logic.setMaxResults(5000);
-        logic.setMaxRowsToScan(25000);
+        logic.setMaxWork(25000);
         logic.setModelTableName(MODEL_TABLE_NAME);
         logic.setQueryPlanner(new DefaultQueryPlanner());
         logic.setIncludeGroupingContext(true);

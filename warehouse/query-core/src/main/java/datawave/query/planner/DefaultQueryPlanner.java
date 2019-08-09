@@ -10,7 +10,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.querylock.QueryLock;
-import datawave.data.type.GeometryType;
+import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
@@ -53,7 +53,6 @@ import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -66,6 +65,7 @@ import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
+import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
@@ -393,7 +393,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         final QueryStopwatch timers = config.getTimers();
-        
         Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
         
         // a full table scan is required if
@@ -443,7 +442,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             List<String> geoFields = new ArrayList<>();
             for (String fieldName : config.getIndexedFields()) {
                 for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
-                    if (type instanceof GeometryType) {
+                    if (type instanceof AbstractGeometryType) {
                         geoFields.add(fieldName);
                         break;
                     }
@@ -856,7 +855,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (!disableExpandIndexFunction) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
             
-            // Coalesce any bounded ranges into separate AND subtrees
+            // expand the index queries for the functions
             queryTree = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, queryTree);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after function index queries were expanded:");
@@ -878,7 +877,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             try {
                 
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
-                queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields);
+                queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
+                                config.isExpandFields(), config.isExpandValues());
             } catch (EmptyUnfieldedTermExpansionException e) {
                 // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
@@ -1093,13 +1093,20 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
-                
-                ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields);
+                ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
+                                config.isExpandFields(), config.isExpandValues());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree);
-                queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding regex:");
+                }
+                queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
+                                config.isExpandValues());
+                if (log.isDebugEnabled()) {
+                    logQuery(queryTree, "Query after expanding ranges:");
+                }
+                queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
+                if (log.isDebugEnabled()) {
+                    logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
                 }
                 // if we now have an unexecutable tree because of delayed
                 // predicates, then remove delayed predicates as needed and
@@ -1126,11 +1133,18 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     config.setExpandAllTerms(true);
                     
                     queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree);
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding regex again:");
+                    }
+                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
+                                    config.isExpandValues());
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding ranges again:");
+                    }
                     queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                     config.setExpandAllTerms(expandAllTerms);
                     if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding ranges and regex again:");
+                        logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
                     }
                 }
                 

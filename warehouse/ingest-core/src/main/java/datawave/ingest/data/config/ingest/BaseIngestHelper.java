@@ -596,7 +596,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             for (Matcher patternMatcher : typeCompiledPatternMap.keySet()) {
                 
                 if (patternMatcher.reset(fieldName).matches()) {
-                    types.addAll(typeCompiledPatternMap.get(patternMatcher));
+                    Collection<datawave.data.type.Type<?>> patternTypes = typeCompiledPatternMap.get(patternMatcher);
+                    types.addAll(patternTypes);
+                    typeFieldMap.putAll(fieldName, patternTypes);
                 }
             }
         }
@@ -660,6 +662,22 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
         }
         return list;
+    }
+    
+    public HashSet<NormalizedContentInterface> normalizeFieldValue(String fieldName, NormalizedContentInterface normalizedContent, boolean indexOnly) {
+        Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(fieldName);
+        HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
+        for (datawave.data.type.Type<?> dataType : dataTypes) {
+            NormalizedContentInterface value = normalizeFieldValue(normalizedContent, dataType);
+            if (indexOnly) {
+                value.setEventFieldValue(null);
+            }
+            values.add(value);
+            if (log.isDebugEnabled()) {
+                log.debug("added normalized field " + value + " to values set.");
+            }
+        }
+        return values;
     }
     
     protected NormalizedContentInterface normalizeFieldValue(NormalizedContentInterface normalizedContent, datawave.data.type.Type<?> datawaveType) {

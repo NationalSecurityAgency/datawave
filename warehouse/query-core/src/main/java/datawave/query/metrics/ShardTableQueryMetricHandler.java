@@ -395,7 +395,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
             
             List<QueryMetric> queryMetrics = new ArrayList<>();
-            queryMetrics.add(new QueryMetric());
             
             if (cachedQueryMetric == null) {
                 // if numPages > 0 or Lifecycle > DEFINED, then we should have a metric cached already
@@ -660,6 +659,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     }
                 } else if (fieldName.equals("QUERY")) {
                     m.setQuery(fieldValue);
+                } else if (fieldName.equals("PLAN")) {
+                    m.setPlan(fieldValue);
                 } else if (fieldName.equals("QUERY_LOGIC")) {
                     m.setQueryLogic(fieldValue);
                 } else if (fieldName.equals("QUERY_ID")) {
@@ -775,6 +776,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     m.setSeekCount(Long.parseLong(fieldValue));
                 }
                 
+                else if (fieldName.equals("YIELD_COUNT")) {
+                    m.setYieldCount(Long.parseLong(fieldValue));
+                }
+                
                 else if (fieldName.equals("DOC_RANGES")) {
                     m.setDocRanges(Long.parseLong(fieldValue));
                 }
@@ -885,6 +890,11 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     @Override
     public void reload() {
         try {
+            if (this.recordWriter != null) {
+                // don't try to flush the mtbw (close). If recordWriter != null then this method is being called
+                // because of an Exception and the metrics have been saved off to be added to the new recordWriter.
+                this.recordWriter.returnConnector();
+            }
             recordWriter = new AccumuloRecordWriter(this.connectionFactory, conf);
         } catch (AccumuloException | AccumuloSecurityException | IOException e) {
             log.error(e.getMessage(), e);

@@ -7,6 +7,7 @@ import java.util.Date;
 
 import datawave.data.type.util.Geometry;
 import datawave.data.type.util.IpAddress;
+import datawave.data.type.util.Point;
 
 public interface Normalizer<T> extends Serializable {
     
@@ -23,6 +24,7 @@ public interface Normalizer<T> extends Serializable {
     Normalizer<String> LC_NORMALIZER = new LcNormalizer();
     Normalizer<String> NETWORK_NORMALIZER = new NetworkNormalizer();
     Normalizer<BigDecimal> NUMBER_NORMALIZER = new NumberNormalizer();
+    Normalizer<Point> POINT_NORMALIZER = new PointNormalizer();
     Normalizer<String> TRIM_LEADING_ZEROS_NORMALIZER = new TrimLeadingZerosNormalizer();
     Normalizer<String> NOOP_NORMALIZER = new NoOpNormalizer();
     

@@ -1,6 +1,8 @@
 spring:
   application:
     name: accumulo
+  main:
+    allow-bean-definition-overriding: true
   cloud:
     config:
       # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
@@ -74,7 +76,6 @@ accumulo:
   lookup:
     numQueryThreads: 1
     audit:
-      defaultColumnVisibility: 'BAR'
       defaultAuditType: 'NONE'
       tableConfig:
         - tableRegex: 'w.*e'

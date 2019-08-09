@@ -71,6 +71,8 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     protected Collection<IndexLookupCallable> todo;
     protected Set<Type<?>> allTypes;
     protected Collection<String> onlyUseThese;
+    protected boolean expandFields;
+    protected boolean expandValues;
     protected Set<String> expansionFields;
     protected MetadataHelper helper;
     protected Set<String> indexOnlyFields;
@@ -81,18 +83,21 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     protected String threadName;
     private static final Logger log = Logger.getLogger(ParallelIndexExpansion.class);
     
-    public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields)
-                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        this(config, scannerFactory, helper, expansionFields, "Datawave Fielded Regex");
+    public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
+                    boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        this(config, scannerFactory, helper, expansionFields, expandFields, expandValues, "Datawave Fielded Regex");
     }
     
     public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
-                    String threadName) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+                    boolean expandFields, boolean expandValues, String threadName) throws InstantiationException, IllegalAccessException,
+                    TableNotFoundException {
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.threadName = threadName;
         
+        this.expandFields = expandFields;
+        this.expandValues = expandValues;
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
         
         todo = Lists.newArrayList();
@@ -292,7 +297,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         if (markedParents != null) {
             for (JexlNode markedParent : markedParents) {
                 if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ExceededOrThresholdMarkerJexlNode.instanceOf(markedParent)
-                                || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ASTEvaluationOnly.instanceOf(node))
+                                || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ASTEvaluationOnly.instanceOf(markedParent))
                     return node;
             }
         }
@@ -651,11 +656,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 if (positive) {
                     // for a positive node, we want equalities in a OR
                     newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), node,
-                                    fieldsToValues);
+                                    fieldsToValues, expandFields, expandValues);
                 } else {
                     // for a negative node, we want negative equalities in an AND
                     newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.AND_NODE, new ASTNENode(ParserTreeConstants.JJTNENODE), node,
-                                    fieldsToValues);
+                                    fieldsToValues, expandFields, expandValues);
                 }
             }
             

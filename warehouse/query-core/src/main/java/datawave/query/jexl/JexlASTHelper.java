@@ -61,6 +61,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.log4j.Logger;
 
 import java.io.StringReader;
@@ -106,7 +107,7 @@ public class JexlASTHelper {
     /**
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
-     * 
+     *
      * @param query
      *            The query string in JEXL syntax to parse
      * @return Root node of the query parse tree.
@@ -121,7 +122,11 @@ public class JexlASTHelper {
         caseFixQuery = caseFixQuery.replaceAll("\\s+[Nn][Oo][Tt]\\s+", " not ");
         
         // Parse the query
-        return parser.parse(new StringReader(caseFixQuery), null);
+        try {
+            return parser.parse(new StringReader(caseFixQuery), null);
+        } catch (TokenMgrError e) {
+            throw new ParseException(e.getMessage());
+        }
     }
     
     /**

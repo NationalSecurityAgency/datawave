@@ -1,9 +1,11 @@
 package datawave.query.function;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class AncestorEqualityTest {
     private AncestorEquality equality;
@@ -15,31 +17,50 @@ public class AncestorEqualityTest {
     
     @Test
     public void testSameAccept() {
-        Assert.assertTrue(equality.partOf(new Key("abc", "1234.123.12345"), new Key("abc", "1234.123.12345")));
+        Key key = new Key("abc", "1234.123.12345");
+        Key other = new Key("abc", "1234.123.12345");
+        assertTrue(equality.partOf(key, other));
     }
     
     @Test
     public void testParentAccept() {
-        Assert.assertTrue(equality.partOf(new Key("abc", "1234.123.12345"), new Key("abc", "1234.123")));
+        Key key = new Key("abc", "1234.123.12345");
+        Key other = new Key("abc", "1234.123");
+        assertTrue(equality.partOf(key, other));
     }
     
     @Test
     public void testRootAccept() {
-        Assert.assertTrue(equality.partOf(new Key("abc", "1234.123.12345"), new Key("abc", "1234")));
+        Key key = new Key("abc", "1234.123.12345");
+        Key other = new Key("abc", "1234");
+        assertTrue(equality.partOf(key, other));
     }
     
     @Test
     public void testSiblingReject() {
-        Assert.assertFalse(equality.partOf(new Key("abc", "1234.123.12345"), new Key("abc", "1234.123.12346")));
+        Key key = new Key("abc", "1234.123.12345");
+        Key other = new Key("abc", "1234.123.12346");
+        assertFalse(equality.partOf(key, other));
     }
     
     @Test
     public void testSubstringReject() {
-        Assert.assertFalse(equality.partOf(new Key("abc", "1234.123.12345"), new Key("abc", "1234.123.1234")));
+        Key key = new Key("abc", "1234.123.12345");
+        Key other = new Key("abc", "1234.123.1234");
+        assertFalse(equality.partOf(key, other));
     }
     
     @Test
     public void testChildReject() {
-        Assert.assertFalse(equality.partOf(new Key("abc", "1234.123.12345"), new Key("abc", "1234.123.12345.1")));
+        Key key = new Key("abc", "1234.123.12345");
+        Key other = new Key("abc", "1234.123.12345.1");
+        assertFalse(equality.partOf(key, other));
+    }
+    
+    @Test
+    public void testGreatGrandChild() {
+        Key key = new Key("abc", "parent.document.id.child.grandchild.greatgrandchild");
+        Key other = new Key("abc", "parent.document.id.child.grandchild");
+        assertTrue(equality.partOf(key, other));
     }
 }

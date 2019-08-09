@@ -916,6 +916,58 @@ public class JavaRegexAnalyzerTest {
     }
     
     @Test
+    public void testRegexAnalyzerQuoting() throws JavaRegexParseException {
+        log.debug("---testRegexAnalyzerQuoting");
+        Map<String,String> values = new HashMap<>();
+        values.put("\\Q+ae4\\E", "+ae4");
+        values.put("abc\\Q+ae4\\E", "abc+ae4");
+        values.put("\\Q+ae4\\Edef", "+ae4def");
+        values.put("abc\\Q+ae4\\Edef", "abc+ae4def");
+        for (String value : values.keySet()) {
+            JavaRegexAnalyzer wcd = new JavaRegexAnalyzer(value);
+            Assert.assertEquals(value, wcd.getRegex());
+            Assert.assertEquals(value, wcd.toString());
+            log.debug("value: " + value);
+            Assert.assertFalse(wcd.hasWildCard());
+            Assert.assertFalse(wcd.isLeadingRegex());
+            Assert.assertFalse(wcd.isTrailingRegex());
+            Assert.assertTrue(wcd.isLeadingLiteral());
+            Assert.assertTrue(wcd.isTrailingLiteral());
+            Assert.assertFalse(wcd.isNgram());
+            Assert.assertEquals(values.get(value), wcd.getLeadingOrTrailingLiteral());
+            Assert.assertEquals(values.get(value), wcd.getLeadingLiteral());
+            Assert.assertEquals(values.get(value), wcd.getTrailingLiteral());
+        }
+    }
+    
+    @Test
+    public void testRegexAnalyzerBoundary() throws JavaRegexParseException {
+        log.debug("---testRegexAnalyzerQuoting");
+        Map<String,String> values = new HashMap<>();
+        values.put("\\Bae4\\b", "ae4");
+        values.put("\\Zae4\\z", "ae4");
+        values.put("abc\\Gae4", "abcae4");
+        values.put("\\Bae4\\Zdef", "ae4def");
+        values.put("abc\\Aae4\\Gdef", "abcae4def");
+        values.put("^abc\\Aae4\\Gdef$", "abcae4def");
+        for (String value : values.keySet()) {
+            JavaRegexAnalyzer wcd = new JavaRegexAnalyzer(value);
+            Assert.assertEquals(value, wcd.getRegex());
+            Assert.assertEquals(value, wcd.toString());
+            log.debug("value: " + value);
+            Assert.assertFalse(wcd.hasWildCard());
+            Assert.assertFalse(wcd.isLeadingRegex());
+            Assert.assertFalse(wcd.isTrailingRegex());
+            Assert.assertTrue(wcd.isLeadingLiteral());
+            Assert.assertTrue(wcd.isTrailingLiteral());
+            Assert.assertFalse(wcd.isNgram());
+            Assert.assertEquals(values.get(value), wcd.getLeadingOrTrailingLiteral());
+            Assert.assertEquals(values.get(value), wcd.getLeadingLiteral());
+            Assert.assertEquals(values.get(value), wcd.getTrailingLiteral());
+        }
+    }
+    
+    @Test
     public void testZeroPadIpRegex() throws JavaRegexParseException {
         log.debug("---testRegexAnalyzer18");
         

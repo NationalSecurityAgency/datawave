@@ -37,6 +37,7 @@ import datawave.util.TextUtil;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -72,6 +73,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
     // token field designator - the suffix added to fields that contain tokens
     // that are generated from other fields.
     protected String tokenFieldNameSuffix = "";
+    
+    protected String listDelimiter = "";
     
     /**
      * portions of the generic event.
@@ -110,6 +113,9 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         contentHelper = getContentIndexingDataTypeHelper();
         tokenFieldNameSuffix = contentHelper.getTokenFieldNameDesignator();
         Preconditions.checkNotNull(tokenFieldNameSuffix);
+        
+        listDelimiter = contentHelper.getListDelimiter();
+        Preconditions.checkNotNull(listDelimiter);
         
         counters = new ContentIndexCounters();
         
@@ -151,6 +157,15 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         // get the typical shard/index information
         values.putAll(super.processBulk(key, event, eventFields, reporter));
         
+        flushTokenOffsetCache(event, values);
+        
+        counters.flush(reporter);
+        
+        return values;
+    }
+    
+    protected void flushTokenOffsetCache(RawRecordContainer event, Multimap<BulkIngestKey,Value> values) {
+        
         // now flush out the offset queue
         if (tokenOffsetCache != null) {
             int termCount = 0;
@@ -185,9 +200,6 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             tokenOffsetCache.clear();
         }
         
-        counters.flush(reporter);
-        
-        return values;
     }
     
     /**
@@ -277,21 +289,22 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     termPosition = tokenHelper.getInterFieldPositionIncrement();
                 }
                 
-                boolean indexField = contentHelper.isContentIndexField(indexedFieldName);
-                boolean reverseIndexField = contentHelper.isReverseContentIndexField(indexedFieldName);
+                boolean indexField = createGlobalIndexTerms && contentHelper.isContentIndexField(indexedFieldName);
+                boolean reverseIndexField = createGlobalReverseIndexTerms && contentHelper.isReverseContentIndexField(indexedFieldName);
                 
-                if ((createGlobalIndexTerms && indexField) || (createGlobalReverseIndexTerms && reverseIndexField)) {
+                if (indexField || reverseIndexField) {
                     try {
-                        if (isTokenizationBySubtypeEnabled()) {
-                            if (determineTokenizationBySubtype(nci.getIndexedFieldName())) {
-                                tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
-                            }
-                        } else {
-                            tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
-                        }
+                        tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
+                }
+                
+                boolean indexListField = createGlobalIndexTerms && contentHelper.isIndexListField(indexedFieldName);
+                boolean reverseIndexListField = createGlobalReverseIndexTerms && contentHelper.isReverseIndexListField(indexedFieldName);
+                
+                if (indexListField || reverseIndexListField) {
+                    indexListEntries(nci, indexListField, reverseIndexListField, reporter);
                 }
             }
         } finally {
@@ -301,14 +314,6 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         validateIndexedFields(createGlobalIndexTerms, createGlobalReverseIndexTerms, reporter);
         
         return fields;
-    }
-    
-    protected boolean isTokenizationBySubtypeEnabled() {
-        return false;
-    }
-    
-    protected boolean determineTokenizationBySubtype(String field) {
-        return false;
     }
     
     public boolean isTokenizerTimeWarned() {
@@ -643,4 +648,82 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         return util;
     }
     
+    protected void indexListEntries(final NormalizedContentInterface nci, boolean indexField, boolean reverseIndexField, StatusReporter reporter) {
+        
+        if (!(indexField || reverseIndexField)) {
+            return;
+        }
+        
+        String indexedFieldName = nci.getIndexedFieldName();
+        String content = nci.getIndexedFieldValue();
+        
+        String[] tokens = StringUtils.split(content, listDelimiter);
+        int position = 0;
+        for (String token : tokens) {
+            String trimmedToken = StringUtils.trim(token);
+            if (StringUtils.isEmpty(trimmedToken)) {
+                continue;
+            }
+            
+            // Track the number of tokens processed
+            counters.increment(ContentIndexCounters.ORIGINAL_PROCESSED_COUNTER, reporter);
+            
+            Set<NormalizedContentInterface> normalizedValueFields;
+            if (indexField) {
+                NormalizedContentInterface newField;
+                
+                newField = (NormalizedContentInterface) (nci.clone());
+                newField.setFieldName(indexedFieldName);
+                // don't put tokens in the event.
+                newField.setEventFieldValue(null);
+                newField.setIndexedFieldValue(trimmedToken);
+                
+                // normalize the value
+                normalizedValueFields = contentHelper.normalizeFieldValue(indexedFieldName, newField, true);
+                if (CollectionUtils.isNotEmpty(normalizedValueFields)) {
+                    index.putAll(indexedFieldName, normalizedValueFields);
+                    // add this token to the event fields so a
+                    // local fi\x00 key gets created
+                    // NOTE: we already assigned it to the
+                    // 'indexOnly' list so it won't show up in
+                    // the event
+                    fields.putAll(indexedFieldName, normalizedValueFields);
+                    
+                    if (tokenOffsetCache != null) {
+                        for (NormalizedContentInterface normalizedNci : normalizedValueFields) {
+                            tokenOffsetCache.addOffset(new TermAndZone(normalizedNci.getIndexedFieldValue(), indexedFieldName), position);
+                        }
+                    }
+                } else {
+                    index.put(indexedFieldName, newField);
+                    fields.put(indexedFieldName, newField);
+                    if (tokenOffsetCache != null) {
+                        tokenOffsetCache.addOffset(new TermAndZone(trimmedToken, indexedFieldName), position);
+                    }
+                }
+                position++;
+            }
+            
+            if (reverseIndexField) {
+                String rToken = StringUtils.reverse(trimmedToken);
+                NormalizedContentInterface newField;
+                newField = (NormalizedContentInterface) (nci.clone());
+                newField.setFieldName(indexedFieldName);
+                newField.setEventFieldValue(rToken);
+                newField.setIndexedFieldValue(rToken);
+                
+                // normalize the value
+                normalizedValueFields = contentHelper.normalizeFieldValue(indexedFieldName, newField, false);
+                if (CollectionUtils.isNotEmpty(normalizedValueFields)) {
+                    reverse.putAll(indexedFieldName, normalizedValueFields);
+                } else {
+                    reverse.put(indexedFieldName, newField);
+                }
+                // NOTE: We don't want fi\x00 keys for reverse
+                // tokens
+            }
+            
+        }
+        
+    }
 }

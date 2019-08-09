@@ -62,7 +62,7 @@ public class GeometryNormalizerTest {
     
     @Test
     public void testWKTPoint() {
-        Geometry geom = GeometryNormalizer.parseGeometry("POINT(10 20)");
+        Geometry geom = AbstractGeometryNormalizer.parseGeometry("POINT(10 20)");
         assertEquals(10.0, geom.getGeometryN(0).getCoordinate().x, 0.0);
         assertEquals(20.0, geom.getGeometryN(0).getCoordinate().y, 0.0);
         
@@ -73,7 +73,7 @@ public class GeometryNormalizerTest {
     
     @Test
     public void testWKTPointz() {
-        Geometry geom = GeometryNormalizer.parseGeometry("POINT Z(10 20 30)");
+        Geometry geom = AbstractGeometryNormalizer.parseGeometry("POINT Z(10 20 30)");
         assertEquals(10.0, geom.getGeometryN(0).getCoordinate().x, 0.0);
         assertEquals(20.0, geom.getGeometryN(0).getCoordinate().y, 0.0);
         assertEquals(30.0, geom.getGeometryN(0).getCoordinate().z, 0.0);

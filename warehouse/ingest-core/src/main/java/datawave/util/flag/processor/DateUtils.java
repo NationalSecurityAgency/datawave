@@ -32,7 +32,7 @@ public class DateUtils {
      * @param group
      * @param path
      */
-    public long getBucket(String group, String path) throws UnusableFileException {
+    public static long getBucket(String group, String path) throws UnusableFileException {
         if (group == null || "none".equals(group)) {
             return 0L;
         }
@@ -71,7 +71,7 @@ public class DateUtils {
      * 
      * @param path
      */
-    public long getFolderTimestamp(String path) throws UnusableFileException {
+    public static long getFolderTimestamp(String path) throws UnusableFileException {
         return getBucket("day", path);
     }
 }

@@ -51,10 +51,10 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -295,7 +295,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 for (Range range : plan.getRanges()) {
                     if (isEventSpecific(range)) {
                         Key topKey = range.getStartKey();
-                        newRanges.add(new Range(topKey.getRow().toString(), true, topKey.getRow() + TupleToRange.NULL_BYTE_STRING, false));
+                        newRanges.add(new Range(topKey.getRow().toString(), true, topKey.getRow() + Constants.NULL_BYTE_STRING, false));
                     } else {
                         newRanges.add(range);
                     }

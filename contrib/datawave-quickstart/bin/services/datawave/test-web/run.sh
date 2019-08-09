@@ -16,6 +16,7 @@ BIN_DIR="$( dirname "${SERVICES_DIR}" )"
 # Import some helpful bits from the quickstart environment...
 
 source "${BIN_DIR}/env.sh"
+source "${BIN_DIR}/query.sh"
 source "${THIS_DIR}/../bootstrap.sh"
 
 function usage() {
