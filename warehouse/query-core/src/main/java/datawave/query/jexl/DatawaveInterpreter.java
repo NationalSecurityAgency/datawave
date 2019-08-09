@@ -30,8 +30,10 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -176,40 +178,63 @@ public class DatawaveInterpreter extends Interpreter {
     }
     
     public Object visit(ASTOrNode node, Object data) {
+        Deque<JexlNode> children = new ArrayDeque<>();
+        Deque<JexlNode> stack = new ArrayDeque<>();
+        stack.push(node);
+        
+        // iterative depth-first traversal of tree to avoid stack
+        // overflow when traversing large or'd lists
+        while (!stack.isEmpty()) {
+            JexlNode currNode = stack.pop();
+            
+            if (currNode instanceof ASTOrNode) {
+                for (int i = currNode.jjtGetNumChildren() - 1; i >= 0; i--) {
+                    stack.push(JexlASTHelper.dereference(currNode.jjtGetChild(i)));
+                }
+            } else {
+                children.push(currNode);
+            }
+        }
+        
+        Object result = children.pop().jjtAccept(this, data);
+        while (!children.isEmpty()) {
+            result = interpretOr(children.pop().jjtAccept(this, data), result);
+        }
+        
+        return result;
+    }
+    
+    public Object interpretOr(Object left, Object right) {
         FunctionalSet leftFunctionalSet = null;
         FunctionalSet rightFunctionalSet = null;
-        Object left = node.jjtGetChild(0).jjtAccept(this, data);
         if (left == null)
             left = FunctionalSet.empty();
-        if (left instanceof Collection == false) {
+        if (!(left instanceof Collection)) {
             try {
                 boolean leftValue = arithmetic.toBoolean(left);
                 if (leftValue) {
                     return Boolean.TRUE;
                 }
             } catch (ArithmeticException xrt) {
-                throw new JexlException(node.jjtGetChild(0), "boolean coercion error", xrt);
+                throw new RuntimeException(left.toString() + " boolean coercion error", xrt);
             }
         } else {
-            if (leftFunctionalSet == null)
-                leftFunctionalSet = new FunctionalSet();
+            leftFunctionalSet = new FunctionalSet();
             leftFunctionalSet.addAll((Collection) left);
         }
-        Object right = node.jjtGetChild(1).jjtAccept(this, data);
         if (right == null)
             right = FunctionalSet.empty();
-        if (right instanceof Collection == false) {
+        if (!(right instanceof Collection)) {
             try {
                 boolean rightValue = arithmetic.toBoolean(right);
                 if (rightValue) {
                     return Boolean.TRUE;
                 }
             } catch (ArithmeticException xrt) {
-                throw new JexlException(node.jjtGetChild(1), "boolean coercion error", xrt);
+                throw new RuntimeException(right.toString() + " boolean coercion error", xrt);
             }
         } else {
-            if (rightFunctionalSet == null)
-                rightFunctionalSet = new FunctionalSet();
+            rightFunctionalSet = new FunctionalSet();
             rightFunctionalSet.addAll((Collection) right);
         }
         // when an identifier is expanded by the data model within a Function node, the results of the matches

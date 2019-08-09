@@ -77,6 +77,7 @@ import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
 import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
@@ -354,6 +355,7 @@ public class MixedGeoAndGeoWaveTest {
     
     private Iterator getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
+        params.putSingle(QUERY_LOGIC_NAME, "EventQuery");
         params.putSingle(QUERY_STRING, queryString);
         params.putSingle(QUERY_NAME, "geoQuery");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");

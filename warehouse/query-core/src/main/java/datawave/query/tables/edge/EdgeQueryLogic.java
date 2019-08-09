@@ -673,13 +673,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public Set<String> getOptionalQueryParameters() {
-        Set<String> params = new TreeSet<>();
-        params.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        params.add(datawave.webservice.query.QueryParameters.QUERY_END);
-        params.add(QueryParameters.DATATYPE_FILTER_SET);
-        params.add(EdgeQueryConfiguration.INCLUDE_STATS);
-        params.add(EdgeQueryConfiguration.DATE_RANGE_TYPE);
-        return params;
+        Set<String> optionalParams = new TreeSet<>();
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        optionalParams.add(EdgeQueryConfiguration.INCLUDE_STATS);
+        optionalParams.add(EdgeQueryConfiguration.DATE_RANGE_TYPE);
+        return optionalParams;
     }
     
     public Set<Type<?>> getBlockedNormalizers() {
@@ -716,13 +716,18 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public Set<String> getRequiredQueryParameters() {
-        // TODO Auto-generated method stub
-        return Collections.emptySet();
+        Set<String> requiredParams = new TreeSet<>();
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_STRING);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_NAME);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_VISIBILITY);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME);
+        return requiredParams;
     }
     
     @Override
     public Set<String> getExampleQueries() {
-        // TODO Auto-generated method stub
         return Collections.emptySet();
     }
     

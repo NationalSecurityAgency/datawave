@@ -41,6 +41,31 @@ public class QueryParametersImpl implements QueryParameters {
         clear();
     }
     
+    /**
+     * Configure internal variables via the incoming parameter map, performing validation of values.
+     *
+     * QueryParameters are considered valid if the following required parameters are present.
+     * <ol>
+     * <li>'query'</li>
+     * <li>'queryName'</li>
+     * <li>'persistence'</li>
+     * <li>'auths'</li>
+     * <li>'expiration'</li>
+     * <li>'queryLogicName'</li>
+     * </ol>
+     *
+     * QueryParameters may also include the following optional parameters.
+     * <ol>
+     * <li>'pagesize'</li>
+     * <li>'pageTimeout'</li>
+     * <li>'begin'</li>
+     * <li>'end'</li>
+     * </ol>
+     *
+     * @param parameters
+     *            - a Map of QueryParameters
+     * @throws IllegalArgumentException
+     */
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         for (String param : KNOWN_PARAMS) {
             List<String> values = parameters.get(param);
@@ -48,7 +73,7 @@ public class QueryParametersImpl implements QueryParameters {
                 continue;
             }
             if (values.isEmpty() || values.size() > 1) {
-                throw new IllegalArgumentException("Known parameter " + param + " only accepts one value");
+                throw new IllegalArgumentException("Known parameter [" + param + "] only accepts one value");
             }
             if (QUERY_STRING.equals(param)) {
                 this.query = values.get(0);
@@ -95,11 +120,17 @@ public class QueryParametersImpl implements QueryParameters {
                 throw new IllegalArgumentException("Unknown condition.");
             }
         }
-        Preconditions.checkNotNull(this.query, "Query string cannot be null");
-        Preconditions.checkNotNull(this.queryName, "Query name cannot be null");
-        Preconditions.checkNotNull(this.persistenceMode, "Persistence mode cannot be null");
-        Preconditions.checkNotNull(this.auths, "Query auths cannot be null");
-        Preconditions.checkNotNull(this.expirationDate, "Expiration date cannot be null");
+        
+        try {
+            Preconditions.checkNotNull(this.query, "QueryParameter 'query' cannot be null");
+            Preconditions.checkNotNull(this.queryName, "QueryParameter 'queryName' cannot be null");
+            Preconditions.checkNotNull(this.persistenceMode, "QueryParameter 'persistence' mode cannot be null");
+            Preconditions.checkNotNull(this.auths, "QueryParameter 'auths' cannot be null");
+            Preconditions.checkNotNull(this.expirationDate, "QueryParameter 'expirationDate' cannot be null");
+            Preconditions.checkNotNull(this.logicName, "QueryParameter 'logicName' cannot be null");
+        } catch (NullPointerException e) {
+            throw new IllegalArgumentException("Missing one or more required QueryParameters", e);
+        }
     }
     
     @Override
@@ -233,21 +264,33 @@ public class QueryParametersImpl implements QueryParameters {
      * mapped directly to the QUERY_PARAMS key.
      * 
      * No attempt is made to determine whether or not the given arguments constitute a valid query. If validation is desired, see the {@link validate} method
-     * 
+     *
      * @param queryLogicName
+     *            - name of QueryLogic to use
      * @param query
+     *            - the raw query string
      * @param queryName
+     *            - client-supplied name of query
      * @param queryVisibility
+     *            -
      * @param beginDate
+     *            - start date
      * @param endDate
+     *            - end date
      * @param queryAuthorizations
+     *            - what auths the query should run with
      * @param expirationDate
+     *            -
      * @param pagesize
+     *            -
      * @param pageTimeout
      * @param maxResultsOverride
      * @param persistenceMode
+     *            -
      * @param parameters
+     *            - additional parameters passed in as map
      * @param trace
+     *            -
      * @return
      * @throws ParseException
      *             on date parse/format error

@@ -21,14 +21,15 @@ public class TestQueryParameters {
     public void setup() {
         qp = new QueryParametersImpl();
         parameters = new MultivaluedMapImpl<String,String>();
-    }
-    
-    @Test
-    public void testNullExpirationDate() {
         parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
         parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
         parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
         parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
+        parameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, "LogicName");
+    }
+    
+    @Test
+    public void testNullExpirationDate() {
         qp.validate(parameters);
         
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -38,10 +39,6 @@ public class TestQueryParameters {
     
     @Test
     public void test24HoursExpirationDate() {
-        parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
-        parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
         parameters.putSingle(QueryParameters.QUERY_EXPIRATION, "+24Hours");
         qp.validate(parameters);
         
@@ -55,10 +52,6 @@ public class TestQueryParameters {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         SimpleDateFormat msFormat = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String expDateString = format.format(DateUtils.addDays(new Date(), 1));
-        parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
-        parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
         parameters.putSingle(QueryParameters.QUERY_EXPIRATION, expDateString);
         qp.validate(parameters);
         assertEquals(expDateString + " 235959.999", msFormat.format(qp.getExpirationDate()));
@@ -69,10 +62,6 @@ public class TestQueryParameters {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat msFormat = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String expDateString = format.format(DateUtils.addDays(new Date(), 1));
-        parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
-        parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
         parameters.putSingle(QueryParameters.QUERY_EXPIRATION, expDateString);
         qp.validate(parameters);
         assertEquals(expDateString + ".999", msFormat.format(qp.getExpirationDate()));
@@ -82,10 +71,6 @@ public class TestQueryParameters {
     public void testTimeMillisExpirationDate() {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String expDateString = format.format(DateUtils.addDays(new Date(), 1));
-        parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
-        parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
         parameters.putSingle(QueryParameters.QUERY_EXPIRATION, expDateString);
         qp.validate(parameters);
         assertEquals(expDateString, format.format(qp.getExpirationDate()));
@@ -97,13 +82,8 @@ public class TestQueryParameters {
         SimpleDateFormat msFormat = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String startDateStr = format.format(new Date());
         
-        MultivaluedMap<String,String> parameters = new MultivaluedMapImpl<String,String>();
-        parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
-        parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
+        parameters.remove(QueryParameters.QUERY_BEGIN);
         parameters.putSingle(QueryParameters.QUERY_BEGIN, startDateStr);
-        QueryParametersImpl qp = new QueryParametersImpl();
         qp.validate(parameters);
         assertEquals(startDateStr + " 000000.000", msFormat.format(qp.getBeginDate()));
     }
@@ -114,13 +94,8 @@ public class TestQueryParameters {
         SimpleDateFormat msFormat = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String startDateStr = format.format(new Date());
         
-        MultivaluedMap<String,String> parameters = new MultivaluedMapImpl<String,String>();
-        parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
-        parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
+        parameters.remove(QueryParameters.QUERY_BEGIN);
         parameters.putSingle(QueryParameters.QUERY_BEGIN, startDateStr);
-        QueryParameters qp = new QueryParametersImpl();
         qp.validate(parameters);
         assertEquals(startDateStr + ".000", msFormat.format(qp.getBeginDate()));
     }
@@ -131,13 +106,8 @@ public class TestQueryParameters {
         SimpleDateFormat msFormat = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String endDateStr = format.format(new Date());
         
-        MultivaluedMap<String,String> parameters = new MultivaluedMapImpl<String,String>();
-        parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
-        parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
+        parameters.remove(QueryParameters.QUERY_END);
         parameters.putSingle(QueryParameters.QUERY_END, endDateStr);
-        QueryParameters qp = new QueryParametersImpl();
         qp.validate(parameters);
         assertEquals(endDateStr + " 235959.999", msFormat.format(qp.getEndDate()));
     }
@@ -148,13 +118,8 @@ public class TestQueryParameters {
         SimpleDateFormat msFormat = new SimpleDateFormat("yyyyMMdd HHmmss.SSS");
         String endDateStr = format.format(new Date());
         
-        MultivaluedMap<String,String> parameters = new MultivaluedMapImpl<String,String>();
-        parameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        parameters.putSingle(QueryParameters.QUERY_NAME, "Test");
-        parameters.putSingle(QueryParameters.QUERY_PERSISTENCE, "TRANSIENT");
-        parameters.putSingle(QueryParameters.QUERY_STRING, "FOO == BAR");
+        parameters.remove(QueryParameters.QUERY_END);
         parameters.putSingle(QueryParameters.QUERY_END, endDateStr);
-        QueryParameters qp = new QueryParametersImpl();
         qp.validate(parameters);
         assertEquals(endDateStr + ".999", msFormat.format(qp.getEndDate()));
     }

@@ -719,6 +719,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
@@ -888,6 +889,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
@@ -1057,6 +1059,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
@@ -1175,6 +1178,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
@@ -1612,7 +1616,7 @@ public class ExtendedQueryExecutorBeanTest {
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
-    @Test(expected = DatawaveWebApplicationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testDefineQuery_UncheckedException() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";
@@ -3283,6 +3287,7 @@ public class ExtendedQueryExecutorBeanTest {
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
         
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
@@ -3410,6 +3415,7 @@ public class ExtendedQueryExecutorBeanTest {
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
         
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
@@ -3549,6 +3555,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));

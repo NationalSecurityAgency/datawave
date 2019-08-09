@@ -82,6 +82,11 @@ import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+/**
+ * QueryOptions are set on the iterators.
+ *
+ * Some options are passed through from the QueryParemeters.
+ */
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
     
