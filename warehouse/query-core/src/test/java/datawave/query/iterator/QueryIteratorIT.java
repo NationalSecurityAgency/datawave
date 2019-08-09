@@ -51,6 +51,11 @@ import static datawave.query.iterator.QueryOptions.START_TIME;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Integration tests for the QueryIterator
  *
@@ -62,7 +67,15 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected IteratorEnvironment environment;
     protected EventDataQueryFilter filter;
     protected TypeMetadata typeMetadata;
-    protected Path temporaryFolder;
+
+    // Default row is for day 20190314, shard 0
+    protected static final String DEFAULT_ROW = "20190314_0";
+    
+    // Default if test does not specify a datatype
+    protected static final String DEFAULT_DATATYPE = "dataType1";
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     @Before
     public void setup() throws IOException {
@@ -81,7 +94,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(INDEXED_FIELDS, "EVENT_FIELD1,EVENT_FIELD4,EVENT_FIELD6,TF_FIELD1,TF_FIELD2,INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3");
         
         // set the unindexed fields list
-        options.put(NON_INDEXED_DATATYPES, "dataType1:EVENT_FIELD2,EVENT_FIELD3,EVENT_FIELD5");
+        options.put(NON_INDEXED_DATATYPES, DEFAULT_DATATYPE + ":EVENT_FIELD2,EVENT_FIELD3,EVENT_FIELD5");
         
         // set a query id
         options.put(QUERY_ID, "000001");
@@ -97,14 +110,14 @@ public class QueryIteratorIT extends EasyMockSupport {
         
         // these will be marked as indexed fields
         typeMetadata = new TypeMetadata();
-        typeMetadata.put("EVENT_FIELD1", "dataType1", "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("EVENT_FIELD4", "dataType1", "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("EVENT_FIELD6", "dataType1", "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("TF_FIELD1", "dataType1", "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("TF_FIELD2", "dataType1", "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("INDEX_ONLY_FIELD1", "dataType1", "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("INDEX_ONLY_FIELD2", "dataType1", "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("INDEX_ONLY_FIELD3", "dataType1", "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("EVENT_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("EVENT_FIELD4", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("EVENT_FIELD6", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("TF_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("TF_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("INDEX_ONLY_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("INDEX_ONLY_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("INDEX_ONLY_FIELD3", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         
         environment = createMock(IteratorEnvironment.class);
         filter = createMock(EventDataQueryFilter.class);
@@ -116,416 +129,466 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
     
     private List<Map.Entry<Key,Value>> addEvent(long eventTime, String uid) {
-        List<Map.Entry<Key,Value>> listSource = new ArrayList();
+        return addEvent(DEFAULT_ROW, DEFAULT_DATATYPE, eventTime, uid);
+    }
+    
+    private List<Map.Entry<Key,Value>> addEvent(String row, String dataType, long eventTime, String uid) {
+        List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
         
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("row", "EVENT_FIELD1", "a", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "EVENT_FIELD1", "a", "dataType1", uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD1", "a", dataType, uid, eventTime), new Value()));
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("row", "EVENT_FIELD2", "b", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("row", "EVENT_FIELD3", "c", "dataType1", uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid, eventTime), new Value()));
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("row", "EVENT_FIELD4", "d", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "EVENT_FIELD4", "d", "dataType1", uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD4", "d", dataType, uid, eventTime), new Value()));
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("row", "EVENT_FIELD5", "e", "dataType1", uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid, eventTime), new Value()));
         // indexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("row", "EVENT_FIELD6", "f", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "EVENT_FIELD6", "f", "dataType1", uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), new Value()));
         
         // add some indexed TF fields
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("row", "TF_FIELD1", "a b c", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "TF_FIELD1", "a b c", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "TF_FIELD1", "a", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "TF_FIELD1", "b", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "TF_FIELD1", "c", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("row", "TF_FIELD1", "a", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("row", "TF_FIELD1", "b", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("row", "TF_FIELD1", "c", "dataType1", uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a b c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTime), new Value()));
         
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("row", "TF_FIELD2", "x y z", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "TF_FIELD2", "x y z", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "TF_FIELD2", "x", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "TF_FIELD2", "y", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "TF_FIELD2", "z", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("row", "TF_FIELD2", "x", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("row", "TF_FIELD2", "y", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("row", "TF_FIELD2", "z", "dataType1", uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTime), new Value()));
         
         // add some index only field data
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "INDEX_ONLY_FIELD1", "apple", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "INDEX_ONLY_FIELD1", "pear", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "INDEX_ONLY_FIELD1", "orange", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "INDEX_ONLY_FIELD2", "beef", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "INDEX_ONLY_FIELD2", "chicken", "dataType1", uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("row", "INDEX_ONLY_FIELD2", "pork", "dataType1", uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid, eventTime), new Value()));
         
         return listSource;
     }
     
     protected List<Map.Entry<Key,Value>> configureTestData(long eventTime) {
-        List<Map.Entry<Key,Value>> listSource = new ArrayList();
+        List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
         
         listSource.addAll(addEvent(eventTime, "123.345.456"));
         
         return listSource;
     }
     
+    protected Range getDocumentRange(String uid) {
+        return getDocumentRange(DEFAULT_ROW, DEFAULT_DATATYPE, uid);
+    }
+    
     protected Range getDocumentRange(String row, String dataType, String uid) {
-        // not a document range
+        // Check for a shard range
         if (uid == null) {
-            Key startKey = new Key(row);
-            return new Range(startKey, true, startKey.followingKey(PartialKey.ROW), false);
-        } else {
-            return new Range(new Key("row", "dataType1" + Constants.NULL + uid), true, new Key("row", "dataType1" + Constants.NULL + uid + Constants.NULL),
-                            false);
+            return getShardRange(row);
         }
+        
+        Key startKey = new Key(row, dataType + Constants.NULL + uid);
+        Key endKey = new Key(row, dataType + Constants.NULL + uid + Constants.NULL);
+        return new Range(startKey, true, endKey, false);
+    }
+    
+    protected Range getShardRange() {
+        return getShardRange(DEFAULT_ROW);
+    }
+    
+    protected Range getShardRange(String row) {
+        Key startKey = new Key(row);
+        return new Range(startKey, true, startKey.followingKey(PartialKey.ROW), false);
     }
     
     @Test
     public void indexOnly_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'apple'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'apple'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_documentSpecific_hitTerm_test() throws IOException {
         options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'apple'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_shardRange_hitTerm_test() throws IOException {
         options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'apple'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        Range seekRange = getDocumentRange("123.345.456");
         indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'fork'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'fork'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "INDEX_ONLY_FIELD1 == 'fork'";
+        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'apple'", false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "INDEX_ONLY_FIELD1 == 'apple'";
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
+        Range seekRange = getShardRange();
+        String query = "INDEX_ONLY_FIELD1 == 'apple'";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
         secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, "INDEX_ONLY_FIELD1 == 'apple'", false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
     }
     
     @Test
     public void indexOnly_trailingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))", false, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_trailingRegex_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))", false, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_trailingRegex_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'f.*'))", true, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'f.*'))";
+        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_trailingRegex_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'f.*'))", true, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'f.*'))";
+        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_trailingRegex_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))", false, addEvent(11, "123.345.457"),
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_trailingRegex_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
         secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))", false, addEvent(11, "123.345.457"),
-                        Arrays.asList(secondEvent));
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
     }
     
     @Test
     public void indexOnly_leadingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))", false, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_leadingRegex_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))", false, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_leadingRegex_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*k'))", true, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*k'))";
+        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_leadingRegex_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*k'))", true, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*k'))";
+        indexOnly_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_leadingRegex_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))", false, addEvent(11, "123.345.457"),
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void indexOnly_leadingRegex_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))";
         Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
         secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
-        indexOnly_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (INDEX_ONLY_FIELD1 =~ '.*le'))", false, addEvent(11, "123.345.457"),
-                        Arrays.asList(secondEvent));
+        indexOnly_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(secondEvent));
     }
     
     @Test
     public void event_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 == 'b'";
+        event_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 == 'b'";
+        event_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_documentSpecific_hitTerm_test() throws IOException {
         options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 == 'b'";
+        event_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_shardRange_hitTerm_test() throws IOException {
         options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 == 'b'";
+        event_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'a'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 == 'a'";
+        event_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 == 'a'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 == 'a'";
+        event_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 == 'b'";
+        event_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 == 'b'";
+        event_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
     public void event_trailingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 =~ 'b.*'";
+        event_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 =~ 'b.*'";
+        event_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ 'a.*'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 =~ 'a.*'";
+        event_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ 'a.*'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 =~ 'a.*'";
+        event_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 =~ 'b.*'";
+        event_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 =~ 'b.*'";
+        event_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
     public void event_leadingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 =~ '.*b'";
+        event_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 =~ '.*b'";
+        event_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*a'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 =~ '.*a'";
+        event_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*a'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 =~ '.*a'";
+        event_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD2 =~ '.*b'";
+        event_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD2 =~ '.*b'";
+        event_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
     public void index_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "EVENT_FIELD4 == 'd'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD4 == 'd'";
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "EVENT_FIELD4 == 'd'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD4 == 'd'";
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_documentSpecific_hitTerm_test() throws IOException {
         options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "EVENT_FIELD4 == 'd'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD4 == 'd'";
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_shardRange_hitTerm_test() throws IOException {
         options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "EVENT_FIELD4 == 'd'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD4 == 'd'";
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "EVENT_FIELD4 == 'e'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD4 == 'e'";
+        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "EVENT_FIELD4 == 'e'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD4 == 'e'";
+        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     /**
@@ -536,8 +599,9 @@ public class QueryIteratorIT extends EasyMockSupport {
     @Test
     public void index_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "EVENT_FIELD4 == 'd'", false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD4 == 'd'";
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     /**
@@ -548,150 +612,151 @@ public class QueryIteratorIT extends EasyMockSupport {
     @Test
     public void index_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "EVENT_FIELD4 == 'd'", false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD4 == 'd'";
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
     public void index_trailingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'd.*'))", false, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'd.*'))";
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_trailingRegex_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'd.*'))", false, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'd.*'))";
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_trailingRegex_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'e.*'))", true, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'e.*'))";
+        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_trailingRegex_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'e.*'))", true, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'e.*'))";
+        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_trailingRegex_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'd.*'))", false, addEvent(11, "123.345.457"),
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'd.*'))";
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_trailingRegex_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'd.*'))", false, addEvent(11, "123.345.457"),
-                        Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ 'd.*'))";
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
     public void index_leadingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))", false, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))";
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_leadingRegex_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))", false, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))";
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_leadingRegex_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*e'))", true, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*e'))";
+        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_leadingRegex_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*e'))", true, Collections.EMPTY_LIST,
-                        Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*e'))";
+        index_test(seekRange, query, true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_leadingRegex_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))", false, addEvent(11, "123.345.457"),
-                        Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))";
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void index_leadingRegex_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        index_test(seekRange, "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))", false, addEvent(11, "123.345.457"),
-                        Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))";
+        index_test(seekRange, query, false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
     public void tf_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))",
-                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void tf_exceededValue_trailingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))",
-                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'b.*'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void tf_exceededValue_leadingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b'))",
-                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void tf_exceededValue_leadingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        tf_test(seekRange, "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b'))",
-                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void tf_exceededValue_negated_leadingWildcard_documentSpecific_test() throws IOException {
-        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        tf_test(seekRange, "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))",
-                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void tf_exceededValue_negated_leadingWildcard_shardRange_test() throws IOException {
-        Range seekRange = getDocumentRange("row", "dataType1", null);
-        tf_test(seekRange, "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))",
-                        getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     /**
@@ -867,7 +932,11 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
     
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String uid) {
-        Key hitKey = new Key("row", "dataType1" + Constants.NULL + uid);
+        return getBaseExpectedEvent(DEFAULT_ROW, DEFAULT_DATATYPE, uid);
+    }
+    
+    protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String row, String dataType, String uid) {
+        Key hitKey = new Key(row, dataType + Constants.NULL + uid);
         Map<String,List<String>> expectedDocument = new HashMap<>();
         expectedDocument.put("EVENT_FIELD1", Arrays.asList(new String[] {"a"}));
         expectedDocument.put("EVENT_FIELD2", Arrays.asList(new String[] {"b"}));
@@ -892,7 +961,7 @@ public class QueryIteratorIT extends EasyMockSupport {
             Map.Entry<Key,Map<String,List<String>>> evalPair = evalIterator.next();
             eval(evalPair.getKey(), evalPair.getValue());
         }
-        Assert.assertFalse(iterator.hasTop());
+        assertFalse(iterator.hasTop());
     }
     
     /**
@@ -907,55 +976,55 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected void eval(Key docKeyHit, Map<String,List<String>> docKeys) throws IOException {
         // asserts for a hit or miss
         if (docKeyHit == null) {
-            Assert.assertFalse(iterator.hasTop());
+            assertFalse(iterator.hasTop());
         } else {
-            Assert.assertTrue("Expected hit, but got none", iterator.hasTop());
+            assertTrue("Expected hit, but got none", iterator.hasTop());
             Key next = iterator.getTopKey();
-            Assert.assertTrue(next != null);
-            Assert.assertTrue(next.getRow().toString().equals(docKeyHit.getRow().toString()));
-            Assert.assertTrue(next.getColumnFamily().toString().equals(docKeyHit.getColumnFamily().toString()));
+            assertNotNull(next);
+            assertEquals(next.getRow().toString(), docKeyHit.getRow().toString());
+            assertEquals(next.getColumnFamily().toString(), docKeyHit.getColumnFamily().toString());
             
             // asserts for document build
             Value topValue = iterator.getTopValue();
-            Assert.assertTrue(topValue != null);
+            assertNotNull(topValue);
             Map.Entry<Key,Document> deserializedValue = deserialize(topValue);
-            Assert.assertTrue(deserializedValue.getValue() != null);
+            assertNotNull(deserializedValue.getValue());
             Document d = deserializedValue.getValue();
-            Assert.assertTrue(d != null);
+            assertNotNull(d);
             
             // -1 is for RECORD_ID field and -1 for HIT_LIST if configured
             int baseSize = d.getDictionary().size() - 1;
             int docSize = isExpectHitTerm() ? baseSize - 1 : baseSize;
             
-            Assert.assertTrue("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys,
-                            docKeys.keySet().size() == docSize);
+            assertEquals("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys, docKeys.keySet().size(),
+                            docSize);
             
             // validate the hitlist
-            Assert.assertTrue("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get("HIT_TERM") != null), (d
-                            .getDictionary().get("HIT_TERM") != null) == isExpectHitTerm());
+            assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get("HIT_TERM") != null), (d.getDictionary()
+                            .get("HIT_TERM") != null), isExpectHitTerm());
             
             // verify hits for each specified field
             for (String field : docKeys.keySet()) {
                 List<String> expected = docKeys.get(field);
                 if (expected.size() == 1) {
                     // verify the only doc
-                    Assert.assertTrue(field + ": value: " + d.getDictionary().get(field).getData() + " did not match expected value: " + expected.get(0), d
-                                    .getDictionary().get(field).getData().toString().equals(expected.get(0)));
+                    assertEquals(field + ": value: " + d.getDictionary().get(field).getData() + " did not match expected value: " + expected.get(0), d
+                                    .getDictionary().get(field).getData().toString(), expected.get(0));
                 } else {
                     // the data should be a set, verify it matches expected
                     Object dictData = d.getDictionary().get(field).getData();
-                    Assert.assertTrue(dictData != null);
-                    Assert.assertTrue("Expected " + expected.size() + " values for '" + field + "' found 1, '" + dictData.toString() + "'\nexpected: "
-                                    + expected, dictData instanceof Set);
+                    assertNotNull(dictData);
+                    assertTrue("Expected " + expected.size() + " values for '" + field + "' found 1, '" + dictData.toString() + "'\nexpected: " + expected,
+                                    dictData instanceof Set);
                     Set dictSet = (Set) dictData;
-                    Assert.assertTrue("Expected " + expected.size() + " values for '" + field + "' found " + dictSet.size() + "\nfound: " + dictSet.toString()
-                                    + "\nexpected: " + expected, dictSet.size() == expected.size());
+                    assertEquals("Expected " + expected.size() + " values for '" + field + "' found " + dictSet.size() + "\nfound: " + dictSet.toString()
+                                    + "\nexpected: " + expected, dictSet.size(), expected.size());
                     Iterator<Attribute> dictIterator = dictSet.iterator();
                     while (dictIterator.hasNext()) {
-                        Assert.assertTrue(expected.remove(dictIterator.next().getData().toString()));
+                        assertTrue(expected.remove(dictIterator.next().getData().toString()));
                     }
                     // verify that the expected set is now empty
-                    Assert.assertTrue(expected.size() == 0);
+                    assertEquals(0, expected.size());
                 }
             }
             
@@ -970,15 +1039,27 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
     
     // support methods
+    protected Key getTF(String field, String value, String uid, long timestamp) {
+        return getTF(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, timestamp);
+    }
+    
     protected Key getTF(String row, String field, String value, String dataType, String uid, long timestamp) {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         return new Key(row, "tf", dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value + Constants.NULL_BYTE_STRING + field,
                         timestamp);
     }
     
+    protected Key getFI(String field, String value, String uid, long timestamp) {
+        return getFI(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, timestamp);
+    }
+    
     protected Key getFI(String row, String field, String value, String dataType, String uid, long timestamp) {
         return new Key(row, "fi" + Constants.NULL_BYTE_STRING + field.toUpperCase(), value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING
                         + uid, timestamp);
+    }
+    
+    protected Key getEvent(String field, String value, String uid, long timestamp) {
+        return getEvent(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, timestamp);
     }
     
     protected Key getEvent(String row, String field, String value, String dataType, String uid, long timestamp) {
