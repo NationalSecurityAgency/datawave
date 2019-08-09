@@ -233,6 +233,8 @@ public class QueryExecutorBeanTest {
     
     private MultivaluedMap createNewQueryParameterMap() throws Exception {
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
+        p.putSingle(QueryParameters.QUERY_STRING, "foo == 'bar'");
+        p.putSingle(QueryParameters.QUERY_NAME, "query name");
         p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, StringUtils.join(auths, ","));
         p.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
@@ -384,6 +386,7 @@ public class QueryExecutorBeanTest {
     public void testDefine() throws Exception {
         QueryImpl q = createNewQuery();
         MultivaluedMap p = createNewQueryParameterMap();
+        p.putSingle(QueryParameters.QUERY_LOGIC_NAME, "EventQueryLogic");
         
         defineTestRunner(q, p);
     }
@@ -393,6 +396,7 @@ public class QueryExecutorBeanTest {
     public void testPredict() throws Exception {
         QueryImpl q = createNewQuery();
         MultivaluedMap p = createNewQueryParameterMap();
+        p.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, p);
         
@@ -600,6 +604,7 @@ public class QueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         
         try {
+            queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, "EventQueryLogic");
             bean.createQuery("EventQueryLogic", queryParameters);
             fail(); // If doesn't throw exception, should fail
         } catch (BadRequestException e) {
@@ -613,6 +618,7 @@ public class QueryExecutorBeanTest {
         QueryImpl q = createNewQuery();
         
         final MultivaluedMap<String,String> queryParameters = createNewQueryParameterMap();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, "EventQueryLogic");
         
         final Thread createQuery = new Thread(() -> {
             try {

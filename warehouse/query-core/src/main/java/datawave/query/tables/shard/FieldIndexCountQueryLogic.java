@@ -544,11 +544,11 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
     
     @Override
     public Set<String> getOptionalQueryParameters() {
-        Set<String> params = new TreeSet<>();
-        params.add(QueryParameters.PARAMETER_MODEL_NAME);
-        params.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
-        params.add(QueryParameters.DATATYPE_FILTER_SET);
-        return params;
+        Set<String> optionalParams = new TreeSet<>(super.getOptionalQueryParameters());
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
+        optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        return optionalParams;
     }
     
 }
