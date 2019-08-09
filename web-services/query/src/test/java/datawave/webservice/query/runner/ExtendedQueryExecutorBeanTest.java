@@ -3287,6 +3287,7 @@ public class ExtendedQueryExecutorBeanTest {
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
         
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
@@ -3414,6 +3415,7 @@ public class ExtendedQueryExecutorBeanTest {
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
         
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));

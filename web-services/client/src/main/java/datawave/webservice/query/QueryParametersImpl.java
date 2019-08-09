@@ -127,7 +127,7 @@ public class QueryParametersImpl implements QueryParameters {
             Preconditions.checkNotNull(this.persistenceMode, "QueryParameter 'persistence' mode cannot be null");
             Preconditions.checkNotNull(this.auths, "QueryParameter 'auths' cannot be null");
             Preconditions.checkNotNull(this.expirationDate, "QueryParameter 'expirationDate' cannot be null");
-            //Preconditions.checkNotNull(this.logicName, "QueryParameter 'logicName' cannot be null");
+            Preconditions.checkNotNull(this.logicName, "QueryParameter 'logicName' cannot be null");
         } catch (NullPointerException e) {
             throw new IllegalArgumentException("Missing one or more required QueryParameters", e);
         }
