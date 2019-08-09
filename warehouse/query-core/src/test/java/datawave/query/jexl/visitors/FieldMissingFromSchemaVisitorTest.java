@@ -9,7 +9,6 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
@@ -75,9 +74,11 @@ public class FieldMissingFromSchemaVisitorTest {
         // Setup datatype filter
         Set<String> dataTypeFilter = Sets.newHashSet("datatype1", "datatype2");
         
+        // Same set expected for all three test cases.
+        Set<String> expected = Sets.newHashSet("FOO3", "FOO4");
+        
         // Case 1 - check with a datatype filter
         Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
-        Set<String> expected = Sets.newHashSet("FOO3", "FOO4");
         assertEquals(expected, actual);
         
         // Case 2 - check with a null datatype filter, implies all fields.
