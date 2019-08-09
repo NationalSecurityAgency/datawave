@@ -13,12 +13,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -67,15 +64,14 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected IteratorEnvironment environment;
     protected EventDataQueryFilter filter;
     protected TypeMetadata typeMetadata;
-
+    
     // Default row is for day 20190314, shard 0
     protected static final String DEFAULT_ROW = "20190314_0";
     
     // Default if test does not specify a datatype
     protected static final String DEFAULT_DATATYPE = "dataType1";
     
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public Path temporaryFolder;
     
     @Before
     public void setup() throws IOException {
