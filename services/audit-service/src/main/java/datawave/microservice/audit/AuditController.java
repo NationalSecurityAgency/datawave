@@ -112,7 +112,7 @@ public class AuditController {
      *            The audit parameters to be sent
      */
     private boolean sendMessage(AuditParameters parameters) {
-        if ((healthChecker != null && healthChecker.isHealthy()) || healthChecker == null) {
+        if (healthChecker == null || healthChecker.isHealthy()) {
             String auditId = parameters.getAuditId();
             
             CountDownLatch latch = null;
@@ -122,7 +122,7 @@ public class AuditController {
             }
             
             boolean success = messageChannel.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).setCorrelationId(auditId).build());
-            
+
             if (auditProperties.isConfirmAckEnabled()) {
                 try {
                     success = success && latch.await(auditProperties.getConfirmAckTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -132,7 +132,7 @@ public class AuditController {
                     correlationLatchMap.remove(auditId);
                 }
             }
-            
+
             return success;
         }
         
