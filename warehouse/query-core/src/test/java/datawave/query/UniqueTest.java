@@ -71,7 +71,7 @@ public abstract class UniqueTest {
             // start returning
             // different keys.
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log,
-                            RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY);
+                            RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
@@ -99,7 +99,7 @@ public abstract class UniqueTest {
             // start returning
             // different keys.
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log,
-                            RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY);
+                            RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);

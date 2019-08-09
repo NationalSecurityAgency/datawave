@@ -97,21 +97,27 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
         // Note the key assumption here is that the ranges are processed in order (see IteratorChain
         // used above) and that the ranges are non-overlapping (see Range.mergeOverlapping() used
         // above).
-        List<Range> newRanges = new ArrayList<>();
-        boolean found = false;
-        for (Range range : ranges) {
-            if (found) {
-                newRanges.add(range);
-            } else if (range.contains(lastKey)) {
-                found = true;
-                Range newRange = new Range(lastKey, false, range.getEndKey(), range.isEndKeyInclusive());
-                newRanges.add(newRange);
+        if (lastKey != null) {
+            List<Range> newRanges = new ArrayList<>();
+            boolean found = false;
+            for (Range range : ranges) {
+                if (found) {
+                    newRanges.add(range);
+                } else if (range.contains(lastKey)) {
+                    found = true;
+                    Range newRange = new Range(lastKey, false, range.getEndKey(), range.isEndKeyInclusive());
+                    newRanges.add(newRange);
+                }
             }
+            if (!ranges.isEmpty() && newRanges.isEmpty()) {
+                StringBuilder rangesForPrint = new StringBuilder();
+                for (Range r : ranges) {
+                    rangesForPrint.append(r.toString());
+                }
+                throw new IllegalStateException("Did not find specified key in previous set of ranges: " + rangesForPrint.toString() + " key: " + lastKey);
+            }
+            this.ranges = newRanges;
         }
-        if (newRanges.isEmpty()) {
-            throw new IllegalStateException("Did not find specified key in previous set of ranges");
-        }
-        this.ranges = newRanges;
 
         // now return a rebuild iterator stack using the new set of ranges.
         return iterator();

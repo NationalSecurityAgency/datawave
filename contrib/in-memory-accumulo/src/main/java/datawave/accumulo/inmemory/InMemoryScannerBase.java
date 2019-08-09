@@ -48,6 +48,8 @@ public class InMemoryScannerBase extends ScannerOptions {
     
     protected final InMemoryTable table;
     protected final Authorizations auths;
+
+    private ArrayList<SortedKeyValueIterator<Key,Value>> injectedIterators = new ArrayList<>();
     
     InMemoryScannerBase(InMemoryTable mockTable, Authorizations authorizations) {
         this.table = mockTable;
@@ -133,7 +135,8 @@ public class InMemoryScannerBase extends ScannerOptions {
         SortedKeyValueIterator<Key,Value> wrappedFilter = VisibilityFilter.wrap(cqf, auths, defaultLabels);
         AccumuloConfiguration conf = new InMemoryConfiguration(table.settings);
         InMemoryIteratorEnvironment iterEnv = new InMemoryIteratorEnvironment(auths);
-        SortedKeyValueIterator<Key,Value> result = iterEnv.getTopLevelIterator(IteratorUtil.loadIterators(IteratorScope.scan, wrappedFilter, null, conf,
+        SortedKeyValueIterator<Key,Value> injectedIterators = applyInjectedIterators(wrappedFilter);
+        SortedKeyValueIterator<Key,Value> result = iterEnv.getTopLevelIterator(IteratorUtil.loadIterators(IteratorScope.scan, injectedIterators, null, conf,
                         serverSideIteratorList, serverSideIteratorOptions, iterEnv, false));
         return result;
     }
@@ -151,5 +154,32 @@ public class InMemoryScannerBase extends ScannerOptions {
     @Override
     public void setClassLoaderContext(String context) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Apply all injected iterators in order to the base wrapped iterator
+     * @param base
+     * @return
+     */
+    private SortedKeyValueIterator<Key,Value> applyInjectedIterators(SortedKeyValueIterator<Key,Value> base) {
+        SortedKeyValueIterator prev = base;
+        for (SortedKeyValueIterator<Key,Value> injected : injectedIterators) {
+            try {
+                injected.init(prev, null, null);
+                prev = injected;
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to apply injected iterators", e);
+            }
+        }
+
+        return prev;
+    }
+
+    /**
+     * Add an iterator to the front of the iterator stack
+     * @param injectedIterator
+     */
+    public void addInjectedIterator(SortedKeyValueIterator<Key,Value> injectedIterator) {
+        injectedIterators.add(injectedIterator);
     }
 }
