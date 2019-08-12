@@ -27,14 +27,11 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.accumulo.core.client.impl.thrift.SecurityErrorCode;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.clientImpl.Credentials;
+import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
 import org.apache.accumulo.core.util.ByteBufferUtil;
-import org.apache.accumulo.core.util.CachedConfiguration;
 import org.apache.accumulo.core.util.TextUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -133,18 +130,6 @@ public class InMemoryInstance implements Instance {
         return getConnector(user, TextUtil.getBytes(new Text(pass.toString())));
     }
     
-    AccumuloConfiguration conf = null;
-    
-    @Override
-    public AccumuloConfiguration getConfiguration() {
-        return conf == null ? DefaultConfiguration.getInstance() : conf;
-    }
-    
-    @Override
-    public void setConfiguration(AccumuloConfiguration conf) {
-        this.conf = conf;
-    }
-    
     @Override
     public Connector getConnector(String principal, AuthenticationToken token) throws AccumuloException, AccumuloSecurityException {
         Connector conn = new InMemoryConnector(new Credentials(principal, token), acu, this);
@@ -154,4 +139,21 @@ public class InMemoryInstance implements Instance {
             throw new AccumuloSecurityException(principal, SecurityErrorCode.BAD_CREDENTIALS);
         return conn;
     }
+
+    public static class CachedConfiguration {
+        private static Configuration configuration = null;
+
+        public static synchronized Configuration getInstance() {
+            if (configuration == null)
+                setInstance(new Configuration());
+            return configuration;
+        }
+
+        public static synchronized Configuration setInstance(Configuration update) {
+            Configuration result = configuration;
+            configuration = update;
+            return result;
+        }
+    }
+
 }

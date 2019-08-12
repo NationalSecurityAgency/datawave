@@ -14,9 +14,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.trace.DistributedTrace;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.zookeeper.ZooUtil;
 import org.apache.accumulo.tracer.AsyncSpanReceiver;
 import org.apache.accumulo.tracer.ZooTraceClient;
 import org.apache.commons.lang.mutable.MutableInt;
@@ -83,6 +81,10 @@ import java.util.Set;
 @MBean
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory {
+    public static final String TRACE_HOST_PROPERTY = "trace.host";
+    public static final String TRACE_SERVICE_PROPERTY = "trace.service";
+    public static final String TRACER_ZK_HOST = "tracer.zookeeper.host";
+    public static final String TRACER_ZK_PATH = "tracer.zookeeper.path";
     
     private Logger log = Logger.getLogger(this.getClass());
     
@@ -136,10 +138,10 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                                 .withZkHosts(entry.getValue().getZookeepers());
                 ZooKeeperInstance instance = new ZooKeeperInstance(zkConfig);
                 Map<String,String> confMap = new HashMap<>();
-                confMap.put(DistributedTrace.TRACER_ZK_HOST, instance.getZooKeepers());
-                confMap.put(DistributedTrace.TRACER_ZK_PATH, ZooUtil.getRoot(instance) + Constants.ZTRACERS);
-                confMap.put(DistributedTrace.TRACE_HOST_PROPERTY, InetAddress.getLocalHost().getHostName());
-                confMap.put(DistributedTrace.TRACE_SERVICE_PROPERTY, appName);
+                confMap.put(TRACER_ZK_HOST, instance.getZooKeepers());
+                confMap.put(TRACER_ZK_PATH, Constants.ZTRACERS);
+                confMap.put(TRACE_HOST_PROPERTY, InetAddress.getLocalHost().getHostName());
+                confMap.put(TRACE_SERVICE_PROPERTY, appName);
                 confMap.put(AsyncSpanReceiver.SEND_TIMER_MILLIS, "1000");
                 confMap.put(AsyncSpanReceiver.QUEUE_SIZE, "5000");
                 Trace.addReceiver(new ZooTraceClient(HTraceConfiguration.fromMap(confMap)));

@@ -528,16 +528,6 @@ public class RebuildingScannerTestHelper {
         }
         
         @Override
-        public void setTimeOut(int timeOut) {
-            ((InMemoryScanner) delegate).setTimeOut(timeOut);
-        }
-        
-        @Override
-        public int getTimeOut() {
-            return ((InMemoryScanner) delegate).getTimeOut();
-        }
-        
-        @Override
         public void setRange(Range range) {
             ((InMemoryScanner) delegate).setRange(range);
         }

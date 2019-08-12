@@ -1,8 +1,9 @@
 package datawave.ingest.table.balancer;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
-import org.apache.accumulo.core.data.impl.KeyExtent;
+
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.server.master.balancer.GroupBalancer;
@@ -22,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 /**
  * A custom tablet balancer designed to work with a date-partitioned (sharded) table. This balancer is based on the {@link GroupBalancer}, which spreads tablets
@@ -39,7 +41,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     private Collection<Pair<KeyExtent,Location>> tabletLocationCache;
     private Function<KeyExtent,String> partitioner;
     
-    public ShardedTableTabletBalancer(String tableId) {
+    public ShardedTableTabletBalancer(TableId tableId) {
         super(tableId);
     }
     

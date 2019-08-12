@@ -12,20 +12,6 @@ public class ScannerDelegate extends ScannerBaseDelegate implements Scanner {
     }
     
     @Override
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public final void setTimeOut(int timeOut) {
-        ((Scanner) delegate).setTimeOut(timeOut);
-    }
-    
-    @Override
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public final int getTimeOut() {
-        return ((Scanner) delegate).getTimeOut();
-    }
-    
-    @Override
     public final void setRange(Range range) {
         ((Scanner) delegate).setRange(range);
     }

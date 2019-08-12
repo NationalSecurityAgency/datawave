@@ -11,7 +11,8 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -48,7 +49,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         
         // determine the table id
         final String metadataString = inputKey.getStartKey().getRow().toString().intern();
-        final String tableId = getTableId(metadataString);
+        final TableId tableId = TableId.of(getTableId(metadataString));
         
         // determine our stop criteria
         final String stopRow = inputKey.getEndKey().getRow().toString().intern();
@@ -137,7 +138,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
      *            The range against the table
      * @return the accumulo metadata table range
      */
-    public static Range createMetadataRange(String tableId, Range range) {
+    public static Range createMetadataRange(TableId tableId, Range range) {
         Text startRow;
         if (range.getStartKey() != null) {
             startRow = range.getStartKey().getRow();

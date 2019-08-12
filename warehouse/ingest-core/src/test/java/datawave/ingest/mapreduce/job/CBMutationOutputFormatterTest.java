@@ -7,8 +7,6 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
-import org.apache.accumulo.core.client.mapreduce.lib.impl.ConfiguratorBase.TokenSource;
-import org.apache.accumulo.core.client.mapreduce.lib.util.OutputConfigurator.Features;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
@@ -40,6 +38,24 @@ import java.util.Map;
 public class CBMutationOutputFormatterTest {
     
     protected static final Logger logger = Logger.getLogger(CBMutationOutputFormatterTest.class);
+    
+    public enum Features {
+        CAN_CREATE_TABLES, SIMULATION_MODE
+    }
+    
+    public enum TokenSource {
+        FILE, INLINE, JOB;
+        
+        private String prefix;
+        
+        TokenSource() {
+            prefix = name().toLowerCase() + ":";
+        }
+        
+        public String prefix() {
+            return prefix;
+        }
+    }
     
     protected Level testDriverLevel;
     protected Level uutLevel;

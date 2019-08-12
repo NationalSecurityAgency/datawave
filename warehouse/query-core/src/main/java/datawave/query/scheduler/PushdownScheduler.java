@@ -20,7 +20,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
-import datawave.mr.bulk.RfileResource;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
@@ -105,10 +105,6 @@ public class PushdownScheduler extends Scheduler {
         
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery());
-            
-            if (config.getBypassAccumulo()) {
-                session.setDelegatedInitializer(RfileResource.class);
-            }
             
             if (config.getSpeculativeScanning()) {
                 session.setSpeculativeScanning(true);

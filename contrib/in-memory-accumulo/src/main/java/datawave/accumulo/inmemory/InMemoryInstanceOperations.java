@@ -90,4 +90,9 @@ class InMemoryInstanceOperations implements InstanceOperations {
     
     @Override
     public void waitForBalance() throws AccumuloException {}
+
+    @Override
+    public String getInstanceID() {
+        return "";
+    }
 }

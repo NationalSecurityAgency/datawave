@@ -39,28 +39,13 @@ class InMemoryConfiguration extends AccumuloConfiguration {
     public String get(Property property) {
         return map.get(property.getKey());
     }
-    
-    /**
-     * Don't use this method. It has been deprecated. Its parameters are not public API and subject to change.
-     *
-     */
-    public void getProperties(Map<String,String> props, final PropertyFilter filter) {
-        // convert PropertyFilter to Predicate
-        getProperties(props, new Predicate<String>() {
-            
-            @Override
-            public boolean apply(String input) {
-                return filter.accept(input);
+
+    @Override
+    public void getProperties(Map<String, String> props, java.util.function.Predicate<String> filter) {
+        map.keySet().forEach(k -> {
+            if (filter.test(k)){
+                props.put(k, map.get(k));
             }
         });
-    }
-    
-    @Override
-    public void getProperties(Map<String,String> props, Predicate<String> filter) {
-        for (Entry<String,String> entry : map.entrySet()) {
-            if (filter.apply(entry.getKey())) {
-                props.put(entry.getKey(), entry.getValue());
-            }
-        }
     }
 }

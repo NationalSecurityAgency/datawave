@@ -5,10 +5,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.mr.bulk.BulkInputFormat;
-import datawave.mr.bulk.MultiRfileInputformat;
-import datawave.mr.bulk.RfileScanner;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
@@ -22,7 +18,6 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
@@ -255,32 +250,6 @@ public class ScannerFactory {
     
     public void setMaxQueue(int size) {
         this.maxQueue = size;
-    }
-    
-    public synchronized ScannerBase newRfileScanner(String tableName, Set<Authorizations> auths, Query setting) {
-        Configuration conf = new Configuration();
-        
-        Connector con = cxn;
-        
-        final String instanceName = con.getInstance().getInstanceName();
-        final String zookeepers = con.getInstance().getZooKeepers();
-        
-        AccumuloHelper.setInstanceName(conf, instanceName);
-        AccumuloHelper.setUsername(conf, con.whoami());
-        
-        AccumuloHelper.setZooKeepers(conf, zookeepers);
-        BulkInputFormat.setZooKeeperInstance(conf, instanceName, zookeepers);
-        
-        AccumuloHelper.setPassword(conf, config.getAccumuloPassword().getBytes());
-        BulkInputFormat.setMemoryInput(conf, con.whoami(), config.getAccumuloPassword().getBytes(), tableName, auths.iterator().next());
-        
-        conf.set(MultiRfileInputformat.CACHE_METADATA, "true");
-        
-        ScannerBase baseScanner = new RfileScanner(con, conf, tableName, auths, 1);
-        
-        instances.add(baseScanner);
-        
-        return baseScanner;
     }
     
 }

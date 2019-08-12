@@ -408,8 +408,8 @@ public class AccumuloIndexAgeDisplay {
             
             /*
              * Running with maven will display the following exception: java.lang.InterruptedException: sleep interrupted at java.lang.Thread.sleep(Native
-             * Method) at org.apache.accumulo.core.client.impl.ThriftTransportPool$Closer.closeConnections(ThriftTransportPool.java:138) at
-             * org.apache.accumulo.core.client.impl.ThriftTransportPool$Closer.run(ThriftTransportPool.java:148) at java.lang.Thread.run(Thread.java:745)
+             * Method) at org.apache.accumulo.core.clientImpl.ThriftTransportPool$Closer.closeConnections(ThriftTransportPool.java:138) at
+             * org.apache.accumulo.core.clientImpl.ThriftTransportPool$Closer.run(ThriftTransportPool.java:148) at java.lang.Thread.run(Thread.java:745)
              * 
              * From mail-archives.apache.org This appears to be a known issue with ZooKeeper and Thrift resources that are not cleaned up. The main thread
              * finishes, but before the exec plugin stopped the application, it tried and failed to interrupt the other non-daemon threads that were still

@@ -2,6 +2,8 @@ package datawave.iterators.filter;
 
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
+
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -42,7 +44,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
     @Mock
     private SortedKeyValueIterator<Key,Value> source;
     
-    private DefaultConfiguration conf = new DefaultConfiguration();
+    private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
     
     @Before
     public void setUp() throws Exception {

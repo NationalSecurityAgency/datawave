@@ -5,6 +5,9 @@ import com.google.common.collect.Lists;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.util.cli.PasswordConverter;
+
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
@@ -12,11 +15,12 @@ import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.accumulo.core.client.impl.MasterClient;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.clientImpl.Credentials;
+import org.apache.accumulo.core.clientImpl.MasterClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.master.thrift.MasterClientService.Iface;
 import org.apache.accumulo.core.master.thrift.MasterMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
@@ -90,7 +94,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private String jobDirPattern;
     private String instanceName;
     private String zooKeepers;
-    private Credentials credentials;
+    private AccumuloClient accumuloClient;
     private Map<String,Integer> tablePriorities;
     private Configuration conf;
     private URI seqFileHdfs;
@@ -332,34 +336,32 @@ public final class BulkIngestMapFileLoader implements Runnable {
         String jobDirPattern = args[1].replaceAll("'", "");
         String instanceName = args[2];
         String zooKeepers = args[3];
+        String user = args[4];
         String passwordStr = PasswordConverter.parseArg(args[5]);
         
-        Credentials credentials = new Credentials(args[4], new PasswordToken(passwordStr));
-        BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                        destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads);
+        BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, user, new PasswordToken(passwordStr),
+                        seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads);
         Thread t = new Thread(processor, "map-file-watcher");
         t.start();
     }
     
-    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
-                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, 1);
+    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
+                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
+        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf,
+                        shutdownPort, 1);
     }
     
-    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
-                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, shutdownPort, 1);
-    }
-    
-    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
-                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort, int numHdfsThreads) {
+    public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
+                    URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort,
+                    int numHdfsThreads) {
         this.conf = conf;
         this.tablePriorities = tablePriorities;
         this.workDir = new Path(workDir);
         this.jobDirPattern = jobDirPattern;
         this.instanceName = instanceName;
         this.zooKeepers = zooKeepers;
-        this.credentials = credentials;
+        // this will keep an active connection open to Accumulo and must be closed during shutdown
+        this.accumuloClient = Accumulo.newClient().to(instanceName, zooKeepers).as(user, passToken).build();
         this.seqFileHdfs = seqFileHdfs;
         this.srcHdfs = srcHdfs;
         this.destHdfs = destHdfs;
@@ -484,6 +486,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             }
         } finally {
             log.info("Shutting down executor service");
+            accumuloClient.close();
             executor.shutdown();
         }
         log.info("Bulk map file loader shutting down.");
@@ -610,12 +613,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private int getMajorCompactionCount() {
         int majC = 0;
         
-        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-        
         Iface client = null;
         try {
-            client = MasterClient.getConnection(new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()));
-            MasterMonitorInfo mmi = client.getMasterStats(null, credentials.toThrift(instance));
+            client = MasterClient.getConnection((ClientContext) accumuloClient);
+            MasterMonitorInfo mmi = client.getMasterStats(null, ((ClientContext) accumuloClient).rpcCreds());
             Map<String,TableInfo> tableStats = mmi.getTableMap();
             
             for (java.util.Map.Entry<String,TableInfo> e : tableStats.entrySet()) {
@@ -672,9 +673,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         // By now the map files should be on the local filesystem
         FileSystem fs = getFileSystem(destHdfs);
         
-        Instance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-        TableOperations tops = instance.getConnector(credentials.getPrincipal(), credentials.getToken()).tableOperations();
-        Map<String,String> tableIds = tops.tableIdMap();
+        Map<String,String> tableIds = accumuloClient.tableOperations().tableIdMap();
         FileStatus[] tableDirs = fs.globStatus(new Path(mapFilesDir, "*"));
         
         // sort the table dirs in priority order based on the configuration
@@ -741,7 +740,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 
                 priority = tablePriorities.get(stat.getPath().getName());
             }
-            imports.push(startImport(mapFilesDir, tableName, tableDir, tops));
+            imports.push(startImport(mapFilesDir, tableName, tableDir, accumuloClient));
         }
         
         Exception e = null;
@@ -762,8 +761,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
             throw new IOException(e);
     }
     
-    public ImportRunnable startImport(Path mapFilesDir, String tableName, Path tableDir, TableOperations tops) {
-        ImportRunnable runnable = new ImportRunnable(mapFilesDir, tableName, tableDir, tops);
+    public ImportRunnable startImport(Path mapFilesDir, String tableName, Path tableDir, AccumuloClient accumuloClient) {
+        ImportRunnable runnable = new ImportRunnable(mapFilesDir, tableName, tableDir, accumuloClient);
         Thread thread = new Thread(runnable);
         runnable.setThread(thread);
         thread.start();
@@ -774,15 +773,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
         private boolean complete = false;
         private String tableName;
         private Path tableDir;
-        private TableOperations tops;
+        private AccumuloClient accumuloClient;
         private Path mapFilesDir;
         private Exception exception = null;
         private Thread thread = null;
         
-        private ImportRunnable(Path mapFilesDir, String tableName, Path tableDir, TableOperations tops) {
+        private ImportRunnable(Path mapFilesDir, String tableName, Path tableDir, AccumuloClient accumuloClient) {
             this.tableName = tableName;
             this.tableDir = tableDir;
-            this.tops = tops;
+            this.accumuloClient = accumuloClient;
             this.mapFilesDir = mapFilesDir;
         }
         
@@ -829,7 +828,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 
                 // import the directory
                 log.info("Bringing Map Files online for " + tableName);
-                tops.importDirectory(tableName, tableDir.toString(), failuresDir, false);
+                accumuloClient.tableOperations().importDirectory(tableName, tableDir.toString(), failuresDir, false);
                 log.info("Completed bringing map files online for " + tableName);
                 validateComplete();
             } catch (Exception e) {

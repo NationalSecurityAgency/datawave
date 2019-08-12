@@ -1,19 +1,12 @@
 package datawave.microservice.audit.auditors.accumulo.config;
 
-import datawave.microservice.audit.auditors.accumulo.AccumuloAuditor;
-import datawave.microservice.audit.auditors.accumulo.config.AccumuloAuditProperties.Accumulo;
-import datawave.microservice.audit.common.AuditMessage;
-import datawave.microservice.audit.common.AuditMessageHandler;
-import datawave.webservice.common.audit.AuditParameters;
-import datawave.webservice.common.audit.Auditor;
+import javax.annotation.Resource;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.commons.configuration.BaseConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -26,7 +19,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.SubscribableChannel;
 
-import javax.annotation.Resource;
+import datawave.microservice.audit.auditors.accumulo.AccumuloAuditor;
+import datawave.microservice.audit.auditors.accumulo.config.AccumuloAuditProperties.Accumulo;
+import datawave.microservice.audit.common.AuditMessage;
+import datawave.microservice.audit.common.AuditMessageHandler;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
 
 /**
  * Configures the AccumuloAuditor to process messages received by the audit service. This configuration is activated via the 'audit.auditors.accumulo.enabled'
@@ -64,15 +62,11 @@ public class AccumuloAuditConfig {
     @ConditionalOnMissingBean
     public Connector connector(AccumuloAuditProperties accumuloAuditProperties) {
         Accumulo accumulo = accumuloAuditProperties.getAccumuloConfig();
-        final BaseConfiguration baseConfiguration = new BaseConfiguration();
-        baseConfiguration.setDelimiterParsingDisabled(true); // Silence warnings about multi-value properties
-        baseConfiguration.setProperty("instance.name", accumulo.getInstanceName());
-        baseConfiguration.setProperty("instance.zookeeper.host", accumulo.getZookeepers());
-        final ClientConfiguration clientConfiguration = new ClientConfiguration(baseConfiguration);
-        final Instance instance = new ZooKeeperInstance(clientConfiguration);
         Connector connector = null;
         try {
-            connector = instance.getConnector(accumulo.getUsername(), new PasswordToken(accumulo.getPassword()));
+            AccumuloClient client = org.apache.accumulo.core.client.Accumulo.newClient().to(accumulo.getInstanceName(), accumulo.getZookeepers())
+                            .as(accumulo.getUsername(), new PasswordToken(accumulo.getPassword())).build();
+            connector = Connector.from(client);
         } catch (AccumuloException | AccumuloSecurityException e) {
             log.error("Unable to contact Accumulo.", e);
         }

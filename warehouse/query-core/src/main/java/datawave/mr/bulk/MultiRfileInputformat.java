@@ -25,6 +25,7 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -201,7 +202,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
         
         for (Range range : ranges) {
             // turn this range into a range of rows against the accumulo metadata: (e.g. <tableId>;row)
-            Range metadataRange = MetadataCacheLoader.createMetadataRange(tableId, range);
+            Range metadataRange = MetadataCacheLoader.createMetadataRange(TableId.of(tableId), range);
             
             Set<Tuple2<String,Set<String>>> metadataEntries;
             try {

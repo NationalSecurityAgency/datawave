@@ -9,7 +9,7 @@
     <artifactId>accumulo-utils</artifactId>
     <version>1.4-SNAPSHOT</version>
     <properties>
-        <version.accumulo>1.9.2</version.accumulo>
+        <version.accumulo>2.0.0</version.accumulo>
         <version.authorization-api>1.4</version.authorization-api>
         <version.commons-collections>4.2</version.commons-collections>
         <!-- Guava 15 is needed for Accumulo on the tservers -->
@@ -29,6 +29,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>authorization-api</artifactId>
                 <version>${version.authorization-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-query</artifactId>
+                <version>3.1.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
@@ -113,6 +118,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>authorization-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-query</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>

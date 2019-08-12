@@ -7,7 +7,7 @@
     <packaging>jar</packaging>
     <name>Datawave InMemory Accumulo</name>
     <properties>
-        <version.accumulo>1.9.2</version.accumulo>
+        <version.accumulo>2.0.0</version.accumulo>
     </properties>
     <url>https://code.nsa.gov/datawave</url>
     <licenses>
@@ -48,6 +48,11 @@
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-server-base</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.2</version>
         </dependency>
     </dependencies>
     <build>

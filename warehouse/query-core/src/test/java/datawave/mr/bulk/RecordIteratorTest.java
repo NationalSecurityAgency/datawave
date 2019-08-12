@@ -6,6 +6,7 @@ import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -52,7 +53,7 @@ public class RecordIteratorTest {
         splits.add(r2);
         splits.add(r3);
         
-        AccumuloConfiguration acuConf = AccumuloConfiguration.getDefaultConfiguration();
+        AccumuloConfiguration acuConf = DefaultConfiguration.getInstance();
         Configuration conf = new Configuration();
         conf.set("recorditer.auth.string", "A1,A2,A3");
         

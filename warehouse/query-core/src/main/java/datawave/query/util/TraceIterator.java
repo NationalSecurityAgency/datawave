@@ -4,8 +4,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Iterator;
 
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
+import datawave.webservice.query.runner.Span;
+import datawave.webservice.query.runner.Trace;
 
 /**
  *
