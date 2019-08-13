@@ -22,7 +22,7 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN apk --no-cache add --upgrade openssl openssh which bc wget git bash procps findutils curl && \
+RUN apk --no-cache add --upgrade openssl openssh which bc wget git bash procps findutils curl gettext && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
     chmod 0600 ~/.ssh/authorized_keys && \
