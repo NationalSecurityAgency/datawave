@@ -122,7 +122,7 @@ public class AuditController {
             }
             
             boolean success = messageChannel.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).setCorrelationId(auditId).build());
-
+            
             if (auditProperties.isConfirmAckEnabled()) {
                 try {
                     success = success && latch.await(auditProperties.getConfirmAckTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -132,7 +132,7 @@ public class AuditController {
                     correlationLatchMap.remove(auditId);
                 }
             }
-
+            
             return success;
         }
         
