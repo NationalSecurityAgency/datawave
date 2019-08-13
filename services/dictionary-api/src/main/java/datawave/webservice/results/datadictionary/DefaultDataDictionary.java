@@ -209,7 +209,7 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
         builder.append("<table id=\"myTable\">\n");
         
         builder.append("<thead><tr><th>FieldName</th><th>Internal FieldName</th><th>DataType</th>");
-        builder.append("<th>Index only</th><th>Forward Indexed</th><th>Reverse Indexed</th><th>Normalized</th><th>Types</th><th>Description</th><th>LastUpdated</th></tr></thead>");
+        builder.append("<th>Index only</th><th>Forward Indexed</th><th>Reverse Indexed</th><th>Normalized</th><th>Types</th><th>Tokenized</th><th>Description</th><th>LastUpdated</th></tr></thead>");
         
         builder.append("<tbody>");
         for (DefaultMetadataField f : this.getFields()) {
@@ -237,6 +237,7 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
             builder.append("<td>").append(f.isReverseIndexed() ? true : "").append("</td>");
             builder.append("<td>").append(f.isNormalized() ? true : "").append("</td>");
             builder.append("<td>").append(types).append("</td>");
+            builder.append("<td>").append(f.isTokenized() ? true : "").append("</td>");
             builder.append("<td>");
             
             boolean first = true;
