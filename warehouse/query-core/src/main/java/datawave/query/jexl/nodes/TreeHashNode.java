@@ -6,7 +6,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.google.common.collect.Sets;
 
-public class TreeHashNode {
+public class TreeHashNode implements Comparable<TreeHashNode> {
     
     private int size = 0;
     private HashCodeBuilder builder;
@@ -46,5 +46,21 @@ public class TreeHashNode {
         StringBuilder builder = new StringBuilder();
         builder.append(hashCode()).append(" ").append(nodes);
         return builder.toString();
+    }
+    
+    @Override
+    public int compareTo(TreeHashNode other) {
+        // Compare number of additions first
+        if (size != other.size) {
+            return size - other.size;
+        }
+        
+        // Compare size of nodes
+        if (nodes.size() != other.nodes.size()) {
+            return nodes.size() - other.nodes.size();
+        }
+        
+        // Compare hash codes.
+        return hashCode() - other.hashCode();
     }
 }

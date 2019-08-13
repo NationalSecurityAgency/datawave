@@ -132,18 +132,18 @@ public class TreeHashVisitor extends BaseVisitor {
         int lastsize = inte.length();
         
         // Build keys for child node map
-        List<String> keys = new ArrayList<>();
-        TreeMap<String,JexlNode> nodeMap = new TreeMap<>();
+        List<TreeHashNode> keys = new ArrayList<>();
+        TreeMap<TreeHashNode,JexlNode> nodeMap = new TreeMap<>();
         for (int ii = 0; ii < numChildren; ii++) {
             JexlNode child = node.jjtGetChild(ii);
-            String key = TreeHashVisitor.getNodeHash(child).toString();
+            TreeHashNode key = TreeHashVisitor.getNodeHash(child);
             nodeMap.put(key, child);
             keys.add(key);
         }
         
         // Sort the list of keys, append child node in order
         Collections.sort(keys);
-        for (String key : keys) {
+        for (TreeHashNode key : keys) {
             JexlNode child = nodeMap.get(key);
             if (inte.length() != lastsize) {
                 inte.append(joinTerm);
