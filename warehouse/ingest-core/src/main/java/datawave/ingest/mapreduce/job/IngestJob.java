@@ -87,6 +87,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -139,7 +140,7 @@ public class IngestJob implements Tool {
     
     protected boolean eventProcessingError = false;
     protected Logger log = Logger.getLogger("datawave.ingest");
-    private ConsoleAppender ca = new ConsoleAppender();
+    private ConsoleAppender ca = new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n"));
     
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
     protected int reduceTasks = 0;
@@ -277,12 +278,12 @@ public class IngestJob implements Tool {
         
         TypeRegistry.getInstance(conf);
         
-        log.error(conf.toString());
-        log.error(String.format("getStrings('%s') = %s", TypeRegistry.INGEST_DATA_TYPES, conf.get(TypeRegistry.INGEST_DATA_TYPES)));
-        log.error(String.format("getStrings('data.name') = %s", conf.get("data.name")));
+        log.info(conf.toString());
+        log.info(String.format("getStrings('%s') = %s", TypeRegistry.INGEST_DATA_TYPES, conf.get(TypeRegistry.INGEST_DATA_TYPES)));
+        log.info(String.format("getStrings('data.name') = %s", conf.get("data.name")));
         int index = 0;
         for (String name : TypeRegistry.getTypeNames()) {
-            log.error(String.format("name[%d] = '%s'", index++, name));
+            log.info(String.format("name[%d] = '%s'", index++, name));
         }
         
         if (TypeRegistry.getTypes().isEmpty()) {
