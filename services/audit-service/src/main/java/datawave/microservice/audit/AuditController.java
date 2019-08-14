@@ -112,7 +112,7 @@ public class AuditController {
      *            The audit parameters to be sent
      */
     private boolean sendMessage(AuditParameters parameters) {
-        if ((healthChecker != null && healthChecker.isHealthy()) || healthChecker == null) {
+        if (healthChecker == null || healthChecker.isHealthy()) {
             String auditId = parameters.getAuditId();
             
             CountDownLatch latch = null;
