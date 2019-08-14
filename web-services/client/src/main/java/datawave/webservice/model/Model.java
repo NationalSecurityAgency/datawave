@@ -1,8 +1,10 @@
 package datawave.webservice.model;
 
 import java.io.Serializable;
+import java.text.MessageFormat;
 import java.util.TreeSet;
 
+import javax.inject.Inject;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -22,7 +24,23 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 public class Model extends BaseResponse implements Serializable, HtmlProvider {
     
     private static final long serialVersionUID = 1L;
+    private String jqueryUri;
+    private String dataTablesUri;
     private static final String TITLE = "Model Description", EMPTY = "";
+    private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
+                    + "<script type=''text/javascript'' src=''{1}''></script>\n"
+                    + "<script type=''text/javascript''>\n"
+                    + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[3, \"asc\"]], \"bStateSave\": true'}') '}')\n"
+                    + "</script>\n";
+    
+    public Model(String jqueryUri, String datatablesUri) {
+        this.jqueryUri = jqueryUri;
+        this.dataTablesUri = datatablesUri;
+        
+    }
+    
+    // Only used in ModelBeanTest now
+    public Model() {};
     
     @XmlAttribute(name = "name", required = true)
     private String name = null;
@@ -96,7 +114,7 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
      */
     @Override
     public String getHeadContent() {
-        return EMPTY;
+        return MessageFormat.format(DATA_TABLES_TEMPLATE, jqueryUri, dataTablesUri);
     }
     
     /*
@@ -108,30 +126,27 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
         
-        builder.append("<table>\n");
+        builder.append("<div>\n");
+        builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
+        builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
         
-        builder.append("<tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th><th>IndexOnly</th></tr>");
+        builder.append("<thead><tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th></tr></thead>");
+        builder.append("<tbody>");
         
-        int x = 0;
         for (FieldMapping f : this.getFields()) {
-            // highlight alternating rows
-            if (x % 2 == 0) {
-                builder.append("<tr class=\"highlight\">");
-            } else {
-                builder.append("<tr>");
-            }
-            x++;
-            
             builder.append("<td>").append(f.getColumnVisibility()).append("</td>");
             builder.append("<td>").append(f.getFieldName()).append("</td>");
             builder.append("<td>").append(f.getDatatype()).append("</td>");
             builder.append("<td>").append(f.getModelFieldName()).append("</td>");
             builder.append("<td>").append(f.getDirection()).append("</td>");
-            builder.append("<td>").append(f.getIndexOnly()).append("</td>");
             builder.append("</tr>");
         }
         
-        builder.append("</table>\n");
+        builder.append("</tbody>");
+        builder.append("  </table>\n");
+        builder.append("  <div class=\"dataTables_info\" id=\"myTable_info\" role=\"status\" aria-live=\"polite\"></div>\n");
+        builder.append("</div>\n");
+        builder.append("</div>");
         
         return builder.toString();
     }
