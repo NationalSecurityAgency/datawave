@@ -491,7 +491,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             tce = (TabletClosedException) reason;
         
         int depth = 1;
-        while (tce == null && iie == null && ioe == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
+        while (iie == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
             reason = reason.getCause();
             if (reason instanceof IOException)
                 ioe = (IOException) reason;

@@ -51,16 +51,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 
 import static datawave.query.QueryTestTableHelper.*;
 import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.*;
@@ -85,6 +76,7 @@ public abstract class GroupingTest {
             EVERY_OTHER,
             EVERY_OTHER_SANS_CONSISTENCY
     );
+    private static final List<RebuildingScannerTestHelper.INTERRUPT> INTERRUPTS = Arrays.asList(RebuildingScannerTestHelper.INTERRUPT.values());
     // @formatter:on
     
     @RunWith(Arquillian.class)
@@ -92,8 +84,9 @@ public abstract class GroupingTest {
         
         @Override
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                        Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception {
-            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown);
+                        Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
+                        throws Exception {
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown, interrupt);
             Connector connector = qtth.connector;
             VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.SHARD);
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
@@ -108,8 +101,9 @@ public abstract class GroupingTest {
         
         @Override
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                        Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception {
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, teardown);
+                        Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
+                        throws Exception {
+            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, teardown, interrupt);
             Connector connector = qtth.connector;
             VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
@@ -158,7 +152,8 @@ public abstract class GroupingTest {
     }
     
     protected abstract BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                    Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception;
+                    Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
+                    throws Exception;
     
     protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
                     Map<String,String> extraParms, Connector connector) throws Exception {
@@ -266,8 +261,10 @@ public abstract class GroupingTest {
         
         List<List<EventBase>> responseEvents = new ArrayList<>();
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            responseEvents.add(((DefaultEventQueryResponse) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown))
-                            .getEvents());
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                responseEvents.add(((DefaultEventQueryResponse) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters,
+                                teardown, interrupt)).getEvents());
+            }
         }
         List<String> digested = digest(responseEvents);
         log.debug("reponses:" + digested);
@@ -321,7 +318,9 @@ public abstract class GroupingTest {
         extraParameters.put("group.fields.batch.size", "6");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
         }
     }
     
@@ -341,7 +340,9 @@ public abstract class GroupingTest {
         extraParameters.put("group.fields.batch.size", "0");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
         }
     }
     
@@ -361,7 +362,9 @@ public abstract class GroupingTest {
         extraParameters.put("group.fields.batch.size", "6");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
         }
     }
     
@@ -390,7 +393,9 @@ public abstract class GroupingTest {
         // @formatter:on
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
         }
     }
     
@@ -419,7 +424,9 @@ public abstract class GroupingTest {
         // @formatter:on
         logic.setParser(new LuceneToJexlQueryParser());
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
-            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
         }
         logic.setParser(new JexlControlledQueryParser());
     }

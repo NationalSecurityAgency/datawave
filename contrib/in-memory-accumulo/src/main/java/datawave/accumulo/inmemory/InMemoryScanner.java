@@ -121,9 +121,11 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner, Sca
 
     @Override
     public Iterator<Entry<Key,Value>> rebuild(Key lastKey) {
-        // simply rebuild the range starting at lastKey, non-inclusive.
-        Range newRange = new Range(lastKey, false, range.getEndKey(), range.isEndKeyInclusive());
-        this.range = newRange;
+        if (lastKey != null) {
+            // simply rebuild the range starting at lastKey, non-inclusive.
+            Range newRange = new Range(lastKey, false, range.getEndKey(), range.isEndKeyInclusive());
+            this.range = newRange;
+        }
 
         // now rebuild the iterator stack using the new range.
         return iterator();
