@@ -70,6 +70,7 @@ import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -142,6 +143,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
     public static String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
     
     protected boolean limitScanners = false;
+    
+    /**
+     * Allows developers to enable/disable the enforcing of unique nodes with OR and AND nodes.
+     */
+    private boolean enforceUniqueTermsWithinExpressions = false;
     
     /**
      * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
@@ -715,6 +721,15 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         stopwatch.stop();
+        
+        if (enforceUniqueTermsWithinExpressions) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique terms within AND and OR expressions");
+            queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after duplicate terms removed from AND and OR expressions:");
+            }
+            stopwatch.stop();
+        }
         
         Set<String> indexOnlyFields;
         try {
@@ -2302,5 +2317,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (null != builderThread) {
             builderThread.shutdown();
         }
+    }
+    
+    public boolean isEnforceUniqueTermsWithinExpressions() {
+        return enforceUniqueTermsWithinExpressions;
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
 }

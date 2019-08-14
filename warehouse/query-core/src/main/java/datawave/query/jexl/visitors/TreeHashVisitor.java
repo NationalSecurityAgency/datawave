@@ -24,11 +24,19 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.TreeMap;
+
 /**
- * Builds hash for necessary node. Not that this depends on JexlStringBuildingVisitor which will descend children of the provided node. Provides the string
- * representation of the expression nodes. Note that as a result, reference nodes are dropped. The result of this class can be used to determine if we have the
- * same nodes within a sub tree. Passing the result of this to a map will use the hashcode of the string followed by the equality of it to ensure that we do not
- * duplicate nodes.
+ * Builds a hash for the given node.
+ *
+ * Depends on the JexlStringBuildingVisitor to descend through the children of the given node. This builds the string representation for expression nodes. A
+ * side effect of this is that reference nodes are dropped.
+ *
+ * The result of {@link TreeHashVisitor#getNodeHash(JexlNode)} can be used to determine if we have the same nodes within a subtree. A map can be built using the
+ * hashcode of the string to ensure node uniqueness.
  */
 public class TreeHashVisitor extends BaseVisitor {
     
@@ -44,20 +52,16 @@ public class TreeHashVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        
         return super.visit(node, data);
-        
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        
         return ((TreeHashNode) data).append(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        
         return ((TreeHashNode) data).append(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
     
@@ -71,19 +75,16 @@ public class TreeHashVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        
         return ((TreeHashNode) data).append(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        
         return ((TreeHashNode) data).append(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        
         return ((TreeHashNode) data).append(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
     
@@ -117,38 +118,39 @@ public class TreeHashVisitor extends BaseVisitor {
     }
     
     public Object visit(ASTOrNode node, Object data) {
-        
-        int numChildren = node.jjtGetNumChildren();
-        
-        TreeHashNode inte = (TreeHashNode) (data);
-        int lastsize = inte.length();
-        
-        for (int i = 0; i < numChildren; i++) {
-            if (inte.length() != lastsize) {
-                inte.append(ORNODE);
-            }
-            lastsize = inte.length();
-            node.jjtGetChild(i).jjtAccept(this, inte);
-        }
-        
-        return inte;
+        return visitAndOrChildren(node, data, ORNODE);
     }
     
     public Object visit(ASTAndNode node, Object data) {
-        
+        return visitAndOrChildren(node, data, ANDNODE);
+    }
+    
+    private Object visitAndOrChildren(JexlNode node, Object data, String joinTerm) {
         int numChildren = node.jjtGetNumChildren();
         
         TreeHashNode inte = (TreeHashNode) (data);
         int lastsize = inte.length();
         
-        for (int i = 0; i < numChildren; i++) {
-            if (inte.length() != lastsize) {
-                inte.append(ANDNODE);
-            }
-            lastsize = inte.length();
-            node.jjtGetChild(i).jjtAccept(this, inte);
+        // Build keys for child node map
+        List<TreeHashNode> keys = new ArrayList<>();
+        TreeMap<TreeHashNode,JexlNode> nodeMap = new TreeMap<>();
+        for (int ii = 0; ii < numChildren; ii++) {
+            JexlNode child = node.jjtGetChild(ii);
+            TreeHashNode key = TreeHashVisitor.getNodeHash(child);
+            nodeMap.put(key, child);
+            keys.add(key);
         }
         
+        // Sort the list of keys, append child node in order
+        Collections.sort(keys);
+        for (TreeHashNode key : keys) {
+            JexlNode child = nodeMap.get(key);
+            if (inte.length() != lastsize) {
+                inte.append(joinTerm);
+            }
+            lastsize = inte.length();
+            child.jjtAccept(this, inte);
+        }
         return inte;
     }
     
@@ -170,5 +172,4 @@ public class TreeHashVisitor extends BaseVisitor {
             return false;
         }
     }
-    
 }
