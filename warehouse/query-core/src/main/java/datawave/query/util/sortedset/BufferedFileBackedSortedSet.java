@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -165,7 +166,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     }
     
     /**
-     * If the number of sets if over maxFiles, then start compacting those files down. The goal is to get the number of files down around 50% of maxFiles in N
+     * If the number of sets is over maxFiles, then start compacting those files down. The goal is to get the number of files down around 50% of maxFiles in N
      * rounds.
      * 
      * @param maxFiles
@@ -188,8 +189,8 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
             int setsPerCompaction = (filesToCompact + rounds - 1) / rounds; // divide into sets to compact, rounding up
             
             // sort the sets by size (compact up smaller sets first)
-            sets.sort(Comparator.comparing((SortedSet<E> s) -> s.size()));
-
+            sets.sort(Comparator.comparing(SortedSet<E>::size).reversed());
+            
             // newSet will be the final multiset
             MultiSetBackedSortedSet<E> newSet = new MultiSetBackedSortedSet<>();
             
@@ -198,12 +199,8 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
                 // create a set for those sets to be compacted into one file
                 MultiSetBackedSortedSet<E> setToCompact = new MultiSetBackedSortedSet<>();
                 for (int i = 0; i < setsPerCompaction; i++) {
-                    setToCompact.addSet(sets.get(i));
+                    setToCompact.addSet(sets.remove(sets.size() - 1));
                 }
-                
-                // remove the sets being compacted from our list
-                // creating new array list to allow previous list to be GC'ed
-                sets = new ArrayList<>(sets.subList(setsPerCompaction, sets.size()));
                 
                 // compact it
                 if (log.isDebugEnabled()) {
