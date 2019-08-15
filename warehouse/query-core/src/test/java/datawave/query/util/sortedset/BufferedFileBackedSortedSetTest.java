@@ -47,7 +47,7 @@ public class BufferedFileBackedSortedSetTest {
             }
         });
         
-        // adding in the data set multiple times to create underlying files with dyuplicate values making the
+        // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
         for (int d = 0; d < 11; d++) {
             Collections.addAll(set, data);
