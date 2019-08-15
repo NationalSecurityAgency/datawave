@@ -182,7 +182,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
             // calculate the number of sets to compact
             int numSets = sets.size();
             int excessSets = numSets - (maxFiles / 2); // those over 50% of maxFiles
-            int setsPerCompaction = Math.min(excessSets + 1, numSets); // Add in 1 to account for the compacted sets being added back in
+            int setsPerCompaction = Math.min(excessSets + 1, numSets); // Add in 1 to account for the compacted set being added back in
             
             // sort the sets by size (compact up smaller sets first)
             sets.sort(Comparator.comparing(SortedSet<E>::size).reversed());
