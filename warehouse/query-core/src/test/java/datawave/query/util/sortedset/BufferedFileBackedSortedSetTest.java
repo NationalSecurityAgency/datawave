@@ -107,10 +107,6 @@ public class BufferedFileBackedSortedSetTest {
     public void testClear() {
         set.clear();
         assertTrue(set.isEmpty());
-        for (int i = 0; i < data.length; i++) {
-            set.add(data[i]);
-            assertFalse(set.isEmpty());
-        }
     }
     
     @Test
@@ -141,17 +137,18 @@ public class BufferedFileBackedSortedSetTest {
     }
     
     @Test
-    public void testIteratortRemove() {
+    public void testIteratorRemove() {
         int size = set.size();
         int failCount = 0;
+        assertFalse(set.isPersisted());
+        // calling iterator() will force persistence
         for (Iterator<byte[]> it = set.iterator(); it.hasNext();) {
+            assertTrue(set.isPersisted());
             byte[] value = it.next();
             assertTrue(set.contains(value));
             try {
                 it.remove();
-                assertFalse(set.contains(value));
-                size--;
-                assertEquals(size, set.size());
+                fail("Expected iterator remove to fail with a persisted set");
             } catch (Exception e) {
                 // expected that some of the underlying FileSortedSets are persisted and hence the remove will fail
                 failCount++;
@@ -159,7 +156,7 @@ public class BufferedFileBackedSortedSetTest {
                 assertEquals(size, set.size());
             }
         }
-        assertTrue(failCount > 0);
+        assertEquals(size, failCount);
         assertFalse(set.isEmpty());
     }
     
