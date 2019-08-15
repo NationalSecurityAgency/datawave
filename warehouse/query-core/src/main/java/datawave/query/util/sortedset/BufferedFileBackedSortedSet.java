@@ -27,7 +27,6 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     
     protected MultiSetBackedSortedSet<E> set = new MultiSetBackedSortedSet<>();
     protected int maxOpenFiles = 10000;
-    protected int compactionRounds = 1;
     protected FileSortedSet<E> buffer = null;
     protected Comparator<? super E> comparator = null;
     protected boolean sizeModified = false;
@@ -79,7 +78,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
         if (buffer != null) {
             buffer.persist();
             buffer = null;
-            compact(maxOpenFiles, compactionRounds);
+            compact(maxOpenFiles);
         }
     }
     
@@ -166,14 +165,12 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     }
     
     /**
-     * If the number of sets is over maxFiles, then start compacting those files down. The goal is to get the number of files down around 50% of maxFiles in N
-     * rounds.
+     * If the number of sets is over maxFiles, then start compacting those files down. The goal is to get the number of files down around 50% of maxFiles.
      * 
      * @param maxFiles
-     * @param rounds
      * @throws IOException
      */
-    public void compact(int maxFiles, int rounds) throws IOException {
+    public void compact(int maxFiles) throws IOException {
         // if we have more sets than we are allowed, then we need to compact this down
         if (maxFiles > 0 && set.getSets().size() > maxFiles) {
             if (log.isDebugEnabled()) {
@@ -182,11 +179,10 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
             // create a copy of the set list (sorting below)
             List<SortedSet<E>> sets = new ArrayList<>(set.getSets());
             
-            // calculate the number of sets to compact per round
+            // calculate the number of sets to compact
             int numSets = sets.size();
             int excessSets = numSets - (maxFiles / 2); // those over 50% of maxFiles
-            int filesToCompact = excessSets + rounds; // Add in a few extra to account for the compacted sets being added back in
-            int setsPerCompaction = (filesToCompact + rounds - 1) / rounds; // divide into sets to compact, rounding up
+            int setsPerCompaction = Math.min(excessSets + 1, numSets); // Add in 1 to account for the compacted sets being added back in
             
             // sort the sets by size (compact up smaller sets first)
             sets.sort(Comparator.comparing(SortedSet<E>::size).reversed());
@@ -194,31 +190,28 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
             // newSet will be the final multiset
             MultiSetBackedSortedSet<E> newSet = new MultiSetBackedSortedSet<>();
             
-            for (int r = 0; r < rounds; r++) {
-                
-                // create a set for those sets to be compacted into one file
-                MultiSetBackedSortedSet<E> setToCompact = new MultiSetBackedSortedSet<>();
-                for (int i = 0; i < setsPerCompaction; i++) {
-                    setToCompact.addSet(sets.remove(sets.size() - 1));
-                }
-                
-                // compact it
-                if (log.isDebugEnabled()) {
-                    log.debug("Starting compaction for " + setToCompact);
-                }
-                long start = System.currentTimeMillis();
-                FileSortedSet<E> compaction = compact(setToCompact);
-                if (log.isDebugEnabled()) {
-                    long delta = System.currentTimeMillis() - start;
-                    log.debug("Compacted " + setToCompact + " -> " + compaction + " in " + delta + "ms");
-                }
-                
-                // add the compacted set to our final multiset
-                newSet.addSet(compaction);
-                
-                // clear the compactions set to remove the files that were compacted
-                setToCompact.clear();
+            // create a set for those sets to be compacted into one file
+            MultiSetBackedSortedSet<E> setToCompact = new MultiSetBackedSortedSet<>();
+            for (int i = 0; i < setsPerCompaction; i++) {
+                setToCompact.addSet(sets.remove(sets.size() - 1));
             }
+            
+            // compact it
+            if (log.isDebugEnabled()) {
+                log.debug("Starting compaction for " + setToCompact);
+            }
+            long start = System.currentTimeMillis();
+            FileSortedSet<E> compaction = compact(setToCompact);
+            if (log.isDebugEnabled()) {
+                long delta = System.currentTimeMillis() - start;
+                log.debug("Compacted " + setToCompact + " -> " + compaction + " in " + delta + "ms");
+            }
+            
+            // add the compacted set to our final multiset
+            newSet.addSet(compaction);
+            
+            // clear the compactions set to remove the files that were compacted
+            setToCompact.clear();
             
             // now add in the sets we did not compact
             for (int i = 0; i < sets.size(); i++) {
