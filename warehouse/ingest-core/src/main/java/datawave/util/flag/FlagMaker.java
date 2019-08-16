@@ -276,7 +276,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     }
 
     protected void logFileInfo(FlagDataTypeConfig fc, FileStatus status) {
-        log.info("File " + fc.getDataName() + " : " + status);
+        log.info("File {} : {}", fc.getDataName(), status);
     }
     
     private boolean shouldOnlyCreateFullFlags(FlagDataTypeConfig fc) {
