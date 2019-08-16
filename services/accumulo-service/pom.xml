@@ -8,10 +8,11 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>accumulo-service</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.1.2-SNAPSHOT</version>
     <description>DATAWAVE Accumulo Microservice</description>
     <properties>
         <start-class>datawave.microservice.accumulo.AccumuloService</start-class>
+        <version.curator>2.13.0</version.curator>
         <version.microservice.accumulo-api>1.1</version.microservice.accumulo-api>
         <version.microservice.starter-datawave>1.5</version.microservice.starter-datawave>
         <version.microservice.starter-datawave-audit>1.0</version.microservice.starter-datawave-audit>
@@ -41,12 +42,17 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-client</artifactId>
-                <version>2.11.0</version>
+                <version>${version.curator}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-framework</artifactId>
-                <version>2.11.0</version>
+                <version>${version.curator}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
+                <version>${version.curator}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -80,7 +86,7 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
-                <version>2.11.0</version>
+                <version>${version.curator}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
