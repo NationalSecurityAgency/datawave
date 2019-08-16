@@ -27,10 +27,10 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[0, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
     
-    public ModelList(String jqueryUri, String datatablesUri, String dataWaveMetadataTableName) {
+    public ModelList(String jqueryUri, String datatablesUri, String modelTableName) {
         this.jqueryUri = jqueryUri;
         this.dataTablesUri = datatablesUri;
-        this.modelTableName = dataWaveMetadataTableName;
+        this.modelTableName = modelTableName;
     }
     
     @XmlElementWrapper(name = "ModelNames")

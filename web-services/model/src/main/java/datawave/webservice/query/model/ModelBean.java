@@ -129,7 +129,7 @@ public class ModelBean {
             modelTableName = defaultModelTableName;
         }
         
-        ModelList response = new ModelList(modelTableName, dataTablesUri, modelTableName);
+        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName);
         
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
