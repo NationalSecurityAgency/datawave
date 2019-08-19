@@ -266,12 +266,17 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 } else {
                     try {
                         this.fd.addInputFile(new InputFile(folder, status, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp()));
+                        logFileInfo(fc, status);
                     } catch (UnusableFileException e) {
                         log.warn("Skipping unusable file " + status.getPath(), e);
                     }
                 }
             }
         }
+    }
+
+    protected void logFileInfo(FlagDataTypeConfig fc, FileStatus status) {
+        log.info("File {} : {}", fc.getDataName(), status);
     }
     
     private boolean shouldOnlyCreateFullFlags(FlagDataTypeConfig fc) {
