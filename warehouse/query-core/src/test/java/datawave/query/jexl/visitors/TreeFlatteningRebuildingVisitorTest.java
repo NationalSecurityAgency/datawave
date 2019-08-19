@@ -15,15 +15,14 @@ public class TreeFlatteningRebuildingVisitorTest {
     @Test
     public void dontFlattenASTDelayedPredicateAndTest() throws Exception {
         String query = "((ASTDelayedPredicate = true) && (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) && GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' && GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
-        String expected = "GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8' && ((ASTDelayedPredicate = true) && (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) && GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0'";
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
-        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
+        Assert.assertEquals(query, JexlStringBuildingVisitor.buildQuery(node));
     }
     
     @Test
     public void dontFlattenASTDelayedPredicateOrTest() throws Exception {
         String query = "((ASTDelayedPredicate = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
-        String expected = "GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8' || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || (ASTDelayedPredicate = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))";
+        String expected = "(ASTDelayedPredicate = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8')) || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
         Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
     }
@@ -38,14 +37,6 @@ public class TreeFlatteningRebuildingVisitorTest {
         }
         Assert.assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringReader(";")).parse(new StringReader(new LuceneToJexlQueryParser()
                         .parse(sb.toString()).toString()), null)));
-    }
-    
-    @Test
-    public void multipleNestingTest() throws Exception {
-        String query = "(a || b || (c || d || e || (f || g || (h || i || (((j || k)))))))";
-        String expected = "(j || k || h || i || f || g || e || c || d || a || b)";
-        JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
-        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
     }
     
 }

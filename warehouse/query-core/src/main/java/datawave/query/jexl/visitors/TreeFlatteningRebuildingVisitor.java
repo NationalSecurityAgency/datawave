@@ -70,7 +70,29 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     public Object visit(ASTOrNode node, Object data) {
         ASTOrNode orNode = JexlNodes.newInstanceOfType(node);
         orNode.image = node.image;
-        flattenTree(node, orNode);
+        
+        final LinkedList<JexlNode> toCombine = new LinkedList<>();
+        final LinkedList<JexlNode> children = new LinkedList<>();
+        toCombine.push(node);
+        do {
+            JexlNode currentNode = toCombine.pop();
+            for (int i = currentNode.jjtGetNumChildren() - 1; i >= 0; i--) {
+                final JexlNode child = currentNode.jjtGetChild(i);
+                final JexlNode dereferenced = JexlASTHelper.dereference(child);
+                if (dereferenced instanceof ASTOrNode) {
+                    toCombine.push(dereferenced);
+                } else {
+                    children.push(child);
+                }
+            }
+        } while (!toCombine.isEmpty());
+        
+        do {
+            JexlNode child = (JexlNode) children.pop().jjtAccept(this, null);
+            orNode.jjtAddChild(child, orNode.jjtGetNumChildren());
+            child.jjtSetParent(orNode);
+        } while (!children.isEmpty());
+        
         return orNode;
     }
     
@@ -240,32 +262,22 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             log.warn("newNode is not the same type as currentNode ... something has probably gone horribly wrong");
         }
         
-        final LinkedList<JexlNode> toCombine = new LinkedList<>();
-        do {
-            for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
-                final JexlNode child = currentNode.jjtGetChild(i);
-                final JexlNode node;
-                final JexlNode dereferenced;
-                if (child instanceof ASTOrNode) {
-                    node = child;
-                    dereferenced = JexlASTHelper.dereference(child);
-                } else {
-                    node = (JexlNode) child.jjtAccept(this, null);
-                    dereferenced = JexlASTHelper.dereference(node);
-                }
-                if (acceptableNodesToCombine(currentNode, dereferenced, !node.equals(dereferenced))) {
-                    toCombine.addFirst(dereferenced);
-                } else {
-                    newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
-                    node.jjtSetParent(newNode);
-                }
+        for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
+            JexlNode node = (JexlNode) currentNode.jjtGetChild(i).jjtAccept(this, null);
+            JexlNode dereferenced = JexlASTHelper.dereference(node);
+            
+            if (acceptableNodesToCombine(currentNode, dereferenced, !node.equals(dereferenced))) {
+                flattenTree(dereferenced, newNode);
+            } else {
+                newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
+                node.jjtSetParent(newNode);
             }
-        } while ((currentNode = toCombine.pollFirst()) != null);
+        }
     }
     
     protected static boolean acceptableNodesToCombine(JexlNode currentNode, JexlNode newNode, boolean isWrapped) {
         if (currentNode.getClass().equals(newNode.getClass())) {
-            // if this is a bounded range or marker node, then to not combine
+            // if this is a bounded range or marker node, then do not combine
             // don't allow combination of a marker node UNLESS it's already unwrapped
             if (newNode instanceof ASTAndNode && (isBoundedRange((ASTAndNode) newNode) || (QueryPropertyMarker.instanceOf(newNode, null) && isWrapped))) {
                 return false;
