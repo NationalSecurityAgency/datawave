@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -26,14 +27,14 @@ import java.io.File;
  */
 public class TableConfigHelperFactoryTest {
     private static final Logger logger = Logger.getLogger(TableConfigHelperFactoryTest.class);
-    
-    private static Configuration conf;
     private static MiniAccumuloCluster mac;
-    private static Connector connector;
-    private static TableOperations tops;
+    
+    private Configuration conf;
+    private TableOperations tops;
     
     private static final String TEST_SHARD_TABLE_NAME = "testShard";
     
+    @BeforeClass
     public static void startCluster() throws Exception {
         File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + TableConfigHelperFactoryTest.class.getName());
         if (macDir.exists())
@@ -43,9 +44,8 @@ public class TableConfigHelperFactoryTest {
         mac.start();
     }
     
-    @BeforeClass
-    public static void setup() throws Exception {
-        startCluster();
+    @Before
+    public void setup() throws Exception {
         conf = new Configuration();
         
         conf.set("shard.table.name", TableName.SHARD);
@@ -55,8 +55,10 @@ public class TableConfigHelperFactoryTest {
         conf.set("testShard.table.config.class", ShardTableConfigHelper.class.getName());
         conf.set("testShard.table.config.prefix", "test");
         
-        connector = mac.getConnector("root", "pass");
-        tops = connector.tableOperations();
+        tops = mac.getConnector("root", "pass").tableOperations();
+        
+        recreateTable(tops, TableName.SHARD);
+        recreateTable(tops, TEST_SHARD_TABLE_NAME);
     }
     
     @AfterClass
@@ -73,9 +75,6 @@ public class TableConfigHelperFactoryTest {
     
     @Test
     public void shouldSetupTableWithOverrides() throws Exception {
-        recreateTable(tops, TableName.SHARD);
-        recreateTable(tops, TEST_SHARD_TABLE_NAME);
-        
         TableConfigHelper helper = TableConfigHelperFactory.create(TEST_SHARD_TABLE_NAME, conf, logger);
         helper.configure(tops);
         
@@ -88,9 +87,6 @@ public class TableConfigHelperFactoryTest {
     
     @Test
     public void shouldSetupTablesWithoutOverrides() throws Exception {
-        recreateTable(tops, TableName.SHARD);
-        recreateTable(tops, TEST_SHARD_TABLE_NAME);
-        
         TableConfigHelper helper = TableConfigHelperFactory.create(TableName.SHARD, conf, logger);
         helper.configure(tops);
         
