@@ -8,13 +8,12 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -23,30 +22,29 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 
 /**
- * Each Test starts and stops a mini accumulo cluster. Files are stored in
- * warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest-testname
+ * Test uses mini accumulo cluster. Files are stored in warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest
  */
 public class TableConfigHelperFactoryTest {
     private static final Logger logger = Logger.getLogger(TableConfigHelperFactoryTest.class);
-    @Rule
-    public TestName name = new TestName();
     
-    private Configuration conf;
-    private MiniAccumuloCluster mac;
-    private Connector connector;
-    private TableOperations tops;
+    private static Configuration conf;
+    private static MiniAccumuloCluster mac;
+    private static Connector connector;
+    private static TableOperations tops;
     
     private static final String TEST_SHARD_TABLE_NAME = "testShard";
     
-    public void startCluster() throws Exception {
-        File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + TableConfigHelperFactoryTest.class.getName() + "-" + name.getMethodName());
+    public static void startCluster() throws Exception {
+        File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + TableConfigHelperFactoryTest.class.getName());
+        if (macDir.exists())
+            FileUtils.deleteDirectory(macDir);
         macDir.mkdirs();
         mac = new MiniAccumuloCluster(new MiniAccumuloConfig(macDir, "pass"));
         mac.start();
     }
     
-    @Before
-    public void setup() throws Exception {
+    @BeforeClass
+    public static void setup() throws Exception {
         startCluster();
         conf = new Configuration();
         
@@ -59,17 +57,14 @@ public class TableConfigHelperFactoryTest {
         
         connector = mac.getConnector("root", "pass");
         tops = connector.tableOperations();
-        
-        recreateTable(tops, TableName.SHARD);
-        recreateTable(tops, TEST_SHARD_TABLE_NAME);
     }
     
-    @After
-    public void shutdown() throws Exception {
+    @AfterClass
+    public static void shutdown() throws Exception {
         mac.stop();
     }
     
-    private void recreateTable(TableOperations tops, String table) throws Exception {
+    private static void recreateTable(TableOperations tops, String table) throws Exception {
         if (tops.exists(table)) {
             tops.delete(table);
         }
@@ -78,6 +73,9 @@ public class TableConfigHelperFactoryTest {
     
     @Test
     public void shouldSetupTableWithOverrides() throws Exception {
+        recreateTable(tops, TableName.SHARD);
+        recreateTable(tops, TEST_SHARD_TABLE_NAME);
+        
         TableConfigHelper helper = TableConfigHelperFactory.create(TEST_SHARD_TABLE_NAME, conf, logger);
         helper.configure(tops);
         
@@ -90,6 +88,9 @@ public class TableConfigHelperFactoryTest {
     
     @Test
     public void shouldSetupTablesWithoutOverrides() throws Exception {
+        recreateTable(tops, TableName.SHARD);
+        recreateTable(tops, TEST_SHARD_TABLE_NAME);
+        
         TableConfigHelper helper = TableConfigHelperFactory.create(TableName.SHARD, conf, logger);
         helper.configure(tops);
         
