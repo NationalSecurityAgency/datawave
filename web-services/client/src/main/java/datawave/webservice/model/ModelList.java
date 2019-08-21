@@ -36,7 +36,7 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
     @XmlElementWrapper(name = "ModelNames")
     @XmlElement(name = "ModelName")
     private HashSet<String> names = null;
-
+    
     public HashSet<String> getNames() {
         return names;
     }
