@@ -39,4 +39,12 @@ public class TreeFlatteningRebuildingVisitorTest {
                         .parse(sb.toString()).toString()), null)));
     }
     
+    @Test
+    public void multipleNestingTest() throws Exception {
+        String query = "((a && (b && (c && d))) || b || (c || d || e || (f || g || (h || i || (((j || k)))))))";
+        String expected = "((a && b && c && d) || b || c || d || e || f || g || h || i || j || k)";
+        JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
+    }
+    
 }

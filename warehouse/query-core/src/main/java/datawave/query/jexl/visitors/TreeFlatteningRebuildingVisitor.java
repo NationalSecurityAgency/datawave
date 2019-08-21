@@ -21,6 +21,7 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -71,27 +72,39 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         ASTOrNode orNode = JexlNodes.newInstanceOfType(node);
         orNode.image = node.image;
         
-        final LinkedList<JexlNode> toCombine = new LinkedList<>();
-        final LinkedList<JexlNode> children = new LinkedList<>();
-        toCombine.push(node);
+        LinkedList<JexlNode> stackA = new LinkedList<>();
+        stackA.push(node);
+        LinkedList<JexlNode> stackB;
+        boolean hasMoreOrNodes;
         do {
-            JexlNode currentNode = toCombine.pop();
-            for (int i = currentNode.jjtGetNumChildren() - 1; i >= 0; i--) {
-                final JexlNode child = currentNode.jjtGetChild(i);
-                final JexlNode dereferenced = JexlASTHelper.dereference(child);
-                if (dereferenced instanceof ASTOrNode) {
-                    toCombine.push(dereferenced);
+            stackB = new LinkedList<>();
+            hasMoreOrNodes = false;
+            do {
+                JexlNode currentNode = stackA.pop();
+                if (currentNode instanceof ASTOrNode) {
+                    for (int i = currentNode.jjtGetNumChildren() - 1; i >= 0; i--) {
+                        JexlNode child = currentNode.jjtGetChild(i);
+                        JexlNode dereferenced = JexlASTHelper.dereference(child);
+                        if (dereferenced instanceof ASTOrNode) {
+                            hasMoreOrNodes = true;
+                            stackB.push(dereferenced);
+                        } else {
+                            stackB.push(child);
+                        }
+                    }
                 } else {
-                    children.push(child);
+                    stackB.push(currentNode);
                 }
-            }
-        } while (!toCombine.isEmpty());
+            } while (!stackA.isEmpty());
+            stackA = new LinkedList<>(stackB);
+            Collections.reverse(stackA);
+        } while (hasMoreOrNodes);
         
         do {
-            JexlNode child = (JexlNode) children.pop().jjtAccept(this, null);
+            JexlNode child = (JexlNode) stackB.pop().jjtAccept(this, null);
             orNode.jjtAddChild(child, orNode.jjtGetNumChildren());
             child.jjtSetParent(orNode);
-        } while (!children.isEmpty());
+        } while (!stackB.isEmpty());
         
         return orNode;
     }
