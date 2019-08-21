@@ -28,6 +28,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
@@ -42,6 +43,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
+import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -83,6 +85,18 @@ public class ModelBean {
     
     private static final HashSet<String> RESERVED_COLF_VALUES = Sets.newHashSet("e", "i", "ri", "f", "tf", "m", "desc", "edge", "t", "n", "h");
     
+    @Inject
+    @ConfigProperty(name = "dw.model.defaultTableName", defaultValue = DEFAULT_MODEL_TABLE_NAME)
+    private String defaultModelTableName;
+    
+    @Inject
+    @ConfigProperty(name = "dw.cdn.jquery.uri", defaultValue = "/jquery.min.js")
+    private String jqueryUri;
+    
+    @Inject
+    @ConfigProperty(name = "dw.cdn.dataTables.uri", defaultValue = "/jquery.dataTables.min.js")
+    private String dataTablesUri;
+    
     @EJB
     private AccumuloConnectionFactory connectionFactory;
     
@@ -109,8 +123,13 @@ public class ModelBean {
     @Path("/list")
     @GZIP
     @Interceptors(ResponseInterceptor.class)
-    public ModelList listModelNames(@QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
-        ModelList response = new ModelList();
+    public ModelList listModelNames(@QueryParam("modelTableName") String modelTableName) {
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        
+        ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName);
         
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -181,8 +200,12 @@ public class ModelBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
-    public VoidResponse importModel(datawave.webservice.model.Model model,
-                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
+    public VoidResponse importModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        
         if (log.isDebugEnabled()) {
             log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
         }
@@ -218,8 +241,12 @@ public class ModelBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
-    public VoidResponse deleteModel(@Required("name") @PathParam("name") String name,
-                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
+    public VoidResponse deleteModel(@Required("name") @PathParam("name") String name, @QueryParam("modelTableName") String modelTableName) {
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        
         return deleteModel(name, modelTableName, true);
     }
     
@@ -264,8 +291,13 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public VoidResponse cloneModel(@Required("name") @FormParam("name") String name, @Required("newName") @FormParam("newName") String newName,
-                    @FormParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
+                    @FormParam("modelTableName") String modelTableName) {
         VoidResponse response = new VoidResponse();
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        
         datawave.webservice.model.Model model = getModel(name, modelTableName);
         // Set the new name
         model.setName(newName);
@@ -293,9 +325,13 @@ public class ModelBean {
     @Path("/{name}")
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
-    public datawave.webservice.model.Model getModel(@Required("name") @PathParam("name") String name,
-                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
-        datawave.webservice.model.Model response = new datawave.webservice.model.Model();
+    public datawave.webservice.model.Model getModel(@Required("name") @PathParam("name") String name, @QueryParam("modelTableName") String modelTableName) {
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        
+        datawave.webservice.model.Model response = new datawave.webservice.model.Model(jqueryUri, dataTablesUri);
         
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -367,8 +403,12 @@ public class ModelBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
-    public VoidResponse insertMapping(datawave.webservice.model.Model model,
-                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
+    public VoidResponse insertMapping(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        
         VoidResponse response = new VoidResponse();
         
         Connector connector = null;
@@ -432,8 +472,12 @@ public class ModelBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
-    public VoidResponse deleteMapping(datawave.webservice.model.Model model,
-                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
+    public VoidResponse deleteMapping(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
+        
+        if (modelTableName == null) {
+            modelTableName = defaultModelTableName;
+        }
+        
         return deleteMapping(model, modelTableName, true);
     }
     
