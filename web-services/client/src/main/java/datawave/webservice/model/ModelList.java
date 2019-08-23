@@ -1,8 +1,10 @@
 package datawave.webservice.model;
 
 import java.io.Serializable;
+import java.text.MessageFormat;
 import java.util.HashSet;
 
+import javax.inject.Inject;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -13,8 +15,23 @@ import datawave.webservice.result.BaseResponse;
 @XmlRootElement(name = "ModelList")
 public class ModelList extends BaseResponse implements Serializable, HtmlProvider {
     
+    private String jqueryUri;
+    private String dataTablesUri;
+    private String modelTableName;
+    
     private static final long serialVersionUID = 1L;
-    private static final String TITLE = "Model Names", EMPTY = "";
+    private static final String TITLE = "Model Names";
+    private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
+                    + "<script type=''text/javascript'' src=''{1}''></script>\n"
+                    + "<script type=''text/javascript''>\n"
+                    + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[0, \"asc\"]], \"bStateSave\": true'}') '}')\n"
+                    + "</script>\n";
+    
+    public ModelList(String jqueryUri, String datatablesUri, String modelTableName) {
+        this.jqueryUri = jqueryUri;
+        this.dataTablesUri = datatablesUri;
+        this.modelTableName = modelTableName;
+    }
     
     @XmlElementWrapper(name = "ModelNames")
     @XmlElement(name = "ModelName")
@@ -55,7 +72,7 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
      */
     @Override
     public String getHeadContent() {
-        return EMPTY;
+        return MessageFormat.format(DATA_TABLES_TEMPLATE, jqueryUri, dataTablesUri);
     }
     
     /*
@@ -70,22 +87,24 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
         if (this.getNames() == null || this.getNames().isEmpty()) {
             builder.append("No models available.");
         } else {
-            builder.append("<table>\n");
+            builder.append("<div>\n");
+            builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
+            builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
+            builder.append("<thead><tr><th>Model Name</th></tr></thead>");
+            builder.append("<tbody>");
             
-            int x = 0;
             for (String name : this.getNames()) {
                 // highlight alternating rows
-                if (x % 2 == 0) {
-                    builder.append("<tr class=\"highlight\">");
-                } else {
-                    builder.append("<tr>");
-                }
-                x++;
-                builder.append("<td><a href=\"/DataWave/Model/").append(name).append("\">").append(name).append("</a></td>");
-                builder.append("</tr>");
+                builder.append("<tr>");
+                builder.append("<td><a href=\"/DataWave/Model/").append(name).append("?modelTableName=").append(modelTableName);
+                builder.append("\">").append(name).append("</a></td>");
+                builder.append("</tr>\n");
             }
-            
-            builder.append("</table>\n");
+            builder.append("</tbody>");
+            builder.append("  </table>\n");
+            builder.append("  <div class=\"dataTables_info\" id=\"myTable_info\" role=\"status\" aria-live=\"polite\"></div>\n");
+            builder.append("</div>\n");
+            builder.append("</div>");
         }
         return builder.toString();
     }

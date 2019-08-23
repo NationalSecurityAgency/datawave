@@ -55,6 +55,7 @@ undeploy datawave-web-service.ear
 /subsystem=logging/logger=grails.app.controllers.multimediawebgui:remove
 /subsystem=logging/logger=grails.app.filter.multimediawebgui:remove
 
+
 /subsystem=logging/periodic-rotating-file-handler=QUERY_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=CACHED_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=SECURITY_LOG/:remove
@@ -166,6 +167,7 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.query.metrics.visibility:remove
 /system-property=dw.metrics.warehouse.namenode:remove
 /system-property=dw.metrics.warehouse.hadoop.path:remove
+/system-property=dw.model.defaultTableName:remove
 /system-property=dw.atom.tableName:remove
 /system-property=dw.atom.externalHostName:remove
 /system-property=dw.atom.externalPort:remove
