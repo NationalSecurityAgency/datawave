@@ -10,9 +10,11 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -158,10 +160,14 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
         for (int i = 0; i < 10 && !verified; i++) {
             try {
                 int actualSize = 0;
+                List<E> firstOneHundred = new ArrayList<>();
                 ObjectOutputStream stream = getOutputStream();
                 try {
                     for (E t : set) {
                         writeObject(stream, t);
+                        if (firstOneHundred.size() < 100) {
+                            firstOneHundred.add(t);
+                        }
                         actualSize++;
                     }
                     stream.writeInt(actualSize);
@@ -172,19 +178,15 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
                 if (handler.getSize() < 4) {
                     throw new IOException("Failed to verify file existence");
                 }
-                // now verify at least the first 100 objects were written correctly
+                // now verify the first 100 objects were written correctly
                 ObjectInputStream inStream = getInputStream();
                 try {
-                    int testReadSize = Math.min(actualSize, 100);
                     int count = 0;
-                    for (E t : set) {
+                    for (E t : firstOneHundred) {
                         count++;
                         E input = readObject(inStream);
                         if (!equals(t, input)) {
                             throw new IOException("Failed to verify element " + count + " was written");
-                        }
-                        if (count == testReadSize) {
-                            break;
                         }
                     }
                 } finally {
