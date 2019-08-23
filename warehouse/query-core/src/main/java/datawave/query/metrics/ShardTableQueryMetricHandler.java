@@ -287,8 +287,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
         event.setAuxData(storedQueryMetric);
         event.setRawRecordNumber(1000L);
+        event.addAltId(storedQueryMetric.getQueryId());
         
-        // must happen after validate
         event.setId(uidBuilder.newId(storedQueryMetric.getQueryId().getBytes(), (Date) null));
         
         final Multimap<String,NormalizedContentInterface> fields;
