@@ -2,6 +2,7 @@ package datawave.iterators.filter.ageoff;
 
 import com.google.common.collect.Sets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import datawave.iterators.filter.AgeOffConfigParams;
@@ -37,6 +38,10 @@ import org.apache.log4j.Logger;
  * </pre>
  */
 public class FieldAgeOffFilter extends AppliedRule {
+    
+    protected enum FieldExclusionType {
+        EVENT
+    }
     
     public static final String OPTION_PREFIX = "field.";
     private ColumnVisibilityOrFilter cvOrFilter = new ColumnVisibilityOrFilter();
@@ -94,12 +99,17 @@ public class FieldAgeOffFilter extends AppliedRule {
     protected Map<ByteSequence,Long> fieldTimes = null;
     
     /**
+     * Exclude data from age-off
+     */
+    protected Set<FieldExclusionType> fieldExcludeOptions = null;
+    
+    /**
      * Required by the {@code FilterRule} interface. This method returns a {@code boolean} value indicating whether or not to allow the {@code (Key, Value)}
      * pair through the rule. A value of {@code true} indicates that he pair should be passed onward through the {@code Iterator} stack, and {@code false}
      * indicates that the {@code (Key, Value)} pair should not be passed on.
      *
      * <p>
-     * If the value provided in the paramter {@code k} does not match the REGEX pattern specified in this filter's configuration options, then a value of
+     * If the value provided in the parameter {@code k} does not match the REGEX pattern specified in this filter's configuration options, then a value of
      * {@code true} is returned.
      *
      * @param k
@@ -122,6 +132,7 @@ public class FieldAgeOffFilter extends AppliedRule {
         final byte[] cq = k.getColumnQualifierData().getBackingArray();
         
         ByteSequence field = null;
+        FieldExclusionType candidateExclusionType = null;
         
         /**
          * Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
@@ -172,6 +183,7 @@ public class FieldAgeOffFilter extends AppliedRule {
             } else {
                 // CASE 3
                 // For the data, find the first null byte or '.' in the colQual, then grab the start of the string to this point
+                candidateExclusionType = FieldExclusionType.EVENT;
                 int length = -1;
                 for (int i = 0; i < cq.length; i++) {
                     if (cq[i] == '.' || cq[i] == NULL) {
@@ -186,6 +198,12 @@ public class FieldAgeOffFilter extends AppliedRule {
                     field = new ArrayByteSequence(cq, 0, length);
                 }
             }
+        }
+        
+        // check to see if the field is excluded based on type
+        // if so, pass through the filter
+        if ((candidateExclusionType != null && fieldExcludeOptions.contains(candidateExclusionType))) {
+            return true;
         }
         
         Long dataTypeCutoff = (fieldTimes.containsKey(field)) ? fieldTimes.get(field) : null;
@@ -258,6 +276,15 @@ public class FieldAgeOffFilter extends AppliedRule {
             isIndextable = Boolean.valueOf(options.getOption(AgeOffConfigParams.IS_INDEX_TABLE));
         }
         
+        fieldExcludeOptions = new HashSet<>();
+        String excludeSchemaOption = options.getOption(AgeOffConfigParams.EXCLUDE_DATA);
+        if (excludeSchemaOption != null) {
+            for (String schemaTypeText : excludeSchemaOption.split(",")) {
+                FieldExclusionType schemaType = Enum.valueOf(FieldExclusionType.class, schemaTypeText.toUpperCase());
+                fieldExcludeOptions.add(schemaType);
+            }
+        }
+        
         long defaultUnitsFactor = 1L; // default to "days" as the unit.
         
         if (ttlUnits != null) {
@@ -293,5 +320,4 @@ public class FieldAgeOffFilter extends AppliedRule {
     public boolean isFilterRuleApplied() {
         return ruleApplied;
     }
-    
 }
