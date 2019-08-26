@@ -27,6 +27,11 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[0, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
     
+    /**
+     * Need empty constructor for serialization
+     */
+    public ModelList() {}
+    
     public ModelList(String jqueryUri, String datatablesUri, String modelTableName) {
         this.jqueryUri = jqueryUri;
         this.dataTablesUri = datatablesUri;
