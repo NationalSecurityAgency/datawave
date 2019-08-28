@@ -223,13 +223,13 @@ public abstract class UniqueTest {
         
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
-        extraParameters.put("unique.fields", "DEATH_DATE,MAGIC");
+        extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
         
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-        extraParameters.put("unique.fields", "DEATH_DATE,BIRTH_DATE");
+        extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
     
@@ -241,12 +241,12 @@ public abstract class UniqueTest {
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "UUID =~ '^[CS].*' && f:unique(DEATH_DATE,MAGIC)";
+        String queryString = "UUID =~ '^[CS].*' && f:unique($DEATH_DATE,MAGIC)";
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
         
-        queryString = "UUID =~ '^[CS].*' && f:unique('DEATH_DATE','BIRTH_DATE')";
+        queryString = "UUID =~ '^[CS].*' && f:unique('DEATH_DATE','$BIRTH_DATE')";
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -262,12 +262,12 @@ public abstract class UniqueTest {
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(DEATH_DATE,MAGIC)";
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(DEATH_DATE,$MAGIC)";
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
         
-        queryString = "UUID:/^[CS].*/ AND #UNIQUE(DEATH_DATE,BIRTH_DATE)";
+        queryString = "UUID:/^[CS].*/ AND #UNIQUE(DEATH_DATE,$BIRTH_DATE)";
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
