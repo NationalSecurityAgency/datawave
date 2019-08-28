@@ -574,7 +574,6 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                 dw.k = k;
                 dw.shardId = shardId;
                 dw.visibility = visibility;
-                dw.event = event;
                 dw.value = value;
                 this.docWriterService.execute(dw);
             }
@@ -645,14 +644,13 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         Key k;
         byte[] shardId;
         byte[] visibility;
-        RawRecordContainer event;
         Value value;
         
         @Override
         public void run() {
             log.debug("Writing out a document of size " + value.get().length + " bytes.");
             Mutation m = new Mutation(new Text(shardId));
-            m.put(k.getColumnFamily(), k.getColumnQualifier(), new ColumnVisibility(visibility), event.getDate(), value);
+            m.put(k.getColumnFamily(), k.getColumnQualifier(), new ColumnVisibility(visibility), k.getTimestamp(), value);
             try {
                 docWriter.addMutation(m);
             } catch (MutationsRejectedException e) {
