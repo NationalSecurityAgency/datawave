@@ -55,7 +55,7 @@ public class FieldMissingFromSchemaVisitorTest {
     }
     
     /**
-     * Test query with two field:datatype pairs, none of which does not exist in the metadata helper.
+     * Test query with two field:datatype pairs, none of which exist in the metadata helper.
      */
     @Test
     public void testMissingFields() throws ParseException {
