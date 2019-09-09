@@ -53,7 +53,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setTableName(other.getTableName());
         setMaxWork(other.getMaxWork());
         setMaxResults(other.getMaxResults());
-        setUndisplayedVisibilities(other.getUndisplayedVisibilities());
         setBaseIteratorPriority(other.getBaseIteratorPriority());
         setBypassAccumulo(other.getBypassAccumulo());
         
@@ -212,15 +211,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public void setBypassAccumulo(boolean bypassAccumulo) {
         getConfig().setBypassAccumulo(bypassAccumulo);
-    }
-    
-    @Override
-    public Set<String> getUndisplayedVisibilities() {
-        return getConfig().getUndisplayedVisibilities();
-    }
-    
-    public void setUndisplayedVisibilities(Set<String> undisplayedVisibilities) {
-        getConfig().setUndisplayedVisibilities(undisplayedVisibilities);
     }
     
     @Override
