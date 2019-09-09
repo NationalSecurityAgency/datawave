@@ -201,8 +201,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             log.debug("Normalized Patterns = " + config.getPatterns());
         }
         
-        config.setUndisplayedVisibilities(super.getUndisplayedVisibilities());
-        
         return config;
     }
     

@@ -313,8 +313,6 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         config.setRangesForTerms(rangesForTerms);
         config.setRangesForPatterns(rangesForPatterns);
         
-        config.setUndisplayedVisibilities(super.getUndisplayedVisibilities());
-        
         return config;
     }
     
