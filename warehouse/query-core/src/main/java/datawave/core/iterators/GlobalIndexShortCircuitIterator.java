@@ -36,8 +36,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 /**
  * <p>
  * Iterator used for global index lookups in ShardQueryLogic. This iterator will aggregate range information for a query term so that we don't pass back too
- * many ranges to the web service. This iterator is set up in the RangeCalculator and is constructed with ranges that contain the start and end term, field
- * name, and start and end dates
+ * many ranges to the web service. This iterator is is constructed with ranges that contain the start and end term, field name, and start and end dates.
  *
  * <p>
  * This iterator has two required properties (SHARDS_PER_DAY and EVENTS_PER_DAY) that must be set and one optional property (DATA_TYPES). This iterator uses

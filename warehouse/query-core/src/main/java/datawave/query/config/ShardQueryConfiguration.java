@@ -246,7 +246,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean allowTermFrequencyLookup = true;
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
-    // Threshold values used in the new RangeCalculator
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
     private int maxTermThreshold = 2500;
