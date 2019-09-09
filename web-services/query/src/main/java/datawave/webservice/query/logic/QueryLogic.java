@@ -232,11 +232,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     String getLogicDescription();
     
     /**
-     * @return set of column visibility markings that should not be presented
-     */
-    Set<String> getUndisplayedVisibilities();
-    
-    /**
      * @return should query metrics be collected for this query logic
      */
     boolean getCollectQueryMetrics();
