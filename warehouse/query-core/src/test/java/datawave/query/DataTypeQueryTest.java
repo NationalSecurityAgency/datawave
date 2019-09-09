@@ -126,6 +126,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
         
+        // Setting this property has no effect on test results.
         this.logic.setEventPerDayThreshold(1);
         
         String query = CityField.STATE.name() + EQ_OP + "'missouri'";
@@ -141,6 +142,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
         
+        // Setting this property has no effect on test results.
         this.logic.setEventPerDayThreshold(1);
         this.logic.setShardsPerDayThreshold(1);
         
