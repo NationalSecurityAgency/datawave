@@ -61,6 +61,8 @@ import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
+import datawave.query.tracking.ActiveQuery;
+import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
@@ -250,6 +252,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         
         this.sourceForDeepCopies = this.source.deepCopy(this.myEnvironment);
+        
+        // update ActiveQueryLog with (potentially) updated config
+        ActiveQueryLog.setConfig(env.getConfig());
     }
     
     @Override
@@ -268,6 +273,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     @Override
     public void next() throws IOException {
+        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(ActiveQuery.CallType.NEXT);
         Span s = Trace.start("QueryIterator.next()");
         if (log.isTraceEnabled()) {
             log.trace("next");
@@ -285,11 +291,18 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
+            if (this.key == null && this.value == null) {
+                // no entries to return
+                ActiveQueryLog.getInstance().remove(getQueryId());
+            } else {
+                ActiveQueryLog.getInstance().get(getQueryId()).endCall(ActiveQuery.CallType.NEXT);
+            }
         }
     }
     
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(ActiveQuery.CallType.SEEK);
         Span span = Trace.start("QueryIterator.seek");
         
         if (this.isIncludeGroupingContext() == false
@@ -406,6 +419,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
             
+            pipelineDocuments = Iterators.filter(
+                            pipelineDocuments,
+                            keyDocumentEntry -> {
+                                // last chance before the documents are serialized
+                                ActiveQueryLog.getInstance().get(getQueryId())
+                                                .recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
+                                // Always return true since we just want to record data in the ActiveQueryLog
+                                return true;
+                            });
+            
             if (this.getReturnType() == ReturnType.kryo) {
                 // Serialize the Document using Kryo
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
@@ -465,6 +488,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             QueryStatsDClient client = getStatsdClient();
             if (client != null) {
                 client.flush();
+            }
+            if (this.key == null && this.value == null) {
+                // no entries to return
+                ActiveQueryLog.getInstance().remove(getQueryId());
+            } else {
+                ActiveQueryLog.getInstance().get(getQueryId()).endCall(ActiveQuery.CallType.SEEK);
             }
         }
     }

@@ -6,11 +6,13 @@ import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -116,6 +118,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         typeMetadata.put("INDEX_ONLY_FIELD3", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         
         environment = createMock(IteratorEnvironment.class);
+        EasyMock.expect(environment.getConfig()).andReturn(new DefaultConfiguration());
         filter = createMock(EventDataQueryFilter.class);
     }
     
