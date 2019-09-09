@@ -169,7 +169,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             sb.append("(");
         }
         
-        Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>();
+        Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>(numChildren);
         StringBuilder childSB = new StringBuilder();
         for (int i = 0; i < numChildren; i++) {
             node.jjtGetChild(i).jjtAccept(this, childSB);
@@ -196,7 +196,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             sb.append("(");
         }
         
-        Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>();
+        Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>(numChildren);
         StringBuilder childSB = new StringBuilder();
         for (int i = 0; i < numChildren; i++) {
             node.jjtGetChild(i).jjtAccept(this, childSB);
