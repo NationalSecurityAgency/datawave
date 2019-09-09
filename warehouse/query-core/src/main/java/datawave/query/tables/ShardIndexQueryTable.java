@@ -1,14 +1,11 @@
 package datawave.query.tables;
 
 import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardIndexQueryConfiguration;
@@ -16,7 +13,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.discovery.DiscoveredThing;
 import datawave.query.discovery.DiscoveryIterator;
 import datawave.query.discovery.DiscoveryTransformer;
-import datawave.query.discovery.VisibilityPruningIterator;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
@@ -556,23 +552,9 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         
         ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly);
         
-        bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, config.getAuthorizations(), config.getUndisplayedVisibilities()));
         bs.addScanIterator(new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class));
         
         return bs;
-    }
-    
-    public static IteratorSetting configureVisibilityPruning(int stackPosition, Set<Authorizations> auths, Set<String> unDisplayed) {
-        
-        Set<String> myUnDisplayedVisibilities = Sets.newTreeSet(unDisplayed == null ? new TreeSet<>() : unDisplayed);
-        
-        IteratorSetting is = new IteratorSetting(stackPosition, VisibilityPruningIterator.class);
-        String stringifiedBlacklist = StringUtils.join(myUnDisplayedVisibilities.iterator(), ',');
-        is.addOption(VisibilityPruningIterator.BLACKLIST, stringifiedBlacklist);
-        Iterator<String> authSets = Iterators.transform(auths.iterator(), Functions.toStringFunction());
-        String stringifiedAuths = StringUtils.join(authSets, ',');
-        is.addOption(VisibilityPruningIterator.AUTHORIZATIONS, stringifiedAuths);
-        return is;
     }
     
     public boolean isFullTableScanEnabled() {
