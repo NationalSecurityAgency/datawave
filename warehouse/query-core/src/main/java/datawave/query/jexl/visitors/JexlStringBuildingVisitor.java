@@ -1,7 +1,10 @@
 package datawave.query.jexl.visitors;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
+import java.util.TreeSet;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -56,16 +59,29 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     private Set<String> allowedMethods = Sets.newHashSet("contains", "retainAll", "containsAll", "isEmpty", "size", "equals", "hashCode", "getValueForGroup",
                     "getGroupsForValue", "getValuesForGroups", "toString", "values", "min", "max", "lessThan", "greaterThan", "compareWith");
     
+    protected boolean sortDedupeChildren;
+    
+    public JexlStringBuildingVisitor() {
+        this(false);
+    }
+    
+    public JexlStringBuildingVisitor(boolean sortDedupeChildren) {
+        this.sortDedupeChildren = sortDedupeChildren;
+    }
+    
     /**
      * Build a String that is the equivalent JEXL query.
      * 
      * @param script
      *            An ASTJexlScript
+     * @param sortDedupeChildren
+     *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
+     *            beforehand for maximum 'dedupeage'.
      * @return
      */
-    public static String buildQuery(JexlNode script) {
+    public static String buildQuery(JexlNode script, boolean sortDedupeChildren) {
         
-        JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor();
+        JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor(sortDedupeChildren);
         
         String s = null;
         try {
@@ -95,13 +111,27 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     
     /**
      * Build a String that is the equivalent JEXL query.
-     * 
+     *
      * @param script
      *            An ASTJexlScript
      * @return
      */
-    public static String buildQueryWithoutParse(JexlNode script) {
-        JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor();
+    public static String buildQuery(JexlNode script) {
+        return buildQuery(script, false);
+    }
+    
+    /**
+     * Build a String that is the equivalent JEXL query.
+     * 
+     * @param script
+     *            An ASTJexlScript
+     * @param sortDedupeChildren
+     *            Whether or not to sort the child nodes, and dedupe them. Note: Only siblings (children with the same parent node) will be deduped. Flatten
+     *            beforehand for maximum 'dedupeage'.
+     * @return
+     */
+    public static String buildQueryWithoutParse(JexlNode script, boolean sortDedupeChildren) {
+        JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor(sortDedupeChildren);
         
         String s = null;
         try {
@@ -113,6 +143,17 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             throw e;
         }
         return s;
+    }
+    
+    /**
+     * Build a String that is the equivalent JEXL query.
+     *
+     * @param script
+     *            An ASTJexlScript
+     * @return
+     */
+    public static String buildQueryWithoutParse(JexlNode script) {
+        return buildQueryWithoutParse(script, false);
     }
     
     public Object visit(ASTOrNode node, Object data) {
@@ -128,14 +169,15 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             sb.append("(");
         }
         
-        int lastsize = sb.length();
+        Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>();
+        StringBuilder childSB = new StringBuilder();
         for (int i = 0; i < numChildren; i++) {
-            if (sb.length() != lastsize) {
-                sb.append(" || ");
-            }
-            lastsize = sb.length();
-            node.jjtGetChild(i).jjtAccept(this, sb);
+            node.jjtGetChild(i).jjtAccept(this, childSB);
+            childStrings.add(childSB.toString());
+            childSB.setLength(0);
         }
+        sb.append(String.join(" || ", childStrings));
+        
         if (wrapIt)
             sb.append(")");
         
@@ -154,14 +196,14 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             sb.append("(");
         }
         
-        int lastsize = sb.length();
+        Collection<String> childStrings = (sortDedupeChildren) ? new TreeSet<>() : new ArrayList<>();
+        StringBuilder childSB = new StringBuilder();
         for (int i = 0; i < numChildren; i++) {
-            if (sb.length() != lastsize) {
-                sb.append(" && ");
-            }
-            lastsize = sb.length();
-            node.jjtGetChild(i).jjtAccept(this, sb);
+            node.jjtGetChild(i).jjtAccept(this, childSB);
+            childStrings.add(childSB.toString());
+            childSB.setLength(0);
         }
+        sb.append(String.join(" && ", childStrings));
         
         if (wrapIt)
             sb.append(")");

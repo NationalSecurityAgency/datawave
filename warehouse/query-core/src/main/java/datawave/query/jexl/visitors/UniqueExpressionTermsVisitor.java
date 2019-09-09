@@ -126,7 +126,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
         List<JexlNode> children = new ArrayList<>();
         for (int ii = 0; ii < node.jjtGetNumChildren(); ii++) {
             JexlNode child = node.jjtGetChild(ii);
-            String childKey = TreeHashVisitor.getNodeHash(child).toString();
+            String childKey = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(child), true);
             if (childKeys.add(childKey)) {
                 children.add(child);
             } else {
