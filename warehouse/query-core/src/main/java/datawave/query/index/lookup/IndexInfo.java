@@ -693,6 +693,7 @@ public class IndexInfo implements Writable, UidIntersector {
     }
     
     private String nodeToKey(JexlNode node) {
+        // Note: This method assumes that the node passed in is already flattened.
         return JexlStringBuildingVisitor.buildQueryWithoutParse(node, true);
     }
 }
