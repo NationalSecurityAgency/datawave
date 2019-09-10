@@ -339,14 +339,14 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void event_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
@@ -354,7 +354,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
@@ -362,119 +362,119 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put("HIT_TERM", "true");
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'a'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'a'", true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 == 'a'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'a'", true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, "EVENT_FIELD2 == 'b'", false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
     public void event_trailingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ 'a.*'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ 'a.*'", true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ 'a.*'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ 'a.*'", true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_trailingRegex_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, "EVENT_FIELD2 =~ 'b.*'", false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
     public void event_leadingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_documentSpecific_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*a'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ '.*a'", true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_shardRange_miss_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*a'", true, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ '.*a'", true, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_documentSpecific_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, null, addEvent(11, "123.345.457"), Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_leadingRegex_shardRange_secondEvent_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("row", "dataType1", null);
-        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
+        event_test(seekRange, "EVENT_FIELD2 =~ '.*b'", false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
     @Test
@@ -687,23 +687,27 @@ public class QueryIteratorIT extends EasyMockSupport {
                         getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
+    protected void configureIterator() {
+        // configure iterator
+        iterator.setEvaluationFilter(filter);
+        iterator.setTypeMetadata(typeMetadata);
+    }
+    
     /**
      * Simulate a full table scan against an event data (only) query
      * 
      * @param seekRange
      * @throws IOException
      */
-    protected void event_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
-                    List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
+    protected void event_test(Range seekRange, String query, boolean miss, Map.Entry<Key,Map<String,List<String>>> hitOverride,
+                    List<Map.Entry<Key,Value>> otherData, List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
         // configure source
         List<Map.Entry<Key,Value>> listSource = configureTestData(11);
         listSource.addAll(otherData);
         
         baseIterator = new SortedListKeyValueIterator(listSource);
         
-        // configure iterator
-        iterator.setEvaluationFilter(filter);
-        iterator.setTypeMetadata(typeMetadata);
+        configureIterator();
         
         // configure specific query options
         options.put(QUERY, query);
@@ -723,7 +727,11 @@ public class QueryIteratorIT extends EasyMockSupport {
         if (miss) {
             hits.add(new AbstractMap.SimpleEntry<>(null, null));
         } else {
-            hits.add(getBaseExpectedEvent("123.345.456"));
+            if (hitOverride != null) {
+                hits.add(hitOverride);
+            } else {
+                hits.add(getBaseExpectedEvent("123.345.456"));
+            }
         }
         hits.addAll(otherHits);
         eval(hits);
@@ -743,9 +751,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         
         baseIterator = new SortedListKeyValueIterator(listSource);
         
-        // configure iterator
-        iterator.setEvaluationFilter(filter);
-        iterator.setTypeMetadata(typeMetadata);
+        configureIterator();
         
         // configure specific query options
         options.put(QUERY, query);
@@ -783,9 +789,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         
         baseIterator = new SortedListKeyValueIterator(listSource);
         
-        // configure iterator
-        iterator.setEvaluationFilter(filter);
-        iterator.setTypeMetadata(typeMetadata);
+        configureIterator();
         
         // configure specific query options
         options.put(QUERY, query);
@@ -830,9 +834,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         
         baseIterator = new SortedListKeyValueIterator(listSource);
         
-        // configure iterator
-        iterator.setEvaluationFilter(filter);
-        iterator.setTypeMetadata(typeMetadata);
+        configureIterator();
         
         // configure specific query options
         options.put(QUERY, query);
@@ -857,6 +859,35 @@ public class QueryIteratorIT extends EasyMockSupport {
         
         hits.addAll(otherHits);
         eval(hits);
+    }
+    
+    @Test
+    public void event_isNotNull_documentSpecific_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(EVENT_FIELD3 == null)", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void event_isNotNull_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", null);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(EVENT_FIELD3 == null)", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        
+    }
+    
+    @Test
+    public void event_isNotNullFunction_documentSpecific_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", "123.345.456");
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(filter:isNull(EVENT_FIELD3))", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void event_isNotNullFunction_shardRange_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("row", "dataType1", null);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(filter:isNull(EVENT_FIELD3))", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String uid) {
