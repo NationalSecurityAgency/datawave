@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -32,10 +33,8 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.TreeHashNode;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.query.jexl.visitors.TreeHashVisitor;
 
 /**
  * This class represents information about hits in the index.
@@ -143,7 +142,7 @@ public class IndexInfo implements Writable, UidIntersector {
     public IndexInfo union(IndexInfo first, IndexInfo o, List<JexlNode> delayedNodes) {
         IndexInfo merged = new IndexInfo();
         Set<JexlNode> internalNodeList = Sets.newHashSet();
-        Multimap<TreeHashNode,JexlNode> nodesMap = ArrayListMultimap.create();
+        Multimap<String,JexlNode> nodesMap = ArrayListMultimap.create();
         
         if (null != first.myNode && first.myNode != o.myNode) {
             
@@ -153,11 +152,11 @@ public class IndexInfo implements Writable, UidIntersector {
             if (null == topLevelOr) {
                 topLevelOr = sourceNode;
                 // add the source node
-                nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), first.myNode);
+                nodesMap.put(nodeToKey(sourceNode), first.myNode);
             } else {
                 for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
                     JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                    nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), topLevelOr.jjtGetChild(i));
+                    nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
                 }
             }
         }
@@ -170,21 +169,21 @@ public class IndexInfo implements Writable, UidIntersector {
             if (null == topLevelOr) {
                 topLevelOr = sourceNode;
                 // add the source node
-                nodesMap.put(TreeHashVisitor.getNodeHash(topLevelOr), o.myNode);
+                nodesMap.put(nodeToKey(topLevelOr), o.myNode);
             } else {
                 for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
                     JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                    nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), topLevelOr.jjtGetChild(i));
+                    nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
                 }
             }
         }
         
         for (JexlNode node : delayedNodes) {
             JexlNode baseNode = getSourceNode(node);
-            nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), node);
+            nodesMap.put(nodeToKey(baseNode), node);
         }
         
-        for (TreeHashNode key : nodesMap.keySet()) {
+        for (String key : nodesMap.keySet()) {
             Collection<JexlNode> nodeColl = nodesMap.get(key);
             JexlNode delayedNode = null;
             if (nodeColl.size() > 1) {
@@ -287,7 +286,7 @@ public class IndexInfo implements Writable, UidIntersector {
         
         IndexInfo merged = new IndexInfo();
         Set<JexlNode> internalNodeList = Sets.newHashSet();
-        Multimap<TreeHashNode,JexlNode> nodesMap = ArrayListMultimap.create();
+        Multimap<String,JexlNode> nodesMap = ArrayListMultimap.create();
         
         if (null != myNode && myNode != o.myNode && !isInfinite()) {
             JexlNode sourceNode = getSourceNode(myNode);
@@ -296,11 +295,11 @@ public class IndexInfo implements Writable, UidIntersector {
             if (null == topLevelOr) {
                 topLevelOr = sourceNode;
                 // add the source node
-                nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), myNode);
+                nodesMap.put(nodeToKey(sourceNode), myNode);
             } else {
                 for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
                     JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                    nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), topLevelOr.jjtGetChild(i));
+                    nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
                 }
             }
         }
@@ -312,21 +311,21 @@ public class IndexInfo implements Writable, UidIntersector {
             if (null == topLevelOr) {
                 topLevelOr = sourceNode;
                 // add the source node
-                nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), o.myNode);
+                nodesMap.put(nodeToKey(sourceNode), o.myNode);
             } else {
                 for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
                     JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                    nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), topLevelOr.jjtGetChild(i));
+                    nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
                 }
             }
         }
         
         for (JexlNode node : delayedNodes) {
             JexlNode baseNode = getSourceNode(node);
-            nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), node);
+            nodesMap.put(nodeToKey(baseNode), node);
         }
         
-        for (TreeHashNode key : nodesMap.keySet()) {
+        for (String key : nodesMap.keySet()) {
             Collection<JexlNode> nodeColl = nodesMap.get(key);
             JexlNode delayedNode = null;
             if (nodeColl.size() > 1) {
@@ -459,7 +458,7 @@ public class IndexInfo implements Writable, UidIntersector {
         
         IndexInfo merged = new IndexInfo();
         Set<JexlNode> allNodes = Sets.newHashSet();
-        Multimap<TreeHashNode,JexlNode> nodesMap = ArrayListMultimap.create();
+        Multimap<String,JexlNode> nodesMap = ArrayListMultimap.create();
         if (ids.keySet().isEmpty()) {
             merged.count = maxPossibilities;
         } else {
@@ -473,11 +472,11 @@ public class IndexInfo implements Writable, UidIntersector {
                         if (null == topLevelOr) {
                             topLevelOr = sourceNode;
                             // add the source node
-                            nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), node);
+                            nodesMap.put(nodeToKey(sourceNode), node);
                         } else {
                             for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
                                 JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                                nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), topLevelOr.jjtGetChild(i));
+                                nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
                             }
                         }
                     }
@@ -490,10 +489,10 @@ public class IndexInfo implements Writable, UidIntersector {
         
         for (JexlNode node : infiniteNodes) {
             JexlNode baseNode = getSourceNode(node);
-            nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), node);
+            nodesMap.put(nodeToKey(baseNode), node);
         }
         
-        for (TreeHashNode key : nodesMap.keySet()) {
+        for (String key : nodesMap.keySet()) {
             Collection<JexlNode> nodeColl = nodesMap.get(key);
             JexlNode delayedNode = null;
             if (nodeColl.size() > 1) {
@@ -691,5 +690,12 @@ public class IndexInfo implements Writable, UidIntersector {
     
     public void setNode(JexlNode currNode) {
         myNode = currNode;
+    }
+    
+    private String nodeToKey(JexlNode node) {
+        // Note: This method assumes that the node passed in is already flattened.
+        // If not, and our tree contains functionally equivalent subtrees, we would
+        // be duplicating some of our efforts which is bad, m'kay?
+        return JexlStringBuildingVisitor.buildQueryWithoutParse(node, true);
     }
 }

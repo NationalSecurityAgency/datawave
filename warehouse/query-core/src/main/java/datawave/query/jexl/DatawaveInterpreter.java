@@ -5,8 +5,7 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.TreeHashNode;
-import datawave.query.jexl.visitors.TreeHashVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.Interpreter;
 import org.apache.commons.jexl2.JexlContext;
@@ -49,7 +48,7 @@ import java.util.SortedSet;
  */
 public class DatawaveInterpreter extends Interpreter {
     
-    protected Map<TreeHashNode,Object> resultMap;
+    protected Map<String,Object> resultMap;
     
     private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
     
@@ -83,9 +82,9 @@ public class DatawaveInterpreter extends Interpreter {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        TreeHashNode hash = TreeHashVisitor.getNodeHash(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
-        Object result = resultMap.get(hash);
+        Object result = resultMap.get(nodeString);
         if (null != result) {
             return result;
         }
@@ -106,10 +105,10 @@ public class DatawaveInterpreter extends Interpreter {
         // if the function is paired with a method that is called on its results (like 'size') then the
         // actual results must be returned.
         if (hasSiblings(node)) {
-            resultMap.put(hash, result);
+            resultMap.put(nodeString, result);
             return result;
         }
-        resultMap.put(hash, result instanceof Collection ? !((Collection) result).isEmpty() : result);
+        resultMap.put(nodeString, result instanceof Collection ? !((Collection) result).isEmpty() : result);
         return result instanceof Collection ? !((Collection) result).isEmpty() : result;
     }
     
@@ -131,25 +130,25 @@ public class DatawaveInterpreter extends Interpreter {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        TreeHashNode hash = TreeHashVisitor.getNodeHash(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
-        Object result = resultMap.get(hash);
+        Object result = resultMap.get(nodeString);
         if (null != result)
             return result;
         result = super.visit(node, data);
-        resultMap.put(hash, result);
+        resultMap.put(nodeString, result);
         return result;
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        TreeHashNode hash = TreeHashVisitor.getNodeHash(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
-        Object result = resultMap.get(hash);
+        Object result = resultMap.get(nodeString);
         if (null != result)
             return result;
         result = super.visit(node, data);
-        resultMap.put(hash, result);
+        resultMap.put(nodeString, result);
         return result;
     }
     

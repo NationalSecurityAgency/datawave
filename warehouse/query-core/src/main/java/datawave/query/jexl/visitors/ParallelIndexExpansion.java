@@ -19,7 +19,6 @@ import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.TreeHashNode;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
@@ -79,7 +78,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     protected CostEstimator costAnalysis;
     protected Set<String> allFields;
     protected Node newChild;
-    protected Map<TreeHashNode,IndexLookup> lookupMap = Maps.newConcurrentMap();
+    protected Map<String,IndexLookup> lookupMap = Maps.newConcurrentMap();
     protected String threadName;
     private static final Logger log = Logger.getLogger(ParallelIndexExpansion.class);
     
@@ -224,8 +223,8 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         String fieldName = JexlASTHelper.getIdentifier(node);
         
-        TreeHashNode nodeHash = TreeHashVisitor.getNodeHash(node);
-        IndexLookup task = lookupMap.get(nodeHash);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(node), true);
+        IndexLookup task = lookupMap.get(nodeString);
         
         if (null == task) {
             
@@ -233,7 +232,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                             config.getDatatypeFilter(), helper);
             
             if (task.supportReference())
-                lookupMap.put(nodeHash, task);
+                lookupMap.put(nodeString, task);
             
         }
         
