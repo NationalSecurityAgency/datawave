@@ -694,6 +694,8 @@ public class IndexInfo implements Writable, UidIntersector {
     
     private String nodeToKey(JexlNode node) {
         // Note: This method assumes that the node passed in is already flattened.
+        // If not, and our tree contains functionally equivalent subtrees, we would
+        // be duplicating some of our efforts which is bad, m'kay?
         return JexlStringBuildingVisitor.buildQueryWithoutParse(node, true);
     }
 }

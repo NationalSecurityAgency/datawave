@@ -82,7 +82,7 @@ public class DatawaveInterpreter extends Interpreter {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        String nodeString = JexlStringBuildingVisitor.buildQuery(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
         Object result = resultMap.get(nodeString);
         if (null != result) {
@@ -130,7 +130,7 @@ public class DatawaveInterpreter extends Interpreter {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        String nodeString = JexlStringBuildingVisitor.buildQuery(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
         Object result = resultMap.get(nodeString);
         if (null != result)
@@ -142,7 +142,7 @@ public class DatawaveInterpreter extends Interpreter {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        String nodeString = JexlStringBuildingVisitor.buildQuery(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
         Object result = resultMap.get(nodeString);
         if (null != result)
