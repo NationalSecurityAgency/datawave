@@ -3,7 +3,12 @@ package datawave.query.tracking;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.iterator.profile.QuerySpan;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,24 +46,40 @@ public class ActiveQueryLogTest {
         }
         
         public void run() {
+            Range r1 = new Range(new Key("a"), new Key("b"));
+            Range r2 = new Range(new Key("b"), new Key("c"));
+            Range r3 = new Range(new Key("c"), new Key("d"));
+            Range r4 = new Range(new Key("d"), new Key("e"));
+            Range r5 = new Range(new Key("e"), new Key("f"));
+            Range r6 = new Range(new Key("f"), new Key("g"));
+            Range[] rangeArray = new Range[6];
+            rangeArray[0] = r1;
+            rangeArray[1] = r2;
+            rangeArray[2] = r3;
+            rangeArray[3] = r4;
+            rangeArray[4] = r5;
+            rangeArray[5] = r6;
+            
             try {
                 QuerySpan qs = new QuerySpan(null);
                 for (int seek = 0; seek < numSeeks; seek++) {
-                    ActiveQueryLog.getInstance().get(queryId).beginCall(ActiveQuery.CallType.SEEK);
+                    Range range = rangeArray[seek % rangeArray.length];
+                    ActiveQueryLog.getInstance().get(queryId).beginCall(range, ActiveQuery.CallType.SEEK);
                     if (randomSleep) {
                         TimeUnit.SECONDS.sleep(createRandomDelay());
                     }
-                    ActiveQueryLog.getInstance().get(queryId).endCall(ActiveQuery.CallType.SEEK);
+                    ActiveQueryLog.getInstance().get(queryId).endCall(range, ActiveQuery.CallType.SEEK);
                     qs.seek();
                     qs.seek();
                 }
                 
                 for (int next = 0; next < numNexts; next++) {
-                    ActiveQueryLog.getInstance().get(queryId).beginCall(ActiveQuery.CallType.NEXT);
+                    Range range = rangeArray[next % rangeArray.length];
+                    ActiveQueryLog.getInstance().get(queryId).beginCall(range, ActiveQuery.CallType.NEXT);
                     if (randomSleep) {
                         TimeUnit.SECONDS.sleep(createRandomDelay());
                     }
-                    ActiveQueryLog.getInstance().get(queryId).endCall(ActiveQuery.CallType.NEXT);
+                    ActiveQueryLog.getInstance().get(queryId).endCall(range, ActiveQuery.CallType.NEXT);
                     qs.next();
                     qs.next();
                 }
@@ -75,7 +96,12 @@ public class ActiveQueryLogTest {
     @Test
     public void testThreadSafety() {
         
-        int numQueries = 20;
+        Logger.getLogger(ActiveQueryLog.class).setLevel(Level.DEBUG);
+        Logger.getLogger(ActiveQueryLog.class).addAppender(new ConsoleAppender());
+        
+        ActiveQueryLog.getInstance().setLogPeriod(1000);
+        
+        int numQueries = 50;
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numQueries);
         
         Map<String,QueryTask> tasks = new HashMap<>();
@@ -83,7 +109,7 @@ public class ActiveQueryLogTest {
             String queryId = createQueryId();
             int numSeeks = rand.nextInt(5) + 1;
             int numNexts = rand.nextInt(20) + 1;
-            QueryTask task = new QueryTask(queryId, numSeeks, numNexts, false);
+            QueryTask task = new QueryTask(queryId, numSeeks, numNexts, true);
             tasks.put(queryId, task);
             executor.execute(task);
         }

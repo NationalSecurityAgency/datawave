@@ -155,6 +155,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected boolean fieldIndexSatisfiesQuery = false;
     
     protected Range range;
+    protected Range originalRange;
     
     protected Key key;
     protected Value value;
@@ -273,7 +274,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     @Override
     public void next() throws IOException {
-        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(ActiveQuery.CallType.NEXT);
+        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
         Span s = Trace.start("QueryIterator.next()");
         if (log.isTraceEnabled()) {
             log.trace("next");
@@ -291,18 +292,20 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
+            ActiveQueryLog.getInstance().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.NEXT);
             if (this.key == null && this.value == null) {
                 // no entries to return
-                ActiveQueryLog.getInstance().remove(getQueryId());
-            } else {
-                ActiveQueryLog.getInstance().get(getQueryId()).endCall(ActiveQuery.CallType.NEXT);
+                ActiveQueryLog.getInstance().remove(getQueryId(), this.originalRange);
             }
         }
     }
     
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(ActiveQuery.CallType.SEEK);
+        // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
+        // so the FinalDocumentTracking iterator needs the start key with the count already appended
+        originalRange = range;
+        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         Span span = Trace.start("QueryIterator.seek");
         
         if (this.isIncludeGroupingContext() == false
@@ -319,10 +322,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 log.debug("Seek range: " + range + " " + query);
             }
             this.range = range;
-            
-            // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
-            // so the FinalDocumentTracking iterator needs the start key with the count already appended
-            Range originalRange = range;
             
             // determine whether this is a teardown/rebuild range
             long resultCount = 0;
@@ -489,11 +488,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
+            ActiveQueryLog.getInstance().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.SEEK);
             if (this.key == null && this.value == null) {
                 // no entries to return
-                ActiveQueryLog.getInstance().remove(getQueryId());
-            } else {
-                ActiveQueryLog.getInstance().get(getQueryId()).endCall(ActiveQuery.CallType.SEEK);
+                ActiveQueryLog.getInstance().remove(getQueryId(), this.originalRange);
             }
         }
     }

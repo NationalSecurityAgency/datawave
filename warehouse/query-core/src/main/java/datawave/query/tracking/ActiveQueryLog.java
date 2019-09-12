@@ -3,9 +3,14 @@ package datawave.query.tracking;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.data.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -17,13 +22,15 @@ public class ActiveQueryLog {
     private static AccumuloConfiguration conf = null;
     
     // Accumulo properties
-    public static final String MAX_IDLE = "datawave.query.active.maxIdle";
-    public static final String LOG_PERIOD = "datawave.query.active.logPeriod";
+    public static final String MAX_IDLE = "datawave.query.active.maxIdleMs";
+    public static final String LOG_PERIOD = "datawave.query.active.logPeriodMs";
+    public static final String LOG_MAX_QUERIES = "datawave.query.active.logMaxQueries";
     public static final String WINDOW_SIZE = "datawave.query.active.windowSize";
     
     // Changeable via Accumulo properties
     private long maxIdle = 900000l;
     private long logPeriod = 60000l;
+    private int logMaxQueries = 5;
     private int windowSize = 10;
     
     private Cache<String,ActiveQuery> CACHE = null;
@@ -75,8 +82,12 @@ public class ActiveQueryLog {
         }
         
     }
-    
-    public void setWindowSize(int windowSize) {
+
+    synchronized public void setLogMaxQueries(int logMaxQueries) {
+        this.logMaxQueries = logMaxQueries;
+    }
+
+    synchronized public void setWindowSize(int windowSize) {
         if (windowSize > 0) {
             this.windowSize = windowSize;
         } else {
@@ -84,18 +95,16 @@ public class ActiveQueryLog {
         }
     }
     
-    public void setMaxIdle(long maxIdle) {
+    synchronized public void setMaxIdle(long maxIdle) {
         if (this.maxIdle != maxIdle || this.CACHE == null) {
             if (maxIdle > 0) {
                 Cache<String,ActiveQuery> newCache = setupCache(maxIdle);
                 if (this.CACHE == null) {
                     this.CACHE = newCache;
                 } else {
-                    synchronized (this) {
-                        Cache<String,ActiveQuery> oldCache = this.CACHE;
-                        this.CACHE = newCache;
-                        this.CACHE.putAll(oldCache.asMap());
-                    }
+                    Cache<String,ActiveQuery> oldCache = this.CACHE;
+                    this.CACHE = newCache;
+                    this.CACHE.putAll(oldCache.asMap());
                 }
             } else {
                 LOG.error("Bad value: (" + maxIdle + ") for maxIdle");
@@ -126,7 +135,16 @@ public class ActiveQueryLog {
         } else if (useDefaults) {
             setLogPeriod(this.logPeriod);
         }
-        
+
+        String logMaxQueriesStr = conf.get(LOG_MAX_QUERIES);
+        if (logMaxQueriesStr != null) {
+            try {
+                setLogMaxQueries(Integer.valueOf(logMaxQueriesStr));
+            } catch (NumberFormatException e) {
+                LOG.error("Bad value: (" + logMaxQueriesStr + ") in " + LOG_MAX_QUERIES + " : " + e.getMessage());
+            }
+        }
+
         String windowSizeStr = conf.get(WINDOW_SIZE);
         if (windowSizeStr != null) {
             try {
@@ -144,8 +162,12 @@ public class ActiveQueryLog {
         return cache;
     }
     
-    synchronized public void remove(String queryId) {
-        this.CACHE.invalidate(queryId);
+    synchronized public void remove(String queryId, Range range) {
+        ActiveQuery activeQuery = get(queryId);
+        activeQuery.finishRange(range);
+        if (activeQuery.getNumActiveRanges() == 0) {
+            this.CACHE.invalidate(queryId);
+        }
     }
     
     synchronized public ActiveQuery get(String queryId) {
@@ -156,12 +178,26 @@ public class ActiveQueryLog {
         @Override
         public void run() {
             synchronized (this) {
+                List<ActiveQuery> activeQueryList = new ArrayList<>();
+                for (ActiveQuery q : CACHE.asMap().values()) {
+                    activeQueryList.add(q);
+                }
+                activeQueryList.sort(activeQueryList, new TotalTimeComparator());
+
                 for (ActiveQuery q : CACHE.asMap().values()) {
                     if (q.isInCall()) {
                         LOG.debug(q.toString());
                     }
                 }
+
             }
         }
     };
+
+    public class TotalTimeComparator implements Comparator<ActiveQuery> {
+        @Override
+        public int compare(ActiveQuery o1, ActiveQuery o2) {
+            return Long.compare(o1.totalElapsedTime(), o2.totalElapsedTime());
+        }
+    }
 }

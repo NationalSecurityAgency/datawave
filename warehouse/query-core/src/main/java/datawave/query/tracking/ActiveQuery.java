@@ -5,9 +5,13 @@ import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.profile.QuerySpan;
+import org.apache.accumulo.core.data.Range;
 
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -23,10 +27,11 @@ public class ActiveQuery {
         SEEK, NEXT
     };
     
-    private Map<CallType,Long> startTimeMap = new HashMap<>();
+    private Map<CallType,Map<Range,Long>> startTimeMap = new HashMap<>();
     private Map<CallType,Timer> timerMap = new HashMap<>();
     private Map<CallType,Long> numCallsMap = new HashMap<>();
-    private Map<CallType,Boolean> inCallMap = new HashMap<>();
+    private Map<CallType,Integer> inCallMap = new HashMap<>();
+    private Set<Range> activeRanges = new HashSet<>();
     
     public ActiveQuery(String queryId, int windowSize) {
         this.queryId = queryId;
@@ -34,7 +39,7 @@ public class ActiveQuery {
         this.initTs = System.currentTimeMillis();
     }
     
-    public long getNumCalls(CallType type) {
+    synchronized public long getNumCalls(CallType type) {
         Long val = this.numCallsMap.get(type);
         if (val == null) {
             val = 0l;
@@ -43,20 +48,29 @@ public class ActiveQuery {
         return val;
     }
     
-    public void beginCall(CallType type) {
-        this.startTimeMap.put(type, System.currentTimeMillis());
+    synchronized public void beginCall(Range range, CallType type) {
+        Map<Range,Long> rangeMap = this.startTimeMap.get(type);
+        if (rangeMap == null) {
+            rangeMap = new HashMap<>();
+            this.startTimeMap.put(type, rangeMap);
+        }
+        rangeMap.put(range, System.currentTimeMillis());
+        activeRanges.add(range);
         setInCall(type, true);
     }
     
-    public void endCall(CallType type) {
+    synchronized public void endCall(Range range, CallType type) {
         Long val = getNumCalls(type);
         this.numCallsMap.put(type, (val.longValue() + 1));
         
-        Long start = this.startTimeMap.get(type);
-        if (start != null) {
-            getTimer(type).update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
-            this.startTimeMap.remove(type);
-            setInCall(type, false);
+        Map<Range,Long> rangeMap = this.startTimeMap.get(type);
+        if (rangeMap != null) {
+            Long start = rangeMap.get(range);
+            if (start != null) {
+                getTimer(type).update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
+                rangeMap.remove(range);
+                setInCall(type, false);
+            }
         }
     }
     
@@ -65,22 +79,35 @@ public class ActiveQuery {
         this.lastQuerySpan = querySpan;
     }
     
-    public long totalElapsedTime() {
+    synchronized public long totalElapsedTime() {
         return System.currentTimeMillis() - this.initTs;
     }
     
-    public boolean isInCall() {
-        return this.inCallMap.values().stream().anyMatch(Predicate.isEqual(Boolean.TRUE));
+    synchronized public boolean isInCall() {
+        int numInCallTotal = 0;
+        for (Integer numInCall : this.inCallMap.values()) {
+            numInCallTotal += numInCall;
+        }
+        return numInCallTotal > 0;
     }
     
     public String getQueryId() {
         return queryId;
     }
     
+    synchronized public void finishRange(Range range) {
+        this.activeRanges.remove(range);
+    }
+    
+    synchronized public int getNumActiveRanges() {
+        return this.activeRanges.size();
+    }
+    
     @Override
-    public String toString() {
+    synchronized public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[").append(this.queryId).append("] ");
+        sb.append("ranges=").append(getNumActiveRanges()).append(" ");
         if (isInCall()) {
             sb.append("(tot/cur) ").append(totalElapsedTime()).append("/").append(currentCallTime()).append(" ");
         } else {
@@ -105,7 +132,7 @@ public class ActiveQuery {
         return sb.toString();
     }
     
-    private Timer getTimer(CallType type) {
+    synchronized private Timer getTimer(CallType type) {
         Timer t = timerMap.get(type);
         if (t == null) {
             t = new Timer(new SlidingWindowReservoir(this.windowSize));
@@ -114,7 +141,7 @@ public class ActiveQuery {
         return t;
     }
     
-    private long lastSourceCount() {
+    synchronized private long lastSourceCount() {
         if (this.lastQuerySpan == null) {
             return 0;
         } else {
@@ -122,7 +149,7 @@ public class ActiveQuery {
         }
     }
     
-    private long lastNextCount() {
+    synchronized private long lastNextCount() {
         if (this.lastQuerySpan == null) {
             return 0;
         } else {
@@ -130,7 +157,7 @@ public class ActiveQuery {
         }
     }
     
-    private long lastSeekCount() {
+    synchronized private long lastSeekCount() {
         if (this.lastQuerySpan == null) {
             return 0;
         } else {
@@ -138,17 +165,36 @@ public class ActiveQuery {
         }
     }
     
-    private long currentCallTime() {
-        if (this.inCallMap.values().stream().anyMatch(Predicate.isEqual(Boolean.TRUE))) {
-            long now = System.currentTimeMillis();
-            long startTime = this.startTimeMap.values().stream().mapToLong(v -> v).min().orElse(now);
-            return now - startTime;
+    synchronized private long currentCallTime() {
+        if (isInCall()) {
+            long earliestStart = Long.MAX_VALUE;
+            for (Map<Range,Long> m : this.startTimeMap.values()) {
+                for (Long start : m.values()) {
+                    if (start < earliestStart) {
+                        earliestStart = start;
+                    }
+                }
+            }
+            return System.currentTimeMillis() - earliestStart;
         } else {
             return 0;
         }
     }
     
-    private void setInCall(CallType type, boolean inCall) {
-        this.inCallMap.put(type, inCall);
+    synchronized private void setInCall(CallType type, boolean inCall) {
+        Integer numCalls = this.inCallMap.get(type);
+        if (numCalls == null) {
+            numCalls = new Integer(0);
+        }
+        int newNumCalls;
+        if (inCall) {
+            newNumCalls = numCalls.intValue() + 1;
+        } else {
+            newNumCalls = numCalls.intValue() - 1;
+        }
+        if (newNumCalls < 0) {
+            newNumCalls = 0;
+        }
+        this.inCallMap.put(type, newNumCalls);
     }
 }
