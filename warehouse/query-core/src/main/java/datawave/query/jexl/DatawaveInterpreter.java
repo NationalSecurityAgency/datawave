@@ -195,10 +195,9 @@ public class DatawaveInterpreter extends Interpreter {
             }
         }
         
-        Object result = children.pop().jjtAccept(this, data);
-        while (!arithmetic.toBoolean(result) && !children.isEmpty()) {
+        Object result = null;
+        while (!arithmetic.toBoolean(result) && !children.isEmpty())
             result = interpretOr(children.pop().jjtAccept(this, data), result);
-        }
         
         return result;
     }
