@@ -35,7 +35,7 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected Set<String> fieldsToAggregate;
     protected EventDataQueryFilter attrFilter;
     protected TermFrequencyAggregator termFrequencyAggregator;
-    private IteratorEnvironment iteratorEnvironment;
+    protected IteratorEnvironment iteratorEnvironment;
     
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
