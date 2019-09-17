@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.contrib</groupId>
     <artifactId>datawave-in-memory-accumulo</artifactId>
-    <version>1.9.2.2</version>
+    <version>1.9.2.3</version>
     <packaging>jar</packaging>
     <name>Datawave InMemory Accumulo</name>
     <properties>
