@@ -126,10 +126,15 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
         
+        // Setting this property has no effect on test results.
         this.logic.setEventPerDayThreshold(1);
         
         String query = CityField.STATE.name() + EQ_OP + "'missouri'";
         String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
+        runTest(query, expect, qOptions);
+        
+        // Prove that setting this property has no effect on test results.
+        this.logic.setEventPerDayThreshold(Integer.MAX_VALUE);
         runTest(query, expect, qOptions);
     }
     
@@ -141,11 +146,17 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
         
+        // Setting this property has no effect on test results.
         this.logic.setEventPerDayThreshold(1);
         this.logic.setShardsPerDayThreshold(1);
         
         String query = CityField.STATE.name() + EQ_OP + "'missouri'";
         String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
+        runTest(query, expect, qOptions);
+        
+        // Prove that setting this property has no effect on test results.
+        this.logic.setEventPerDayThreshold(Integer.MAX_VALUE);
+        this.logic.setShardsPerDayThreshold(Integer.MAX_VALUE);
         runTest(query, expect, qOptions);
     }
     
