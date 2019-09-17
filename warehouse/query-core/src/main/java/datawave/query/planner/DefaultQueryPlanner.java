@@ -1852,7 +1852,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     /**
-     * Performs a lookup in the global index / reverse index and returns a RangeCalculator
+     * Performs a lookup in the global index / reverse index and returns a {@link CloseableIterable} of QueryPlans
      *
      * @param config
      * @param queryTree

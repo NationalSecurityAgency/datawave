@@ -13,8 +13,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 
 /**
- * This interface can be implemented by a class supplying JEXL functions to provide additionally information about the arguments. The initial purpose of this is
- * to allow the DatawaveQueryAnalyzer and RangeCalculator to determine ranges from the global index for a given function.
+ * This interface can be implemented by a class supplying JEXL functions to provide additional information about the arguments. The initial purpose of this is
+ * to determine ranges from the global index for a given function.
  */
 public interface JexlFunctionArgumentDescriptorFactory {
     /**

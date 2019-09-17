@@ -201,8 +201,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             log.debug("Normalized Patterns = " + config.getPatterns());
         }
         
-        config.setUndisplayedVisibilities(super.getUndisplayedVisibilities());
-        
         return config;
     }
     
@@ -260,14 +258,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
         configureIndexMatchingIterator(config, bs, literals, patterns, ranges, reverseIndex);
-        
-        // When seperating by colvis leave visibilities in tact
-        if (config.getSeparateCountsByColVis()) {
-            bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, new HashSet<>(), config.getUndisplayedVisibilities()));
-        } else {
-            bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, config.getAuthorizations(),
-                            config.getUndisplayedVisibilities()));
-        }
         
         IteratorSetting discoveryIteratorSetting = new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class);
         discoveryIteratorSetting.addOption(REVERSE_INDEX, Boolean.toString(reverseIndex));

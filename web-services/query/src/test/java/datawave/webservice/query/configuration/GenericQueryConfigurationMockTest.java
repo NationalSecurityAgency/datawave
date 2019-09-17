@@ -52,7 +52,6 @@ public class GenericQueryConfigurationMockTest {
         oldConfig.setTableName("TEST");
         oldConfig.setBaseIteratorPriority(100);
         oldConfig.setMaxWork(1000L);
-        oldConfig.setUndisplayedVisibilities(new HashSet<>());
         oldConfig.setBypassAccumulo(false);
         
         expect(this.baseQueryLogic.getConfig()).andReturn(oldConfig).anyTimes();
@@ -88,7 +87,6 @@ public class GenericQueryConfigurationMockTest {
         // Assert good init
         assertEquals("shard", config.getTableName());
         assertEquals(-1L, config.getMaxWork().longValue());
-        assertEquals(new HashSet<>(), config.getUndisplayedVisibilities());
         assertEquals(100, config.getBaseIteratorPriority());
         assertFalse(config.getBypassAccumulo());
     }
