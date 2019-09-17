@@ -1,5 +1,17 @@
 package datawave.query.iterator.logic;
 
+import com.google.common.collect.TreeMultimap;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.SeekableIterator;
+import datawave.query.iterator.Util;
+import datawave.query.iterator.Util.Transformer;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,19 +24,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
-import datawave.query.iterator.Util.Transformer;
-import org.apache.log4j.Logger;
-
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.Util;
-
-import com.google.common.collect.TreeMultimap;
-
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
  */
-public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
+public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, SeekableIterator {
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, excludes;
     
@@ -81,6 +84,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         next();
     }
     
+    public boolean isInitialized() {
+        return includeHeads != null;
+    }
+    
     /**
      * return the previously found next and set its document. If there are more head references, advance until the lowest and highest match that is not
      * filtered, advancing all iterators tied to lowest and set next/document for the next call
@@ -88,6 +95,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @return the previously found next
      */
     public T next() {
+        if (!isInitialized()) {
+            throw new IllegalStateException("initialize() was never called");
+        }
+        
         prev = next;
         prevDocument = document;
         
@@ -124,11 +135,58 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     }
     
     public boolean hasNext() {
-        if (null == includeHeads) {
+        if (!isInitialized()) {
             throw new IllegalStateException("initialize() was never called");
         }
         
         return next != null;
+    }
+    
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        // seek all of the iterators. Drop those that fail, as long as we have at least one include left
+        Iterator<NestedIterator<T>> include = includes.iterator();
+        while (include.hasNext()) {
+            NestedIterator<T> child = include.next();
+            try {
+                for (NestedIterator<T> itr : child.leaves()) {
+                    if (itr instanceof SeekableIterator) {
+                        ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
+                    }
+                }
+            } catch (Exception e) {
+                include.remove();
+                if (includes.isEmpty()) {
+                    throw e;
+                } else {
+                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
+                }
+                
+            }
+        }
+        Iterator<NestedIterator<T>> exclude = excludes.iterator();
+        while (exclude.hasNext()) {
+            NestedIterator<T> child = exclude.next();
+            try {
+                for (NestedIterator<T> itr : child.leaves()) {
+                    if (itr instanceof SeekableIterator) {
+                        ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
+                    }
+                }
+            } catch (Exception e) {
+                exclude.remove();
+                if (includes.isEmpty()) {
+                    throw e;
+                } else {
+                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
+                }
+            }
+        }
+        
+        if (isInitialized()) {
+            // advance throwing next away and re-populating next with what should be
+            next();
+        }
     }
     
     /**
@@ -141,7 +199,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      *             if prev is greater than or equal to minimum
      */
     public T move(T minimum) {
-        if (null == includeHeads) {
+        if (!isInitialized()) {
             throw new IllegalStateException("initialize() was never called");
         }
         
@@ -178,12 +236,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     public Collection<NestedIterator<T>> leaves() {
         LinkedList<NestedIterator<T>> leaves = new LinkedList<>();
-        for (NestedIterator<T> itr : includes) {
-            leaves.addAll(itr.leaves());
-        }
-        for (NestedIterator<T> itr : excludes) {
-            leaves.addAll(itr.leaves());
-        }
+        // treat this node as a leaf as it's seek
+        leaves.add(this);
         return leaves;
     }
     
@@ -207,13 +261,22 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
         transforms.remove(key);
         for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
-            if (itr.hasNext()) {
-                T next = itr.next();
-                T transform = transformer.transform(next);
-                transforms.put(transform, next);
-                includeHeads.put(transform, itr);
-            } else {
-                return Util.getEmpty();
+            try {
+                if (itr.hasNext()) {
+                    T next = itr.next();
+                    T transform = transformer.transform(next);
+                    transforms.put(transform, next);
+                    includeHeads.put(transform, itr);
+                } else {
+                    return Util.getEmpty();
+                }
+            } catch (Exception e) {
+                // only need to actually fail if we have nothing left in the AND clause
+                if (includeHeads.isEmpty()) {
+                    throw e;
+                } else {
+                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
+                }
             }
         }
         return includeHeads;
@@ -284,4 +347,5 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     public Document document() {
         return prevDocument;
     }
+    
 }

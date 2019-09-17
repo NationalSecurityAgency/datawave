@@ -207,6 +207,8 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String MAX_IVARATOR_SOURCES = "max.ivarator.sources";
     
+    public static final String MAX_IVARATOR_RESULTS = "max.ivarator.results";
+    
     public static final String COMPRESS_SERVER_SIDE_RESULTS = "compress.server.side.results";
     
     public static final String MAX_EVALUATION_PIPELINES = "max.evaluation.pipelines";
@@ -312,6 +314,8 @@ public class QueryOptions implements OptionDescriber {
     protected int ivaratorMaxOpenFiles = 100;
     
     protected int maxIvaratorSources = 33;
+    
+    protected long maxIvaratorResults = -1;
     
     protected long yieldThresholdMs = Long.MAX_VALUE;
     
@@ -430,6 +434,7 @@ public class QueryOptions implements OptionDescriber {
         this.maxIndexRangeSplit = other.maxIndexRangeSplit;
         this.ivaratorMaxOpenFiles = other.ivaratorMaxOpenFiles;
         this.maxIvaratorSources = other.maxIvaratorSources;
+        this.maxIvaratorResults = other.maxIvaratorResults;
         
         this.yieldThresholdMs = other.yieldThresholdMs;
         
@@ -884,6 +889,14 @@ public class QueryOptions implements OptionDescriber {
     
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+    
+    public long getMaxIvaratorResults() {
+        return maxIvaratorResults;
+    }
+    
+    public void setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
     }
     
     public boolean isCompressResults() {
@@ -1419,6 +1432,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(MAX_IVARATOR_SOURCES)) {
             this.setMaxIvaratorSources(Integer.parseInt(options.get(MAX_IVARATOR_SOURCES)));
+        }
+        
+        if (options.containsKey(MAX_IVARATOR_RESULTS)) {
+            this.setMaxIvaratorResults(Long.parseLong(options.get(MAX_IVARATOR_RESULTS)));
         }
         
         if (options.containsKey(YIELD_THRESHOLD_MS)) {
