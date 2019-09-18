@@ -468,18 +468,7 @@ public class IndexInfo implements Writable, UidIntersector {
                 if ((nodes.size() + infiniteNodes.size()) > 1) {
                     nodes.addAll(infiniteNodes);
                     for (JexlNode node : nodes) {
-                        JexlNode sourceNode = getSourceNode(node);
-                        JexlNode topLevelOr = getOrNode(sourceNode);
-                        if (null == topLevelOr) {
-                            topLevelOr = sourceNode;
-                            // add the source node
-                            nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), node);
-                        } else {
-                            for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                                JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                                nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), topLevelOr.jjtGetChild(i));
-                            }
-                        }
+                        nodesMap.put(TreeHashVisitor.getNodeHash(node), node);
                     }
                     IndexMatch currentMatch = new IndexMatch(nodes, uid, IndexMatchType.AND);
                     matches.add(currentMatch);
