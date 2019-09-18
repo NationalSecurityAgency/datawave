@@ -7,6 +7,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -20,6 +21,13 @@ public class FieldMissingFromSchemaVisitorTest {
     
     // Special fields required by visitor.
     private Set<String> specialFields = Sets.newHashSet(ANY_FIELD, NO_FIELD);
+    
+    private MockMetadataHelper helper;
+    
+    @Before
+    public void before() {
+        helper = new MockMetadataHelper();
+    }
     
     /**
      * Test query with two field:datatype pairs that both exist in the metadata helper.
@@ -35,23 +43,19 @@ public class FieldMissingFromSchemaVisitorTest {
         fieldsToDatatypes.put("FOO2", "datatype2");
         
         // Setup MockMetadataHelper
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(fieldsToDatatypes);
         
         // Setup datatype filter
         Set<String> dataTypeFilter = Sets.newHashSet("datatype1", "datatype2");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkDatatypeFilter(Collections.emptySet(), script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkNullDatatypeFilter(Collections.emptySet(), script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkEmptyDatatypeFilter(Collections.emptySet(), script);
     }
     
     /**
@@ -68,7 +72,6 @@ public class FieldMissingFromSchemaVisitorTest {
         fieldsToDatatypes.put("FOO2", "datatype2");
         
         // Setup MockMetadataHelper
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(fieldsToDatatypes);
         
         // Setup datatype filter
@@ -78,16 +81,13 @@ public class FieldMissingFromSchemaVisitorTest {
         Set<String> expected = Sets.newHashSet("FOO3", "FOO4");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
-        assertEquals(expected, actual);
+        checkDatatypeFilter(expected, script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
-        assertEquals(expected, actual);
+        checkNullDatatypeFilter(expected, script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
-        assertEquals(expected, actual);
+        checkEmptyDatatypeFilter(expected, script);
     }
     
     /**
@@ -103,24 +103,20 @@ public class FieldMissingFromSchemaVisitorTest {
         fieldsToDatatypes.put("FOO", "datatype1");
         
         // Setup MockMetadataHelper
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(fieldsToDatatypes);
         
         // Setup datatype filter
         Set<String> dataTypeFilter = Sets.newHashSet("datatype1", "datatype2");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
         Set<String> expected = Sets.newHashSet("FOO2");
-        assertEquals(expected, actual);
+        checkDatatypeFilter(expected, script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
-        assertEquals(expected, actual);
+        checkNullDatatypeFilter(expected, script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
-        assertEquals(expected, actual);
+        checkEmptyDatatypeFilter(expected, script);
     }
     
     /**
@@ -137,24 +133,20 @@ public class FieldMissingFromSchemaVisitorTest {
         fieldsToDatatypes.put("FOO2", "datatype2");
         
         // Setup MockMetadataHelper
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(fieldsToDatatypes);
         
         // Setup datatype filter
         Set<String> dataTypeFilter = Sets.newHashSet("datatype1");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
         Set<String> expected = Sets.newHashSet("FOO2");
-        assertEquals(expected, actual);
+        checkDatatypeFilter(expected, script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkNullDatatypeFilter(Collections.emptySet(), script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkEmptyDatatypeFilter(Collections.emptySet(), script);
     }
     
     /**
@@ -170,23 +162,19 @@ public class FieldMissingFromSchemaVisitorTest {
         fieldsToDatatypes.put("FOO", "datatype1");
         
         // Setup MockMetadataHelper
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(fieldsToDatatypes);
         
         // Setup datatype filter
         Set<String> dataTypeFilter = Sets.newHashSet("datatype1");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkDatatypeFilter(Collections.emptySet(), script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkNullDatatypeFilter(Collections.emptySet(), script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkEmptyDatatypeFilter(Collections.emptySet(), script);
     }
     
     /**
@@ -198,24 +186,20 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         
         // Setup MockMetadataHelper with emptyFieldsToDatatypes
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(HashMultimap.create());
         
         // Setup datatype filter
         Set<String> dataTypeFilter = Sets.newHashSet("datatype1");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
         Set<String> expected = Sets.newHashSet("FOO");
-        assertEquals(expected, actual);
+        checkDatatypeFilter(expected, script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
-        assertEquals(expected, actual);
+        checkNullDatatypeFilter(expected, script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
-        assertEquals(expected, actual);
+        checkEmptyDatatypeFilter(expected, script);
     }
     
     /**
@@ -231,24 +215,20 @@ public class FieldMissingFromSchemaVisitorTest {
         fieldsToDatatypes.put("FOO", "datatype1");
         
         // Setup MockMetadataHelper
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(fieldsToDatatypes);
         
         // Setup datatype filter
         Set<String> dataTypeFilter = Sets.newHashSet("datatypeX");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
         Set<String> expected = Sets.newHashSet("FOO");
-        assertEquals(expected, actual);
+        checkDatatypeFilter(expected, script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkNullDatatypeFilter(Collections.emptySet(), script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
-        assertEquals(Collections.emptySet(), actual);
+        checkEmptyDatatypeFilter(Collections.emptySet(), script);
     }
     
     /**
@@ -266,7 +246,6 @@ public class FieldMissingFromSchemaVisitorTest {
         fieldsToDatatypes.put("BAZ", "datatype1");
         
         // Setup MockMetadataHelper with some indexed TF fields.
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(fieldsToDatatypes);
         helper.addTermFrequencyFields(Sets.newHashSet("BAR", "BAZ"));
         helper.setIndexedFields(Sets.newHashSet("BAR", "BAZ"));
@@ -275,17 +254,14 @@ public class FieldMissingFromSchemaVisitorTest {
         Set<String> dataTypeFilter = Sets.newHashSet("datatype1");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
         Set<String> expected = Sets.newHashSet("BAR");
-        assertEquals(expected, actual);
+        checkDatatypeFilter(expected, script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
-        assertEquals(expected, actual);
+        checkNullDatatypeFilter(expected, script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
-        assertEquals(expected, actual);
+        checkEmptyDatatypeFilter(expected, script);
     }
     
     /**
@@ -303,7 +279,6 @@ public class FieldMissingFromSchemaVisitorTest {
         fieldsToDatatypes.put("BAZ", "datatype1");
         
         // Setup MockMetadataHelper with some indexed TF fields.
-        MockMetadataHelper helper = new MockMetadataHelper();
         helper.addFieldsToDatatypes(fieldsToDatatypes);
         helper.addTermFrequencyFields(Sets.newHashSet("BAR", "BAZ"));
         helper.setIndexedFields(Sets.newHashSet("BAR", "BAZ"));
@@ -312,17 +287,29 @@ public class FieldMissingFromSchemaVisitorTest {
         Set<String> dataTypeFilter = Sets.newHashSet("datatype1");
         
         // Case 1 - check with a datatype filter
-        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
         Set<String> expected = Sets.newHashSet("BAR", "FOO");
-        assertEquals(expected, actual);
+        checkDatatypeFilter(expected, script, dataTypeFilter);
         
         // Case 2 - check with a null datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
         expected = Sets.newHashSet("BAR");
-        assertEquals(expected, actual);
+        checkNullDatatypeFilter(expected, script);
         
         // Case 3 - check with an empty datatype filter, implies all fields.
-        actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
+        checkEmptyDatatypeFilter(expected, script);
+    }
+    
+    private void checkDatatypeFilter(Set<String> expected, ASTJexlScript script, Set<String> dataTypeFilter) {
+        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, dataTypeFilter, specialFields);
+        assertEquals(expected, actual);
+    }
+    
+    private void checkNullDatatypeFilter(Set<String> expected, ASTJexlScript script) {
+        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, null, specialFields);
+        assertEquals(expected, actual);
+    }
+    
+    private void checkEmptyDatatypeFilter(Set<String> expected, ASTJexlScript script) {
+        Set<String> actual = FieldMissingFromSchemaVisitor.getNonExistentFields(helper, script, Collections.emptySet(), specialFields);
         assertEquals(expected, actual);
     }
 }
