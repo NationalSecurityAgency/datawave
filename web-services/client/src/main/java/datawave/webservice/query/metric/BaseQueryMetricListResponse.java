@@ -86,8 +86,9 @@ public abstract class BaseQueryMetricListResponse<T extends BaseQueryMetric> ext
             return "<script type='text/javascript' src='/jquery.min.js'></script>" +
                     "<script type='text/javascript'>" +
                     "$(document).ready(function() {" +
+                    "   var currentUrl = window.location.href.replace(/\\/+$/, '');" +
                     "   var queryHeader = document.getElementById(\"query-header\").innerHTML;" +
-                    "   queryHeader = queryHeader + '<br>(<a href=\"' + window.location.href + '/map\">map</a>)';" +
+                    "   queryHeader = queryHeader + '<br>(<a href=\"' + currentUrl + '/map\">map</a>)';" +
                     "   document.getElementById(\"query-header\").innerHTML = queryHeader;" +
                     "});" +
                     "</script>";
