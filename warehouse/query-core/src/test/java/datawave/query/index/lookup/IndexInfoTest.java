@@ -110,7 +110,7 @@ public class IndexInfoTest {
         
         IndexInfo merged = left.intersect(right);
         
-        // The intersection of left and right should be a set of 3 document ids
+        // The intersection of left and right should be a set of 1 document ids
         List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
         
@@ -143,7 +143,7 @@ public class IndexInfoTest {
         
         IndexInfo merged = right.intersect(left);
         
-        // The intersection of left and right should be a set of 3 document ids
+        // The intersection of left and right should be a set of 1 document ids
         List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
         
@@ -178,7 +178,7 @@ public class IndexInfoTest {
         
         IndexInfo merged = left.intersect(right, Arrays.asList(delayed), left);
         
-        // The intersection of left and right should be a set of 3 document ids
+        // The intersection of left and right should be a set of 1 document ids
         List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
         
@@ -213,7 +213,7 @@ public class IndexInfoTest {
         
         IndexInfo merged = right.intersect(left, Arrays.asList(delayed), right);
         
-        // The intersection of left and right should be a set of 3 document ids
+        // The intersection of left and right should be a set of 1 document ids
         List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
         

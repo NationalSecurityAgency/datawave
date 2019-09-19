@@ -468,7 +468,7 @@ public class IndexInfo implements Writable, UidIntersector {
                 if ((nodes.size() + infiniteNodes.size()) > 1) {
                     nodes.addAll(infiniteNodes);
                     for (JexlNode node : nodes) {
-                        nodesMap.put(TreeHashVisitor.getNodeHash(node), node);
+                        nodesMap.put(TreeHashVisitor.getNodeHash(getSourceNode(node)), node);
                     }
                     IndexMatch currentMatch = new IndexMatch(nodes, uid, IndexMatchType.AND);
                     matches.add(currentMatch);
