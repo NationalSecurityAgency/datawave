@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,8 +26,8 @@ public class ActiveQueryLog {
     public static final String WINDOW_SIZE = "datawave.query.active.windowSize";
     
     // Changeable via Accumulo properties
-    private long maxIdle = 900000l;
-    private long logPeriod = 60000l;
+    private long maxIdle = 900000;
+    private long logPeriod = 60000;
     private int logMaxQueries = 5;
     private int windowSize = 10;
     
@@ -67,7 +65,7 @@ public class ActiveQueryLog {
         }
     }
     
-    public void setLogPeriod(long logPeriod) {
+    synchronized public void setLogPeriod(long logPeriod) {
         if (logPeriod > 0) {
             if (logPeriod != this.logPeriod || this.timer == null) {
                 if (this.timer != null) {
@@ -82,11 +80,11 @@ public class ActiveQueryLog {
         }
         
     }
-
+    
     synchronized public void setLogMaxQueries(int logMaxQueries) {
         this.logMaxQueries = logMaxQueries;
     }
-
+    
     synchronized public void setWindowSize(int windowSize) {
         if (windowSize > 0) {
             this.windowSize = windowSize;
@@ -112,7 +110,7 @@ public class ActiveQueryLog {
         }
     }
     
-    private void checkSettings(AccumuloConfiguration conf, boolean useDefaults) {
+    synchronized private void checkSettings(AccumuloConfiguration conf, boolean useDefaults) {
         
         String maxIdleStr = conf.get(MAX_IDLE);
         if (maxIdleStr != null) {
@@ -135,7 +133,7 @@ public class ActiveQueryLog {
         } else if (useDefaults) {
             setLogPeriod(this.logPeriod);
         }
-
+        
         String logMaxQueriesStr = conf.get(LOG_MAX_QUERIES);
         if (logMaxQueriesStr != null) {
             try {
@@ -144,7 +142,7 @@ public class ActiveQueryLog {
                 LOG.error("Bad value: (" + logMaxQueriesStr + ") in " + LOG_MAX_QUERIES + " : " + e.getMessage());
             }
         }
-
+        
         String windowSizeStr = conf.get(WINDOW_SIZE);
         if (windowSizeStr != null) {
             try {
@@ -158,14 +156,13 @@ public class ActiveQueryLog {
     private Cache<String,ActiveQuery> setupCache(long maxIdle) {
         Caffeine<Object,Object> caffeine = Caffeine.newBuilder();
         caffeine.expireAfterAccess(maxIdle, TimeUnit.MILLISECONDS);
-        Cache<String,ActiveQuery> cache = caffeine.build();
-        return cache;
+        return caffeine.build();
     }
     
     synchronized public void remove(String queryId, Range range) {
         ActiveQuery activeQuery = get(queryId);
-        activeQuery.finishRange(range);
-        if (activeQuery.getNumActiveRanges() == 0) {
+        int numActiveRanges = activeQuery.removeRange(range);
+        if (numActiveRanges == 0) {
             this.CACHE.invalidate(queryId);
         }
     }
@@ -175,29 +172,27 @@ public class ActiveQueryLog {
     }
     
     class ActiveQueryTimerTask extends TimerTask {
+        
+        public ActiveQueryTimerTask() {}
+        
         @Override
         public void run() {
-            synchronized (this) {
-                List<ActiveQuery> activeQueryList = new ArrayList<>();
-                for (ActiveQuery q : CACHE.asMap().values()) {
-                    activeQueryList.add(q);
-                }
-                activeQueryList.sort(activeQueryList, new TotalTimeComparator());
-
-                for (ActiveQuery q : CACHE.asMap().values()) {
-                    if (q.isInCall()) {
-                        LOG.debug(q.toString());
-                    }
-                }
-
+            List<ActiveQuerySnapshot> activeQueryList = new ArrayList<>();
+            for (ActiveQuery q : CACHE.asMap().values()) {
+                activeQueryList.add(q.snapshot());
+            }
+            
+            activeQueryList.sort(ActiveQuerySnapshot.greatestElapsedTime);
+            
+            List<ActiveQuerySnapshot> sublist = activeQueryList;
+            if (ActiveQueryLog.this.logMaxQueries > 0) {
+                sublist = activeQueryList.subList(0, Math.min(ActiveQueryLog.this.logMaxQueries, activeQueryList.size()));
+            }
+            
+            for (ActiveQuerySnapshot q : sublist) {
+                LOG.debug(q.toString());
             }
         }
-    };
-
-    public class TotalTimeComparator implements Comparator<ActiveQuery> {
-        @Override
-        public int compare(ActiveQuery o1, ActiveQuery o2) {
-            return Long.compare(o1.totalElapsedTime(), o2.totalElapsedTime());
-        }
     }
+    
 }

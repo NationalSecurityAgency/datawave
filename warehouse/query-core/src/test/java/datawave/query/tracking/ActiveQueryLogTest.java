@@ -99,9 +99,9 @@ public class ActiveQueryLogTest {
         Logger.getLogger(ActiveQueryLog.class).setLevel(Level.DEBUG);
         Logger.getLogger(ActiveQueryLog.class).addAppender(new ConsoleAppender());
         
-        ActiveQueryLog.getInstance().setLogPeriod(1000);
+        ActiveQueryLog.getInstance().setLogPeriod(2000);
         
-        int numQueries = 50;
+        int numQueries = 10;
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numQueries);
         
         Map<String,QueryTask> tasks = new HashMap<>();
@@ -109,7 +109,7 @@ public class ActiveQueryLogTest {
             String queryId = createQueryId();
             int numSeeks = rand.nextInt(5) + 1;
             int numNexts = rand.nextInt(20) + 1;
-            QueryTask task = new QueryTask(queryId, numSeeks, numNexts, true);
+            QueryTask task = new QueryTask(queryId, numSeeks, numNexts, false);
             tasks.put(queryId, task);
             executor.execute(task);
         }
@@ -125,8 +125,9 @@ public class ActiveQueryLogTest {
         for (Map.Entry<String,QueryTask> e : tasks.entrySet()) {
             ActiveQuery activeQuery = ActiveQueryLog.getInstance().get(e.getKey());
             QueryTask queryTask = e.getValue();
-            Assert.assertEquals(queryTask.numSeeks, activeQuery.getNumCalls(ActiveQuery.CallType.SEEK));
-            Assert.assertEquals(queryTask.numNexts, activeQuery.getNumCalls(ActiveQuery.CallType.NEXT));
+            ActiveQuerySnapshot snapshot = activeQuery.snapshot();
+            Assert.assertEquals(queryTask.numSeeks, snapshot.getNumCalls(ActiveQuery.CallType.SEEK));
+            Assert.assertEquals(queryTask.numNexts, snapshot.getNumCalls(ActiveQuery.CallType.NEXT));
         }
     }
 }
