@@ -74,15 +74,6 @@
         <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
 
-    <bean id="ChainedQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
-        <property name="allowedFunctions">
-            <util:list value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
-                <bean class="datawave.query.language.functions.jexl.ChainStart"/>
-                <bean class="datawave.query.language.functions.jexl.Chain"/>
-            </util:list>
-        </property>
-    </bean>
-
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="compressOptionMappings" value="true" />
         <property name="queryModelProviderFactory" ref="queryModelProviderFactory" />
