@@ -5,8 +5,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -415,6 +417,7 @@ public class IndexInfo implements Writable, UidIntersector {
             nodeSet.add(match.getNode());
             
             match.set(TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodeSet)));
+            // TODO this may need to be of type AND for nested logic to be correct
         }
         
         if (null != myNode || null != delayedNodes) {
@@ -445,6 +448,11 @@ public class IndexInfo implements Writable, UidIntersector {
         HashMultimap<String,JexlNode> ids = HashMultimap.create();
         Set<IndexMatch> matches = Sets.newHashSet();
         
+        // must be true or we shouldn't be here
+        assert otherInfiniteNodes != null;
+        assert delayedNodes != null;
+        assert otherInfiniteNodes.size() + delayedNodes.size() > 0;
+        
         for (IndexMatch match : matchIterable) {
             JexlNode newNode = match.getNode();
             if (null != newNode)
@@ -458,56 +466,48 @@ public class IndexInfo implements Writable, UidIntersector {
         }
         
         IndexInfo merged = new IndexInfo();
-        Set<JexlNode> allNodes = Sets.newHashSet();
-        Multimap<TreeHashNode,JexlNode> nodesMap = ArrayListMultimap.create();
         if (ids.keySet().isEmpty()) {
             merged.count = maxPossibilities;
         } else {
             for (String uid : ids.keySet()) {
                 Set<JexlNode> nodes = Sets.newHashSet(ids.get(uid));
-                if ((nodes.size() + infiniteNodes.size()) > 1) {
-                    nodes.addAll(infiniteNodes);
-                    for (JexlNode node : nodes) {
-                        nodesMap.put(TreeHashVisitor.getNodeHash(getSourceNode(node)), node);
-                    }
-                    IndexMatch currentMatch = new IndexMatch(nodes, uid, IndexMatchType.AND);
-                    matches.add(currentMatch);
-                }
+                nodes.addAll(infiniteNodes);
+                IndexMatch currentMatch = new IndexMatch(nodes, uid, IndexMatchType.AND);
+                matches.add(currentMatch);
             }
             merged.count = matches.size();
         }
         
-        for (JexlNode node : infiniteNodes) {
-            JexlNode baseNode = getSourceNode(node);
-            nodesMap.put(TreeHashVisitor.getNodeHash(baseNode), node);
-        }
-        
-        for (TreeHashNode key : nodesMap.keySet()) {
-            Collection<JexlNode> nodeColl = nodesMap.get(key);
-            JexlNode delayedNode = null;
-            if (nodeColl.size() > 1) {
-                if (log.isTraceEnabled()) {
-                    log.trace(key + " has more than one node. taking first");
-                }
-                for (JexlNode node : nodeColl) {
-                    if (isDelayed(node)) {
-                        delayedNode = node;
-                        break;
-                    }
-                }
+        JexlNode newNode;
+        if (matches.size() > 1) {
+            // get the unique node sets
+            Map<TreeHashNode,JexlNode> matchNodes = new HashMap<>(matches.size());
+            for (IndexMatch match : matches) {
+                TreeHashNode hash = TreeHashVisitor.getNodeHash(match.getNode());
+                matchNodes.put(hash, match.getNode());
             }
-            if (null != delayedNode)
-                allNodes.add(delayedNode);
-            else
-                allNodes.add(nodeColl.iterator().next());
+            
+            // it is counter intuitive that this is an OR, but since each indexMatch is actually a potential different query path an or is appropriate here
+            // example (A || B) && C
+            // IndexMatch - A == 'a'
+            // IndexMatch - B == 'b'
+            // IndexMatch - C == infinite
+            // the merge node's matches actually represent (A && C) || (A && B)
+            // it may be possible to reduce the tree due to the IndexMatches only coming from one side
+            // IndexMatch - A == 'a'
+            // NoData - B == 'c'
+            // IndexMatch - C == infinite
+            // the merge nodes matches now just represent (A && C)
+            if (matchNodes.values().size() > 1) {
+                newNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createOrNode(matchNodes.values()));
+            } else {
+                newNode = TreeFlatteningRebuildingVisitor.flatten(matchNodes.values().iterator().next());
+            }
+        } else {
+            newNode = TreeFlatteningRebuildingVisitor.flatten(matches.iterator().next().getNode());
         }
         
-        /*
-         * Why we need this. Well, this is intended to be here because if we don't have all Ids match above, we should have a node for this IndexInfo that we're
-         * returning. We'll be using this node in case
-         */
-        
-        merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(allNodes));
+        merged.myNode = newNode;
         merged.uids = ImmutableSortedSet.copyOf(matches);
         
         return merged;
