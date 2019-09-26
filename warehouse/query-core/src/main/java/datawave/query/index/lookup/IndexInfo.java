@@ -440,11 +440,14 @@ public class IndexInfo implements Writable, UidIntersector {
      * 
      * @param maxPossibilities
      * @param matchIterable
+     * @param matchNode
+     *            to be used for constructing the merged node when there are no IndexMatch objects
      * @param otherInfiniteNodes
      * @param delayedNodes
      * @return
      */
-    protected IndexInfo intersect(long maxPossibilities, Iterable<IndexMatch> matchIterable, List<JexlNode> otherInfiniteNodes, List<JexlNode> delayedNodes) {
+    protected IndexInfo intersect(long maxPossibilities, Iterable<IndexMatch> matchIterable, JexlNode matchNode, List<JexlNode> otherInfiniteNodes,
+                    List<JexlNode> delayedNodes) {
         HashMultimap<String,JexlNode> ids = HashMultimap.create();
         Set<IndexMatch> matches = Sets.newHashSet();
         
@@ -503,8 +506,12 @@ public class IndexInfo implements Writable, UidIntersector {
             } else {
                 newNode = TreeFlatteningRebuildingVisitor.flatten(matchNodes.values().iterator().next());
             }
-        } else {
+        } else if (matches.size() == 1) {
             newNode = TreeFlatteningRebuildingVisitor.flatten(matches.iterator().next().getNode());
+        } else {
+            List<JexlNode> allNodes = Lists.newArrayList(infiniteNodes);
+            allNodes.add(matchNode);
+            newNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(allNodes));
         }
         
         merged.myNode = newNode;
@@ -539,7 +546,7 @@ public class IndexInfo implements Writable, UidIntersector {
              * A) we are intersecting UNKNOWN AND small
              */
             if (o.onlyEvents())
-                return intersect(Math.max(count, o.count), o.uids(), Lists.newArrayList(getNode()), delayedNodes);
+                return intersect(Math.max(count, o.count), o.uids(), o.getNode(), Lists.newArrayList(getNode()), delayedNodes);
             
         } else if (o.isInfinite() && !this.isInfinite()) {
             
@@ -547,7 +554,7 @@ public class IndexInfo implements Writable, UidIntersector {
              * B) We are intersecting small and unknown.
              */
             if (onlyEvents())
-                return intersect(Math.max(count, o.count), uids, Lists.newArrayList(o.getNode()), delayedNodes);
+                return intersect(Math.max(count, o.count), uids, getNode(), Lists.newArrayList(o.getNode()), delayedNodes);
         }
         
         IndexInfo merged = new IndexInfo();

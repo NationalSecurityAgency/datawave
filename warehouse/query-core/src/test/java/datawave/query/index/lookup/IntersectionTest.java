@@ -260,6 +260,25 @@ public class IntersectionTest {
     }
     
     @Test
+    public void testIntersection_noMatchesTest() throws ParseException {
+        // A && B
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2'");
+        
+        // A - uids
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList());
+        
+        // B - uids
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", null);
+        
+        List<? extends IndexStream> toMerge = Arrays.asList(s1, s2);
+        
+        Intersection i = new Intersection(toMerge, new IndexInfo());
+        assertFalse(i.hasNext());
+        
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+    }
+    
+    @Test
     public void testIntersection_uidAndinfinite() throws ParseException {
         // A && B && C
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3'");
