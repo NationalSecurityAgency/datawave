@@ -1,6 +1,7 @@
 package datawave.query.index.lookup;
 
 import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
@@ -267,35 +268,13 @@ public class IndexInfoTest {
         List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         
-        IndexInfo merged = left.union(right);
+        IndexInfo merged = IndexInfoUnion.union(left, right);
         
         // The union of left and right should be a set of four document ids
         Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("doc1", "doc2", "doc3", "doc4");
         
         assertEquals(4, merged.uids().size());
         assertEquals(expectedDocs, merged.uids());
-    }
-    
-    /**
-     * Union of query terms when one term is a delayed predicate
-     */
-    @Test
-    public void testUnion_OneTermIsDelayedPredicate() {
-        ASTDelayedPredicate delayedPredicate = ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
-        
-        IndexInfo left = new IndexInfo(50);
-        left.applyNode(delayedPredicate);
-        
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
-        IndexInfo right = new IndexInfo(rightMatches);
-        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
-        
-        IndexInfo merged = right.union(left);
-        assertEquals(0, merged.uids().size());
-        assertEquals("Count should be 53 but is " + merged.count(), 53, merged.count());
-        String expectedQuery = "(((ASTDelayedPredicate = true) && (FIELD == 'VALUE')))";
-        String actualQuery = JexlStringBuildingVisitor.buildQuery(merged.getNode());
-        assertEquals(expectedQuery, actualQuery);
     }
     
     /**
@@ -309,7 +288,7 @@ public class IndexInfoTest {
         IndexInfo right = new IndexInfo(90L);
         right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
-        IndexInfo merged = left.union(right);
+        IndexInfo merged = IndexInfoUnion.union(left, right);
         assertEquals(140L, merged.count());
         assertTrue(merged.uids().isEmpty());
     }
@@ -326,7 +305,7 @@ public class IndexInfoTest {
         IndexInfo right = new IndexInfo(rightMatches);
         
         IndexInfo expectedMerged = new IndexInfo(-1L);
-        assertEquals(expectedMerged, left.union(right));
-        assertEquals(expectedMerged, right.union(left));
+        assertEquals(expectedMerged, IndexInfoUnion.union(left, right));
+        assertEquals(expectedMerged, IndexInfoUnion.union(right, left));
     }
 }

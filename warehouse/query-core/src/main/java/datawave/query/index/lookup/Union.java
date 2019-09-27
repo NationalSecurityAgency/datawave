@@ -41,7 +41,7 @@ public class Union implements IndexStream {
     public Union(Iterable<? extends IndexStream> children) {
         this.children = new PriorityQueue(16, PeekOrdering.make(new TupleComparator<>()));
         this.childrenNodes = Lists.newArrayList();
-        delayedNodes = Lists.newArrayList();
+        this.delayedNodes = Lists.newArrayList();
         int childrenCount = 0;
         boolean childrenIgnored = false;
         boolean unindexedField = false;
@@ -97,7 +97,7 @@ public class Union implements IndexStream {
                     case EXCEEDED_TERM_THRESHOLD:
                         if (log.isTraceEnabled())
                             log.trace("Adding current node to stream");
-                        /**
+                        /*
                          * Helpful for debugging
                          */
                         this.childrenNodes.add(stream.currentNode());
@@ -107,7 +107,6 @@ public class Union implements IndexStream {
                         this.delayedNodes.add(stream.currentNode());
                     case ABSENT:
                     case PRESENT:
-                        
                         break;
                     default:
                         break;
@@ -198,7 +197,8 @@ public class Union implements IndexStream {
             }
             IndexStream itr = children.poll();
             
-            pointers = pointers.union(itr.peek().second(), delayedNodes);
+            pointers = IndexInfoUnion.union(pointers, itr.peek().second(), delayedNodes);
+            
             itr.next();
             if (itr.hasNext())
                 children.add(itr);

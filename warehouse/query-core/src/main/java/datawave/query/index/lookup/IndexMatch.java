@@ -9,6 +9,7 @@ import java.util.Set;
 
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.WritableComparable;
@@ -64,10 +65,6 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
         this.shard = "";
     }
     
-    private boolean contains(JexlNode node) {
-        return nodeStrings.contains(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
-    }
-    
     public String getUid() {
         return uid;
     }
@@ -84,7 +81,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
                 return JexlNodeFactory.createAndNode(myNodes);
             case OR:
             default:
-                return JexlNodeFactory.createUnwrappedOrNode(myNodes);
+                return TreeFlatteningRebuildingVisitor.flattenAll(JexlNodeFactory.createUnwrappedOrNode(myNodes));
         }
     }
     
@@ -147,6 +144,10 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
             nodeStrings.add(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
             myNodes.add(node);
         }
+    }
+    
+    private boolean contains(JexlNode node) {
+        return nodeStrings.contains(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
     
     @Override
