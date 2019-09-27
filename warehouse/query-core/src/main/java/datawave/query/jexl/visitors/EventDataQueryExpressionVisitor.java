@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -13,6 +12,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.predicate.PeekingPredicate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -57,7 +57,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
      * The null value flag is a bit of an unusual case and is generated in cases where a null (or non-null) comparison is performed for a field. It indicates
      * that at least one key for a field must be kept regardless of value. As such, this flag is set to false once its predicate has be satisfied.
      */
-    public static class ExpressionFilter implements Predicate<Key>, Cloneable {
+    public static class ExpressionFilter implements PeekingPredicate<Key>, Cloneable {
         final AttributeFactory attributeFactory;
         
         /** The field this filter apples to */
@@ -144,7 +144,17 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          *            the key to evaluate, must be parsable by DatawaveKey
          * @return true if the key should be kept in order to evaluare the query, false otherwise
          */
+        @Override
         public boolean apply(Key key) {
+            return apply(key, true);
+        }
+        
+        @Override
+        public boolean peek(Key key) {
+            return apply(key, false);
+        }
+        
+        private boolean apply(Key key, boolean update) {
             final DatawaveKey datawaveKey = new DatawaveKey(key);
             final String keyFieldName = JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
             
@@ -222,7 +232,9 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                 for (String normalizedFieldValue : fieldValuesToEvaluate) {
                     if (normalizedFieldValues.contains(normalizedFieldValue)) {
                         // field name matches and field value matches, keep.
-                        nonNullValueSeen = true;
+                        if (update) {
+                            nonNullValueSeen = true;
+                        }
                         return true;
                     }
                     
@@ -230,7 +242,9 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                         m.reset(normalizedFieldValue);
                         if (m.matches()) {
                             // field name matches and field pattern matches, keep.
-                            nonNullValueSeen = true;
+                            if (update) {
+                                nonNullValueSeen = true;
+                            }
                             return true;
                         }
                     }
@@ -238,7 +252,9 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                     for (LiteralRange r : normalizedRanges) {
                         if (r.contains(normalizedFieldValue)) {
                             // field name patches and value is within range, keep.
-                            nonNullValueSeen = true;
+                            if (update) {
+                                nonNullValueSeen = true;
+                            }
                             return true;
                         }
                     }
@@ -247,7 +263,9 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                         // field name has a nullValueFlag, keep one and only one instance
                         // of this field. (The fact of its presence will be sufficient
                         // to satisfy the null check condition assuming all other conditions are met
-                        nonNullValueSeen = true;
+                        if (update) {
+                            nonNullValueSeen = true;
+                        }
                         return true;
                     }
                 }
@@ -255,6 +273,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             
             // field name does not match any of the rules above, reject this key.
             return false;
+            
         }
         
         /**
@@ -263,9 +282,9 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          * @param filters
          * @return a cloned set of filters
          */
-        public static Map<String,? extends Predicate<Key>> clone(Map<String,? extends Predicate<Key>> filters) {
-            Map<String,Predicate<Key>> cloned = new HashMap<>();
-            for (Map.Entry<String,? extends Predicate<Key>> entry : filters.entrySet()) {
+        public static Map<String,? extends PeekingPredicate<Key>> clone(Map<String,? extends PeekingPredicate<Key>> filters) {
+            Map<String,PeekingPredicate<Key>> cloned = new HashMap<>();
+            for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
                 if (entry.getValue() instanceof ExpressionFilter) {
                     cloned.put(entry.getKey(), ((ExpressionFilter) entry.getValue()).clone());
                 } else {
@@ -280,8 +299,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          *
          * @param filters
          */
-        public static void reset(Map<String,? extends Predicate<Key>> filters) {
-            for (Map.Entry<String,? extends Predicate<Key>> entry : filters.entrySet()) {
+        public static void reset(Map<String,? extends PeekingPredicate<Key>> filters) {
+            for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
                 if (entry.getValue() instanceof ExpressionFilter) {
                     ((ExpressionFilter) entry.getValue()).reset();
                 }

@@ -88,6 +88,11 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     }
     
     @Override
+    public boolean peek(Map.Entry<Key,String> input) {
+        return filter.peek(input);
+    }
+    
+    @Override
     public Key transform(Key toLimit) {
         return filter.transform(toLimit);
     }
