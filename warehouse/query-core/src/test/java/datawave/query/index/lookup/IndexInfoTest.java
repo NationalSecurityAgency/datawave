@@ -1,12 +1,8 @@
 package datawave.query.index.lookup;
 
 import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Test;
 
