@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Predicate;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -9,6 +8,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
+import datawave.query.predicate.PeekingPredicate;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
@@ -932,7 +932,7 @@ public class EventDataQueryExpressionVisitorTest {
         final AtomicInteger completed = new AtomicInteger();
         Runnable runnable = () -> {
             try {
-                final Map<String,? extends Predicate<Key>> filter = ExpressionFilter.clone(base);
+                final Map<String,? extends PeekingPredicate<Key>> filter = ExpressionFilter.clone(base);
                 started.getAndIncrement();
                 synchronized (gate) {
                     gate.wait();

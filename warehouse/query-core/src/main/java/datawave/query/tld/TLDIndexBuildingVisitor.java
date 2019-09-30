@@ -203,6 +203,12 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
                 return true;
             }
             
+            @Override
+            public boolean peek(@Nullable Entry<Key,String> var1) {
+                // accept all
+                return true;
+            }
+            
             /**
              * Only keep the tf key if it isn't the root pointer or if it is index only and contributes to document evaluation
              * 
@@ -213,7 +219,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             public boolean keep(Key k) {
                 DatawaveKey key = new DatawaveKey(k);
                 return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName()))
-                                && attrFilter.apply(new AbstractMap.SimpleEntry(k, null));
+                                && attrFilter.peek(new AbstractMap.SimpleEntry(k, null));
             }
             
             @Override

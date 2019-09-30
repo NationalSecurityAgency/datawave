@@ -15,6 +15,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static datawave.query.iterator.QueryOptions.INDEXED_FIELDS;
+import static datawave.query.iterator.QueryOptions.NON_INDEXED_DATATYPES;
+import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
+
 /**
  * Anything QueryIterator does TLDQueryIterator should do too... plus stuff
  */
@@ -24,6 +28,51 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void setup() throws IOException {
         super.setup();
         iterator = new TLDQueryIterator();
+        
+        // update indexed/unindexed fields
+        options.put(INDEXED_FIELDS, options.get(INDEXED_FIELDS) + ",TF_FIELD3");
+        options.put(NON_INDEXED_DATATYPES, options.get(NON_INDEXED_DATATYPES) + ",EVENT_FIELD7");
+        
+        // update type metadata
+        typeMetadata.put("EVENT_FIELD7", "dataType1", "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("TF_FIELD3", "dataType1", "datawave.data.type.LcNoDiacriticsType");
+    }
+    
+    @Override
+    protected void configureIterator() {
+        // configure iterator
+        iterator.setEvaluationFilter(null);
+        iterator.setTypeMetadata(typeMetadata);
+    }
+    
+    @Test
+    public void event_isNotNull_documentSpecific_tld_test() throws IOException {
+        options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD3");
+        
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        
+        Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
+        List<String> tfField1Hits = new ArrayList<>();
+        tfField1Hits.add("z");
+        expectedDocument.getValue().put("TF_FIELD3", tfField1Hits);
+        
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void event_isNotNull_shardRange_tld_test() throws IOException {
+        options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD3");
+        
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange(null);
+        
+        Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
+        List<String> tfField1Hits = new ArrayList<>();
+        tfField1Hits.add("z");
+        expectedDocument.getValue().put("TF_FIELD3", tfField1Hits);
+        
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
     }
     
     /**
@@ -147,6 +196,13 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "d", "123.345.456.2", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "e", "123.345.456.2", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "f", "123.345.456.2", eventTime), new Value()));
+        
+        // add some event data for children
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("EVENT_FIELD7", "1", "123.345.456.1", eventTime), new Value()));
+        
+        // add some non-event data that is unique for children
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD3", "z", "123.345.456.2", eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD3", "z", "123.345.456.2", eventTime), new Value()));
         
         return listSource;
     }

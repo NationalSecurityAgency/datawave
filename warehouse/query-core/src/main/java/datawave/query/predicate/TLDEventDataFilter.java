@@ -1,6 +1,5 @@
 package datawave.query.predicate;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -134,19 +133,32 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      */
     @Override
     public boolean apply(Entry<Key,String> input) {
+        return apply(input, true);
+    }
+    
+    @Override
+    public boolean peek(Entry<Key,String> input) {
+        return apply(input, false);
+    }
+    
+    private boolean apply(Entry<Key,String> input, boolean update) {
         // if a TLD, then accept em all, other wise defer to the query field
         // filter
         Key current = input.getKey();
         lastParseInfo = getParseInfo(current);
         boolean root = lastParseInfo.isRoot();
-        boolean keep = keepField(current, true, root);
+        boolean keep = keepField(current, update, root);
         if (keep) {
             if (root) {
                 // must return true on the root or the field cannot be returned
                 return true;
             } else {
                 // delegate to the super
-                return super.apply(input);
+                if (update) {
+                    return super.apply(input);
+                } else {
+                    return super.peek(input);
+                }
             }
         }
         
@@ -180,9 +192,11 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         lastParseInfo = getParseInfo(k);
         boolean root = lastParseInfo.isRoot();
         
-        return (root && (k.getColumnQualifier().getLength() == 0 || keepField(k, false, true)))
-                        || (!root && nonEventFields.contains(lastParseInfo.getField()) && keepField(k, false, false) && super
-                                        .apply(new AbstractMap.SimpleEntry<>(k, null)));
+        if (root) {
+            return k.getColumnQualifier().getLength() == 0 || keepField(k, false, true);
+        } else {
+            return nonEventFields.contains(lastParseInfo.getField()) && keepField(k, false, false) && apply(k, false);
+        }
     }
     
     /**

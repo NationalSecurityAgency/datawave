@@ -1,7 +1,5 @@
 package datawave.query.predicate;
 
-import com.google.common.base.Predicate;
-
 import datawave.query.attributes.Document;
 
 import org.apache.accumulo.core.data.Key;
@@ -13,7 +11,7 @@ import java.util.Map;
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
-public interface EventDataQueryFilter extends Predicate<Map.Entry<Key,String>>, Filter, SeekingFilter, TransformingFilter, Cloneable {
+public interface EventDataQueryFilter extends PeekingPredicate<Map.Entry<Key,String>>, Filter, SeekingFilter, TransformingFilter, Cloneable {
     
     /**
      * This method is used to denote the start of processing a new document.
@@ -35,6 +33,9 @@ public interface EventDataQueryFilter extends Predicate<Map.Entry<Key,String>>, 
      */
     @Override
     boolean apply(@Nullable Map.Entry<Key,String> var1);
+    
+    @Override
+    boolean peek(@Nullable Map.Entry<Key,String> var1);
     
     /**
      * The keep method is used to filter out those fields returned from the apply method above that will be returned to the user.
