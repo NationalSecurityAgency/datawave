@@ -224,7 +224,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     private static Multimap<String,Type<?>> normalizedFieldAsDataTypeMap;
     
+    // These are caches of the complete set of indexed and normalized fields
     private static Set<String> cachedIndexedFields = null;
+    private static Set<String> cachedReverseIndexedFields = null;
     private static Set<String> cachedNormalizedFields = null;
     
     protected List<PushDownRule> rules = Lists.newArrayList();
@@ -302,10 +304,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         setDisableTestNonExistentFields(other.disableTestNonExistentFields);
         setDisableExpandIndexFunction(other.disableExpandIndexFunction);
         setDisableRangeCoalescing(other.disableRangeCoalescing);
-        if (null != other.cachedIndexedFields)
-            cachedIndexedFields = Sets.newHashSet(other.cachedIndexedFields);
-        if (null != other.cachedNormalizedFields)
-            cachedNormalizedFields = Sets.newHashSet(other.cachedNormalizedFields);
         rules.addAll(other.rules);
         queryIteratorClazz = other.queryIteratorClazz;
         setMetadataHelper(other.getMetadataHelper());
@@ -916,8 +914,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ANYFIELD regex nodes");
             
             try {
-                
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
+                config.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
+                config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
                                 config.isExpandFields(), config.isExpandValues());
             } catch (EmptyUnfieldedTermExpansionException e) {
@@ -989,18 +988,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
         }
         
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fetch required dataTypes");
         Multimap<String,Type<?>> fieldToDatatypeMap = null;
         if (cacheDataTypes) {
             fieldToDatatypeMap = dataTypeMap.getIfPresent(String.valueOf(config.getDatatypeFilter().hashCode()));
             
         }
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fetch required dataTypes");
         try {
             if (null != fieldToDatatypeMap) {
                 Set<String> indexedFields = Sets.newHashSet();
+                Set<String> reverseIndexedFields = Sets.newHashSet();
                 Set<String> normalizedFields = Sets.newHashSet();
                 
-                loadDataTypeMetadata(fieldToDatatypeMap, indexedFields, normalizedFields, config, false);
+                loadDataTypeMetadata(fieldToDatatypeMap, indexedFields, reverseIndexedFields, normalizedFields, config, false);
                 
                 if (null == queryFieldsAsDataTypeMap) {
                     queryFieldsAsDataTypeMap = HashMultimap.create(Multimaps.filterKeys(fieldToDatatypeMap, input -> !cachedNormalizedFields.contains(input)));
@@ -1011,12 +1011,12 @@ public class DefaultQueryPlanner extends QueryPlanner {
                                     .create(Multimaps.filterKeys(fieldToDatatypeMap, input -> cachedNormalizedFields.contains(input)));
                 }
                 
-                setCachedFields(indexedFields, queryFieldsAsDataTypeMap, normalizedFieldAsDataTypeMap, config);
+                setCachedFields(indexedFields, reverseIndexedFields, queryFieldsAsDataTypeMap, normalizedFieldAsDataTypeMap, config);
             } else {
                 fieldToDatatypeMap = configureIndexedAndNormalizedFields(metadataHelper, config, queryTree);
                 
                 if (cacheDataTypes) {
-                    loadDataTypeMetadata(null, null, null, config, true);
+                    loadDataTypeMetadata(null, null, null, null, config, true);
                     
                     dataTypeMap.put(String.valueOf(config.getDatatypeFilter().hashCode()), metadataHelper.getFieldsToDatatypes(config.getDatatypeFilter()));
                 }
@@ -1244,19 +1244,29 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    private void loadDataTypeMetadata(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> normalizedFields,
-                    ShardQueryConfiguration config, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
-                    ExecutionException, InstantiationException, IllegalAccessException {
+    private void loadDataTypeMetadata(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> reverseIndexedFields,
+                    Set<String> normalizedFields, ShardQueryConfiguration config, boolean reload) throws AccumuloException, AccumuloSecurityException,
+                    TableNotFoundException, ExecutionException, InstantiationException, IllegalAccessException {
         synchronized (dataTypeMap) {
-            if (!reload && (null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)) {
+            if (!reload && (null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)
+                            && (null != cachedReverseIndexedFields && null != reverseIndexedFields)) {
                 indexedFields.addAll(cachedIndexedFields);
+                reverseIndexedFields.addAll(cachedReverseIndexedFields);
                 normalizedFields.addAll(cachedNormalizedFields);
                 
                 return;
             }
             
             cachedIndexedFields = metadataHelper.getIndexedFields(null);
+            cachedReverseIndexedFields = metadataHelper.getReverseIndexedFields(null);
             cachedNormalizedFields = metadataHelper.getAllNormalized();
+            
+            if ((null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)
+                            && (null != cachedReverseIndexedFields && null != reverseIndexedFields)) {
+                indexedFields.addAll(cachedIndexedFields);
+                reverseIndexedFields.addAll(cachedReverseIndexedFields);
+                normalizedFields.addAll(cachedNormalizedFields);
+            }
         }
     }
     
@@ -2174,28 +2184,30 @@ public class DefaultQueryPlanner extends QueryPlanner {
         Multimap<String,Type<?>> fieldToDatatypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, config.getDatatypeFilter(), queryTree, false);
         
         try {
-            return configureIndexedAndNormalizedFields(fieldToDatatypeMap, metadataHelper.getIndexedFields(null), metadataHelper.getAllNormalized(), config,
-                            queryTree);
+            return configureIndexedAndNormalizedFields(fieldToDatatypeMap, metadataHelper.getIndexedFields(null), metadataHelper.getReverseIndexedFields(null),
+                            metadataHelper.getAllNormalized(), config, queryTree);
         } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
         }
         
     }
     
-    protected void setCachedFields(final Set<String> indexedFields, Multimap<String,Type<?>> queryFieldMap, Multimap<String,Type<?>> normalizedFieldMap,
-                    ShardQueryConfiguration config) {
+    protected void setCachedFields(Set<String> indexedFields, Set<String> reverseIndexedFields, Multimap<String,Type<?>> queryFieldMap,
+                    Multimap<String,Type<?>> normalizedFieldMap, ShardQueryConfiguration config) {
         config.setIndexedFields(indexedFields);
+        config.setReverseIndexedFields(reverseIndexedFields);
         config.setQueryFieldsDatatypes(queryFieldMap);
         config.setNormalizedFieldsDatatypes(normalizedFieldMap);
     }
     
-    protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(Multimap<String,Type<?>> fieldToDatatypeMap, final Set<String> indexedFields,
-                    final Set<String> normalizedFields, ShardQueryConfiguration config, ASTJexlScript queryTree) throws DatawaveQueryException,
-                    TableNotFoundException, InstantiationException, IllegalAccessException {
+    protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields,
+                    Set<String> reverseIndexedFields, Set<String> normalizedFields, ShardQueryConfiguration config, ASTJexlScript queryTree)
+                    throws DatawaveQueryException, TableNotFoundException, InstantiationException, IllegalAccessException {
         log.debug("config.getDatatypeFilter() = " + config.getDatatypeFilter());
         log.debug("fieldToDatatypeMap.keySet() is " + fieldToDatatypeMap.keySet());
         
         config.setIndexedFields(indexedFields);
+        config.setReverseIndexedFields(reverseIndexedFields);
         
         log.debug("normalizedFields = " + normalizedFields);
         

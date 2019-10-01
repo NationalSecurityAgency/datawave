@@ -250,6 +250,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ASTJexlScript script;
         try {
             Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
+            if (expansionFields.isEmpty()) {
+                // if the expansion field set is not set, then only allow those that are known to be indexed for the given datatypes
+                expansionFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
+            }
             script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields,
                             config.isExpandFields(), config.isExpandValues());
         } catch (EmptyUnfieldedTermExpansionException e) {
@@ -273,6 +277,9 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         
         final Set<String> indexedFields = metadataHelper.getIndexedFields(dataTypes);
         config.setIndexedFields(indexedFields);
+        
+        final Set<String> reverseIndexedFields = metadataHelper.getReverseIndexedFields(dataTypes);
+        config.setReverseIndexedFields(reverseIndexedFields);
         
         final Multimap<String,Type<?>> normalizedFields = metadataHelper.getFieldsToDatatypes(dataTypes);
         config.setNormalizedFieldsDatatypes(normalizedFields);
@@ -343,9 +350,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             // scan the table
             BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, TableName.SHARD_INDEX,
                             Collections.singleton(config.getRangesForTerms().get(termEntry)), Collections.singleton(termEntry.getValue()),
-                            Collections.emptySet(), config.getTableName().equals(config.getReverseIndexTableName()), false);
-            
-            bs.fetchColumnFamily(new Text(termEntry.getKey()));
+                            Collections.emptySet(), config.getTableName().equals(config.getReverseIndexTableName()), false,
+                            Collections.singleton(termEntry.getKey()));
             
             batchscanners.add(Maps.immutableEntry(bs, false));
         }
@@ -356,9 +362,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             
             // scan the table
             BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, tName, Collections.singleton(rangeEntry.getKey()),
-                            Collections.emptySet(), Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false);
-            
-            bs.fetchColumnFamily(new Text(patternEntry.getKey()));
+                            Collections.emptySet(), Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false,
+                            Collections.singleton(patternEntry.getKey()));
             
             batchscanners.add(Maps.immutableEntry(bs, rangeEntry.getValue()));
         }
@@ -481,9 +486,9 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     /**
      * scan a global index (shardIndex or shardReverseIndex) for the specified ranges and create a set of fieldname/TermInformation values. The Key/Values
      * scanned are trimmed based on a set of terms to match, and a set of data types (found in the config)
-     * 
+     *
      * @param config
-     * 
+     *
      * @param scannerFactory
      * @param tableName
      * @param ranges
@@ -494,7 +499,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
      * @throws TableNotFoundException
      */
     public static BatchScanner configureBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName, Collection<Range> ranges,
-                    Collection<String> literals, Collection<String> patterns, boolean reverseIndex) throws TableNotFoundException {
+                    Collection<String> literals, Collection<String> patterns, boolean reverseIndex, Collection<String> expansionFields)
+                    throws TableNotFoundException {
         
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
@@ -520,14 +526,14 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, true);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, true, expansionFields);
         
         return bs;
     }
     
     public static BatchScanner configureBatchScannerForDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
-                    Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly)
-                    throws TableNotFoundException {
+                    Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly,
+                    Collection<String> expansionFields) throws TableNotFoundException {
         
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
@@ -549,7 +555,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly,
+                        expansionFields);
         
         bs.addScanIterator(new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class));
         
