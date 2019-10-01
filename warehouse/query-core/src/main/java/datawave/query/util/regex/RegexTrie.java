@@ -1,6 +1,7 @@
 package datawave.query.util.regex;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +32,9 @@ public class RegexTrie {
      * Add a set of strings into the trie
      * 
      * @param strings
-     *            A list of strings. May contain the empty string.
+     *            A collection of strings. May contain the empty string.
      */
-    public void addAll(List<String> strings) {
+    public void addAll(Collection<String> strings) {
         for (String string : strings) {
             add(string);
         }

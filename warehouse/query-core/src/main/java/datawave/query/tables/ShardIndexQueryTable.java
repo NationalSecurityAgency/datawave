@@ -27,6 +27,7 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.query.util.regex.RegexTrie;
 import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
@@ -274,6 +275,9 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         final Set<String> indexedFields = metadataHelper.getIndexedFields(dataTypes);
         config.setIndexedFields(indexedFields);
         
+        final Set<String> reverseIndexedFields = metadataHelper.getReverseIndexedFields(dataTypes);
+        config.setReverseIndexedFields(reverseIndexedFields);
+        
         final Multimap<String,Type<?>> normalizedFields = metadataHelper.getFieldsToDatatypes(dataTypes);
         config.setNormalizedFieldsDatatypes(normalizedFields);
         
@@ -520,6 +524,9 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexRegexFieldnameMatchingIterator(config, bs, (reverseIndex ? config.getReverseIndexedFields()
+                        : config.getIndexedFields()));
+        
         ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, true);
         
         return bs;
@@ -548,6 +555,9 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
+        
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexRegexFieldnameMatchingIterator(config, bs, (reverseIndex ? config.getReverseIndexedFields()
+                        : config.getIndexedFields()));
         
         ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly);
         

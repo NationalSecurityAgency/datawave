@@ -2,9 +2,11 @@ package datawave.query.jexl.lookups;
 
 import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
+import datawave.core.iterators.GlobalIndexFieldnameMatchingIterator;
 import datawave.core.iterators.GlobalIndexTermMatchingIterator;
 import datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
 import datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
+import datawave.core.iterators.filter.GlobalIndexFieldnameMatchingFilter;
 import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 import datawave.data.type.Type;
 import datawave.query.Constants;
@@ -20,6 +22,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.regex.RegexTrie;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -49,6 +52,7 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -319,6 +323,11 @@ public class ShardIndexQueryTableStaticMethods {
         IteratorSetting setting = configureDateRangeIterator(config);
         options.addScanIterator(setting);
         
+        setting = configureGlobalIndexRegexFieldnameMatchingIterator(config, (reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields()));
+        if (setting != null) {
+            options.addScanIterator(setting);
+        }
+        
         setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
         if (setting != null) {
             options.addScanIterator(setting);
@@ -353,6 +362,10 @@ public class ShardIndexQueryTableStaticMethods {
         // options.addScanIterator(configureGlobalIndexDateRangeFilter(config, dateRange));
         options.addScanIterator(configureDateRangeIterator(config));
         IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
+        if (setting != null) {
+            options.addScanIterator(setting);
+        }
+        setting = configureGlobalIndexRegexFieldnameMatchingIterator(config, (reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields()));
         if (setting != null) {
             options.addScanIterator(setting);
         }
@@ -427,6 +440,65 @@ public class ShardIndexQueryTableStaticMethods {
             cfg.addOption(GlobalIndexDataTypeFilter.DATA_TYPE + i, dataType);
             i++;
         }
+        return cfg;
+    }
+    
+    public static final void configureGlobalIndexRegexFieldnameMatchingIterator(ShardQueryConfiguration config, ScannerBase bs, Collection<String> literals) {
+        if ((literals == null || literals.isEmpty())) {
+            return;
+        }
+        
+        RegexTrie trie = new RegexTrie();
+        trie.addAll(literals);
+        configureGlobalIndexFieldnameMatchingIterator(config, bs, null, Collections.singleton(trie.toRegex()));
+    }
+    
+    public static final void configureGlobalIndexFieldnameMatchingIterator(ShardQueryConfiguration config, ScannerBase bs, Collection<String> literals,
+                    Collection<String> patterns) {
+        if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty())) {
+            return;
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("Configuring GlobalIndexFieldnameMatchingIterator with " + literals + " and " + patterns);
+        }
+        
+        IteratorSetting cfg = configureGlobalIndexFieldnameMatchingIterator(config, literals, patterns);
+        
+        bs.addScanIterator(cfg);
+        
+    }
+    
+    public static final IteratorSetting configureGlobalIndexRegexFieldnameMatchingIterator(ShardQueryConfiguration config, Collection<String> literals) {
+        RegexTrie trie = new RegexTrie();
+        trie.addAll(literals);
+        return configureGlobalIndexFieldnameMatchingIterator(config, null, Collections.singleton(trie.toRegex()));
+    }
+    
+    public static final IteratorSetting configureGlobalIndexFieldnameMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
+                    Collection<String> patterns) {
+        if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty())) {
+            return null;
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("Configuring GlobalIndexFieldnameMatchingIterator with " + literals + " and " + patterns);
+        }
+        
+        IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 23, "fieldnameMatcher", GlobalIndexFieldnameMatchingIterator.class);
+        int i = 1;
+        if (patterns != null) {
+            for (String pattern : patterns) {
+                cfg.addOption(GlobalIndexFieldnameMatchingFilter.PATTERN + i, pattern);
+                i++;
+            }
+        }
+        i = 1;
+        if (literals != null) {
+            for (String literal : literals) {
+                cfg.addOption(GlobalIndexFieldnameMatchingFilter.LITERAL + i, literal);
+                i++;
+            }
+        }
+        
         return cfg;
     }
     
