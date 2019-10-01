@@ -16,6 +16,7 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -27,12 +28,15 @@ import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
@@ -53,6 +57,7 @@ import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
@@ -83,6 +88,7 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
+import datawave.query.util.Tuple3;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -259,6 +265,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * Should the ExecutableExpansionVisitor be run
      */
     protected boolean executableExpansion = true;
+    
+    /**
+     * Control if automated logical query reduction should be done
+     */
+    protected boolean reduceQuery = false;
     
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
@@ -843,6 +854,18 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         stopwatch.stop();
+        
+        if (reduceQuery) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query");
+            
+            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after reduction:");
+            }
+            
+            stopwatch.stop();
+        }
         
         return queryTree;
     }
@@ -1867,6 +1890,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
         boolean needsFullTable = false;
         CloseableIterable<QueryPlan> ranges = null;
         
+        // if the query has already been reduced to false there is no reason to do more
+        if (QueryPruningVisitor.getState(queryTree) == QueryPruningVisitor.TRUTH_STATE.FALSE) {
+            return new Tuple2<>(emptyCloseableIterator(), false);
+        }
+        
         // if we still have an unexecutable tree, then a full table scan is
         // required
         List<String> debugOutput = null;
@@ -1877,6 +1905,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (log.isDebugEnabled()) {
             logDebug(debugOutput, "ExecutableDeterminationVisitor at getQueryRanges:");
         }
+        
         if (state != STATE.EXECUTABLE) {
             if (state == STATE.ERROR) {
                 log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
