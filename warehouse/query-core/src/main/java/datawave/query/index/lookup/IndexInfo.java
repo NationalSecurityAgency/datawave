@@ -86,7 +86,7 @@ public class IndexInfo implements Writable, UidIntersector {
      * @return
      */
     public boolean isInfinite() {
-        return count == -1L;
+        return count == -1L || count != uids.size();
     }
     
     public long count() {

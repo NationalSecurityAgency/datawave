@@ -27,7 +27,7 @@ import static datawave.query.jexl.JexlASTHelper.nodeToKey;
 
 /**
  * This class generates the union of two {@link IndexInfo} objects. It handles all combinations of document and infinite ranges and will add in any nodes that
- * were delayed. These are nodes that the DefaultQueryPlanner determined were not appropriate for the index lookup, thus delaying them for later evaluation.
+ * were delayed.
  * <p>
  * Consider the following example, where the query 'A OR B' is executed against the index. Suppose that term A hits on documents 1 and 2, and term b hits on
  * documents 2 and 3. Logically, we can represent this as,
@@ -66,6 +66,9 @@ public class IndexInfoUnion {
     
     public static IndexInfo union(IndexInfo left, IndexInfo right, List<JexlNode> delayedNodes) {
         
+        // The merged node list is constructed independently of the IndexMatch collection.
+        // We do this because at this point we don't know if we are building document ranges or shard/day ranges.
+        // See TupleToRange for how the IndexInfo object is used to build query ranges.
         Map<String,JexlNode> mergedNodes = new HashMap<>();
         
         // 1. Unwrap the top level Jexl node for the IndexInfo objects and merge them together.
@@ -92,8 +95,6 @@ public class IndexInfoUnion {
         // 6. Handle uid count
         if (left.isInfinite() || right.isInfinite()) {
             merged.count = -1;
-        } else if (!left.onlyEvents() || !right.onlyEvents()) {
-            merged.count = left.count + right.count;
         } else {
             merged.count = merged.uids.size();
         }

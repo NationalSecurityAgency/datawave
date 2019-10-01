@@ -221,7 +221,7 @@ public class IndexInfoTest {
     }
     
     /**
-     * Intersection of query terms when neither term has document ids. The intersection of {50,90} is {50}
+     * Intersection of query terms when neither term has document ids. This forces the IndexInfo object into an infinite range with a count of -1.
      */
     @Test
     public void testIntersection_NoTermHasDocIds() {
@@ -232,7 +232,7 @@ public class IndexInfoTest {
         right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         IndexInfo merged = left.intersect(right);
-        assertEquals(50L, merged.count());
+        assertEquals(-1L, merged.count());
         assertTrue(merged.uids().isEmpty());
     }
     
@@ -274,7 +274,7 @@ public class IndexInfoTest {
     }
     
     /**
-     * Union of query terms when neither term has document ids. The union of {50, 90} is {140}.
+     * Union of query terms when neither term has document ids. This forces the IndexInfo object into an infinite range with a count of -1.
      */
     @Test
     public void testUnion_NoTermHasDocIds() {
@@ -285,7 +285,7 @@ public class IndexInfoTest {
         right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         IndexInfo merged = IndexInfoUnion.union(left, right);
-        assertEquals(140L, merged.count());
+        assertEquals(-1L, merged.count());
         assertTrue(merged.uids().isEmpty());
     }
     
