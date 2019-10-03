@@ -5,6 +5,8 @@ import com.codahale.metrics.Timer;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Range;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,6 +15,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class ActiveQuery {
+    
+    private static Logger LOG = LoggerFactory.getLogger(ActiveQuery.class);
     
     private String queryId = null;
     private long initTs = 0;
@@ -70,10 +74,14 @@ public class ActiveQuery {
     }
     
     synchronized public void recordStats(Document document, QuerySpan querySpan) {
-        this.documentSizeBytes = document.sizeInBytes();
-        this.lastSourceCount = querySpan.getSourceCount();
-        this.lastSeekCount = querySpan.getSeekCount();
-        this.lastNextCount = querySpan.getNextCount();
+        if (document != null) {
+            this.documentSizeBytes = document.sizeInBytes();
+        }
+        if (querySpan != null) {
+            this.lastSourceCount = querySpan.getSourceCount();
+            this.lastSeekCount = querySpan.getSeekCount();
+            this.lastNextCount = querySpan.getNextCount();
+        }
     }
     
     synchronized public int removeRange(Range range) {
@@ -128,6 +136,7 @@ public class ActiveQuery {
             newNumCalls = numCalls.intValue() - 1;
         }
         if (newNumCalls < 0) {
+            LOG.info("inCall count for callType:" + type.toString() + "=" + newNumCalls + ", resetting to 0");
             newNumCalls = 0;
         }
         this.inCallMap.put(type, newNumCalls);

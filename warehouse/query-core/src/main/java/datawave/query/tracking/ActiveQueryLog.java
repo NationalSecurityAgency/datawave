@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ActiveQueryLog {
     
@@ -32,6 +33,7 @@ public class ActiveQueryLog {
     private int windowSize = 10;
     
     private Cache<String,ActiveQuery> CACHE = null;
+    private ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Timer timer = new Timer("ActiveQueryLog");
     
     synchronized public static void setConfig(AccumuloConfiguration conf) {
@@ -93,16 +95,21 @@ public class ActiveQueryLog {
         }
     }
     
-    synchronized public void setMaxIdle(long maxIdle) {
+    public void setMaxIdle(long maxIdle) {
         if (this.maxIdle != maxIdle || this.CACHE == null) {
             if (maxIdle > 0) {
-                Cache<String,ActiveQuery> newCache = setupCache(maxIdle);
-                if (this.CACHE == null) {
-                    this.CACHE = newCache;
-                } else {
-                    Cache<String,ActiveQuery> oldCache = this.CACHE;
-                    this.CACHE = newCache;
-                    this.CACHE.putAll(oldCache.asMap());
+                cacheLock.writeLock().lock();
+                try {
+                    Cache<String,ActiveQuery> newCache = setupCache(maxIdle);
+                    if (this.CACHE == null) {
+                        this.CACHE = newCache;
+                    } else {
+                        Cache<String,ActiveQuery> oldCache = this.CACHE;
+                        this.CACHE = newCache;
+                        this.CACHE.putAll(oldCache.asMap());
+                    }
+                } finally {
+                    cacheLock.writeLock().unlock();
                 }
             } else {
                 LOG.error("Bad value: (" + maxIdle + ") for maxIdle");
@@ -110,7 +117,7 @@ public class ActiveQueryLog {
         }
     }
     
-    synchronized private void checkSettings(AccumuloConfiguration conf, boolean useDefaults) {
+    private void checkSettings(AccumuloConfiguration conf, boolean useDefaults) {
         
         String maxIdleStr = conf.get(MAX_IDLE);
         if (maxIdleStr != null) {
@@ -159,16 +166,28 @@ public class ActiveQueryLog {
         return caffeine.build();
     }
     
-    synchronized public void remove(String queryId, Range range) {
+    public void remove(String queryId, Range range) {
         ActiveQuery activeQuery = get(queryId);
         int numActiveRanges = activeQuery.removeRange(range);
         if (numActiveRanges == 0) {
-            this.CACHE.invalidate(queryId);
+            cacheLock.readLock().lock();
+            try {
+                this.CACHE.invalidate(queryId);
+            } finally {
+                cacheLock.readLock().unlock();
+            }
         }
     }
     
-    synchronized public ActiveQuery get(String queryId) {
-        return this.CACHE.get(queryId, s -> new ActiveQuery(queryId, this.windowSize));
+    public ActiveQuery get(String queryId) {
+        ActiveQuery activeQuery = null;
+        cacheLock.readLock().lock();
+        try {
+            activeQuery = this.CACHE.get(queryId, s -> new ActiveQuery(queryId, this.windowSize));
+        } finally {
+            cacheLock.readLock().unlock();
+        }
+        return activeQuery;
     }
     
     class ActiveQueryTimerTask extends TimerTask {
@@ -178,8 +197,13 @@ public class ActiveQueryLog {
         @Override
         public void run() {
             List<ActiveQuerySnapshot> activeQueryList = new ArrayList<>();
-            for (ActiveQuery q : CACHE.asMap().values()) {
-                activeQueryList.add(q.snapshot());
+            cacheLock.readLock().lock();
+            try {
+                for (ActiveQuery q : ActiveQueryLog.this.CACHE.asMap().values()) {
+                    activeQueryList.add(q.snapshot());
+                }
+            } finally {
+                cacheLock.readLock().unlock();
             }
             
             activeQueryList.sort(ActiveQuerySnapshot.greatestElapsedTime);
