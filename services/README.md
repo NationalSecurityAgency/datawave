@@ -305,7 +305,7 @@ curl -q -k -H "Authorization: Bearer $(</tmp/jwt.txt)" \
 --data-urlencode "auditUserDN=testUser" \
 --data-urlencode "auditType=LOCALONLY" \
 --data-urlencode "query=no query--testing the audit service" \
---data-urlencode "queryDate=20180101000000" \
+--data-urlencode "queryDate=1514764800000" \
 --data-urlencode "auditColumnVisibility=USER" \
 --data-urlencode "logicClass=EventQuery" \
 --data-urlencode "auths=TEST" \
