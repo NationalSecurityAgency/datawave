@@ -43,8 +43,14 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
         
         buf = QueueUtils.synchronizedQueue(new CircularFifoQueue(1));
         
+        // these two guava methods replaced behavior of startAndWait() from version 15 but
+        // will now throw an exception if another thread closes the session so catch and ignore
         startAsync();
-        awaitRunning();
+        try {
+            awaitRunning();
+        } catch (IllegalStateException e) {
+            log.debug("Thread was closed while waiting to start up.");
+        }
     }
     
     /*
