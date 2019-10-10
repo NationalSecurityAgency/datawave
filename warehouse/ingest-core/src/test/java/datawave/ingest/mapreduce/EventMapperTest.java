@@ -51,8 +51,11 @@ public class EventMapperTest {
         conf.setClass(EventMapper.CONTEXT_WRITER_CLASS, TestContextWriter.class, ContextWriter.class);
         
         Type type = new Type("file", null, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
+        Type errorType = new Type(TypeRegistry.ERROR_PREFIX, null, null, new String[] {SimpleDataTypeHandler.class.getName()}, 20, null);
+        
         TypeRegistry registry = TypeRegistry.getInstance(conf);
         registry.put(type.typeName(), type);
+        registry.put(errorType.typeName(), errorType);
         
         Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
         fields.put("fileExtension", new BaseNormalizedContent("fileExtension", "gz"));
@@ -192,8 +195,9 @@ public class EventMapperTest {
         
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
-        // no handlers configured for errors
-        assertEquals(0, written.size());
+        // two fields mutations + LOAD_DATE + ORIG_FILE
+        // previously this would have been zero
+        assertEquals(4, written.size());
     }
     
     private Map.Entry<BulkIngestKey,Value> getMetric(Multimap<BulkIngestKey,Value> written) {
