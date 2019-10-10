@@ -39,6 +39,7 @@ public class EventMapperTest {
     
     private Configuration conf;
     private SimpleRawRecord record;
+    private SimpleRawRecord errorRecord;
     private EventMapper<LongWritable,RawRecordContainer,BulkIngestKey,Value> eventMapper;
     
     @Before
@@ -66,6 +67,17 @@ public class EventMapperTest {
         record.setRawFileName("/some/filename");
         record.setRawData("some data".getBytes());
         record.generateId(null);
+        
+        errorRecord = new SimpleRawRecord();
+        errorRecord.setRawFileTimestamp(0);
+        errorRecord.setDataType(type);
+        errorRecord.setDate(eventTime);
+        errorRecord.setRawFileName("/some/filename");
+        errorRecord.setRawData("some data".getBytes());
+        errorRecord.generateId(null);
+        errorRecord.setRawFileName("");
+        errorRecord.addError("EVENT_DATE_MISSING");
+        errorRecord.setFatalError(true);
         
         expect(mapContext.getConfiguration()).andReturn(conf).anyTimes();
         
@@ -170,6 +182,18 @@ public class EventMapperTest {
         
         // two fields mutations + LOAD_DATE + ORIG_FILE
         assertEquals(4, written.size());
+    }
+    
+    @Test
+    public void errorEventWithZeroTimestampNotDropped() throws IOException, InterruptedException {
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), errorRecord, mapContext);
+        eventMapper.cleanup(mapContext);
+        
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+        
+        // no handlers configured for errors
+        assertEquals(0, written.size());
     }
     
     private Map.Entry<BulkIngestKey,Value> getMetric(Multimap<BulkIngestKey,Value> written) {
