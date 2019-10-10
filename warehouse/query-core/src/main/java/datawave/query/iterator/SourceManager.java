@@ -34,15 +34,42 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
     
     Queue<SourceManager> sourceQueue;
     
-    // objects for seeking
+    /**
+     * last key returned for the current lastRange, will be null prior to seek or after the range is done
+     */
     protected Key lastKey = null;
+    
+    /**
+     * last value returned for the current lastRange, will be null prior to seek or after the range is done
+     */
+    protected Value lastValue = null;
+    
+    /**
+     * has the current range been exhausted
+     */
+    protected boolean rangeDone = false;
+    
+    /**
+     * The last range to be seek'd
+     */
     protected Range lastRange;
     protected Collection<ByteSequence> columnFamilies = Lists.newArrayList();
     protected boolean inclusive = false;
     
+    /**
+     * original source used to construct the source manager or null if using a child source manager
+     */
     protected SortedKeyValueIterator<Key,Value> originalSource = null;
+    
+    /**
+     * used when this souce should not be used for deep copies but should delegate to its child until an original source is found
+     */
     protected SourceManager child = null;
     private IteratorEnvironment originalEnv = null;
+    
+    /**
+     * true when this is a leaf source manager, false otherwise
+     */
     private boolean root = false;
     
     public SourceManager(int initialSize, SortedKeyValueIterator<Key,Value> source) {
@@ -105,6 +132,9 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
     @Override
     public void next() throws IOException {
         if (null != child) {
+            if (lastRange == null) {
+                throw new IllegalStateException("seek must be called prior to next()");
+            }
             
             reseekIfNeeded();
             
@@ -112,33 +142,38 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             
             try {
                 lastKey = child.getTopKey();
+                lastValue = child.getTopValue();
+                
+                // need to understand when to expect no more keys for this range to differentiate from the start case
+                if (lastKey == null) {
+                    rangeDone = true;
+                }
             } catch (Exception e) {
                 lastKey = null;
+                lastValue = null;
             }
         } else {
             originalSource.next();
             if (originalSource.hasTop()) {
                 try {
                     lastKey = originalSource.getTopKey();
+                    lastValue = originalSource.getTopValue();
                 } catch (Exception e) {
                     lastKey = null;
+                    lastValue = null;
                 }
-            } else
+            } else {
                 lastKey = null;
+                lastValue = null;
+            }
+            
         }
         
     }
     
     @Override
     public Key getTopKey() {
-        Key topKey = null;
-        if (null != child) {
-            topKey = child.getTopKey();
-        } else {
-            if (null != originalSource && originalSource.hasTop())
-                topKey = originalSource.getTopKey();
-        }
-        return topKey;
+        return lastKey;
     }
     
     public SortedKeyValueIterator<Key,Value> getOriginalSource() {
@@ -147,12 +182,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
     
     @Override
     public Value getTopValue() {
-        if (null != child) {
-            return child.getTopValue();
-            
-        } else {
-            return originalSource.getTopValue();
-        }
+        return lastValue;
     }
     
     private void seekFromLast() throws IOException {
@@ -160,11 +190,13 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             if (log.isTraceEnabled())
                 log.trace("reseek from key " + lastKey);
             seek(new Range(lastKey, true, lastRange.getEndKey(), lastRange.isEndKeyInclusive()), columnFamilies, inclusive);
-            lastKey = null;
         } else {
-            if (log.isTraceEnabled())
-                log.trace("reseek from range " + lastRange);
-            seek(lastRange, columnFamilies, inclusive);
+            // only seek if the current range hasn't been fully exhausted in the past
+            if (!rangeDone) {
+                if (log.isTraceEnabled())
+                    log.trace("reseek from range " + lastRange);
+                seek(lastRange, columnFamilies, inclusive);
+            }
         }
         
     }
@@ -178,8 +210,16 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             
             try {
                 lastKey = child.getTopKey();
+                lastValue = child.getTopValue();
+                rangeDone = false;
+                
+                if (lastKey == null) {
+                    rangeDone = true;
+                }
             } catch (Exception e) {
                 lastKey = null;
+                lastValue = null;
+                rangeDone = false;
             }
             
         } else {
@@ -194,11 +234,17 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
                 if (originalSource.hasTop()) {
                     try {
                         lastKey = originalSource.getTopKey();
+                        lastValue = originalSource.getTopValue();
                     } catch (Exception e) {
                         lastKey = null;
+                        lastValue = null;
+                        rangeDone = false;
                     }
-                } else
+                } else {
                     lastKey = null;
+                    lastValue = null;
+                    rangeDone = false;
+                }
             }
             
         }
@@ -258,12 +304,11 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
                 childLastKey = child.getSourceLastKey();
             }
             
-            boolean lastKeysNull = lastKey == null;
-            lastKeysNull &= childLastKey == null;
             if (log.isTraceEnabled()) {
                 log.trace("reseek " + lastRange + " " + childRange + " " + childLastKey + " " + lastKey);
             }
-            if (childRange != null && (!lastRange.equals(childRange) && !lastKeysNull && (lastKey == null || !lastKey.equals(childLastKey)))) {
+            
+            if (!rangesMatch(childRange, lastRange) || !keysMatch(childLastKey, lastKey)) {
                 try {
                     seekFromLast();
                     return true;
@@ -273,6 +318,14 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             }
         }
         return false;
+    }
+    
+    private boolean keysMatch(Key childKey, Key lastKey) {
+        return (childKey == null && lastKey == null) || (childKey != null && lastKey != null && childKey.equals(lastKey));
+    }
+    
+    private boolean rangesMatch(Range childRange, Range lastRange) {
+        return (childRange == null && lastRange == null) || (childRange != null && lastRange != null && lastRange.equals(childRange));
     }
     
     private Key getSourceLastKey() {
@@ -296,6 +349,12 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             if (log.isTraceEnabled()) {
                 log.trace("Call has top" + lastRange + " " + getSourceRange() + " " + lastKey + " " + getSourceLastKey());
             }
+            
+            // short circuit
+            if (rangeDone) {
+                return false;
+            }
+            
             reseekIfNeeded();
             
             return child.hasTop();

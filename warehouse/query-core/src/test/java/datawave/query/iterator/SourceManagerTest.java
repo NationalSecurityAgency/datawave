@@ -1,6 +1,9 @@
 package datawave.query.iterator;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -40,6 +43,7 @@ public class SourceManagerTest {
     
     private SortedMapIterator data;
     private SourceCounter counter;
+    private SortedListKeyValueIterator dataIterator;
     
     @Before
     public void setup() throws ParseException, IOException {
@@ -51,6 +55,112 @@ public class SourceManagerTest {
         Map<String,String> options = Maps.newHashMap();
         
         counter.init(data, options, new MockIteratorEnvironment());
+        
+        dataIterator = new SortedListKeyValueIterator(createTestData());
+    }
+    
+    @Test
+    public void dataIntegrityTest() throws IOException {
+        SourceManager manager = new SourceManager(dataIterator);
+        manager.setInitialSize(1);
+        
+        // pre-seek both iterators
+        SortedKeyValueIterator<Key,Value> copy1 = manager.deepCopy(null);
+        copy1.seek(new Range(), Collections.emptyList(), false);
+        SortedKeyValueIterator<Key,Value> copy2 = manager.deepCopy(null);
+        copy2.seek(new Range(), Collections.emptyList(), false);
+        
+        // individual next loops
+        int copy1Count = 0;
+        while (copy1.hasTop()) {
+            assertNotEquals("unexpected topKey on iteration=" + copy1Count, null, copy1.getTopKey());
+            copy1Count++;
+            copy1.next();
+        }
+        
+        int copy2Count = 0;
+        while (copy2.hasTop()) {
+            assertNotEquals("unexpected topKey on iteration=" + copy2Count, null, copy2.getTopKey());
+            copy2Count++;
+            copy2.next();
+        }
+        
+        assertTrue("both copies should have the same number of next calls; copy1=" + copy1Count + " copy2=" + copy2Count, copy1Count == copy2Count);
+        
+        // re-seek
+        copy1.seek(new Range(), Collections.emptyList(), false);
+        copy2.seek(new Range(), Collections.emptyList(), false);
+        
+        // alternating next loops
+        int alternatingCount = 0;
+        while (copy1.hasTop() && copy2.hasTop()) {
+            assertTrue(copy1.getTopKey().equals(copy2.getTopKey()));
+            alternatingCount++;
+            copy1.next();
+            copy2.next();
+        }
+        
+        assertFalse(copy1.hasTop());
+        assertFalse(copy2.hasTop());
+        assertEquals(copy1Count, alternatingCount);
+        
+        // different ranges
+        copy1.seek(new Range(new Key("20121126_2"), true, new Key("20121126_3"), false), Collections.emptyList(), false);
+        copy2.seek(new Range(new Key("20121126_0"), true, new Key("20121126_4"), true), Collections.emptyList(), false);
+        
+        int mixedCopy1Count = 0;
+        int mixedCopy2Count = 0;
+        boolean reseek = true;
+        
+        while (copy1.hasTop() || copy2.hasTop()) {
+            if (copy1.hasTop()) {
+                copy1.getTopKey();
+                mixedCopy1Count++;
+                copy1.next();
+            }
+            
+            if (!copy1.hasTop() && reseek) {
+                // test intermediate seek
+                copy1.seek(new Range(new Key("20121126_2"), true, new Key("20121126_3"), false), Collections.emptyList(), false);
+                reseek = false;
+            }
+            
+            if (copy2.hasTop()) {
+                copy2.getTopKey();
+                mixedCopy2Count++;
+                copy2.next();
+            }
+        }
+        
+        assertTrue(mixedCopy2Count > mixedCopy1Count);
+        assertTrue(mixedCopy2Count == copy2Count);
+        // since re-seek after the first one should be 2x expected
+        assertTrue(mixedCopy1Count == 9 * 2);
+        
+        // test one side empty range
+        copy1.seek(new Range(new Key("20121126_9"), true, new Key("20121126_99"), false), Collections.emptyList(), false);
+        copy2.seek(new Range(new Key("20121126_0"), true, new Key("20121126_4"), true), Collections.emptyList(), false);
+        
+        mixedCopy1Count = 0;
+        mixedCopy2Count = 0;
+        
+        while (copy1.hasTop() || copy2.hasTop()) {
+            if (copy1.hasTop()) {
+                copy1.getTopKey();
+                mixedCopy1Count++;
+                copy1.next();
+            }
+            
+            if (copy2.hasTop()) {
+                copy2.getTopKey();
+                mixedCopy2Count++;
+                copy2.next();
+            }
+        }
+        
+        assertTrue(mixedCopy2Count > mixedCopy1Count);
+        assertTrue(mixedCopy2Count == copy2Count);
+        assertTrue(mixedCopy1Count == 0);
     }
     
     @Test
