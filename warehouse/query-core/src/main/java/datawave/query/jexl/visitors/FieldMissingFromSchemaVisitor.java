@@ -27,9 +27,12 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 /**
- * Class to check that each query node contains a field which exists in the schema. 1. If a datatype filter was specified, then the existence check is limited
- * to only those datatypes 2. If a datatype filter is NOT specified (null or empty), this implies ALL datatypes.
- *
+ * Class to check that each query node contains a field which exists in the schema.
+ * 
+ * <pre>
+ * 1. If a datatype filter was specified, then the existence check is limited to only those datatypes
+ * 2. If a datatype filter is NOT specified (null or empty), this implies ALL datatypes.
+ * </pre>
  */
 public class FieldMissingFromSchemaVisitor extends BaseVisitor {
     
