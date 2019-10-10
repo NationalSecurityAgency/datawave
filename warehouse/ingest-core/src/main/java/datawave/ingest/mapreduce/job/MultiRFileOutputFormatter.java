@@ -25,6 +25,7 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.crypto.CryptoServiceFactory;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -243,7 +244,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
-        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf).withTableConfiguration(tableConf).build());
+        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, CryptoServiceFactory.newDefaultInstance())
+                        .withTableConfiguration(tableConf).build());
     }
     
     /**
@@ -351,7 +353,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     // get the sequence file block file size to use
     protected int getSeqFileBlockSize() {
         if (!tableConfigs.isEmpty()) {
-            return (int) tableConfigs.values().iterator().next().getMemoryInBytes(Property.TABLE_FILE_COMPRESSED_BLOCK_SIZE);
+            return (int) tableConfigs.values().iterator().next().getAsBytes(Property.TABLE_FILE_COMPRESSED_BLOCK_SIZE);
         } else {
             return 0;
         }
@@ -556,8 +558,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf).withTableConfiguration(tableConfigs.get(table))
-                                        .build();
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, CryptoServiceFactory.newDefaultInstance())
+                                        .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
                         openReader.close();

@@ -8,8 +8,8 @@ import java.util.Map.Entry;
 import datawave.query.attributes.Document;
 import datawave.query.util.TraceIterators;
 
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
+import datawave.webservice.query.runner.Span;
+import datawave.webservice.query.runner.Trace;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 

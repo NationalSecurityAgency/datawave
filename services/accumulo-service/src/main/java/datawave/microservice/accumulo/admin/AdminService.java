@@ -29,10 +29,12 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.impl.Tables;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.clientImpl.Tables;
 import org.apache.accumulo.core.client.security.SecurityErrorCode;
 import org.apache.accumulo.core.data.ConstraintViolationSummary;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.data.TabletId;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -493,13 +495,13 @@ public class AdminService {
                 }
             }
             
-            Map<KeyExtent,Set<SecurityErrorCode>> authFailures = null;
+            Map<TabletId,Set<SecurityErrorCode>> authFailures = null;
             List<ConstraintViolationSummary> cvs = null;
             
             try {
                 writer.close();
             } catch (MutationsRejectedException e) {
-                authFailures = e.getAuthorizationFailuresMap();
+                authFailures = e.getSecurityErrorCodes();
                 cvs = e.getConstraintViolationSummaries();
             }
             
@@ -508,16 +510,10 @@ public class AdminService {
             
             if (authFailures != null) {
                 List<AuthorizationFailure> authorizationFailures = new ArrayList<>();
-                for (Map.Entry<KeyExtent,Set<SecurityErrorCode>> next : authFailures.entrySet()) {
+                for (Map.Entry<TabletId,Set<SecurityErrorCode>> next : authFailures.entrySet()) {
                     AuthorizationFailure failure = new AuthorizationFailure();
                     
-                    String mappedTableName = null;
-                    try {
-                        mappedTableName = Tables.getTableName(warehouseConnector.getInstance(), next.getKey().getTableId().toString());
-                    } catch (TableNotFoundException e) {
-                        mappedTableName = "unknown";
-                    }
-                    failure.setTableName(new OptionallyEncodedString(mappedTableName));
+                    failure.setTableId(new OptionallyEncodedString(next.getKey().getTableId().toString()));
                     failure.setEndRow(new OptionallyEncodedString(next.getKey().getEndRow().toString()));
                     failure.setPrevEndRow(new OptionallyEncodedString(next.getKey().getPrevEndRow().toString()));
                     // TODO: Add SecurityErrorCode to the AuthorizationFailure object

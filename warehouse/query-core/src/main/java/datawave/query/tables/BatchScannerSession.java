@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Throwables;
-import org.apache.accumulo.core.client.impl.ScannerOptions;
-import org.apache.accumulo.core.client.impl.TabletLocator;
+import org.apache.accumulo.core.clientImpl.ScannerOptions;
+import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -40,7 +40,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 
-import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.async.Scan;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.SessionArbiter;
@@ -355,7 +354,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             
             Scan scan = null;
             
-            if (speculativeScanning && delegatedResourceInitializer == RfileResource.class) {
+            if (speculativeScanning) {
                 
                 if (log.isTraceEnabled()) {
                     log.trace("Using speculative execution");
@@ -418,7 +417,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             
             Scan scan = null;
             
-            if (speculativeScanning && delegatedResourceInitializer == RfileResource.class) {
+            if (speculativeScanning) {
                 
                 if (log.isTraceEnabled()) {
                     log.trace("Using speculative execution");

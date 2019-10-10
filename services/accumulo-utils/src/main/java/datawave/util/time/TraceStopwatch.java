@@ -2,8 +2,8 @@ package datawave.util.time;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
+import datawave.webservice.query.runner.Span;
+import datawave.webservice.query.runner.Trace;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.google.common.base.Preconditions;

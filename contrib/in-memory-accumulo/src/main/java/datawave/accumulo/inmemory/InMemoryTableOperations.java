@@ -42,17 +42,19 @@ import org.apache.accumulo.core.client.admin.FindMax;
 import org.apache.accumulo.core.client.admin.Locations;
 import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.client.admin.TimeType;
-import org.apache.accumulo.core.client.impl.TableOperationsHelper;
-import org.apache.accumulo.core.client.impl.Tables;
+import org.apache.accumulo.core.clientImpl.TableOperationsHelper;
+import org.apache.accumulo.core.clientImpl.Tables;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.crypto.CryptoServiceFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.data.impl.KeyExtent;
-import org.apache.accumulo.core.data.impl.TabletIdImpl;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
+import org.apache.accumulo.core.dataImpl.TabletIdImpl;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.metadata.MetadataTable;
@@ -60,7 +62,6 @@ import org.apache.accumulo.core.metadata.RootTable;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.start.classloader.vfs.AccumuloVFSClassLoader;
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -284,8 +285,8 @@ class InMemoryTableOperations extends TableOperationsHelper {
          */
         for (FileStatus importStatus : fs.listStatus(importPath)) {
             try {
-                FileSKVIterator importIterator = FileOperations.getInstance().newReaderBuilder().forFile(importStatus.getPath().toString(), fs, fs.getConf())
-                                .withTableConfiguration(AccumuloConfiguration.getDefaultConfiguration()).seekToBeginning().build();
+                FileSKVIterator importIterator = FileOperations.getInstance().newReaderBuilder().forFile(importStatus.getPath().toString(), fs, fs.getConf(), CryptoServiceFactory.newDefaultInstance())
+                                .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
                 while (importIterator.hasTop()) {
                     Key key = importIterator.getTopKey();
                     Value value = importIterator.getTopValue();
@@ -359,9 +360,9 @@ class InMemoryTableOperations extends TableOperationsHelper {
         for (Entry<String,InMemoryTable> entry : acu.tables.entrySet()) {
             String table = entry.getKey();
             if (RootTable.NAME.equals(table))
-                result.put(table, RootTable.ID);
+                result.put(table, RootTable.ID.canonical());
             else if (MetadataTable.NAME.equals(table))
-                result.put(table, MetadataTable.ID);
+                result.put(table, MetadataTable.ID.canonical());
             else
                 result.put(table, entry.getValue().getTableId());
         }
@@ -436,7 +437,7 @@ class InMemoryTableOperations extends TableOperationsHelper {
     @Override
     public void clone(String srcTableName, String newTableName, boolean flush, Map<String,String> propertiesToSet, Set<String> propertiesToExclude)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException, TableExistsException {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
     
     @Override
@@ -457,12 +458,12 @@ class InMemoryTableOperations extends TableOperationsHelper {
     
     @Override
     public void importTable(String tableName, String exportDir) throws TableExistsException, AccumuloException, AccumuloSecurityException {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
     
     @Override
     public void exportTable(String tableName, String exportDir) throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
     
     @Override

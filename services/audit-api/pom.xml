@@ -9,7 +9,8 @@
     <artifactId>audit-api</artifactId>
     <version>1.5-SNAPSHOT</version>
     <properties>
-        <version.accumulo>1.9.2</version.accumulo>
+        <version.accumulo>2.0.0</version.accumulo>
+        <version.commons>3.9</version.commons>
         <version.guava>25.1-jre</version.guava>
     </properties>
     <dependencyManagement>
@@ -69,6 +70,11 @@
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${version.commons}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

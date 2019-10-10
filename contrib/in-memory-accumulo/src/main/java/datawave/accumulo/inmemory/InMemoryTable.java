@@ -30,13 +30,13 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.accumulo.core.client.admin.TimeType;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.conf.IterConfigUtil;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.hadoop.io.Text;
 
@@ -95,8 +95,8 @@ public class InMemoryTable {
     InMemoryTable(boolean limitVersion, TimeType timeType, String tableId) {
         this.timeType = timeType;
         this.tableId = tableId;
-        settings = IteratorUtil.generateInitialTableProperties(limitVersion);
-        for (Entry<String,String> entry : AccumuloConfiguration.getDefaultConfiguration()) {
+        settings = IterConfigUtil.generateInitialTableProperties(limitVersion);
+        for (Entry<String,String> entry : DefaultConfiguration.getInstance()) {
             String key = entry.getKey();
             if (key.startsWith(Property.TABLE_PREFIX.getKey()))
                 settings.put(key, entry.getValue());
@@ -123,7 +123,7 @@ public class InMemoryTable {
         this.timeType = timeType;
         this.tableId = tableId;
         settings = properties;
-        for (Entry<String,String> entry : AccumuloConfiguration.getDefaultConfiguration()) {
+        for (Entry<String,String> entry : DefaultConfiguration.getInstance()) {
             String key = entry.getKey();
             if (key.startsWith(Property.TABLE_PREFIX.getKey()))
                 settings.put(key, entry.getValue());

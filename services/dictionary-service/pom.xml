@@ -13,7 +13,7 @@
     <properties>
         <start-class>datawave.microservice.dictionary.DictionaryService</start-class>
         <version.microservice.dictionary-api>1.1-SNAPSHOT</version.microservice.dictionary-api>
-        <version.microservice.starter>1.4</version.microservice.starter>
+        <version.microservice.starter>1.6-SNAPSHOT</version.microservice.starter>
         <version.webjars.datatables>1.10.19</version.webjars.datatables>
         <version.webjars.jquery>3.3.1-2</version.webjars.jquery>
     </properties>

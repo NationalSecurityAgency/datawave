@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
@@ -25,6 +26,7 @@ import datawave.mr.bulk.split.LocationStrategy;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.SplitStrategy;
 
+import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -40,20 +42,23 @@ import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.accumulo.core.client.impl.Tables;
-import org.apache.accumulo.core.client.impl.TabletLocator;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.clientImpl.ClientInfo;
+import org.apache.accumulo.core.clientImpl.Credentials;
+import org.apache.accumulo.core.clientImpl.Tables;
+import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.client.mapreduce.InputFormatBase;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
@@ -946,14 +951,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         
         Instance instance = getInstance(job.getConfiguration());
         Connector conn = instance.getConnector(getUsername(job.getConfiguration()), new PasswordToken(getPassword(job.getConfiguration())));
-        String tableId = Tables.getTableId(instance, tableName);
-        
-        if (Tables.getTableState(instance, tableId) != TableState.OFFLINE) {
-            Tables.clearCache(instance);
-            if (Tables.getTableState(instance, tableId) != TableState.OFFLINE) {
-                throw new AccumuloException("Table is online " + tableName + "(" + tableId + ") cannot scan table in offline mode ");
-            }
-        }
+        String tableId = conn.tableOperations().tableIdMap().get(tableName);
         
         for (Range range : ranges) {
             Text startRow;
@@ -963,7 +961,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             else
                 startRow = new Text();
             
-            Range metadataRange = new Range(new KeyExtent(tableId, startRow, null).getMetadataEntry(), true, null, false);
+            Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).getMetadataEntry(), true, null, false);
             Scanner scanner = conn.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
             MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
             scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
@@ -1074,11 +1072,11 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
         if (conf.getBoolean(MOCK, false))
             return new InMemoryTabletLocator();
-        Instance instance = getInstance(conf);
         String tableName = getTablename(conf);
-        Credentials credentials = new Credentials(getUsername(conf), new PasswordToken(getPassword(conf)));
-        return TabletLocator.getLocator(new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()),
-                        Tables.getTableId(instance, tableName));
+        Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
+                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
+        ClientContext context = new ClientContext(ClientInfo.from(props));
+        return TabletLocator.getLocator(context, Tables.getTableId(context, tableName));
     }
     
     /**
@@ -1113,19 +1111,21 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 }
             } else {
                 Instance instance = getInstance(job.getConfiguration());
-                String tableId = null;
+                TableId tableId = null;
                 tl = getTabletLocator(job.getConfiguration());
                 // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                 tl.invalidateCache();
-                while (!tl.binRanges(new ClientContext(instance, cbHelper.getCredentials(), AccumuloConfiguration.getDefaultConfiguration()), ranges,
-                                binnedRanges).isEmpty()) {
+                Properties props = Accumulo.newClientProperties().to(cbHelper.getInstanceName(), cbHelper.getZooKeepers())
+                                .as(cbHelper.getUsername(), new PasswordToken(cbHelper.getPassword())).build();
+                ClientContext context = new ClientContext(props);
+                while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                     if (!(instance instanceof InMemoryInstance)) {
                         if (tableId == null)
-                            tableId = Tables.getTableId(instance, tableName);
-                        if (!Tables.exists(instance, tableId))
-                            throw new TableDeletedException(tableId);
-                        if (Tables.getTableState(instance, tableId) == TableState.OFFLINE)
-                            throw new TableOfflineException(instance, tableId);
+                            tableId = Tables.getTableId(context, tableName);
+                        if (!Tables.exists(context, tableId))
+                            throw new TableDeletedException(tableId.canonical());
+                        if (Tables.getTableState(context, tableId) == TableState.OFFLINE)
+                            throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
                     }
                     binnedRanges.clear();
                     log.warn("Unable to locate bins for specified ranges. Retrying.");

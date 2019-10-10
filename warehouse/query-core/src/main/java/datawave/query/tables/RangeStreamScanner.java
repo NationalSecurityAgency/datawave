@@ -6,7 +6,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Queue;
@@ -20,7 +19,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.base.Throwables;
-import datawave.mr.bulk.RfileScanner;
+
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -568,9 +567,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             }
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setRange(currentRange);
-            else if (baseScanner instanceof RfileScanner) {
-                ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
-            }
             
             Iterator<Entry<Key,Value>> iter = baseScanner.iterator();
             

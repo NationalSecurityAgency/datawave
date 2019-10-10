@@ -10,11 +10,10 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -400,7 +399,7 @@ public class IteratorBuildingVisitorTest {
         TypeMetadata typeMetadata = new TypeMetadata();
         
         Iterator<Map.Entry<Key,Value>> iterator = source.iterator();
-        IteratorEnvironment env = new BaseIteratorEnvironment();
+        IteratorEnvironment env = new TestIteratorEnvironment();
         visitor.setSource(new SourceFactory(iterator), env);
         
         // configure the visitor for use
@@ -477,6 +476,12 @@ public class IteratorBuildingVisitorTest {
         @Override
         public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
             return new IteratorToSortedKeyValueIterator(iterator);
+        }
+    }
+    
+    private static class TestIteratorEnvironment implements IteratorEnvironment {
+        public boolean isSamplingEnabled() {
+            return false;
         }
     }
 }

@@ -23,7 +23,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.admin.DelegationTokenConfig;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
-import org.apache.accumulo.core.client.impl.thrift.SecurityErrorCode;
+import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.DelegationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -41,19 +41,8 @@ class InMemorySecurityOperations implements SecurityOperations {
     }
     
     @Override
-    public void createUser(String user, byte[] password, Authorizations authorizations) throws AccumuloException, AccumuloSecurityException {
-        createLocalUser(user, new PasswordToken(password));
-        changeUserAuthorizations(user, authorizations);
-    }
-    
-    @Override
     public void createLocalUser(String principal, PasswordToken password) throws AccumuloException, AccumuloSecurityException {
         this.acu.users.put(principal, new InMemoryUser(principal, password, new Authorizations()));
-    }
-    
-    @Override
-    public void dropUser(String user) throws AccumuloException, AccumuloSecurityException {
-        dropLocalUser(user);
     }
     
     @Override
@@ -62,21 +51,11 @@ class InMemorySecurityOperations implements SecurityOperations {
     }
     
     @Override
-    public boolean authenticateUser(String user, byte[] password) throws AccumuloException, AccumuloSecurityException {
-        return authenticateUser(user, new PasswordToken(password));
-    }
-    
-    @Override
     public boolean authenticateUser(String principal, AuthenticationToken token) throws AccumuloException, AccumuloSecurityException {
         InMemoryUser user = acu.users.get(principal);
         if (user == null)
             return false;
         return user.token.equals(token);
-    }
-    
-    @Override
-    public void changeUserPassword(String user, byte[] password) throws AccumuloException, AccumuloSecurityException {
-        changeLocalUserPassword(user, new PasswordToken(password));
     }
     
     @Override
@@ -210,11 +189,6 @@ class InMemorySecurityOperations implements SecurityOperations {
         if (perms != null)
             perms.remove(permission);
         
-    }
-    
-    @Override
-    public Set<String> listUsers() throws AccumuloException, AccumuloSecurityException {
-        return listLocalUsers();
     }
     
     @Override

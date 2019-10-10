@@ -12,7 +12,7 @@
     <description>DATAWAVE Configuration Microservice</description>
     <properties>
         <start-class>datawave.microservice.config.server.ConfigServerApplication</start-class>
-        <version.microservice.starter>1.4</version.microservice.starter>
+        <version.microservice.starter>1.6-SNAPSHOT</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>

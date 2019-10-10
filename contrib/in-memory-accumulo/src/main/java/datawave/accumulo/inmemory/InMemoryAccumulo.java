@@ -26,8 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.admin.TimeType;
-import org.apache.accumulo.core.client.impl.Namespaces;
-import org.apache.accumulo.core.client.impl.Tables;
+import org.apache.accumulo.core.clientImpl.Namespace;
+import org.apache.accumulo.core.clientImpl.Namespaces;
+import org.apache.accumulo.core.clientImpl.Tables;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.metadata.MetadataTable;
@@ -52,8 +53,8 @@ public class InMemoryAccumulo {
         InMemoryUser root = new InMemoryUser("root", new PasswordToken(new byte[0]), Authorizations.EMPTY);
         root.permissions.add(SystemPermission.SYSTEM);
         users.put(root.name, root);
-        namespaces.put(Namespaces.DEFAULT_NAMESPACE, new InMemoryNamespace());
-        namespaces.put(Namespaces.ACCUMULO_NAMESPACE, new InMemoryNamespace());
+        namespaces.put(Namespace.DEFAULT.name(), new InMemoryNamespace());
+        namespaces.put(Namespace.ACCUMULO.name(), new InMemoryNamespace());
         createTable("root", RootTable.NAME, true, TimeType.LOGICAL);
         createTable("root", MetadataTable.NAME, true, TimeType.LOGICAL);
         createTable("root", ReplicationTable.NAME, true, TimeType.LOGICAL);
