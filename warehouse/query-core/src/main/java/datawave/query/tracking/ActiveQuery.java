@@ -136,7 +136,7 @@ public class ActiveQuery {
             newNumCalls = numCalls.intValue() - 1;
         }
         if (newNumCalls < 0) {
-            LOG.info("inCall count for callType:" + type.toString() + "=" + newNumCalls + ", resetting to 0");
+            LOG.warn("inCall count for callType:" + type.toString() + "=" + newNumCalls + ", resetting to 0");
             newNumCalls = 0;
         }
         this.inCallMap.put(type, newNumCalls);
