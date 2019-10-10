@@ -1856,18 +1856,6 @@
                 </plugins>
             </build>
         </profile>
-        <!-- The microservices profile (activated with -Pmicroservices or -Dservices triggers building of the microservices. -->
-        <profile>
-            <id>microservices</id>
-            <activation>
-                <property>
-                    <name>services</name>
-                </property>
-            </activation>
-            <modules>
-                <module>services/build-parent</module>
-            </modules>
-        </profile>
         <profile>
             <id>build-dw-contrib</id>
             <activation>
