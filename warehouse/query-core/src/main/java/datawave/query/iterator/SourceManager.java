@@ -102,9 +102,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             throw new RuntimeException("Original source wasn't configured " + originalSource + " " + originalEnv);
         }
         for (int i = 0; i < sizeToCreate; i++) {
-            
             sourceQueue.offer(createSource());
-            
         }
     }
     
@@ -120,7 +118,6 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
     
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
-        
         // started queue
         originalSource = source;
         originalEnv = env;
@@ -140,35 +137,23 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             
             child.next();
             
-            try {
-                lastKey = child.getTopKey();
-                lastValue = child.getTopValue();
-                
-                // need to understand when to expect no more keys for this range to differentiate from the start case
-                if (lastKey == null) {
-                    rangeDone = true;
-                }
-            } catch (Exception e) {
-                lastKey = null;
-                lastValue = null;
+            lastKey = child.getTopKey();
+            lastValue = child.getTopValue();
+            
+            // need to understand when to expect no more keys for this range to differentiate from the start case
+            if (lastKey == null) {
+                rangeDone = true;
             }
         } else {
             originalSource.next();
             if (originalSource.hasTop()) {
-                try {
-                    lastKey = originalSource.getTopKey();
-                    lastValue = originalSource.getTopValue();
-                } catch (Exception e) {
-                    lastKey = null;
-                    lastValue = null;
-                }
+                lastKey = originalSource.getTopKey();
+                lastValue = originalSource.getTopValue();
             } else {
                 lastKey = null;
                 lastValue = null;
             }
-            
         }
-        
     }
     
     @Override
@@ -198,30 +183,25 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
                 seek(lastRange, columnFamilies, inclusive);
             }
         }
-        
     }
     
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        lastKey = null;
+        lastValue = null;
+        rangeDone = false;
+        
         if (null != child) {
             if (log.isDebugEnabled())
                 log.debug("DeepCopy at " + sourceQueue.size() + ", deepCopies: " + deepCopiesCalled + ", sources: " + sources + " child seek to " + range);
             child.seek(range, columnFamilies, inclusive);
             
-            try {
-                lastKey = child.getTopKey();
-                lastValue = child.getTopValue();
-                rangeDone = false;
-                
-                if (lastKey == null) {
-                    rangeDone = true;
-                }
-            } catch (Exception e) {
-                lastKey = null;
-                lastValue = null;
-                rangeDone = false;
-            }
+            lastKey = child.getTopKey();
+            lastValue = child.getTopValue();
             
+            if (lastKey == null) {
+                rangeDone = true;
+            }
         } else {
             // we are a child source node and must be resought
             
@@ -232,18 +212,8 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
                 originalSource.seek(range, columnFamilies, inclusive);
                 
                 if (originalSource.hasTop()) {
-                    try {
-                        lastKey = originalSource.getTopKey();
-                        lastValue = originalSource.getTopValue();
-                    } catch (Exception e) {
-                        lastKey = null;
-                        lastValue = null;
-                        rangeDone = false;
-                    }
-                } else {
-                    lastKey = null;
-                    lastValue = null;
-                    rangeDone = false;
+                    lastKey = originalSource.getTopKey();
+                    lastValue = originalSource.getTopValue();
                 }
             }
             
@@ -294,9 +264,8 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
         
     }
     
-    protected boolean reseekIfNeeded() {
+    protected boolean reseekIfNeeded() throws IOException {
         if (root) {
-            
             Range childRange = null;
             Key childLastKey = null;
             if (null != child) {
@@ -309,12 +278,8 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
             }
             
             if (!rangesMatch(childRange, lastRange) || !keysMatch(childLastKey, lastKey)) {
-                try {
-                    seekFromLast();
-                    return true;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                seekFromLast();
+                return true;
             }
         }
         return false;
@@ -344,22 +309,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
     
     @Override
     public boolean hasTop() {
-        if (null != child) {
-            
-            if (log.isTraceEnabled()) {
-                log.trace("Call has top" + lastRange + " " + getSourceRange() + " " + lastKey + " " + getSourceLastKey());
-            }
-            
-            // short circuit
-            if (rangeDone) {
-                return false;
-            }
-            
-            reseekIfNeeded();
-            
-            return child.hasTop();
-        } else
-            return originalSource.hasTop();
+        return lastKey != null;
     }
     
     public int getChildrenSize() {
