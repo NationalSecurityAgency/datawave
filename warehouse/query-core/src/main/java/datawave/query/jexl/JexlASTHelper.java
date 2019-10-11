@@ -71,15 +71,19 @@ import java.math.BigInteger;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 /**
  *
@@ -1456,6 +1460,60 @@ public class JexlASTHelper {
         }
         
         return maxSelectivity;
+    }
+    
+    /**
+     * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage.
+     *
+     * @param rootNode
+     *            the tree to validate
+     * @param failHard
+     *            whether or not to throw an exception if validation fails
+     * @return true if valid, false otherwise
+     */
+    // checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage
+    public static boolean validateLineage(JexlNode rootNode, boolean failHard) {
+        boolean result = true;
+        
+        // add all the nodes to the stack and iterate...
+        Deque<JexlNode> workingStack = new LinkedList<>();
+        workingStack.push(rootNode);
+        
+        // go through all of the nodes from parent to children, and ensure that parent and child relationships are correct
+        while (!workingStack.isEmpty()) {
+            JexlNode node = workingStack.pop();
+            
+            if (node.jjtGetNumChildren() > 0) {
+                for (JexlNode child : children(node)) {
+                    if (child != null) {
+                        if (child.jjtGetParent() == null) {
+                            if (failHard)
+                                throw new RuntimeException("Failed to validate lineage: Tree included a child with a null parent.");
+                            else
+                                log.error("Failed to validate lineage: Tree included a child with a null parent.");
+                            
+                            result = false;
+                        } else if (!child.jjtGetParent().equals(node)) {
+                            if (failHard)
+                                throw new RuntimeException("Failed to validate lineage:  Included a child with a conflicting parent.");
+                            else
+                                log.error("Failed to validate lineage:  Included a child with a conflicting parent.");
+                            
+                            result = false;
+                        }
+                        workingStack.push(child);
+                    } else {
+                        if (failHard)
+                            throw new RuntimeException("Failed to validate lineage: Included a null child.");
+                        else
+                            log.error("Failed to validate lineage: Included a null child.");
+                        
+                        result = false;
+                    }
+                }
+            }
+        }
+        return result;
     }
     
     private JexlASTHelper() {}
