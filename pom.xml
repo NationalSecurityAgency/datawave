@@ -1856,19 +1856,5 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>build-dw-contrib</id>
-            <activation>
-                <property>
-                    <name>plugins</name>
-                </property>
-            </activation>
-            <modules>
-                <module>contrib/read-properties</module>
-                <module>contrib/assert-properties</module>
-                <module>contrib/code-style</module>
-                <module>contrib/in-memory-accumulo</module>
-            </modules>
-        </profile>
     </profiles>
 </project>
