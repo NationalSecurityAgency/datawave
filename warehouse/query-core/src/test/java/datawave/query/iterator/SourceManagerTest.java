@@ -60,7 +60,7 @@ public class SourceManagerTest {
     }
     
     @Test
-    public void dataIntegrityTest() throws IOException {
+    public void dataIntegrity_individualTest() throws IOException {
         SourceManager manager = new SourceManager(dataIterator);
         manager.setInitialSize(1);
         
@@ -86,6 +86,18 @@ public class SourceManagerTest {
         }
         
         assertTrue("both copies should have the same number of next calls; copy1=" + copy1Count + " copy2=" + copy2Count, copy1Count == copy2Count);
+    }
+    
+    @Test
+    public void dataIntegrity_alternatingTest() throws IOException {
+        SourceManager manager = new SourceManager(dataIterator);
+        manager.setInitialSize(1);
+        
+        // pre-seek both iterators
+        SortedKeyValueIterator<Key,Value> copy1 = manager.deepCopy(null);
+        copy1.seek(new Range(), Collections.emptyList(), false);
+        SortedKeyValueIterator<Key,Value> copy2 = manager.deepCopy(null);
+        copy2.seek(new Range(), Collections.emptyList(), false);
         
         // re-seek
         copy1.seek(new Range(), Collections.emptyList(), false);
@@ -102,7 +114,19 @@ public class SourceManagerTest {
         
         assertFalse(copy1.hasTop());
         assertFalse(copy2.hasTop());
-        assertEquals(copy1Count, alternatingCount);
+        assertEquals(26, alternatingCount);
+    }
+    
+    @Test
+    public void dataIntegrity_differentRangeReseekTest() throws IOException {
+        SourceManager manager = new SourceManager(dataIterator);
+        manager.setInitialSize(1);
+        
+        // pre-seek both iterators
+        SortedKeyValueIterator<Key,Value> copy1 = manager.deepCopy(null);
+        copy1.seek(new Range(), Collections.emptyList(), false);
+        SortedKeyValueIterator<Key,Value> copy2 = manager.deepCopy(null);
+        copy2.seek(new Range(), Collections.emptyList(), false);
         
         // different ranges
         copy1.seek(new Range(new Key("20121126_2"), true, new Key("20121126_3"), false), Collections.emptyList(), false);
@@ -133,16 +157,28 @@ public class SourceManagerTest {
         }
         
         assertTrue(mixedCopy2Count > mixedCopy1Count);
-        assertTrue(mixedCopy2Count == copy2Count);
+        assertTrue(mixedCopy2Count == 26);
         // since re-seek after the first one should be 2x expected
         assertTrue(mixedCopy1Count == 9 * 2);
+    }
+    
+    @Test
+    public void dataIntegrity_emptyRangeTest() throws IOException {
+        SourceManager manager = new SourceManager(dataIterator);
+        manager.setInitialSize(1);
+        
+        // pre-seek both iterators
+        SortedKeyValueIterator<Key,Value> copy1 = manager.deepCopy(null);
+        copy1.seek(new Range(), Collections.emptyList(), false);
+        SortedKeyValueIterator<Key,Value> copy2 = manager.deepCopy(null);
+        copy2.seek(new Range(), Collections.emptyList(), false);
         
         // test one side empty range
         copy1.seek(new Range(new Key("20121126_9"), true, new Key("20121126_99"), false), Collections.emptyList(), false);
         copy2.seek(new Range(new Key("20121126_0"), true, new Key("20121126_4"), true), Collections.emptyList(), false);
         
-        mixedCopy1Count = 0;
-        mixedCopy2Count = 0;
+        int mixedCopy1Count = 0;
+        int mixedCopy2Count = 0;
         
         while (copy1.hasTop() || copy2.hasTop()) {
             if (copy1.hasTop()) {
@@ -159,7 +195,7 @@ public class SourceManagerTest {
         }
         
         assertTrue(mixedCopy2Count > mixedCopy1Count);
-        assertTrue(mixedCopy2Count == copy2Count);
+        assertTrue(mixedCopy2Count == 26);
         assertTrue(mixedCopy1Count == 0);
     }
     
