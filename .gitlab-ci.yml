@@ -43,12 +43,16 @@ deploy_and_test:
      - contrib/datawave-quickstart/bin/services/*/*.tar.gz
      - .m2/repository
   script:
+    - export DW_DATAWAVE_BUILD_COMMAND
+    - TAG="$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)"
+    - contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
     - |
-      export DW_DATAWAVE_BUILD_COMMAND
-      TAG="$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)"
-      contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
-      docker tag ${IMAGE_NAME}:${TAG} ${REMOTE_IMAGE_NAME}:${TAG}
-      docker push ${REMOTE_IMAGE_NAME}:${TAG}
+      if [[ "${CI_COMMIT_REF_NAME}" =~ ^release/.*|^master$ ]]
+      then
+        docker tag ${IMAGE_NAME}:${TAG} ${REMOTE_IMAGE_NAME}:${TAG}
+        docker push ${REMOTE_IMAGE_NAME}:${TAG}
+      fi
   tags:
     - datawave
     - shell-executor
+
