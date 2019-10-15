@@ -3,7 +3,6 @@ package datawave.query.tables;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.NoSuchElementException;
-import java.util.Queue;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.pool.PoolableObjectFactory;
@@ -11,41 +10,25 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Queues;
 
 /**
  * Closable queue that defines a simplistic factory that creates and destroys scanner resources.
  */
-public class ResourceQueue implements Closeable {
-    
-    /**
-     * default connector.
-     */
-    protected Connector connector = null;
-    
-    /**
-     * Object pool that contains the scanner resources we will return
-     */
-    GenericObjectPool scannerPool;
-    
-    protected boolean isOpen = false;
-    
-    protected PoolableObjectFactory factory;
-    
-    private int capacity;
-    
-    private byte type;
+public final class ResourceQueue implements Closeable {
     
     private static final Logger log = Logger.getLogger(ResourceQueue.class);
+    
+    private final GenericObjectPool<AccumuloResource> scannerPool;
+    
+    private final byte type;
     
     /**
      * Constructor for the queue that accepts the capacity and the connector. Defaults to the block when exhausted queue option
      * 
      * @param capacity
      * @param cxn
-     * @throws Exception
      */
-    public ResourceQueue(int capacity, Connector cxn) throws Exception {
+    public ResourceQueue(int capacity, Connector cxn) {
         this(capacity, cxn, GenericObjectPool.WHEN_EXHAUSTED_BLOCK);
     }
     
@@ -55,76 +38,35 @@ public class ResourceQueue implements Closeable {
      * @param capacity
      * @param cxn
      * @param type
-     * @throws Exception
      */
-    public ResourceQueue(int capacity, Connector cxn, byte type) throws Exception {
+    public ResourceQueue(int capacity, Connector cxn, byte type) {
         Preconditions.checkNotNull(cxn);
-        
-        connector = cxn;
-        
-        isOpen = true;
-        
-        configurePool(capacity, type);
-        
-    }
-    
-    /**
-     * Constructor that accepts the type of pool, the connector, and the capacity
-     * 
-     * @param capacity
-     * @param type
-     * @throws Exception
-     */
-    protected ResourceQueue(int capacity, byte type) throws Exception {
-        
-        connector = null;
-        
-        isOpen = true;
-        
-        configurePool(capacity, type);
-        
-    }
-    
-    /**
-     * configure the pool
-     * 
-     * @throws Exception
-     */
-    protected void configurePool(int capacity, byte type) throws Exception {
         Preconditions.checkArgument(capacity > 0);
-        
-        factory = new ScannerQueueFactory(capacity);
-        
-        this.capacity = capacity;
-        
-        scannerPool = new GenericObjectPool(factory);
-        // set the max capacity
-        scannerPool.setMaxActive(capacity);
-        // amount of time to wait for a connection
-        scannerPool.setMaxWait(5000);
-        // block
-        scannerPool.setWhenExhaustedAction(type);
         
         this.type = type;
         
+        PoolableObjectFactory<AccumuloResource> factory = new AccumuloResourceFactory(cxn);
+        
+        this.scannerPool = new GenericObjectPool<AccumuloResource>(factory);
+        // set the max capacity
+        this.scannerPool.setMaxActive(capacity);
+        // amount of time to wait for a connection
+        this.scannerPool.setMaxWait(5000);
+        // block
+        this.scannerPool.setWhenExhaustedAction(type);
     }
     
     public AccumuloResource getScannerResource() throws Exception {
         // let's grab an object from the pool,
-        
         AccumuloResource resource = null;
         while (resource == null) {
             try {
-                resource = ((AccumuloResource) scannerPool.borrowObject());
+                resource = scannerPool.borrowObject();
             } catch (NoSuchElementException nse) {
                 if (type == GenericObjectPool.WHEN_EXHAUSTED_FAIL) {
                     throw nse;
                 }
-                if (Thread.interrupted()) {
-                    throw new InterruptedException("Thread is interrupted");
-                }
             }
-            
         }
         return resource;
     }
@@ -141,7 +83,7 @@ public class ResourceQueue implements Closeable {
     }
     
     public int getCapacity() {
-        return capacity;
+        return this.scannerPool.getMaxActive();
     }
     
     /*
@@ -151,82 +93,49 @@ public class ResourceQueue implements Closeable {
      */
     @Override
     public synchronized void close() throws IOException {
-        
-        isOpen = false;
         // let the currently running scanners go
         try {
             scannerPool.close();
         } catch (Exception e) {
             throw new IOException(e);
         }
-        
     }
     
-    protected class ScannerQueueFactory implements PoolableObjectFactory {
+    private static final class AccumuloResourceFactory implements PoolableObjectFactory<AccumuloResource> {
         
-        protected Queue<AccumuloResource> resource;
+        private final Connector connector;
         
-        public ScannerQueueFactory(int capacity) {
-            resource = Queues.newConcurrentLinkedQueue();
+        AccumuloResourceFactory(Connector connector) {
+            this.connector = connector;
         }
         
-        /*
-         * (non-Javadoc)
-         * 
-         * @see org.apache.commons.pool.PoolableObjectFactory#activateObject(java. lang.Object)
-         */
         @Override
-        public void activateObject(Object object) throws Exception {
-            Preconditions.checkArgument(object instanceof AccumuloResource);
-            
+        public void activateObject(AccumuloResource object) throws Exception {
+            /* no-op */
         }
         
-        /*
-         * (non-Javadoc)
-         * 
-         * @see org.apache.commons.pool.PoolableObjectFactory#destroyObject(java.lang .Object)
-         */
         @Override
-        public void destroyObject(Object object) throws Exception {
-            Preconditions.checkArgument(object instanceof AccumuloResource);
+        public void destroyObject(AccumuloResource object) throws Exception {
             if (log.isTraceEnabled())
                 log.trace("Removing " + object.hashCode());
         }
         
-        /*
-         * (non-Javadoc)
-         * 
-         * @see org.apache.commons.pool.PoolableObjectFactory#makeObject()
-         */
         @Override
-        public Object makeObject() throws Exception {
+        public AccumuloResource makeObject() throws Exception {
             AccumuloResource scannerResource = new AccumuloResource(connector);
             if (log.isTraceEnabled())
                 log.trace("Returning " + scannerResource.hashCode());
             return scannerResource;
-            
         }
         
-        /*
-         * (non-Javadoc)
-         * 
-         * @see org.apache.commons.pool.PoolableObjectFactory#passivateObject(java. lang.Object)
-         */
         @Override
-        public void passivateObject(Object object) throws Exception {
+        public void passivateObject(AccumuloResource object) throws Exception {
             destroyObject(object);
         }
         
-        /*
-         * (non-Javadoc)
-         * 
-         * @see org.apache.commons.pool.PoolableObjectFactory#validateObject(java. lang.Object)
-         */
         @Override
-        public boolean validateObject(Object object) {
-            return object instanceof AccumuloResource;
+        public boolean validateObject(AccumuloResource object) {
+            return true;
         }
-        
     }
-    
 }
