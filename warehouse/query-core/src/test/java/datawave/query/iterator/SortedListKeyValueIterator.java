@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 
 /**
  * Iterator that can be used to back a source with a List of Key/Value entries. Useful for small data test sets
@@ -36,6 +37,14 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
         this.sourceList = new ArrayList<>(sourceList);
         this.sourceList.sort(Map.Entry.comparingByKey());
         currentIndex = 0;
+    }
+    
+    public SortedListKeyValueIterator(SortedMap<Key,Value> map) {
+        this.sourceList = new ArrayList<>(map.entrySet().size());
+        currentIndex = 0;
+        for (Map.Entry<Key,Value> entry : map.entrySet()) {
+            sourceList.add(entry);
+        }
     }
     
     public SortedListKeyValueIterator(SortedListKeyValueIterator source) {
