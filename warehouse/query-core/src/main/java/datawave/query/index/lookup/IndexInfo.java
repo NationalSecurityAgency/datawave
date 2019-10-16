@@ -4,9 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,12 +21,10 @@ import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.query.jexl.JexlNodeFactory;
@@ -75,8 +71,22 @@ public class IndexInfo implements Writable, UidIntersector {
         this.count = this.uids.size();
     }
     
+    /**
+     * Helper method that determines if the IndexInfo contains only document ranges.
+     * 
+     * @return
+     */
     public boolean onlyEvents() {
         return count == uids.size();
+    }
+    
+    /**
+     * Helper method that determines if the IndexInfo contains an infinite range.
+     * 
+     * @return
+     */
+    public boolean isInfinite() {
+        return count == -1L || count != uids.size();
     }
     
     public long count() {
@@ -128,114 +138,6 @@ public class IndexInfo implements Writable, UidIntersector {
         this.uids = setBuilder.build();
     }
     
-    public IndexInfo union(IndexInfo o) {
-        return union(o, new ArrayList<>());
-    }
-    
-    /**
-     * Let's be clear about what we are doing. In this case we are dealing with a union of many nodes, or in some cases a single OrNode. If the latter, we
-     * simply use that node as our node. Otherwise, we will need to create an or node manually.
-     * 
-     * @param first
-     * @param o
-     * @param delayedNodes
-     * @return
-     */
-    public IndexInfo union(IndexInfo first, IndexInfo o, List<JexlNode> delayedNodes) {
-        IndexInfo merged = new IndexInfo();
-        Set<JexlNode> internalNodeList = Sets.newHashSet();
-        Multimap<String,JexlNode> nodesMap = ArrayListMultimap.create();
-        
-        if (null != first.myNode && first.myNode != o.myNode) {
-            
-            JexlNode sourceNode = getSourceNode(first.myNode);
-            JexlNode topLevelOr = getOrNode(sourceNode);
-            
-            if (null == topLevelOr) {
-                topLevelOr = sourceNode;
-                // add the source node
-                nodesMap.put(nodeToKey(sourceNode), first.myNode);
-            } else {
-                for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                    JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                    nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
-                }
-            }
-        }
-        
-        if (null != o.myNode) {
-            
-            JexlNode sourceNode = getSourceNode(o.myNode);
-            JexlNode topLevelOr = getOrNode(sourceNode);
-            
-            if (null == topLevelOr) {
-                topLevelOr = sourceNode;
-                // add the source node
-                nodesMap.put(nodeToKey(topLevelOr), o.myNode);
-            } else {
-                for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                    JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                    nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
-                }
-            }
-        }
-        
-        for (JexlNode node : delayedNodes) {
-            JexlNode baseNode = getSourceNode(node);
-            nodesMap.put(nodeToKey(baseNode), node);
-        }
-        
-        for (String key : nodesMap.keySet()) {
-            Collection<JexlNode> nodeColl = nodesMap.get(key);
-            JexlNode delayedNode = null;
-            if (nodeColl.size() > 1) {
-                for (JexlNode node : nodeColl) {
-                    if (isDelayed(node)) {
-                        delayedNode = node;
-                        break;
-                    }
-                }
-            }
-            if (null != delayedNode)
-                internalNodeList.add(delayedNode);
-            else
-                internalNodeList.add(nodeColl.iterator().next());
-        }
-        
-        // ensure that we already aren't in there
-        
-        merged.count = -1;
-        merged.uids = ImmutableSortedSet.of();
-        if (internalNodeList.isEmpty()) {
-            
-            merged.myNode = null;
-        } else {
-            
-            merged.myNode = JexlNodeFactory.createUnwrappedOrNode(internalNodeList);
-        }
-        
-        return merged;
-    }
-    
-    private JexlNode getOrNode(JexlNode node) {
-        if (node instanceof ASTOrNode) {
-            return node;
-        } else if (node instanceof ASTReference) {
-            return getOrNode(node.jjtGetChild(0));
-        } else if (node instanceof ASTReferenceExpression) {
-            return getOrNode(node.jjtGetChild(0));
-        }
-        return null;
-    }
-    
-    protected Collection<JexlNode> getSourceNodes(ASTOrNode orNode) {
-        Collection<JexlNode> childNodes = new HashSet<>(orNode.jjtGetNumChildren());
-        for (int i = 0; i < orNode.jjtGetNumChildren(); i++) {
-            childNodes.add(orNode.jjtGetChild(i));
-        }
-        return childNodes;
-    }
-    
     public static JexlNode getSourceNode(JexlNode delayedNode) {
         
         if (ASTDelayedPredicate.instanceOf(delayedNode)) {
@@ -269,130 +171,15 @@ public class IndexInfo implements Writable, UidIntersector {
         }
     }
     
-    /**
-     * Return the union of an IndexInfo object and a list of delayed nodes.
-     *
-     * @param o
-     *            - an IndexInfo object
-     * @param delayedNodes
-     *            - a list of delayed nodes
-     * @return - the resulting union
-     */
-    public IndexInfo union(IndexInfo o, List<JexlNode> delayedNodes) {
-        
-        if (isInfinite()) {
-            return union(this, o, delayedNodes);
-        } else if (o.isInfinite()) {
-            return union(o, this, delayedNodes);
+    private JexlNode getOrNode(JexlNode node) {
+        if (node instanceof ASTOrNode) {
+            return node;
+        } else if (node instanceof ASTReference) {
+            return getOrNode(node.jjtGetChild(0));
+        } else if (node instanceof ASTReferenceExpression) {
+            return getOrNode(node.jjtGetChild(0));
         }
-        
-        IndexInfo merged = new IndexInfo();
-        Set<JexlNode> internalNodeList = Sets.newHashSet();
-        Multimap<String,JexlNode> nodesMap = ArrayListMultimap.create();
-        
-        if (null != myNode && myNode != o.myNode && !isInfinite()) {
-            JexlNode sourceNode = getSourceNode(myNode);
-            
-            JexlNode topLevelOr = getOrNode(sourceNode);
-            if (null == topLevelOr) {
-                topLevelOr = sourceNode;
-                // add the source node
-                nodesMap.put(nodeToKey(sourceNode), myNode);
-            } else {
-                for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                    JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                    nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
-                }
-            }
-        }
-        
-        if (null != o.myNode && !o.isInfinite()) {
-            
-            JexlNode sourceNode = getSourceNode(o.myNode);
-            JexlNode topLevelOr = getOrNode(sourceNode);
-            if (null == topLevelOr) {
-                topLevelOr = sourceNode;
-                // add the source node
-                nodesMap.put(nodeToKey(sourceNode), o.myNode);
-            } else {
-                for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                    JexlNode baseNode = getSourceNode(topLevelOr.jjtGetChild(i));
-                    nodesMap.put(nodeToKey(baseNode), topLevelOr.jjtGetChild(i));
-                }
-            }
-        }
-        
-        for (JexlNode node : delayedNodes) {
-            JexlNode baseNode = getSourceNode(node);
-            nodesMap.put(nodeToKey(baseNode), node);
-        }
-        
-        for (String key : nodesMap.keySet()) {
-            Collection<JexlNode> nodeColl = nodesMap.get(key);
-            JexlNode delayedNode = null;
-            if (nodeColl.size() > 1) {
-                for (JexlNode node : nodeColl) {
-                    if (isDelayed(node)) {
-                        delayedNode = node;
-                        break;
-                    }
-                }
-            }
-            if (null != delayedNode)
-                internalNodeList.add(delayedNode);
-            else
-                internalNodeList.add(nodeColl.iterator().next());
-        }
-        
-        if (!onlyEvents() || !o.onlyEvents()) {
-            /*
-             * We are dealing with high cardinality terms. Sum the counts and return a parent node.
-             */
-            merged.count = count + o.count;
-            merged.uids = ImmutableSortedSet.of();
-        } else {
-            HashMultimap<String,JexlNode> ids = HashMultimap.create();
-            
-            /*
-             * Concatenate all UIDs and merge the individual nodes
-             */
-            for (IndexMatch match : Iterables.concat(uids, o.uids)) {
-                
-                JexlNode newNode = match.getNode();
-                if (null != newNode)
-                    ids.put(match.uid, newNode);
-            }
-            
-            Set<IndexMatch> matches = Sets.newHashSet();
-            
-            for (String uid : ids.keySet()) {
-                Set<JexlNode> nodes = Sets.newHashSet(ids.get(uid));
-                if (!nodes.isEmpty()) {
-                    nodes.addAll(delayedNodes);
-                    matches.add(new IndexMatch(nodes, uid, IndexMatchType.OR));
-                }
-                
-            }
-            merged.uids = ImmutableSortedSet.copyOf(matches);
-            merged.count = merged.uids.size();
-        }
-        
-        /*
-         * If there are multiple levels within a union we could have an ASTOrNode. We cannot prune OrNodes as we would with an intersection, so propagate the
-         * OrNode.
-         */
-        if (log.isTraceEnabled()) {
-            for (JexlNode node : internalNodeList) {
-                log.trace("internalNodeList node  is " + node);
-            }
-        }
-        if (internalNodeList.isEmpty()) {
-            merged.myNode = null;
-        } else {
-            merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createUnwrappedOrNode(internalNodeList));
-            
-        }
-        return merged;
+        return null;
     }
     
     /**
@@ -677,10 +464,6 @@ public class IndexInfo implements Writable, UidIntersector {
     
     public String toString() {
         return "{ \"count\": " + count() + " - " + uids.size() + " }";
-    }
-    
-    private boolean isInfinite() {
-        return count == -1L;
     }
     
     public void setNode(JexlNode currNode) {
