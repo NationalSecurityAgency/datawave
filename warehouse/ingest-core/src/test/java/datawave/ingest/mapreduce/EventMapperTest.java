@@ -39,6 +39,7 @@ public class EventMapperTest {
     
     private Configuration conf;
     private SimpleRawRecord record;
+    private SimpleRawRecord errorRecord;
     private EventMapper<LongWritable,RawRecordContainer,BulkIngestKey,Value> eventMapper;
     
     @Before
@@ -50,8 +51,11 @@ public class EventMapperTest {
         conf.setClass(EventMapper.CONTEXT_WRITER_CLASS, TestContextWriter.class, ContextWriter.class);
         
         Type type = new Type("file", null, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
+        Type errorType = new Type(TypeRegistry.ERROR_PREFIX, null, null, new String[] {SimpleDataTypeHandler.class.getName()}, 20, null);
+        
         TypeRegistry registry = TypeRegistry.getInstance(conf);
         registry.put(type.typeName(), type);
+        registry.put(errorType.typeName(), errorType);
         
         Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
         fields.put("fileExtension", new BaseNormalizedContent("fileExtension", "gz"));
@@ -66,6 +70,17 @@ public class EventMapperTest {
         record.setRawFileName("/some/filename");
         record.setRawData("some data".getBytes());
         record.generateId(null);
+        
+        errorRecord = new SimpleRawRecord();
+        errorRecord.setRawFileTimestamp(0);
+        errorRecord.setDataType(type);
+        errorRecord.setDate(eventTime);
+        errorRecord.setRawFileName("/some/filename");
+        errorRecord.setRawData("some data".getBytes());
+        errorRecord.generateId(null);
+        errorRecord.setRawFileName("");
+        errorRecord.addError("EVENT_DATE_MISSING");
+        errorRecord.setFatalError(true);
         
         expect(mapContext.getConfiguration()).andReturn(conf).anyTimes();
         
@@ -169,6 +184,19 @@ public class EventMapperTest {
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
         // two fields mutations + LOAD_DATE + ORIG_FILE
+        assertEquals(4, written.size());
+    }
+    
+    @Test
+    public void errorEventWithZeroTimestampNotDropped() throws IOException, InterruptedException {
+        eventMapper.setup(mapContext);
+        eventMapper.map(new LongWritable(1), errorRecord, mapContext);
+        eventMapper.cleanup(mapContext);
+        
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+        
+        // two fields mutations + LOAD_DATE + ORIG_FILE
+        // previously this would have been zero
         assertEquals(4, written.size());
     }
     
