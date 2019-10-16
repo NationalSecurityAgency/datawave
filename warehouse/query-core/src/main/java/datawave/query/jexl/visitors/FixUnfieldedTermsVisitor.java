@@ -6,6 +6,7 @@ import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.lookups.FieldNameLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.Query;
@@ -277,17 +278,6 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return super.visit(node, data);
-    }
-    
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        
-        ASTReference ref = (ASTReference) super.visit(node, data);
-        if (JexlNodes.children(ref).length == 0) {
-            return null;
-        } else {
-            return ref;
-        }
     }
     
     @Override

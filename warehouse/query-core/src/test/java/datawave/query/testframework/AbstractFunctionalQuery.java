@@ -37,6 +37,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -202,6 +203,13 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * Performs any instance initialization required for the specific test case.
      */
     protected abstract void testInit();
+    
+    public void debugQuery() {
+        Logger.getRootLogger().setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner.DefaultQueryPlanner").setLevel(Level.DEBUG);
+    }
     
     // ============================================
     // implementation interface methods
