@@ -102,8 +102,8 @@ public class IndexInfoUnion {
         // 7. Get the set of merged nodes
         Set<JexlNode> nodeSet = new HashSet<>(mergedNodes.values());
         
-        // Put the node set into an OR node and flatten. Catches any duplicates that slip through.
-        merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createUnwrappedOrNode(nodeSet));
+        // Put the node set into an unwrapped OR node.
+        merged.myNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet);
         
         return merged;
     }
