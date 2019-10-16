@@ -84,22 +84,17 @@ public class IndexInfoUnion {
         // 4. Build the final IndexInfo object.
         IndexInfo merged = new IndexInfo();
         
-        // 5. Handle the uids
+        // 5. Handle the uids & uid count
         if (left.isInfinite() || right.isInfinite()) {
             // If either side is infinite we cannot perform a document uid specific lookup.
             merged.uids = ImmutableSortedSet.of();
-        } else {
-            merged.uids = ImmutableSortedSet.copyOf(matches);
-        }
-        
-        // 6. Handle uid count
-        if (left.isInfinite() || right.isInfinite()) {
             merged.count = -1;
         } else {
+            merged.uids = ImmutableSortedSet.copyOf(matches);
             merged.count = merged.uids.size();
         }
         
-        // 7. Get the set of merged nodes
+        // 6. Get the set of merged nodes
         Set<JexlNode> nodeSet = new HashSet<>(mergedNodes.values());
         
         // Put the node set into an unwrapped OR node.
