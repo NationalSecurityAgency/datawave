@@ -23,8 +23,10 @@ import java.util.Map;
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 /**
- * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. NOTE: If you remove reference
- * expressions and references, this will adversely affect the jexl evaluation of the query.
+ * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. A reference with a reference
+ * expression child represents a set of parentheses in the printed query - that combination of nodes will be removed except when they are used for a marked
+ * node, or when they are being used within a a NOT node. References are required for things like String Literals and Identifiers, so they will be left alone in
+ * those cases. NOTE: If you remove reference expressions and references, this will adversely affect the jexl evaluation of the query.
  */
 public class TreeFlatteningRebuilder {
     private static final Logger log = Logger.getLogger(TreeFlatteningRebuilder.class);
@@ -110,7 +112,7 @@ public class TreeFlatteningRebuilder {
                 newNode = flattenAndOrNode(JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
             }
             // if this is a node with children, assign the children
-            else if (hasChildren && node.equals(parentStack.peek())) {
+            else if (hasChildren && node == parentStack.peek()) {
                 newNode = JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0]));
             }
             // if this is a leaf node, just keep it
@@ -124,7 +126,7 @@ public class TreeFlatteningRebuilder {
                 // if the original node's parent is NOT the next one on the parent stack,
                 // then this is a new parent node. add it to the parent stack, and add a new list of children.
                 // otherwise, add this node to the existing parent's list of children
-                if (!node.jjtGetParent().equals(parentStack.peek())) {
+                if (node.jjtGetParent() != parentStack.peek()) {
                     parentStack.push(node.jjtGetParent());
                     childrenStack.push(Lists.newArrayList(newNode));
                 } else {
@@ -284,7 +286,7 @@ public class TreeFlatteningRebuilder {
                 JexlNode poppedNode = stack.pop();
                 JexlNode dereferenced = JexlASTHelper.dereference(poppedNode);
                 
-                if (acceptableNodesToCombine(node, dereferenced, !poppedNode.equals(dereferenced))) {
+                if (acceptableNodesToCombine(node, dereferenced, poppedNode != dereferenced)) {
                     for (int i = 0; i < dereferenced.jjtGetNumChildren(); i++) {
                         stack.push(dereferenced.jjtGetChild(i));
                     }

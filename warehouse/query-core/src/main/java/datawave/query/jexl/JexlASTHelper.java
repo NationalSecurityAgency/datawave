@@ -1493,7 +1493,7 @@ public class JexlASTHelper {
                                 log.error("Failed to validate lineage: Tree included a child with a null parent.");
                             
                             result = false;
-                        } else if (!child.jjtGetParent().equals(node)) {
+                        } else if (child.jjtGetParent() != node) {
                             if (failHard)
                                 throw new RuntimeException("Failed to validate lineage:  Included a child with a conflicting parent.");
                             else

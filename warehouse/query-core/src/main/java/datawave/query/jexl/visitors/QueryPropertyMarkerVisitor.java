@@ -115,7 +115,9 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             Deque<JexlNode> stack = new LinkedList<>();
             stack.push(node);
             
-            //
+            // for the purposes of this method, nested and nodes are
+            // ignored, and their children are handled as direct children
+            // of the parent and node.
             while (!stack.isEmpty()) {
                 JexlNode descendant = stack.pop();
                 
