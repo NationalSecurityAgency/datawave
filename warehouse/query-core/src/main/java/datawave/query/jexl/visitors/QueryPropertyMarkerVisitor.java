@@ -106,8 +106,8 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        // if this is an and node with multiple children, and it is
-        // the first one we've found, it is our potential candidate
+        // if this is an and node, and it is the first one we've
+        // found, it is our potential candidate
         if (data == null) {
             List<JexlNode> siblingNodes = new ArrayList<>();
             

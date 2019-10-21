@@ -177,6 +177,14 @@ public class TreeFlatteningRebuildingVisitorTest {
     }
     
     @Test
+    public void multipleNestingMixedOpsTest() throws Exception {
+        String query = "((a && (b && ((c1 || (c2 || c3)) && d))) || b || (c || d || e || (f || g || ((h1 && (h2 && h3)) || i || (((j || k)))))))";
+        String expected = "((a && b && (c1 || c2 || c3) && d) || b || c || d || e || f || g || (h1 && h2 && h3) || i || j || k)";
+        JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
+    }
+    
+    @Test
     public void singleChildAndOrTest() throws Exception {
         JexlNode eqNode = JexlASTHelper.parseJexlQuery("FIELD == 'value'");
         JexlNode and1 = JexlNodeFactory.createUnwrappedAndNode(Collections.singleton(eqNode));
