@@ -160,17 +160,17 @@ function accumuloStatus() {
         done
     }
 
-    test -z "${_gc}" && error "accumulo gc is not running"
-    test -z "${_master}" && error "accumulo master is not running"
-    test -z "${_monitor}" && info "accumulo monitor is not running"
-    test -z "${_tracer}" && info "accumulo tracer is not running"
-    test -z "${_tserver}" && error "accumulo tserver is not running"
+    test -z "${_gc}" && warn "gc is not running"
+    test -z "${_master}" && warn "master is not running"
+    test -z "${_monitor}" && info "monitor is not running"
+    test -z "${_tracer}" && info "tracer is not running"
+    test -z "${_tserver}" && warn "tserver is not running"
 
-    echo "======  Zookeeper Status  ======"
+    echo "======  ZooKeeper Status  ======"
     if [[ -n "${DW_ZOOKEEPER_PID_LIST}" ]]; then
-        info "zookeeper => ${DW_ZOOKEEPER_PID_LIST}"
+        info "ZooKeeper => ${DW_ZOOKEEPER_PID_LIST}"
     else
-        error "zookeeper is not running"
+        warn "ZooKeeper is not running"
     fi
 }
 
