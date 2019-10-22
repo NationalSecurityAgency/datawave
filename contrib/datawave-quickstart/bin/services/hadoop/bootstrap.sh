@@ -157,12 +157,12 @@ function hadoopStatus() {
         done
     }
 
-    test -z "${_jobHist}" && error "hadoop job history is not running"
-    test -z "${_dataNode}" && error "hadoop data node is not running"
-    test -z "${_nameNode}" && error "hadoop name node is not running"
-    test -z "${_secNameNode}" && error "hadoop secondary name node is not running"
-    test -z "${_nodeMgr}" && error "hadoop node manager is not running"
-    test -z "${_resourceMgr}" && error "hadoop resource maanger is not running"
+    test -z "${_jobHist}" && warn "JobHistoryServer is not running"
+    test -z "${_dataNode}" && warn "DataNode is not running"
+    test -z "${_nameNode}" && warn "NameNode is not running"
+    test -z "${_secNameNode}" && warn "SecondaryName is not running"
+    test -z "${_nodeMgr}" && warn "NodeManager is not running"
+    test -z "${_resourceMgr}" && warn "ResourceManager is not running"
 }
 
 function hadoopIsInstalled() {
