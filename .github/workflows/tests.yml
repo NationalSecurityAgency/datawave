@@ -23,9 +23,10 @@ jobs:
     # go away whenever GitHub actions support caching (supposedly in November 2019).
     - name: Set up maven repo
       run: |
-        echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
+        curl -o /tmp/m2-cache.tar.gz https://raw.githubusercontent.com/brianloss/maven_repo/files/cached-maven-repository.tar.gz
         mkdir ~/.m2 || true
-        docker run --rm -u $(id -u):$(id -g) -v ~/.m2:/m2 docker.pkg.github.com/brianloss/maven_repo/repo:v1
+        tar xzf /tmp/m2-cache.tar.gz -C ~/.m2
+        rm /tmp/m2-cache.tar.gz
     - name: Build and Run Unit Tests
       run: mvn -V -B -e -Dsurefire.rerunFailingTestsCount=3 -Pdev,examples,assemble -Ddist -T1C clean verify
       env:
@@ -50,9 +51,10 @@ jobs:
   #   # go away whenever GitHub actions support caching (supposedly in November 2019).
   #   - name: Set up maven repo
   #     run: |
-  #       echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
+  #       curl -o /tmp/m2-cache.tar.gz https://raw.githubusercontent.com/brianloss/maven_repo/files/cached-maven-repository.tar.gz
   #       mkdir ~/.m2 || true
-  #       docker run --rm -u $(id -u):$(id -g) -v ~/.m2:/m2 docker.pkg.github.com/brianloss/maven_repo/repo:v1
+  #       tar xzf /tmp/m2-cache.tar.gz -C ~/.m2
+  #       rm /tmp/m2-cache.tar.gz
   #   # Builds the quickstart docker image and run the query tests
   #   - name: Quickstart Query Tests
   #     env:
