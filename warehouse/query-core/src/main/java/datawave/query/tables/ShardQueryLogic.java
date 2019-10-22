@@ -1266,22 +1266,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setTypeMetadataInHdfs(typeMetadataInHdfs);
     }
     
-    @Deprecated
     public int getEventPerDayThreshold() {
         return getConfig().getEventPerDayThreshold();
     }
     
-    @Deprecated
     public void setEventPerDayThreshold(int eventPerDayThreshold) {
         getConfig().setEventPerDayThreshold(eventPerDayThreshold);
     }
     
-    @Deprecated
     public int getShardsPerDayThreshold() {
         return getConfig().getShardsPerDayThreshold();
     }
     
-    @Deprecated
     public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
         getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
     }
