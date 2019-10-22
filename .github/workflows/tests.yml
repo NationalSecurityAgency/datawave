@@ -31,37 +31,36 @@ jobs:
       env:
         MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
 
-  # This job is disabled for the release/2.5 branch.
-  # quickstart-build-and-test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout Code
-  #     uses: actions/checkout@v1
-  #   - name: Set up JDK 1.8
-  #     uses: actions/setup-java@v1
-  #     with:
-  #       java-version: 1.8
-  #   # Allow us to use the "--squash" option below
-  #   - name: Turn on Docker Experimental Features
-  #     run: |
-  #       sudo sed -ri 's/\s*}\s*$/, "experimental": true }/' /etc/docker/daemon.json
-  #       sudo systemctl restart docker
-  #   # This is a hack to pre-populate the maven repo and reduce downloads. This can
-  #   # go away whenever GitHub actions support caching (supposedly in November 2019).
-  #   - name: Set up maven repo
-  #     run: |
-  #       echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
-  #       mkdir ~/.m2 || true
-  #       docker run --rm -u $(id -u):$(id -g) -v ~/.m2:/m2 docker.pkg.github.com/brianloss/maven_repo/repo:v1
-  #   # Builds the quickstart docker image and run the query tests
-  #   - name: Quickstart Query Tests
-  #     env:
-  #       DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -Pdev -Ddeploy -Dtar -DskipTests clean install"
-  #       DOCKER_BUILD_OPTS: "--squash --force-rm"
-  #       MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
-  #     run: |
-  #       TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
-  #       contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
+  quickstart-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v1
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    # Allow us to use the "--squash" option below
+    - name: Turn on Docker Experimental Features
+      run: |
+        sudo sed -ri 's/\s*}\s*$/, "experimental": true }/' /etc/docker/daemon.json
+        sudo systemctl restart docker
+    # This is a hack to pre-populate the maven repo and reduce downloads. This can
+    # go away whenever GitHub actions support caching (supposedly in November 2019).
+    - name: Set up maven repo
+      run: |
+        echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
+        mkdir ~/.m2 || true
+        docker run --rm -u $(id -u):$(id -g) -v ~/.m2:/m2 docker.pkg.github.com/brianloss/maven_repo/repo:v1
+    # Builds the quickstart docker image and run the query tests
+    - name: Quickstart Query Tests
+      env:
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -Pdev -Ddeploy -Dtar -DskipTests clean install"
+        DOCKER_BUILD_OPTS: "--squash --force-rm"
+        MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+      run: |
+        TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+        contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
