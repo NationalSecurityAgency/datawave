@@ -19,8 +19,17 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
+    # This is a hack to pre-populate the maven repo and reduce downloads. This can
+    # go away whenever GitHub actions support caching (supposedly in November 2019).
+    - name: Set up maven repo
+      run: |
+        echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
+        mkdir ~/.m2 || true
+        docker run --rm -u $(id -u):$(id -g) -v ~/.m2:/m2 docker.pkg.github.com/brianloss/maven_repo/repo:v1
     - name: Build and Run Unit Tests
       run: mvn -V -B -e -Dsurefire.rerunFailingTestsCount=3 -Pdev,examples,assemble -Ddist -T1C clean verify
+      env:
+        MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
 
   # This job is disabled for the release/2.5 branch.
   # quickstart-build-and-test:
@@ -37,11 +46,19 @@ jobs:
   #     run: |
   #       sudo sed -ri 's/\s*}\s*$/, "experimental": true }/' /etc/docker/daemon.json
   #       sudo systemctl restart docker
+  #   # This is a hack to pre-populate the maven repo and reduce downloads. This can
+  #   # go away whenever GitHub actions support caching (supposedly in November 2019).
+  #   - name: Set up maven repo
+  #     run: |
+  #       echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
+  #       mkdir ~/.m2 || true
+  #       docker run --rm -u $(id -u):$(id -g) -v ~/.m2:/m2 docker.pkg.github.com/brianloss/maven_repo/repo:v1
   #   # Builds the quickstart docker image and run the query tests
   #   - name: Quickstart Query Tests
   #     env:
   #       DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -Pdev -Ddeploy -Dtar -DskipTests clean install"
   #       DOCKER_BUILD_OPTS: "--squash --force-rm"
+  #       MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
   #     run: |
   #       TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
   #       contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
