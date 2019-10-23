@@ -24,7 +24,7 @@ class NegationFilter {
         }
         
         Collection<T> currentFilters = new LinkedList<>(filters.keySet().headSet(t));
-        
+        boolean filtered = false;
         // return as soon as we find a match
         Iterator<T> needsMoving = currentFilters.iterator();
         while (needsMoving.hasNext()) {
@@ -34,12 +34,12 @@ class NegationFilter {
                     T transform = transformer.transform(nextFilter);
                     filters.put(transform, filter);
                     if (transform.equals(t)) {
-                        return true;
+                        filtered = true;
                     }
                 }
             }
         }
         
-        return false;
+        return filtered;
     }
 }

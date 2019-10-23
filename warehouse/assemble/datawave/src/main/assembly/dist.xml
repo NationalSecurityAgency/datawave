@@ -116,6 +116,7 @@
                 <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-query</include>
+                <include>io.dropwizard.metrics:metrics-core</include>
                 <include>org.javatuples:javatuples</include>
                 <include>com.google.code.gson:gson</include>
                 <include>org.apache.lucene:lucene-core</include>
