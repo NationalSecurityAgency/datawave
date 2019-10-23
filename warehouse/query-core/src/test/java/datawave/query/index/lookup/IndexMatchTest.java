@@ -118,6 +118,19 @@ public class IndexMatchTest {
     }
     
     @Test
+    public void testAddDuplicateNodes() {
+        JexlNode one = JexlNodeFactory.buildEQNode("FIELD", "value");
+        JexlNode two = JexlNodeFactory.buildEQNode("FIELD", "value");
+        
+        IndexMatch match = new IndexMatch();
+        match.add(one);
+        match.add(two);
+        
+        assertEquals(1, match.myNodes.size());
+        assertEquals(1, match.nodeStrings.size());
+    }
+    
+    @Test
     public void testToString() {
         String uid = "uid";
         JexlNode eqNode = JexlNodeFactory.buildEQNode("FIELD", "value");
