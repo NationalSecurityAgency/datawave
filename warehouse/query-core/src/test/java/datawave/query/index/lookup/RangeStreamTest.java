@@ -313,6 +313,7 @@ public class RangeStreamTest {
     public void setupTest() {
         config = new ShardQueryConfiguration();
         config.setConnector(connector);
+        config.setShardsPerDayThreshold(20);
     }
     
     @Test
@@ -989,6 +990,7 @@ public class RangeStreamTest {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         config.setBeginDate(sdf.parse("20190314"));
         config.setEndDate(sdf.parse("20190315"));
+        config.setShardsPerDayThreshold(3);
         
         config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
         

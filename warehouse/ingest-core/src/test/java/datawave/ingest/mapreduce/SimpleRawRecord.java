@@ -12,6 +12,7 @@ import org.apache.hadoop.io.Writable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -30,7 +31,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private UID id = uidBuilder.newId();
     private Type dataType;
     private long date = 0;
-    private Collection<String> errors = Collections.emptyList();
+    private Collection<String> errors = new ArrayList<>();
     private Collection<String> altIds = Collections.emptyList();
     private String rawFileName = "";
     private long rawRecordNumber = 0;
@@ -39,6 +40,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private Object auxData;
     private Map<String,String> auxMap;
     private ColumnVisibility visibility;
+    private boolean fatalError = false;
     
     @Override
     public Map<String,String> getSecurityMarkings() {
@@ -120,9 +122,13 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         return this.errors.contains(error);
     }
     
+    public void setFatalError(boolean fatalError) {
+        this.fatalError = fatalError;
+    }
+    
     @Override
     public boolean fatalError() {
-        return false;
+        return fatalError;
     }
     
     @Override
