@@ -104,7 +104,7 @@
         <version.weld-se>2.3.5.Final</version.weld-se>
         <version.wildfly>10.1.0.Final</version.wildfly>
         <version.xerces>2.11.0.SP4</version.xerces>
-        <version.zookeeper>3.4.5-cdh5.9.1</version.zookeeper>
+        <version.zookeeper>3.4.5-cdh5.16.2</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
     </properties>
