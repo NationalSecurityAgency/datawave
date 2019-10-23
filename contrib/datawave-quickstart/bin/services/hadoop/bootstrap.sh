@@ -3,7 +3,7 @@
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://mirrors.advancedhosters.com/apache/hadoop/common/hadoop-3.1.2/hadoop-3.1.2.tar.gz}"
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive.apache.org/dist/hadoop/common/hadoop-3.1.2/hadoop-3.1.2.tar.gz}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
@@ -157,12 +157,12 @@ function hadoopStatus() {
         done
     }
 
-    test -z "${_jobHist}" && error "hadoop job history is not running"
-    test -z "${_dataNode}" && error "hadoop data node is not running"
-    test -z "${_nameNode}" && error "hadoop name node is not running"
-    test -z "${_secNameNode}" && error "hadoop secondary name node is not running"
-    test -z "${_nodeMgr}" && error "hadoop node manager is not running"
-    test -z "${_resourceMgr}" && error "hadoop resource maanger is not running"
+    test -z "${_jobHist}" && warn "JobHistoryServer is not running"
+    test -z "${_dataNode}" && warn "DataNode is not running"
+    test -z "${_nameNode}" && warn "NameNode is not running"
+    test -z "${_secNameNode}" && warn "SecondaryName is not running"
+    test -z "${_nodeMgr}" && warn "NodeManager is not running"
+    test -z "${_resourceMgr}" && warn "ResourceManager is not running"
 }
 
 function hadoopIsInstalled() {

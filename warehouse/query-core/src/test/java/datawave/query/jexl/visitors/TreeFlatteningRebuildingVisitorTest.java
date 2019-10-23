@@ -38,7 +38,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expected = "a && b";
         testFlatten(expected, original);
     }
-
+    
     @Ignore
     @Test
     public void testDisjunctionExtraParens() throws ParseException {
@@ -53,7 +53,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expected = "a && b && c";
         testFlatten(expected, original);
     }
-
+    
     @Ignore
     @Test
     public void testDisjunction() throws ParseException {
@@ -61,7 +61,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expected = "a || b || c";
         testFlatten(expected, original);
     }
-
+    
     @Ignore
     @Test
     public void testConjunctionWithNestedExtraParens() throws ParseException {
@@ -69,7 +69,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expected = "a && (b && c || d || e)";
         testFlatten(expected, original);
     }
-
+    
     @Ignore
     @Test
     public void testDisjunctionWithNestedExtraParens() throws ParseException {

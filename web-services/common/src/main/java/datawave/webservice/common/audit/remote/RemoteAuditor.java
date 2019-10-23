@@ -10,6 +10,7 @@ import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.http.Consts;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -107,7 +108,7 @@ public class RemoteAuditor extends RemoteHttpService implements AuditService {
         
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(dp.getName(), dp.getProxiedUsers());
         UrlEncodedFormEntity postBody = new UrlEncodedFormEntity(params.entrySet().stream()
-                        .map(e -> (NameValuePair) new BasicNameValuePair(e.getKey(), e.getValue()))::iterator);
+                        .map(e -> (NameValuePair) new BasicNameValuePair(e.getKey(), e.getValue()))::iterator, Consts.UTF_8);
         // @formatter:off
         return executePostMethodWithRuntimeException(
                 "audit",
