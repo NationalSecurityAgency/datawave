@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
@@ -157,7 +156,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         
         delegatorReference = super.sessionDelegator;
         
-        scannerBatches = Iterators.emptyIterator();
+        scannerBatches = Collections.emptyIterator();
         
         currentBatch = Queues.newLinkedBlockingDeque();
         
@@ -535,7 +534,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      */
     @Override
     public void onFailure(Throwable t) {
-        stop();
+        stopAsync();
         uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), t);
         Throwables.propagate(t);
         
@@ -646,7 +645,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     
     @Override
     public void close() {
-        stop();
+        stopAsync();
         service.shutdownNow();
         listenerService.shutdownNow();
     }

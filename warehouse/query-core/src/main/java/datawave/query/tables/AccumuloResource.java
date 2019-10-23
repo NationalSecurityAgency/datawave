@@ -83,7 +83,7 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
      */
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
-        return Iterators.emptyIterator();
+        return Collections.emptyIterator();
     }
     
     public static final class ResourceFactory {
