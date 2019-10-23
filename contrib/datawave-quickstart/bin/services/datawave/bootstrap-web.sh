@@ -43,7 +43,8 @@ function datawaveWebStop() {
 }
 
 function datawaveWebStatus() {
-    datawaveWebIsRunning && echo "DataWave Web is running. PIDs: ${DW_DATAWAVE_WEB_PID_LIST}" || echo "DataWave Web is not running"
+    echo "======  DataWave Web Status  ======"
+    datawaveWebIsRunning && info "Wildfly is running => ${DW_DATAWAVE_WEB_PID_LIST}" || warn "Wildfly is not running"
 }
 
 function datawaveWebIsInstalled() {

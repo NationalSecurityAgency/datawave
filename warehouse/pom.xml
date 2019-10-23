@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>2.6.27-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
@@ -45,6 +45,7 @@
         <tests.to.skip />
         <!-- default value - override on command-line to skip tests -->
         <version.basis-rlp>7.5.0</version.basis-rlp>
+        <version.dropwizard-metrics>3.2.6</version.dropwizard-metrics>
         <version.hadoop.processors>2.2.3</version.hadoop.processors>
         <version.hamcrest>1.3</version.hamcrest>
     </properties>
@@ -191,6 +192,11 @@
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-query</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${version.dropwizard-metrics}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.json-lib</groupId>

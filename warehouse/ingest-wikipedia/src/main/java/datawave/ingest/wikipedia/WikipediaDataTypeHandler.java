@@ -446,7 +446,6 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
         dw.k = k;
         dw.shardId = shardId;
         dw.visibility = visibility;
-        dw.event = event;
         dw.value = value;
         
         this.docWriterService.execute(dw);

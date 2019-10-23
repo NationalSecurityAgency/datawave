@@ -10,6 +10,7 @@ import com.google.common.hash.PrimitiveSink;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.util.StringUtils;
@@ -26,6 +27,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * This is a iterator that will filter documents base on a uniqueness across a set of configured fields. Only the first instance of an event with a unique set
@@ -51,13 +54,17 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private final boolean DEBUG = false;
     
     public UniqueTransform(Set<String> fields) {
-        this.fields = fields;
+        this.fields = deconstruct(fields);
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (DEBUG) {
             this.seen = new HashSet<>();
         }
         if (log.isTraceEnabled())
             log.trace("unique fields: " + this.fields);
+    }
+    
+    private Set<String> deconstruct(Collection<String> fields) {
+        return fields.stream().map(field -> JexlASTHelper.deconstructIdentifier(field)).collect(Collectors.toSet());
     }
     
     /**
@@ -147,7 +154,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         DataOutputStream output = new DataOutputStream(bytes);
         List<FieldSet> fieldSets = getOrderedFieldSets(document);
-        System.out.println(fieldSets);
         int count = 0;
         for (FieldSet fieldSet : fieldSets) {
             String separator = "f" + (count++) + ":";
@@ -331,7 +337,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     /**
      * Get the base field name for a field (removed grouping context)
-     * 
+     *
      * @param documentField
      * @return the base field name
      */
