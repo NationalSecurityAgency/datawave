@@ -149,8 +149,8 @@ public class EdgeKeyVersioningCache {
         
         // now attempt to write them out
         try {
-            try(PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpVersionFile)))) {
-                for (Map.Entry<Integer, String> pair : versionDates.entrySet()) {
+            try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpVersionFile)))) {
+                for (Map.Entry<Integer,String> pair : versionDates.entrySet()) {
                     out.println(pair.getKey() + "\t" + pair.getValue());
                 }
             }
@@ -251,7 +251,8 @@ public class EdgeKeyVersioningCache {
     private String seedMetadataTable(Connector connector, long time, int keyVersionNum) throws TableNotFoundException, MutationsRejectedException {
         Value emptyVal = new Value();
         SimpleDateFormat dateFormat = new SimpleDateFormat(DateNormalizer.ISO_8601_FORMAT_STRING);
-        String dateString = dateFormat.format(new Date(time));;
+        String dateString = dateFormat.format(new Date(time));
+        ;
         try (BatchWriter recordWriter = connector.createBatchWriter(metadataTableName, new BatchWriterConfig())) {
             String normalizedVersionNum = NumericalEncoder.encode(Integer.toString(keyVersionNum));
             String rowID = "edge_key";

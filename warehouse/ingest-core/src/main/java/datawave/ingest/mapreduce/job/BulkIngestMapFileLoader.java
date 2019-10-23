@@ -1139,7 +1139,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             rawFS.setConf(conf);
             CompressionCodec cc = new GzipCodec();
             CompressionType ct = CompressionType.BLOCK;
-
+            
             Counters c = reporter.getCounters();
             if (null != c && c.countCounters() > 0) {
                 // Serialize the counters to a file in HDFS.
@@ -1148,7 +1148,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                 Writer.valueClass(Counters.class), Writer.compression(ct, cc));
                 writer.append(NullWritable.get(), c);
                 writer.close();
-
+                
                 // Now we will try to move the file to HDFS.
                 // Copy the file to the temp dir
                 try {
@@ -1166,7 +1166,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     // If an error occurs in the copy, then we will leave in the local metrics directory.
                     log.error("Error copying metrics file into HDFS, will remain in metrics directory.");
                 }
-
+                
                 // reset reporter so that old metrics don't persist over time
                 this.reporter = new StandaloneStatusReporter();
             }
