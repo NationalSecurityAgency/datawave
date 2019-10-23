@@ -719,7 +719,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         Set<String> requiredParams = new TreeSet<>();
         requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_STRING);
         requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_NAME);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_VISIBILITY);
         requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
         requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
         requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME);

@@ -136,6 +136,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 
+/**
+ * These are nodes that the DefaultQueryPlanner determined were not appropriate for the index lookup, thus delaying them for later evaluation.
+ */
 public class DefaultQueryPlanner extends QueryPlanner {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
@@ -1438,7 +1441,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
             DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
                             config.getDatatypeFilter());
             if (dateIndexData.getFields().isEmpty()) {
-                throw new IllegalArgumentException("The specified date type: " + dateType + " is unknown for the specified data types");
+                log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
+                // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired effect.
+                // Also it will be understandable from the plan as to why no results were returned.
+                dateIndexData.getFields().add(Constants.NO_FIELD);
             }
             log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
             // now for each field, add an expression to filter that date
@@ -1849,7 +1855,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     /**
-     * Performs a lookup in the global index / reverse index and returns a RangeCalculator
+     * Performs a lookup in the global index / reverse index and returns a {@link CloseableIterable} of QueryPlans
      *
      * @param config
      * @param queryTree

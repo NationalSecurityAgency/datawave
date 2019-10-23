@@ -477,6 +477,38 @@ public class FieldAgeOffFilterTest {
         Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
     }
     
+    @Test
+    public void testExcludeEventData() {
+        long tenSecondsAgo = System.currentTimeMillis() - (10 * ONE_SEC);
+        
+        FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
+        FilterOptions filterOptions = createFilterOptionsWithPattern();
+        // set the default to 5 seconds
+        filterOptions.setTTL(5);
+        filterOptions.setTTLUnits(AgeOffTtlUnits.SECONDS);
+        // set up ttls for field_y and field_z only
+        filterOptions.setOption("fields", "field_y,field_z");
+        filterOptions.setOption("excludeData", "event");
+        filterOptions.setOption("field.field_y.ttl", "9"); // 9 seconds
+        filterOptions.setOption("field.field_z.ttl", "11"); // 11 seconds
+        ageOffFilter.init(filterOptions, iterEnv);
+        
+        // field_y is event data, it should pass through; but rule is not applied
+        Key key1 = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
+        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key1, new Value()));
+        Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+        
+        // field_y is index data, it should not pass through and rule applied
+        Key key2 = new Key("1234", "fi\u0000field_y", "my_value\\x00my-uuid", VISIBILITY_PATTERN, tenSecondsAgo);
+        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key2, new Value()));
+        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+        
+        // field_z is index data and not aged-off, so it should pass through
+        Key key3 = new Key("1234", "fi\u0000field_z", "my_value\\x00my-uuid", VISIBILITY_PATTERN, tenSecondsAgo);
+        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key3, new Value()));
+        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+    }
+    
     private FilterOptions createFilterOptionsWithPattern() {
         FilterOptions filterOptions = new FilterOptions();
         filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, VISIBILITY_PATTERN);

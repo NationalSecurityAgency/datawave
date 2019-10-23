@@ -213,6 +213,18 @@ public class TLDTest {
         assertEquals(expectedPositions, instances);
     }
     
+    @Test
+    public void testInstancesOfWithNullBytes() {
+        // Even indices contain a null byte
+        ByteSequence bytes = new ArrayByteSequence(new byte[] {0, 1, 0, 1, 0});
+        ArrayList<Integer> positions = TLD.instancesOf(0, bytes);
+        assertEquals(3, positions.size());
+        
+        for (int ii = 0; ii < positions.size(); ii++) {
+            assertEquals(ii * 2, positions.get(ii).intValue());
+        }
+    }
+    
     // Build parent keys from FI keys
     @Test
     public void testBuildParentKey() {

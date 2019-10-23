@@ -173,10 +173,6 @@
             </list>
         </property>
         <property name="filterOptions" ref="BaseEventQueryFilterOptions" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
         <!-- Determines how many events in the global index lookup will be
@@ -310,10 +306,6 @@
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="maxUniqueValues" value="20000" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value." />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -324,10 +316,6 @@
         <property name="tableName" value="${shard.table.name}" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Query that returns a document given the document identifier" />
     </bean>
@@ -345,10 +333,6 @@
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="maxUniqueValues" value="20000" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="FieldIndex count query (experimental)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -444,10 +428,6 @@
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Discovery query that returns information from the index about the supplied term(s)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -466,10 +446,6 @@
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Discovery query that returns information from the ingest errors index about the supplied term(s)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -495,10 +471,6 @@
         <property name="includeDataTypeAsField" value="false" />
         <property name="includeGroupingContext" value="false" />
         <property name="useEnrichers" value="false" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Fast boolean query over indexed fields, only returning fields queried on" />
         <!-- Determines how many events in the global index lookup will be

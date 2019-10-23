@@ -64,7 +64,7 @@ RUN rm -f .dockerignore && \
 # stopped gracefully, and any cruft is purged.
 
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest && allStop" && \
+    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop" && \
     echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \

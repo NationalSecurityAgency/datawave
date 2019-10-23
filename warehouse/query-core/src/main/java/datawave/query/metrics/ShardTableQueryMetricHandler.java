@@ -287,8 +287,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
         event.setAuxData(storedQueryMetric);
         event.setRawRecordNumber(1000L);
+        event.addAltId(storedQueryMetric.getQueryId());
         
-        // must happen after validate
         event.setId(uidBuilder.newId(storedQueryMetric.getQueryId().getBytes(), (Date) null));
         
         final Multimap<String,NormalizedContentInterface> fields;
@@ -862,9 +862,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             // to
             // Logger log = ThreadConfigurableLogger.getLogger(MyClass.class);
             
-            ThreadLocalLogLevel.setLevel("datawave.query.parser.DatawaveQueryAnalyzer", Level.OFF);
-            ThreadLocalLogLevel.setLevel("datawave.query.parser.DatawaveQueryParser", Level.OFF);
-            
             ThreadLocalLogLevel.setLevel("datawave.query.index.lookup.RangeStream", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
@@ -872,7 +869,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             ThreadLocalLogLevel.setLevel("datawave.query.scheduler.SequentialScheduler", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.tables.ShardQueryLogic", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.VisibilityHelper", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.QueryModelVisitor", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);

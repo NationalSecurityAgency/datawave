@@ -49,11 +49,24 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
      */
     @Override
     public boolean apply(@Nullable Map.Entry<Key,String> entry) {
+        return apply(entry, true);
+    }
+    
+    @Override
+    public boolean peek(@Nullable Map.Entry<Key,String> entry) {
+        return apply(entry, false);
+    }
+    
+    private boolean apply(Map.Entry<Key,String> entry, boolean update) {
         Iterator<EventDataQueryFilter> iterator = filters.iterator();
         boolean result = true;
         
         while (iterator.hasNext() && result) {
-            result = iterator.next().apply(entry);
+            if (update) {
+                result = iterator.next().apply(entry);
+            } else {
+                result = iterator.next().peek(entry);
+            }
         }
         
         return result;
