@@ -1334,16 +1334,20 @@ public class JexlNodeFactory {
         ASTIdentifier nsNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
         nsNode.image = namespace;
         newNode.jjtAddChild(nsNode, childIndex++);
+        nsNode.jjtSetParent(newNode);
         ASTIdentifier functionNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
         functionNode.image = function;
         newNode.jjtAddChild(functionNode, childIndex++);
+        functionNode.jjtSetParent(newNode);
         ASTIdentifier fieldNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
         fieldNode.image = field;
         newNode.jjtAddChild(fieldNode, childIndex++);
+        fieldNode.jjtSetParent(newNode);
         for (int i = 0; i < args.length; i++) {
             ASTStringLiteral literal = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
             literal.image = args[i].toString();
-            newNode.jjtAddChild(JexlNodeFactory.wrap(literal), childIndex++);
+            newNode.jjtAddChild(JexlNodeFactory.wrap(literal), childIndex);
+            newNode.jjtGetChild(childIndex++).jjtSetParent(newNode);
         }
         return JexlNodeFactory.wrap(newNode);
     }
