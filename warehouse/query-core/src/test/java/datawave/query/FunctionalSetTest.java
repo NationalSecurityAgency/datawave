@@ -160,6 +160,7 @@ public abstract class FunctionalSetTest {
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         logic.setMaxEvaluationPipelines(1);
+        logic.setMaxDepthThreshold(6);
         
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
