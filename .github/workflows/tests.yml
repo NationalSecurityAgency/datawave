@@ -23,7 +23,7 @@ jobs:
     # go away whenever GitHub actions support caching (supposedly in November 2019).
     - name: Set up maven repo
       run: |
-        curl -o /tmp/m2-cache.tar.gz 'https://github.com/brianloss/maven_repo/blob/files/cached-maven-repository.tar.gz?raw=true'
+        wget -O /tmp/m2-cache.tar.gz https://media.githubusercontent.com/media/brianloss/maven_repo/files/cached-maven-repository.tar.gz
         mkdir ~/.m2 || true
         tar xzf /tmp/m2-cache.tar.gz -C ~/.m2
         rm /tmp/m2-cache.tar.gz
