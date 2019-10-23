@@ -252,7 +252,6 @@ public class EdgeKeyVersioningCache {
         Value emptyVal = new Value();
         SimpleDateFormat dateFormat = new SimpleDateFormat(DateNormalizer.ISO_8601_FORMAT_STRING);
         String dateString = dateFormat.format(new Date(time));
-        ;
         try (BatchWriter recordWriter = connector.createBatchWriter(metadataTableName, new BatchWriterConfig())) {
             String normalizedVersionNum = NumericalEncoder.encode(Integer.toString(keyVersionNum));
             String rowID = "edge_key";
