@@ -33,7 +33,7 @@ public class CityDataManager extends AbstractDataManager {
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
         Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
-        try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader, ',', '\"', '\0')) {
+        try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             String[] data;
             int count = 0;
             Set<RawData> cityData = new HashSet<>();

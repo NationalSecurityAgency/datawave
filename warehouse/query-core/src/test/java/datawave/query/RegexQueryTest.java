@@ -192,69 +192,6 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         runTest(query, query);
     }
     
-    @Test
-    public void testBackslashEdgeCase1() throws Exception {
-        String term = "'\\\\Edge-City-1'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
-    @Test
-    public void testBackslashEdgeCase2() throws Exception {
-        String term = "'\\\\\\\\Edge-City-2'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
-    @Test
-    public void testBackslashEdgeCase3() throws Exception {
-        String term = "'\\\\\\\\\\\\Edge-City-3'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
-    @Test
-    public void testBackslashEdgeCase4() throws Exception {
-        String term = "'Edge-City-4\\\\'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
-    @Test
-    public void testBackslashEdgeCase5() throws Exception {
-        String term = "'Edge-City-5\\\\\\\\'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
-    @Test
-    public void testBackslashEdgeCase6() throws Exception {
-        String term = "'Edge-City-6\\\\\\\\\\\\'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
-    @Test
-    public void testBackslashEdgeCase7() throws Exception {
-        String term = "'Edge-C\\\\ity-7'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
-    @Test
-    public void testBackslashEdgeCase8() throws Exception {
-        String term = "'Edge-C\\\\\\\\ity-8'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
-    @Test
-    public void testBackslashEdgeCase9() throws Exception {
-        String term = "'Edge-C\\\\\\\\\\\\ity-9'";
-        String query = CityField.CITY.name() + EQ_OP + term;
-        runTest(query, query);
-    }
-    
     // ============================================
     // error conditions
     @Test(expected = FullTableScansDisallowedException.class)
