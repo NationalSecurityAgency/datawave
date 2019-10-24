@@ -62,7 +62,7 @@ public class FlagMakerConfig {
     protected long directoryCacheTimeout = (2 * 60 * 60 * 1000);
     // implementation of flagmaker to run
     private String flagMakerClass = FlagMaker.class.getName();
-
+    
     public FlagDataTypeConfig getDefaultCfg() {
         return defaultCfg;
     }
@@ -198,11 +198,11 @@ public class FlagMakerConfig {
     public void setFlagCountThreshold(int flagCountThreshold) {
         this.flagCountThreshold = flagCountThreshold;
     }
-
+    
     public String getFlagMakerClass() {
         return flagMakerClass;
     }
-
+    
     public void setFlagMakerClass(String flagMakerClass) {
         this.flagMakerClass = flagMakerClass;
     }
@@ -366,5 +366,5 @@ public class FlagMakerConfig {
         result.append("flagMakerClass: " + this.getFlagMakerClass() + "\n");
         return result.toString();
     }
-
+    
 }

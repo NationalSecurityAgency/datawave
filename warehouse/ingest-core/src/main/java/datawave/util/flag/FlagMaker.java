@@ -131,7 +131,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         }
         
     }
-
+    
     private static FlagMaker createFlagMaker(FlagMakerConfig fc) {
         try {
             Class<? extends FlagMaker> c = (Class<? extends FlagMaker>) Class.forName(fc.getFlagMakerClass());
@@ -141,7 +141,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             throw new RuntimeException("Failed to instantiate FlagMaker of type " + fc.getFlagMakerClass(), e);
         }
     }
-
+    
     static FlagMakerConfig getFlagMakerConfig(String[] args) throws JAXBException, IOException {
         String flagConfig = null;
         String baseHDFSDirOverride = null;
