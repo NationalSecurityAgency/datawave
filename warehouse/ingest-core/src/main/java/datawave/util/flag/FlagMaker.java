@@ -31,6 +31,7 @@ import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
 import java.net.Socket;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -121,7 +122,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         }
         
         try {
-            FlagMaker m = new FlagMaker(flagMakerConfig);
+            FlagMaker m = createFlagMaker(flagMakerConfig);
             m.run();
         } catch (IllegalArgumentException ex) {
             System.err.println("" + ex.getMessage());
@@ -130,12 +131,23 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         }
         
     }
-    
+
+    private static FlagMaker createFlagMaker(FlagMakerConfig fc) {
+        try {
+            Class<? extends FlagMaker> c = (Class<? extends FlagMaker>) Class.forName(fc.getFlagMakerClass());
+            Constructor<? extends FlagMaker> constructor = c.getConstructor(FlagMakerConfig.class);
+            return constructor.newInstance(fc);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to instantiate FlagMaker of type " + fc.getFlagMakerClass(), e);
+        }
+    }
+
     static FlagMakerConfig getFlagMakerConfig(String[] args) throws JAXBException, IOException {
         String flagConfig = null;
         String baseHDFSDirOverride = null;
         String extraIngestArgsOverride = null;
         String flagFileDirectoryOverride = null;
+        String flagMakerClass = null;
         for (int i = 0; i < args.length; i++) {
             if ("-flagConfig".equals(args[i])) {
                 flagConfig = args[++i];
@@ -149,6 +161,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             } else if ("-flagFileDirectoryOverride".equals(args[i])) {
                 flagFileDirectoryOverride = args[++i];
                 log.info("Will override flagFileDirectory with {}", flagFileDirectoryOverride);
+            } else if ("-flagMakerClass".equals(args[i])) {
+                flagMakerClass = args[++i];
+                log.info("will override flagMakerClass with {}", flagMakerClass);
             }
         }
         if (flagConfig == null) {
@@ -168,6 +183,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 flagDataTypeConfig.setExtraIngestArgs(extraIngestArgsOverride);
             }
             xmlObject.getDefaultCfg().setExtraIngestArgs(extraIngestArgsOverride);
+        }
+        if (null != flagMakerClass) {
+            xmlObject.setFlagMakerClass(flagMakerClass);
         }
         log.debug(xmlObject.toString());
         return xmlObject;
