@@ -369,6 +369,15 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     
     private final Text newColumnQualifier = new Text(new byte[128]);
     
+    /**
+     * Advance the source to the Key specified by pointer then fetch the next tk/tv from that point
+     * 
+     * @param pointer
+     *            the minimum point to advance source to
+     * @throws IOException
+     * @throws IllegalStateException
+     *             if getTopKey() >= pointer
+     */
     @Override
     public void move(Key pointer) throws IOException {
         if (this.hasTop() && this.getTopKey().compareTo(pointer) >= 0) {

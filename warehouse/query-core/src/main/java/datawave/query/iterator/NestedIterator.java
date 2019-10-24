@@ -19,7 +19,9 @@ public interface NestedIterator<T> extends Iterator<T> {
      * Tells the underlying iterator to return the first element that is greater than or equal to <code>minimum</code>.
      * 
      * @param minimum
-     * @return
+     * @return the first Key in the iterator >= minimum or null if no Key exists
+     * @throws IllegalStateException
+     *             if the iterator is already at or beyond minimum
      */
     T move(T minimum);
     
