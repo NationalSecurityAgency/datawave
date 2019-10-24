@@ -49,6 +49,7 @@ public class ShardRangeStream extends RangeStream {
             
             IteratorSetting cfg = new IteratorSetting(stackStart++, "query", FieldIndexOnlyQueryIterator.class);
             
+            DefaultQueryPlanner.addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
             DefaultQueryPlanner.addOption(cfg, QueryOptions.QUERY, queryString, false);
             
             try {
