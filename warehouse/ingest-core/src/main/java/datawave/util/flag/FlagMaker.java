@@ -137,6 +137,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             Class<? extends FlagMaker> c = (Class<? extends FlagMaker>) Class.forName(fc.getFlagMakerClass());
             Constructor<? extends FlagMaker> constructor = c.getConstructor(FlagMakerConfig.class);
             return constructor.newInstance(fc);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Subclasses of FlagMaker must implement a constructor that takes a FlagMakerConfig", e);
         } catch (Exception e) {
             throw new RuntimeException("Failed to instantiate FlagMaker of type " + fc.getFlagMakerClass(), e);
         }
