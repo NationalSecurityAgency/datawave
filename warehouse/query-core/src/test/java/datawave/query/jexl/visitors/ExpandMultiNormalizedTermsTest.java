@@ -304,7 +304,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "filter:includeRegex(IP, '1\\.2\\.3\\..*')";
-        String expected = "filter:includeRegex(IP, '1\\\\.2\\\\.3\\\\..*')";
+        String expected = "filter:includeRegex(IP, '1\\.2\\.3\\..*')";
         expandTerms(original, expected);
     }
     
@@ -320,7 +320,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "filter:includeRegex(IP, '1\\.2\\.3\\..*')";
-        String expected = "filter:includeRegex(IP, '1\\\\.2\\\\.3\\\\..*')";
+        String expected = "filter:includeRegex(IP, '1\\.2\\.3\\..*')";
         expandTerms(original, expected);
     }
     
@@ -336,7 +336,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "filter:includeRegex(IP, '1\\.2\\.3\\.4')";
-        String expected = "filter:includeRegex(IP, '1\\\\.2\\\\.3\\\\.4')";
+        String expected = "filter:includeRegex(IP, '1\\.2\\.3\\.4')";
         expandTerms(original, expected);
     }
     
