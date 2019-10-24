@@ -2,7 +2,10 @@ package datawave.query.index.lookup;
 
 import com.google.common.collect.ImmutableSortedSet;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Test;
 
@@ -221,7 +224,7 @@ public class IndexInfoTest {
     }
     
     /**
-     * Intersection of query terms when neither term has document ids. This forces the IndexInfo object into an infinite range with a count of -1.
+     * Intersection of query terms when neither term has document ids. The intersection of {50,90} is {50}
      */
     @Test
     public void testIntersection_NoTermHasDocIds() {
@@ -232,7 +235,7 @@ public class IndexInfoTest {
         right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
         IndexInfo merged = left.intersect(right);
-        assertEquals(-1L, merged.count());
+        assertEquals(50L, merged.count());
         assertTrue(merged.uids().isEmpty());
     }
     
@@ -264,7 +267,7 @@ public class IndexInfoTest {
         List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         
-        IndexInfo merged = IndexInfoUnion.union(left, right);
+        IndexInfo merged = left.union(right);
         
         // The union of left and right should be a set of four document ids
         Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("doc1", "doc2", "doc3", "doc4");
@@ -274,7 +277,29 @@ public class IndexInfoTest {
     }
     
     /**
-     * Union of query terms when neither term has document ids. This forces the IndexInfo object into an infinite range with a count of -1.
+     * Union of query terms when one term is a delayed predicate
+     */
+    @Test
+    public void testUnion_OneTermIsDelayedPredicate() {
+        ASTDelayedPredicate delayedPredicate = ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        
+        IndexInfo left = new IndexInfo(50);
+        left.applyNode(delayedPredicate);
+        
+        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
+        IndexInfo right = new IndexInfo(rightMatches);
+        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        
+        IndexInfo merged = right.union(left);
+        assertEquals(0, merged.uids().size());
+        assertEquals("Count should be 53 but is " + merged.count(), 53, merged.count());
+        String expectedQuery = "((ASTDelayedPredicate = true) && (FIELD == 'VALUE'))";
+        String actualQuery = JexlStringBuildingVisitor.buildQuery(merged.getNode());
+        assertEquals(expectedQuery, actualQuery);
+    }
+    
+    /**
+     * Union of query terms when neither term has document ids. The union of {50, 90} is {140}.
      */
     @Test
     public void testUnion_NoTermHasDocIds() {
@@ -284,8 +309,8 @@ public class IndexInfoTest {
         IndexInfo right = new IndexInfo(90L);
         right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
         
-        IndexInfo merged = IndexInfoUnion.union(left, right);
-        assertEquals(-1L, merged.count());
+        IndexInfo merged = left.union(right);
+        assertEquals(140L, merged.count());
         assertTrue(merged.uids().isEmpty());
     }
     
@@ -301,7 +326,7 @@ public class IndexInfoTest {
         IndexInfo right = new IndexInfo(rightMatches);
         
         IndexInfo expectedMerged = new IndexInfo(-1L);
-        assertEquals(expectedMerged, IndexInfoUnion.union(left, right));
-        assertEquals(expectedMerged, IndexInfoUnion.union(right, left));
+        assertEquals(expectedMerged, left.union(right));
+        assertEquals(expectedMerged, right.union(left));
     }
 }
