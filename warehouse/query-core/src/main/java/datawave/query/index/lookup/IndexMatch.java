@@ -64,6 +64,10 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
         this.shard = "";
     }
     
+    private boolean contains(JexlNode node) {
+        return nodeStrings.contains(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
+    }
+    
     public String getUid() {
         return uid;
     }
@@ -143,10 +147,6 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
             nodeStrings.add(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
             myNodes.add(node);
         }
-    }
-    
-    private boolean contains(JexlNode node) {
-        return nodeStrings.contains(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
     
     @Override
