@@ -280,16 +280,4 @@ public class JexlASTHelperTest {
         Assert.assertEquals(ASTNotNode.class, nonRangeChildNodes.get(0).getClass());
     }
     
-    @Test
-    public void testNodeToKey() {
-        JexlNode left = JexlNodeFactory.buildEQNode("field", "value");
-        JexlNode right = JexlNodeFactory.buildEQNode("field", "value");
-        
-        String leftKey = JexlASTHelper.nodeToKey(left);
-        String rightKey = JexlASTHelper.nodeToKey(right);
-        
-        // Different JexlNodes with the same value should generate the same key.
-        Assert.assertEquals(leftKey, rightKey);
-    }
-    
 }
