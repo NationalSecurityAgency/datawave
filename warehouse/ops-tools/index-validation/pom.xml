@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-ops-tools-parent</artifactId>
-        <version>2.6.31-SNAPSHOT</version>
+        <version>2.6.31</version>
     </parent>
     <artifactId>datawave-ops-tools-index-validation</artifactId>
     <packaging>jar</packaging>
