@@ -134,9 +134,9 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * 
      * @param minimum
      *            the minimum to return
-     * @return the first >= minimum or null if none exists
+     * @return the first greater than or equal to minimum or null if none exists
      * @throws IllegalStateException
-     *             if prev >= minimum
+     *             if prev is greater than or equal to minimum
      */
     public T move(T minimum) {
         if (null == includeHeads) {

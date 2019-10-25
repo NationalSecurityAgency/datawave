@@ -376,7 +376,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      *            the minimum point to advance source to
      * @throws IOException
      * @throws IllegalStateException
-     *             if getTopKey() >= pointer
+     *             if getTopKey() is greater than or equal to pointer
      */
     @Override
     public void move(Key pointer) throws IOException {

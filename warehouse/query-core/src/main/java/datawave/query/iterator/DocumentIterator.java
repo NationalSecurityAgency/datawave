@@ -16,12 +16,12 @@ public interface DocumentIterator extends SortedKeyValueIterator<Key,Value> {
     Document document();
     
     /**
-     * Move the iterator forward to the first Key >= pointer
+     * Move the iterator forward to the first Key great than or equal to pointer
      *
      * @param pointer
      * @throws IOException
      * @throws IllegalStateException
-     *             if getTopKey() >= pointer
+     *             if getTopKey() is greater than or equal to pointer
      */
     void move(Key pointer) throws IOException;
 }

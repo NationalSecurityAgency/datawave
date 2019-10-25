@@ -68,14 +68,14 @@ public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterato
     }
     
     /**
-     * Advance to the next Key in the iterator that is >= minimum. First check the cached value in next, then check the delegate cached value in getTopValue(),
-     * finally advance the delegate
+     * Advance to the next Key in the iterator that is greater than or equal to minimum. First check the cached value in next, then check the delegate cached
+     * value in getTopValue(), finally advance the delegate
      * 
      * @param minimum
      *            the minimum key to advance to
-     * @return the first Key >= minimum found
+     * @return the first Key greater than or equal to minimum found
      * @throws IllegalStateException
-     *             if prevKey >= minimum
+     *             if prevKey is greater than or equal to minimum
      */
     public Key move(Key minimum) {
         if (prevKey != null && prevKey.compareTo(minimum) >= 0) {
