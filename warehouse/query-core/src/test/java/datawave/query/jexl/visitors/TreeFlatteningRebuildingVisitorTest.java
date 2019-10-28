@@ -4,7 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -15,6 +17,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TreeFlatteningRebuildingVisitorTest {
     
@@ -39,7 +45,6 @@ public class TreeFlatteningRebuildingVisitorTest {
         testFlatten(expected, original);
     }
     
-    @Ignore
     @Test
     public void testDisjunctionExtraParens() throws ParseException {
         String original = "a || (((((b)))))";
@@ -54,7 +59,6 @@ public class TreeFlatteningRebuildingVisitorTest {
         testFlatten(expected, original);
     }
     
-    @Ignore
     @Test
     public void testDisjunction() throws ParseException {
         String original = "a || (b || c)";
@@ -62,7 +66,6 @@ public class TreeFlatteningRebuildingVisitorTest {
         testFlatten(expected, original);
     }
     
-    @Ignore
     @Test
     public void testConjunctionWithNestedExtraParens() throws ParseException {
         String original = "a && ((b && c || d || e))";
@@ -70,7 +73,6 @@ public class TreeFlatteningRebuildingVisitorTest {
         testFlatten(expected, original);
     }
     
-    @Ignore
     @Test
     public void testDisjunctionWithNestedExtraParens() throws ParseException {
         String original = "a || ((b && c || d || e))";
@@ -122,7 +124,6 @@ public class TreeFlatteningRebuildingVisitorTest {
     /*
      * Test cases where no change is expected
      */
-    @Ignore
     @Test
     public void testFlattenWithNoChange() throws ParseException {
         String original = "a && b && c && d && (e || f || g || h)";
@@ -161,7 +162,7 @@ public class TreeFlatteningRebuildingVisitorTest {
     
     @Test
     public void depthNoStackTraceOrTest() throws Exception {
-        final int numTerms = 10_000;
+        final int numTerms = 10000;
         final StringBuilder sb = new StringBuilder(13 * numTerms); // 13 == "abc_" + 5 + " OR "
         sb.append("abc_" + StringUtils.leftPad(Integer.toString(numTerms, 10), 5, '0'));
         for (int i = 2; i <= numTerms; i++) {
@@ -177,6 +178,28 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expected = "((a && b && c && d) || b || c || d || e || f || g || h || i || j || k)";
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
         Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
+    }
+    
+    @Test
+    public void multipleNestingMixedOpsTest() throws Exception {
+        String query = "((a && (b && ((c1 || (c2 || c3)) && d))) || b || (c || d || e || (f || g || ((h1 && (h2 && h3)) || i || (((j || k)))))))";
+        String expected = "((a && b && (c1 || c2 || c3) && d) || b || c || d || e || f || g || (h1 && h2 && h3) || i || j || k)";
+        JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
+    }
+    
+    @Test
+    public void singleChildAndOrTest() throws Exception {
+        JexlNode eqNode = JexlASTHelper.parseJexlQuery("FIELD == 'value'");
+        JexlNode and1 = JexlNodeFactory.createUnwrappedAndNode(Collections.singleton(eqNode));
+        JexlNode or1 = JexlNodeFactory.createUnwrappedOrNode(Collections.singleton(and1));
+        
+        JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(or1);
+        
+        Assert.assertEquals(ASTJexlScript.class, flattened.getClass());
+        Assert.assertEquals(1, flattened.jjtGetNumChildren());
+        Assert.assertEquals(ASTEQNode.class, flattened.jjtGetChild(0).getClass());
+        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(eqNode), JexlStringBuildingVisitor.buildQuery(flattened));
     }
     
 }

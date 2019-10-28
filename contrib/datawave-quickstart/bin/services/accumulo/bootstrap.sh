@@ -15,7 +15,7 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Zookeeper config
 
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-http://archive.cloudera.com/cdh5/cdh/5/zookeeper-3.4.5-cdh5.9.1.tar.gz}"
+DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-http://archive.cloudera.com/cdh5/cdh/5/zookeeper-3.4.5-cdh5.16.2.tar.gz}"
 DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
@@ -32,7 +32,7 @@ maxClientCnxns=100"
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://www.apache.org/dist/accumulo/1.9.3/accumulo-1.9.3-bin.tar.gz}"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://raw.githubusercontent.com/brianloss/maven_repo/files/accumulo-1.9.3-hadoop3-bin.tar.gz}"
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
@@ -160,17 +160,17 @@ function accumuloStatus() {
         done
     }
 
-    test -z "${_gc}" && error "accumulo gc is not running"
-    test -z "${_master}" && error "accumulo master is not running"
-    test -z "${_monitor}" && info "accumulo monitor is not running"
-    test -z "${_tracer}" && info "accumulo tracer is not running"
-    test -z "${_tserver}" && error "accumulo tserver is not running"
+    test -z "${_gc}" && warn "gc is not running"
+    test -z "${_master}" && warn "master is not running"
+    test -z "${_monitor}" && info "monitor is not running"
+    test -z "${_tracer}" && info "tracer is not running"
+    test -z "${_tserver}" && warn "tserver is not running"
 
-    echo "======  Zookeeper Status  ======"
+    echo "======  ZooKeeper Status  ======"
     if [[ -n "${DW_ZOOKEEPER_PID_LIST}" ]]; then
-        info "zookeeper => ${DW_ZOOKEEPER_PID_LIST}"
+        info "ZooKeeper => ${DW_ZOOKEEPER_PID_LIST}"
     else
-        error "zookeeper is not running"
+        warn "ZooKeeper is not running"
     fi
 }
 
