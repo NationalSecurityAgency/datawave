@@ -41,6 +41,6 @@ public class CachingIterator<T> implements PeekingIterator<T> {
     
     @Override
     public void remove() {
-        // no-op
+        delegate.remove();
     }
 }
