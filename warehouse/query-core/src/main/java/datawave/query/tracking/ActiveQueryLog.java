@@ -11,11 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ActiveQueryLog {
     
+    private static final String DEFAULT_EMPTY_QUERY_ID = new UUID(0, 0).toString();
     private static Logger LOG = LoggerFactory.getLogger(ActiveQueryLog.class);
     private static ActiveQueryLog instance = null;
     private static AccumuloConfiguration conf = null;
@@ -172,18 +174,22 @@ public class ActiveQueryLog {
         if (numActiveRanges == 0) {
             cacheLock.readLock().lock();
             try {
-                this.CACHE.invalidate(queryId);
+                this.CACHE.invalidate(queryIdFor(queryId));
             } finally {
                 cacheLock.readLock().unlock();
             }
         }
     }
     
+    private String queryIdFor(String queryId) {
+        return (queryId == null ? DEFAULT_EMPTY_QUERY_ID : queryId);
+    }
+    
     public ActiveQuery get(String queryId) {
         ActiveQuery activeQuery = null;
         cacheLock.readLock().lock();
         try {
-            activeQuery = this.CACHE.get(queryId, s -> new ActiveQuery(queryId, this.windowSize));
+            activeQuery = this.CACHE.get(queryIdFor(queryId), s -> new ActiveQuery(queryIdFor(queryId), this.windowSize));
         } finally {
             cacheLock.readLock().unlock();
         }
