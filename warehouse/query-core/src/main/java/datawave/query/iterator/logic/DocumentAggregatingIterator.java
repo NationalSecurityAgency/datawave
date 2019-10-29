@@ -88,6 +88,7 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
         } else {
             nextKey = null;
             nextValue = null;
+            document = null;
         }
     }
     
@@ -121,13 +122,23 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
         return document;
     }
     
-    /*
-     * (non-Javadoc)
-     * 
-     * @see datawave.query.iterator.IndexDocumentIterator#move(org.apache.accumulo.core.data.Key)
-     */
-    @Override
     public void move(Key pointer) throws IOException {
-        seek(new Range(pointer, true, seekRange.getEndKey(), seekRange.isEndKeyInclusive()), seekColumnFamilies, seekInclusive);
+        // check the current position
+        if (nextKey != null && nextKey.compareTo(pointer) >= 0) {
+            throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + nextKey + ", movekey=" + pointer);
+        }
+        
+        if (!getSource().hasTop()) {
+            // there is nothing beyond the current key
+            nextKey = null;
+            nextValue = null;
+            document = null;
+        } else if (getSource().getTopKey().compareTo(pointer) >= 0) {
+            // load that into next
+            next();
+        } else {
+            // we have to seek
+            seek(new Range(pointer, true, seekRange.getEndKey(), seekRange.isEndKeyInclusive()), seekColumnFamilies, seekInclusive);
+        }
     }
 }
