@@ -99,28 +99,24 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
             // queryNode instanceof FieldQueryNode
             
             FieldQueryNode fieldNode = (FieldQueryNode) queryNode;
+            boolean hasUnescapedWildcard = WildcardFieldedTerm.hasUnescapedWildcard(fieldNode, Sets.newHashSet(' ', '/'));
             
             String field = fieldNode.getFieldAsString();
-            String selector = fieldNode.getTextAsString();
-            
-            JexlSelectorNode.Type type = null;
-            
-            int firstWildcard = WildcardFieldedTerm.getFirstWildcardIndex(fieldNode, Sets.newHashSet(' ', '/'));
-            
-            if (firstWildcard == -1) {
-                type = JexlSelectorNode.Type.EXACT;
-            } else {
+            String selector;
+            JexlSelectorNode.Type type;
+            if (hasUnescapedWildcard) {
                 // When we have a regular expression, we want to maintain the original escaped characters in the term
                 selector = EscapedNodes.getEscapedTerm(fieldNode, new EscapeQuerySyntaxImpl());
-                
                 type = JexlSelectorNode.Type.WILDCARDS;
+            } else {
+                selector = fieldNode.getTextAsString();
+                type = JexlSelectorNode.Type.EXACT;
             }
             
             if (field == null || field.isEmpty()) {
                 returnNode = new JexlSelectorNode(type, "", selector);
             } else {
                 returnNode = new JexlSelectorNode(type, field, selector);
-                
             }
         }
         
