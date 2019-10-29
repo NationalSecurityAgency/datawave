@@ -9,14 +9,10 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.predicate.Filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * A convenience class that aggregates a field, filter, range, source iterator, normalizer mappings, index only fields, data type filter and key transformer
@@ -50,22 +46,13 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirURI, hdfsFileSystem)) {
+        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirs)) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + filter + " over " + range);
             }
+            
             // get the hadoop file system and a temporary directory
-            URI hdfsCacheURI = null;
-            try {
-                hdfsCacheURI = new URI(ivaratorCacheDirURI);
-                hdfsFileSystem.mkdirs(new Path(hdfsCacheURI));
-            } catch (MalformedURLException e) {
-                throw new IllegalStateException("Unable to load hadoop configuration", e);
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to create hadoop file system", e);
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
-            }
+            validateIvaratorCacheDirs(ivaratorCacheDirs);
             
             DocumentIterator docIterator = null;
             try {
@@ -87,8 +74,8 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                         .withMaxRangeSplit(maxRangeSplit)
                         .withMaxOpenFiles(ivaratorMaxOpenFiles)
                         .withMaxResults(maxIvaratorResults)
-                        .withFileSystem(hdfsFileSystem)
-                        .withUniqueDir(new Path(hdfsCacheURI))
+                        .withIvaratorCacheDirs(ivaratorCacheDirs)
+                        .withNumRetries(ivaratorNumRetries)
                         .withQueryLock(queryLock)
                         .allowDirResuse(true)
                         .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
@@ -127,8 +114,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             datatypeFilter = null;
             keyTform = null;
             timeFilter = null;
-            hdfsFileSystem = null;
-            ivaratorCacheDirURI = null;
+            ivaratorCacheDirs = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

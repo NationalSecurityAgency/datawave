@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
@@ -1571,16 +1572,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setFullTableScanEnabled(fullTableScanEnabled);
     }
     
-    public List<String> getIvaratorCacheBaseURIsAsList() {
-        return getConfig().getIvaratorCacheBaseURIsAsList();
+    public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
+        return getConfig().getIvaratorCacheDirConfigs();
     }
     
-    public String getIvaratorCacheBaseURIs() {
-        return getConfig().getIvaratorCacheBaseURIs();
-    }
-    
-    public void setIvaratorCacheBaseURIs(String ivaratorCacheBaseURIs) {
-        getConfig().setIvaratorCacheBaseURIs(ivaratorCacheBaseURIs);
+    public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        getConfig().setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
     
     public String getIvaratorFstHdfsBaseURIs() {
@@ -1657,6 +1654,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         getConfig().setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
+    }
+    
+    public int getIvaratorNumRetries() {
+        return getConfig().getIvaratorNumRetries();
+    }
+    
+    public void setIvaratorNumRetries(int ivaratorNumRetries) {
+        getConfig().setIvaratorNumRetries(ivaratorNumRetries);
     }
     
     public int getMaxIvaratorSources() {

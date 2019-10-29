@@ -6,12 +6,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -27,31 +29,51 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         super(other);
     }
     
-    public HdfsBackedSortedSet(FileSystem fs, Path uniqueDir, int maxOpenFiles) throws IOException {
-        this(null, fs, uniqueDir, maxOpenFiles);
+    public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries) throws IOException {
+        this(null, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries);
     }
     
-    public HdfsBackedSortedSet(Comparator<? super E> comparator, FileSystem fs, Path uniqueDir, int maxOpenFiles) throws IOException {
-        this(comparator, 10000, fs, uniqueDir, maxOpenFiles);
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles,
+                    int numRetries) throws IOException {
+        this(comparator, 10000, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries);
     }
     
-    public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, FileSystem fs, Path uniqueDir, int maxOpenFiles)
-                    throws IOException {
-        super(comparator, bufferPersistThreshold, maxOpenFiles, new SortedSetHdfsFileHandlerFactory(fs, uniqueDir));
+    private static List<SortedSetFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath) {
+        List<SortedSetFileHandlerFactory> fileHandlerFactories = new ArrayList<>();
+        for (IvaratorCacheDir ivaratorCacheDir : ivaratorCacheDirs) {
+            fileHandlerFactories.add(new SortedSetHdfsFileHandlerFactory(ivaratorCacheDir, uniqueSubPath));
+        }
+        return fileHandlerFactories;
+    }
+    
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
+                    int maxOpenFiles, int numRetries) throws IOException {
+        super(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, createFileHandlerFactories(ivaratorCacheDirs, uniqueSubPath));
         
-        // now load up this sorted set with any existing files
-        FileStatus[] files = fs.listStatus(uniqueDir);
-        int count = 0;
-        if (files != null) {
-            for (FileStatus file : files) {
-                if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
-                    count++;
-                    addSet(new FileSortedSet<>(comparator, new SortedSetHdfsFileHandler(fs, file.getPath()), true));
+        // for each of the handler factories, check to see if there are any existing files we should load
+        for (SortedSetFileHandlerFactory handlerFactory : handlerFactories) {
+            // Note: All of the file handler factories created by 'createFileHandlerFactories' are SortedSetHdfsFileHandlerFactories
+            if (handlerFactory instanceof SortedSetHdfsFileHandlerFactory) {
+                SortedSetHdfsFileHandlerFactory hdfsHandlerFactory = (SortedSetHdfsFileHandlerFactory) handlerFactory;
+                FileSystem fs = hdfsHandlerFactory.getFs();
+                int count = 0;
+                
+                // if the directory already exists, load up this sorted set with any existing files
+                if (fs.exists(hdfsHandlerFactory.getUniqueDir())) {
+                    FileStatus[] files = fs.listStatus(hdfsHandlerFactory.getUniqueDir());
+                    if (files != null) {
+                        for (FileStatus file : files) {
+                            if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
+                                count++;
+                                addSet(new FileSortedSet<>(comparator, new SortedSetHdfsFileHandler(fs, file.getPath()), true));
+                            }
+                        }
+                    }
+                    
+                    hdfsHandlerFactory.setFileCount(count);
                 }
             }
         }
-        
-        ((SortedSetHdfsFileHandlerFactory) (this.handlerFactory)).setFileCount(count);
     }
     
     @Override
@@ -70,13 +92,29 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
     }
     
     public static class SortedSetHdfsFileHandlerFactory implements SortedSetFileHandlerFactory {
-        private FileSystem fs;
-        private Path uniqueDir;
+        final private IvaratorCacheDir ivaratorCacheDir;
+        private String uniqueSubPath;
         private int fileCount = 0;
         
-        public SortedSetHdfsFileHandlerFactory(FileSystem fs, Path uniqueDir) {
-            this.fs = fs;
-            this.uniqueDir = uniqueDir;
+        public SortedSetHdfsFileHandlerFactory(IvaratorCacheDir ivaratorCacheDir, String uniqueSubPath) {
+            this.ivaratorCacheDir = ivaratorCacheDir;
+            this.uniqueSubPath = uniqueSubPath;
+        }
+        
+        public IvaratorCacheDir getIvaratorCacheDir() {
+            return ivaratorCacheDir;
+        }
+        
+        public FileSystem getFs() {
+            return ivaratorCacheDir.getFs();
+        }
+        
+        public Path getUniqueDir() {
+            return new Path(ivaratorCacheDir.getPathURI(), uniqueSubPath);
+        }
+        
+        public int getFileCount() {
+            return fileCount;
         }
         
         void setFileCount(int count) {
@@ -85,6 +123,13 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         
         @Override
         public SortedSetFileHandler createHandler() throws IOException {
+            FileSystem fs = getFs();
+            Path uniqueDir = getUniqueDir();
+            
+            // attempt to create the folder if it doesn't exist
+            if (!fs.exists(uniqueDir) && !fs.mkdirs(uniqueDir))
+                throw new IOException("Unable to create directory [" + uniqueDir + "] in filesystem [" + fs + "]");
+            
             // generate a unique file name
             fileCount++;
             Path file = new Path(uniqueDir, FILENAME_PREFIX + fileCount + '.' + System.currentTimeMillis());
@@ -93,7 +138,7 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         
         @Override
         public String toString() {
-            return uniqueDir + " (fileCount=" + fileCount + ')';
+            return getUniqueDir() + " (fileCount=" + fileCount + ')';
         }
         
     }

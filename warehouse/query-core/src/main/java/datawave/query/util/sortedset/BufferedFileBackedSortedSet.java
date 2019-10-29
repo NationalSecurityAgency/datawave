@@ -4,13 +4,15 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.stream.Collectors;
 
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
+import org.apache.hadoop.fs.FsStatus;
 import org.apache.log4j.Logger;
 
 /**
@@ -24,6 +26,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     private static final Logger log = Logger.getLogger(BufferedFileBackedSortedSet.class);
     protected static final int DEFAULT_BUFFER_PERSIST_THRESHOLD = 1000;
     protected static final int DEFAULT_MAX_OPEN_FILES = 100;
+    protected static final int DEFAULT_NUM_RETRIES = 2;
     
     protected MultiSetBackedSortedSet<E> set = new MultiSetBackedSortedSet<>();
     protected int maxOpenFiles = 10000;
@@ -31,8 +34,9 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     protected Comparator<? super E> comparator = null;
     protected boolean sizeModified = false;
     protected int size = 0;
+    protected int numRetries;
     
-    protected SortedSetFileHandlerFactory handlerFactory;
+    protected List<SortedSetFileHandlerFactory> handlerFactories;
     protected int bufferPersistThreshold;
     
     /**
@@ -46,7 +50,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     }
     
     public BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
-        this(other.comparator, other.bufferPersistThreshold, other.maxOpenFiles, other.handlerFactory);
+        this(other.comparator, other.bufferPersistThreshold, other.maxOpenFiles, other.numRetries, new ArrayList<>(other.handlerFactories));
         for (SortedSet<E> subSet : other.set.getSets()) {
             FileSortedSet<E> clone = new FileSortedSet<>((FileSortedSet<E>) subSet);
             this.set.addSet(clone);
@@ -58,25 +62,96 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
         this.size = other.size;
     }
     
-    public BufferedFileBackedSortedSet(SortedSetFileHandlerFactory handlerFactory) {
-        this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, handlerFactory);
+    public BufferedFileBackedSortedSet(List<SortedSetFileHandlerFactory> handlerFactories) {
+        this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories);
     }
     
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, SortedSetFileHandlerFactory handlerFactory) {
-        this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, handlerFactory);
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, List<SortedSetFileHandlerFactory> handlerFactories) {
+        this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories);
     }
     
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles,
-                    SortedSetFileHandlerFactory handlerFactory) {
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles, int numRetries,
+                    List<SortedSetFileHandlerFactory> handlerFactories) {
         this.comparator = comparator;
-        this.handlerFactory = handlerFactory;
+        this.handlerFactories = handlerFactories;
         this.bufferPersistThreshold = bufferPersistThreshold;
+        this.numRetries = numRetries;
         this.maxOpenFiles = maxOpenFiles;
+    }
+    
+    private SortedSetFileHandler createFileHandler(SortedSetFileHandlerFactory handlerFactory) throws IOException {
+        boolean isCacheDirValid = false;
+        if (handlerFactory instanceof HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) {
+            IvaratorCacheDir ivaratorCacheDir = ((HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) handlerFactory).getIvaratorCacheDir();
+            
+            FsStatus fsStatus = null;
+            try {
+                fsStatus = ivaratorCacheDir.getFs().getStatus();
+            } catch (IOException e) {
+                log.warn("Unable to determine status of the filesystem: " + ivaratorCacheDir.getFs());
+            }
+            
+            // determine whether this fs is a good candidate
+            if (fsStatus != null) {
+                long availableStorageMB = fsStatus.getRemaining() / 0x100000L;
+                double availableStoragePercent = (double) fsStatus.getRemaining() / fsStatus.getCapacity();
+                
+                // if we are using less than our storage limit, the cache dir is valid
+                isCacheDirValid = availableStorageMB >= ivaratorCacheDir.getConfig().getMinAvailableStorageMB()
+                                && availableStoragePercent >= ivaratorCacheDir.getConfig().getMinAvailableStoragePercent();
+            }
+        } else {
+            isCacheDirValid = true;
+        }
+        
+        if (isCacheDirValid) {
+            try {
+                return handlerFactory.createHandler();
+            } catch (IOException e) {
+                log.warn("Unable to create file handler using handler factory: " + handlerFactory, e);
+            }
+        }
+        
+        return null;
     }
     
     public void persist() throws IOException {
         if (buffer != null) {
-            buffer.persist();
+            // go through the handler factories and try to persist the sorted set
+            for (int i = 0; i < handlerFactories.size() && !buffer.isPersisted(); i++) {
+                SortedSetFileHandlerFactory handlerFactory = handlerFactories.get(i);
+                SortedSetFileHandler handler = createFileHandler(handlerFactory);
+                
+                // if we have a valid handler, try to persist
+                if (handler != null) {
+                    Exception cause = null;
+                    for (int attempts = 0; attempts <= numRetries && !buffer.isPersisted(); attempts++) {
+                        try {
+                            buffer.persist(handler);
+                        } catch (IOException e) {
+                            if (attempts == numRetries)
+                                cause = e;
+                        }
+                    }
+                    
+                    if (!buffer.isPersisted()) {
+                        log.warn("Unable to persist the sorted set using the file handler: " + handler, cause);
+                        
+                        // if this was an hdfs file handler, decrement the count
+                        if (handlerFactory instanceof HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) {
+                            HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory hdfsHandlerFactory = ((HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) handlerFactory);
+                            hdfsHandlerFactory.setFileCount(hdfsHandlerFactory.getFileCount() - 1);
+                        }
+                    }
+                } else {
+                    log.warn("Unable to create a file handler using the handler factory: " + handlerFactory);
+                }
+            }
+            
+            // if the buffer was not persisted, throw an exception
+            if (!buffer.isPersisted())
+                throw new IOException("Unable to persist the sorted set using the configured handler factories.");
+            
             buffer = null;
             compact(maxOpenFiles);
         }
@@ -92,6 +167,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     
     protected void addSet(FileSortedSet<E> subSet) {
         set.addSet(subSet);
+        size += subSet.size();
     }
     
     public boolean hasPersistedData() {
@@ -164,6 +240,10 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
         return set.iterator();
     }
     
+    private String printHandlerFactories() {
+        return String.join(", ", handlerFactories.stream().map(SortedSetFileHandlerFactory::toString).collect(Collectors.toList()));
+    }
+    
     /**
      * If the number of sets is over maxFiles, then start compacting those files down. The goal is to get the number of files down around 50% of maxFiles.
      * 
@@ -174,7 +254,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
         // if we have more sets than we are allowed, then we need to compact this down
         if (maxFiles > 0 && set.getSets().size() > maxFiles) {
             if (log.isDebugEnabled()) {
-                log.debug("Compacting " + handlerFactory);
+                log.debug("Compacting [" + printHandlerFactories() + "]");
             }
             // create a copy of the set list (sorting below)
             List<SortedSet<E>> sets = new ArrayList<>(set.getSets());
@@ -224,7 +304,44 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     }
     
     private FileSortedSet<E> compact(MultiSetBackedSortedSet<E> setToCompact) throws IOException {
-        return new FileSortedSet<>(setToCompact, handlerFactory.createHandler(), true);
+        FileSortedSet<E> compactedSet = null;
+        
+        // go through the handler factories and try to persist the sorted set
+        for (int i = 0; i < handlerFactories.size() && compactedSet == null; i++) {
+            SortedSetFileHandlerFactory handlerFactory = handlerFactories.get(i);
+            SortedSetFileHandler handler = createFileHandler(handlerFactory);
+            
+            // if we have a valid handler, try to persist
+            if (handler != null) {
+                Exception cause = null;
+                for (int attempts = 0; attempts <= numRetries && compactedSet == null; attempts++) {
+                    try {
+                        compactedSet = new FileSortedSet<>(setToCompact, handlerFactory.createHandler(), true);
+                    } catch (IOException e) {
+                        if (attempts == numRetries)
+                            cause = e;
+                    }
+                }
+                
+                if (compactedSet == null) {
+                    log.warn("Unable to compact the sorted set using the file handler: " + handler, cause);
+                    
+                    // if this was an hdfs file handler, decrement the count
+                    if (handlerFactory instanceof HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) {
+                        HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory hdfsHandlerFactory = ((HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) handlerFactory);
+                        hdfsHandlerFactory.setFileCount(hdfsHandlerFactory.getFileCount() - 1);
+                    }
+                }
+            } else {
+                log.warn("Unable to create a file handler using the handler factory: " + handlerFactory);
+            }
+        }
+        
+        // if the sorted sets were not compacted, throw an exception
+        if (compactedSet == null)
+            throw new IOException("Unable to persist the sorted set using the configured handler factories.");
+        
+        return compactedSet;
     }
     
     @Override
@@ -241,7 +358,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     public boolean add(E e) {
         if (buffer == null) {
             try {
-                buffer = new FileSortedSet<>(comparator, handlerFactory.createHandler(), false);
+                buffer = new FileSortedSet<>(comparator, null, false);
             } catch (Exception ex) {
                 throw new IllegalStateException("Unable to create an underlying FileSortedSet", ex);
             }
@@ -266,7 +383,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     public boolean addAll(Collection<? extends E> c) {
         if (buffer == null) {
             try {
-                buffer = new FileSortedSet<>(comparator, handlerFactory.createHandler(), false);
+                buffer = new FileSortedSet<>(comparator, null, false);
             } catch (Exception ex) {
                 throw new IllegalStateException("Unable to create an underlying FileSortedSet", ex);
             }

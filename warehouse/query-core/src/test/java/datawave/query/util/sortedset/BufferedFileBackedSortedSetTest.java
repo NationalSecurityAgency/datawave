@@ -40,12 +40,13 @@ public class BufferedFileBackedSortedSetTest {
             sortedOrder[i * 2] = sortedTemplate[i] + sortedTemplate.length;
             sortedOrder[i * 2 + 1] = sortedTemplate[i];
         }
-        set = new BufferedFileBackedSortedSet<>(new ByteArrayComparator(), 5, 7, new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
-            @Override
-            public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
-                return new SortedSetTempFileHandler();
-            }
-        });
+        set = new BufferedFileBackedSortedSet<>(new ByteArrayComparator(), 5, 7, 2,
+                        Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
+                            @Override
+                            public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
+                                return new SortedSetTempFileHandler();
+                            }
+                        }));
         
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
