@@ -91,7 +91,7 @@ fi
 
 # Perform additional Accumulo configs dynamically as needed.
 createAccumuloShellInitScript
-ACCUMULO_TMP_SCRIPT="$(mktemp -t `basename $0`-accumulo-shell.XXXXX)"
+ACCUMULO_TMP_SCRIPT="$(mktemp -t `basename $0`-accumulo-shell.XXXXXX)"
 echo "${DW_ACCUMULO_SHELL_INIT_SCRIPT}" > $ACCUMULO_TMP_SCRIPT
 info "Executing the following Accumulo shell script: $ACCUMULO_TMP_SCRIPT"
 info "${ACCUMULO_TMP_SCRIPT} contents... "
@@ -135,12 +135,35 @@ if [ "${OK_TO_LOAD_JOB_CACHE}" == true ] ; then
    ! datawaveIngestLoadJobCache && fatal "DataWave Ingest initialization failed"
 fi
 
+#==============================================================================
+# Creates the datawave tables and creates splits. Set the environment variable
+# DW_DATAWAVE_SKIP_CREATE_TABLES=true to disable creation of datawave tables.
+function initializeDatawaveTables() {
+    # create tables
+    if [[ ${DW_DATAWAVE_SKIP_CREATE_TABLES} != true ]]; then
+        info "creating datawave tables and splits ..."
+        ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-all-tables.sh || fatal "error creating tables"
+        # create splits for shard table for today
+        local _today=$(date "+%Y%m%d")
+        ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-shards-since.sh ${_today}
+        # always pre-split non sharded tables
+        ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/seed-index-splits.sh > /dev/null 2>&1
+
+        # set splits cache
+        ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-splits-file.sh
+    fi
+}
+
 function ingestExampleData() {
     # Ingest some canned, example data files
     datawaveIngestWikipedia "${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}"
     datawaveIngestJson "${DW_DATAWAVE_INGEST_TEST_FILE_JSON}"
     datawaveIngestCsv "${DW_DATAWAVE_INGEST_TEST_FILE_CSV}"
 }
+
+
+initializeDatawaveTables
+
 
 echo
 info "DataWave Ingest initialized and ready to start..."

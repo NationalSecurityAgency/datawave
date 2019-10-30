@@ -15,7 +15,6 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.impl.ClientContext;
 import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.client.impl.MasterClient;
-import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.master.thrift.MasterClientService.Iface;
@@ -78,6 +77,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static int MAJC_WAIT_TIMEOUT = 0;// 2 * 60 * 1000;
     private static int SHUTDOWN_PORT = 24111;
     private static boolean FIFO = true;
+    private static boolean INGEST_METRICS = true;
     
     public static final String COMPLETE_FILE_MARKER = "job.complete";
     public static final String LOADING_FILE_MARKER = "job.loading";
@@ -111,7 +111,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
         ArrayList<String[]> properties = new ArrayList<>();
         
         if (args.length < 6) {
-            log.error("usage: BulkIngestMapFileLoader hdfsWorkDir jobDirPattern instanceName zooKeepers username password [-sleepTime sleepTime] [-majcThreshold threshold] [-majcCheckInterval count] [-majcDelay majcDelay] [-seqFileHdfs seqFileSystemUri] [-srcHdfs srcFileSystemURI] [-destHdfs destFileSystemURI] [-jt jobTracker] [-shutdownPort portNum] confFile [{confFile}]");
+            log.error("usage: BulkIngestMapFileLoader hdfsWorkDir jobDirPattern instanceName zooKeepers username password "
+                            + "[-sleepTime sleepTime] [-majcThreshold threshold] [-majcCheckInterval count] [-majcDelay majcDelay] "
+                            + " [-seqFileHdfs seqFileSystemUri] [-srcHdfs srcFileSystemURI] [-destHdfs destFileSystemURI] [-jt jobTracker] "
+                            + "[-ingestMetricsDisabled] [-shutdownPort portNum] confFile [{confFile}]");
             System.exit(-1);
         }
         
@@ -267,6 +270,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-shutdownPort must be followed a port number", e);
                         System.exit(-2);
                     }
+                } else if ("-ingestMetricsDisabled".equalsIgnoreCase(args[i])) {
+                    INGEST_METRICS = false;
+                    log.info("Ingest metrics disabled");
                 } else if ("-lifo".equalsIgnoreCase(args[i])) {
                     FIFO = false;
                     log.info("Changing processing order to LIFO");
@@ -665,7 +671,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         Instance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
         TableOperations tops = instance.getConnector(credentials.getPrincipal(), credentials.getToken()).tableOperations();
-        Map<String,String> tableIds = Tables.getNameToIdMap(instance);
+        Map<String,String> tableIds = tops.tableIdMap();
         FileStatus[] tableDirs = fs.globStatus(new Path(mapFilesDir, "*"));
         
         // sort the table dirs in priority order based on the configuration
@@ -1118,49 +1124,52 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
     
     private void writeStats(Path[] jobDirectories) throws IOException {
-        long now = System.currentTimeMillis();
-        for (Path p : jobDirectories)
-            reporter.getCounter("MapFileLoader.EndTimes", p.getName()).increment(now);
-        // Write out the metrics.
-        // We are going to serialize the counters into a file in HDFS.
-        // The context was set in the processKeyValues method below, and should not be null. We'll guard against NPE anyway
-        FileSystem fs = getFileSystem(seqFileHdfs);
-        RawLocalFileSystem rawFS = new RawLocalFileSystem();
-        rawFS.setConf(conf);
-        CompressionCodec cc = new GzipCodec();
-        CompressionType ct = CompressionType.BLOCK;
-        
-        Counters c = reporter.getCounters();
-        if (null != c && c.countCounters() > 0) {
-            // Serialize the counters to a file in HDFS.
-            Path src = new Path(File.createTempFile("MapFileLoader", ".metrics").getAbsolutePath());
-            Writer writer = SequenceFile.createWriter(conf, Writer.file(rawFS.makeQualified(src)), Writer.keyClass(NullWritable.class),
-                            Writer.valueClass(Counters.class), Writer.compression(ct, cc));
-            writer.append(NullWritable.get(), c);
-            writer.close();
+        if (!INGEST_METRICS) {
+            log.info("ingest metrics disabled");
+        } else {
+            long now = System.currentTimeMillis();
+            for (Path p : jobDirectories)
+                reporter.getCounter("MapFileLoader.EndTimes", p.getName()).increment(now);
+            // Write out the metrics.
+            // We are going to serialize the counters into a file in HDFS.
+            // The context was set in the processKeyValues method below, and should not be null. We'll guard against NPE anyway
+            FileSystem fs = getFileSystem(seqFileHdfs);
+            RawLocalFileSystem rawFS = new RawLocalFileSystem();
+            rawFS.setConf(conf);
+            CompressionCodec cc = new GzipCodec();
+            CompressionType ct = CompressionType.BLOCK;
             
-            // Now we will try to move the file to HDFS.
-            // Copy the file to the temp dir
-            try {
-                Path mDir = new Path(workDir, "MapFileLoaderMetrics");
-                if (!fs.exists(mDir))
-                    fs.mkdirs(mDir);
-                Path dst = new Path(mDir, src.getName());
-                log.info("Copying file " + src + " to " + dst);
-                fs.copyFromLocalFile(false, true, src, dst);
-                // If this worked, then remove the local file
-                rawFS.delete(src, false);
-                // also remove the residual crc file
-                rawFS.delete(getCrcFile(src), false);
-            } catch (IOException e) {
-                // If an error occurs in the copy, then we will leave in the local metrics directory.
-                log.error("Error copying metrics file into HDFS, will remain in metrics directory.");
+            Counters c = reporter.getCounters();
+            if (null != c && c.countCounters() > 0) {
+                // Serialize the counters to a file in HDFS.
+                Path src = new Path(File.createTempFile("MapFileLoader", ".metrics").getAbsolutePath());
+                Writer writer = SequenceFile.createWriter(conf, Writer.file(rawFS.makeQualified(src)), Writer.keyClass(NullWritable.class),
+                                Writer.valueClass(Counters.class), Writer.compression(ct, cc));
+                writer.append(NullWritable.get(), c);
+                writer.close();
+                
+                // Now we will try to move the file to HDFS.
+                // Copy the file to the temp dir
+                try {
+                    Path mDir = new Path(workDir, "MapFileLoaderMetrics");
+                    if (!fs.exists(mDir))
+                        fs.mkdirs(mDir);
+                    Path dst = new Path(mDir, src.getName());
+                    log.info("Copying file " + src + " to " + dst);
+                    fs.copyFromLocalFile(false, true, src, dst);
+                    // If this worked, then remove the local file
+                    rawFS.delete(src, false);
+                    // also remove the residual crc file
+                    rawFS.delete(getCrcFile(src), false);
+                } catch (IOException e) {
+                    // If an error occurs in the copy, then we will leave in the local metrics directory.
+                    log.error("Error copying metrics file into HDFS, will remain in metrics directory.");
+                }
+                
+                // reset reporter so that old metrics don't persist over time
+                this.reporter = new StandaloneStatusReporter();
             }
-            
-            // reset reporter so that old metrics don't persist over time
-            this.reporter = new StandaloneStatusReporter();
         }
-        
     }
     
     private Path getCrcFile(Path path) {

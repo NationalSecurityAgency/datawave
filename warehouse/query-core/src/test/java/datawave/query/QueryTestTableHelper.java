@@ -58,14 +58,14 @@ public final class QueryTestTableHelper {
     
     public QueryTestTableHelper(String instanceName, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
                     TableNotFoundException {
-        this(instanceName, log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER);
+        this(instanceName, log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
     }
     
-    public QueryTestTableHelper(String instanceName, Logger log, RebuildingScannerTestHelper.TEARDOWN teardown) throws AccumuloSecurityException,
-                    AccumuloException, TableExistsException, TableNotFoundException {
+    public QueryTestTableHelper(String instanceName, Logger log, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
+                    throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
         // create mock instance and connector
         InMemoryInstance i = new InMemoryInstance(instanceName);
-        this.connector = RebuildingScannerTestHelper.getConnector(i, "root", new PasswordToken(""), teardown);
+        this.connector = RebuildingScannerTestHelper.getConnector(i, "root", new PasswordToken(""), teardown, interrupt);
         this.log = log;
         
         createTables();
@@ -165,6 +165,6 @@ public final class QueryTestTableHelper {
         logic.setReverseIndexTableName(SHARD_RINDEX_TABLE_NAME);
         logic.setModelTableName(MODEL_TABLE_NAME);
         logic.setMaxResults(5000);
-        logic.setMaxRowsToScan(25000);
+        logic.setMaxWork(25000);
     }
 }

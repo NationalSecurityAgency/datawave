@@ -4,6 +4,7 @@
 !**/ingest-scripts/src/**/bin/
 !**/application/src/main/wildfly/overlay/bin
 !**/web-services/deploy/application/src/main/wildfly/overlay/bin
+!**/web-services/examples/http-client/bin
 **/*.iml
 **/*.orig
 **/*.prefs

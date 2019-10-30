@@ -112,8 +112,9 @@ public class MetricsIngester extends Configured implements Tool {
         Class<? extends Mapper<?,?,?,?>> mapperClass;
         String outTable;
         
-        FileSystem fs = FileSystem.get(conf);
-        FileStatus[] fstats = fs.listStatus(new Path(conf.get(MetricsConfig.INPUT_DIRECTORY)));
+        Path inputDirectoryPath = new Path(conf.get(MetricsConfig.INPUT_DIRECTORY));
+        FileSystem fs = FileSystem.get(inputDirectoryPath.toUri(), conf);
+        FileStatus[] fstats = fs.listStatus(inputDirectoryPath);
         Path[] files = FileUtil.stat2Paths(fstats);
         Path[] fileBuffer = new Path[MAX_FILES];
         for (int i = 0; i < files.length;) {
@@ -193,8 +194,9 @@ public class MetricsIngester extends Configured implements Tool {
         /*
          * This block allows for us to read from a virtual "snapshot" of a directory and remove only files we process.
          */
-        FileSystem fs = FileSystem.get(conf);
-        FileStatus[] fstats = fs.listStatus(new Path(conf.get(MetricsConfig.INPUT_DIRECTORY)));
+        Path inputDirectoryPath = new Path(conf.get(MetricsConfig.INPUT_DIRECTORY));
+        FileSystem fs = FileSystem.get(inputDirectoryPath.toUri(), conf);
+        FileStatus[] fstats = fs.listStatus(inputDirectoryPath);
         Path[] inPaths = {};
         if (fstats != null && fstats.length > 0) {
             inPaths = FileUtil.stat2Paths(fstats);

@@ -3,7 +3,9 @@ package datawave.query.jexl.visitors;
 import java.io.StringReader;
 import java.util.Set;
 
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
@@ -54,5 +56,15 @@ public class VariableNameVisitor extends BaseVisitor {
     public Object visit(ASTIdentifier node, Object data) {
         this.variableNames.add(node.image);
         return super.visit(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+            this.variableNames.add(ExceededOrThresholdMarkerJexlNode.getField(node));
+            return data;
+        } else {
+            return super.visit(node, data);
+        }
     }
 }

@@ -53,4 +53,9 @@ public class AgeOffConfigParams {
      * A flag that indicates that the table being aged off is an index table
      */
     public static final String IS_INDEX_TABLE = "isindextable";
+    
+    /**
+     * Exclude schema components from age-off
+     */
+    public static final String EXCLUDE_DATA = "excludeData";
 }

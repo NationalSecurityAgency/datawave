@@ -49,9 +49,9 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     protected JexlNode currentNode;
     
-    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields)
-                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        super(config, scannerFactory, helper, expansionFields, "Datawave Unfielded Lookup");
+    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
+                    boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        super(config, scannerFactory, helper, expansionFields, expandFields, expandValues, "Datawave Unfielded Lookup");
     }
     
     protected class FixUnfieldedTermsVisitorThreadFactory implements ThreadFactory {
@@ -78,16 +78,22 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         
     }
     
-    public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script)
-                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        return fixUnfieldedTree(config, scannerFactory, helper, script, null);
+    public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
+                    boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        return fixUnfieldedTree(config, scannerFactory, helper, script, null, expandFields, expandValues);
     }
     
     public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
-                    Set<String> expansionFields) throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        FixUnfieldedTermsVisitor visitor = new FixUnfieldedTermsVisitor(config, scannerFactory, helper, expansionFields);
-        
-        return (ASTJexlScript) script.jjtAccept(visitor, null);
+                    Set<String> expansionFields, boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException,
+                    TableNotFoundException {
+        // if not expanding fields or values, then this is a noop
+        if (expandFields || expandValues) {
+            FixUnfieldedTermsVisitor visitor = new FixUnfieldedTermsVisitor(config, scannerFactory, helper, expansionFields, expandFields, expandValues);
+            
+            return (ASTJexlScript) script.jjtAccept(visitor, null);
+        } else {
+            return script;
+        }
     }
     
     @Override

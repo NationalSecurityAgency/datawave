@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>2.5.25-SNAPSHOT</version>
+        <version>2.6.29-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
@@ -50,6 +50,11 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-model-configuration-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-index-stats</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -107,6 +112,10 @@
             <artifactId>datawave-ws-query</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
         </dependency>
@@ -134,26 +143,6 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
             <version>${version.caffeine}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-commons</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-core-client</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-jms-client</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-server</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -419,9 +408,9 @@
             </build>
         </profile>
         <profile>
-            <!-- 
+            <!--
 				WARNING WARNING WARNING
-				
+
 				If you change anything in this profile regarding which files are included, then you need to make the
 				corresponding change in src/main/assembly/dist.xml.  Unfortunately, there is no way for the RPM and
 				assembly plugins to share the same configuration, so this information must be duplicated.
@@ -503,7 +492,7 @@
                                         <source>
                                             <location>${project.build.directory}/archive</location>
                                             <excludes>
-                                                <!-- Leave out the bin dir since we add that below with different 
+                                                <!-- Leave out the bin dir since we add that below with different
 													permissions -->
                                                 <exclude>bin/**</exclude>
                                             </excludes>
@@ -611,6 +600,9 @@
                                             <include>org.springframework:spring-context-support</include>
                                             <include>org.springframework:spring-expression</include>
                                             <include>aopalliance:aopalliance</include>
+                                            <include>com.fasterxml.jackson.core:jackson-databind</include>
+                                            <include>com.fasterxml.jackson.core:jackson-core</include>
+                                            <include>com.fasterxml.jackson.core:jackson-annotations</include>
                                         </includes>
                                     </dependency>
                                 </mapping>

@@ -72,7 +72,7 @@ DW_DATAWAVE_INGEST_LIVE_DATA_TYPES=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES:-"wikipe
 
 # Comma-delimited data type identifiers to be ingested via "bulk" ingest, ie via bulk import of RFiles into Accumulo tables
 
-DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-""}
+DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-"shardStats"}
 
 DW_DATAWAVE_MAPRED_INGEST_OPTS=${DW_DATAWAVE_MAPRED_INGEST_OPTS:-"-useInlineCombiner -ingestMetricsDisabled"}
 
@@ -103,7 +103,16 @@ function datawaveIngestStop() {
 }
 
 function datawaveIngestStatus() {
-    datawaveIngestIsRunning && echo "DataWave Ingest is running. PIDs: ${DW_DATAWAVE_INGEST_PID_LIST}" || echo "DataWave Ingest is not running"
+
+    echo "======  DataWave Ingest Status  ======"
+    if datawaveIngestIsRunning ; then
+        echo "pids: ${DW_DATAWAVE_INGEST_PID_LIST}"
+        $DW_DATAWAVE_INGEST_HOME/bin/ingest/list-ingest.sh
+
+    else
+        info "No ingest processes are running"
+    fi
+
 }
 
 function datawaveIngestIsInstalled() {
@@ -193,7 +202,7 @@ function datawaveIngestCsv() {
 
    # Same as with datawaveIngestWikipedia, we use live-ingest.sh, but this time to ingest some CSV data.
    # Note that the sample file, my.csv, has records that intentionally generate errors to demonstrate
-   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot 
+   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot
    # data-related errors that arise during ingest. As a result, this job may terminate with warnings
 
    local csvRawFile="${1}"

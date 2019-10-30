@@ -8,6 +8,7 @@ import java.util.List;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import io.undertow.security.idm.Credential;
 import datawave.security.util.DnUtils;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
 /**
  * A {@link Credential} for use with Datawave authentication. The main reason for using this credential is to ensure that the JAAS cache inside of Wildfly works
@@ -20,6 +21,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
     private X509Certificate certificate;
     private String userName;
     private List<SubjectIssuerDNPair> entities = new ArrayList<>();
+    private String jwtToken;
     
     /**
      * Constructs a {@link DatawaveCredential} using only DN information. This means there is no supplied certificate, and this credential will only be trusted
@@ -56,6 +58,11 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
         extractEntities(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
     }
     
+    public DatawaveCredential(String jwtToken) {
+        this.userName = jwtToken;
+        this.jwtToken = jwtToken;
+    }
+    
     private void extractEntities(String subjectDN, String issuerDN, String proxiedSubjects, String proxiedIssuers) {
         entities.add(SubjectIssuerDNPair.of(subjectDN, issuerDN));
         if (proxiedSubjects != null) {
@@ -85,9 +92,13 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
         return certificate;
     }
     
+    public String getJwtToken() {
+        return jwtToken;
+    }
+    
     @Override
     public int compareTo(DatawaveCredential o) {
-        return userName.compareTo(o.getUserName());
+        return new CompareToBuilder().append(userName, o.getUserName()).append(jwtToken, o.getJwtToken()).toComparison();
     }
     
     @Override

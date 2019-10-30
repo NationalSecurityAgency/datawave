@@ -149,6 +149,11 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
             node.jjtAccept(functionMetadata, null);
             return false;
         }
+        
+        @Override
+        public boolean allowIvaratorFiltering() {
+            return true;
+        }
     }
     
     @Override

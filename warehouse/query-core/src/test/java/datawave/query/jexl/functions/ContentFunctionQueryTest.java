@@ -76,12 +76,14 @@ import java.text.SimpleDateFormat;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
 import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
@@ -89,7 +91,7 @@ import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
-import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 
 @RunWith(Arquillian.class)
 public class ContentFunctionQueryTest {
@@ -230,54 +232,27 @@ public class ContentFunctionQueryTest {
         String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
         
         final List<String> expected = Arrays.asList("dog", "cat");
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(1, events.size());
         evaluateEvents(events, expected);
     }
     
     @Test
     public void withinTestWithAlternateDate() throws Exception {
-        
-        String queryStr = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
-        
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_STRING, queryStr);
-        params.putSingle(QUERY_NAME, "contentQuery");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
+        String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
         
         MultivaluedMap<String,String> optionalParams = new MultivaluedMapImpl<>();
         optionalParams.putSingle(DATE_RANGE_TYPE, "BOGUSDATETYPE");
         
-        QueryParameters queryParams = new QueryParametersImpl();
-        queryParams.validate(params);
-        
-        Set<Authorizations> auths = new HashSet<>();
-        auths.add(new Authorizations(AUTHS));
-        
-        Query query = new QueryImpl();
-        
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, optionalParams);
-        
-        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-        
-        try {
-            logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
-            Assert.fail("Expected query to fail with bogus date type");
-        } catch (IllegalArgumentException | DateTimeParseException e) {
-            Assert.assertEquals("The specified date type: BOGUSDATETYPE is unknown for the specified data types", e.getMessage());
-        }
-        
+        final List<DefaultEvent> events = getQueryResults(query, true, optionalParams);
+        Assert.assertEquals(0, events.size());
     }
     
     @Test
     public void withinSkipTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','boy')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("dog", "boy");
         evaluateEvents(events, expected);
@@ -287,7 +262,7 @@ public class ContentFunctionQueryTest {
     public void phraseTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'boy','car')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("boy", "car");
         evaluateEvents(events, expected);
@@ -297,7 +272,7 @@ public class ContentFunctionQueryTest {
     public void phraseWithSkipTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'dog','gap')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("dog", "gap");
         evaluateEvents(events, expected);
@@ -307,7 +282,7 @@ public class ContentFunctionQueryTest {
     public void phraseScoreTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:phrase(-1.5, termOffsetMap,'boy','car')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("boy", "car");
         evaluateEvents(events, expected);
@@ -317,7 +292,7 @@ public class ContentFunctionQueryTest {
     public void phraseScoreFilterTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:phrase(-1.4, termOffsetMap,'boy','car')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(0, events.size());
         Assert.assertEquals("Expected no results", 0, events.size());
     }
@@ -335,20 +310,21 @@ public class ContentFunctionQueryTest {
         }
     }
     
-    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, boolean queryOldData) throws Exception {
+    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultivaluedMap<String,String> optionalParams) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic(useIvarator);
         
-        Iterator iter = getResultsIterator(queryString, logic, queryOldData);
+        Iterator iter = getResultsIterator(queryString, logic, optionalParams);
         List<DefaultEvent> events = new ArrayList<>();
         while (iter.hasNext())
             events.add((DefaultEvent) iter.next());
         return events;
     }
     
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, boolean queryOldData) throws Exception {
+    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, MultivaluedMap<String,String> optionalParams) throws Exception {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, queryString);
         params.putSingle(QUERY_NAME, "contentQuery");
+        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
         params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
@@ -362,7 +338,7 @@ public class ContentFunctionQueryTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, optionalParams);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         

@@ -18,7 +18,7 @@ import org.apache.log4j.Logger;
 
 public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilter implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
     
-    public static final String UNIQE_TERMS_IN_FIELD = "term.unique";
+    public static final String UNIQUE_TERMS_IN_FIELD = "term.unique";
     private static final Logger log = Logger.getLogger(GlobalIndexTermMatchingIterator.class);
     
     private SortedKeyValueIterator<Key,Value> source;
@@ -29,7 +29,7 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
     private Collection<ByteSequence> scanCFs;
     private boolean scanInclusive;
     
-    protected boolean uniqeTermsOnly = false;
+    protected boolean uniqueTermsOnly = false;
     
     public GlobalIndexTermMatchingIterator() throws IOException {}
     
@@ -74,7 +74,7 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
     
     @Override
     public void next() throws IOException {
-        if (foundMatch && uniqeTermsOnly) {
+        if (foundMatch && uniqueTermsOnly) {
             advance(getSource().getTopKey());
         } else
             getSource().next();
@@ -89,7 +89,7 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
         getSource().seek(range, columnFamilies, inclusive);
         
         // if we have been reseeked after being torn down, and we are only returning unique terms, then advance to the next unique row/cf
-        if (!range.isStartKeyInclusive() && uniqeTermsOnly && getSource().hasTop()) {
+        if (!range.isStartKeyInclusive() && uniqueTermsOnly && getSource().hasTop()) {
             Key start = range.getStartKey();
             // verify this was actually from being torn down in that this key looks like a global index term
             if (start.getColumnFamily().getLength() > 0 && start.getColumnQualifier().getLength() > 0
@@ -163,7 +163,7 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
         io.addNamedOption(LITERAL + "i", "A literal value to match");
         io.addNamedOption(PATTERN + "i", "A regex value to match");
         io.addNamedOption(REVERSE_INDEX, "Boolean denoting whether we are matching against a reverse index");
-        io.addNamedOption(UNIQE_TERMS_IN_FIELD, "Advances the term when one is found, ignoring the fact that the term may exist on multiple shards");
+        io.addNamedOption(UNIQUE_TERMS_IN_FIELD, "Advances the term when one is found, ignoring the fact that the term may exist on multiple shards");
         io.setDescription("GlobalIndexTermMatchingIterator uses a set of literals and regexs to match global index keys");
         return io;
     }
@@ -172,12 +172,12 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
     public boolean validateOptions(Map<String,String> options) {
         boolean valid = super.validateOptions(options);
         
-        if (options.containsKey(UNIQE_TERMS_IN_FIELD)) {
-            /**
+        if (options.containsKey(UNIQUE_TERMS_IN_FIELD)) {
+            /*
              * note that boolean will ONLY return true if the value in the map is 'true' or 'TRUE'. we don't need the above conditional, but we are being
              * defensive.
-             **/
-            uniqeTermsOnly = new Boolean(options.get(UNIQE_TERMS_IN_FIELD));
+             */
+            uniqueTermsOnly = new Boolean(options.get(UNIQUE_TERMS_IN_FIELD));
             
         }
         return valid;

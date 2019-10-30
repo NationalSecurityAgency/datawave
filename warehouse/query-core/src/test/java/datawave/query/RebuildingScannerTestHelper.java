@@ -4,7 +4,10 @@ import datawave.accumulo.inmemory.InMemoryBatchScanner;
 import datawave.accumulo.inmemory.InMemoryConnector;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.InMemoryScanner;
+import datawave.accumulo.inmemory.InMemoryScannerBase;
 import datawave.accumulo.inmemory.ScannerRebuilder;
+import datawave.query.attributes.Document;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -29,15 +32,20 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IterationInterruptedException;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.ByteBufferUtil;
 import org.apache.accumulo.core.util.TextUtil;
 import org.apache.hadoop.io.Text;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Iterator;
@@ -73,23 +81,198 @@ public class RebuildingScannerTestHelper {
         }
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown) throws AccumuloException, AccumuloSecurityException {
-        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, new PasswordToken(pass))), teardown);
+    public enum INTERRUPT {
+        NEVER(NeverInterrupt.class),
+        RANDOM(RandomInterrupt.class),
+        EVERY_OTHER(EveryOtherInterrupt.class),
+        FI_EVERY_OTHER(FiEveryOtherInterrupt.class),
+        RANDOM_HIGH(HighRandomInterrupt.class);
+        
+        private Class<? extends InterruptListener> iclass;
+        
+        INTERRUPT(Class<? extends InterruptListener> iclass) {
+            this.iclass = iclass;
+        }
+        
+        public InterruptListener instance() {
+            try {
+                return iclass.newInstance();
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown) throws AccumuloException,
-                    AccumuloSecurityException {
-        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, ByteBufferUtil.toBytes(pass))), teardown);
+    public static class InterruptIterator implements SortedKeyValueIterator<Key,Value> {
+        private SortedKeyValueIterator<Key,Value> source;
+        private InterruptListener interruptListener;
+        private boolean initialized = false;
+        
+        public InterruptIterator() {
+            // no-op
+        }
+        
+        public InterruptIterator(InterruptIterator other, IteratorEnvironment env) {
+            this.interruptListener = other.interruptListener;
+            this.source = other.source.deepCopy(env);
+        }
+        
+        @Override
+        public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> map, IteratorEnvironment iteratorEnvironment) throws IOException {
+            this.source = source;
+        }
+        
+        @Override
+        public boolean hasTop() {
+            return source.hasTop();
+        }
+        
+        @Override
+        public void next() throws IOException {
+            if (initialized && interruptListener != null && interruptListener.interrupt(source.getTopKey())) {
+                throw new IterationInterruptedException("testing next interrupt");
+            }
+            
+            source.next();
+        }
+        
+        @Override
+        public void seek(Range range, Collection<ByteSequence> collection, boolean inclusive) throws IOException {
+            if (interruptListener != null && interruptListener.interrupt(null)) {
+                throw new IterationInterruptedException("testing seek interrupt");
+            }
+            
+            source.seek(range, collection, inclusive);
+            
+            initialized = true;
+        }
+        
+        @Override
+        public Key getTopKey() {
+            return source.getTopKey();
+        }
+        
+        @Override
+        public Value getTopValue() {
+            return source.getTopValue();
+        }
+        
+        @Override
+        public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
+            return new InterruptIterator(this, env);
+        }
+        
+        // must be set by the RebuildingIterator after each rebuild
+        public void setInterruptListener(InterruptListener listener) {
+            this.interruptListener = listener;
+        }
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown) throws AccumuloException,
-                    AccumuloSecurityException {
-        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, TextUtil.getBytes(new Text(pass.toString())))), teardown);
+    public interface InterruptListener {
+        boolean interrupt(Key key);
+        
+        void processedInterrupt(boolean interrupt);
     }
     
-    public static Connector getConnector(InMemoryInstance i, String principal, AuthenticationToken token, TEARDOWN teardown) throws AccumuloException,
+    /**
+     * Never interrupts
+     */
+    public static class NeverInterrupt implements InterruptListener {
+        @Override
+        public boolean interrupt(Key key) {
+            return false;
+        }
+        
+        @Override
+        public void processedInterrupt(boolean interrupt) {
+            // no-op
+        }
+    }
+    
+    /**
+     * Sets interrupting at 50% rate
+     */
+    public static class RandomInterrupt implements InterruptListener {
+        protected final Random random = new Random();
+        protected boolean interrupting = random.nextBoolean();
+        
+        @Override
+        public boolean interrupt(Key key) {
+            return interrupting;
+        }
+        
+        @Override
+        public void processedInterrupt(boolean interrupt) {
+            interrupting = random.nextBoolean();
+        }
+    }
+    
+    /**
+     * Sets interrupting at 95% rate
+     */
+    public static class HighRandomInterrupt extends RandomInterrupt {
+        @Override
+        public void processedInterrupt(boolean interrupt) {
+            interrupting = random.nextInt(100) < 95;
+        }
+    }
+    
+    /**
+     * interrupts every other call
+     */
+    public static class EveryOtherInterrupt implements InterruptListener {
+        protected boolean interrupting = false;
+        
+        @Override
+        public boolean interrupt(Key key) {
+            return interrupting;
+        }
+        
+        @Override
+        public void processedInterrupt(boolean interrupt) {
+            interrupting = !interrupting;
+        }
+    }
+    
+    /**
+     * interrupt every other fi key, otherwise don't interrupt
+     */
+    public static class FiEveryOtherInterrupt extends EveryOtherInterrupt {
+        public FiEveryOtherInterrupt() {
+            // initialize to true first
+            processedInterrupt(false);
+        }
+        
+        @Override
+        public boolean interrupt(Key key) {
+            if (key != null && key.getColumnFamily().toString().startsWith("fi" + Constants.NULL)) {
+                return super.interrupt(key);
+            }
+            
+            return false;
+        }
+    }
+    
+    public static Connector getConnector(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
                     AccumuloSecurityException {
-        return new RebuildingConnector((InMemoryConnector) (i.getConnector(principal, token)), teardown);
+        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, new PasswordToken(pass))), teardown, interrupt);
+    }
+    
+    public static Connector getConnector(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
+                    AccumuloSecurityException {
+        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, ByteBufferUtil.toBytes(pass))), teardown, interrupt);
+    }
+    
+    public static Connector getConnector(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
+                    AccumuloSecurityException {
+        return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, TextUtil.getBytes(new Text(pass.toString())))), teardown, interrupt);
+    }
+    
+    public static Connector getConnector(InMemoryInstance i, String principal, AuthenticationToken token, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloException, AccumuloSecurityException {
+        return new RebuildingConnector((InMemoryConnector) (i.getConnector(principal, token)), teardown, interrupt);
     }
     
     public interface TeardownListener {
@@ -99,74 +282,145 @@ public class RebuildingScannerTestHelper {
     }
     
     public static class RebuildingIterator implements Iterator<Map.Entry<Key,Value>> {
+        private InMemoryScannerBase baseScanner;
         private Iterator<Map.Entry<Key,Value>> delegate;
         private final ScannerRebuilder scanner;
         private final TeardownListener teardown;
+        private final InterruptListener interruptListener;
         private Map.Entry<Key,Value> next = null;
         private Map.Entry<Key,Value> lastKey = null;
+        private KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
+        private boolean initialized = false;
         
-        public RebuildingIterator(Iterator<Map.Entry<Key,Value>> delegate, ScannerRebuilder scanner, TeardownListener teardown) {
-            this.delegate = delegate;
+        public RebuildingIterator(InMemoryScannerBase baseScanner, ScannerRebuilder scanner, TeardownListener teardown, InterruptListener interruptListener) {
+            this.baseScanner = baseScanner;
             this.scanner = scanner;
             this.teardown = teardown;
-            findNext();
+            this.interruptListener = interruptListener;
+            init();
+        }
+        
+        private void init() {
+            // create the interruptIterator and add it to the base scanner
+            InterruptIterator interruptIterator = new InterruptIterator();
+            interruptIterator.setInterruptListener(interruptListener);
+            
+            // add it to the baseScanner injected list so that this iterator is not torn down and losing state with
+            // every interrupt or rebuild
+            baseScanner.addInjectedIterator(interruptIterator);
         }
         
         @Override
         public boolean hasNext() {
+            if (!initialized) {
+                findNext();
+                initialized = true;
+            }
+            
             return next != null;
         }
         
         @Override
         public Map.Entry<Key,Value> next() {
+            if (!initialized) {
+                findNext();
+                initialized = true;
+            }
+            
             lastKey = next;
             findNext();
             return lastKey;
         }
         
         private void findNext() {
-            if (lastKey != null && teardown.teardown()) {
-                boolean hasNext = delegate.hasNext();
-                Map.Entry<Key,Value> next = (hasNext ? delegate.next() : null);
-                if ((hasNext == false) != (next == null)) {
-                    throw new RuntimeException("Has next does not equate to next being null: " + hasNext + " vs " + next);
-                }
-                
-                delegate = scanner.rebuild(lastKey.getKey());
-                
-                boolean rebuildHasNext = delegate.hasNext();
-                Map.Entry<Key,Value> rebuildNext = (rebuildHasNext ? delegate.next() : null);
-                if ((rebuildHasNext == false) != (rebuildNext == null)) {
-                    throw new RuntimeException("Has next does not equate to next being null: " + rebuildHasNext + " vs " + rebuildNext);
-                }
-                
-                if (hasNext != rebuildHasNext) {
-                    // the only known scenario where this is ok is when the rebuild causes us to have a "FinalDocument" where previously we did not have/need
-                    // one
-                    if (teardown.checkConsistency() && (hasNext || !FinalDocumentTrackingIterator.isFinalDocumentKey(rebuildNext.getKey()))) {
-                        throw new RuntimeException("Unexpected change in top key: hasNext is no longer " + hasNext);
+            boolean interrupted = false;
+            int interruptCount = 0;
+            // track if the iterator has already been rebuilt or not, do not rebuild on the same key more than once
+            boolean rebuilt = false;
+            do {
+                try {
+                    if (delegate == null) {
+                        // build initial iterator. It can be interrupted since it calls seek/next under the covers to prepare the first key
+                        delegate = baseScanner.iterator();
                     }
-                } else if (hasNext) {
-                    if (teardown.checkConsistency()) {
-                        // if we are dealing with a final document, then both prebuild and postbuild must be returning a final document
-                        // otherwise the keys need to be identical save for the timestamp
-                        boolean nextFinal = FinalDocumentTrackingIterator.isFinalDocumentKey(next.getKey());
-                        boolean rebuildNextFinal = FinalDocumentTrackingIterator.isFinalDocumentKey(rebuildNext.getKey());
-                        if (nextFinal || rebuildNextFinal) {
-                            if (nextFinal != rebuildNextFinal) {
-                                throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext);
-                            }
-                        } else if (!next.getKey().equals(rebuildNext.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
-                            throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext);
+                    
+                    if (interrupted) {
+                        Key last = lastKey != null ? lastKey.getKey() : null;
+                        if (!rebuilt) {
+                            delegate = scanner.rebuild(last);
+                            rebuilt = true;
+                        } else {
+                            // cal with a null last key to prevent an update to the ranges
+                            delegate = scanner.rebuild(null);
                         }
                     }
+                    
+                    if (lastKey != null && teardown.teardown()) {
+                        boolean hasNext = delegate.hasNext();
+                        Map.Entry<Key,Value> next = (hasNext ? delegate.next() : null);
+                        if ((hasNext == false) != (next == null)) {
+                            throw new RuntimeException("Has next does not equate to next being null: " + hasNext + " vs " + next + " interrupted: "
+                                            + interruptCount);
+                        }
+                        
+                        if (!rebuilt) {
+                            delegate = scanner.rebuild(lastKey.getKey());
+                        } else {
+                            // was already rebuilt once with this key, just re-create the iterator
+                            delegate = scanner.rebuild(null);
+                        }
+                        
+                        boolean rebuildHasNext = delegate.hasNext();
+                        Map.Entry<Key,Value> rebuildNext = (rebuildHasNext ? delegate.next() : null);
+                        if ((rebuildHasNext == false) != (rebuildNext == null)) {
+                            throw new RuntimeException("Has next does not equate to next being null: " + rebuildHasNext + " vs " + rebuildNext
+                                            + " interrupted: " + interruptCount);
+                        }
+                        
+                        if (hasNext != rebuildHasNext) {
+                            // the only known scenario where this is ok is when the rebuild causes us to have a "FinalDocument" where previously we did not
+                            // have/need
+                            // one
+                            if (teardown.checkConsistency() && (hasNext || !FinalDocumentTrackingIterator.isFinalDocumentKey(rebuildNext.getKey()))) {
+                                throw new RuntimeException("Unexpected change in top key: hasNext is no longer " + hasNext + " interrupted: " + interruptCount);
+                            }
+                        } else if (hasNext) {
+                            if (teardown.checkConsistency()) {
+                                // if we are dealing with a final document, then both prebuild and postbuild must be returning a final document
+                                // otherwise the keys need to be identical save for the timestamp
+                                boolean nextFinal = FinalDocumentTrackingIterator.isFinalDocumentKey(next.getKey());
+                                boolean rebuildNextFinal = FinalDocumentTrackingIterator.isFinalDocumentKey(rebuildNext.getKey());
+                                if (nextFinal || rebuildNextFinal) {
+                                    if (nextFinal != rebuildNextFinal) {
+                                        throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext
+                                                        + " interrupted: " + interruptCount);
+                                    }
+                                } else if (!next.getKey().equals(rebuildNext.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
+                                    final Document rebuildDocument = deserializer.apply(rebuildNext).getValue();
+                                    final Document lastDocument = deserializer.apply(lastKey).getValue();
+                                    // if the keys don't match but are returning the previous document and using a new key this is okay
+                                    if (!lastDocument.get("RECORD_ID").getData().toString().equals(rebuildDocument.get("RECORD_ID").getData().toString())
+                                                    && !lastKey.getKey().equals(rebuildNext.getKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)) {
+                                        throw new RuntimeException("Unexpected change in top key: expected " + next + " BUT GOT " + rebuildNext);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        this.next = rebuildNext;
+                    } else {
+                        this.next = (delegate.hasNext() ? delegate.next() : null);
+                        // only clear interrupts flag when not dealing with rebuilds
+                        interruptListener.processedInterrupt(false);
+                    }
+                    // reset interrupted flag
+                    interrupted = false;
+                } catch (IterationInterruptedException e) {
+                    interrupted = true;
+                    interruptListener.processedInterrupt(true);
+                    interruptCount++;
                 }
-                
-                this.next = rebuildNext;
-            } else {
-                this.next = (delegate.hasNext() ? delegate.next() : null);
-            }
-            
+            } while (interrupted);
         }
         
         @Override
@@ -256,16 +510,18 @@ public class RebuildingScannerTestHelper {
     
     public static class RebuildingScanner extends DelegatingScannerBase implements Scanner {
         private final TEARDOWN teardown;
+        private final INTERRUPT interrupt;
         
-        public RebuildingScanner(InMemoryScanner delegate, TEARDOWN teardown) {
+        public RebuildingScanner(InMemoryScanner delegate, TEARDOWN teardown, INTERRUPT interrupt) {
             super(delegate);
             this.teardown = teardown;
+            this.interrupt = interrupt;
         }
         
         @Override
         public Iterator<Map.Entry<Key,Value>> iterator() {
             try {
-                return new RebuildingIterator(delegate.iterator(), ((InMemoryScanner) delegate).clone(), teardown.instance());
+                return new RebuildingIterator((InMemoryScannerBase) delegate, ((InMemoryScanner) delegate).clone(), teardown.instance(), interrupt.instance());
             } catch (Exception e) {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
@@ -324,16 +580,19 @@ public class RebuildingScannerTestHelper {
     
     public static class RebuildingBatchScanner extends DelegatingScannerBase implements BatchScanner {
         private final TEARDOWN teardown;
+        private final INTERRUPT interrupt;
         
-        public RebuildingBatchScanner(InMemoryBatchScanner delegate, TEARDOWN teardown) {
+        public RebuildingBatchScanner(InMemoryBatchScanner delegate, TEARDOWN teardown, INTERRUPT interrupt) {
             super(delegate);
             this.teardown = teardown;
+            this.interrupt = interrupt;
         }
         
         @Override
         public Iterator<Map.Entry<Key,Value>> iterator() {
             try {
-                return new RebuildingIterator(delegate.iterator(), ((InMemoryBatchScanner) delegate).clone(), teardown.instance());
+                return new RebuildingIterator((InMemoryScannerBase) delegate, ((InMemoryBatchScanner) delegate).clone(), teardown.instance(),
+                                interrupt.instance());
             } catch (Exception e) {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
@@ -348,15 +607,17 @@ public class RebuildingScannerTestHelper {
     public static class RebuildingConnector extends Connector {
         private final InMemoryConnector delegate;
         private final TEARDOWN teardown;
+        private final INTERRUPT interrupt;
         
-        public RebuildingConnector(InMemoryConnector delegate, TEARDOWN teardown) {
+        public RebuildingConnector(InMemoryConnector delegate, TEARDOWN teardown, INTERRUPT interrupt) {
             this.delegate = delegate;
             this.teardown = teardown;
+            this.interrupt = interrupt;
         }
         
         @Override
         public BatchScanner createBatchScanner(String s, Authorizations authorizations, int i) throws TableNotFoundException {
-            return new RebuildingBatchScanner((InMemoryBatchScanner) (delegate.createBatchScanner(s, authorizations, i)), teardown);
+            return new RebuildingBatchScanner((InMemoryBatchScanner) (delegate.createBatchScanner(s, authorizations, i)), teardown, interrupt);
         }
         
         @Override
@@ -395,7 +656,7 @@ public class RebuildingScannerTestHelper {
         
         @Override
         public Scanner createScanner(String s, Authorizations authorizations) throws TableNotFoundException {
-            return new RebuildingScanner((InMemoryScanner) (delegate.createScanner(s, authorizations)), teardown);
+            return new RebuildingScanner((InMemoryScanner) (delegate.createScanner(s, authorizations)), teardown, interrupt);
         }
         
         @Override

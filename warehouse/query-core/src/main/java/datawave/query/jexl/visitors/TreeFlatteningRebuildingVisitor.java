@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ import org.apache.log4j.Logger;
 
 /**
  * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. NOTE: If you remove reference
- * expressions and references, this will adversly affect the jexl evaluation of the query.
+ * expressions and references, this will adversely affect the jexl evaluation of the query.
  */
 public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(TreeFlatteningRebuildingVisitor.class);
@@ -194,11 +195,11 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     
     /**
      * Advances a child reference expression, if one is embedded Ex. {@code Ref RefExpr <-- this way we at Ref RefExpr}
-     * 
+     *
      * will become
-     * 
+     *
      * {@code Ref RefExpr <-- this still way we at}
-     * 
+     *
      * @param jexlNode
      *            Incoming JexlNode
      * @return
@@ -237,7 +238,7 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             JexlNode node = (JexlNode) currentNode.jjtGetChild(i).jjtAccept(this, null);
             JexlNode dereferenced = JexlASTHelper.dereference(node);
             
-            if (acceptableNodesToCombine(currentNode, dereferenced)) {
+            if (acceptableNodesToCombine(currentNode, dereferenced, !node.equals(dereferenced))) {
                 flattenTree(dereferenced, newNode, data);
             } else {
                 newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
@@ -248,12 +249,43 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         return newNode;
     }
     
-    protected boolean acceptableNodesToCombine(JexlNode currentNode, JexlNode newNode) {
+    protected JexlNode flattenTree(ASTOrNode currentNode, JexlNode newNode, Object data) {
+        if (!currentNode.getClass().equals(newNode.getClass())) {
+            log.warn("newNode is not the same type as currentNode ... something has probably gone horribly wrong");
+        }
+        
+        LinkedList<JexlNode> stack1 = new LinkedList<>();
+        LinkedList<JexlNode> stack2 = new LinkedList<>();
+        stack1.push(currentNode);
+        do {
+            JexlNode node = stack1.pop();
+            for (int i = node.jjtGetNumChildren() - 1, j = 0; i >= 0; i--) {
+                JexlNode child = node.jjtGetChild(i);
+                JexlNode dereferencedChild = JexlASTHelper.dereference(child);
+                
+                if (acceptableNodesToCombine(node, dereferencedChild, !child.equals(dereferencedChild))) {
+                    stack1.add(j++, dereferencedChild);
+                } else {
+                    stack2.push(child);
+                }
+            }
+        } while (!stack1.isEmpty());
+        do {
+            JexlNode node = (JexlNode) stack2.pop().jjtAccept(this, null);
+            newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
+            node.jjtSetParent(newNode);
+        } while (!stack2.isEmpty());
+        return newNode;
+    }
+    
+    protected boolean acceptableNodesToCombine(JexlNode currentNode, JexlNode newNode, boolean isWrapped) {
         if (currentNode.getClass().equals(newNode.getClass())) {
-            // if this is a bounded range or marker node, then to not combine
+            // if this is a bounded range or marker node, then do not combine
             if (newNode instanceof ASTAndNode && isBoundedRange((ASTAndNode) newNode)) {
                 return false;
-            } else if (newNode instanceof ASTAndNode && QueryPropertyMarker.instanceOf(newNode, null)) {
+            }
+            // don't allow combination of a marker node UNLESS it's already unwrapped
+            else if (newNode instanceof ASTAndNode && QueryPropertyMarker.instanceOf(newNode, null) && isWrapped) {
                 return false;
             }
             

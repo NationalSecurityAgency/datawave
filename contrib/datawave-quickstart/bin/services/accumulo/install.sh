@@ -7,7 +7,6 @@ BIN_DIR="$( dirname "${SERVICES_DIR}" )"
 
 source "${BIN_DIR}/env.sh"
 source "${THIS_DIR}/bootstrap.sh"
-source "${SERVICES_DIR}/java/bootstrap.sh"
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 
 hadoopIsInstalled || fatal "Accumulo requires that Hadoop be installed"

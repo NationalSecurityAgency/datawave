@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+<web-app version="4.0" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="
             http://xmlns.jcp.org/xml/ns/javaee
-            http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+            http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
 
     <servlet-mapping>
         <servlet-name>javax.ws.rs.core.Application</servlet-name>
@@ -15,6 +15,7 @@
         Don't automatically scan for and register Providers and JAX-RS classes. Hadoop jars, among others, have annotations
         that will be picked up by scans, but the classes are tied to Jersey. Wildfly uses Jackson by default and the two
         don't play well together.
+        TODO: These are deprecated and should be moved to a ServletContainerInitializer
     -->
     <context-param>
         <param-name>resteasy.scan</param-name>
@@ -28,6 +29,7 @@
         <param-name>resteasy.scan.providers</param-name>
         <param-value>false</param-value>
     </context-param>
+
     <!--
         Tell RestEasy to get form parameters using getParameterMap rather than trying to decode the request body. We need this
         because our logging interceptor reads the request body in order to log the form parameters, and therefore when RestEasy
@@ -35,6 +37,15 @@
     -->
     <context-param>
         <param-name>resteasy.use.container.form.params</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
+    <!--
+        Tell RestEasy to use the Jackson provider instead of the default JsonBindingProvider, for
+        backwards compatibility.
+    -->
+    <context-param>
+        <param-name>resteasy.preferJacksonOverJsonB</param-name>
         <param-value>true</param-value>
     </context-param>
 
@@ -57,10 +68,10 @@
             datawave.webservice.operations.admin.PermissionsBean,
             datawave.webservice.operations.user.StatsBean,
             datawave.webservice.operations.user.ListUsersBean,
-            datawave.webservice.operations.user.LookupBean,
             datawave.webservice.operations.user.ListUserPermissionsBean,
             datawave.webservice.operations.user.ListTablesBean,
             datawave.webservice.operations.user.ListUserAuthorizationsBean,
+            datawave.webservice.operations.user.LookupBean,
             <!-- From Query -->
             datawave.webservice.query.runner.QueryExecutorBean,
             datawave.webservice.query.hud.HudBean,
@@ -251,6 +262,13 @@
             <web-resource-name>CatchAll</web-resource-name>
             <description>Most services use this constraint. Authorized users, or servers not proxying for a user.</description>
             <url-pattern>/*</url-pattern>
+            <http-method>GET</http-method>
+            <http-method>HEAD</http-method>
+            <http-method>POST</http-method>
+            <http-method>PUT</http-method>
+            <http-method>DELETE</http-method>
+            <http-method>CONNECT</http-method>
+            <http-method>TRACE</http-method>
         </web-resource-collection>
         <auth-constraint>
             <role-name>AuthorizedUser</role-name>

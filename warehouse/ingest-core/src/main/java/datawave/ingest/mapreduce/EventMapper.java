@@ -456,8 +456,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             value.setAuxProperty(ErrorDataTypeHandler.PROCESSED_COUNT, "1");
         }
         
-        // Determine whether the event date is greater than the interval.
-        if (null != myInterval && 0L != myInterval && (value.getDate() < (now.get() - myInterval))) {
+        // Determine whether the event date is greater than the interval. Excluding fatal error events.
+        if (!value.fatalError() && null != myInterval && 0L != myInterval && (value.getDate() < (now.get() - myInterval))) {
             if (log.isInfoEnabled())
                 log.info("Event with time " + value.getDate() + " older than specified interval of " + (now.get() - myInterval) + ", skipping...");
             getCounter(context, IngestInput.OLD_EVENT).increment(1);

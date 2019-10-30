@@ -57,7 +57,7 @@ public class CachedResultsExpirationBean {
         for (Map.Entry<String,CachedRunningQuery> entry : cachedRunningQueryCache.entrySet()) {
             CachedRunningQuery crq = entry.getValue();
             String cacheId = entry.getKey();
-            CachedResultsBean.closeCrqConnection(crq);
+            crq.closeConnection(log);
             cachedRunningQueryCache.remove(cacheId);
             // cancel any concurrent load
             String originalQuery = crq.getOriginalQueryId();
@@ -89,7 +89,7 @@ public class CachedResultsExpirationBean {
                 log.trace("key: " + cacheId + ", now: " + now + ", last used: " + crq.getLastUsed() + " difference: " + difference);
             }
             if ((difference > cachedResultsExpirationConfiguration.getEvictionTimeMs())) {
-                CachedResultsBean.closeCrqConnection(crq);
+                crq.closeConnection(log);
                 closeCount++;
                 evictionCount++;
                 cachedRunningQueryCache.remove(cacheId);
@@ -104,7 +104,7 @@ public class CachedResultsExpirationBean {
                 }
                 log.debug("CachedRunningQuery " + cacheId + " connections returned and removed from cache");
             } else if ((difference > cachedResultsExpirationConfiguration.getCloseConnectionsTimeMs())) {
-                CachedResultsBean.closeCrqConnection(crq);
+                crq.closeConnection(log);
                 closeCount++;
                 log.debug("CachedRunningQuery " + cacheId + " connections returned");
             }

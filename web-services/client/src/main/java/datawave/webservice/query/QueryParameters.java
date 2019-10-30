@@ -6,6 +6,10 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import datawave.validation.ParameterValidator;
 
+/**
+ * QueryParameters passed in from a client, they are validated and passed through to the iterator stack as QueryOptions.
+ *
+ */
 public interface QueryParameters extends ParameterValidator {
     
     String QUERY_STRING = "query";

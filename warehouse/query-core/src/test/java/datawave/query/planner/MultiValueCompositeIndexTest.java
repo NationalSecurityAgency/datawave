@@ -23,11 +23,11 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
@@ -35,6 +35,19 @@ import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedMap;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -58,24 +71,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
 import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
@@ -296,9 +297,9 @@ public class MultiValueCompositeIndexTest {
     
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
-        String query = "((" + GEO_FIELD + " >= '0311' && " + GEO_FIELD + " <= '0312') && " + WKT_BYTE_LENGTH_FIELD + " == 15) ||" + "(" + GEO_FIELD
-                        + " == '1f20aaaaaaaaaaaaaa' && (" + WKT_BYTE_LENGTH_FIELD + " >= 59 && " + WKT_BYTE_LENGTH_FIELD + " <= 61)) ||" + "(" + GEO_FIELD
-                        + " == '1f0aaaaaaaaaaaaaaa' && " + WKT_BYTE_LENGTH_FIELD + " >= 22)";
+        String query = "((" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312')" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " == 15) ||" + "("
+                        + GEO_FIELD + " == '1f20aaaaaaaaaaaaaa'" + JEXL_AND_OP + "(" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD
+                        + " <= 61)) ||" + "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
         
         List<QueryData> queries = getQueryRanges(query, false);
         Assert.assertEquals(3, queries.size());
@@ -326,9 +327,9 @@ public class MultiValueCompositeIndexTest {
     
     @Test
     public void compositeWithIvaratorTest() throws Exception {
-        String query = "((" + GEO_FIELD + " >= '0311' && " + GEO_FIELD + " <= '0312') && " + WKT_BYTE_LENGTH_FIELD + " == 15) ||" + "(" + GEO_FIELD
-                        + " == '1f20aaaaaaaaaaaaaa' && (" + WKT_BYTE_LENGTH_FIELD + " >= 59 && " + WKT_BYTE_LENGTH_FIELD + " <= 61)) ||" + "(" + GEO_FIELD
-                        + " == '1f0aaaaaaaaaaaaaaa' && " + WKT_BYTE_LENGTH_FIELD + " >= 22)";
+        String query = "((" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312')" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " == 15) ||" + "("
+                        + GEO_FIELD + " == '1f20aaaaaaaaaaaaaa'" + JEXL_AND_OP + "(" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD
+                        + " <= 61)) ||" + "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
         
         List<QueryData> queries = getQueryRanges(query, true);
         Assert.assertEquals(732, queries.size());
@@ -378,6 +379,7 @@ public class MultiValueCompositeIndexTest {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, queryString);
         params.putSingle(QUERY_NAME, "geoQuery");
+        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
         params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
@@ -406,6 +408,7 @@ public class MultiValueCompositeIndexTest {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, queryString);
         params.putSingle(QUERY_NAME, "geoQuery");
+        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
         params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");

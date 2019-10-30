@@ -135,9 +135,21 @@
             <li>The lowerLeft, upperRight, and center are of the form &lt;lat&gt;_&lt;lon&gt; and must be surrounded by single quotes.</li>
             <li>Geometry is represented according to the Open Geospatial Consortium standard for Well-Known Text. It is in decimal degrees longitude for x, amd latitude for y.  For example, a point at New York can be represented as 'POINT (-74.01 40.71)' and a box at New York can be repesented as 'POLYGON(( -74.1 40.75, -74.1 40.69, -73.9 40.69, -73.9 40.75, -74.1 40.75)); </li>
 	</ol>
-	
-	
-	
+
+	<p class="left">An #EVALUATION_ONLY function has recently been introduced which is intended to be used to defer execution of part of a query to the evaluation phase.  This could be used to defer a range to the evaluation phase, or possibly to defer GeoWave function evaluation to the evaluation phase, avoiding the need to generate geo indices when additional indexed fields are present (i.e. indexed fields other than the geo field).  For example:</p>
+	<table>
+		<tr><th>JEXL Example</th></tr>
+
+		<tr class="highlight">
+			<td>INDEXED_FIELD == 'some value' && (<b>(ASTEvaluationOnly = true)</b> && geowave:intersects(geometryField, Well-Known Text))</td></tr>
+
+		<tr><th>LUCENE Example</th></tr>
+
+		<tr class="highlight">
+			<td>INDEXED_FIELD: 'some value' AND <b>#EVALUATION_ONLY</b>('#INTERSECTS(geometryField, Well-Known Text)')</td></tr>
+	</table>
+
+
 	<p class="left">There are some additional functions that are supplied to handle dates more smoothly.  It is intended that the need for these functions
     may go away in future versions (<b>bolded</b> parameters are literal, other parameters are substituted with appropriate values):
 	<table>

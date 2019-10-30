@@ -37,6 +37,7 @@ import org.apache.accumulo.core.Constants;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -48,7 +49,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.data.thrift.IterInfo;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -87,6 +87,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -139,7 +140,7 @@ public class IngestJob implements Tool {
     
     protected boolean eventProcessingError = false;
     protected Logger log = Logger.getLogger("datawave.ingest");
-    private ConsoleAppender ca = new ConsoleAppender();
+    private ConsoleAppender ca = new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n"));
     
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
     protected int reduceTasks = 0;
@@ -277,12 +278,12 @@ public class IngestJob implements Tool {
         
         TypeRegistry.getInstance(conf);
         
-        log.error(conf.toString());
-        log.error(String.format("getStrings('%s') = %s", TypeRegistry.INGEST_DATA_TYPES, conf.get(TypeRegistry.INGEST_DATA_TYPES)));
-        log.error(String.format("getStrings('data.name') = %s", conf.get("data.name")));
+        log.info(conf.toString());
+        log.info(String.format("getStrings('%s') = %s", TypeRegistry.INGEST_DATA_TYPES, conf.get(TypeRegistry.INGEST_DATA_TYPES)));
+        log.info(String.format("getStrings('data.name') = %s", conf.get("data.name")));
         int index = 0;
         for (String name : TypeRegistry.getTypeNames()) {
-            log.error(String.format("name[%d] = '%s'", index++, name));
+            log.info(String.format("name[%d] = '%s'", index++, name));
         }
         
         if (TypeRegistry.getTypes().isEmpty()) {
@@ -1256,7 +1257,7 @@ public class IngestJob implements Tool {
         // aggregator is a scan aggregator.
         IteratorScope scope = IteratorScope.scan;
         for (String table : tableNames) {
-            ArrayList<IterInfo> iters = new ArrayList<>();
+            ArrayList<IteratorSetting> iters = new ArrayList<>();
             HashMap<String,Map<String,String>> allOptions = new HashMap<>();
             
             // Go through all of the configuration properties of this table and figure out which
@@ -1278,7 +1279,7 @@ public class IngestJob implements Tool {
                         String sa[] = entry.getValue().split(",");
                         int prio = Integer.parseInt(sa[0]);
                         String className = sa[1];
-                        iters.add(new IterInfo(prio, className, suffixSplit[1]));
+                        iters.add(new IteratorSetting(prio, suffixSplit[1], className));
                     } else if (suffixSplit.length == 4 && suffixSplit[2].equals("opt")) {
                         String iterName = suffixSplit[1];
                         String optName = suffixSplit[3];
@@ -1299,36 +1300,36 @@ public class IngestJob implements Tool {
             
             // Now go through all of the iterators, and for those that are aggregators, store
             // the options in the Hadoop config so that we can parse it back out in the reducer.
-            for (IterInfo iter : iters) {
-                Class<?> klass = Class.forName(iter.getClassName());
+            for (IteratorSetting iter : iters) {
+                Class<?> klass = Class.forName(iter.getIteratorClass());
                 if (PropogatingIterator.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getIterName());
+                    Map<String,String> options = allOptions.get(iter.getName());
                     if (null != options) {
                         for (Entry<String,String> option : options.entrySet()) {
                             String key = String.format("aggregator.%s.%d.%s", table, iter.getPriority(), option.getKey());
                             conf.set(key, option.getValue());
                         }
                     } else
-                        log.trace("Skipping iterator class " + iter.getClassName() + " since it doesn't have options.");
+                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
                     
                 } else {
-                    log.trace("Skipping iterator class " + iter.getClassName() + " since it doesn't appear to be a combiner.");
+                    log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
                 }
             }
             
-            for (IterInfo iter : iters) {
-                Class<?> klass = Class.forName(iter.getClassName());
+            for (IteratorSetting iter : iters) {
+                Class<?> klass = Class.forName(iter.getIteratorClass());
                 if (Combiner.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getIterName());
+                    Map<String,String> options = allOptions.get(iter.getName());
                     if (null != options) {
                         String key = String.format("combiner.%s.%d.iterClazz", table, iter.getPriority());
-                        conf.set(key, iter.getClassName());
+                        conf.set(key, iter.getIteratorClass());
                         for (Entry<String,String> option : options.entrySet()) {
                             key = String.format("combiner.%s.%d.%s", table, iter.getPriority(), option.getKey());
                             conf.set(key, option.getValue());
                         }
                     } else
-                        log.trace("Skipping iterator class " + iter.getClassName() + " since it doesn't have options.");
+                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
                     
                 }
             }

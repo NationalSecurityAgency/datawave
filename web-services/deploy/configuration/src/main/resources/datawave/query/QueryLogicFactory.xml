@@ -173,10 +173,6 @@
             </list>
         </property>
         <property name="filterOptions" ref="BaseEventQueryFilterOptions" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
         <!-- Determines how many events in the global index lookup will be
@@ -195,6 +191,8 @@
         <property name="maxValueExpansionThreshold" value="${beq.valueExpansionThreshold}" />
         <!-- The max value or list expansion for a single field before using an ivarator -->
         <property name="maxOrExpansionThreshold" value="${beq.orExpansionThreshold}" />
+        <!-- The max value or list expansion for a group of ranges against a single field before combining them in an ivarator -->
+        <property name="maxOrRangeThreshold" value="${beq.orRangeThreshold}" />
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="${beq.orExpansionFstThreshold}" />
         <!-- The max number of splits to divide a range into for the ivarators.  They are run in a pool of threads controlled by the tserver.datawave.ivarator.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
@@ -303,15 +301,11 @@
         <property name="metadataTableName" value="${metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="maxResults" value="-1" />
-        <property name="maxRowsToScan" value="-1" />
+        <property name="maxWork" value="-1" />
         <property name="queryThreads" value="${shard.query.threads}" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="maxUniqueValues" value="20000" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value." />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -321,11 +315,7 @@
     <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryTable">
         <property name="tableName" value="${shard.table.name}" />
         <property name="maxResults" value="-1" />
-        <property name="maxRowsToScan" value="-1" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
+        <property name="maxWork" value="-1" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Query that returns a document given the document identifier" />
     </bean>
@@ -338,15 +328,11 @@
         <property name="metadataTableName" value="${error.metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="maxResults" value="-1" />
-        <property name="maxRowsToScan" value="-1" />
+        <property name="maxWork" value="-1" />
         <property name="queryThreads" value="${shard.query.threads}" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="maxUniqueValues" value="20000" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="FieldIndex count query (experimental)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -436,16 +422,12 @@
         <property name="indexTableName" value="${index.table.name}" />
         <property name="reverseIndexTableName" value="${rindex.table.name}" />
         <property name="maxResults" value="-1" />
-        <property name="maxRowsToScan" value="-1" />
+        <property name="maxWork" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Discovery query that returns information from the index about the supplied term(s)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -458,16 +440,12 @@
         <property name="indexTableName" value="${error.index.table.name}" />
         <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
         <property name="maxResults" value="-1" />
-        <property name="maxRowsToScan" value="-1" />
+        <property name="maxWork" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Discovery query that returns information from the ingest errors index about the supplied term(s)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -493,10 +471,6 @@
         <property name="includeDataTypeAsField" value="false" />
         <property name="includeGroupingContext" value="false" />
         <property name="useEnrichers" value="false" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Fast boolean query over indexed fields, only returning fields queried on" />
         <!-- Determines how many events in the global index lookup will be
@@ -515,6 +489,12 @@
         <property name="maxValueExpansionThreshold" value="${beq.valueExpansionThreshold}" />
         <!-- The max value or list expansion for a single field before using an ivarator -->
         <property name="maxOrExpansionThreshold" value="${beq.orExpansionThreshold}" />
+        <!-- The max value or list expansion for a group of ranges against a single field before combining them in an ivarator -->
+        <property name="maxOrRangeThreshold" value="${beq.orRangeThreshold}" />
+        <!-- The maximum number of ranges to combine for merged range ivarators against a single field within an or node -->
+        <property name="maxRangesPerRangeIvarator" value="${beq.maxRangesPerRangeIvarator}" />
+        <!-- The maximum number of range ivarators allowed for a single field under an or node -->
+        <property name="maxOrRangeIvarators" value="${beq.maxOrRangeIvarators}" />
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="${beq.orExpansionFstThreshold}" />
         <!-- The max number of splits to divide a range into for the ivarators.  They are run in a pool of threads controlled by the tserver.datawave.ivarator.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->

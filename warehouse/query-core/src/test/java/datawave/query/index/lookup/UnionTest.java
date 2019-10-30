@@ -62,14 +62,19 @@ public class UnionTest {
         PeekingIterator<Tuple2<String,IndexInfo>> leftIter = Iterators.peekingIterator(Collections.singleton(leftTuple).iterator());
         
         // Build a peeking iterator for a right side term.
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
+        List<IndexMatch> rightMatches = buildIndexMatches("FIELD2", "VALUE2", "doc2", "doc3", "doc4");
         IndexInfo right = new IndexInfo(rightMatches);
         Tuple2<String,IndexInfo> rightTuple = Tuples.tuple("20190314_0", right);
         PeekingIterator<Tuple2<String,IndexInfo>> rightIter = Iterators.peekingIterator(Collections.singleton(rightTuple).iterator());
         
         // Build the Union.
-        Union union = new Union(Lists.newArrayList(ScannerStream.withData(leftIter, JexlNodeFactory.buildEQNode("FIELD", "VALUE")),
-                        ScannerStream.withData(rightIter, JexlNodeFactory.buildEQNode("FIELD", "VALUE"))));
+        JexlNode eqNode = JexlNodeFactory.buildEQNode("FIELD", "VALUE");
+        JexlNode eqNode2 = JexlNodeFactory.buildEQNode("FIELD2", "VALUE2");
+        
+        ScannerStream leftStream = ScannerStream.withData(leftIter, eqNode);
+        ScannerStream rightStream = ScannerStream.withData(rightIter, eqNode2);
+        
+        Union union = new Union(Lists.newArrayList(leftStream, rightStream));
         
         assertTrue(union.hasNext());
         
@@ -79,10 +84,10 @@ public class UnionTest {
         assertEquals("20190314_0", nextedTuple.first());
         
         // Assert expected index info
-        Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("doc1", "doc2", "doc3", "doc4");
+        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3", "doc4");
         IndexInfo expectedIndexInfo = new IndexInfo(expectedDocs);
-        
         expectedIndexInfo.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        
         assertEquals(expectedIndexInfo, nextedTuple.second());
         assertFalse(union.hasNext());
     }

@@ -287,8 +287,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
         event.setAuxData(storedQueryMetric);
         event.setRawRecordNumber(1000L);
+        event.addAltId(storedQueryMetric.getQueryId());
         
-        // must happen after validate
         event.setId(uidBuilder.newId(storedQueryMetric.getQueryId().getBytes(), (Date) null));
         
         final Multimap<String,NormalizedContentInterface> fields;
@@ -395,7 +395,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
             
             List<QueryMetric> queryMetrics = new ArrayList<>();
-            queryMetrics.add(new QueryMetric());
             
             if (cachedQueryMetric == null) {
                 // if numPages > 0 or Lifecycle > DEFINED, then we should have a metric cached already
@@ -660,6 +659,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     }
                 } else if (fieldName.equals("QUERY")) {
                     m.setQuery(fieldValue);
+                } else if (fieldName.equals("PLAN")) {
+                    m.setPlan(fieldValue);
                 } else if (fieldName.equals("QUERY_LOGIC")) {
                     m.setQueryLogic(fieldValue);
                 } else if (fieldName.equals("QUERY_ID")) {
@@ -775,6 +776,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     m.setSeekCount(Long.parseLong(fieldValue));
                 }
                 
+                else if (fieldName.equals("YIELD_COUNT")) {
+                    m.setYieldCount(Long.parseLong(fieldValue));
+                }
+                
                 else if (fieldName.equals("DOC_RANGES")) {
                     m.setDocRanges(Long.parseLong(fieldValue));
                 }
@@ -857,9 +862,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             // to
             // Logger log = ThreadConfigurableLogger.getLogger(MyClass.class);
             
-            ThreadLocalLogLevel.setLevel("datawave.query.parser.DatawaveQueryAnalyzer", Level.OFF);
-            ThreadLocalLogLevel.setLevel("datawave.query.parser.DatawaveQueryParser", Level.OFF);
-            
             ThreadLocalLogLevel.setLevel("datawave.query.index.lookup.RangeStream", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
@@ -867,7 +869,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             ThreadLocalLogLevel.setLevel("datawave.query.scheduler.SequentialScheduler", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.tables.ShardQueryLogic", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.VisibilityHelper", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.QueryModelVisitor", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);
@@ -885,6 +886,11 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     @Override
     public void reload() {
         try {
+            if (this.recordWriter != null) {
+                // don't try to flush the mtbw (close). If recordWriter != null then this method is being called
+                // because of an Exception and the metrics have been saved off to be added to the new recordWriter.
+                this.recordWriter.returnConnector();
+            }
             recordWriter = new AccumuloRecordWriter(this.connectionFactory, conf);
         } catch (AccumuloException | AccumuloSecurityException | IOException e) {
             log.error(e.getMessage(), e);

@@ -55,6 +55,7 @@ undeploy datawave-web-service.ear
 /subsystem=logging/logger=grails.app.controllers.multimediawebgui:remove
 /subsystem=logging/logger=grails.app.filter.multimediawebgui:remove
 
+
 /subsystem=logging/periodic-rotating-file-handler=QUERY_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=CACHED_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=SECURITY_LOG/:remove
@@ -69,10 +70,10 @@ undeploy datawave-web-service.ear
 
 # Remove the H2 DataSource used by the DatabaseUserService
 /subsystem=datasources/data-source=DatabaseUserServiceDS:remove
+/subsystem=datasources/jdbc-driver=mysql:remove
 
 # Remove the JDBC DataSource used by CachedResults
 /subsystem=datasources/data-source=CachedResultsDS:remove
-undeploy mysql-connector-java-${version.mysql-connector}.jar
 
 #
 # Remove EJB subsystem configuration changes
@@ -122,10 +123,13 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /core-service=management/security-realm=SSLRealm/:remove
 
 #
+# Remove the security infinispan cache
+#
+/subsystem=infinispan/cache-container=security:remove
+
+#
 # Remove our system properties
 #
-/system-property=user.timezone:remove
-/system-property=file.encoding:remove
 /system-property=cluster.name:remove
 /system-property=dw.warehouse.instanceName:remove
 /system-property=dw.warehouse.zookeepers:remove
@@ -163,6 +167,7 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.query.metrics.visibility:remove
 /system-property=dw.metrics.warehouse.namenode:remove
 /system-property=dw.metrics.warehouse.hadoop.path:remove
+/system-property=dw.model.defaultTableName:remove
 /system-property=dw.atom.tableName:remove
 /system-property=dw.atom.externalHostName:remove
 /system-property=dw.atom.externalPort:remove
@@ -193,6 +198,15 @@ jms-queue remove --queue-address=QueryMetricsQueue
 # Restore default ports to listen only on loopback
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:127.0.0.1}")
 /interface=management/:write-attribute(name=inet-address,value="${jboss.bind.address.management:127.0.0.1}")
+
+# Add the metrics subsystem back in, since we removed it during setup.
+/subsystem=microprofile-metrics-smallrye:add
+
+# Add the Elytron subsystem back in -- we removed it since it's not compatible with our security framework
+/subsystem=elytron:add
+
+# Add the MySQL Connector as a module
+module remove --name=com.mysql.driver
 
 # Shut down Wildfly
 :shutdown(restart=false)

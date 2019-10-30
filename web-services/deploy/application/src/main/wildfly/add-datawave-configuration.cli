@@ -8,6 +8,18 @@ batch
 # Run an embedded server to perform the configuration
 embed-server --server-config=standalone-full.xml
 
+# Add the MySQL Connector as a module
+module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api --resources=mysql/mysql-connector-java-${version.mysql-connector}.jar
+
+# Remove the Elytron security subsystem entirely. Our JAAS security setup doesn't work
+# with it due to some bugs (the RunAsLoginModule doesn't work -- WFLY-11892) so we'll
+# just continue to use the deprecated system for now
+/subsystem=elytron:remove
+
+# Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
+# See WFLY-11801 for details.
+/subsystem=microprofile-metrics-smallrye:remove
+
 # Change default ports to listen on all interfaces (can still override on command line)
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:0.0.0.0}")
 /interface=management/:write-attribute(name=inet-address,value="${jboss.bind.address.management:0.0.0.0}")
@@ -31,8 +43,6 @@ embed-server --server-config=standalone-full.xml
 #
 # System properties
 #
-/system-property=user.timezone:add(value=GMT)
-/system-property=file.encoding:add(value=UTF8)
 /system-property=cluster.name:add(value=${cluster.name})
 /system-property=dw.warehouse.instanceName:add(value=${accumulo.instance.name})
 /system-property=dw.warehouse.zookeepers:add(value="${zookeeper.hosts}")
@@ -77,7 +87,13 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.metrics.reporter.host:add(value=${metrics.reporter.host})
 /system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
 /system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
+/system-property=dw.cache.tableNames:add(value="${tables.to.cache}")
+/system-property=dw.model.defaultTableName:add(value=${table.name.metadata})
+
+# Enable/disable the test authorization service (enable for development use only)
 /system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
+
+# Authorization microservice config
 /system-property=dw.security.use.remoteuserservice:add(value=${security.use.remoteauthservice})
 /system-property=dw.remoteDatawaveUserService.useSrvDnsLookup:add(value=${security.remoteuserservice.srv.lookup.enabled})
 /system-property=dw.remoteDatawaveUserService.srvDnsServers:add(value=${security.remoteuserservice.srv.lookup.servers})
@@ -85,12 +101,27 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.remoteDatawaveUserService.scheme:add(value=${security.remoteuserservice.scheme})
 /system-property=dw.remoteDatawaveUserService.host:add(value=${security.remoteuserservice.host})
 /system-property=dw.remoteDatawaveUserService.port:add(value=${security.remoteuserservice.port})
-/system-property=dw.cache.tableNames:add(value="${tables.to.cache}")
+
+# Accumulo microservice config
+/system-property=dw.remoteAccumuloService.useSrvDnsLookup:add(value=${accumulo.remoteservice.srv.lookup.enabled})
+/system-property=dw.remoteAccumuloService.srvDnsServers:add(value=${accumulo.remoteservice.srv.lookup.servers})
+/system-property=dw.remoteAccumuloService.srvDnsPort:add(value=${accumulo.remoteservice.srv.lookup.port})
+/system-property=dw.remoteAccumuloService.scheme:add(value=${accumulo.remoteservice.scheme})
+/system-property=dw.remoteAccumuloService.host:add(value=${accumulo.remoteservice.host})
+/system-property=dw.remoteAccumuloService.port:add(value=${accumulo.remoteservice.port})
 
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)
 
 /system-property=jexl.function.namespace.registry:add(value="datawave.query.jexl.functions.JexlFunctionNamespaceRegistry.class")
+
+#
+# Add cache container for the security realm
+#
+/subsystem=infinispan/cache-container=security:add
+/subsystem=infinispan/cache-container=security/local-cache=security:add
+/subsystem=infinispan/cache-container=security:write-attribute(name=default-cache,value=security)
+/subsystem=infinispan/cache-container=security/local-cache=security/component=expiration:add(lifespan=300000)
 
 #
 # Add security realm and domain
@@ -100,7 +131,7 @@ embed-server --server-config=standalone-full.xml
 /core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=certificates/ca.jks,keystore-relative-to=jboss.server.config.dir,keystore-provider=JKS,keystore-password="ChangeIt")
 /core-service=management/security-realm=SSLRealm/authentication=jaas/:add(name=datawave)
 
-/subsystem=security/security-domain=datawave:add(cache-type=none)
+/subsystem=security/security-domain=datawave:add(cache-type=infinispan)
 /subsystem=security/security-domain=datawave/authentication=classic:add
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
@@ -110,7 +141,7 @@ embed-server --server-config=standalone-full.xml
 /subsystem=security/security-domain=JmsXARealm/authentication=classic:add
 /subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
 
-/subsystem=security/security-domain=datawave-client:add(cache-type=none)
+/subsystem=security/security-domain=datawave-client:add(cache-type=infinispan)
 /subsystem=security/security-domain=datawave-client/authentication=classic:add
 /subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
@@ -155,8 +186,8 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 /subsystem=ee/managed-executor-service=default:write-attribute(name=max-threads,value=${jboss.managed.executor.service.default.max.threads})
 
 # Configure the JDBC DataSource used by MySQL
-deploy mysql/mysql-connector-java-${version.mysql-connector}.jar
-/subsystem=datasources/data-source=CachedResultsDS:add(jndi-name=java:jboss/datasources/CachedResultsDS,connection-url="jdbc:mysql://${mysql.host}:3306/${mysql.dbname}?zeroDateTimeBehavior=convertToNull",min-pool-size=${mysql.pool.min.size},max-pool-size=${mysql.pool.max.size},blocking-timeout-wait-millis=5000,idle-timeout-minutes=15,exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter,valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker,user-name=${mysql.user.name},password=${mysql.user.password},driver-name=mysql-connector-java-${version.mysql-connector}.jar_com.mysql.jdbc.Driver_5_1,driver-class=com.mysql.jdbc.Driver)
+/subsystem=datasources/jdbc-driver=mysql:add(driver-name=mysql,driver-module-name=com.mysql.driver)
+/subsystem=datasources/data-source=CachedResultsDS:add(jndi-name=java:jboss/datasources/CachedResultsDS,connection-url="jdbc:mysql://${mysql.host}:3306/${mysql.dbname}?zeroDateTimeBehavior=convertToNull",min-pool-size=${mysql.pool.min.size},max-pool-size=${mysql.pool.max.size},blocking-timeout-wait-millis=5000,idle-timeout-minutes=15,exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter,valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker,user-name=${mysql.user.name},password=${mysql.user.password},driver-name=mysql)
 
 # Configure the H2 DataSource used by the DatabaseUserService
 /subsystem=datasources/data-source=DatabaseUserServiceDS:add(jndi-name=java:jboss/datasources/DatabaseUserServiceDS,connection-url="jdbc:h2:${jboss.server.config.dir}/h2/databaseDatawaveUsers",user-name=sa,password=sa,driver-name=h2)

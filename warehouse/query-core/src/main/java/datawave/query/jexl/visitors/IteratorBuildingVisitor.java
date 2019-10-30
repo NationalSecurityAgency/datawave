@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.SourcePool;
 import datawave.core.iterators.ThreadLocalPooledSource;
 import datawave.core.iterators.filesystem.FileSystemCache;
@@ -14,6 +15,7 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
@@ -86,6 +88,7 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.apache.lucene.util.fst.FST;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -100,6 +103,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -185,6 +191,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected IteratorEnvironment env;
     
     protected Set<JexlNode> delayedEqNodes = Sets.newHashSet();
+    
+    protected Map<String,Object> exceededOrEvaluationCache;
     
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
@@ -280,10 +288,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (!limitLookup || !allowTermFrequencyLookup || (indexOnlyFields.contains(identifier) && !termFrequencyFields.contains(identifier))) {
                 if (source instanceof ASTAndNode) {
                     try {
-                        if (JexlASTHelper.getFunctionNodes(source).isEmpty()) {
+                        List<ASTFunctionNode> functionNodes = JexlASTHelper.getFunctionNodes(source).stream()
+                                        .filter(node -> JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node).allowIvaratorFiltering())
+                                        .collect(Collectors.toList());
+                        if (functionNodes.isEmpty()) {
                             ivarateRange(source, data);
                         } else {
-                            ivarateFilter(source, data);
+                            ivarateFilter(source, data, functionNodes);
                         }
                     } catch (IOException ioe) {
                         throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
@@ -1055,30 +1066,62 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param data
      */
     public void ivarateList(JexlNode source, Object data) throws IOException {
-        IndexListIteratorBuilder builder = new IndexListIteratorBuilder();
-        builder.negateAsNeeded(data);
+        IvaratorBuilder builder = null;
         
-        Map<String,Object> parameters;
         try {
-            parameters = ExceededOrThresholdMarkerJexlNode.getParameters(source);
-        } catch (URISyntaxException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_URI_PARAMETER, MessageFormat.format("Class: {0}",
+            String id = ExceededOrThresholdMarkerJexlNode.getId(source);
+            String field = ExceededOrThresholdMarkerJexlNode.getField(source);
+            ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(source);
+            
+            if (params.getRanges() != null && !params.getRanges().isEmpty()) {
+                IndexRangeIteratorBuilder rangeIterBuilder = new IndexRangeIteratorBuilder();
+                builder = rangeIterBuilder;
+                
+                SortedSet<Range> ranges = params.getSortedAccumuloRanges();
+                rangeIterBuilder.setSubRanges(params.getSortedAccumuloRanges());
+                
+                // cache these ranges for use during Jexl Evaluation
+                if (exceededOrEvaluationCache != null)
+                    exceededOrEvaluationCache.put(id, ranges);
+                
+                LiteralRange<?> fullRange = new LiteralRange<>(String.valueOf(ranges.first().getStartKey().getRow()), ranges.first().isStartKeyInclusive(),
+                                String.valueOf(ranges.last().getEndKey().getRow()), ranges.last().isEndKeyInclusive(), field, NodeOperand.AND);
+                
+                rangeIterBuilder.setRange(fullRange);
+            } else {
+                IndexListIteratorBuilder listIterBuilder = new IndexListIteratorBuilder();
+                builder = listIterBuilder;
+                
+                if (params.getValues() != null && !params.getValues().isEmpty()) {
+                    Set<String> values = new TreeSet<>(params.getValues());
+                    listIterBuilder.setValues(values);
+                    
+                    // cache these values for use during Jexl Evaluation
+                    if (exceededOrEvaluationCache != null)
+                        exceededOrEvaluationCache.put(id, values);
+                } else if (params.getFstURI() != null) {
+                    URI fstUri = new URI(params.getFstURI());
+                    FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
+                                    hdfsFileSystem.getFileSystem(fstUri));
+                    listIterBuilder.setFst(fst);
+                    
+                    // cache this fst for use during JexlEvaluation.
+                    if (exceededOrEvaluationCache != null)
+                        exceededOrEvaluationCache.put(id, fst);
+                }
+                
+                // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
+                listIterBuilder.setNegated(false);
+            }
+            
+            builder.setField(field);
+        } catch (IOException | URISyntaxException | NullPointerException e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, MessageFormat.format("Class: {0}",
                             ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
             throw new DatawaveFatalQueryException(qe);
         }
         
-        builder.setField(String.valueOf(parameters.get(ExceededOrThresholdMarkerJexlNode.FIELD_PROP)));
-        
-        if (parameters.containsKey(ExceededOrThresholdMarkerJexlNode.VALUES_PROP)) {
-            builder.setValues((Set<String>) parameters.get(ExceededOrThresholdMarkerJexlNode.VALUES_PROP));
-        }
-        if (parameters.containsKey(ExceededOrThresholdMarkerJexlNode.FST_URI_PROP)) {
-            builder.setFstURI((URI) parameters.get(ExceededOrThresholdMarkerJexlNode.FST_URI_PROP));
-            builder.setFstHdfsFileSystem(hdfsFileSystem.getFileSystem(builder.getFstURI()));
-        }
-        
-        // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
-        builder.setNegated(false);
+        builder.negateAsNeeded(data);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         
         ivarate(builder, source, data);
@@ -1143,7 +1186,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param source
      * @param data
      */
-    public void ivarateFilter(JexlNode source, Object data) throws IOException {
+    public void ivarateFilter(JexlNode source, Object data, List<ASTFunctionNode> functionNodes) throws IOException {
         IndexFilterIteratorBuilder builder = new IndexFilterIteratorBuilder();
         builder.negateAsNeeded(data);
         // index checking has already been done, otherwise we would not have an
@@ -1155,8 +1198,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            List<ASTFunctionNode> functions = JexlASTHelper.getFunctionNodes(source);
-            builder.setRangeAndFunction(ranges.keySet().iterator().next(), new FunctionFilter(functions));
+            builder.setRangeAndFunction(ranges.keySet().iterator().next(), new FunctionFilter(functionNodes));
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "ASTFunctionNode"));
             throw new DatawaveFatalQueryException(qe);
@@ -1538,4 +1580,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
+    public IteratorBuildingVisitor setExceededOrEvaluationCache(Map<String,Object> exceededOrEvaluationCache) {
+        this.exceededOrEvaluationCache = exceededOrEvaluationCache;
+        return this;
+    }
 }

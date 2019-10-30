@@ -104,7 +104,7 @@ public class TreeEqualityVisitor implements ParserVisitor {
         } else if (node1 instanceof JexlNode && !equal(((JexlNode) node1).image, ((JexlNode) node2).image)) {
             equal = false;
             return ("Node images differ: " + ((JexlNode) node1).image + " vs " + ((JexlNode) node2).image);
-        } else if (node1.jjtGetNumChildren() > 0) {
+        } else if (node1.jjtGetNumChildren() > 0 || node2.jjtGetNumChildren() > 0) {
             List<SimpleNode> list1 = listChildren(node1);
             List<SimpleNode> list2 = listChildren(node2);
             if (list1.size() != list2.size()) {

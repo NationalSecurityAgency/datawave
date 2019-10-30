@@ -16,5 +16,8 @@ install:
   - popd
 
 script:
+  - pushd services/build-parent
+  - travis_wait mvn -q install -DskipTests
+  - popd
   - travis_wait mvn -q -Pdev,dist install -DskipTests
-  - mvn -Dsurefire.forkCount=4 -Pdev verify
+  - mvn -Dsurefire.forkCount=4 -Pdev,microservices verify

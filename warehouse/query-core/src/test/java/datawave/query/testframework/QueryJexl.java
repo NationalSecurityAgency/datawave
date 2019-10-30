@@ -45,10 +45,8 @@ import java.util.Set;
  * <ul>
  * <li>Differences in the manner in which the Datawave Interpreter and the Jexl Interpreter work may result in the results. One difference in with multivalue
  * fields where the size() method will return different results.</li>
- * <li>The not equal (!=) and not regex(!~) relationships do not work properly with multivalue fields when the field contain multiple values. A single value
- * will work correctly. The following conversions should work:<br>
- * a != 'b' => not (a == 'b')<br>
- * a !~ 'a.*' => not(a =~ 'a.*)</li>
+ * <li>The not equal (!=) and not regex(!~) relationships do not work properly for multivalue fields that contain multiple values. A single value for a
+ * multivalue field will work correctly. Either create a different expect query or hardcode the expected results.</li>
  * <li>Only one data manager is available for processing results.</li>
  * <li>For any query that contains embedded "()", this will not be evaluate properly. The ExpressionImpl object does not return the same variable list. This
  * variable list is used to set the context and thus the evaluation fails. Here is an example:<br>
@@ -92,7 +90,7 @@ public class QueryJexl {
     }
     
     /**
-     * Performs the evlation of a Jexl query.
+     * Performs the evaluation of a Jexl query.
      * 
      * @return matching entries for the current manager
      */
@@ -122,6 +120,15 @@ public class QueryJexl {
             Boolean match = (Boolean) jExpr.evaluate(jCtx);
             if (match) {
                 response.add(mapping);
+            }
+        }
+        
+        if (log.isTraceEnabled()) {
+            log.trace("    ======  expected response data  ======");
+            for (Map<String,String> data : response) {
+                for (Map.Entry<String,String> entry : data.entrySet()) {
+                    log.debug("key(" + entry.getKey() + ") value(" + entry.getValue() + ")");
+                }
             }
         }
         

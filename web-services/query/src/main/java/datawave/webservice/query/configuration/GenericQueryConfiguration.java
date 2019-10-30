@@ -35,9 +35,9 @@ public abstract class GenericQueryConfiguration {
     private Date beginDate = null;
     private Date endDate = null;
     
-    private Long maxRowsToScan = 25000L;
+    // The max number of next + seek calls made by the underlying iterators
+    private Long maxWork = -1L;
     
-    private Set<String> undisplayedVisibilities = new HashSet<>();
     protected int baseIteratorPriority = 100;
     
     // Table name
@@ -71,11 +71,10 @@ public abstract class GenericQueryConfiguration {
         this.setBeginDate(genericConfig.getBeginDate());
         this.setConnector(genericConfig.getConnector());
         this.setEndDate(genericConfig.getEndDate());
-        this.setMaxRowsToScan(genericConfig.getMaxRowsToScan());
+        this.setMaxWork(genericConfig.getMaxWork());
         this.setQueries(genericConfig.getQueries());
         this.setQueryString(genericConfig.getQueryString());
         this.setTableName(genericConfig.getTableName());
-        this.setUndisplayedVisibilities(genericConfig.getUndisplayedVisibilities());
     }
     
     /**
@@ -144,12 +143,12 @@ public abstract class GenericQueryConfiguration {
         this.endDate = endDate;
     }
     
-    public Long getMaxRowsToScan() {
-        return maxRowsToScan;
+    public Long getMaxWork() {
+        return maxWork;
     }
     
-    public void setMaxRowsToScan(Long maxRowsToScan) {
-        this.maxRowsToScan = maxRowsToScan <= 0L ? Long.MAX_VALUE : maxRowsToScan;
+    public void setMaxWork(Long maxWork) {
+        this.maxWork = maxWork;
     }
     
     public String getTableName() {
@@ -158,14 +157,6 @@ public abstract class GenericQueryConfiguration {
     
     public void setTableName(String tableName) {
         this.tableName = tableName;
-    }
-    
-    public Set<String> getUndisplayedVisibilities() {
-        return undisplayedVisibilities;
-    }
-    
-    public void setUndisplayedVisibilities(Set<String> undisplayedVisibilities) {
-        this.undisplayedVisibilities = undisplayedVisibilities;
     }
     
     public boolean getBypassAccumulo() {

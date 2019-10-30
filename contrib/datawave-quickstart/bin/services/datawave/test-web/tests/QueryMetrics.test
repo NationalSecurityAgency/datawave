@@ -21,34 +21,26 @@ configureTest \
         CreateAndNext \
         "Creates a JEXL-syntax QueryMetrics query and gets the first page of results" \
         "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/QueryMetricsQuery/createAndNext" \
-        application/xml \
+        "application/xml;charset=UTF-8" \
         200
 
 # NOTE:
 #
 # At this point, because our DataWave instance *may* be running for the first time (and thus may never have
 # had queries executed against it), there's a good chance that the in-memory cache for the query metrics metadata
-# table is empty and needs to be refreshed. If so, the cache won't reflect the table's current state, and it will
-# not be possible to query the metrics shard table
-#
-# Ordinarily, rather than perform a Wildfly restart, you'd just wait for the cache's configured TTL to expire, or
-# you'd force an *asynchronous* reload of the cache on-demand with
-#
-#         'GET */DataWave/Common/AccumuloTableCache/reload/{tableName}'
-#
-# Here, we'll just bounce the web server, as it's the easiest (synchronous) way to ensure that the cache is primed
-#
+# table is empty and needs to be loaded. If so, the cache won't reflect the table's current state, and it will
+# not be possible to query the metrics shard table. Force it to load, if appropriate...
 
-DW_SKIP_WEB_BOUNCE=${DW_SKIP_WEB_BOUNCE:-false}
+DW_SKIP_RELOAD_CACHE=${DW_SKIP_RELOAD_CACHE:-false}
 
-if [[ "${DW_SKIP_WEB_BOUNCE}" == false && "${LIST_TESTS}" == false ]] ; then
+if [[ "${DW_SKIP_RELOAD_CACHE}" == false && "${LIST_TESTS}" == false ]] ; then
 
     echo
-    info "Bouncing DataWave Web to ensure query metrics metadata cache is primed and ready for test"
+    info "Reloading query metrics metadata cache, so that we're primed and ready for test"
     echo
 
-    datawaveWebStop
-    datawaveWebStart
+    reloadDataWaveTableCache
+    sleep 35
 fi
 
 runTest --set-query-id

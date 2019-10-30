@@ -1,6 +1,7 @@
 package datawave.core.iterators;
 
 import datawave.query.Constants;
+import datawave.query.jexl.DatawaveArithmetic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -154,7 +155,6 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
      */
     @Override
     protected boolean matches(Key k) throws IOException {
-        boolean matches = false;
         String colq = k.getColumnQualifier().toString();
         
         // search backwards for the null bytes to expose the value in value\0datatype\0UID
@@ -162,20 +162,7 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         index = colq.lastIndexOf('\0', index - 1);
         String value = colq.substring(0, index);
         
-        if (this.fst != null) {
-            final IntsRefBuilder irBuilder = new IntsRefBuilder();
-            Util.toUTF16(value, irBuilder);
-            final IntsRef ints = irBuilder.get();
-            synchronized (this.fst) {
-                if (Util.get(this.fst, ints) != null) {
-                    matches = true;
-                }
-            }
-        } else {
-            matches = values.contains(value);
-        }
-        
-        return matches;
+        return (this.fst != null) ? DatawaveArithmetic.matchesFst(value, fst) : values.contains(value);
     }
     
     public static FST<?> getFST(SortedSet<String> values) throws IOException {

@@ -569,6 +569,8 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElement
     protected long seekCount = 0;
     @XmlElement
+    protected long yieldCount = 0L;
+    @XmlElement
     protected long docRanges = 0;
     @XmlElement
     protected long fiRanges = 0;
@@ -584,7 +586,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public enum Lifecycle {
         
-        NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN
+        NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN, MAXWORK
     }
     
     public String getQueryType() {
@@ -734,6 +736,14 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public void setSeekCount(long seekCount) {
         this.seekCount = seekCount;
+    }
+    
+    public long getYieldCount() {
+        return this.yieldCount;
+    }
+    
+    public void setYieldCount(long yieldCount) {
+        this.yieldCount = yieldCount;
     }
     
     public long getDocRanges() {

@@ -117,7 +117,61 @@ function accumuloStop() {
 }
 
 function accumuloStatus() {
-    accumuloIsRunning && echo "Accumulo is running. PIDs: ${DW_ACCUMULO_PID_LIST} ${DW_ZOOKEEPER_PID_LIST}" || echo "Accumulo is not running"
+    # define vars for accumulo processes
+    local _gc
+    local _master
+    local _monitor
+    local _tracer
+    local _tserver
+
+    echo "======  Accumulo Status  ======"
+    local _opt=pid
+    local _arg
+
+    accumuloIsRunning
+    test -n "${DW_ACCUMULO_PID_LIST}" && {
+        local -r _pids=${DW_ACCUMULO_PID_LIST// /|}
+        echo "pids: ${DW_ACCUMULO_PID_LIST}"
+
+        for _arg in $(jps -lm | egrep "${_pids}"); do
+            case ${_opt} in
+                pid)
+                    _pid=${_arg}
+                    _opt=class;;
+                class) _opt=component;;
+                component)
+                    local _none
+                    case "${_arg}" in
+                        gc) _gc=${_pid};;
+                        master) _master=${_pid};;
+                        monitor) _monitor=${_pid};;
+                        tracer) _tracer=${_pid};;
+                        tserver) _tserver=${_pid};;
+                        *) _none=true;;
+                    esac
+
+                    test -z "${_none}" && info "${_arg} => ${_pid}"
+                    _opt=address
+                    unset _none
+                    _pid=;;
+                address) _opt=addrValue;;
+                addrValue) _opt=pid;;
+            esac
+        done
+    }
+
+    test -z "${_gc}" && warn "gc is not running"
+    test -z "${_master}" && warn "master is not running"
+    test -z "${_monitor}" && info "monitor is not running"
+    test -z "${_tracer}" && info "tracer is not running"
+    test -z "${_tserver}" && warn "tserver is not running"
+
+    echo "======  ZooKeeper Status  ======"
+    if [[ -n "${DW_ZOOKEEPER_PID_LIST}" ]]; then
+        info "ZooKeeper => ${DW_ZOOKEEPER_PID_LIST}"
+    else
+        warn "ZooKeeper is not running"
+    fi
 }
 
 function accumuloUninstall() {

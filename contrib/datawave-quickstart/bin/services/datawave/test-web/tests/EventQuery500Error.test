@@ -1,7 +1,0 @@
-
-configureTest \
-         IntentionalError \
-         "Creates an error for EventQuery by omitting all required query params" \
-         "--header 'Content-Type: application/x-www-form-urlencoded' -X POST ${URI_ROOT}/Query/EventQuery/create" \
-         application/xml \
-         500

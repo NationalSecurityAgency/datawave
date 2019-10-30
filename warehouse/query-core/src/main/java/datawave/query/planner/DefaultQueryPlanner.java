@@ -10,7 +10,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.querylock.QueryLock;
-import datawave.data.type.GeometryType;
+import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
@@ -71,10 +71,12 @@ import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
+import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -141,6 +143,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 
+/**
+ * These are nodes that the DefaultQueryPlanner determined were not appropriate for the index lookup, thus delaying them for later evaluation.
+ */
 public class DefaultQueryPlanner extends QueryPlanner {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
@@ -148,6 +153,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
     public static String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
     
     protected boolean limitScanners = false;
+    
+    /**
+     * Allows developers to enable/disable the enforcing of unique nodes with OR and AND nodes.
+     */
+    private boolean enforceUniqueTermsWithinExpressions = false;
     
     /**
      * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
@@ -404,7 +414,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         final QueryStopwatch timers = config.getTimers();
-        
         Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
         
         // a full table scan is required if
@@ -454,7 +463,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             List<String> geoFields = new ArrayList<>();
             for (String fieldName : config.getIndexedFields()) {
                 for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
-                    if (type instanceof GeometryType) {
+                    if (type instanceof AbstractGeometryType) {
                         geoFields.add(fieldName);
                         break;
                     }
@@ -728,6 +737,15 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
+        if (enforceUniqueTermsWithinExpressions) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique terms within AND and OR expressions");
+            queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after duplicate terms removed from AND and OR expressions:");
+            }
+            stopwatch.stop();
+        }
+        
         Set<String> indexOnlyFields;
         try {
             indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
@@ -879,7 +897,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (!disableExpandIndexFunction) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
             
-            // Coalesce any bounded ranges into separate AND subtrees
+            // expand the index queries for the functions
             queryTree = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, queryTree);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after function index queries were expanded:");
@@ -901,7 +919,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             try {
                 
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
-                queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields);
+                queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
+                                config.isExpandFields(), config.isExpandValues());
             } catch (EmptyUnfieldedTermExpansionException e) {
                 // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
@@ -1116,13 +1135,20 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
-                
-                ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields);
+                ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
+                                config.isExpandFields(), config.isExpandValues());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree);
-                queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding regex:");
+                }
+                queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
+                                config.isExpandValues());
+                if (log.isDebugEnabled()) {
+                    logQuery(queryTree, "Query after expanding ranges:");
+                }
+                queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
+                if (log.isDebugEnabled()) {
+                    logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
                 }
                 // if we now have an unexecutable tree because of delayed
                 // predicates, then remove delayed predicates as needed and
@@ -1149,11 +1175,18 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     config.setExpandAllTerms(true);
                     
                     queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree);
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding regex again:");
+                    }
+                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
+                                    config.isExpandValues());
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding ranges again:");
+                    }
                     queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                     config.setExpandAllTerms(expandAllTerms);
                     if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding ranges and regex again:");
+                        logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
                     }
                 }
                 
@@ -1432,7 +1465,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
             DateIndexHelper.DateTypeDescription dateIndexData = dateIndexHelper.getTypeDescription(dateType, config.getBeginDate(), config.getEndDate(),
                             config.getDatatypeFilter());
             if (dateIndexData.getFields().isEmpty()) {
-                throw new IllegalArgumentException("The specified date type: " + dateType + " is unknown for the specified data types");
+                log.warn("The specified date type: " + dateType + " is unknown for the specified data types");
+                // If this is the case, then essentially we have no dates to search. Adding the filter function with _NO_FIELD_ will have the desired effect.
+                // Also it will be understandable from the plan as to why no results were returned.
+                dateIndexData.getFields().add(Constants.NO_FIELD);
             }
             log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
             // now for each field, add an expression to filter that date
@@ -1843,7 +1879,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     /**
-     * Performs a lookup in the global index / reverse index and returns a RangeCalculator
+     * Performs a lookup in the global index / reverse index and returns a {@link CloseableIterable} of QueryPlans
      *
      * @param config
      * @param queryTree
@@ -2317,5 +2353,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (null != builderThread) {
             builderThread.shutdown();
         }
+    }
+    
+    public boolean isEnforceUniqueTermsWithinExpressions() {
+        return enforceUniqueTermsWithinExpressions;
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
 }

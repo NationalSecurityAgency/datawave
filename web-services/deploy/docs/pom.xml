@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>2.5.25-SNAPSHOT</version>
+        <version>2.6.29-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-docs</artifactId>
     <packaging>war</packaging>
@@ -34,13 +34,6 @@
                                 <artifactItem>
                                     <groupId>gov.nsa.datawave.webservices</groupId>
                                     <artifactId>datawave-ws-client</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>dist</classifier>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>gov.nsa.datawave.webservices</groupId>
-                                    <artifactId>datawave-ws-accumulo-client</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>dist</classifier>
                                     <type>tar.gz</type>

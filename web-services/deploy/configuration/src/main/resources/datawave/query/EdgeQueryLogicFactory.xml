@@ -21,11 +21,7 @@
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE_EDGE" />
         <property name="maxResults" value="25000" />
-        <property name="maxRowsToScan" value="-1" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
+        <property name="maxWork" value="-1" />
         <property name="dataTypes">
             <list value-type="datawave.data.type.Type">
                 <bean class="datawave.data.type.GeoLatType" />

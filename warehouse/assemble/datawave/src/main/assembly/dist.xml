@@ -116,6 +116,7 @@
                 <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-query</include>
+                <include>io.dropwizard.metrics:metrics-core</include>
                 <include>org.javatuples:javatuples</include>
                 <include>com.google.code.gson:gson</include>
                 <include>org.apache.lucene:lucene-core</include>
@@ -138,6 +139,9 @@
                 <include>mil.nga.giat:geowave-core-ingest</include>
                 <include>com.vividsolutions:jts</include>
                 <include>com.google.uzaygezen:uzaygezen-core</include>
+                <include>com.fasterxml.jackson.core:jackson-databind</include>
+                <include>com.fasterxml.jackson.core:jackson-core</include>
+                <include>com.fasterxml.jackson.core:jackson-annotations</include>
             </includes>
         </dependencySet>
         <!-- Stuff that goes in /opt/accumulo-metrics/current/lib/ext -->
