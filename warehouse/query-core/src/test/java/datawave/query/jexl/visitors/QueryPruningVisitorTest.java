@@ -18,7 +18,7 @@ public class QueryPruningVisitorTest {
     public void falseAndTest() throws ParseException {
         String query = "FIELD1 == 'x' && _NOFIELD_ == 'y'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
@@ -31,7 +31,7 @@ public class QueryPruningVisitorTest {
         boolean jexlState = jexlEvaluation.apply(new Tuple3<>(new Key(), new Document(), new DatawaveJexlContext()));
         Assert.assertFalse(jexlState);
         
-        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(reduced), "((pruned = '" + query.replaceAll("'", "\\\\'") + "') && false)");
+        Assert.assertEquals("((pruned = '" + query.replaceAll("'", "\\\\'") + "') && false)", JexlStringBuildingVisitor.buildQuery(reduced));
     }
     
     @Test
@@ -45,14 +45,14 @@ public class QueryPruningVisitorTest {
         boolean jexlState = jexlEvaluation.apply(new Tuple3<>(new Key(), new Document(), new DatawaveJexlContext()));
         Assert.assertTrue(jexlState);
         
-        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(reduced), "((pruned = '" + query.replaceAll("'", "\\\\'") + "') && true)");
+        Assert.assertEquals("((pruned = '" + query.replaceAll("'", "\\\\'") + "') && true)", JexlStringBuildingVisitor.buildQuery(reduced));
     }
     
     @Test
     public void falseDoubleAndTest() throws ParseException {
         String query = "FIELD1 == 'x' && _NOFIELD_ == 'y' && FIELD2 == 'y'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
@@ -65,28 +65,28 @@ public class QueryPruningVisitorTest {
         boolean jexlState = jexlEvaluation.apply(new Tuple3<>(new Key(), new Document(), new DatawaveJexlContext()));
         Assert.assertFalse(jexlState);
         
-        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(reduced), "((pruned = '" + query.replaceAll("'", "\\\\'") + "') && false)");
+        Assert.assertEquals("((pruned = '" + query.replaceAll("'", "\\\\'") + "') && false)", JexlStringBuildingVisitor.buildQuery(reduced));
     }
     
     @Test
     public void unknownOrTest() throws ParseException {
         String query = "FIELD1 == 'x' || _NOFIELD_ == 'y'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void trueOrTest() throws ParseException {
         String query = "true || _NOFIELD_ == 'y'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.TRUE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.TRUE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void branchedTest() throws ParseException {
         String query = "FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
@@ -97,15 +97,38 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         JexlNode reduced = QueryPruningVisitor.reduce(script);
         
-        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(reduced), "FIELD1 == 'x' || (((pruned = '" + subtree.replaceAll("'", "\\\\'")
-                        + "') && false))");
+        Assert.assertEquals("FIELD1 == 'x' || (((pruned = '" + subtree.replaceAll("'", "\\\\'") + "') && false))",
+                        JexlStringBuildingVisitor.buildQuery(reduced));
+    }
+    
+    @Test
+    public void nestedBranchRewriteTest() throws ParseException {
+        String query = "((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z') || FIELD2 == 'z'";
+        
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode reduced = QueryPruningVisitor.reduce(script);
+        
+        Assert.assertEquals("(((pruned = '(_NOFIELD_ == \\'x\\' || _NOFIELD_ == \\'y\\') && _NOFIELD_ == \\'z\\'') && false)) || FIELD2 == 'z'",
+                        JexlStringBuildingVisitor.buildQuery(reduced));
+    }
+    
+    @Test
+    public void deeplyNestedBranchRewriteTest() throws ParseException {
+        String query = "((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'";
+        
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode reduced = QueryPruningVisitor.reduce(script);
+        
+        Assert.assertEquals(
+                        "(((pruned = '(_NOFIELD_ == \\'x\\' || _NOFIELD_ == \\'y\\') && (_NOFIELD_ == \\'a\\' || _NOFIELD_ == \\'b\\') && _NOFIELD_ == \\'z\\'') && false)) || FIELD2 == 'z'",
+                        JexlStringBuildingVisitor.buildQuery(reduced));
     }
     
     @Test
     public void unchangedTest() throws ParseException {
         String query = "FIELD1 == 'x' || (FIELD1 == 'y' && FIELD2 == 'z')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
@@ -116,91 +139,91 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         JexlNode reduced = QueryPruningVisitor.reduce(script);
         
-        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(reduced), query);
+        Assert.assertEquals(query, JexlStringBuildingVisitor.buildQuery(reduced));
     }
     
     @Test
     public void combinationTest() throws ParseException {
         String query = "F(_NOFIELD_) == 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void andTrueTest() throws ParseException {
         String query = "true && !(_NOFIELD_ == 'z')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.TRUE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.TRUE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void orFalseTest() throws ParseException {
         String query = "false || _NOFIELD_ == 'z'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void notUnknownTest() throws ParseException {
         String query = "FIELD != 'a'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void notNoFieldTest() throws ParseException {
         String query = "_NOFIELD_ != 'a'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void notFalseTest() throws ParseException {
         String query = "!false";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.TRUE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.TRUE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void notTrueTest() throws ParseException {
         String query = "!true";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void methodTest() throws ParseException {
         String query = "x('a')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void functionTest() throws ParseException {
         String query = "filter:isNull(FIELD)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void GETest() throws ParseException {
         String query = "FIELD >= 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void GTTest() throws ParseException {
         String query = "FIELD > 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void LETest() throws ParseException {
         String query = "FIELD <= 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
@@ -214,55 +237,55 @@ public class QueryPruningVisitorTest {
     public void RETest() throws ParseException {
         String query = "FIELD =~ 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void NRTest() throws ParseException {
         String query = "FIELD !~ 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.UNKNOWN);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.UNKNOWN, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void GENoFieldTest() throws ParseException {
         String query = "_NOFIELD_ >= 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void GTNoFieldTest() throws ParseException {
         String query = "_NOFIELD_ > 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void LENoFieldTest() throws ParseException {
         String query = "_NOFIELD_ <= 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void LTNoFieldTest() throws ParseException {
         String query = "_NOFIELD_ < 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void RENoFieldTest() throws ParseException {
         String query = "_NOFIELD_ =~ 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
     
     @Test
     public void NRNoFieldTest() throws ParseException {
         String query = "_NOFIELD_ !~ 'x'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TRUTH_STATE.FALSE);
+        Assert.assertEquals(QueryPruningVisitor.TRUTH_STATE.FALSE, QueryPruningVisitor.getState(script));
     }
 }
