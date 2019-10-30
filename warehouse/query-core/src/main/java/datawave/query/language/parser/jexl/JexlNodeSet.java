@@ -1,11 +1,11 @@
 package datawave.query.language.parser.jexl;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -30,7 +30,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     
     /**
      * Method to access all the Jexl nodes in the set.
-     * 
+     *
      * @return - the underlying node map values.
      */
     public Collection<JexlNode> getNodes() {
@@ -67,7 +67,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     
     @Override
     public Iterator<JexlNode> iterator() {
-        return Lists.newArrayList(nodeMap.values()).listIterator();
+        return Collections.unmodifiableCollection(nodeMap.values()).iterator();
     }
     
     @Override
@@ -77,7 +77,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     
     @Override
     public <T> T[] toArray(T[] ts) {
-        throw new UnsupportedOperationException("JexlNodeSet does not support toArray() operations.");
+        throw new UnsupportedOperationException("JexlNodeSet does not support toArray() calls to pre-allocated arrays.");
     }
     
     @Override
@@ -91,6 +91,9 @@ public class JexlNodeSet implements Set<JexlNode> {
     }
     
     /**
+     * Remove the specified object from the set if it is a Jexl node.
+     *
+     * Builds a node key for the Jexl node and delegates to {@link #remove(String, Object)}
      *
      * @param o
      *            - object to be removed from the set of Jexl nodes.
