@@ -21,6 +21,7 @@ import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
@@ -1247,6 +1248,17 @@ public class JexlASTHelper {
         }
         
         return true;
+    }
+    
+    /**
+     * Generate a key for the given JexlNode. This may be used to determine node equality.
+     *
+     * @param node
+     *            - a JexlNode.
+     * @return - a key for the node.
+     */
+    public static String nodeToKey(JexlNode node) {
+        return JexlStringBuildingVisitor.buildQueryWithoutParse(node, true);
     }
     
     /**
