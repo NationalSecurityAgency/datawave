@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
@@ -48,8 +49,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -140,7 +141,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     @Before
     public void querySetUp() throws IOException {
-        temporaryFolder = Files.createTempDirectory("tmp");
+        temporaryFolder = Paths.get(Files.createTempDir().toURI());
         
         log.debug("---------  querySetUp  ---------");
         
@@ -536,12 +537,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         final List<String> dirs = new ArrayList<>();
         final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
-            // avoid threading issues by using a random number as part of the directory path to create a distinct directory
-            int rand = rVal.nextInt(Integer.MAX_VALUE);
-            Path ivCache = Files.createTempDirectory("ivarator.cache-" + rand);
+            Path ivCache = Paths.get(Files.createTempDir().toURI());
             dirs.add(ivCache.toAbsolutePath().toString());
             if (fst) {
-                ivCache = Files.createTempDirectory("ivarator.cache-" + "fst-" + rand);
+                ivCache = Paths.get(Files.createTempDir().toURI());
                 fstDirs.add(ivCache.toAbsolutePath().toString());
             }
         }

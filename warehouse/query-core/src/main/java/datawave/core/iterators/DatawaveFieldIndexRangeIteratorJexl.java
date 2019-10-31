@@ -162,6 +162,9 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     }
     
     private Key createLowerBoundKey(Text rowId, Text fiName, Text lowerBound, boolean isLowerInclusive) {
+        if (ANY_FINAME.equals(fiName)) {
+            return new Key(rowId, FI_START);
+        }
         // we cannot simply use startKeyInclusive in the Range as the datatype and UID follow the value in the keys
         // hence we need to compute the min possibly value that would be inclusive
         this.boundingFiRangeStringBuilder.setLength(0);
@@ -175,6 +178,9 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     }
     
     private Key createUpperBoundKey(Text rowId, Text fiName, Text upperBound, boolean isUpperInclusive) {
+        if (ANY_FINAME.equals(fiName)) {
+            return new Key(rowId, FI_END);
+        }
         // we cannot simply use endKeyInclusive in the Range as the datatype and UID follow the value in the keys
         // hence we need to compute the max possibly value that would be inclusive
         this.boundingFiRangeStringBuilder.setLength(0);
