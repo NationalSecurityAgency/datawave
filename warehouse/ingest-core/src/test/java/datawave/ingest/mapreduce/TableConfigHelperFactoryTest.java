@@ -6,26 +6,43 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.util.TableName;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.mock.MockInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.accumulo.minicluster.MiniAccumuloConfig;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.File;
+
+/**
+ * Test uses mini accumulo cluster. Files are stored in warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest
+ */
 public class TableConfigHelperFactoryTest {
     private static final Logger logger = Logger.getLogger(TableConfigHelperFactoryTest.class);
+    private static MiniAccumuloCluster mac;
     
     private Configuration conf;
-    private MockInstance instance;
-    private Connector connector;
     private TableOperations tops;
     
     private static final String TEST_SHARD_TABLE_NAME = "testShard";
+    
+    @BeforeClass
+    public static void startCluster() throws Exception {
+        File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + TableConfigHelperFactoryTest.class.getName());
+        if (macDir.exists())
+            FileUtils.deleteDirectory(macDir);
+        macDir.mkdirs();
+        mac = new MiniAccumuloCluster(new MiniAccumuloConfig(macDir, "pass"));
+        mac.start();
+    }
     
     @Before
     public void setup() throws Exception {
@@ -38,15 +55,18 @@ public class TableConfigHelperFactoryTest {
         conf.set("testShard.table.config.class", ShardTableConfigHelper.class.getName());
         conf.set("testShard.table.config.prefix", "test");
         
-        instance = new MockInstance();
-        connector = instance.getConnector("root", new PasswordToken(new byte[0]));
-        tops = connector.tableOperations();
+        tops = mac.getConnector("root", "pass").tableOperations();
         
         recreateTable(tops, TableName.SHARD);
         recreateTable(tops, TEST_SHARD_TABLE_NAME);
     }
     
-    private void recreateTable(TableOperations tops, String table) throws Exception {
+    @AfterClass
+    public static void shutdown() throws Exception {
+        mac.stop();
+    }
+    
+    private static void recreateTable(TableOperations tops, String table) throws Exception {
         if (tops.exists(table)) {
             tops.delete(table);
         }

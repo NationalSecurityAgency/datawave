@@ -436,6 +436,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
+            builder.setEnv(env);
             builder.setTermFrequencyAggregator(getTermFrequencyAggregator(node, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
             
             Range fiRange = getFiRangeForTF(range);
@@ -573,6 +574,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setTimeFilter(timeFilter);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -644,6 +646,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         node.childrenAccept(this, builder);
         
@@ -878,6 +881,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         
         return builder.build();
     }
@@ -910,6 +914,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         
         node.childrenAccept(this, builder);
         
@@ -1325,6 +1330,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
+        builder.setEnv(env);
         
         // We have no parent already defined
         if (data == null) {

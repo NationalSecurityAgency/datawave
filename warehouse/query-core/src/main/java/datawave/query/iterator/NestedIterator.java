@@ -3,6 +3,8 @@ package datawave.query.iterator;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+
 import datawave.query.attributes.Document;
 
 /**
@@ -19,7 +21,9 @@ public interface NestedIterator<T> extends Iterator<T> {
      * Tells the underlying iterator to return the first element that is greater than or equal to <code>minimum</code>.
      * 
      * @param minimum
-     * @return
+     * @return the first Key in the iterator greater than or equal to minimum or null if no Key exists
+     * @throws IllegalStateException
+     *             if the iterator is already at or beyond minimum
      */
     T move(T minimum);
     
@@ -42,4 +46,9 @@ public interface NestedIterator<T> extends Iterator<T> {
      * Returns a <code>Document</code> object that is composed of attributes read in by the leaf nodes of this sub-tree.
      */
     Document document();
+    
+    /**
+     * Provides configuration information to the Iterator before initializing and seeking. Default does nothing.
+     */
+    default void setEnvironment(IteratorEnvironment env) {}
 }

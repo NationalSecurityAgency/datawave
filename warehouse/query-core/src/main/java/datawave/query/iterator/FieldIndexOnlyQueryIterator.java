@@ -51,6 +51,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
@@ -257,7 +258,18 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         Collection<String> unindexedTypes = Lists.newArrayList();
         
         Set<String> keys = fetchDataTypeKeys(this.documentOptions.get(NON_INDEXED_DATATYPES));
-        unindexedTypes.addAll(keys);
+        
+        String compressedOptionString = this.documentOptions.get(QUERY_MAPPING_COMPRESS);
+        if (!org.apache.commons.lang3.StringUtils.isBlank(compressedOptionString)) {
+            boolean compressedOption = Boolean.parseBoolean(compressedOptionString);
+            if (compressedOption) {
+                for (String key : keys) {
+                    unindexedTypes.add(decompressOption(key, QueryOptions.UTF8));
+                }
+            }
+        } else {
+            unindexedTypes.addAll(keys);
+        }
         
         if (isQueryFullySatisfiedInitialState) {
             SatisfactionVisitor satisfactionVisitor = this.createSatisfiabilityVisitor(true); // we'll charge in with optimism

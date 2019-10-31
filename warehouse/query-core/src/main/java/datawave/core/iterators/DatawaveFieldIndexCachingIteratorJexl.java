@@ -3,10 +3,12 @@ package datawave.core.iterators;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.PeekingIterator;
 import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.iterator.CachingIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
@@ -82,6 +84,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         protected TypeMetadata typeMetadata;
         private CompositeMetadata compositeMetadata;
         private int compositeSeekThreshold;
+        private IteratorEnvironment env;
         
         @SuppressWarnings("unchecked")
         protected B self() {
@@ -191,6 +194,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             return self();
         }
         
+        public B withIteratorEnv(IteratorEnvironment env) {
+            this.env = env;
+            return self();
+        }
+        
         public abstract DatawaveFieldIndexCachingIteratorJexl build();
     }
     
@@ -267,7 +275,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // a thread safe wrapper around the sorted set used by the scan threads
     private SortedSet<KeyValueSerializable> threadSafeSet = null;
     // the iterator (merge sort) of key values once the sorted set has been filled
-    private Iterator<KeyValueSerializable> keyValues = null;
+    private PeekingIterator<KeyValueSerializable> keyValues = null;
     // the current row covered by the hdfs set
     private String currentRow = null;
     // did we created the row directory
@@ -334,14 +342,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this(builder.fieldName, builder.fieldValue, builder.timeFilter, builder.datatypeFilter, builder.negated, builder.scanThreshold, builder.scanTimeout,
                         builder.hdfsBackedSetBufferSize, builder.maxRangeSplit, builder.maxOpenFiles, builder.fs, builder.uniqueDir, builder.queryLock,
                         builder.allowDirReuse, builder.returnKeyType, builder.sortedUIDs, builder.compositeMetadata, builder.compositeSeekThreshold,
-                        builder.typeMetadata);
+                        builder.typeMetadata, builder.env);
     }
     
     @SuppressWarnings("hiding")
     private DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
                     QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs, CompositeMetadata compositeMetadata,
-                    int compositeSeekThreshold, TypeMetadata typeMetadata) {
+                    int compositeSeekThreshold, TypeMetadata typeMetadata, IteratorEnvironment env) {
         if (fieldName.toString().startsWith("fi" + NULL_BYTE)) {
             this.fieldName = new Text(fieldName.toString().substring(3));
             this.fiName = fieldName;
@@ -379,6 +387,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
         
         this.compositeSeekThreshold = compositeSeekThreshold;
+        this.initEnv = env;
     }
     
     public DatawaveFieldIndexCachingIteratorJexl(DatawaveFieldIndexCachingIteratorJexl other, IteratorEnvironment env) {
@@ -417,6 +426,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
         
         this.lastRangeSeeked = other.lastRangeSeeked;
+        this.initEnv = env;
     }
     
     // -------------------------------------------------------------------------
@@ -464,6 +474,15 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             // the start of this range is beyond the end of the last range seeked
             // we must reset keyValues to null and empty the underlying collection
             clearRowBasedHdfsBackedSet();
+        } else {
+            // inside the original range, so potentially need to reposition keyValues
+            if (keyValues != null) {
+                Key startKey = r.getStartKey();
+                // decide if keyValues needs to be rebuilt or can be reused
+                if (!keyValues.hasNext() || (keyValues.peek().getKey().compareTo(startKey) > 0)) {
+                    keyValues = new CachingIterator<>(threadSafeSet.iterator());
+                }
+            }
         }
         
         // if we are not sorting UIDs, then determine whether we have a cq and capture the lastFiKey
@@ -723,7 +742,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 }
                 
                 if (this.keyValues == null) {
-                    this.keyValues = this.threadSafeSet.iterator();
+                    this.keyValues = new CachingIterator<>(this.threadSafeSet.iterator());
                 }
             }
             
@@ -1052,7 +1071,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         };
         
-        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange);
+        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
         
     }
     
@@ -1126,7 +1145,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.set.clear();
                 this.keyValues = null;
             } else {
-                this.keyValues = this.set.iterator();
+                this.keyValues = new CachingIterator<>(this.set.iterator());
             }
             
             // reset the keyValues counter as we have a new set here

@@ -6,6 +6,7 @@ import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
+
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;

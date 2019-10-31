@@ -91,7 +91,7 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                                     .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
                                     .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
                                     .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                    .build();
+                                    .withIteratorEnv(env).build();
                     
                 } else {
                     listIterator = DatawaveFieldIndexListIteratorJexl.builder().withFieldName(new Text(field)).withFST(fst).withTimeFilter(timeFilter)
@@ -101,14 +101,14 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                                     .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
                                     .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
                                     .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                    .build();
+                                    .withIteratorEnv(env).build();
                     
                 }
                 if (collectTimingDetails) {
                     listIterator.setCollectTimingDetails(true);
                     listIterator.setQuerySpanCollector(this.querySpanCollector);
                 }
-                listIterator.init(source, null, null);
+                listIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexListIteratorJexl: " + listIterator);
                 
                 boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);

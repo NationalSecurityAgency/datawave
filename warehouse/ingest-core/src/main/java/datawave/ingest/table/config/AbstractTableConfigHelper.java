@@ -1,6 +1,5 @@
 package datawave.ingest.table.config;
 
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +16,9 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.iterators.IteratorUtil;
+import org.apache.accumulo.core.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
+import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -97,33 +97,18 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
     }
     
     /**
-     * This calls the generateInitialTableProperties on the IteratorUtil class using reflection because they changed the signature between 1.4.1 and 1.4.2 of
-     * ACCUMULO and did not supply any backward compatibility (argh).
-     * 
-     * @return
+     * Copied from Accumulo 1.9 IteratorUtil
      */
     public static Map<String,String> generateInitialTableProperties() {
-        Map<String,String> props = null;
-        try {
-            Method method = IteratorUtil.class.getMethod("generateInitialTableProperties");
-            props = (Map<String,String>) (method.invoke(null));
-        } catch (SecurityException e) {
-            try {
-                Method method = IteratorUtil.class.getMethod("generateInitialTableProperties", boolean.class);
-                props = (Map<String,String>) (method.invoke(null, true));
-            } catch (Exception ex) {
-                throw new RuntimeException("Unable to call generateInitialTableProperties", ex);
-            }
-        } catch (NoSuchMethodException e) {
-            try {
-                Method method = IteratorUtil.class.getMethod("generateInitialTableProperties", boolean.class);
-                props = (Map<String,String>) (method.invoke(null, true));
-            } catch (Exception ex) {
-                throw new RuntimeException("Unable to call generateInitialTableProperties", ex);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to call IteratorUtil.generateInitialTableProperties()", e);
+        TreeMap<String,String> props = new TreeMap<>();
+        
+        for (IteratorScope iterScope : IteratorScope.values()) {
+            props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
+            props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
         }
+        
+        props.put(Property.TABLE_CONSTRAINT_PREFIX + "1", DefaultKeySizeConstraint.class.getName());
+        
         return props;
     }
     

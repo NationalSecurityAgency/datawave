@@ -17,6 +17,7 @@ import datawave.query.QueryParameters;
 import datawave.query.UnindexType;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -707,12 +709,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
     
+    private Set<String> deconstruct(Collection<String> fields) {
+        return fields.stream().map(field -> JexlASTHelper.deconstructIdentifier(field)).collect(Collectors.toSet());
+    }
+    
     public Set<String> getProjectFields() {
         return projectFields;
     }
     
     public void setProjectFields(Set<String> projectFields) {
-        this.projectFields = projectFields;
+        this.projectFields = deconstruct(projectFields);
     }
     
     public String getProjectFieldsAsString() {
@@ -724,7 +730,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setBlacklistedFields(Set<String> blacklistedFields) {
-        this.blacklistedFields = blacklistedFields;
+        this.blacklistedFields = deconstruct(blacklistedFields);
     }
     
     public String getBlacklistedFieldsAsString() {
@@ -942,7 +948,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         if (null == unevaluatedFields) {
             this.unevaluatedFields = new HashSet<>();
         } else {
-            this.unevaluatedFields = new HashSet<>(unevaluatedFields);
+            this.unevaluatedFields = deconstruct(unevaluatedFields);
         }
     }
     
@@ -1347,7 +1353,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setLimitFields(Set<String> limitFields) {
-        this.limitFields = limitFields;
+        this.limitFields = deconstruct(limitFields);
     }
     
     public String getLimitFieldsAsString() {
@@ -1399,7 +1405,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setGroupFields(Set<String> groupFields) {
-        this.groupFields = groupFields;
+        this.groupFields = deconstruct(groupFields);
     }
     
     public String getGroupFieldsAsString() {
@@ -1423,7 +1429,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setUniqueFields(Set<String> uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.uniqueFields = deconstruct(uniqueFields);
     }
     
     public String getUniqueFieldsAsString() {
@@ -1703,7 +1709,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setQueryTermFrequencyFields(Set<String> queryTermFrequencyFields) {
-        this.queryTermFrequencyFields = queryTermFrequencyFields;
+        this.queryTermFrequencyFields = deconstruct(queryTermFrequencyFields);
     }
     
     public boolean isTermFrequenciesRequired() {
