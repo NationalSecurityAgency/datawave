@@ -6,7 +6,6 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Test;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;

@@ -141,8 +141,8 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(uid + " - {");
-        for (JexlNode node : nodeSet.getNodes()) {
-            builder.append(JexlStringBuildingVisitor.buildQuery(node)).append(" ");
+        for (String nodeKey : nodeSet.getNodeKeys()) {
+            builder.append(nodeKey).append(" ");
         }
         builder.append("}");
         
