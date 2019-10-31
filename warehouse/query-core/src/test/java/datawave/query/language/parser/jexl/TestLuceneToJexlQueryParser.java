@@ -268,9 +268,10 @@ public class TestLuceneToJexlQueryParser {
     public void testWildcards() throws ParseException {
         Assert.assertEquals("F1 == '*1234'", parseQuery("F1:\\*1234"));
         Assert.assertEquals("F1 =~ '\\u005c*12.34'", parseQuery("F1:\\*12?34"));
-        
-        Assert.assertEquals("F1 == '.1234'", parseQuery("F1:\\.1234"));
-        Assert.assertEquals("F1 =~ '\\u005c.12.34'", parseQuery("F1:\\.12?34"));
+        Assert.assertEquals("F1 == '*'", parseQuery("F1:\\*"));
+        Assert.assertEquals("F1 =~ '\\u005c\\u005c.*?'", parseQuery("F1:\\\\*"));
+        Assert.assertEquals("F1 == '\\u005c*'", parseQuery("F1:\\\\\\*"));
+        Assert.assertEquals("F1 =~ '\\u005c\\u005c.*?x.*?'", parseQuery("F1:\\\\*x*"));
     }
     
     @Test
