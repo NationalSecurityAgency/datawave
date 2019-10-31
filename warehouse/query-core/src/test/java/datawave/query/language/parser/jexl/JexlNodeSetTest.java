@@ -57,7 +57,7 @@ public class JexlNodeSetTest {
         JexlNode node = JexlNodeFactory.buildEQNode("FOO", "bar");
         JexlNodeSet nodeSet = new JexlNodeSet();
         nodeSet.add(node);
-
+        
         Iterator<JexlNode> iter = nodeSet.iterator();
         assertTrue(iter.hasNext());
         JexlNode next = iter.next();
@@ -95,7 +95,7 @@ public class JexlNodeSetTest {
         assertTrue(nodeSet.contains(node1));
         assertTrue(nodeSet.contains(node2));
         assertFalse(nodeSet.contains(node3));
-
+        
         assertTrue(nodeSet.add(node3));
         assertFalse(nodeSet.add(node3));
         assertFalse(nodeSet.add(node3));
@@ -260,7 +260,7 @@ public class JexlNodeSetTest {
         assertTrue(nodeSet.contains(node2));
         assertTrue(nodeSet.contains(node3));
         assertFalse(nodeSet.isEmpty());
-
+        
         nodeSet.clear();
         assertFalse(nodeSet.contains(node1));
         assertFalse(nodeSet.contains(node2));
