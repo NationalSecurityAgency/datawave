@@ -250,10 +250,6 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ASTJexlScript script;
         try {
             Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
-            if (expansionFields.isEmpty()) {
-                // if the expansion field set is not set, then only allow those that are known to be indexed for the given datatypes
-                expansionFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
-            }
             script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields,
                             config.isExpandFields(), config.isExpandValues());
         } catch (EmptyUnfieldedTermExpansionException e) {

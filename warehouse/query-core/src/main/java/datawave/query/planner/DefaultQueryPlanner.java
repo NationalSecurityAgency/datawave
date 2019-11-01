@@ -1000,7 +1000,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 Set<String> reverseIndexedFields = Sets.newHashSet();
                 Set<String> normalizedFields = Sets.newHashSet();
                 
-                loadDataTypeMetadata(fieldToDatatypeMap, indexedFields, reverseIndexedFields, normalizedFields, config, false);
+                loadDataTypeMetadata(fieldToDatatypeMap, indexedFields, reverseIndexedFields, normalizedFields, false);
                 
                 if (null == queryFieldsAsDataTypeMap) {
                     queryFieldsAsDataTypeMap = HashMultimap.create(Multimaps.filterKeys(fieldToDatatypeMap, input -> !cachedNormalizedFields.contains(input)));
@@ -1016,7 +1016,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 fieldToDatatypeMap = configureIndexedAndNormalizedFields(metadataHelper, config, queryTree);
                 
                 if (cacheDataTypes) {
-                    loadDataTypeMetadata(null, null, null, null, config, true);
+                    loadDataTypeMetadata(null, null, null, null, true);
                     
                     dataTypeMap.put(String.valueOf(config.getDatatypeFilter().hashCode()), metadataHelper.getFieldsToDatatypes(config.getDatatypeFilter()));
                 }
@@ -1235,7 +1235,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @param indexedFields
      * @param reverseIndexedFields
      * @param normalizedFields
-     * @param config
      * @param reload
      * @throws AccumuloException
      * @throws AccumuloSecurityException
@@ -1245,8 +1244,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @throws IllegalAccessException
      */
     private void loadDataTypeMetadata(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> reverseIndexedFields,
-                    Set<String> normalizedFields, ShardQueryConfiguration config, boolean reload) throws AccumuloException, AccumuloSecurityException,
-                    TableNotFoundException, ExecutionException, InstantiationException, IllegalAccessException {
+                    Set<String> normalizedFields, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
+                    ExecutionException, InstantiationException, IllegalAccessException {
         synchronized (dataTypeMap) {
             if (!reload && (null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)
                             && (null != cachedReverseIndexedFields && null != reverseIndexedFields)) {
