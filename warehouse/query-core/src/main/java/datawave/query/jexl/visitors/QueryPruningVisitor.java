@@ -184,13 +184,16 @@ public class QueryPruningVisitor extends BaseVisitor {
         
         Set<TRUTH_STATE> states = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            states.add((TRUTH_STATE) (node.jjtGetChild(i).jjtAccept(this, data)));
+            TRUTH_STATE state = (TRUTH_STATE) (node.jjtGetChild(i).jjtAccept(this, data));
+            if (state == TRUTH_STATE.TRUE) {
+                // short circuit
+                replaceAndAssign(node, originalString, new ASTTrueNode(ParserTreeConstants.JJTTRUENODE));
+                return TRUTH_STATE.TRUE;
+            }
+            states.add(state);
         }
         
-        if (states.contains(TRUTH_STATE.TRUE)) {
-            replaceAndAssign(node, originalString, new ASTTrueNode(ParserTreeConstants.JJTTRUENODE));
-            return TRUTH_STATE.TRUE;
-        } else if (states.contains(TRUTH_STATE.UNKNOWN)) {
+        if (states.contains(TRUTH_STATE.UNKNOWN)) {
             return TRUTH_STATE.UNKNOWN;
         } else {
             replaceAndAssign(node, originalString, new ASTFalseNode(ParserTreeConstants.JJTFALSENODE));
@@ -205,13 +208,16 @@ public class QueryPruningVisitor extends BaseVisitor {
         
         Set<TRUTH_STATE> states = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            states.add((TRUTH_STATE) (node.jjtGetChild(i).jjtAccept(this, data)));
+            TRUTH_STATE state = (TRUTH_STATE) (node.jjtGetChild(i).jjtAccept(this, data));
+            if (state == TRUTH_STATE.FALSE) {
+                // short circuit
+                replaceAndAssign(node, originalString, new ASTFalseNode(ParserTreeConstants.JJTFALSENODE));
+                return TRUTH_STATE.FALSE;
+            }
+            states.add(state);
         }
         
-        if (states.contains(TRUTH_STATE.FALSE)) {
-            replaceAndAssign(node, originalString, new ASTFalseNode(ParserTreeConstants.JJTFALSENODE));
-            return TRUTH_STATE.FALSE;
-        } else if (states.contains(TRUTH_STATE.UNKNOWN)) {
+        if (states.contains(TRUTH_STATE.UNKNOWN)) {
             return TRUTH_STATE.UNKNOWN;
         } else {
             replaceAndAssign(node, originalString, new ASTTrueNode(ParserTreeConstants.JJTTRUENODE));
