@@ -140,14 +140,14 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
         
-        Assert.assertEquals(9801, tableToKey.get(TableName.SHARD).size());
-        Assert.assertEquals(4899, tableToKey.get(TableName.SHARD_INDEX).size());
-        Assert.assertEquals(4886, tableToKey.get(TableName.SHARD_RINDEX).size());
+        Assert.assertEquals(9783, tableToKey.get(TableName.SHARD).size());
+        Assert.assertEquals(4890, tableToKey.get(TableName.SHARD_INDEX).size());
+        Assert.assertEquals(4877, tableToKey.get(TableName.SHARD_RINDEX).size());
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
         Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
         
-        Assert.assertEquals(22799 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
+        Assert.assertEquals(22764 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
     }
     
 }

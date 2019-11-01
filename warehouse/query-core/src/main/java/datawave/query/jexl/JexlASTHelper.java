@@ -21,7 +21,6 @@ import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
@@ -71,15 +70,19 @@ import java.math.BigInteger;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 /**
  *
@@ -108,7 +111,7 @@ public class JexlASTHelper {
     /**
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
-     *
+     * 
      * @param query
      *            The query string in JEXL syntax to parse
      * @return Root node of the query parse tree.
@@ -1247,20 +1250,6 @@ public class JexlASTHelper {
     }
     
     /**
-     * Generate a key for the given JexlNode. This may be used to determine node equality.
-     *
-     * @param node
-     *            - a JexlNode.
-     * @return - a key for the node.
-     */
-    public static String nodeToKey(JexlNode node) {
-        // Note: This method assumes that the node passed in is already flattened.
-        // If not, and our tree contains functionally equivalent subtrees, we would
-        // be duplicating some of our efforts which is bad, m'kay?
-        return JexlStringBuildingVisitor.buildQueryWithoutParse(node, true);
-    }
-    
-    /**
      * When at an operand, this method will find the first Identifier and replace its {image} value with the supplied {String}. This is intended to be used when
      * the query model is being supplied and we want to replace the field name in some expression.
      * 
@@ -1456,6 +1445,60 @@ public class JexlASTHelper {
         }
         
         return maxSelectivity;
+    }
+    
+    /**
+     * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage.
+     *
+     * @param rootNode
+     *            the tree to validate
+     * @param failHard
+     *            whether or not to throw an exception if validation fails
+     * @return true if valid, false otherwise
+     */
+    // checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage
+    public static boolean validateLineage(JexlNode rootNode, boolean failHard) {
+        boolean result = true;
+        
+        // add all the nodes to the stack and iterate...
+        Deque<JexlNode> workingStack = new LinkedList<>();
+        workingStack.push(rootNode);
+        
+        // go through all of the nodes from parent to children, and ensure that parent and child relationships are correct
+        while (!workingStack.isEmpty()) {
+            JexlNode node = workingStack.pop();
+            
+            if (node.jjtGetNumChildren() > 0) {
+                for (JexlNode child : children(node)) {
+                    if (child != null) {
+                        if (child.jjtGetParent() == null) {
+                            if (failHard)
+                                throw new RuntimeException("Failed to validate lineage: Tree included a child with a null parent.");
+                            else
+                                log.error("Failed to validate lineage: Tree included a child with a null parent.");
+                            
+                            result = false;
+                        } else if (child.jjtGetParent() != node) {
+                            if (failHard)
+                                throw new RuntimeException("Failed to validate lineage:  Included a child with a conflicting parent.");
+                            else
+                                log.error("Failed to validate lineage:  Included a child with a conflicting parent.");
+                            
+                            result = false;
+                        }
+                        workingStack.push(child);
+                    } else {
+                        if (failHard)
+                            throw new RuntimeException("Failed to validate lineage: Included a null child.");
+                        else
+                            log.error("Failed to validate lineage: Included a null child.");
+                        
+                        result = false;
+                    }
+                }
+            }
+        }
+        return result;
     }
     
     private JexlASTHelper() {}

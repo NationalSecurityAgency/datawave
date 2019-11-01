@@ -255,7 +255,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.sourceForDeepCopies = this.source.deepCopy(this.myEnvironment);
         
         // update ActiveQueryLog with (potentially) updated config
-        ActiveQueryLog.setConfig(env.getConfig());
+        if (env != null) {
+            ActiveQueryLog.setConfig(env.getConfig());
+        }
     }
     
     @Override

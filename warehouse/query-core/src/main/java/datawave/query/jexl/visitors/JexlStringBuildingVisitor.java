@@ -401,10 +401,6 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         StringBuilder sb = (StringBuilder) data;
         
         String literal = node.image;
-        
-        // first, escape any backslashes in the literal
-        literal = literal.replace("\\", "\\\\");
-        
         int index = literal.indexOf(STRING_QUOTE);
         if (-1 != index) {
             // Slightly larger buffer
@@ -424,6 +420,20 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             builder.append(literal.substring(begin));
             
             // Set the new version on the literal
+            literal = builder.toString();
+        }
+        
+        // Make sure we don't accidentally escape the closing quotation mark
+        // e.g. FOO == 'C:\Foo\'
+        if (literal.charAt(literal.length() - 1) == BACKSLASH) {
+            StringBuilder builder = new StringBuilder(literal);
+            
+            // Nuke that last backslash
+            builder.setLength(literal.length() - 1);
+            
+            // We need to ensure that a literal backslash makes it down to the tservers
+            builder.append(BACKSLASH).append(BACKSLASH);
+            
             literal = builder.toString();
         }
         

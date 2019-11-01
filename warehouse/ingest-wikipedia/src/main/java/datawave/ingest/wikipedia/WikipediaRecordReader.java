@@ -10,6 +10,7 @@ import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.input.reader.AggregatingRecordReader;
 import datawave.ingest.input.reader.EventInitializer;
 import datawave.ingest.input.reader.KeyReader;
+import datawave.ingest.input.reader.LineReader;
 import datawave.ingest.input.reader.ReaderInitializer;
 import datawave.ingest.input.reader.ValueReader;
 import datawave.ingest.input.reader.event.EventFixer;
@@ -39,6 +40,8 @@ import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+
+import static datawave.ingest.input.reader.LineReader.Properties.LONGLINE_NEWLINE_INCLUDED;
 
 public class WikipediaRecordReader extends AggregatingRecordReader {
     
@@ -194,6 +197,8 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
             context.getConfiguration().set(AggregatingRecordReader.START_TOKEN, BEGIN);
             context.getConfiguration().set(AggregatingRecordReader.END_TOKEN, END);
             context.getConfiguration().set(AggregatingRecordReader.RETURN_PARTIAL_MATCHES, Boolean.toString(true));
+            // Guard against improper concatenation of newline-separated terms
+            context.getConfiguration().set(LONGLINE_NEWLINE_INCLUDED, Boolean.toString(true));
             
             readerInitializer.initialize(split, context);
             

@@ -143,9 +143,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 
-/**
- * These are nodes that the DefaultQueryPlanner determined were not appropriate for the index lookup, thus delaying them for later evaluation.
- */
 public class DefaultQueryPlanner extends QueryPlanner {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);

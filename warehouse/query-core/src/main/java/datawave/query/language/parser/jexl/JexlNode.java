@@ -25,7 +25,7 @@ public class JexlNode {
     
     public static String jexlEscapeSelector(String s) {
         String escapedSelector = s;
-        escapedSelector = escapedSelector.replace("\\", "\\\\");
+        escapedSelector = escapedSelector.replace("\\", "\\u005c");
         
         // escape apostrophes becasue we uses these to enclose string
         // literals in jexl syntax.
