@@ -141,14 +141,8 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                 
             }
             
-            if (unfieldedLookup) {
-                for (String field : fields) {
-                    opts.fetchColumnFamily(new Text(field));
-                }
-            } else {
-                for (String field : fields) {
-                    opts.fetchColumnFamily(new Text(field));
-                }
+            for (String field : fields) {
+                opts.fetchColumnFamily(new Text(field));
             }
             
             sessions.add(bs);
@@ -167,7 +161,9 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         sessions.clear();
         for (String key : reverseMap.keySet()) {
             Collection<Range> ranges = reverseMap.get(key);
-            log.trace("adding " + ranges + " for reverse");
+            if (log.isTraceEnabled()) {
+                log.trace("adding " + ranges + " for reverse");
+            }
             try {
                 
                 bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(), ranges,
@@ -186,14 +182,8 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                 }
             }
             
-            if (unfieldedLookup) {
-                for (String field : reverseFields) {
-                    opts.fetchColumnFamily(new Text(field));
-                }
-            } else {
-                for (String field : reverseFields) {
-                    opts.fetchColumnFamily(new Text(field));
-                }
+            for (String field : reverseFields) {
+                opts.fetchColumnFamily(new Text(field));
             }
             
             sessions.add(bs);
