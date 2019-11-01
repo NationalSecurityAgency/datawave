@@ -43,7 +43,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
-import org.junit.Rule;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -59,7 +58,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -79,8 +77,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
-    
-    private static final Random rVal = new Random(System.currentTimeMillis());
     
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
