@@ -42,7 +42,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     /**
      * Method to access all the Jexl nodes in the set.
      *
-     * @return - the underlying node map values.
+     * @return the underlying node map values.
      */
     public Collection<JexlNode> getNodes() {
         return nodeMap.values();
@@ -51,7 +51,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     /**
      * Get the set of generated node keys.
      * 
-     * @return - the underlying node map keySet.
+     * @return the underlying node map keySet.
      */
     public Set<String> getNodeKeys() {
         return nodeMap.keySet();
@@ -120,13 +120,13 @@ public class JexlNodeSet implements Set<JexlNode> {
      *
      * Defeat node duplicates when the same node is wrapped in an {@link ASTDelayedPredicate} marker.
      *
-     * For example "FOO == 'bar'" and "(DELAYED && FOO == 'bar'" will never be in the same set.
+     * For example, FOO == 'bar' and it's delayed equivalent (DELAYED &amp;&amp; FOO == 'bar' will never be in the same set.
      *
      * @param nodeKey
-     *            - a node key.
+     *            a node key.
      * @param node
-     *            - a Jexl node.
-     * @return - true if the JexlNodeSet was modified, false if not.
+     *            a Jexl node.
+     * @return true if the JexlNodeSet was modified, false if not.
      */
     protected boolean add(String nodeKey, JexlNode node) {
         if (!nodeMap.containsKey(nodeKey)) {
@@ -142,8 +142,8 @@ public class JexlNodeSet implements Set<JexlNode> {
      * Builds a node key for the Jexl node and delegates to {@link #remove(String, Object)}
      *
      * @param o
-     *            - object to be removed from the set of Jexl nodes.
-     * @return - True if the set contained the specified element.
+     *            object to be removed from the set of Jexl nodes.
+     * @return True if the set contained the specified element.
      */
     @Override
     public boolean remove(Object o) {
@@ -162,10 +162,10 @@ public class JexlNodeSet implements Set<JexlNode> {
     /**
      *
      * @param nodeKey
-     *            - key for the object to be removed.
+     *            key for the object to be removed.
      * @param o
-     *            - the object to be removed.
-     * @return - True, if the set contained the specified element.
+     *            the object to be removed.
+     * @return True, if the set contained the specified element.
      */
     private boolean remove(String nodeKey, Object o) {
         return nodeMap.remove(nodeKey, nodeMap.get(nodeKey));
@@ -240,38 +240,39 @@ public class JexlNodeSet implements Set<JexlNode> {
     /**
      * Copied from IndexInfo so that JexlNodeSet can handle adding delayed predicates.
      *
-     * (FOO == 'bar') and (DELAYED && FOO == 'bar') are logically equivalent.
+     * (FOO == 'bar') and (DELAYED &amp;&amp; FOO == 'bar') are logically equivalent.
      *
-     * @param delayedNode
-     * @return
+     * @param node
+     *            a Jexl node.
+     * @return the source Jexl node if this node is delayed.
      */
-    private JexlNode getSourceNode(JexlNode delayedNode) {
+    private JexlNode getSourceNode(JexlNode node) {
         
-        if (ASTDelayedPredicate.instanceOf(delayedNode)) {
-            return ASTDelayedPredicate.getQueryPropertySource(delayedNode, ASTDelayedPredicate.class);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(delayedNode)) {
+        if (ASTDelayedPredicate.instanceOf(node)) {
+            return ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
+        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
             
-            return ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(delayedNode);
-        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(delayedNode)) {
+            return ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(node);
+        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(node)) {
             
-            return ExceededTermThresholdMarkerJexlNode.getExceededTermThresholdSource(delayedNode);
-        } else if (IndexHoleMarkerJexlNode.instanceOf(delayedNode)) {
+            return ExceededTermThresholdMarkerJexlNode.getExceededTermThresholdSource(node);
+        } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
             
-            return IndexHoleMarkerJexlNode.getIndexHoleSource(delayedNode);
+            return IndexHoleMarkerJexlNode.getIndexHoleSource(node);
         } else {
-            return delayedNode;
+            return node;
         }
     }
     
     // Is a node delayed?
-    protected boolean isDelayed(JexlNode testNode) {
-        if (ASTDelayedPredicate.instanceOf(testNode)) {
+    protected boolean isDelayed(JexlNode node) {
+        if (ASTDelayedPredicate.instanceOf(node)) {
             return true;
-        } else if (IndexHoleMarkerJexlNode.instanceOf(testNode)) {
+        } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
             return true;
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(testNode)) {
+        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
             return true;
-        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(testNode)) {
+        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(node)) {
             return true;
         } else {
             return false;
