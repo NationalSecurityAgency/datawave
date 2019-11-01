@@ -50,7 +50,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         setMetadataHelper(helperRef);
         this.patterns = patterns;
         this.fields = fields;
-        this.reverseFields = fields;
+        this.reverseFields = reverseFields;
         this.unfieldedLookup = unfieldedLookup;
     }
     
