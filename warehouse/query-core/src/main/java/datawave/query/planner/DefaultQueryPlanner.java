@@ -56,6 +56,7 @@ import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
+import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
@@ -1991,7 +1992,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             }
             // if a value threshold is exceeded and we cannot handle that, then
             // force a full table scan
-            else if (StreamContext.EXCEEDED_VALUE_THRESHOLD.equals(stream.context()) && !config.canHandleExceededValueThreshold()) {
+            else if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
             }

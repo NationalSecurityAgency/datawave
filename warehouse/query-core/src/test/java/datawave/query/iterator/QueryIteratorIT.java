@@ -1,5 +1,6 @@
 package datawave.query.iterator;
 
+import com.google.common.io.Files;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -20,8 +21,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,7 +80,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void setup() throws IOException {
         iterator = new QueryIterator();
         options = new HashMap<>();
-        temporaryFolder = Files.createTempDirectory("tmp");
+        temporaryFolder = Paths.get(Files.createTempDir().toURI());
         
         // global options
         

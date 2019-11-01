@@ -62,6 +62,10 @@ import java.util.stream.Collectors;
  */
 public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator {
     
+    public static final Text ANY_FINAME = new Text("fi\0" + Constants.ANY_FIELD);
+    public static final Text FI_START = new Text("fi\0");
+    public static final Text FI_END = new Text("fi\0~");
+    
     public abstract static class Builder<B extends Builder<B>> {
         private Text fieldName;
         protected Text fieldValue;
