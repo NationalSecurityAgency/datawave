@@ -1232,8 +1232,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * Load the metadata information.
      *
      * @param fieldToDatatypeMap
-     *
      * @param indexedFields
+     * @param reverseIndexedFields
      * @param normalizedFields
      * @param config
      * @param reload

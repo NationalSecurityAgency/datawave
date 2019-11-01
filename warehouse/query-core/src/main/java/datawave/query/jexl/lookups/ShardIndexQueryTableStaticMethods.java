@@ -70,8 +70,12 @@ public class ShardIndexQueryTableStaticMethods {
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
     public static IndexLookup normalizeQueryTerm(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
                     MetadataHelper helperRef) throws TableNotFoundException {
@@ -142,8 +146,12 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
     public static IndexLookup normalizeQueryTerm(ASTEQNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
                     MetadataHelper helperRef) throws TableNotFoundException {
@@ -154,8 +162,12 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
     public static IndexLookup normalizeQueryTerm(ASTNENode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
                     MetadataHelper helperRef) throws TableNotFoundException {
@@ -180,8 +192,12 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
     public static IndexLookup expandRegexFieldName(ASTERNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
                     MetadataHelper helperRef) throws TableNotFoundException {
@@ -192,8 +208,12 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
     public static IndexLookup expandRegexFieldName(ASTNRNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
                     MetadataHelper helperRef) throws TableNotFoundException {
@@ -204,8 +224,12 @@ public class ShardIndexQueryTableStaticMethods {
      * A non-public method that implements the expandRegexFieldName to force clients to actually provide an ASTERNode or ASTNRNode
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
     protected static IndexLookup _expandRegexFieldName(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
                     MetadataHelper helperRef) throws TableNotFoundException {
@@ -258,7 +282,8 @@ public class ShardIndexQueryTableStaticMethods {
      * @param fieldName
      * @param dataTypes
      * @param datatypeFilter
-     * @return
+     * @param helperRef
+     * @return The index lookup instance
      */
     public static IndexLookup expandRegexTerms(ASTERNode node, String fieldName, Collection<Type<?>> dataTypes, Set<String> datatypeFilter,
                     MetadataHelper helperRef) {

@@ -488,14 +488,14 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
      * scanned are trimmed based on a set of terms to match, and a set of data types (found in the config)
      *
      * @param config
-     *
      * @param scannerFactory
      * @param tableName
      * @param ranges
      * @param literals
      * @param patterns
      * @param reverseIndex
-     * @return The scanner used
+     * @param expansionFields
+     * @return the batch scanner
      * @throws TableNotFoundException
      */
     public static BatchScanner configureBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName, Collection<Range> ranges,
