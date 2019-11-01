@@ -106,7 +106,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             
             // expect no results
             runTest(query, Collections.emptyList());
-            
+
             // add the metadata back in
             addMetadataEntries(metadata);
         }
@@ -385,7 +385,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testReverseIndex() throws Exception {
         log.info("------  testReverseIndex  ------");
-        String phrase = EQ_OP + "'.*o'";
+        String phrase = EQ_OP + "'.*ica'";
         String query = Constants.ANY_FIELD + phrase;
         
         // Test the plan with all expansions
@@ -412,7 +412,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         // The idea here is that now if we remove the indexed marker in the
         // metadata, then the anyfield expansion will miss the hit despite
         // the entry in the global index
-        String phrase = EQ_OP + "'.*o'";
+        String phrase = RE_OP + "'.*ica'";
         String query = Constants.ANY_FIELD + phrase;
         
         // Test the plan with all expansions
@@ -425,7 +425,11 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
                         ColumnFamilyConstants.COLF_RI);
         
         // expect no results
-        runTest(query, Collections.emptyList());
+        try {
+            runTest(query, Collections.emptyList());
+        } catch (FullTableScansDisallowedException e) {
+            // ok, essential no matches in index
+        }
         
         // add the metadata back in
         addMetadataEntries(metadata);
@@ -532,7 +536,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         // add the metadata back in
         addMetadataEntries(metadata);
     }
-    
+
     @Test
     public void testRegexZeroResults() throws Exception {
         String phrase = RE_OP + "'zero.*'";

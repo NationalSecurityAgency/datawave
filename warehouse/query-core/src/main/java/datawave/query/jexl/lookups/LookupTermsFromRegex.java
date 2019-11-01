@@ -121,84 +121,87 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                 forwardMap.put(pattern, rangeDescription.range);
             }
         }
-        
-        for (String key : forwardMap.keySet()) {
-            Collection<Range> ranges = forwardMap.get(key);
-            try {
-                bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                Collections.emptySet(), Collections.singleton(key), false, true);
-                
-                bs.setResourceClass(BatchResource.class);
-            } catch (Exception e) {
-                throw new DatawaveFatalQueryException(e);
-            }
-            SessionOptions opts = bs.getOptions();
-            if (null != fairnessIterator) {
-                opts.addScanIterator(fairnessIterator);
-                
-                IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
-                opts.addScanIterator(cfg);
-                
-            }
-            
-            for (String field : fields) {
-                opts.fetchColumnFamily(new Text(field));
-            }
-            
-            sessions.add(bs);
-            iter = Iterators.concat(iter, bs);
-            
-        }
-        
-        try {
-            timedScan(iter, fieldsToValues, config, unfieldedLookup, fields, false, maxLookupConfigured, log);
-        } finally {
-            for (ScannerSession sesh : sessions) {
-                scannerFactory.close(sesh);
-            }
-        }
-        
-        sessions.clear();
-        for (String key : reverseMap.keySet()) {
-            Collection<Range> ranges = reverseMap.get(key);
-            if (log.isTraceEnabled()) {
-                log.trace("adding " + ranges + " for reverse");
-            }
-            try {
-                
-                bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(), ranges,
-                                Collections.emptySet(), Collections.singleton(key), true, true);
-                
-                bs.setResourceClass(BatchResource.class);
-            } catch (Exception e) {
-                throw new DatawaveFatalQueryException(e);
-            }
-            SessionOptions opts = bs.getOptions();
-            if (null != fairnessIterator) {
-                opts.addScanIterator(fairnessIterator);
+
+        if (!fields.isEmpty()) {
+            for (String key : forwardMap.keySet()) {
+                Collection<Range> ranges = forwardMap.get(key);
+                try {
+                    bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                            Collections.emptySet(), Collections.singleton(key), false, true);
+
+                    bs.setResourceClass(BatchResource.class);
+                } catch (Exception e) {
+                    throw new DatawaveFatalQueryException(e);
+                }
+                SessionOptions opts = bs.getOptions();
                 if (null != fairnessIterator) {
+                    opts.addScanIterator(fairnessIterator);
+
                     IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
                     opts.addScanIterator(cfg);
+
+                }
+
+                for (String field : fields) {
+                    opts.fetchColumnFamily(new Text(field));
+                }
+
+                sessions.add(bs);
+                iter = Iterators.concat(iter, bs);
+
+            }
+
+            try {
+                timedScan(iter, fieldsToValues, config, unfieldedLookup, fields, false, maxLookupConfigured, log);
+            } finally {
+                for (ScannerSession sesh : sessions) {
+                    scannerFactory.close(sesh);
                 }
             }
-            
-            for (String field : reverseFields) {
-                opts.fetchColumnFamily(new Text(field));
-            }
-            
-            sessions.add(bs);
-            iter = Iterators.concat(iter, bs);
-            
         }
-        
-        try {
-            timedScan(iter, fieldsToValues, config, unfieldedLookup, reverseFields, true, maxLookupConfigured, log);
-        } finally {
-            for (ScannerSession sesh : sessions) {
-                scannerFactory.close(sesh);
+
+        sessions.clear();
+        if (reverseFields.isEmpty()) {
+            for (String key : reverseMap.keySet()) {
+                Collection<Range> ranges = reverseMap.get(key);
+                if (log.isTraceEnabled()) {
+                    log.trace("adding " + ranges + " for reverse");
+                }
+                try {
+
+                    bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(), ranges,
+                            Collections.emptySet(), Collections.singleton(key), true, true);
+
+                    bs.setResourceClass(BatchResource.class);
+                } catch (Exception e) {
+                    throw new DatawaveFatalQueryException(e);
+                }
+                SessionOptions opts = bs.getOptions();
+                if (null != fairnessIterator) {
+                    opts.addScanIterator(fairnessIterator);
+                    if (null != fairnessIterator) {
+                        IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
+                        opts.addScanIterator(cfg);
+                    }
+                }
+
+                for (String field : reverseFields) {
+                    opts.fetchColumnFamily(new Text(field));
+                }
+
+                sessions.add(bs);
+                iter = Iterators.concat(iter, bs);
+
+            }
+            try {
+                timedScan(iter, fieldsToValues, config, unfieldedLookup, reverseFields, true, maxLookupConfigured, log);
+            } finally {
+                for (ScannerSession sesh : sessions) {
+                    scannerFactory.close(sesh);
+                }
             }
         }
-        
+
         return fieldsToValues;
     }
     
