@@ -54,6 +54,8 @@ import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPruningVisitor;
+import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -66,7 +68,6 @@ import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
-import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
@@ -266,6 +267,17 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * Should the ExecutableExpansionVisitor be run
      */
     protected boolean executableExpansion = true;
+    
+    /**
+     * Control if automated logical query reduction should be done
+     */
+    protected boolean reduceQuery = false;
+    
+    /**
+     * Control if when applying logical query reduction the pruned query should be shown via an assignment node in the resulting query. There may be a
+     * performance impact.
+     */
+    protected boolean showReducedQueryPrune = true;
     
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
@@ -858,6 +870,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         stopwatch.stop();
+        
+        if (reduceQuery) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query");
+            
+            // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after reduction:");
+            }
+            
+            stopwatch.stop();
+        }
         
         return queryTree;
     }
@@ -1900,6 +1925,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
         boolean needsFullTable = false;
         CloseableIterable<QueryPlan> ranges = null;
         
+        // if the query has already been reduced to false there is no reason to do more
+        if (QueryPruningVisitor.getState(queryTree) == QueryPruningVisitor.TruthState.FALSE) {
+            return new Tuple2<>(emptyCloseableIterator(), false);
+        }
+        
         // if we still have an unexecutable tree, then a full table scan is
         // required
         List<String> debugOutput = null;
@@ -1910,6 +1940,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (log.isDebugEnabled()) {
             logDebug(debugOutput, "ExecutableDeterminationVisitor at getQueryRanges:");
         }
+        
         if (state != STATE.EXECUTABLE) {
             if (state == STATE.ERROR) {
                 log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
@@ -2295,6 +2326,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setExecutableExpansion(boolean executableExpansion) {
         this.executableExpansion = executableExpansion;
+    }
+    
+    public void setReduceQuery(boolean reduceQuery) {
+        this.reduceQuery = reduceQuery;
+    }
+    
+    public boolean isReduceQuery() {
+        return reduceQuery;
+    }
+    
+    public void setShowReducedQueryPrune(boolean showReducedQueryPrune) {
+        this.showReducedQueryPrune = showReducedQueryPrune;
+    }
+    
+    public boolean isShowReducedQueryPrune() {
+        return showReducedQueryPrune;
     }
     
     public static int getMaxChildNodesToPrint() {
