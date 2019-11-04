@@ -513,8 +513,12 @@ public class ShardIndexQueryTableStaticMethods {
             expansionFields = Sets.newHashSet(expansionFields);
             expansionFields.retainAll(reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
         }
-        for (String field : expansionFields) {
-            bs.fetchColumnFamily(new Text(field));
+        if (expansionFields.isEmpty()) {
+            bs.fetchColumnFamily(new Text(Constants.NO_FIELD));
+        } else {
+            for (String field : expansionFields) {
+                bs.fetchColumnFamily(new Text(field));
+            }
         }
         
     }

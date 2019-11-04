@@ -50,6 +50,11 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     protected JexlNode currentNode;
     
+    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, boolean expandFields,
+                    boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        super(config, scannerFactory, helper, null, expandFields, expandValues, "Datawave Unfielded Lookup");
+    }
+    
     public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
                     boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
         super(config, scannerFactory, helper, expansionFields, expandFields, expandValues, "Datawave Unfielded Lookup");
