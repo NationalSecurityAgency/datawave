@@ -107,6 +107,12 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     
     @Override
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
+        if (ANY_FINAME.equals(fiName)) {
+            Key startKey = new Key(rowId, FI_START);
+            Key endKey = new Key(rowId, FI_END);
+            return new RangeSplitter(new Range(startKey, true, endKey, false), getMaxRangeSplit());
+        }
+        
         if (fst != null || isNegated()) {
             Key startKey = null;
             Key endKey = null;

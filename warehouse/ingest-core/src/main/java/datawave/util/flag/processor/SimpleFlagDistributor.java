@@ -13,11 +13,15 @@ import java.util.TreeSet;
 
 import datawave.util.flag.InputFile;
 import datawave.util.flag.config.FlagDataTypeConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * No groupings, just returns files that are pending in no specific order
  */
 public class SimpleFlagDistributor implements FlagDistributor {
+    
+    private static final Logger log = LoggerFactory.getLogger(SimpleFlagDistributor.class);
     
     private Set<InputFile> inputs;
     private FlagDataTypeConfig fc;
@@ -51,12 +55,18 @@ public class SimpleFlagDistributor implements FlagDistributor {
         } else {
             int count = 0;
             Iterator<InputFile> it = inputs.iterator();
-            // while we have mode potential files, and we have potentially room to add one
+            // while we have more potential files, and we have potentially room to add one
             while (it.hasNext() && (count < fc.getMaxFlags())) {
                 InputFile inFile = it.next();
                 
+                int maps = inFile.getMaps();
+                if (maps > fc.getMaxFlags()) {
+                    log.warn("Estimated map count ({}) for file exceeds maxFlags ({}). Consider increasing maxFlags to accommodate larger files, or split this file into smaller chunks. File: {}",
+                                    maps, fc.getMaxFlags(), inFile.getFileName());
+                }
+                
                 // update the count, and break out if this file would pass our threshold
-                count += inFile.getMaps();
+                count += maps;
                 if (count > fc.getMaxFlags()) {
                     break;
                 }

@@ -1,8 +1,10 @@
 package datawave.core.iterators;
 
+import datawave.data.ColumnFamilyConstants;
 import datawave.query.Constants;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
+import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -89,7 +91,11 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
         Key startKey = null;
         Key endKey = null;
-        if (isNegated()) {
+        if (ANY_FINAME.equals(fiName)) {
+            startKey = new Key(rowId, FI_START);
+            endKey = new Key(rowId, FI_END);
+            return new RangeSplitter(new Range(startKey, true, endKey, false), getMaxRangeSplit());
+        } else if (isNegated()) {
             startKey = new Key(rowId, fiName);
             endKey = new Key(rowId, new Text(fiName.toString() + '\0'));
             return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());
