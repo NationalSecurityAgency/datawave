@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
@@ -42,14 +43,13 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
-import org.junit.Rule;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +58,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -78,8 +77,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
-    
-    private static final Random rVal = new Random(System.currentTimeMillis());
     
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -140,7 +137,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     @Before
     public void querySetUp() throws IOException {
-        temporaryFolder = Files.createTempDirectory("tmp");
+        temporaryFolder = Paths.get(Files.createTempDir().toURI());
         
         log.debug("---------  querySetUp  ---------");
         
@@ -536,12 +533,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         final List<String> dirs = new ArrayList<>();
         final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
-            // avoid threading issues by using a random number as part of the directory path to create a distinct directory
-            int rand = rVal.nextInt(Integer.MAX_VALUE);
-            Path ivCache = Files.createTempDirectory("ivarator.cache-" + rand);
+            Path ivCache = Paths.get(Files.createTempDir().toURI());
             dirs.add(ivCache.toAbsolutePath().toString());
             if (fst) {
-                ivCache = Files.createTempDirectory("ivarator.cache-" + "fst-" + rand);
+                ivCache = Paths.get(Files.createTempDir().toURI());
                 fstDirs.add(ivCache.toAbsolutePath().toString());
             }
         }

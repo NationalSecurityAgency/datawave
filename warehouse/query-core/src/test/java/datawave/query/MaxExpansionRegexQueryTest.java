@@ -123,6 +123,8 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String anyCity = this.dataManager.convertAnyField(city);
         String expect = anyRegex + AND_OP + anyCity;
         
+        ivaratorConfig();
+        
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
@@ -156,7 +158,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         try {
             runTest(query, expect);
             Assert.fail("exception expected");
-        } catch (RuntimeException re) {
+        } catch (FullTableScansDisallowedException e) {
             // expected
         }
         
@@ -180,6 +182,8 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String regexPhrase = RN_OP + "'b.*'";
         String fieldVal = EQ_OP + "'a-1'";
         String query = Constants.ANY_FIELD + regexPhrase + AND_OP + Constants.ANY_FIELD + fieldVal;
+        
+        ivaratorConfig();
         
         // '!~' operation is not processed correctly - see QueryJexl docs
         // this is a hack for the expected results

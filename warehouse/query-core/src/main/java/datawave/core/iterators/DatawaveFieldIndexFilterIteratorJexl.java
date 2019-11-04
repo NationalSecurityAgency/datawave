@@ -91,7 +91,11 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
         Key startKey = null;
         Key endKey = null;
         // construct new range
-        
+        if (ANY_FINAME.equals(fiName)) {
+            startKey = new Key(rowId, FI_START);
+            endKey = new Key(rowId, FI_END);
+            return new RangeSplitter(new Range(startKey, true, endKey, false), getMaxRangeSplit());
+        }
         // we cannot simply use startKeyInclusive in the Range as the datatype and UID follow the value in the keys
         // hence we need to compute the min possibly value that would be inclusive
         this.boundingFiRangeStringBuilder.setLength(0);
