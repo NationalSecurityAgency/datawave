@@ -6,7 +6,6 @@ import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -17,7 +16,6 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.RawDataManager;
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -106,7 +104,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             
             // expect no results
             runTest(query, Collections.emptyList());
-
+            
             // add the metadata back in
             addMetadataEntries(metadata);
         }
@@ -385,19 +383,21 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testReverseIndex() throws Exception {
         log.info("------  testReverseIndex  ------");
-        String phrase = EQ_OP + "'.*ica'";
+        String phrase = RE_OP + "'.*ica'";
         String query = Constants.ANY_FIELD + phrase;
         
         // Test the plan with all expansions
-        String expect = Constants.NO_FIELD + phrase;
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'north america'";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
         
         // Test the plan sans value expansion
+        expect = CityField.CONTINENT.name() + phrase;
         plan = getPlan(query, true, false);
         assertPlanEquals(expect, plan);
         
         // Test the plan sans field expansion
+        expect = Constants.ANY_FIELD + EQ_OP + "'north america'";
         plan = getPlan(query, false, true);
         assertPlanEquals(expect, plan);
         
@@ -536,7 +536,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         // add the metadata back in
         addMetadataEntries(metadata);
     }
-
+    
     @Test
     public void testRegexZeroResults() throws Exception {
         String phrase = RE_OP + "'zero.*'";
