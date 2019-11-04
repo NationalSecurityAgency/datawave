@@ -8,6 +8,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.apache.log4j.Logger;
 
+import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,6 +25,8 @@ public class IvaratorCacheDirConfig {
     public static final long DEFAULT_MIN_AVAILABLE_STORAGE_MB = 0L;
     public static final double DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT = 0f;
     
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+    
     // the base path for caching ivarator output for this filesystem
     final protected String basePathURI;
     
@@ -32,6 +38,11 @@ public class IvaratorCacheDirConfig {
     
     // the minimum percent of available storage required to use this filesystem
     final protected double minAvailableStoragePercent;
+    
+    static {
+        objectMapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
+        objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+    }
     
     protected IvaratorCacheDirConfig() {
         this(null);
@@ -64,7 +75,7 @@ public class IvaratorCacheDirConfig {
     public boolean isValid() {
         boolean result = true;
         
-        if (!basePathURI.startsWith("file:/") && !basePathURI.startsWith("hdfs:/")) {
+        if (basePathURI == null || (!basePathURI.startsWith("file:/") && !basePathURI.startsWith("hdfs:/"))) {
             log.warn("Invalid basePathURI for IvaratorCacheDirConfig.  'basePathURI' scheme must be either 'file:' or 'hdfs:'");
             result = false;
         }
@@ -103,14 +114,10 @@ public class IvaratorCacheDirConfig {
     }
     
     public static String toJson(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
         return objectMapper.writeValueAsString(ivaratorCacheDirConfigs);
     }
     
     public static List<IvaratorCacheDirConfig> fromJson(String jsonArray) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         return new ArrayList<>(Arrays.asList(objectMapper.readValue(jsonArray, IvaratorCacheDirConfig[].class)));
     }
     

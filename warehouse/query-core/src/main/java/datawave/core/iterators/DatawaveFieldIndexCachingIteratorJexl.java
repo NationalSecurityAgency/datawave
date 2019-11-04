@@ -359,6 +359,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.sortedUIDs = true;
     }
     
+    /**
+     * Creates an ivarator using the specified builder.
+     * 
+     * @param builder
+     *            may be any builder which extends the abstract builder defined above. Specialized builders exist for regex, range, filter, and list ivarators.
+     */
     protected DatawaveFieldIndexCachingIteratorJexl(Builder builder) {
         if (builder.fieldName.toString().startsWith("fi" + NULL_BYTE)) {
             this.fieldName = new Text(builder.fieldName.toString().substring(3));
