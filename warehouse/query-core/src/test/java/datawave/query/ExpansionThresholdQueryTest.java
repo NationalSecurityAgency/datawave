@@ -1,5 +1,7 @@
 package datawave.query;
 
+import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
@@ -9,6 +11,7 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,6 +24,7 @@ import java.util.Set;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.Assert.fail;
 
 /**
  * These test apply to the threshold marker which is normally injected into the query tree during the processing by the {@link QueryPlanner}. The test cases
@@ -62,20 +66,27 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         String expect = "(" + CityField.STATE.name() + RE_OP + state + ")" + AND_OP + countryQuery;
         
         this.logic.setMaxValueExpansionThreshold(6);
+        try {
+            runTest(query, expect);
+            fail("exception expected");
+        } catch (FullTableScansDisallowedException e) {
+            // expected
+        }
+        
+        this.logic.setMaxValueExpansionThreshold(1);
+        try {
+            runTest(query, expect);
+            fail("exception expected");
+        } catch (FullTableScansDisallowedException e) {
+            // expected
+        }
+        
+        ivaratorConfig();
+        
+        this.logic.setMaxValueExpansionThreshold(6);
         runTest(query, expect);
         
         this.logic.setMaxValueExpansionThreshold(1);
-        
-        // NOTE: Issue #156 addresses an issue where the ivarator is not configured
-        // it does not throw an exception; just return no results
-        // try {
-        // runTest(query, expect);
-        // Assert.fail("exception expected");
-        // } catch (DatawaveFatalQueryException e) {
-        // // expected
-        // }
-        
-        ivaratorConfig();
         runTest(query, expect);
     }
     
@@ -92,13 +103,13 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         String anyCountry = this.dataManager.convertAnyField(country);
         String expect = "(" + anyCity + ")" + AND_OP + anyCountry;
         
+        ivaratorConfig();
+        
         this.logic.setQueryThreads(1);
         this.logic.setMaxValueExpansionThreshold(2);
         runTest(query, expect);
         
-        // issue 156 - alter threshold to 1
-        // this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
+        this.logic.setMaxValueExpansionThreshold(1);
         runTest(query, expect);
     }
     
