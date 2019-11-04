@@ -72,7 +72,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private static final int COUNTERS_PER_INPUT_FILE = 2;
     
     /**
-     * Directory cache will serve as a place holder the directories in HDFS that were created. This will cut down on the number of RPC calls tot he NameNode
+     * Directory cache will serve as a place holder the directories in HDFS that were created. This will cut down on the number of RPC calls to the NameNode
      */
     private final Cache<Path,Path> directoryCache;
     // Executor will be used for directory lookups
@@ -247,7 +247,12 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             loadFilesForDistributor(fc, fs);
             
             while (fd.hasNext(shouldOnlyCreateFullFlags(fc)) && running) {
-                writeFlagFile(fc, fd.next(this));
+                Collection<InputFile> inFiles = fd.next(this);
+                if (null == inFiles || inFiles.isEmpty()) {
+                    throw new IllegalStateException(fd.getClass().getName()
+                                    + " has input files but returned zero candidates for flagging. Please validate configuration");
+                }
+                writeFlagFile(fc, inFiles);
             }
         }
     }
@@ -396,11 +401,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      */
     //@formatter:on
     void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
-        
-        long estSize = getFlagFileSize(fc, inFiles);
-        if (inFiles == null || inFiles.isEmpty())
-            throw new IllegalArgumentException("inFiles for Flag file");
-        final ConcurrentHashMap<InputFile,Path> moved = new ConcurrentHashMap<>();
         File flagFile = null;
         final FileSystem fs = getHadoopFS();
         long now = System.currentTimeMillis();
