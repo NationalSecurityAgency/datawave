@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Set;
 
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -41,7 +40,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     
     public IndexMatch(final String uid, final JexlNode myNode, final IndexMatchType type) {
         this.uid = uid;
-        this.nodeSet = new JexlNodeSet();
+        this.nodeSet = new JexlNodeSet(true);
         if (null != myNode)
             add(myNode);
         this.type = type;
@@ -50,7 +49,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     
     public IndexMatch(Set<JexlNode> nodes, String uid, final IndexMatchType type) {
         this.uid = uid;
-        this.nodeSet = new JexlNodeSet();
+        this.nodeSet = new JexlNodeSet(true);
         if (null != nodes) {
             for (JexlNode node : nodes) {
                 add(node);

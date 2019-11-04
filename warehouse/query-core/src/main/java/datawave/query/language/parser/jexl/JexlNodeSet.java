@@ -2,12 +2,8 @@ package datawave.query.language.parser.jexl;
 
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -22,25 +18,39 @@ import static datawave.query.jexl.JexlASTHelper.nodeToKey;
 /**
  * Utility class that implements the {@link Set} interface for use with a collection of Jexl nodes.
  *
- * Element uniqueness is computed using {@link JexlASTHelper#nodeToKey(JexlNode)} for keys.
+ * Nodes are stored in an underlying map of String keys to JexlNode values. If the underlying nodes are changed then the set is considered invalid.
  *
- * If a Jexl node and it's {@link ASTDelayedPredicate} equivalent are both added to the set, the set will accept the delayed predicate.
+ * The node keys are built using {@link JexlASTHelper#nodeToKey(JexlNode)}.
  *
- * The JexlNodeSet is considered invalid if any of the underlying Jexl nodes change.
+ * If the {@link #useSourceNodeForKeys} flag is set then {@link datawave.query.jexl.nodes.QueryPropertyMarker} nodes will generate a node key from the unwrapped
+ * source node.
+ *
+ * For example, (ASTDelayedPredicate &amp;&amp; FOO == 'bar') will be unwrapped to FOO == 'bar', generating the node key "FOO == 'bar'".
  */
 public class JexlNodeSet implements Set<JexlNode> {
+    
+    // Determines if we unwrap QueryPropertyMarker nodes and use their source node to determine node uniqueness.
+    private boolean useSourceNodeForKeys = false;
     
     // Internal map of node keys to nodes;
     private final Map<String,JexlNode> nodeMap;
     
-    private static final Logger log = Logger.getLogger(JexlNodeSet.class);
-    
     public JexlNodeSet() {
+        this(false);
+    }
+    
+    /**
+     *
+     * @param useSourceNodeForKeys
+     *            determines how node keys are generated.
+     */
+    public JexlNodeSet(boolean useSourceNodeForKeys) {
+        this.useSourceNodeForKeys = useSourceNodeForKeys;
         this.nodeMap = new HashMap<>();
     }
     
     /**
-     * Method to access all the Jexl nodes in the set.
+     * Get all the Jexl nodes in the set.
      *
      * @return the underlying node map values.
      */
@@ -70,7 +80,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     @Override
     public boolean contains(Object o) {
         if (o instanceof JexlNode) {
-            String nodeKey = nodeToKey((JexlNode) o);
+            String nodeKey = buildKey((JexlNode) o);
             return nodeMap.containsKey(nodeKey);
         }
         return false;
@@ -93,82 +103,43 @@ public class JexlNodeSet implements Set<JexlNode> {
     
     @Override
     public boolean add(JexlNode node) {
-        if (isDelayed(node)) {
-            if (log.isTraceEnabled()) {
-                log.trace("Trying to add a delayed node: " + nodeToKey(node));
-            }
-            JexlNode sourceNode = getSourceNode(node);
-            if (contains(sourceNode)) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Source of delayed node already exists in node set.");
-                }
-                if (remove(sourceNode)) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Removing source node " + sourceNode + " from node set prior to adding delayed predicate: " + node);
-                    }
+        String nodeKey = buildKey(node);
+        if (nodeMap.containsKey(nodeKey)) {
+            
+            // If the node mapped to our node key is delayed, do not overwrite.
+            if (isDelayed(nodeMap.get(nodeKey))) {
+                return false;
+            } else {
+                
+                // If we are not delayed but a delayed version of our node already exists, do not add.
+                if (!isDelayed(node)) {
+                    return false;
                 }
             }
-            // Add the delayed node with a node key of just the source node.
-            return add(nodeToKey(sourceNode), node);
-        } else {
-            return add(nodeToKey(node), node);
         }
+        nodeMap.put(nodeKey, node);
+        return true;
     }
     
     /**
-     * You had better know what you're doing if you use this method.
-     *
-     * Defeat node duplicates when the same node is wrapped in an {@link ASTDelayedPredicate} marker.
-     *
-     * For example, FOO == 'bar' and it's delayed equivalent (DELAYED &amp;&amp; FOO == 'bar' will never be in the same set.
-     *
-     * @param nodeKey
-     *            a node key.
-     * @param node
-     *            a Jexl node.
-     * @return true if the JexlNodeSet was modified, false if not.
-     */
-    protected boolean add(String nodeKey, JexlNode node) {
-        if (!nodeMap.containsKey(nodeKey)) {
-            nodeMap.put(nodeKey, node);
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Remove the specified object from the set if it is a Jexl node.
-     *
-     * Builds a node key for the Jexl node and delegates to {@link #remove(String, Object)}
+     * Remove by object or node key.
      *
      * @param o
-     *            object to be removed from the set of Jexl nodes.
+     *            object or node key to be removed from the set of Jexl nodes.
      * @return True if the set contained the specified element.
      */
     @Override
     public boolean remove(Object o) {
         if (o instanceof JexlNode) {
             // Remove by value
-            String nodeKey = nodeToKey((JexlNode) o);
-            return remove(nodeKey, o);
+            String nodeKey = buildKey((JexlNode) o);
+            return nodeMap.remove(nodeKey, nodeMap.get(nodeKey));
         } else if (o instanceof String) {
             // Remove by key
             JexlNode node = nodeMap.get(o);
-            return remove((String) o, node);
+            return nodeMap.remove(o, node);
         }
         return false;
-    }
-    
-    /**
-     *
-     * @param nodeKey
-     *            key for the object to be removed.
-     * @param o
-     *            the object to be removed.
-     * @return True, if the set contained the specified element.
-     */
-    private boolean remove(String nodeKey, Object o) {
-        return nodeMap.remove(nodeKey, nodeMap.get(nodeKey));
     }
     
     @Override
@@ -204,14 +175,14 @@ public class JexlNodeSet implements Set<JexlNode> {
         Set<String> retainKeys = new HashSet<>();
         if (collection != null) {
             for (Object o : collection) {
-                retainKeys.add(nodeToKey((JexlNode) o));
+                retainKeys.add(buildKey((JexlNode) o));
             }
         }
         
         boolean modified = false;
         for (String key : Sets.newHashSet(nodeMap.keySet())) {
             if (!retainKeys.contains(key)) {
-                if (remove(key, nodeMap.get(key))) {
+                if (remove(key)) {
                     modified = true;
                 }
             }
@@ -237,45 +208,24 @@ public class JexlNodeSet implements Set<JexlNode> {
         this.nodeMap.clear();
     }
     
-    /**
-     * Copied from IndexInfo so that JexlNodeSet can handle adding delayed predicates.
-     *
-     * (FOO == 'bar') and (DELAYED &amp;&amp; FOO == 'bar') are logically equivalent.
-     *
-     * @param node
-     *            a Jexl node.
-     * @return the source Jexl node if this node is delayed.
-     */
-    private JexlNode getSourceNode(JexlNode node) {
-        
-        if (ASTDelayedPredicate.instanceOf(node)) {
-            return ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
-            
-            return ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(node);
-        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(node)) {
-            
-            return ExceededTermThresholdMarkerJexlNode.getExceededTermThresholdSource(node);
-        } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
-            
-            return IndexHoleMarkerJexlNode.getIndexHoleSource(node);
-        } else {
-            return node;
-        }
+    // Is a node marked as delayed for any reason?
+    protected boolean isDelayed(JexlNode node) {
+        return QueryPropertyMarker.instanceOf(node, null);
     }
     
-    // Is a node delayed?
-    protected boolean isDelayed(JexlNode node) {
-        if (ASTDelayedPredicate.instanceOf(node)) {
-            return true;
-        } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
-            return true;
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
-            return true;
-        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(node)) {
-            return true;
+    /**
+     * Build a key for the provided Jexl node. If the {@link #useSourceNodeForKeys} flag is set, this method will unwrap
+     * {@link datawave.query.jexl.nodes.QueryPropertyMarker} nodes when generating the node key.
+     * 
+     * @param node
+     * @return
+     */
+    public String buildKey(JexlNode node) {
+        if (useSourceNodeForKeys && isDelayed(node)) {
+            JexlNode sourceNode = QueryPropertyMarker.getQueryPropertySource(node, null);
+            return nodeToKey(sourceNode);
         } else {
-            return false;
+            return nodeToKey(node);
         }
     }
 }

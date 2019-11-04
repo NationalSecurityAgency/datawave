@@ -295,7 +295,7 @@ public class JexlNodeSetTest {
         JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
         assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
         
-        JexlNodeSet nodeSet = new JexlNodeSet();
+        JexlNodeSet nodeSet = new JexlNodeSet(true);
         nodeSet.add(sourceNode);
         nodeSet.add(delayedNode);
         
@@ -314,7 +314,7 @@ public class JexlNodeSetTest {
         JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
         assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
         
-        JexlNodeSet nodeSet = new JexlNodeSet();
+        JexlNodeSet nodeSet = new JexlNodeSet(true);
         nodeSet.add(delayedNode);
         nodeSet.add(sourceNode);
         
