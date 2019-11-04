@@ -88,9 +88,7 @@ public class FieldNameLookup extends IndexLookup {
             if (!fields.isEmpty()) {
                 for (String term : terms) {
                     
-                    Set<Range> ranges = Sets.newHashSet();
-                    
-                    ranges.add(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
+                    Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
                     if (limitToTerms) {
                         log.trace("Creating configureTermMatchOnly");
                         bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
