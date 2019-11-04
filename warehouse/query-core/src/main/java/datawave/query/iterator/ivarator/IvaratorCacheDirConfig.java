@@ -103,12 +103,14 @@ public class IvaratorCacheDirConfig {
     }
     
     public static String toJson(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) throws JsonProcessingException {
-        ObjectMapper objectMapper = JsonMapper.builder().configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true).build();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
         return objectMapper.writeValueAsString(ivaratorCacheDirConfigs);
     }
     
     public static List<IvaratorCacheDirConfig> fromJson(String jsonArray) throws JsonProcessingException {
-        ObjectMapper objectMapper = JsonMapper.builder().configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true).build();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         return new ArrayList<>(Arrays.asList(objectMapper.readValue(jsonArray, IvaratorCacheDirConfig[].class)));
     }
     
