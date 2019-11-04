@@ -77,7 +77,7 @@ public class WildcardFieldedTerm extends FieldedTerm {
         return Pattern.compile(sb.toString(), flags);
     }
     
-    public static int getFirstWildcardIndex(FieldQueryNode node, Set<Character> charactersToNotEscape) {
+    public static boolean hasUnescapedWildcard(FieldQueryNode node, Set<Character> charactersToNotEscape) {
         CharSequence textSeq = node.getText();
         
         if (textSeq instanceof UnescapedCharSequence) {
@@ -92,9 +92,9 @@ public class WildcardFieldedTerm extends FieldedTerm {
                 escBuilder.append(escSeq.charAt(i));
             }
             
-            return getFirstWildcardIndex(escBuilder.toString());
+            return getFirstWildcardIndex(escBuilder.toString()) > -1;
         } else {
-            return getFirstWildcardIndex(textSeq.toString());
+            return getFirstWildcardIndex(textSeq.toString()) > -1;
         }
     }
     
@@ -104,12 +104,12 @@ public class WildcardFieldedTerm extends FieldedTerm {
         char[] chars = selector.toCharArray();
         for (int x = 0; x < chars.length; x++) {
             char currChar = chars[x];
-            if (currChar == '*' || currChar == '?') {
-                char prevChar = chars[(x > 0 ? x - 1 : x)];
-                if (prevChar != '\\') {
-                    firstNonEscapedWildcard = x;
-                    break;
-                }
+            if (currChar == '\\') {
+                // skip next character since it's escaped
+                x++;
+            } else if (currChar == '*' || currChar == '?') {
+                firstNonEscapedWildcard = x;
+                break;
             }
         }
         return firstNonEscapedWildcard;
