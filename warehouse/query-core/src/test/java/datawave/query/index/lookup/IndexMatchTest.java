@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class IndexMatchTest {
     
@@ -238,7 +239,7 @@ public class IndexMatchTest {
         
         // Cannot write a null uid.
         IndexMatch other = writeRead(match);
-        assertNull(other.uid);
+        fail("IndexMatch should have thrown an exception trying to write a null uid.");
     }
     
     /**
