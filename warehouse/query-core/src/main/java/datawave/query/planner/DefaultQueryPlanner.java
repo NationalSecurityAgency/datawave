@@ -273,6 +273,12 @@ public class DefaultQueryPlanner extends QueryPlanner {
      */
     protected boolean reduceQuery = false;
     
+    /**
+     * Control if when applying logical query reduction the pruned query should be shown via an assignment node in the resulting query. There may be a
+     * performance impact.
+     */
+    protected boolean showReducedQueryPrune = true;
+    
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
     }
@@ -869,7 +875,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query");
             
             // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
-            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, log.isDebugEnabled());
+            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
             
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after reduction:");
@@ -2320,6 +2326,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setExecutableExpansion(boolean executableExpansion) {
         this.executableExpansion = executableExpansion;
+    }
+    
+    public void setReduceQuery(boolean reduceQuery) {
+        this.reduceQuery = reduceQuery;
+    }
+    
+    public boolean isReduceQuery() {
+        return reduceQuery;
+    }
+    
+    public void setShowReducedQueryPrune(boolean showReducedQueryPrune) {
+        this.showReducedQueryPrune = showReducedQueryPrune;
+    }
+    
+    public boolean isShowReducedQueryPrune() {
+        return showReducedQueryPrune;
     }
     
     public static int getMaxChildNodesToPrint() {
