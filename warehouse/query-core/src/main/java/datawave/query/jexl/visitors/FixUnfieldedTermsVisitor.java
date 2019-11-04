@@ -85,6 +85,18 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     }
     
     public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
+                    boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        // if not expanding fields or values, then this is a noop
+        if (expandFields || expandValues) {
+            FixUnfieldedTermsVisitor visitor = new FixUnfieldedTermsVisitor(config, scannerFactory, helper, expandFields, expandValues);
+            
+            return (ASTJexlScript) script.jjtAccept(visitor, null);
+        } else {
+            return script;
+        }
+    }
+    
+    public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
                     Set<String> expansionFields, boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException,
                     TableNotFoundException {
         // if not expanding fields or values, then this is a noop
