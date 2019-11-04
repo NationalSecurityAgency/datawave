@@ -16,7 +16,6 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -28,15 +27,12 @@ import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
-import datawave.query.function.JexlEvaluation;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
@@ -72,7 +68,6 @@ import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
-import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
@@ -91,7 +86,6 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
-import datawave.query.util.Tuple3;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -874,7 +868,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (reduceQuery) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query");
             
-            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree);
+            // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, log.isDebugEnabled());
             
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after reduction:");
@@ -1925,7 +1920,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         CloseableIterable<QueryPlan> ranges = null;
         
         // if the query has already been reduced to false there is no reason to do more
-        if (QueryPruningVisitor.getState(queryTree) == QueryPruningVisitor.TRUTH_STATE.FALSE) {
+        if (QueryPruningVisitor.getState(queryTree) == QueryPruningVisitor.TruthState.FALSE) {
             return new Tuple2<>(emptyCloseableIterator(), false);
         }
         
