@@ -33,12 +33,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold;
     
-    protected void validateIvaratorCacheDirs(List<IvaratorCacheDir> ivaratorCacheDirs) {
-        if (ivaratorCacheDirs.isEmpty())
-            throw new IllegalStateException("No ivarator cache dirs defined");
-        
-        IvaratorCacheDir ivaratorCacheDir = ivaratorCacheDirs.get(0);
-        
+    protected void validateIvaratorControlDir(IvaratorCacheDir ivaratorCacheDir) {
         String ivaratorCacheDirURI = ivaratorCacheDir.getPathURI();
         FileSystem hdfsFileSystem = ivaratorCacheDir.getFs();
         

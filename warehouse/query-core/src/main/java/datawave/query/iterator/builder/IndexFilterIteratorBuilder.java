@@ -51,8 +51,12 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                 log.trace("Generating ivarator (caching field index iterator) for " + filter + " over " + range);
             }
             
-            // get the hadoop file system and a temporary directory
-            validateIvaratorCacheDirs(ivaratorCacheDirs);
+            // we can't build an ivarator if no ivarator directories have been defined
+            if (ivaratorCacheDirs.isEmpty())
+                throw new IllegalStateException("No ivarator cache dirs defined");
+            
+            // ensure that we are able to create the first ivarator cache dir (the control dir)
+            validateIvaratorControlDir(ivaratorCacheDirs.get(0));
             
             DocumentIterator docIterator = null;
             try {
