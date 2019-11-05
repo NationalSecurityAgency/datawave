@@ -12,6 +12,7 @@
         <extraIngestArgs>-data.name.override=wikipedia</extraIngestArgs>
         <inputFormat>datawave.ingest.wikipedia.WikipediaEventInputFormat</inputFormat>
         <ingestPool>live</ingestPool>
+        <lifo>false</lifo>
    </flagCfg>
    <flagCfg>
         <dataName>mycsv</dataName>
@@ -35,6 +36,7 @@
         <reducers>${LIVE_INGEST_REDUCERS}</reducers>
         <maxFlags>${INGEST_MAX_LIVE_BLOCKS_PER_JOB}</maxFlags>
         <script>bin/ingest/live-ingest.sh</script>
+        <fileListMarker>***FILE_LIST***</fileListMarker>
    </defaultCfg>
    <baseHDFSDir>${HDFS_BASE_DIR}</baseHDFSDir>
    <distributorType>simple</distributorType>
