@@ -42,13 +42,11 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(LookupBoundedRangeForTerms.class);
     
     protected Set<String> datatypeFilter;
-    protected Set<Text> fields;
     private final LiteralRange<?> literalRange;
     
     public LookupBoundedRangeForTerms(LiteralRange<?> literalRange) {
         this.literalRange = literalRange;
         datatypeFilter = Sets.newHashSet();
-        fields = Sets.newHashSet();
     }
     
     @Override
@@ -77,7 +75,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
         
         String lower = literalRange.getLower().toString(), upper = literalRange.getUpper().toString();
         
-        fields.add(new Text(literalRange.getFieldName()));
+        Set<String> fields = Collections.singleton(literalRange.getFieldName());
         Key startKey;
         if (literalRange.isLowerInclusive()) { // inclusive
             startKey = new Key(new Text(lower));
@@ -161,7 +159,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
             }
             
             try {
-                timedScan(bs.iterator(), fieldToUniqueTerms, config, datatypeFilter, fields, false, maxLookup, null);
+                timedScan(bs.iterator(), fieldToUniqueTerms, config, false, fields, false, maxLookup, null);
             } finally {
                 scannerFactory.close(bs);
             }
@@ -188,8 +186,9 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
         return fieldToUniqueTerms;
     }
     
+    @Override
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
-                    Set<String> datatypeFilter, final Set<Text> fields, boolean isReverse, long timeout) {
+                    final boolean unfieldedLookup, final Set<String> fields, boolean isReverse, long timeout) {
         final Set<String> myDatatypeFilter = datatypeFilter;
         return () -> {
             Text holder = new Text();
@@ -276,9 +275,9 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
                 log.info("Failed or timed out expanding range fields: " + e.getMessage());
                 if (log.isDebugEnabled())
                     log.debug("Failed or Timed out ", e);
-                if (fields.size() >= 1) {
-                    for (Text fieldTxt : fields) {
-                        String field = fieldTxt.toString();
+                // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
+                if (!unfieldedLookup) {
+                    for (String field : fields) {
                         if (log.isTraceEnabled()) {
                             log.trace("field is " + field);
                             log.trace("field is " + (null == fieldsToValues));

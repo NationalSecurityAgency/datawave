@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Set;
 
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import org.apache.commons.jexl2.parser.JexlNode;

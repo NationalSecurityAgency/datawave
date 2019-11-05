@@ -6,6 +6,7 @@ import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.lookups.FieldNameLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.Query;
@@ -48,6 +49,11 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     private static final Logger log = Logger.getLogger(FixUnfieldedTermsVisitor.class);
     
     protected JexlNode currentNode;
+    
+    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, boolean expandFields,
+                    boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        super(config, scannerFactory, helper, null, expandFields, expandValues, "Datawave Unfielded Lookup");
+    }
     
     public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
                     boolean expandFields, boolean expandValues, boolean expandNegations) throws InstantiationException, IllegalAccessException,
@@ -220,6 +226,11 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         
+        // ignore already marked expressions
+        if (QueryPropertyMarker.instanceOf(node, null)) {
+            return node;
+        }
+        
         ASTAndNode newNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
         newNode.image = node.image;
         
@@ -327,7 +338,8 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     protected IndexLookupCallable buildIndexLookup(JexlNode node) throws TableNotFoundException, IOException, InstantiationException, IllegalAccessException {
         // Using the datatype filter when expanding this term isn't really
         // necessary
-        IndexLookup lookup = ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, this.expansionFields, this.allTypes, helper);
+        IndexLookup lookup = ShardIndexQueryTableStaticMethods
+                        .normalizeQueryTerm(node, this.expansionFields, this.allTypes, config.getDatatypeFilter(), helper);
         
         if (lookup instanceof FieldNameLookup && config.getLimitAnyFieldLookups()) {
             lookup.setLimitToTerms(true);
