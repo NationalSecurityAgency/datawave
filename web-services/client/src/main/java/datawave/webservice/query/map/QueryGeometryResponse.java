@@ -46,7 +46,7 @@ public class QueryGeometryResponse extends BaseResponse implements HtmlProvider 
         this.basemaps = basemaps;
     }
     
-    @XmlElement(name = "queryId")
+    @XmlElement(name = "queryId", nillable = true)
     protected String queryId = null;
     
     @XmlTransient
@@ -82,7 +82,7 @@ public class QueryGeometryResponse extends BaseResponse implements HtmlProvider 
     
     private String toGeoJsonFeatures() {
         if (!this.result.isEmpty())
-            return "[ " + String.join(", ", this.result.stream().map(QueryGeometry::toGeoJsonFeature).collect(Collectors.toList())) + " ]";
+            return "[ " + this.result.stream().map(QueryGeometry::toGeoJsonFeature).collect(Collectors.joining(", ")) + " ]";
         else
             return "undefined";
     }

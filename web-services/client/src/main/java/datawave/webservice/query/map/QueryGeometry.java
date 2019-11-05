@@ -41,7 +41,7 @@ public class QueryGeometry implements Serializable {
         this.geometry = geometry;
     }
     
-    String toGeoJsonFeature() {
+    public String toGeoJsonFeature() {
         return "{'type': 'Feature', 'properties': {'function': \"" + StringEscapeUtils.escapeHtml(function) + "\"},'geometry': " + geometry + "}";
     }
     
