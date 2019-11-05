@@ -126,7 +126,7 @@ public class AncestorIndexStream implements IndexStream {
         Collection<String> nodeStrings;
         
         public MatchGroup(IndexMatch match) {
-            nodeStrings = match.nodeStrings;
+            nodeStrings = match.nodeSet.getNodeKeys();
         }
         
         @Override

@@ -1,5 +1,7 @@
 package datawave.query.util.sortedset;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -7,6 +9,8 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 
@@ -104,19 +108,30 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         }
         
         @Override
-        public InputStream getInputStream() throws IOException {
-            if (log.isDebugEnabled()) {
-                log.debug("Creating " + file);
-            }
-            return fs.open(file);
+        public SortedSetInputStream getSortedSetInputStream() throws IOException {
+            // only need to compress if we are using a local file system
+            return new SortedSetInputStream(getInputStream(), ("file".equals(file.toUri().getScheme())));
         }
         
         @Override
-        public OutputStream getOutputStream() throws IOException {
+        public InputStream getInputStream() throws IOException {
             if (log.isDebugEnabled()) {
                 log.debug("Reading " + file);
             }
-            return fs.create(file);
+            return new BufferedInputStream(fs.open(file));
+        }
+        
+        @Override
+        public SortedSetOutputStream getSortedSetOutputStream() throws IOException {
+            // only need to compress if we are using a local file system
+            return new SortedSetOutputStream(getOutputStream(), ("file".equals(file.toUri().getScheme())));
+        }
+        
+        private OutputStream getOutputStream() throws IOException {
+            if (log.isDebugEnabled()) {
+                log.debug("Creating " + file);
+            }
+            return new BufferedOutputStream(fs.create(file));
         }
         
         @Override

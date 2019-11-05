@@ -1,8 +1,8 @@
 package datawave.query.cardinality;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.io.Files;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -89,7 +90,7 @@ public class TestCardinalityWithQuery {
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        temporaryFolder = Files.createTempDirectory("tmp");
+        temporaryFolder = Paths.get(Files.createTempDir().toURI());
         
         logic = new ShardQueryLogic();
         logic.setMarkingFunctions(new MarkingFunctions.Default());

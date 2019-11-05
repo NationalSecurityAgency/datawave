@@ -1,6 +1,10 @@
 package datawave.query.testframework;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
+import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
@@ -31,25 +35,35 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.MultiTableBatchWriter;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
-import org.junit.Rule;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +72,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -78,8 +91,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
-    
-    private static final Random rVal = new Random(System.currentTimeMillis());
     
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -140,7 +151,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     @Before
     public void querySetUp() throws IOException {
-        temporaryFolder = Files.createTempDirectory("tmp");
+        temporaryFolder = Paths.get(Files.createTempDir().toURI());
         
         log.debug("---------  querySetUp  ---------");
         
@@ -536,12 +547,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         final List<String> dirs = new ArrayList<>();
         final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
-            // avoid threading issues by using a random number as part of the directory path to create a distinct directory
-            int rand = rVal.nextInt(Integer.MAX_VALUE);
-            Path ivCache = Files.createTempDirectory("ivarator.cache-" + rand);
+            Path ivCache = Paths.get(Files.createTempDir().toURI());
             dirs.add(ivCache.toAbsolutePath().toString());
             if (fst) {
-                ivCache = Files.createTempDirectory("ivarator.cache-" + "fst-" + rand);
+                ivCache = Paths.get(Files.createTempDir().toURI());
                 fstDirs.add(ivCache.toAbsolutePath().toString());
             }
         }
@@ -580,4 +589,46 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             throw new ComparisonFailure(reason.reason, expected, query);
         }
     }
+    
+    protected Multimap<String,Key> removeMetadataEntries(Set<String> fields, Text cf) throws AccumuloSecurityException, AccumuloException,
+                    TableNotFoundException {
+        Multimap<String,Key> metadataEntries = HashMultimap.create();
+        MultiTableBatchWriter multiTableWriter = connector.createMultiTableBatchWriter(new BatchWriterConfig());
+        BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
+        for (String field : fields) {
+            Mutation mutation = new Mutation(new Text(field));
+            Scanner scanner = connector.createScanner(QueryTestTableHelper.METADATA_TABLE_NAME, new Authorizations());
+            scanner.fetchColumnFamily(cf);
+            scanner.setRange(new Range(new Text(field)));
+            boolean foundEntries = false;
+            for (Map.Entry<Key,Value> entry : scanner) {
+                foundEntries = true;
+                metadataEntries.put(field, entry.getKey());
+                mutation.putDelete(entry.getKey().getColumnFamily(), entry.getKey().getColumnQualifier(), entry.getKey().getColumnVisibilityParsed());
+            }
+            scanner.close();
+            if (foundEntries) {
+                writer.addMutation(mutation);
+            }
+        }
+        writer.close();
+        connector.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
+        return metadataEntries;
+    }
+    
+    protected void addMetadataEntries(Multimap<String,Key> metadataEntries) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+        MultiTableBatchWriter multiTableWriter = connector.createMultiTableBatchWriter(new BatchWriterConfig());
+        BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
+        for (String field : metadataEntries.keySet()) {
+            Mutation mutation = new Mutation(new Text(field));
+            for (Key key : metadataEntries.get(field)) {
+                metadataEntries.put(field, key);
+                mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), new Value());
+            }
+            writer.addMutation(mutation);
+        }
+        writer.close();
+        connector.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
+    }
+    
 }

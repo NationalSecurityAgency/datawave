@@ -275,15 +275,19 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected ASTJexlScript pushdownLargeFieldedLists(ShardQueryConfiguration config, ASTJexlScript queryTree) throws IOException {
         Query settings = config.getQuery();
         
-        URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
-        
-        if (hdfsQueryCacheUri != null) {
-            FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
-            // Find large lists of values against the same field and push down into
-            // an Ivarator
-            return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
+        if (config.canHandleExceededValueThreshold()) {
+            URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
+            
+            if (hdfsQueryCacheUri != null) {
+                FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
+                // Find large lists of values against the same field and push down into
+                // an Ivarator
+                return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
+            } else {
+                return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, null, null);
+            }
         } else {
-            return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, null, null);
+            return queryTree;
         }
     }
     
