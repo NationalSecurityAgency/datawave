@@ -5,6 +5,13 @@ import datawave.query.jexl.JexlNodeFactory;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -12,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class IndexMatchTest {
     
@@ -215,5 +223,47 @@ public class IndexMatchTest {
         String uid = "uid";
         IndexMatch indexMatch = new IndexMatch(uid);
         assertEquals(uid.hashCode(), indexMatch.hashCode());
+    }
+    
+    @Test
+    public void testWriteReadIndexMatch() throws IOException {
+        IndexMatch match = new IndexMatch("uid");
+        
+        IndexMatch other = writeRead(match);
+        assertEquals("uid", other.uid);
+    }
+    
+    @Test(expected = NullPointerException.class)
+    public void testWriteReadIndexMatchWithNullUid() throws IOException {
+        IndexMatch match = new IndexMatch(null);
+        
+        // Cannot write a null uid.
+        IndexMatch other = writeRead(match);
+        fail("IndexMatch should have thrown an exception trying to write a null uid.");
+    }
+    
+    /**
+     * Write the provided IndexMatch to a byte array and construct a fresh IndexMatch from that byte array.
+     *
+     * @param match
+     *            the IndexMatch to be written to a byte array.
+     * @return a new IndexMatch constructed from the byte array
+     * @throws IOException
+     */
+    private IndexMatch writeRead(IndexMatch match) throws IOException {
+        // Write the IndexMatch to a byte array.
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        DataOutput output = new DataOutputStream(outputStream);
+        match.write(output);
+        outputStream.flush();
+        
+        // Construct input stream from byte array.
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        DataInput input = new DataInputStream(inputStream);
+        
+        // Construct IndexMatch from input stream and return.
+        IndexMatch other = new IndexMatch();
+        other.readFields(input);
+        return other;
     }
 }
