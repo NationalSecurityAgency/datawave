@@ -40,7 +40,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     
     public IndexMatch(final String uid, final JexlNode myNode, final IndexMatchType type) {
         this.uid = uid;
-        this.nodeSet = new JexlNodeSet(true);
+        this.nodeSet = new JexlNodeSet();
         if (null != myNode)
             add(myNode);
         this.type = type;
@@ -49,7 +49,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     
     public IndexMatch(Set<JexlNode> nodes, String uid, final IndexMatchType type) {
         this.uid = uid;
-        this.nodeSet = new JexlNodeSet(true);
+        this.nodeSet = new JexlNodeSet();
         if (null != nodes) {
             for (JexlNode node : nodes) {
                 add(node);

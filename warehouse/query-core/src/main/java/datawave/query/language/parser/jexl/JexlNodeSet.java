@@ -23,7 +23,7 @@ import static datawave.query.jexl.JexlASTHelper.nodeToKey;
  * The node keys are built using {@link JexlASTHelper#nodeToKey(JexlNode)}.
  *
  * If the {@link #useSourceNodeForKeys} flag is set then {@link datawave.query.jexl.nodes.QueryPropertyMarker} nodes will generate a node key from the unwrapped
- * source node.
+ * source node. NOTE: This flag is enabled by default.
  *
  * For example, (ASTDelayedPredicate &amp;&amp; FOO == 'bar') will be unwrapped to FOO == 'bar', generating the node key "FOO == 'bar'".
  */
@@ -36,7 +36,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     private final Map<String,JexlNode> nodeMap;
     
     public JexlNodeSet() {
-        this(false);
+        this(true);
     }
     
     /**

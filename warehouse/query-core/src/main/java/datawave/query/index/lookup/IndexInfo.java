@@ -137,7 +137,7 @@ public class IndexInfo implements Writable, UidIntersector {
      */
     public IndexInfo union(IndexInfo first, IndexInfo o, List<JexlNode> delayedNodes) {
         IndexInfo merged = new IndexInfo();
-        JexlNodeSet nodeSet = new JexlNodeSet(true);
+        JexlNodeSet nodeSet = new JexlNodeSet();
         
         if (null != first.myNode && first.myNode != o.myNode) {
             
@@ -228,7 +228,7 @@ public class IndexInfo implements Writable, UidIntersector {
         }
         
         IndexInfo merged = new IndexInfo();
-        JexlNodeSet nodeSet = new JexlNodeSet(true);
+        JexlNodeSet nodeSet = new JexlNodeSet();
         
         if (null != myNode && myNode != o.myNode && !isInfinite()) {
             JexlNode sourceNode = getSourceNode(myNode);
@@ -375,7 +375,7 @@ public class IndexInfo implements Writable, UidIntersector {
                 ids.put(match.uid, newNode);
         }
         
-        JexlNodeSet infiniteNodeSet = new JexlNodeSet(true);
+        JexlNodeSet infiniteNodeSet = new JexlNodeSet();
         infiniteNodeSet.addAll(delayedNodes);
         for (JexlNode node : otherInfiniteNodes) {
             if (null != node)
@@ -387,7 +387,7 @@ public class IndexInfo implements Writable, UidIntersector {
             merged.count = maxPossibilities;
         } else {
             for (String uid : ids.keySet()) {
-                JexlNodeSet nodeSet = new JexlNodeSet(true);
+                JexlNodeSet nodeSet = new JexlNodeSet();
                 nodeSet.addAll(ids.get(uid));
                 nodeSet.addAll(infiniteNodeSet.getNodes());
                 
@@ -400,7 +400,7 @@ public class IndexInfo implements Writable, UidIntersector {
         JexlNode newNode;
         if (matches.size() > 1) {
             // get the unique node sets
-            JexlNodeSet nodeSet = new JexlNodeSet(true);
+            JexlNodeSet nodeSet = new JexlNodeSet();
             for (IndexMatch match : matches) {
                 nodeSet.add(match.getNode());
             }
@@ -424,7 +424,7 @@ public class IndexInfo implements Writable, UidIntersector {
         } else if (matches.size() == 1) {
             newNode = TreeFlatteningRebuildingVisitor.flatten(matches.iterator().next().getNode());
         } else {
-            JexlNodeSet nodeSet = new JexlNodeSet(true);
+            JexlNodeSet nodeSet = new JexlNodeSet();
             nodeSet.addAll(infiniteNodeSet.getNodes());
             nodeSet.add(matchNode);
             
@@ -501,7 +501,7 @@ public class IndexInfo implements Writable, UidIntersector {
                             ids.put(match.uid, newNode);
                     }
                     
-                    JexlNodeSet ourDelayedNodes = new JexlNodeSet(true);
+                    JexlNodeSet ourDelayedNodes = new JexlNodeSet();
                     ourDelayedNodes.addAll(delayedNodes);
                     // we may actually have no node on o
                     if (null != o.getNode())
@@ -522,7 +522,7 @@ public class IndexInfo implements Writable, UidIntersector {
                             ids.put(match.uid, newNode);
                     }
                     
-                    JexlNodeSet ourDelayedNodes = new JexlNodeSet(true);
+                    JexlNodeSet ourDelayedNodes = new JexlNodeSet();
                     ourDelayedNodes.addAll(delayedNodes);
                     // possible, depending on how query is processed that we have no node.
                     if (null != getNode())
@@ -538,7 +538,7 @@ public class IndexInfo implements Writable, UidIntersector {
                 }
             }
         }
-        JexlNodeSet nodeSet = new JexlNodeSet(true);
+        JexlNodeSet nodeSet = new JexlNodeSet();
         if (null != myNode && myNode != o.myNode)
             nodeSet.add(myNode);
         if (null != o.myNode)
@@ -568,7 +568,7 @@ public class IndexInfo implements Writable, UidIntersector {
             Set<JexlNode> nodes = ids.get(uid);
             // make sure that we have nodes, otherwise we are pruned to nothing
             if (nodes.size() > 1 || (allowsDelayed && (nodes.size() + delayedNodes.size()) > 1)) {
-                JexlNodeSet nodeSet = new JexlNodeSet(true);
+                JexlNodeSet nodeSet = new JexlNodeSet();
                 nodeSet.addAll(nodes);
                 nodeSet.addAll(delayedNodes);
                 
