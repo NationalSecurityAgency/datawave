@@ -107,14 +107,9 @@ public class JexlNodeSet implements Set<JexlNode> {
         if (nodeMap.containsKey(nodeKey)) {
             
             // If the node mapped to our node key is delayed, do not overwrite.
-            if (isDelayed(nodeMap.get(nodeKey))) {
+            // If we are not delayed but a delayed version of our node already exists, do not add.
+            if (isDelayed(nodeMap.get(nodeKey)) || !isDelayed(node)) {
                 return false;
-            } else {
-                
-                // If we are not delayed but a delayed version of our node already exists, do not add.
-                if (!isDelayed(node)) {
-                    return false;
-                }
             }
         }
         nodeMap.put(nodeKey, node);
