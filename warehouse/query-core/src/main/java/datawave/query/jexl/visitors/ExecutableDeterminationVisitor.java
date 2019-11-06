@@ -71,6 +71,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -338,7 +339,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         STATE state;
-        if (isUnOrNoFielded(node)) {
+        if (isNoFieldOnly(node)) {
+            state = STATE.IGNORABLE;
+        } else if (isUnOrNoFielded(node)) {
             state = STATE.EXECUTABLE;
         } else if (isUnindexed(node)) {
             state = STATE.NON_EXECUTABLE;
@@ -358,7 +361,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNENode node, Object data) {
         STATE state;
-        if (isUnOrNoFielded(node)) {
+        if (isNoFieldOnly(node)) {
+            state = STATE.IGNORABLE;
+        } else if (isUnOrNoFielded(node)) {
             state = STATE.NON_EXECUTABLE;
         } else if (isUnindexed(node)) {
             state = STATE.NON_EXECUTABLE;
@@ -387,7 +392,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         // if a delayed predicate, then this is not-executable against the index by choice
         else if (ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
-            if (isNonEvent(node)) {
+            if (isNoFieldOnly(node)) {
+                state = STATE.IGNORABLE;
+            } else if (isNonEvent(node)) {
                 state = STATE.ERROR;
             } else {
                 state = STATE.NON_EXECUTABLE;
@@ -405,7 +412,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTERNode node, Object data) {
         STATE state;
         // if we got here, then we were not wrapped in an ivarator, or in a delayed predicate. So we know it returns 0 results unless unindexed.
-        if (isUnOrNoFielded(node)) {
+        if (isNoFieldOnly(node)) {
+            state = STATE.IGNORABLE;
+        } else if (isUnOrNoFielded(node)) {
             state = STATE.EXECUTABLE;
         } else if (isUnindexed(node)) {
             state = STATE.NON_EXECUTABLE;
@@ -422,7 +431,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTNRNode node, Object data) {
         STATE state;
         // negated regex nodes are in general not-executable against the index
-        if (isNonEvent(node)) {
+        if (isNoFieldOnly(node)) {
+            state = STATE.IGNORABLE;
+        } else if (isNonEvent(node)) {
             state = STATE.ERROR;
         } else {
             state = STATE.NON_EXECUTABLE;
@@ -431,6 +442,16 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             output.writeLine(data + node.toString() + '(' + JexlASTHelper.getIdentifier(node) + ") -> " + state);
         }
         return state;
+    }
+    
+    public static boolean isNoFieldOnly(JexlNode node) {
+        try {
+            return Constants.NO_FIELD.equals(JexlASTHelper.getIdentifier(node));
+        } catch (NoSuchElementException e) {
+            // no-op
+        }
+        
+        return false;
     }
     
     private boolean isUnOrNoFielded(JexlNode node) {
@@ -496,7 +517,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
-            if (this.nonEventFields.contains(JexlASTHelper.deconstructIdentifier(identifier))) {
+            String deconstructed = JexlASTHelper.deconstructIdentifier(identifier);
+            if (deconstructed.equals(Constants.NO_FIELD)) {
+                // no field should not be factored in here
+                continue;
+            }
+            if (this.nonEventFields.contains(deconstructed)) {
                 return true;
             }
         }
@@ -529,12 +555,13 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return this;
     }
     
-    @Override
-    public Object visit(ASTGENode node, Object data) {
+    private STATE visitLtGtNode(JexlNode node, Object data) {
         STATE state;
         // if we got here, then (iff in a bounded, indexed range) we were not wrapped in an ivarator, or in a delayed predicate. So we know it returns 0
         // results.
-        if (isWithinBoundedRange(node)) {
+        if (isNoFieldOnly(node)) {
+            state = STATE.IGNORABLE;
+        } else if (isWithinBoundedRange(node)) {
             state = STATE.EXECUTABLE;
         } else if (isNonEvent(node)) {
             state = STATE.ERROR;
@@ -545,60 +572,26 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             output.writeLine(data + node.toString() + '(' + JexlASTHelper.getIdentifier(node) + ") -> " + state);
         }
         return state;
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return visitLtGtNode(node, data);
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        STATE state;
-        // if we got here, then (iff in a bounded, indexed range) we were not wrapped in an ivarator, or in a delayed predicate. So we know it returns 0
-        // results.
-        if (isWithinBoundedRange(node)) {
-            state = STATE.EXECUTABLE;
-        } else if (isNonEvent(node)) {
-            state = STATE.ERROR;
-        } else {
-            state = STATE.NON_EXECUTABLE;
-        }
-        if (output != null) {
-            output.writeLine(data + node.toString() + '(' + JexlASTHelper.getIdentifier(node) + ") -> " + state);
-        }
-        return state;
+        return visitLtGtNode(node, data);
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        STATE state;
-        // if we got here, then (iff in a bounded, indexed range) we were not wrapped in an ivarator, or in a delayed predicate. So we know it returns 0
-        // results.
-        if (isWithinBoundedRange(node)) {
-            state = STATE.EXECUTABLE;
-        } else if (isNonEvent(node)) {
-            state = STATE.ERROR;
-        } else {
-            state = STATE.NON_EXECUTABLE;
-        }
-        if (output != null) {
-            output.writeLine(data + node.toString() + '(' + JexlASTHelper.getIdentifier(node) + ") -> " + state);
-        }
-        return state;
+        return visitLtGtNode(node, data);
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        STATE state;
-        // if we got here, then (iff in a bounded, indexed range) we were not wrapped in an ivarator, or in a delayed predicate. So we know it returns 0
-        // results.
-        if (isWithinBoundedRange(node)) {
-            state = STATE.EXECUTABLE;
-        } else if (isNonEvent(node)) {
-            state = STATE.ERROR;
-        } else {
-            state = STATE.NON_EXECUTABLE;
-        }
-        if (output != null) {
-            output.writeLine(data + node.toString() + '(' + JexlASTHelper.getIdentifier(node) + ") -> " + state);
-        }
-        return state;
+        return visitLtGtNode(node, data);
     }
     
     @Override

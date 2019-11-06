@@ -43,22 +43,22 @@ public class JexlNodeSetTest {
     
     @Test
     public void testContains() {
-        JexlNode node1 = JexlNodeFactory.buildEQNode("FOO", "bar");
-        JexlNodeSet jexlNodeSet = new JexlNodeSet();
-        jexlNodeSet.add(node1);
-        assertTrue(jexlNodeSet.contains(node1));
+        JexlNode node = JexlNodeFactory.buildEQNode("FOO", "bar");
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(node);
+        assertTrue(nodeSet.contains(node));
         
         // Nope, it won't.
-        assertFalse(jexlNodeSet.contains("a string?!?!"));
+        assertFalse(nodeSet.contains("a string?!?!"));
     }
     
     @Test
     public void testIterator() {
         JexlNode node = JexlNodeFactory.buildEQNode("FOO", "bar");
-        JexlNodeSet jexlNodeSet = new JexlNodeSet();
-        jexlNodeSet.add(node);
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(node);
         
-        Iterator<JexlNode> iter = jexlNodeSet.iterator();
+        Iterator<JexlNode> iter = nodeSet.iterator();
         assertTrue(iter.hasNext());
         JexlNode next = iter.next();
         assertEquals(JexlASTHelper.nodeToKey(node), JexlASTHelper.nodeToKey(next));

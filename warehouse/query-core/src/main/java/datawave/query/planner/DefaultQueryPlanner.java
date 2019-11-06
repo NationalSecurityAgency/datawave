@@ -52,7 +52,10 @@ import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
+import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPruningVisitor;
+import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -65,7 +68,6 @@ import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
-import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
@@ -222,7 +224,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     private static Multimap<String,Type<?>> normalizedFieldAsDataTypeMap;
     
+    // These are caches of the complete set of indexed and normalized fields
     private static Set<String> cachedIndexedFields = null;
+    private static Set<String> cachedReverseIndexedFields = null;
     private static Set<String> cachedNormalizedFields = null;
     
     protected List<PushDownRule> rules = Lists.newArrayList();
@@ -266,6 +270,17 @@ public class DefaultQueryPlanner extends QueryPlanner {
      */
     protected boolean executableExpansion = true;
     
+    /**
+     * Control if automated logical query reduction should be done
+     */
+    protected boolean reduceQuery = false;
+    
+    /**
+     * Control if when applying logical query reduction the pruned query should be shown via an assignment node in the resulting query. There may be a
+     * performance impact.
+     */
+    protected boolean showReducedQueryPrune = true;
+    
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
     }
@@ -289,10 +304,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         setDisableTestNonExistentFields(other.disableTestNonExistentFields);
         setDisableExpandIndexFunction(other.disableExpandIndexFunction);
         setDisableRangeCoalescing(other.disableRangeCoalescing);
-        if (null != other.cachedIndexedFields)
-            cachedIndexedFields = Sets.newHashSet(other.cachedIndexedFields);
-        if (null != other.cachedNormalizedFields)
-            cachedNormalizedFields = Sets.newHashSet(other.cachedNormalizedFields);
         rules.addAll(other.rules);
         queryIteratorClazz = other.queryIteratorClazz;
         setMetadataHelper(other.getMetadataHelper());
@@ -858,6 +869,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
+        if (reduceQuery) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query");
+            
+            // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after reduction:");
+            }
+            
+            stopwatch.stop();
+        }
+        
         return queryTree;
     }
     
@@ -890,8 +914,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ANYFIELD regex nodes");
             
             try {
-                
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
+                config.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
+                config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
                                 config.isExpandFields(), config.isExpandValues());
             } catch (EmptyUnfieldedTermExpansionException e) {
@@ -963,18 +988,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
         }
         
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fetch required dataTypes");
         Multimap<String,Type<?>> fieldToDatatypeMap = null;
         if (cacheDataTypes) {
             fieldToDatatypeMap = dataTypeMap.getIfPresent(String.valueOf(config.getDatatypeFilter().hashCode()));
             
         }
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fetch required dataTypes");
         try {
             if (null != fieldToDatatypeMap) {
                 Set<String> indexedFields = Sets.newHashSet();
+                Set<String> reverseIndexedFields = Sets.newHashSet();
                 Set<String> normalizedFields = Sets.newHashSet();
                 
-                loadDataTypeMetadata(fieldToDatatypeMap, indexedFields, normalizedFields, config, false);
+                loadDataTypeMetadata(fieldToDatatypeMap, indexedFields, reverseIndexedFields, normalizedFields, false);
                 
                 if (null == queryFieldsAsDataTypeMap) {
                     queryFieldsAsDataTypeMap = HashMultimap.create(Multimaps.filterKeys(fieldToDatatypeMap, input -> !cachedNormalizedFields.contains(input)));
@@ -985,12 +1011,12 @@ public class DefaultQueryPlanner extends QueryPlanner {
                                     .create(Multimaps.filterKeys(fieldToDatatypeMap, input -> cachedNormalizedFields.contains(input)));
                 }
                 
-                setCachedFields(indexedFields, queryFieldsAsDataTypeMap, normalizedFieldAsDataTypeMap, config);
+                setCachedFields(indexedFields, reverseIndexedFields, queryFieldsAsDataTypeMap, normalizedFieldAsDataTypeMap, config);
             } else {
                 fieldToDatatypeMap = configureIndexedAndNormalizedFields(metadataHelper, config, queryTree);
                 
                 if (cacheDataTypes) {
-                    loadDataTypeMetadata(null, null, null, config, true);
+                    loadDataTypeMetadata(null, null, null, null, true);
                     
                     dataTypeMap.put(String.valueOf(config.getDatatypeFilter().hashCode()), metadataHelper.getFieldsToDatatypes(config.getDatatypeFilter()));
                 }
@@ -1206,10 +1232,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * Load the metadata information.
      *
      * @param fieldToDatatypeMap
-     *
      * @param indexedFields
+     * @param reverseIndexedFields
      * @param normalizedFields
-     * @param config
      * @param reload
      * @throws AccumuloException
      * @throws AccumuloSecurityException
@@ -1218,19 +1243,29 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    private void loadDataTypeMetadata(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> normalizedFields,
-                    ShardQueryConfiguration config, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
+    private void loadDataTypeMetadata(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> reverseIndexedFields,
+                    Set<String> normalizedFields, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
                     ExecutionException, InstantiationException, IllegalAccessException {
         synchronized (dataTypeMap) {
-            if (!reload && (null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)) {
+            if (!reload && (null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)
+                            && (null != cachedReverseIndexedFields && null != reverseIndexedFields)) {
                 indexedFields.addAll(cachedIndexedFields);
+                reverseIndexedFields.addAll(cachedReverseIndexedFields);
                 normalizedFields.addAll(cachedNormalizedFields);
                 
                 return;
             }
             
             cachedIndexedFields = metadataHelper.getIndexedFields(null);
+            cachedReverseIndexedFields = metadataHelper.getReverseIndexedFields(null);
             cachedNormalizedFields = metadataHelper.getAllNormalized();
+            
+            if ((null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)
+                            && (null != cachedReverseIndexedFields && null != reverseIndexedFields)) {
+                indexedFields.addAll(cachedIndexedFields);
+                reverseIndexedFields.addAll(cachedReverseIndexedFields);
+                normalizedFields.addAll(cachedNormalizedFields);
+            }
         }
     }
     
@@ -1899,6 +1934,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
         boolean needsFullTable = false;
         CloseableIterable<QueryPlan> ranges = null;
         
+        // if the query has already been reduced to false there is no reason to do more
+        if (QueryPruningVisitor.getState(queryTree) == QueryPruningVisitor.TruthState.FALSE) {
+            return new Tuple2<>(emptyCloseableIterator(), false);
+        }
+        
         // if we still have an unexecutable tree, then a full table scan is
         // required
         List<String> debugOutput = null;
@@ -1909,6 +1949,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (log.isDebugEnabled()) {
             logDebug(debugOutput, "ExecutableDeterminationVisitor at getQueryRanges:");
         }
+        
         if (state != STATE.EXECUTABLE) {
             if (state == STATE.ERROR) {
                 log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
@@ -1961,7 +2002,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             }
             // if a value threshold is exceeded and we cannot handle that, then
             // force a full table scan
-            else if (StreamContext.EXCEEDED_VALUE_THRESHOLD.equals(stream.context()) && !config.canHandleExceededValueThreshold()) {
+            else if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && !config.canHandleExceededValueThreshold()) {
                 log.debug("Needs full table scan because we exceeded the value threshold and config.canHandleExceededValueThreshold() is false");
                 needsFullTable = true;
             }
@@ -2142,28 +2183,30 @@ public class DefaultQueryPlanner extends QueryPlanner {
         Multimap<String,Type<?>> fieldToDatatypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, config.getDatatypeFilter(), queryTree, false);
         
         try {
-            return configureIndexedAndNormalizedFields(fieldToDatatypeMap, metadataHelper.getIndexedFields(null), metadataHelper.getAllNormalized(), config,
-                            queryTree);
+            return configureIndexedAndNormalizedFields(fieldToDatatypeMap, metadataHelper.getIndexedFields(null), metadataHelper.getReverseIndexedFields(null),
+                            metadataHelper.getAllNormalized(), config, queryTree);
         } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
         }
         
     }
     
-    protected void setCachedFields(final Set<String> indexedFields, Multimap<String,Type<?>> queryFieldMap, Multimap<String,Type<?>> normalizedFieldMap,
-                    ShardQueryConfiguration config) {
+    protected void setCachedFields(Set<String> indexedFields, Set<String> reverseIndexedFields, Multimap<String,Type<?>> queryFieldMap,
+                    Multimap<String,Type<?>> normalizedFieldMap, ShardQueryConfiguration config) {
         config.setIndexedFields(indexedFields);
+        config.setReverseIndexedFields(reverseIndexedFields);
         config.setQueryFieldsDatatypes(queryFieldMap);
         config.setNormalizedFieldsDatatypes(normalizedFieldMap);
     }
     
-    protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(Multimap<String,Type<?>> fieldToDatatypeMap, final Set<String> indexedFields,
-                    final Set<String> normalizedFields, ShardQueryConfiguration config, ASTJexlScript queryTree) throws DatawaveQueryException,
-                    TableNotFoundException, InstantiationException, IllegalAccessException {
+    protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields,
+                    Set<String> reverseIndexedFields, Set<String> normalizedFields, ShardQueryConfiguration config, ASTJexlScript queryTree)
+                    throws DatawaveQueryException, TableNotFoundException, InstantiationException, IllegalAccessException {
         log.debug("config.getDatatypeFilter() = " + config.getDatatypeFilter());
         log.debug("fieldToDatatypeMap.keySet() is " + fieldToDatatypeMap.keySet());
         
         config.setIndexedFields(indexedFields);
+        config.setReverseIndexedFields(reverseIndexedFields);
         
         log.debug("normalizedFields = " + normalizedFields);
         
@@ -2294,6 +2337,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setExecutableExpansion(boolean executableExpansion) {
         this.executableExpansion = executableExpansion;
+    }
+    
+    public void setReduceQuery(boolean reduceQuery) {
+        this.reduceQuery = reduceQuery;
+    }
+    
+    public boolean isReduceQuery() {
+        return reduceQuery;
+    }
+    
+    public void setShowReducedQueryPrune(boolean showReducedQueryPrune) {
+        this.showReducedQueryPrune = showReducedQueryPrune;
+    }
+    
+    public boolean isShowReducedQueryPrune() {
+        return showReducedQueryPrune;
     }
     
     public static int getMaxChildNodesToPrint() {

@@ -14,7 +14,6 @@ import java.util.concurrent.TimeoutException;
 import datawave.query.config.ShardQueryConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import datawave.query.tables.ScannerFactory;
@@ -47,13 +46,13 @@ public abstract class IndexLookup {
      * 
      */
     protected boolean timedScan(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, final ShardQueryConfiguration config,
-                    final Set<String> datatypeFilter, final Set<Text> fields, final boolean isReverse, final long timeout, final Logger log) {
+                    final boolean unfieldedLookup, final Set<String> fields, final boolean isReverse, final long timeout, final Logger log) {
         
         long maxLookup = timeout;
         
         ExecutorService execService = Executors.newFixedThreadPool(1);
         
-        Future<Boolean> future = execService.submit(createTimedCallable(iter, fieldsToValues, config, datatypeFilter, fields, isReverse, timeout));
+        Future<Boolean> future = execService.submit(createTimedCallable(iter, fieldsToValues, config, unfieldedLookup, fields, isReverse, timeout));
         
         boolean result = false;
         try {
@@ -93,9 +92,9 @@ public abstract class IndexLookup {
             future.cancel(true);
             if (null != log && log.isTraceEnabled())
                 log.trace("Timed out ");
-            if (fields.size() >= 1) {
-                for (Text fieldTxt : fields) {
-                    String field = fieldTxt.toString();
+            // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
+            if (!unfieldedLookup) {
+                for (String field : fields) {
                     if (null != log && log.isTraceEnabled()) {
                         log.trace("field is " + field);
                         log.trace("field is " + (null == fieldsToValues));
@@ -114,7 +113,7 @@ public abstract class IndexLookup {
     }
     
     protected Callable<Boolean> createTimedCallable(Iterator<Entry<Key,Value>> iter, IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
-                    Set<String> datatypeFilter, Set<Text> fields, boolean isReverse, long timeout) {
+                    boolean unfieldedLookup, Set<String> fields, boolean isReverse, long timeout) {
         throw new UnsupportedOperationException("This operation isn't supported by this index lookup");
     }
     
