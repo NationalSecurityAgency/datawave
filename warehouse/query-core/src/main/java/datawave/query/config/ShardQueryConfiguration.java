@@ -178,6 +178,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> blacklistedFields = new HashSet<>(0);
     private Set<String> indexedFields = Sets.newHashSet();
+    private Set<String> reverseIndexedFields = Sets.newHashSet();
     private Set<String> normalizedFields = Sets.newHashSet();
     private Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     private Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
@@ -383,6 +384,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
         this.setBlacklistedFields(null == other.getBlacklistedFields() ? null : Sets.newHashSet(other.getBlacklistedFields()));
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
+        this.setReverseIndexedFields(null == other.getReverseIndexedFields() ? null : Sets.newHashSet(other.getReverseIndexedFields()));
         this.setNormalizedFields(null == other.getNormalizedFields() ? null : Sets.newHashSet(other.getNormalizedFields()));
         this.setDataTypes(null == other.getDataTypes() ? null : HashMultimap.create(other.getDataTypes()));
         this.setQueryFieldsDatatypes(null == other.getQueryFieldsDatatypes() ? null : HashMultimap.create(other.getQueryFieldsDatatypes()));
@@ -1273,6 +1275,23 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setIndexedFields(Set<String> indexedFields) {
         this.indexedFields = Sets.newHashSet(indexedFields);
+    }
+    
+    public Set<String> getReverseIndexedFields() {
+        return reverseIndexedFields;
+    }
+    
+    public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
+        this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
+        for (Entry<String,Type<?>> entry : reverseIndexedFieldsAndTypes.entries()) {
+            if (entry.getValue() instanceof UnindexType) {
+                this.reverseIndexedFields.remove(entry.getKey());
+            }
+        }
+    }
+    
+    public void setReverseIndexedFields(Set<String> reverseIndexedFields) {
+        this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFields);
     }
     
     public Set<String> getNormalizedFields() {

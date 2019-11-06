@@ -50,6 +50,11 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     protected JexlNode currentNode;
     
+    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, boolean expandFields,
+                    boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        super(config, scannerFactory, helper, null, expandFields, expandValues, "Datawave Unfielded Lookup");
+    }
+    
     public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
                     boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
         super(config, scannerFactory, helper, expansionFields, expandFields, expandValues, "Datawave Unfielded Lookup");
@@ -81,7 +86,14 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
                     boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        return fixUnfieldedTree(config, scannerFactory, helper, script, null, expandFields, expandValues);
+        // if not expanding fields or values, then this is a noop
+        if (expandFields || expandValues) {
+            FixUnfieldedTermsVisitor visitor = new FixUnfieldedTermsVisitor(config, scannerFactory, helper, expandFields, expandValues);
+            
+            return (ASTJexlScript) script.jjtAccept(visitor, null);
+        } else {
+            return script;
+        }
     }
     
     public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
@@ -353,7 +365,8 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
                     IllegalAccessException {
         // Using the datatype filter when expanding this term isn't really
         // necessary
-        IndexLookup lookup = ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, this.expansionFields, this.allTypes, helper);
+        IndexLookup lookup = ShardIndexQueryTableStaticMethods
+                        .normalizeQueryTerm(node, this.expansionFields, this.allTypes, config.getDatatypeFilter(), helper);
         
         if (lookup instanceof FieldNameLookup && config.getLimitAnyFieldLookups()) {
             lookup.setLimitToTerms(true);
