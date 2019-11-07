@@ -2,11 +2,11 @@ package datawave.query.iterator.builder;
 
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.iterator.DocumentIterator;
-import datawave.query.iterator.logic.DocumentAggregatingIterator;
-import datawave.query.predicate.Filter;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.predicate.Filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.fs.Path;
@@ -70,16 +70,22 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexFilterIteratorJexl rangeIterator = new DatawaveFieldIndexFilterIteratorJexl(new Text(range.getFieldName()), filter, new Text(
-                                range.getLower().toString()), range.isLowerInclusive(), new Text(range.getUpper().toString()), range.isUpperInclusive(),
-                                this.timeFilter, this.datatypeFilter, false, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout,
-                                ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
-                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                DatawaveFieldIndexFilterIteratorJexl rangeIterator = DatawaveFieldIndexFilterIteratorJexl.builder()
+                                .withFieldName(new Text(range.getFieldName())).withFilter(filter).withLowerBound(range.getLower().toString())
+                                .lowerInclusive(range.isLowerInclusive()).withUpperBound(range.getUpper().toString()).upperInclusive(range.isUpperInclusive())
+                                .withTimeFilter(timeFilter).withDatatypeFilter(datatypeFilter).negated(false)
+                                .withScanThreshold(ivaratorCacheScanPersistThreshold).withScanTimeout(ivaratorCacheScanTimeout)
+                                .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize).withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles)
+                                .withFileSystem(hdfsFileSystem).withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
+                                .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
+                                .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
+                                .withIteratorEnv(env).build();
+                
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);
                 }
-                rangeIterator.init(source, null, null);
+                rangeIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexFilterIteratorJexl: " + rangeIterator);
                 
                 // Add an interator to aggregate documents. This is needed for index only fields.

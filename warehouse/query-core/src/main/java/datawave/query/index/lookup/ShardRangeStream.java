@@ -49,11 +49,14 @@ public class ShardRangeStream extends RangeStream {
             
             IteratorSetting cfg = new IteratorSetting(stackStart++, "query", FieldIndexOnlyQueryIterator.class);
             
+            DefaultQueryPlanner.addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
             DefaultQueryPlanner.addOption(cfg, QueryOptions.QUERY, queryString, false);
             
             try {
                 DefaultQueryPlanner.addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS,
-                                QueryOptions.buildIndexOnlyFieldsString(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
+                                QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
+                DefaultQueryPlanner.addOption(cfg, QueryOptions.INDEXED_FIELDS,
+                                QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexedFields(config.getDatatypeFilter())), true);
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -106,7 +109,9 @@ public class ShardRangeStream extends RangeStream {
     
     @Override
     public Range rangeForTerm(String term, String field, Date start, Date end) {
-        return new Range(new Key(DateHelper.format(start) + "_"), false, new Key(DateHelper.format(end) + "_" + '\uffff'), false);
+        Key startKey = new Key(DateHelper.format(start) + "_");
+        Key endKey = new Key(DateHelper.format(end) + "_" + '\uffff');
+        return new Range(startKey, false, endKey, false);
     }
     
     public class FieldIndexParser implements Function<Entry<Key,Value>,QueryPlan> {
@@ -120,9 +125,8 @@ public class ShardRangeStream extends RangeStream {
         }
         
         public QueryPlan apply(Entry<Key,Value> entry) {
-            QueryPlan newPlan = new QueryPlan(node, new Range(new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily()), true, entry.getKey()
-                            .followingKey(PartialKey.ROW_COLFAM), false));
-            return newPlan;
+            return new QueryPlan(node, new Range(new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily()), true, entry.getKey().followingKey(
+                            PartialKey.ROW_COLFAM), false));
         }
     }
 }

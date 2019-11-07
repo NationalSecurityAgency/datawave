@@ -23,7 +23,6 @@ import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
-import datawave.webservice.query.exception.QueryException;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -37,46 +36,30 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 public class LookupTermsFromRegex extends RegexIndexLookup {
     private static final Logger log = Logger.getLogger(LookupTermsFromRegex.class);
     
     protected MetadataHelper helperRef = null;
-    protected Set<String> datatypeFilter;
-    protected Set<Text> fields;
-    protected Set<Text> reversefields;
+    protected Set<String> fields;
+    protected Set<String> reverseFields;
     protected final Set<String> patterns;
+    protected boolean unfieldedLookup = false;
     
-    public LookupTermsFromRegex(Set<String> fields, Set<String> patterns, MetadataHelper helperRef) {
+    public LookupTermsFromRegex(Set<String> fields, Set<String> reverseFields, Set<String> patterns, MetadataHelper helperRef, boolean unfieldedLookup) {
         setMetadataHelper(helperRef);
         this.patterns = patterns;
-        setFields(fields);
-        this.datatypeFilter = Sets.newHashSet();
+        this.fields = fields;
+        this.reverseFields = reverseFields;
+        this.unfieldedLookup = unfieldedLookup;
     }
     
     public LookupTermsFromRegex(String fieldName, Set<String> patterns, MetadataHelper metadata) {
-        this((Set<String>) null, patterns, metadata);
-        this.fields.add(new Text(fieldName));
-    }
-    
-    public LookupTermsFromRegex(String fieldName, Set<String> patterns, Set<String> datatypeFilter, MetadataHelper metadata) {
-        this(fieldName, patterns, metadata);
-        this.datatypeFilter.addAll(datatypeFilter);
+        this(Collections.singleton(fieldName), Collections.singleton(fieldName), patterns, metadata, false);
     }
     
     public void setMetadataHelper(MetadataHelper helper) {
         this.helperRef = helper;
-    }
-    
-    protected void setFields(Set<String> fieldSet) {
-        fields = Sets.newHashSet();
-        reversefields = Sets.newHashSet();
-        if (null != fieldSet) {
-            for (String field : fieldSet) {
-                this.fields.add(new Text(field));
-            }
-        }
     }
     
     @Override
@@ -94,17 +77,15 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         ScannerSession bs = null;
         
         IteratorSetting fairnessIterator = null;
-        long maxLookup = maxLookupConfigured;
-        if (maxLookup > 0) {
+        if (maxLookupConfigured > 0) {
             /**
              * The fairness iterator solves the problem whereby we have runaway iterators as a result of an evaluation that never finds anything
              */
             fairnessIterator = new IteratorSetting(1, TimeoutIterator.class);
             
-            long maxTime = (long) (maxLookup * 1.25);
+            long maxTime = (long) (maxLookupConfigured * 1.25);
             fairnessIterator.addOption(TimeoutIterator.MAX_SESSION_TIME, Long.valueOf(maxTime).toString());
         }
-        boolean performReverseLookup = buildReverseFields(config);
         
         for (String pattern : patterns) {
             if (!isAcceptedPattern(pattern)) {
@@ -141,51 +122,55 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
             }
         }
         
-        for (String key : forwardMap.keySet()) {
-            Collection<Range> ranges = forwardMap.get(key);
+        if (!fields.isEmpty()) {
+            for (String key : forwardMap.keySet()) {
+                Collection<Range> ranges = forwardMap.get(key);
+                try {
+                    bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                                    Collections.emptySet(), Collections.singleton(key), false, true);
+                    
+                    bs.setResourceClass(BatchResource.class);
+                } catch (Exception e) {
+                    throw new DatawaveFatalQueryException(e);
+                }
+                SessionOptions opts = bs.getOptions();
+                if (null != fairnessIterator) {
+                    opts.addScanIterator(fairnessIterator);
+                    
+                    IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
+                    opts.addScanIterator(cfg);
+                    
+                }
+                
+                for (String field : fields) {
+                    opts.fetchColumnFamily(new Text(field));
+                }
+                
+                sessions.add(bs);
+                iter = Iterators.concat(iter, bs);
+                
+            }
+            
             try {
-                bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                Collections.<String> emptySet(), Collections.singleton(key), false, true);
-                
-                bs.setResourceClass(BatchResource.class);
-            } catch (Exception e) {
-                throw new DatawaveFatalQueryException(e);
-            }
-            SessionOptions opts = bs.getOptions();
-            if (null != fairnessIterator) {
-                opts.addScanIterator(fairnessIterator);
-                
-                IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
-                opts.addScanIterator(cfg);
-                
-            }
-            
-            for (Text field : fields) {
-                opts.fetchColumnFamily(field);
-            }
-            
-            sessions.add(bs);
-            iter = Iterators.concat(iter, bs);
-            
-        }
-        
-        try {
-            timedScan(iter, fieldsToValues, config, datatypeFilter, fields, false, maxLookup, log);
-        } finally {
-            for (ScannerSession sesh : sessions) {
-                scannerFactory.close(sesh);
+                timedScan(iter, fieldsToValues, config, unfieldedLookup, fields, false, maxLookupConfigured, log);
+            } finally {
+                for (ScannerSession sesh : sessions) {
+                    scannerFactory.close(sesh);
+                }
             }
         }
         
         sessions.clear();
-        if (performReverseLookup) {
+        if (!reverseFields.isEmpty()) {
             for (String key : reverseMap.keySet()) {
                 Collection<Range> ranges = reverseMap.get(key);
-                log.trace("adding " + ranges + " for reverse");
+                if (log.isTraceEnabled()) {
+                    log.trace("adding " + ranges + " for reverse");
+                }
                 try {
                     
                     bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(), ranges,
-                                    Collections.<String> emptySet(), Collections.singleton(key), true, true);
+                                    Collections.emptySet(), Collections.singleton(key), true, true);
                     
                     bs.setResourceClass(BatchResource.class);
                 } catch (Exception e) {
@@ -199,17 +184,17 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                         opts.addScanIterator(cfg);
                     }
                 }
-                for (Text field : reversefields) {
-                    opts.fetchColumnFamily(field);
+                
+                for (String field : reverseFields) {
+                    opts.fetchColumnFamily(new Text(field));
                 }
                 
                 sessions.add(bs);
                 iter = Iterators.concat(iter, bs);
                 
             }
-            
             try {
-                timedScan(iter, fieldsToValues, config, datatypeFilter, fields, true, maxLookup, log);
+                timedScan(iter, fieldsToValues, config, unfieldedLookup, reverseFields, true, maxLookupConfigured, log);
             } finally {
                 for (ScannerSession sesh : sessions) {
                     scannerFactory.close(sesh);
@@ -222,117 +207,90 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
     
     @Override
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
-                    Set<String> datatypeFilter, final Set<Text> fields, final boolean isReverse, long timeout) {
-        final Set<String> myDatatypeFilter = datatypeFilter;
-        return new Callable<Boolean>() {
-            public Boolean call() {
-                Text holder = new Text();
-                try {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Do we have next? " + iter.hasNext());
-                        
-                    }
-                    while (iter.hasNext()) {
-                        
-                        Entry<Key,Value> entry = iter.next();
-                        
-                        if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
-                            throw new Exception("Exceeded fair threshold");
-                        }
-                        
-                        Key topKey = entry.getKey();
-                        
-                        if (log.isTraceEnabled()) {
-                            log.trace("Foward Index entry: " + entry.getKey().toString());
-                        }
-                        
-                        // Get the column qualifier from the key. It contains the datatype and normalizer class
-                        if (null != topKey.getColumnQualifier()) {
-                            String colq = topKey.getColumnQualifier().toString();
-                            int idx = colq.indexOf(Constants.NULL);
-                            
-                            if (idx != -1) {
-                                String type = colq.substring(idx + 1);
-                                
-                                // If types are specified and this type is not in the list, skip it.
-                                if (null != myDatatypeFilter && myDatatypeFilter.size() > 0 && !myDatatypeFilter.contains(type)) {
-                                    
-                                    if (log.isTraceEnabled())
-                                        log.trace(myDatatypeFilter + " does not contain " + type);
-                                    continue;
-                                }
-                                
-                                topKey.getRow(holder);
-                                String term;
-                                if (!isReverse)
-                                    term = holder.toString();
-                                else
-                                    term = (new StringBuilder(holder.toString())).reverse().toString();
-                                
-                                topKey.getColumnFamily(holder);
-                                String field = holder.toString();
-                                
-                                // We are only returning a mapping of field value to field name, no need to
-                                // determine cardinality and such at this point.
-                                fieldsToValues.put(field, term);
-                                // conditional states that if we exceed the key threshold OR field name is not null and we've exceeded
-                                // the value threshold for that field name ( in the case where we have a fielded lookup ).
-                                if (fieldsToValues.isKeyThresholdExceeded() || (fields.size() == 1 && fieldsToValues.get(field).isThresholdExceeded())) {
-                                    if (log.isTraceEnabled())
-                                        log.trace("We've passed term expansion threshold");
-                                    return true;
-                                }
-                            }
-                        }
+                    final boolean unfieldedLookup, final Set<String> fields, final boolean isReverse, long timeout) {
+        final Set<String> myDatatypeFilter = config.getDatatypeFilter();
+        return () -> {
+            Text holder = new Text();
+            try {
+                if (log.isTraceEnabled()) {
+                    log.trace("Do we have next? " + iter.hasNext());
+                    
+                }
+                while (iter.hasNext()) {
+                    
+                    Entry<Key,Value> entry = iter.next();
+                    
+                    if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
+                        throw new Exception("Exceeded fair threshold");
                     }
                     
-                } catch (Exception e) {
-                    log.info("Failed or Timed out expanding regex: " + e.getMessage());
-                    if (log.isDebugEnabled())
-                        log.debug("Failed or Timed out " + e);
-                    if (fields.size() >= 1) {
-                        for (Text fieldTxt : fields) {
-                            String field = fieldTxt.toString();
-                            if (log.isTraceEnabled()) {
-                                log.trace("field is " + field);
-                                log.trace("field is " + (null == fieldsToValues));
+                    Key topKey = entry.getKey();
+                    
+                    if (log.isTraceEnabled()) {
+                        log.trace("Foward Index entry: " + entry.getKey());
+                    }
+                    
+                    // Get the column qualifier from the key. It contains the datatype and normalizer class
+                    if (null != topKey.getColumnQualifier()) {
+                        String colq = topKey.getColumnQualifier().toString();
+                        int idx = colq.indexOf(Constants.NULL);
+                        
+                        if (idx != -1) {
+                            String type = colq.substring(idx + 1);
+                            
+                            // If types are specified and this type is not in the list, skip it.
+                            if (null != myDatatypeFilter && !myDatatypeFilter.isEmpty() && !myDatatypeFilter.contains(type)) {
+                                
+                                if (log.isTraceEnabled())
+                                    log.trace(myDatatypeFilter + " does not contain " + type);
+                                continue;
                             }
-                            fieldsToValues.put(field, "");
-                            fieldsToValues.get(field).setThresholdExceeded();
+                            
+                            topKey.getRow(holder);
+                            String term;
+                            if (!isReverse)
+                                term = holder.toString();
+                            else
+                                term = (new StringBuilder(holder.toString())).reverse().toString();
+                            
+                            topKey.getColumnFamily(holder);
+                            String field = holder.toString();
+                            
+                            // We are only returning a mapping of field value to field name, no need to
+                            // determine cardinality and such at this point.
+                            fieldsToValues.put(field, term);
+                            // conditional states that if we exceed the key threshold OR field name is not null and we've exceeded
+                            // the value threshold for that field name ( in the case where we have a fielded lookup ).
+                            if (fieldsToValues.isKeyThresholdExceeded() || (fields.size() == 1 && fieldsToValues.get(field).isThresholdExceeded())) {
+                                if (log.isTraceEnabled())
+                                    log.trace("We've passed term expansion threshold");
+                                return true;
+                            }
                         }
-                    } else
-                        fieldsToValues.setKeyThresholdExceeded();
-                    return false;
+                    }
                 }
                 
-                return true;
+            } catch (Exception e) {
+                log.info("Failed or Timed out expanding regex: " + e.getMessage());
+                if (log.isDebugEnabled())
+                    log.debug("Failed or Timed out " + e);
+                // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
+                if (!unfieldedLookup) {
+                    for (String field : fields) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("field is " + field);
+                            log.trace("field is " + (null == fieldsToValues));
+                        }
+                        fieldsToValues.put(field, "");
+                        fieldsToValues.get(field).setThresholdExceeded();
+                    }
+                } else
+                    fieldsToValues.setKeyThresholdExceeded();
+                return false;
             }
+            
+            return true;
         };
-    }
-    
-    /**
-     * @param config
-     * @return
-     */
-    private boolean buildReverseFields(ShardQueryConfiguration config) {
-        
-        for (Text field : fields) {
-            try {
-                if (null != helperRef && helperRef.isReverseIndexed(field.toString(), datatypeFilter)) {
-                    reversefields.add(field);
-                }
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.BUILD_REVERSE_FIELDS_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
-            }
-        }
-        
-        if (log.isTraceEnabled()) {
-            log.trace("fields are " + fields);
-            log.trace("reversefields are " + reversefields);
-        }
-        
-        return (fields.size() == 0 && reversefields.size() == 0) || reversefields.size() > 0;
     }
     
     public static class TooMuchExpansionException extends RuntimeException {

@@ -2,26 +2,18 @@ package datawave.core.iterators;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.PeekingIterator;
+import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.iterator.CachingIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.predicate.TimeFilter;
+import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import datawave.query.util.sortedset.KeyValueSerializable;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -40,6 +32,22 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
 /**
  * The Ivarator base class
  *
@@ -53,6 +61,151 @@ import org.apache.log4j.Logger;
  * 
  */
 public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator {
+    
+    public static final Text ANY_FINAME = new Text("fi\0" + Constants.ANY_FIELD);
+    public static final Text FI_START = new Text("fi\0");
+    public static final Text FI_END = new Text("fi\0~");
+    
+    public abstract static class Builder<B extends Builder<B>> {
+        private Text fieldName;
+        protected Text fieldValue;
+        private Predicate<Key> datatypeFilter;
+        private TimeFilter timeFilter;
+        private boolean negated;
+        private PartialKey returnKeyType = DEFAULT_RETURN_KEY_TYPE;
+        private int maxRangeSplit = 11;
+        private FileSystem fs;
+        private Path uniqueDir;
+        private QueryLock queryLock;
+        private boolean allowDirReuse;
+        private long scanThreshold = 10000;
+        private int hdfsBackedSetBufferSize = 10000;
+        private int maxOpenFiles = 100;
+        private boolean sortedUIDs = true;
+        protected QuerySpanCollector querySpanCollector = null;
+        protected volatile boolean collectTimingDetails = false;
+        private volatile long scanTimeout = 1000L * 60 * 60;
+        protected TypeMetadata typeMetadata;
+        private CompositeMetadata compositeMetadata;
+        private int compositeSeekThreshold;
+        private IteratorEnvironment env;
+        
+        @SuppressWarnings("unchecked")
+        protected B self() {
+            return (B) this;
+        }
+        
+        public B withFieldName(Text fieldName) {
+            this.fieldName = fieldName;
+            return self();
+        }
+        
+        public B withFieldName(String fieldName) {
+            return this.withFieldName(new Text(fieldName));
+        }
+        
+        public B withFieldValue(Text fieldValue) {
+            this.fieldValue = fieldValue;
+            return self();
+        }
+        
+        public B withFieldValue(String fieldValue) {
+            return this.withFieldValue(new Text(fieldValue));
+        }
+        
+        public B withTimeFilter(TimeFilter timeFilter) {
+            this.timeFilter = timeFilter;
+            return self();
+        }
+        
+        public B withDatatypeFilter(Predicate datatypeFilter) {
+            this.datatypeFilter = datatypeFilter;
+            return self();
+        }
+        
+        public B negated(boolean negated) {
+            this.negated = negated;
+            return self();
+        }
+        
+        public B withScanThreshold(long scanThreshold) {
+            this.scanThreshold = scanThreshold;
+            return self();
+        }
+        
+        public B withScanTimeout(long scanTimeout) {
+            this.scanTimeout = scanTimeout;
+            return self();
+        }
+        
+        public B withHdfsBackedSetBufferSize(int hdfsBackedSetBufferSize) {
+            this.hdfsBackedSetBufferSize = hdfsBackedSetBufferSize;
+            return self();
+        }
+        
+        public B withMaxRangeSplit(int maxRangeSplit) {
+            this.maxRangeSplit = maxRangeSplit;
+            return self();
+        }
+        
+        public B withMaxOpenFiles(int maxOpenFiles) {
+            this.maxOpenFiles = maxOpenFiles;
+            return self();
+        }
+        
+        public B withFileSystem(FileSystem fs) {
+            this.fs = fs;
+            return self();
+        }
+        
+        public B withUniqueDir(Path uniqueDir) {
+            this.uniqueDir = uniqueDir;
+            return self();
+        }
+        
+        public B withQueryLock(QueryLock queryLock) {
+            this.queryLock = queryLock;
+            return self();
+        }
+        
+        public B allowDirResuse(boolean allowDirReuse) {
+            this.allowDirReuse = allowDirReuse;
+            return self();
+        }
+        
+        public B withReturnKeyType(PartialKey returnKeyType) {
+            this.returnKeyType = returnKeyType;
+            return self();
+        }
+        
+        public B withSortedUUIDs(boolean sortedUUIDs) {
+            this.sortedUIDs = sortedUUIDs;
+            return self();
+        }
+        
+        public B withTypeMetadata(TypeMetadata typeMetadata) {
+            this.typeMetadata = typeMetadata;
+            return self();
+        }
+        
+        public B withCompositeMetadata(CompositeMetadata compositeMetadata) {
+            this.compositeMetadata = compositeMetadata;
+            return self();
+        }
+        
+        public B withCompositeSeekThreshold(int compositeSeekThreshold) {
+            this.compositeSeekThreshold = compositeSeekThreshold;
+            return self();
+        }
+        
+        public B withIteratorEnv(IteratorEnvironment env) {
+            this.env = env;
+            return self();
+        }
+        
+        public abstract DatawaveFieldIndexCachingIteratorJexl build();
+    }
+    
     public static final Collection<ByteSequence> EMPTY_COL_FAMS = new ArrayList<>();
     public static final Logger log = Logger.getLogger(DatawaveFieldIndexCachingIteratorJexl.class);
     public static final String NULL_BYTE = Constants.NULL_BYTE_STRING;
@@ -66,7 +219,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected static final Collection<ByteSequence> EMPTY_CFS = Collections.EMPTY_LIST;
     
     // These are the ranges to scan in the field index
-    private final List<Range> boundingFiRanges = new ArrayList<Range>();
+    private final List<Range> boundingFiRanges = new ArrayList<>();
+    protected Range currentFiRange = null;
     private Text fiRow = null;
     
     // This is the fieldname of interest
@@ -125,7 +279,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // a thread safe wrapper around the sorted set used by the scan threads
     private SortedSet<KeyValueSerializable> threadSafeSet = null;
     // the iterator (merge sort) of key values once the sorted set has been filled
-    private Iterator<KeyValueSerializable> keyValues = null;
+    private PeekingIterator<KeyValueSerializable> keyValues = null;
     // the current row covered by the hdfs set
     private String currentRow = null;
     // did we created the row directory
@@ -158,8 +312,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // have we timed out
     private volatile boolean timedOut = false;
     
+    protected CompositeMetadata compositeMetadata;
+    protected FieldIndexCompositeSeeker compositeSeeker;
+    protected int compositeSeekThreshold;
+    
     // -------------------------------------------------------------------------
     // ------------- Constructors
+    
     public DatawaveFieldIndexCachingIteratorJexl() {
         super();
         this.fieldName = null;
@@ -183,32 +342,24 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.sortedUIDs = true;
     }
     
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold,
-                    long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock,
-                    boolean allowDirReuse) {
-        this(fieldName, fieldValue, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse);
+    protected DatawaveFieldIndexCachingIteratorJexl(Builder builder) {
+        this(builder.fieldName, builder.fieldValue, builder.timeFilter, builder.datatypeFilter, builder.negated, builder.scanThreshold, builder.scanTimeout,
+                        builder.hdfsBackedSetBufferSize, builder.maxRangeSplit, builder.maxOpenFiles, builder.fs, builder.uniqueDir, builder.queryLock,
+                        builder.allowDirReuse, builder.returnKeyType, builder.sortedUIDs, builder.compositeMetadata, builder.compositeSeekThreshold,
+                        builder.typeMetadata, builder.env);
     }
     
     @SuppressWarnings("hiding")
-    public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
+    private DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse) {
-        this(fieldName, fieldValue, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) {
+                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs, CompositeMetadata compositeMetadata,
+                    int compositeSeekThreshold, TypeMetadata typeMetadata, IteratorEnvironment env) {
         if (fieldName.toString().startsWith("fi" + NULL_BYTE)) {
             this.fieldName = new Text(fieldName.toString().substring(3));
             this.fiName = fieldName;
         } else {
             this.fieldName = fieldName;
-            this.fiName = new Text("fi" + NULL_BYTE + fieldName.toString());
+            this.fiName = new Text("fi" + NULL_BYTE + fieldName);
         }
         log.trace("fName : " + fiName.toString().replaceAll(NULL_BYTE, "%00"));
         this.fieldValue = fieldValue;
@@ -228,6 +379,19 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.maxRangeSplit = maxRangeSplit;
         
         this.sortedUIDs = sortedUIDs;
+        
+        // setup composite logic if this is a composite field
+        if (compositeMetadata != null) {
+            List<String> compositeFields = compositeMetadata.getCompositeFieldMapByType().entrySet().stream().flatMap(x -> x.getValue().keySet().stream())
+                            .distinct().collect(Collectors.toList());
+            if (compositeFields.contains(fieldName.toString())) {
+                this.compositeMetadata = compositeMetadata;
+                this.compositeSeeker = new FieldIndexCompositeSeeker(typeMetadata.fold());
+            }
+        }
+        
+        this.compositeSeekThreshold = compositeSeekThreshold;
+        this.initEnv = env;
     }
     
     public DatawaveFieldIndexCachingIteratorJexl(DatawaveFieldIndexCachingIteratorJexl other, IteratorEnvironment env) {
@@ -266,6 +430,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
         
         this.lastRangeSeeked = other.lastRangeSeeked;
+        this.initEnv = env;
     }
     
     // -------------------------------------------------------------------------
@@ -313,6 +478,15 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             // the start of this range is beyond the end of the last range seeked
             // we must reset keyValues to null and empty the underlying collection
             clearRowBasedHdfsBackedSet();
+        } else {
+            // inside the original range, so potentially need to reposition keyValues
+            if (keyValues != null) {
+                Key startKey = r.getStartKey();
+                // decide if keyValues needs to be rebuilt or can be reused
+                if (!keyValues.hasNext() || (keyValues.peek().getKey().compareTo(startKey) > 0)) {
+                    keyValues = new CachingIterator<>(threadSafeSet.iterator());
+                }
+            }
         }
         
         // if we are not sorting UIDs, then determine whether we have a cq and capture the lastFiKey
@@ -572,7 +746,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 }
                 
                 if (this.keyValues == null) {
-                    this.keyValues = this.threadSafeSet.iterator();
+                    this.keyValues = new CachingIterator<>(this.threadSafeSet.iterator());
                 }
             }
             
@@ -594,7 +768,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         setupRowBasedHdfsBackedSet(sourceRow);
         
         // for each range, fork off a runnable
-        List<Future<?>> futures = new ArrayList<Future<?>>(boundingFiRanges.size());
+        List<Future<?>> futures = new ArrayList<>(boundingFiRanges.size());
         if (log.isDebugEnabled()) {
             log.debug("Processing " + boundingFiRanges + " for " + this);
         }
@@ -603,8 +777,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             if (log.isTraceEnabled()) {
                 log.trace("range -> " + range);
             }
-            final Range boundingFiRange = range;
-            futures.add(fillSet(boundingFiRange));
+            futures.add(fillSet(range));
         }
         
         boolean failed = false;
@@ -654,7 +827,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         // create a set if needed (does not actually need to be thread safe as we are only using one thread in this case)
         if (this.threadSafeSet == null) {
-            this.threadSafeSet = new TreeSet<KeyValueSerializable>();
+            this.threadSafeSet = new TreeSet<>();
         } else {
             this.threadSafeSet.clear();
         }
@@ -666,6 +839,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 if (log.isTraceEnabled()) {
                     log.trace("Seeking fisource to " + this.boundingFiRanges.get(0));
                 }
+                currentFiRange = new Range(this.boundingFiRanges.get(0));
                 this.fiSource.seek(this.boundingFiRanges.get(0), EMPTY_CFS, false);
             }
         }
@@ -681,6 +855,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     if (log.isTraceEnabled()) {
                         log.trace("Seeking fisource to " + this.boundingFiRanges.get(0));
                     }
+                    currentFiRange = new Range(this.boundingFiRanges.get(0));
                     this.fiSource.seek(this.boundingFiRanges.get(0), EMPTY_CFS, false);
                 }
             }
@@ -780,62 +955,127 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected Future<?> fillSet(final Range boundingFiRange) {
         
         // create runnable
-        Runnable runnable = new Runnable() {
-            public void run() {
-                if (log.isDebugEnabled()) {
-                    log.debug("Starting fillSet(" + boundingFiRange + ')');
+        Runnable runnable = () -> {
+            if (log.isDebugEnabled()) {
+                log.debug("Starting fillSet(" + boundingFiRange + ')');
+            }
+            int scanned = 0;
+            int matched = 0;
+            QuerySpan querySpan = null;
+            SortedKeyValueIterator<Key,Value> source = null;
+            Key nextSeekKey = null;
+            int nextCount = 0;
+            try {
+                source = getSourceCopy(false);
+                if (collectTimingDetails && source instanceof SourceTrackingIterator) {
+                    querySpan = ((SourceTrackingIterator) source).getQuerySpan();
                 }
-                int scanned = 0;
-                int matched = 0;
-                QuerySpan querySpan = null;
-                SortedKeyValueIterator<Key,Value> source = null;
-                try {
-                    source = getSourceCopy(false);
-                    if (collectTimingDetails && source instanceof SourceTrackingIterator) {
-                        querySpan = ((SourceTrackingIterator) source).getQuerySpan();
+                
+                // seek the source to a range covering the entire row....the bounding box will dictate the actual scan
+                source.seek(boundingFiRange, EMPTY_CFS, false);
+                scanned++;
+                DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
+                
+                // if this is a range iterator, build the composite-safe Fi range
+                Range compositeSafeFiRange = (this instanceof DatawaveFieldIndexRangeIteratorJexl) ? ((DatawaveFieldIndexRangeIteratorJexl) this)
+                                .buildCompositeSafeFiRange(fiRow, fiName, fieldValue) : null;
+                
+                while (source.hasTop()) {
+                    checkTiming();
+                    
+                    Key top = source.getTopKey();
+                    
+                    // if we are setup for composite seeking, seek if we are out of range
+                    if (compositeSeeker != null && compositeSafeFiRange != null) {
+                        String colQual = top.getColumnQualifier().toString();
+                        String ingestType = colQual.substring(colQual.indexOf('\0') + 1, colQual.lastIndexOf('\0'));
+                        String colFam = top.getColumnFamily().toString();
+                        String fieldName = colFam.substring(colFam.indexOf('\0') + 1);
+                        
+                        Collection<String> componentFields = null;
+                        String separator = null;
+                        Multimap<String,String> compositeToFieldMap = compositeMetadata.getCompositeFieldMapByType().get(ingestType);
+                        Map<String,String> compositeSeparatorMap = compositeMetadata.getCompositeFieldSeparatorsByType().get(ingestType);
+                        if (compositeToFieldMap != null && compositeSeparatorMap != null) {
+                            componentFields = compositeToFieldMap.get(fieldName);
+                            separator = compositeSeparatorMap.get(fieldName);
+                        }
+                        
+                        if (componentFields != null && separator != null && !compositeSeeker.isKeyInRange(top, compositeSafeFiRange, separator)) {
+                            boolean shouldSeek = false;
+                            
+                            // top key precedes nextSeekKey
+                            if (nextSeekKey != null && top.compareTo(nextSeekKey) < 0) {
+                                // if we hit the seek threshold, seek
+                                if (nextCount >= compositeSeekThreshold)
+                                    shouldSeek = true;
+                            }
+                            // top key exceeds nextSeekKey, or nextSeekKey unset
+                            else {
+                                nextCount = 0;
+                                nextSeekKey = null;
+                                
+                                // get a new seek key
+                                Key newStartKey = compositeSeeker.nextSeekKey(new ArrayList<>(componentFields), top, compositeSafeFiRange, separator);
+                                if (newStartKey != boundingFiRange.getStartKey() && newStartKey.compareTo(boundingFiRange.getStartKey()) > 0
+                                                && newStartKey.compareTo(boundingFiRange.getEndKey()) <= 0) {
+                                    nextSeekKey = newStartKey;
+                                    
+                                    // if we hit the seek threshold (i.e. if it is set to 0), seek
+                                    if (nextCount >= compositeSeekThreshold)
+                                        shouldSeek = true;
+                                }
+                            }
+                            
+                            if (shouldSeek) {
+                                source.seek(new Range(nextSeekKey, boundingFiRange.isStartKeyInclusive(), boundingFiRange.getEndKey(), boundingFiRange
+                                                .isEndKeyInclusive()), EMPTY_CFS, false);
+                                
+                                // reset next count and seek key
+                                nextSeekKey = null;
+                                nextCount = 0;
+                            } else {
+                                nextCount++;
+                                source.next();
+                            }
+                            
+                            scanned++;
+                            continue;
+                        }
                     }
                     
-                    // seek the source to a range covering the entire row....the bounding box will dictate the actual scan
-                    source.seek(boundingFiRange, EMPTY_CFS, false);
+                    // terminate if timed out or cancelled
+                    if (DatawaveFieldIndexCachingIteratorJexl.this.setControl.isCancelledQuery()) {
+                        break;
+                    }
+                    
+                    if (addKey(top, source.getTopValue())) {
+                        matched++;
+                    }
+                    
+                    source.next();
                     scanned++;
                     DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
-                    
-                    while (source.hasTop()) {
-                        checkTiming();
-                        
-                        // terminate if timed out or cancelled
-                        if (DatawaveFieldIndexCachingIteratorJexl.this.setControl.isCancelledQuery()) {
-                            break;
-                        }
-                        
-                        if (addKey(source.getTopKey(), source.getTopValue())) {
-                            matched++;
-                        }
-                        
-                        source.next();
-                        scanned++;
-                        DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
-                    }
-                } catch (Exception e) {
-                    // throw the exception up which will be available via the Future
-                    log.error("Failed to complete fillSet(" + boundingFiRange + ")", e);
-                    throw new RuntimeException(e);
-                } finally {
-                    releaseSource(source);
-                    if (log.isDebugEnabled()) {
-                        StringBuilder builder = new StringBuilder();
-                        builder.append("Matched ").append(matched).append(" out of ").append(scanned).append(" for ").append(boundingFiRange).append(": ")
-                                        .append(DatawaveFieldIndexCachingIteratorJexl.this);
-                        log.debug(builder.toString());
-                    }
-                    if (collectTimingDetails && querySpanCollector != null && querySpan != null) {
-                        querySpanCollector.addQuerySpan(querySpan);
-                    }
+                }
+            } catch (Exception e) {
+                // throw the exception up which will be available via the Future
+                log.error("Failed to complete fillSet(" + boundingFiRange + ")", e);
+                throw new RuntimeException(e);
+            } finally {
+                releaseSource(source);
+                if (log.isDebugEnabled()) {
+                    StringBuilder builder = new StringBuilder();
+                    builder.append("Matched ").append(matched).append(" out of ").append(scanned).append(" for ").append(boundingFiRange).append(": ")
+                                    .append(DatawaveFieldIndexCachingIteratorJexl.this);
+                    log.debug(builder.toString());
+                }
+                if (collectTimingDetails && querySpanCollector != null && querySpan != null) {
+                    querySpanCollector.addQuerySpan(querySpan);
                 }
             }
         };
         
-        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this.toString() + " in " + boundingFiRange.toString());
+        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
         
     }
     
@@ -899,7 +1139,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.createdRowDir = false;
             }
             
-            this.set = new HdfsBackedSortedSet<KeyValueSerializable>(null, hdfsBackedSetBufferSize, fs, rowDir, maxOpenFiles);
+            this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, fs, rowDir, maxOpenFiles);
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
             this.currentRow = row;
             this.setControl.takeOwnership(row, this);
@@ -909,7 +1149,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.set.clear();
                 this.keyValues = null;
             } else {
-                this.keyValues = this.set.iterator();
+                this.keyValues = new CachingIterator<>(this.set.iterator());
             }
             
             // reset the keyValues counter as we have a new set here
@@ -1048,8 +1288,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         private volatile boolean cancelled = false;
         
         private final int bufferSize = 128;
-        
-        public HdfsBackedControl() {}
         
         protected Path getOwnershipFile(String row) {
             return new Path(getRowDir(row), OWNERSHIP_FILE);

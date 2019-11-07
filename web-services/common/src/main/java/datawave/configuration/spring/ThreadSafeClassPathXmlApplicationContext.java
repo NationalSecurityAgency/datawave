@@ -9,6 +9,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -276,6 +277,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
         } finally {
             lock.readLock().unlock();
         }
+    }
+    
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(Class<T> aClass) {
+        return configurableApplicationContext.getBeanProvider(aClass);
+    }
+    
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType) {
+        return configurableApplicationContext.getBeanProvider(resolvableType);
     }
     
     @Override

@@ -3,6 +3,8 @@ package datawave.ingest.util;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache;
 import datawave.ingest.time.Now;
+import datawave.util.cli.PasswordConverter;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -54,7 +56,7 @@ public class GenerateEdgeKeyVersionCache {
                         printUsageAndExit();
                     } else {
                         username = toolArgs[i];
-                        password = toolArgs[i + 1].getBytes();
+                        password = PasswordConverter.parseArg(toolArgs[i + 1]).getBytes();
                         tableName = toolArgs[i + 2];
                         // skip over args
                         i += 3;
@@ -75,7 +77,7 @@ public class GenerateEdgeKeyVersionCache {
                 
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Called from main()
             printUsageAndExit();
         }
         
@@ -95,7 +97,7 @@ public class GenerateEdgeKeyVersionCache {
         
         if (initMode) {
             if (keyVersion == null) {
-                System.out.println("Failure! Must specifiy key version number when running init.");
+                System.out.println("Failure! Must specify key version number when running init.");
                 printUsageAndExit();
             }
             Date currentTime = new Date(now.get());
@@ -120,6 +122,6 @@ public class GenerateEdgeKeyVersionCache {
             printUsageAndExit();
         }
         
-        System.out.println("done");
+        System.out.println("Done");
     }
 }

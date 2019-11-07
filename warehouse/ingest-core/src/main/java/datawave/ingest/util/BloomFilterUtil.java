@@ -151,8 +151,7 @@ public class BloomFilterUtil {
         }
         
         final BloomFilter<String> filter = MemberShipTest.create(count);
-        final BloomFilterWrapper wrapper = new BloomFilterWrapper(filter, count);
-        return wrapper;
+        return new BloomFilterWrapper(filter, count);
     }
     
     /**

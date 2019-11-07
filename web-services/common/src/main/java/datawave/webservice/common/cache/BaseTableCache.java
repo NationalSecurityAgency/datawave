@@ -14,12 +14,16 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.connection.WrappedConnector;
 
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -180,8 +184,11 @@ public class BaseTableCache implements Serializable, TableCache {
             Connector instanceConnector = instance.getConnector(AccumuloTableCache.MOCK_USERNAME, AccumuloTableCache.MOCK_PASSWORD);
             instanceConnector.securityOperations().changeUserAuthorizations(AccumuloTableCache.MOCK_USERNAME, authorizations);
             
-            if (instanceConnector.tableOperations().exists(tempTableName))
+            createNamespaceIfNecessary(instanceConnector.namespaceOperations(), tempTableName);
+            
+            if (instanceConnector.tableOperations().exists(tempTableName)) {
                 instanceConnector.tableOperations().delete(tempTableName);
+            }
             
             instanceConnector.tableOperations().create(tempTableName);
             
@@ -248,5 +255,20 @@ public class BaseTableCache implements Serializable, TableCache {
     @Override
     public String toString() {
         return "tableName: " + getTableName() + ", connectionPoolName: " + getConnectionPoolName() + ", auths: " + getAuths();
+    }
+    
+    private void createNamespaceIfNecessary(NamespaceOperations namespaceOperations, String table) throws AccumuloException, AccumuloSecurityException {
+        // if the table has a namespace in it that doesn't already exist, create it
+        if (table.contains(".")) {
+            String namespace = table.split("\\.")[0];
+            try {
+                if (!namespaceOperations.exists(namespace)) {
+                    namespaceOperations.create(namespace);
+                }
+            } catch (NamespaceExistsException e) {
+                // in this case, somebody else must have created the namespace after our existence check
+                log.info("Tried to create Accumulo namespace," + namespace + ", but it already exists");
+            }
+        }
     }
 }

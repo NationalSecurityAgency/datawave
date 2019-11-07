@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
-import datawave.edge.util.ExtendedHyperLogLogPlus;
-
 import org.apache.accumulo.core.data.Value;
 import org.junit.Test;
 

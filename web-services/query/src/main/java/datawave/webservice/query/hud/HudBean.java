@@ -77,7 +77,7 @@ public class HudBean {
         }
         
         List<Query> queryList = runningQueries.getQuery();
-        List<HudQuerySummary> querySummaryList = new ArrayList<HudQuerySummary>();
+        List<HudQuerySummary> querySummaryList = new ArrayList<>();
         
         for (Query query : queryList) {
             HudQuerySummary summary = summaryBuilder.build(query);
@@ -103,9 +103,8 @@ public class HudBean {
             
             querySummaryList.add(summary);
         }
-        String queryListJson = gson.toJson(querySummaryList);
         
-        return queryListJson;
+        return gson.toJson(querySummaryList);
     }
     
     private DatawavePrincipal getPrincipal() {
@@ -127,27 +126,26 @@ public class HudBean {
         QueryMetricSummary hour12 = summaryResp.getHour12();
         QueryMetricSummary day1 = summaryResp.getDay1();
         
-        List<HudMetricSummary> metricSummaryList = new ArrayList<HudMetricSummary>();
+        List<HudMetricSummary> metricSummaryList = new ArrayList<>();
         metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(1L, hour1));
         metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(6L, hour6));
         metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(12L, hour12));
         metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(24L, day1));
         
-        String metricSummaryJson = gson.toJson(metricSummaryList);
-        return metricSummaryJson;
+        return gson.toJson(metricSummaryList);
     }
     
     @Path("/activeusers")
     @GET
     public String getActiveUsers() throws Exception {
-        return gson.toJson(new HashSet<HudActiveUser>());
+        return gson.toJson(new HashSet<>());
         
         // 08/10/2016: Found this while cleaning up commented code. Should this entire method be removed, since it currently does nothing? Or fixed?
         
         // I removed the logic below as it was calling a method on the persister bean
         // that did not do what it was intended to do.
         /*
-         * Set<HudActiveUser> hudActiveUsers = new HashSet<HudActiveUser>(); boolean isAnAdmin = false; Principal p = ctx.getCallerPrincipal(); if (p instanceof
+         * Set<HudActiveUser> hudActiveUsers = new HashSet<>(); boolean isAnAdmin = false; Principal p = ctx.getCallerPrincipal(); if (p instanceof
          * DatawavePrincipal) { DatawavePrincipal dp = (DatawavePrincipal)p; hudActiveUsers.add(new HudActiveUser(dp.getSid())); isAnAdmin = isAnAdmin(dp); }
          * 
          * try { // If they are an admin, make a call to the Persister EJB to get the list of // active users, otherwise they can only query for themselves.

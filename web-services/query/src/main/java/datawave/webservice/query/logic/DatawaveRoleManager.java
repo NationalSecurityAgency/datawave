@@ -25,7 +25,7 @@ public class DatawaveRoleManager implements RoleManager {
         if (principal instanceof DatawavePrincipal == false)
             return false;
         DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;
-        if (requiredRoles != null && requiredRoles.size() > 0) {
+        if (requiredRoles != null && !requiredRoles.isEmpty()) {
             Set<String> usersRoles = new HashSet<>(datawavePrincipal.getPrimaryUser().getRoles());
             return usersRoles.containsAll(requiredRoles);
         }

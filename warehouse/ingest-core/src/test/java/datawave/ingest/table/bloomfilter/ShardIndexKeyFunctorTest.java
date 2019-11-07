@@ -1,7 +1,5 @@
 package datawave.ingest.table.bloomfilter;
 
-import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -84,19 +82,19 @@ public class ShardIndexKeyFunctorTest {
     public void testTransformRange() {
         // key should only be in bloom filter if it contains both the field name (cf) and field value (row)
         org.apache.accumulo.core.data.Key cbKey = new org.apache.accumulo.core.data.Key();
-        Assert.assertEquals("empty key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("empty key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row only");
-        Assert.assertEquals("row only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("row only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("", "cf only");
-        Assert.assertEquals("cf only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("cf only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("", "", "cq only");
-        Assert.assertEquals("cq only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("cq only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row", "", "and cq");
-        Assert.assertEquals("row and cq only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("row and cq only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row", "and a cf");
         org.apache.hadoop.util.bloom.Key bfKey = new org.apache.hadoop.util.bloom.Key(new byte[] {'a', 'n', 'd', ' ', 'a', ' ', 'c', 'f', 'r', 'o', 'w'}, 1.0);
@@ -104,11 +102,11 @@ public class ShardIndexKeyFunctorTest {
         
         org.apache.accumulo.core.data.Key cbKey1 = new org.apache.accumulo.core.data.Key("row", "and a cf");
         org.apache.accumulo.core.data.Key cbKey2 = new org.apache.accumulo.core.data.Key("row", "and another cf");
-        Assert.assertEquals("different keys should not be in bloom filter", null, functor.transform(new Range(cbKey1, cbKey2)));
+        Assert.assertNull("different keys should not be in bloom filter", functor.transform(new Range(cbKey1, cbKey2)));
         
         cbKey1 = new org.apache.accumulo.core.data.Key("row", "and a cf", "and a cq");
         cbKey2 = cbKey1.followingKey(PartialKey.ROW_COLFAM);
-        Assert.assertEquals("consecutive keys should not be in bloom filter with end inclusive", null, functor.transform(new Range(cbKey1, cbKey2)));
+        Assert.assertNull("consecutive keys should not be in bloom filter with end inclusive", functor.transform(new Range(cbKey1, cbKey2)));
         Assert.assertEquals("consecutive keys should be in bloom filter with end exclusive", bfKey, functor.transform(new Range(cbKey1, true, cbKey2, false)));
     }
     

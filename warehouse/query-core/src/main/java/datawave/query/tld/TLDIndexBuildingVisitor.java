@@ -3,12 +3,18 @@ package datawave.query.tld;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import datawave.query.Constants;
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.iterator.builder.AbstractIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.predicate.ChainableEventDataQueryFilter;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.TLDEventDataFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -16,9 +22,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
@@ -76,8 +85,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             
             Key newStartKey = getKey(node);
             
-            kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.<ByteSequence> emptyList(),
-                            false);
+            kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
             
         }
     }
@@ -108,8 +116,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             if (source.getSourceSize() > 0)
                 mySource = source.deepCopy(env);
             
-            mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.<ByteSequence> emptyList(),
-                            false);
+            mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
             
             if (mySource.hasTop()) {
                 kv.add(Maps.immutableEntry(mySource.getTopKey(), Constants.NULL_VALUE));
@@ -117,8 +124,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             }
         }
         
-        SortedKeyValueIterator<Key,Value> kvIter = new IteratorToSortedKeyValueIterator(kv.iterator());
-        return kvIter;
+        return new IteratorToSortedKeyValueIterator(kv.iterator());
     }
     
     @Override
@@ -135,6 +141,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setDatatypeFilter(datatypeFilter);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
+        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -175,4 +182,114 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         return null;
     }
     
+    /**
+     * Use fieldsToAggregate instead of indexOnlyFields because this enables TLDs to return non-event tokens as part of the user document
+     * 
+     * @param filter
+     * @param maxNextCount
+     * @return
+     */
+    @Override
+    protected TermFrequencyAggregator buildTermFrequencyAggregator(ChainableEventDataQueryFilter filter, int maxNextCount) {
+        EventDataQueryFilter rootFilter = new EventDataQueryFilter() {
+            @Override
+            public void startNewDocument(Key documentKey) {
+                // no-op
+            }
+            
+            @Override
+            public boolean apply(@Nullable Entry<Key,String> var1) {
+                // accept all
+                return true;
+            }
+            
+            @Override
+            public boolean peek(@Nullable Entry<Key,String> var1) {
+                // accept all
+                return true;
+            }
+            
+            /**
+             * Only keep the tf key if it isn't the root pointer or if it is index only and contributes to document evaluation
+             * 
+             * @param k
+             * @return
+             */
+            @Override
+            public boolean keep(Key k) {
+                DatawaveKey key = new DatawaveKey(k);
+                return (!TLDEventDataFilter.isRootPointer(k) || indexOnlyFields.contains(key.getFieldName()))
+                                && attrFilter.peek(new AbstractMap.SimpleEntry(k, null));
+            }
+            
+            @Override
+            public Key getStartKey(Key from) {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public Key getStopKey(Key from) {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public Range getKeyRange(Entry<Key,Document> from) {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public EventDataQueryFilter clone() {
+                return this.clone();
+            }
+            
+            @Override
+            public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public int getMaxNextCount() {
+                return -1;
+            }
+            
+            @Override
+            public Key transform(Key toTransform) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        filter.addFilter(rootFilter);
+        return new TLDTermFrequencyAggregator(fieldsToAggregate, filter, filter != null ? filter.getMaxNextCount() : -1);
+    }
+    
+    /**
+     * Range should be build to encompass the entire TLD
+     * 
+     * @param range
+     *            non-null literal range to generate an FI range from
+     * @return
+     */
+    @Override
+    protected Range getFiRangeForTF(LiteralRange<?> range) {
+        Key startKey = rangeLimiter.getStartKey();
+        
+        StringBuilder strBuilder = new StringBuilder("fi");
+        strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
+        Text cf = new Text(strBuilder.toString());
+        
+        strBuilder = new StringBuilder(range.getLower().toString());
+        
+        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        Text cq = new Text(strBuilder.toString());
+        
+        Key seekBeginKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
+        
+        strBuilder = new StringBuilder(range.getUpper().toString());
+        
+        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
+        cq = new Text(strBuilder.toString());
+        
+        Key seekEndKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
+        
+        return new Range(seekBeginKey, true, seekEndKey, true);
+    }
 }

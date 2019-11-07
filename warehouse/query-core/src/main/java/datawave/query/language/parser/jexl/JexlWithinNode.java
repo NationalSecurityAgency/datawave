@@ -9,7 +9,7 @@ public class JexlWithinNode extends JexlNode {
     private Integer distance = null;
     
     public JexlWithinNode(String field, List<String> wordList, Integer distance) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.field = field;
         this.wordList = wordList;
         this.distance = distance;
@@ -19,7 +19,7 @@ public class JexlWithinNode extends JexlNode {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         
-        if (this.field == null || this.field.length() == 0) {
+        if (this.field == null || this.field.isEmpty()) {
             sb.append("content:within(");
             sb.append(this.distance);
             sb.append(", termOffsetMap");

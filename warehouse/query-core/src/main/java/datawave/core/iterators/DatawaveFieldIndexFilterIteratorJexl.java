@@ -1,18 +1,12 @@
 package datawave.core.iterators;
 
-import com.google.common.base.Predicate;
-import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.predicate.Filter;
-import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
@@ -32,36 +26,33 @@ import java.util.List;
 public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRangeIteratorJexl {
     private Filter filter;
     
+    public static class Builder<B extends Builder<B>> extends DatawaveFieldIndexRangeIteratorJexl.Builder<B> {
+        private Filter filter;
+        
+        public B withFilter(Filter filter) {
+            this.filter = filter;
+            return self();
+        }
+        
+        public DatawaveFieldIndexFilterIteratorJexl build() {
+            return new DatawaveFieldIndexFilterIteratorJexl(this);
+        }
+        
+    }
+    
+    public static Builder<?> builder() {
+        return new Builder();
+    }
+    
+    protected DatawaveFieldIndexFilterIteratorJexl(Builder builder) {
+        super(builder);
+        this.filter = builder.filter;
+    }
+    
     // -------------------------------------------------------------------------
     // ------------- Constructors
     public DatawaveFieldIndexFilterIteratorJexl() {
         super();
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexFilterIteratorJexl(Text fieldName, Filter filter, Text lowerBound, boolean lowerInclusive, Text upperBound,
-                    boolean upperInclusive, TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold, long scanTimeout, int bufferSize,
-                    int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse) {
-        this(fieldName, filter, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout,
-                        bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexFilterIteratorJexl(Text fieldName, Filter filter, Text lowerBound, boolean lowerInclusive, Text upperBound,
-                    boolean upperInclusive, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg, long scanThreshold, long scanTimeout,
-                    int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse) {
-        this(fieldName, filter, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout,
-                        bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexFilterIteratorJexl(Text fieldName, Filter filter, Text lowerBound, boolean lowerInclusive, Text upperBound,
-                    boolean upperInclusive, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg, long scanThreshold, long scanTimeout,
-                    int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse,
-                    PartialKey returnKeyType, boolean sortedUIDs) {
-        super(fieldName, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize,
-                        maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse, returnKeyType, sortedUIDs);
-        this.filter = filter;
     }
     
     public DatawaveFieldIndexFilterIteratorJexl(DatawaveFieldIndexFilterIteratorJexl other, IteratorEnvironment env) {
@@ -100,7 +91,11 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
         Key startKey = null;
         Key endKey = null;
         // construct new range
-        
+        if (ANY_FINAME.equals(fiName)) {
+            startKey = new Key(rowId, FI_START);
+            endKey = new Key(rowId, FI_END);
+            return new RangeSplitter(new Range(startKey, true, endKey, false), getMaxRangeSplit());
+        }
         // we cannot simply use startKeyInclusive in the Range as the datatype and UID follow the value in the keys
         // hence we need to compute the min possibly value that would be inclusive
         this.boundingFiRangeStringBuilder.setLength(0);
@@ -138,8 +133,7 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
      */
     @Override
     protected boolean matches(Key k) throws IOException {
-        boolean matches = super.matches(k) && filter.keep(k);
-        return matches;
+        return super.matches(k) && filter.keep(k);
     }
     
 }

@@ -14,9 +14,9 @@ import datawave.query.util.MetadataHelper;
  */
 public interface PushDownPlanner {
     
-    public void setRules(Collection<PushDownRule> rules);
+    void setRules(Collection<PushDownRule> rules);
     
-    public Collection<PushDownRule> getRules();
+    Collection<PushDownRule> getRules();
     
     /**
      * Returns a re-written tree that reflects pushed down Predicates

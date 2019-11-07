@@ -9,13 +9,9 @@ THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
 
 . ingest-env.sh
-
+. findJars.sh
 REGEX=$1
 TRACKER=$2
-#
-# Jars
-#
-DATAWAVE_INGEST_JAR=$THIS_DIR/../../lib/datawave-ingest-core-$INGEST_VERSION.jar
 
 ACC_HOME=$INGEST_ACCUMULO_HOME
 
@@ -28,7 +24,7 @@ else
 fi
 
 
-$ACC_HOME/bin/accumulo -add $DATAWAVE_INGEST_JAR datawave.ingest.util.KillJobByRegex $REGEX
+$ACC_HOME/bin/accumulo -add $DATAWAVE_INGEST_CORE_JAR datawave.ingest.util.KillJobByRegex $REGEX
 RETURN_CODE=$?
 
 exit $RETURN_CODE

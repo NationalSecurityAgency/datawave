@@ -112,7 +112,7 @@ public class EventKeyValueFactory {
         }
         
         public void setMarkings(Map<String,String> markings) {
-            this.markings = (markings == null ? new HashMap<String,String>() : new HashMap<String,String>(markings));
+            this.markings = (markings == null ? new HashMap<>() : new HashMap<>(markings));
         }
         
     }

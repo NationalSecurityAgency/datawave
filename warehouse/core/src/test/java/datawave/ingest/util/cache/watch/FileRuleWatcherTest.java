@@ -1,19 +1,19 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 public class FileRuleWatcherTest {
     private static final String FILTER_CONFIGURATION_FILE = "/test-filter-rules.xml";
@@ -30,7 +30,6 @@ public class FileRuleWatcherTest {
         rulesByMatchPattern = new HashMap<>();
         filePath = new Path(this.getClass().getResource(FILTER_CONFIGURATION_FILE).toString());
         fs = filePath.getFileSystem(new Configuration());
-        FSDataInputStream inputStream = fs.open(filePath);
         watcher = new FileRuleWatcher(fs, filePath, 1);
         rules = watcher.loadContents(fs.open(filePath));
         Assert.assertEquals(5, rules.size());
@@ -63,16 +62,16 @@ public class FileRuleWatcherTest {
     @Test
     public void verifyNoBleedOverOfExtendedOptions() throws IOException {
         Assert.assertEquals("false", rulesByMatchPattern.get("1").options.getOption("filtersWater"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("A").options.getOption("filtersWater"));
+        Assert.assertNull(rulesByMatchPattern.get("A").options.getOption("filtersWater"));
         Assert.assertEquals("true", rulesByMatchPattern.get("B").options.getOption("filtersWater"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("C").options.getOption("filtersWater"));
+        Assert.assertNull(rulesByMatchPattern.get("C").options.getOption("filtersWater"));
         Assert.assertEquals("false", rulesByMatchPattern.get("D").options.getOption("filtersWater"));
         
         Assert.assertEquals("1234", rulesByMatchPattern.get("1").options.getOption("myTagName.ttl"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("A").options.getOption("myTagName.ttl"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("B").options.getOption("myTagName.ttl"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("C").options.getOption("myTagName.ttl"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("D").options.getOption("myTagName.ttl"));
+        Assert.assertNull(rulesByMatchPattern.get("A").options.getOption("myTagName.ttl"));
+        Assert.assertNull(rulesByMatchPattern.get("B").options.getOption("myTagName.ttl"));
+        Assert.assertNull(rulesByMatchPattern.get("C").options.getOption("myTagName.ttl"));
+        Assert.assertNull(rulesByMatchPattern.get("D").options.getOption("myTagName.ttl"));
     }
     
     @Test(expected = IOException.class)

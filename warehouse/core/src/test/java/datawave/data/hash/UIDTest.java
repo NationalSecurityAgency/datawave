@@ -7,11 +7,11 @@ import static datawave.data.hash.UIDConstants.PROCESS_INDEX_OPT;
 import static datawave.data.hash.UIDConstants.THREAD_INDEX_OPT;
 import static datawave.data.hash.UIDConstants.UID_TYPE_OPT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotSame;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -29,35 +29,35 @@ public class UIDTest {
     public void testBuilderCreation() {
         // Test default building, which should result in a Hash-based builder
         UIDBuilder<UID> result1 = UID.builder();
-        assertTrue(result1.getClass() == HashUIDBuilder.class);
-        assertTrue(result1 == UID.builder());
+        assertSame(result1.getClass(), HashUIDBuilder.class);
+        assertSame(result1, UID.builder());
         
         // Test default building due to a null Configuration
         UIDBuilder<UID> result2 = UID.builder((Configuration) null);
-        assertTrue(result2.getClass() == HashUIDBuilder.class);
-        assertTrue(result2 == UID.builder());
+        assertSame(result2.getClass(), HashUIDBuilder.class);
+        assertSame(result2, UID.builder());
         
         // Test default building due to a null Date
         UIDBuilder<UID> result3 = UID.builder((Date) null);
-        assertTrue(result3.getClass() == HashUIDBuilder.class);
-        assertTrue(result3 == UID.builder());
+        assertSame(result3.getClass(), HashUIDBuilder.class);
+        assertSame(result3, UID.builder());
         
         // Test creation of a non-default, hash-based builder due to a non-null Date
         UIDBuilder<UID> result4 = UID.builder(new Date());
-        assertTrue(result4.getClass() == HashUIDBuilder.class);
-        assertTrue(result4 != UID.builder());
+        assertSame(result4.getClass(), HashUIDBuilder.class);
+        assertNotSame(result4, UID.builder());
         
         // Test default building due to a Configuration with a missing uidType property
         UIDBuilder<UID> result5 = UID.builder(new Configuration());
-        assertTrue(result5.getClass() == HashUIDBuilder.class);
-        assertTrue(result5 == UID.builder());
+        assertSame(result5.getClass(), HashUIDBuilder.class);
+        assertSame(result5, UID.builder());
         
         // Test default building due to a Configuration with a HashUID uidType
         Configuration configuration = new Configuration();
         configuration.set(CONFIG_UID_TYPE_KEY, HashUID.class.getSimpleName());
         UIDBuilder<UID> result6 = UID.builder(configuration);
-        assertTrue(result6.getClass() == HashUIDBuilder.class);
-        assertTrue(result6 == UID.builder());
+        assertSame(result6.getClass(), HashUIDBuilder.class);
+        assertSame(result6, UID.builder());
         
         // Test throwing of an exception due to a Configuration with a SnowflakeUID uidType
         // but a missing machine ID
@@ -78,8 +78,8 @@ public class UIDTest {
         configuration.set(CONFIG_UID_TYPE_KEY, SnowflakeUID.class.getSimpleName());
         configuration.setInt(CONFIG_MACHINE_ID_KEY, ((30 << 12) + (20 << 6) + 10));
         UIDBuilder<UID> result8 = UID.builder(configuration, new Date());
-        assertTrue(result8.getClass() == SnowflakeUIDBuilder.class);
-        assertTrue(result8 != UID.builder());
+        assertSame(result8.getClass(), SnowflakeUIDBuilder.class);
+        assertNotSame(result8, UID.builder());
         
         // Test throwing of an exception due to a Configuration with a SnowflakeUID uidType
         // but an invalid machine ID (the first 8-bit node portion of the ID exceeds 255)
@@ -253,24 +253,24 @@ public class UIDTest {
         HashUID uid7 = new HashUID();
         SnowflakeUID uid8 = new SnowflakeUID(null, 16, "1");
         
-        assertFalse(uid1.equals(null));
-        assertTrue(uid1.equals(uid1));
-        assertFalse(uid1.equals(uid2));
+        assertNotEquals(null, uid1);
+        assertEquals(uid1, uid1);
+        assertNotEquals(uid1, uid2);
         
-        assertTrue(uid2.equals(uid2));
-        assertFalse(uid2.equals(uid3));
+        assertEquals(uid2, uid2);
+        assertNotEquals(uid2, uid3);
         
-        assertTrue(uid3.equals(uid4));
+        assertEquals(uid3, uid4);
         
-        assertFalse(uid4.equals(uid5));
+        assertNotEquals(uid4, uid5);
         
-        assertFalse(uid5.equals(uid6));
+        assertNotEquals(uid5, uid6);
         
-        assertFalse(uid6.equals(uid7));
+        assertNotEquals(uid6, uid7);
         
-        assertFalse(uid7.equals(uid8));
+        assertNotEquals(uid7, uid8);
         
-        assertTrue(uid8.equals(uid8));
+        assertEquals(uid8, uid8);
     }
     
     @Test
@@ -347,47 +347,47 @@ public class UIDTest {
         UIDBuilder<UID> builder = UID.builder();
         UID template = builder.newId();
         UID result1 = builder.newId(template);
-        assertTrue(result1 != template);
+        assertNotSame(result1, template);
         assertEquals(result1, template);
         
         // Test cloning of date-specified HashUID
         template = builder.newId(new Date());
         UID result2 = builder.newId(template);
-        assertTrue(result2 != template);
+        assertNotSame(result2, template);
         assertEquals(result2, template);
         
         // Test cloning of byte and date-specified HashUID
         template = builder.newId("test".getBytes(), new Date());
         UID result3 = builder.newId(template);
-        assertTrue(result3 != template);
+        assertNotSame(result3, template);
         assertEquals(result3, template);
         
         // Test cloning of byte and date-specified HashUID with extras
         template = builder.newId("test".getBytes(), new Date(), "1", "2");
         UID result4 = builder.newId(template);
-        assertTrue(result4 != template);
+        assertNotSame(result4, template);
         assertEquals(result4, template);
         
         // Test creation of child from byte and date-specified HashUID
         template = builder.newId("test".getBytes(), new Date());
         UID result5 = builder.newId(template, "1");
-        assertTrue(result5 != template);
+        assertNotSame(result5, template);
         assertNotEquals(result5, template);
-        assertEquals(result5.toString(), template.toString() + ".1");
+        assertEquals(result5.toString(), template + ".1");
         
         // Test creation of child from byte and date-specified HashUID that already has extras
         template = builder.newId("test".getBytes(), new Date(), "1", "2");
         UID result6 = builder.newId(template, "3");
-        assertTrue(result6 != template);
+        assertNotSame(result6, template);
         assertNotEquals(result6, template);
-        assertEquals(result6.toString(), template.toString() + ".3");
+        assertEquals(result6.toString(), template + ".3");
         
         // Test creation of child from custom HashUID that already has extras
         template = CustomHashUID.parse(template.toString());
         UID result7 = builder.newId(template, "3");
-        assertTrue(result7 != template);
+        assertNotSame(result7, template);
         assertNotEquals(result7, template);
-        assertEquals(result7.toString(), template.toString() + ".3");
+        assertEquals(result7.toString(), template + ".3");
         
         // Test creation of child from previous custom HashUID using a SnowflakeUID builder
         Configuration configuration = new Configuration();
@@ -395,54 +395,54 @@ public class UIDTest {
         configuration.setInt(CONFIG_MACHINE_ID_KEY, ((9 << 12) + (8 << 6) + 7)); // Machine ID: Node 9, Process 8, Thread 7
         builder = UID.builder(configuration);
         UID result8 = builder.newId(template, "3");
-        assertTrue(result8 != template);
+        assertNotSame(result8, template);
         assertNotEquals(result8, template);
-        assertEquals(result8.toString(), template.toString() + ".3");
+        assertEquals(result8.toString(), template + ".3");
         
         // Test cloning of simple SnowflakeUID
         template = builder.newId();
         UID result9 = builder.newId(template);
-        assertTrue(result9 != template);
+        assertNotSame(result9, template);
         assertEquals(result9, template);
         
         // Test cloning of date-specified SnowflakeUID
         template = builder.newId(new Date());
         UID result10 = builder.newId(template);
-        assertTrue(result10 != template);
+        assertNotSame(result10, template);
         assertEquals(result10, template);
         
         // Test cloning of byte and date-specified SnowflakeUID
         template = builder.newId("test".getBytes(), new Date());
         UID result11 = builder.newId(template);
-        assertTrue(result11 != template);
+        assertNotSame(result11, template);
         assertEquals(result11, template);
         
         // Test cloning of byte and date-specified SnowflakeUID with extras
         template = builder.newId("test".getBytes(), new Date(), "1", "2");
         UID result12 = builder.newId(template);
-        assertTrue(result12 != template);
+        assertNotSame(result12, template);
         assertEquals(result12, template);
         
         // Test creation of child from byte and date-specified SnowflakeUID
         template = builder.newId("test".getBytes(), new Date());
         UID result13 = builder.newId(template, "1");
-        assertTrue(result13 != template);
+        assertNotSame(result13, template);
         assertNotEquals(result13, template);
-        assertEquals(result13.toString(), template.toString() + ".1");
+        assertEquals(result13.toString(), template + ".1");
         
         // Test creation of child from byte and date-specified SnowflakeUID that already has extras
         template = builder.newId("test".getBytes(), new Date(), "1", "2");
         UID result14 = builder.newId(template, "3");
-        assertTrue(result14 != template);
+        assertNotSame(result14, template);
         assertNotEquals(result14, template);
-        assertEquals(result14.toString(), template.toString() + ".3");
+        assertEquals(result14.toString(), template + ".3");
         
         // Test creation of child from custom HashUID that already has extras
         template = CustomSnowflakeUID.parse(template.toString());
         UID result15 = builder.newId(template, "3");
-        assertTrue(result15 != template);
+        assertNotSame(result15, template);
         assertNotEquals(result15, template);
-        assertEquals(result15.toString(), template.toString() + ".3");
+        assertEquals(result15.toString(), template + ".3");
         
         // Test cloning of null template
         UID result16 = builder.newId((UID) null);

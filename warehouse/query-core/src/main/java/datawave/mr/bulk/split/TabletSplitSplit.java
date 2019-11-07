@@ -3,6 +3,7 @@ package datawave.mr.bulk.split;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 
 import org.apache.hadoop.io.Text;
@@ -97,13 +98,11 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
      * @throws InterruptedException
      */
     public String[] getLocations() throws IOException, InterruptedException {
-        HashSet<String> hosts = new HashSet<String>();
+        HashSet<String> hosts = new HashSet<>();
         for (InputSplit s : splits) {
             String[] hints = s.getLocations();
             if (hints != null && hints.length > 0) {
-                for (String host : hints) {
-                    hosts.add(host);
-                }
+                Collections.addAll(hosts, hints);
             }
         }
         return hosts.toArray(new String[hosts.size()]);
@@ -121,7 +120,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     /**
      * Write splits in the following format. {@code
      * <count><class1><class2>...<classn><split1><split2>...<splitn>
-   * }
+    * }
      */
     public void write(DataOutput out) throws IOException {
         WritableUtils.writeString(out, table);
@@ -170,7 +169,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     public String toString() {
         StringBuilder builder = new StringBuilder("{ ");
         for (InputSplit split : splits) {
-            builder.append("[").append(split.toString()).append("] ");
+            builder.append("[").append(split).append("] ");
         }
         builder.append(" }");
         return builder.toString();

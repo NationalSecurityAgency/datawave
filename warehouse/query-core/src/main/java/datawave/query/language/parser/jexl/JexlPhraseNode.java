@@ -8,7 +8,7 @@ public class JexlPhraseNode extends JexlNode {
     private List<String> wordList = new ArrayList<>();
     
     public JexlPhraseNode(String field, List<String> wordList) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.field = field;
         this.wordList = wordList;
     }
@@ -17,7 +17,7 @@ public class JexlPhraseNode extends JexlNode {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         
-        if (this.field == null || this.field.length() == 0) {
+        if (this.field == null || this.field.isEmpty()) {
             sb.append("content:phrase(termOffsetMap");
         } else {
             sb.append("content:phrase(");

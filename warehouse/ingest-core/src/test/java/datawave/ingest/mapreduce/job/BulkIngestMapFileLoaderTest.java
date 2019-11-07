@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,7 +44,9 @@ import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
@@ -61,6 +64,17 @@ public class BulkIngestMapFileLoaderTest {
     protected CommonTestAppender uutAppender;
     
     private List<String> systemProperties;
+    
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+    
+    @Test
+    public void testShutdownPortAlreadyInUse() throws IOException {
+        exit.expectSystemExitWithStatus(-3);
+        try (final ServerSocket socket = new ServerSocket(0)) {
+            new BulkIngestMapFileLoader(".", null, null, null, null, null, null, null, null, null, null, socket.getLocalPort());
+        }
+    }
     
     public static class WrappedPositionedReadable extends InputStream implements PositionedReadable, Seekable {
         
@@ -368,7 +382,7 @@ public class BulkIngestMapFileLoaderTest {
     
     @Before
     public void setup() throws Exception {
-        systemProperties = new ArrayList<String>();
+        systemProperties = new ArrayList<>();
         
         testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
         BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
@@ -1559,12 +1573,12 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
             uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker,
-                            tablePriorities, conf);
+                            tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1602,7 +1616,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1673,12 +1687,12 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(), null, true,
-                            false, false, false, new HashMap<String,Boolean>(), false, false);
+                            false, false, false, new HashMap<>(), false, false);
             
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
             
@@ -1734,7 +1748,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1796,7 +1810,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1858,7 +1872,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1927,7 +1941,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -1993,7 +2007,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2057,7 +2071,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2120,7 +2134,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2184,7 +2198,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2248,7 +2262,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2310,7 +2324,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2373,7 +2387,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2434,7 +2448,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2497,7 +2511,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2553,7 +2567,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2604,7 +2618,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
@@ -2653,7 +2667,7 @@ public class BulkIngestMapFileLoaderTest {
             Configuration conf = new Configuration();
             
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                            destHdfs, jobtracker, tablePriorities, conf);
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
             
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             

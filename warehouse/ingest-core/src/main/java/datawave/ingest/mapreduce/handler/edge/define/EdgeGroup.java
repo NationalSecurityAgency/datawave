@@ -2,8 +2,6 @@ package datawave.ingest.mapreduce.handler.edge.define;
 
 import java.util.List;
 
-import datawave.ingest.mapreduce.handler.edge.define.EdgeNode;
-
 public class EdgeGroup {
     
     List<EdgeNode> group1;

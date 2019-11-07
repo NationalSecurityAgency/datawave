@@ -47,7 +47,7 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
      * @param allFields
      */
     public QueryModelLoader(Connector connector, String tableName, Set<Authorizations> auths, Set<String> allFields) {
-        super(connector, tableName, auths, new ArrayList<Text>());
+        super(connector, tableName, auths, new ArrayList<>());
         
         this.allFields = allFields;
         

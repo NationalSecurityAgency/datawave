@@ -1,20 +1,50 @@
 package datawave.util.flag;
 
-import java.io.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
+import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
+import datawave.metrics.util.flag.FlagFile;
+import datawave.util.flag.config.ConfigUtil;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import datawave.util.flag.processor.DateUtils;
+import datawave.util.flag.processor.FlagDistributor;
+import datawave.util.flag.processor.SizeValidator;
+import datawave.util.flag.processor.UnusableFileException;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.mapred.JobConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.bind.JAXBException;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
 import java.net.Socket;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -22,44 +52,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import datawave.util.StringUtils;
-import datawave.metrics.util.flag.FlagFile;
-import datawave.ingest.mapreduce.StandaloneStatusReporter;
-import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
-import datawave.util.flag.config.ConfigUtil;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import datawave.util.flag.processor.DateFlagDistributor;
-import datawave.util.flag.processor.DateFolderFlagDistributor;
-import datawave.util.flag.processor.DateUtils;
-import datawave.util.flag.processor.FlagDistributor;
-import datawave.util.flag.processor.SimpleFlagDistributor;
-import datawave.util.flag.processor.SizeValidator;
-import datawave.util.flag.processor.UnusableFileException;
-
-import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hadoop.io.SequenceFile.Writer;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hadoop.io.compress.GzipCodec;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapreduce.Counters;
-import org.apache.log4j.Logger;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
 
 /**
  * 
@@ -69,66 +62,67 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private static final CompressionCodec cc = new GzipCodec();
     private static final CompressionType ct = CompressionType.BLOCK;
     
-    private static final Logger log = Logger.getLogger(FlagMaker.class);
+    private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
     // our yyyy/mm/dd pattern for most things.
     public static final Pattern pattern = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2})(?:/.*|$)");
     private static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd";
-    /**
-     * Directory cache will serve as a place holder the directories in HDFS that were created. This will cut down on the number of RPC calls tot he NameNode
-     */
-    private final Cache<Path,Path> directoryCache;
-    // Executor will be used for directory lookups
-    protected ExecutorService executor;
-    private final FlagMakerConfig fmc;
-    private FlagDistributor fd;
-    private volatile boolean running = true;
-    private FlagSocket flagSocket;
-    private final DecimalFormat df = new DecimalFormat("#0.00");
-    private final static byte ONE = '1';
-    private final ReentrantLock lock = new ReentrantLock();
-    private DateUtils util = new DateUtils();
-    private StandaloneTaskAttemptContext<?,?,?,?> ctx;
-    private static final SimpleDateFormat metricsFormat = new SimpleDateFormat("_yyyyMMdd_HHmmssSS");
+    
     private static final String COUNTER_LIMIT_HADOOP_2 = "mapreduce.job.counters.max";
     private static final String COUNTER_LIMIT_HADOOP_1 = "mapreduce.job.counters.limit";
     private static final int COUNTERS_PER_INPUT_FILE = 2;
+    
+    /**
+     * Directory cache will serve as a place holder the directories in HDFS that were created. This will cut down on the number of RPC calls to the NameNode
+     */
+    private final Cache<Path,Path> directoryCache;
+    // Executor will be used for directory lookups
+    private ExecutorService executor;
+    private final FlagMakerConfig fmc;
+    final FlagDistributor fd;
+    private volatile boolean running = true;
+    private FlagSocket flagSocket;
+    private final DecimalFormat df = new DecimalFormat("#0.00");
+    private DateUtils util = new DateUtils();
+    private StandaloneTaskAttemptContext<?,?,?,?> ctx;
+    
     protected JobConf config;
     
     public FlagMaker(FlagMakerConfig fmconfig) {
         this.fmc = fmconfig;
         this.config = new JobConf(new Configuration());
         
-        setup();
+        this.fmc.validate();
+        // configure the executor per the FlagMakerConfig input
+        this.executor = Executors.newFixedThreadPool(this.fmc.getMaxHdfsThreads());
+        this.fd = this.fmc.getFlagDistributor();
         
         // build the cache per the default configuration.
-        directoryCache = CacheBuilder.newBuilder().maximumSize(fmc.getDirectoryCacheSize())
-                        .expireAfterWrite(fmc.getDirectoryCacheTimeout(), TimeUnit.MILLISECONDS).concurrencyLevel(fmc.getMaxHdfsThreads()).build();
+        // @formatter:off
+        this.directoryCache = CacheBuilder.newBuilder()
+                .maximumSize(fmc.getDirectoryCacheSize())
+                .expireAfterWrite(fmc.getDirectoryCacheTimeout(), TimeUnit.MILLISECONDS)
+                .concurrencyLevel(fmc.getMaxHdfsThreads())
+                .build();
+        // @formatter:on
     }
     
     public static void main(String... args) throws Exception {
-        String flagConfig = null;
+        FlagMakerConfig flagMakerConfig = getFlagMakerConfig(args);
+        
         boolean shutdown = false;
         for (int i = 0; i < args.length; i++) {
-            if ("-flagConfig".equals(args[i])) {
-                flagConfig = args[++i];
-            }
             if ("-shutdown".equals(args[i])) {
                 shutdown = true;
             }
         }
-        if (flagConfig == null) {
-            flagConfig = "FlagMakerConfig.xml";
-            System.out.println("No flag config file specified, attempting to use default file: " + flagConfig);
-        }
-        
-        FlagMakerConfig xmlObject = ConfigUtil.getXmlObject(FlagMakerConfig.class, flagConfig);
         
         if (shutdown) {
-            shutdown(xmlObject.getSocketPort());
+            shutdown(flagMakerConfig.getSocketPort());
             System.exit(0);
         }
+        
         try {
-            FlagMaker m = new FlagMaker(xmlObject);
+            FlagMaker m = createFlagMaker(flagMakerConfig);
             m.run();
         } catch (IllegalArgumentException ex) {
             System.err.println("" + ex.getMessage());
@@ -138,24 +132,88 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         
     }
     
+    private static FlagMaker createFlagMaker(FlagMakerConfig fc) {
+        try {
+            Class<? extends FlagMaker> c = (Class<? extends FlagMaker>) Class.forName(fc.getFlagMakerClass());
+            Constructor<? extends FlagMaker> constructor = c.getConstructor(FlagMakerConfig.class);
+            return constructor.newInstance(fc);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Subclasses of FlagMaker must implement a constructor that takes a FlagMakerConfig", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to instantiate FlagMaker of type " + fc.getFlagMakerClass(), e);
+        }
+    }
+    
+    static FlagMakerConfig getFlagMakerConfig(String[] args) throws JAXBException, IOException {
+        String flagConfig = null;
+        String baseHDFSDirOverride = null;
+        String extraIngestArgsOverride = null;
+        String flagFileDirectoryOverride = null;
+        String flagMakerClass = null;
+        for (int i = 0; i < args.length; i++) {
+            if ("-flagConfig".equals(args[i])) {
+                flagConfig = args[++i];
+                log.info("Using flagConfig of {}", flagConfig);
+            } else if ("-baseHDFSDirOverride".equals(args[i])) {
+                baseHDFSDirOverride = args[++i];
+                log.info("Will override baseHDFSDir with {}", baseHDFSDirOverride);
+            } else if ("-extraIngestArgsOverride".equals(args[i])) {
+                extraIngestArgsOverride = args[++i];
+                log.info("Will override extraIngestArgs with {}", extraIngestArgsOverride);
+            } else if ("-flagFileDirectoryOverride".equals(args[i])) {
+                flagFileDirectoryOverride = args[++i];
+                log.info("Will override flagFileDirectory with {}", flagFileDirectoryOverride);
+            } else if ("-flagMakerClass".equals(args[i])) {
+                flagMakerClass = args[++i];
+                log.info("will override flagMakerClass with {}", flagMakerClass);
+            }
+        }
+        if (flagConfig == null) {
+            flagConfig = "FlagMakerConfig.xml";
+            log.warn("No flag config file specified, attempting to use default file: {}", flagConfig);
+        }
+        
+        FlagMakerConfig xmlObject = ConfigUtil.getXmlObject(FlagMakerConfig.class, flagConfig);
+        if (null != baseHDFSDirOverride) {
+            xmlObject.setBaseHDFSDir(baseHDFSDirOverride);
+        }
+        if (null != flagFileDirectoryOverride) {
+            xmlObject.setFlagFileDirectory(flagFileDirectoryOverride);
+        }
+        if (null != extraIngestArgsOverride) {
+            for (FlagDataTypeConfig flagDataTypeConfig : xmlObject.getFlagConfigs()) {
+                flagDataTypeConfig.setExtraIngestArgs(extraIngestArgsOverride);
+            }
+            xmlObject.getDefaultCfg().setExtraIngestArgs(extraIngestArgsOverride);
+        }
+        if (null != flagMakerClass) {
+            xmlObject.setFlagMakerClass(flagMakerClass);
+        }
+        log.debug(xmlObject.toString());
+        return xmlObject;
+        
+    }
+    
     private static void shutdown(int port) throws IOException {
-        Socket s = new Socket("localhost", port);
-        PrintWriter pw = new PrintWriter(s.getOutputStream(), true);
-        pw.write("shutdown");
-        pw.flush();
-        pw.close();
-        s.close();
+        try (Socket s = new Socket("localhost", port); PrintWriter pw = new PrintWriter(s.getOutputStream(), true)) {
+            pw.write("shutdown");
+            pw.flush();
+        }
     }
     
     private static void printUsage() {
         System.out.println("To run the Flag Maker: ");
         System.out.println("datawave.ingest.flag.FlagMaker -flagConfig [path to xml config]");
-        
+        System.out.println("Optional arguments:");
+        System.out.println("\t\t-shutdown\tDescription: shuts down the flag maker using configured socketPort");
+        System.out.println("\t\t-baseHDFSDirOverride [HDFS Path]\tDescription: overrides baseHDFSDir in xml");
+        System.out.println("\t\t-extraIngestArgsOverride [extra ingest args]\tDescription: overrides extraIngestArgs value in xml config");
+        System.out.println("\t\t-flagFileDirectoryOverride [local path]\tDescription: overrides flagFileDirectory value in xml config");
     }
     
     @Override
     public void run() {
-        log.debug("FlagMaker run() starting");
+        log.info(this.getClass().getSimpleName() + " run() starting");
         startSocket();
         try {
             while (running) {
@@ -169,9 +227,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             }
         } finally {
             executor.shutdown();
-            
         }
-        log.info("FlagMaker Exiting.");
+        log.info(this.getClass().getSimpleName() + " Exiting.");
     }
     
     /**
@@ -180,72 +237,107 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      */
     protected void processFlags() throws IOException {
         FileSystem fs = getHadoopFS();
-        log.debug("Querying for files");
+        log.trace("Querying for files on {}", fs.getUri().toString());
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
             long startTime = System.currentTimeMillis();
             String dataName = fc.getDataName();
             fd.setup(fc);
-            log.debug("Checking for files for " + dataName);
+            log.trace("Checking for files for {}", dataName);
             
-            for (String folder : fc.getFolder()) {
-                String folderPattern = folder + "/" + fmc.getFilePattern();
-                log.debug("searching for " + dataName + " files in " + folderPattern);
-                FileStatus[] files = fs.globStatus(new Path(folderPattern));
-                if (files == null || files.length == 0) {
-                    continue;
-                }
-                
-                // pull the base directory off of the folder
-                if (folder.startsWith(fmc.getBaseHDFSDir())) {
-                    folder = folder.substring(fmc.getBaseHDFSDir().length());
-                    if (folder.startsWith(File.separator)) {
-                        folder = folder.substring(File.separator.length());
-                    }
-                }
-                
-                // add the files
-                for (FileStatus status : files) {
-                    if (status.isDir()) {
-                        log.warn("Skipping subdirectory " + status.getPath());
-                    } else {
-                        try {
-                            fd.addInputFile(new InputFile(folder, status.getPath(), status.getBlockSize(), status.getLen(), getTimestamp(status.getPath(),
-                                            status.getModificationTime())));
-                        } catch (UnusableFileException e) {
-                            log.warn("Skipping unusable file " + status.getPath(), e);
-                        }
-                    }
-                }
-            }
+            loadFilesForDistributor(fc, fs);
             
-            while (fd.hasNext(mustHaveMax(fc)) && running) {
-                initStats(startTime);
-                writeFlagFile(fc, fd.next(this));
+            while (fd.hasNext(shouldOnlyCreateFullFlags(fc)) && running) {
+                Collection<InputFile> inFiles = fd.next(this);
+                if (null == inFiles || inFiles.isEmpty()) {
+                    throw new IllegalStateException(fd.getClass().getName()
+                                    + " has input files but returned zero candidates for flagging. Please validate configuration");
+                }
+                writeFlagFile(fc, inFiles);
             }
         }
     }
     
-    private boolean mustHaveMax(FlagDataTypeConfig fc) {
+    /**
+     * Adds all input files for the data type to the {@link FlagDistributor}.
+     * 
+     * @param fc
+     *            flag datatype configuration data
+     * @param fs
+     *            hadoop filesystem
+     * @throws IOException
+     *             error condition finding files in hadoop
+     */
+    void loadFilesForDistributor(FlagDataTypeConfig fc, FileSystem fs) throws IOException {
+        for (String folder : fc.getFolder()) {
+            String folderPattern = folder + "/" + fmc.getFilePattern();
+            log.debug("searching for " + fc.getDataName() + " files in " + folderPattern);
+            FileStatus[] files = fs.globStatus(new Path(folderPattern));
+            if (files == null || files.length == 0) {
+                continue;
+            }
+            
+            // remove the base directory from the folder
+            if (folder.startsWith(this.fmc.getBaseHDFSDir())) {
+                folder = folder.substring(this.fmc.getBaseHDFSDir().length());
+                if (folder.startsWith(File.separator)) {
+                    folder = folder.substring(File.separator.length());
+                }
+            }
+            
+            // add the files
+            for (FileStatus status : files) {
+                if (status.isDirectory()) {
+                    log.warn("Skipping subdirectory " + status.getPath());
+                } else {
+                    try {
+                        this.fd.addInputFile(new InputFile(folder, status, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp()));
+                        logFileInfo(fc, status);
+                    } catch (UnusableFileException e) {
+                        log.warn("Skipping unusable file " + status.getPath(), e);
+                    }
+                }
+            }
+        }
+    }
+    
+    protected void logFileInfo(FlagDataTypeConfig fc, FileStatus status) {
+        log.info("File {} : {}", fc.getDataName(), status);
+    }
+    
+    private boolean shouldOnlyCreateFullFlags(FlagDataTypeConfig fc) {
+        return !hasTimeoutOccurred(fc) || isBacklogExcessive(fc);
+    }
+    
+    private boolean isBacklogExcessive(FlagDataTypeConfig fc) {
+        if (fc.getFlagCountThreshold() == FlagMakerConfig.UNSET) {
+            log.trace("Not evaluating flag file backlog.  getFlagCountThreshold = {}", FlagMakerConfig.UNSET);
+            return false;
+        }
+        int sizeOfFlagFileBacklog = countFlagFileBacklog(fc);
+        if (sizeOfFlagFileBacklog >= fc.getFlagCountThreshold()) {
+            log.debug("Flag file backlog is excessive: sizeOfFlagFileBacklog: {}, flagCountThreshold: {}", sizeOfFlagFileBacklog, fc.getFlagCountThreshold());
+            return true;
+        }
+        return false;
+    }
+    
+    private boolean hasTimeoutOccurred(FlagDataTypeConfig fc) {
         long now = System.currentTimeMillis();
-        boolean mustHaveMax = (now < fc.getLast());
-        int flagCount = -1;
-        if (!mustHaveMax && fc.getFlagCountThreshold() != FlagMakerConfig.UNSET) {
-            flagCount = getFlagCount(fc);
-            mustHaveMax = (flagCount >= fc.getFlagCountThreshold());
+        // fc.getLast indicates when the flag file creation timeout will occur
+        boolean hasTimeoutOccurred = (now >= fc.getLast());
+        if (!hasTimeoutOccurred) {
+            log.debug("Still waiting for timeout.  now: {}, last: {}, (now-last): {}", now, fc.getLast(), (now - fc.getLast()));
         }
-        if (log.isDebugEnabled()) {
-            log.debug("mustHaveMax = " + mustHaveMax + ", " + now + ", " + fc.getLast() + ", " + flagCount + ", " + fc.getFlagCountThreshold());
-        }
-        return mustHaveMax;
+        return hasTimeoutOccurred;
     }
     
-    public long getTimestamp(Path path, long fileTimestamp) {
+    private long getTimestamp(Path path, long fileTimestamp) {
         if (fmc.isUseFolderTimestamp()) {
             // if using the folder timestamp, then pull the day out of the folder timestamp
             try {
                 return util.getFolderTimestamp(path.toString());
             } catch (Exception e) {
-                log.warn("Path does not contain yyyy/mm/dd...using file timestamp for " + path);
+                log.warn("Path does not contain yyyy/mm/dd...using file timestamp for {}", path);
                 return fileTimestamp;
             }
             
@@ -260,7 +352,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * @param fc
      * @return the flag found for this ingest pool
      */
-    int getFlagCount(final FlagDataTypeConfig fc) {
+    private int countFlagFileBacklog(final FlagDataTypeConfig fc) {
         final MutableInt fileCounter = new MutableInt(0);
         final FileFilter fileFilter = new WildcardFileFilter("*_" + fc.getIngestPool() + "_" + fc.getDataName() + "_*.flag");
         final FileVisitor<java.nio.file.Path> visitor = new SimpleFileVisitor<java.nio.file.Path>() {
@@ -283,117 +375,141 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         return fileCounter.intValue();
     }
     
+    //@formatter:off
     /**
      * Write the flag file. This is done in several steps to ensure we can easily recover if we are killed somewhere in-between.
+     *
+     * <ul>
+     *     <li>move the files to the flagging directory for those that do not already exist in flagging, flagged, or loaded</li>
+     *     <li>create the flag.generating file for those files we were able to move, and do not exist elsewhere</li>
+     *     <li>set the timestamp of the flag file to that of the most recent file</li>
+     *     <li>move the flagging files to the flagged directory</li>
+     *     <li>move the generating file to the final flag file form</li>
+     *     <li>create the cleanup file</li>
+     * </ul>
+     *
+     * Using these steps, a cleanup of an abnormal termination is as follows:
+     * <ul>
+     *     <li>move all flagging files to the base directory</li>
+     *     <li>for all flag.generating files, move the flagged files to the base directory</li>
+     *     <li>remove the flag.generating files.</li>
+     * </ul>
      * 
-     * 1) move the files to the flagging directory for those that do not already exist in flagging, flagged, or loaded 2) create the flag.generating file for
-     * those files we were able to move, and do not exist elsewhere 3) set the timestamp of the flag file to that of the most recent file 4) move the flagging
-     * files to the flagged directory 5) move the generating file to the final flag file form 6) create the cleanup file
-     * 
-     * Using these steps, a cleanup of an abnormal termination is as follows: 1) move all flagging files to the base directory 2) for all flag.generating files,
-     * move the flagged files to the base directory 3) remove the flag.generating files.
-     * 
-     * @param fc
-     * @param inFiles
+     * @param fc flag configuration
+     * @param inFiles input files to write to flag file
      * @throws IOException
      */
+    //@formatter:on
     void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
-        
-        long estSize = getFlagFileSize(fc, inFiles);
-        if (inFiles == null || inFiles.isEmpty())
-            throw new IllegalArgumentException("inFiles for Flag file");
-        final ConcurrentHashMap<InputFile,Path> moved = new ConcurrentHashMap<>();
         File flagFile = null;
         final FileSystem fs = getHadoopFS();
+        long now = System.currentTimeMillis();
+        final FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
+        List<Future<InputFile>> futures = Lists.newArrayList();
+        
         try {
             // first lets create the dest directories, and move the files into the flagging directory
             final AtomicLong latestTime = new AtomicLong(-1);
-            List<Callable<Path>> callables = Lists.newArrayList();
-            for (final InputFile inFile : inFiles) {
-                // Create the flagging directory
-                Callable<Path> mover = new Callable<Path>() {
-                    @Override
-                    public Path call() throws IOException {
-                        Path dstFlagging = getDestPath(inFile, "flagging", fc);
-                        if (directoryCache.getIfPresent(dstFlagging) == null && !fs.exists(dstFlagging.getParent())) {
-                            fs.mkdirs(dstFlagging.getParent());
-                            directoryCache.put(dstFlagging, dstFlagging);
-                        }
-                        // Create the flagged directory
-                        Path dstFlagged = getDestPath(inFile, "flagged", fc);
-                        if (directoryCache.getIfPresent(dstFlagged) == null && !fs.exists(dstFlagged.getParent())) {
-                            fs.mkdirs(dstFlagged.getParent());
-                            directoryCache.put(dstFlagged, dstFlagged);
-                        }
-                        // Check for existence of the file already in the flagging, flagged, or loaded directories
-                        Path dstLoaded = getDestPath(inFile, "loaded", fc);
-                        if (fs.exists(dstFlagged) || fs.exists(dstFlagging) || fs.exists(dstLoaded)) {
-                            log.warn("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName()
-                                            + " as it already exists in the flagging, flagged, or loaded directory");
-                        } else {
-                            // now move the file into the flagging directory
-                            if (fs.rename(inFile.getPath(), dstFlagging)) {
-                                moved.put(inFile, dstFlagging);
-                                latestTime.set(Math.max(inFile.getTimestamp(), latestTime.get()));
-                            } else {
-                                log.error("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName() + ", skipping");
-                            }
-                        }
-                        return dstLoaded;
-                    }
-                };
-                // can look at I files that have a logical ts greater than the logical ts of the last compaction. that would indicate what has been imported
-                // since that compaction started. which is basically the pile up we've seen.
-                // we can look at the size of that compacted file and use that to determine how to size the next one
-                
-                // two prior compactions: 3139106321 3139418030, (311k) apart. and 4,274,086,297 4.2GB
-                // 3139017948 - 3138938475 = 79473 (22 minutes) 3822549588 bytes = 3.8GB 3138796228 to 3139468770
-                // can determine how many I files came in since the most recent C file
-                // can find 5 most recent logical changes
-                
-                callables.add(mover);
-            }
-            try {
-                List<Future<Path>> execResults = executor.invokeAll(callables);
-                
-                for (Future<Path> future : execResults) {
-                    if (future.get() == null)
-                        throw new IOException("Error while attempting to create path");
-                }
-                
-            } catch (InterruptedException e) {
-                throw new IOException(e.getCause());
-            } catch (ExecutionException e) {
-                throw new IOException(e.getCause());
+            
+            for (final InputFile e : inFiles) {
+                // Create directories and move to flagging
+                final FlagEntryMover mover = new FlagEntryMover(directoryCache, fs, e);
+                final Future<InputFile> exec = executor.submit(mover);
+                futures.add(exec);
             }
             
+            HashSet<InputFile> flagging = new HashSet<>();
             // if no files moved, then abort
-            if (moved.isEmpty()) {
-                log.warn("No pending files were able to be moved to the flagging directory. Please investigate.");
+            if (!processResults(futures, flagging)) {
+                log.warn("No pending files were moved to the flagging directory. Please investigate.");
                 return;
             }
             
-            // create the flag.generating file
-            Path first = moved.entrySet().iterator().next().getValue();
-            long now = System.currentTimeMillis();
+            Path first = flagging.iterator().next().getCurrentDir();
             String baseName = fmc.getFlagFileDirectory() + File.separator + df.format(now / 1000) + "_" + fc.getIngestPool() + "_" + fc.getDataName() + "_"
-                            + first.getName() + "+" + moved.size();
-            log.info("Creating flag file" + baseName + ".flag" + " for data type " + fc.getDataName() + " containing " + moved.size() + " files");
-            File f = new File(baseName + ".flag.generating");
-            if (f.createNewFile()) {
-                flagFile = f;
-            } else {
-                throw new IOException("Unable to create flag file " + f);
+                            + first.getName() + "+" + flagging.size();
+            flagFile = write(flagging, fc, baseName);
+            for (InputFile entry : flagging) {
+                long time = entry.getTimestamp();
+                metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), time);
+                latestTime.set(Math.max(entry.getTimestamp(), latestTime.get()));
             }
-            FileOutputStream flagOS = new FileOutputStream(f);
+            
+            // now set the modification time of the flag file
+            if (fmc.isSetFlagFileTimestamp()) {
+                if (!flagFile.setLastModified(latestTime.get())) {
+                    log.warn("unable to set last modified time for flagfile (" + flagFile.getAbsolutePath() + ")");
+                }
+            }
+            
+            // Now we have files moved into the flagging directory, and a flag.generating file created
+            
+            // move the files to the flagged directory
+            for (InputFile entry : flagging) {
+                final SimpleMover mover = new SimpleMover(directoryCache, entry, InputFile.TrackedDir.FLAGGED_DIR, fs);
+                final Future<InputFile> exec = executor.submit(mover);
+                futures.add(exec);
+            }
+            HashSet<InputFile> flagged = new HashSet<>();
+            if (!processResults(futures, flagged)) {
+                throw new IOException("Files went to flagging, but not flagged. Investigate");
+            }
+            
+            for (InputFile entry : flagged) {
+                metrics.updateCounter(FlagFile.class.getSimpleName(), entry.getCurrentDir().getName(), System.currentTimeMillis());
+            }
+            
+            File f2 = new File(baseName + ".flag");
+            if (!flagFile.renameTo(f2)) {
+                throw new IOException("Failed to rename" + flagFile.toString() + " to " + f2);
+            }
+            flagFile = f2;
+            
+            // after we write a file, set the timeout to the forceInterval
+            fc.setLast(now + fc.getTimeoutMilliSecs());
+            
+            metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
+        } catch (IOException ex) {
+            log.error("Unable to complete flag file ", ex);
+            moveFilesBack(inFiles, futures, fs);
+            if (flagFile != null) {
+                if (!flagFile.delete()) {
+                    log.warn("unable to delete flagfile (" + flagFile.getAbsolutePath() + ")");
+                }
+            }
+            throw ex;
+        }
+    }
+    
+    /**
+     * Creates the flag file using all of the valid ingest files.
+     * 
+     * @param flagging
+     *            ingest files
+     * @param fc
+     *            data type for ingest
+     * @param baseName
+     *            base name for flag file
+     * @return handle for flag file
+     * @throws IOException
+     *             error creating flag file
+     */
+    protected File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName) throws IOException {
+        // create the flag.generating file
+        log.debug("Creating flag file" + baseName + ".flag" + " for data type " + fc.getDataName() + " containing " + flagging.size() + " files");
+        File f = new File(baseName + ".flag.generating");
+        if (!f.createNewFile()) {
+            throw new IOException("Unable to create flag file " + f);
+        }
+        
+        try (FileOutputStream flagOS = new FileOutputStream(f)) {
             StringBuilder sb = new StringBuilder(fmc.getDatawaveHome() + File.separator + fc.getScript());
             if (fc.getFileListMarker() == null) {
                 String sep = " ";
-                for (InputFile inFile : moved.keySet()) {
+                for (InputFile inFile : flagging) {
                     if (fc.isCollectMetrics())
                         ctx.getCounter(InputFile.class.getSimpleName(), inFile.getFileName()).setValue(inFile.getTimestamp());
-                    Path dstFlagged = getDestPath(inFile, "flagged", fc);
-                    sb.append(sep).append(dstFlagged.toUri());
+                    sb.append(sep).append(inFile.getFlagged().toUri());
                     sep = ",";
                 }
             } else {
@@ -410,153 +526,58 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             sb.append("\n");
             if (fc.getFileListMarker() != null) {
                 sb.append(fc.getFileListMarker()).append('\n');
-                for (InputFile inFile : moved.keySet()) {
+                for (InputFile inFile : flagging) {
                     if (fc.isCollectMetrics())
                         ctx.getCounter(InputFile.class.getSimpleName(), inFile.getFileName()).setValue(inFile.getTimestamp());
-                    Path dstFlagged = getDestPath(inFile, "flagged", fc);
-                    sb.append(dstFlagged.toUri()).append('\n');
+                    sb.append(inFile.getFlagged().toUri()).append('\n');
                 }
-            }
-            if (estSize != sb.length()) {
-                log.error("Estimated size is not accurate: " + estSize + " vs " + sb.length());
             }
             
             flagOS.write(sb.toString().getBytes());
-            flagOS.close();
-            
-            // now set the modification time of the flag file
-            if (fmc.isSetFlagFileTimestamp()) {
-                f.setLastModified(latestTime.get());
-            }
-            
-            // Now we have files moved into the flagging directory, and a flag.generating file created
-            
-            // move the files to the flagged directory
-            callables = Lists.newArrayList();
-            
-            for (Map.Entry<InputFile,Path> entry : moved.entrySet()) {
-                final InputFile inFile = entry.getKey();
-                final Path dstFlagging = entry.getValue();
-                final Path dstFlagged = getDestPath(inFile, "flagged", fc);
-                Callable<Path> mover = new Callable<Path>() {
-                    @Override
-                    public Path call() throws Exception {
-                        if (fs.rename(dstFlagging, dstFlagged)) {
-                            moved.put(inFile, dstFlagged);
-                            if (fc.isCollectMetrics())
-                                ctx.getCounter(FlagFile.class.getSimpleName(), dstFlagged.getName()).setValue(System.currentTimeMillis());
-                        } else {
-                            throw new IOException("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName());
-                        }
-                        
-                        return dstFlagged;
-                    }
-                };
-                callables.add(mover);
-            }
-            
-            try {
-                List<Future<Path>> execResults = executor.invokeAll(callables);
-                
-                for (Future<Path> future : execResults) {
-                    if (future.get() == null)
-                        throw new IOException("Error while attempting to create path");
-                }
-                
-            } catch (InterruptedException e) {
-                throw new IOException(e.getCause());
-            } catch (ExecutionException e) {
-                throw new IOException(e.getCause());
-            }
-            
-            File f2 = new File(baseName + ".flag");
-            if (f.renameTo(f2)) {
-                flagFile = f2;
-            } else {
-                throw new IOException("Failed to rename" + f.toString() + " to " + f2);
-            }
-            
-            try {
-                lock.lock();
-                // after we write a file, set the timeout to the forceInterval
-                fc.setLast(now + fc.getTimeoutMilliSecs());
-            } finally {
-                lock.unlock();
-            }
-            
-            if (fc.isCollectMetrics())
-                updateStats();
-            
-            if (fc.isCollectMetrics()) {
-                writeMetrics(ctx.getReporter(), this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName(), ct, cc);
-            }
-        } catch (IOException ex) {
-            log.error("Unable to complete flag file ", ex);
-            moveFilesBack(moved);
-            if (flagFile != null) {
-                flagFile.delete();
-            }
-            throw ex;
         }
+        
+        return f;
     }
     
-    private void moveFilesBack(ConcurrentHashMap<InputFile,Path> moved) throws IOException {
-        if (moved.isEmpty())
-            return;
-        try {
-            FileSystem fs = getHadoopFS();
-            Iterator<Map.Entry<InputFile,Path>> it = moved.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<InputFile,Path> kv = it.next();
-                if (fs.rename(kv.getValue(), kv.getKey().getPath())) {
-                    it.remove();
+    private boolean processResults(List<Future<InputFile>> futures, Collection<InputFile> entries) throws IOException {
+        IOException ioex = null;
+        for (Future<InputFile> future : futures) {
+            try {
+                InputFile fe = future.get();
+                if (fe != null && fe.isMoved()) {
+                    entries.add(fe);
                 }
+            } catch (InterruptedException | ExecutionException ex) {
+                ioex = new IOException("Failure during move", ex.getCause());
             }
-        } catch (IOException ex) {
+        }
+        futures.clear();
+        if (ioex != null) {
+            throw ioex;
+        }
+        return !entries.isEmpty();
+    }
+    
+    private void moveFilesBack(Collection<InputFile> files, List<Future<InputFile>> futures, FileSystem fs) throws IOException {
+        if (files.isEmpty()) {
+            return;
+        }
+        for (InputFile flagEntry : files) {
+            final SimpleMover mover = new SimpleMover(directoryCache, flagEntry, InputFile.TrackedDir.PATH_DIR, fs);
+            final Future<InputFile> exec = executor.submit(mover);
+            futures.add(exec);
+        }
+        HashSet<InputFile> moved = new HashSet<>();
+        processResults(futures, moved);
+        if (moved.size() != files.size()) {
             StringBuilder sb = new StringBuilder();
-            for (Map.Entry<InputFile,Path> orphan : moved.entrySet()) {
-                sb.append("\n").append(orphan.getValue().toString());
+            for (InputFile entry : files) {
+                if (!entry.getPath().equals(entry.getCurrentDir())) {
+                    sb.append("\n").append(entry.getCurrentDir().toString());
+                }
             }
             log.error("An error occurred while attempting to move files. The following files were orphaned:" + sb.toString());
         }
-    }
-    
-    /**
-     * if it matches the date pattern, use that, otherwise use a pattern of now
-     * 
-     * @param inFile
-     * @return
-     */
-    private Path getDestPath(InputFile inFile, String subdir, FlagDataTypeConfig fc) {
-        Matcher m = pattern.matcher(inFile.getDirectory());
-        String dst = fmc.getBaseHDFSDir() + subdir + File.separator + inFile.getFolder() + File.separator;
-        if (m.find()) {
-            String grp = m.group(1);
-            dst += grp;
-        } else {
-            SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT_STRING);
-            dst += format.format(new Date());
-        }
-        return new Path(dst + File.separator + inFile.getFileName());
-    }
-    
-    /**
-     * Get the length of the URI produced by getDestPath(inFile,subdir,fc)
-     * 
-     * @param inFile
-     * @return the length of the URI
-     */
-    private int getDestPathLength(InputFile inFile, String subdir, FlagDataTypeConfig fc) {
-        Matcher m = pattern.matcher(inFile.getDirectory());
-        int len = fmc.getBaseHDFSDir().length() + subdir.length() + 1 + inFile.getFolder().length() + 1;
-        if (m.find()) {
-            String grp = m.group(1);
-            len += grp.length();
-        } else {
-            SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT_STRING);
-            len += format.format(new Date()).length();
-        }
-        return len + 1 + inFile.getFileName().length();
     }
     
     FileSystem getHadoopFS() throws IOException {
@@ -583,15 +604,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             String dtype = s.substring(4).trim();
             for (FlagDataTypeConfig cfg : fmc.getFlagConfigs()) {
                 if (cfg.getDataName().equals(dtype)) {
-                    try {
-                        lock.lock();
-                        log.info("Forcing " + dtype + " to generate flag file");
-                        cfg.setLast(System.currentTimeMillis() - cfg.getTimeoutMilliSecs());
-                        break;
-                    } finally {
-                        lock.unlock();
-                    }
-                    
+                    log.info("Forcing {} to generate flag file", dtype);
+                    cfg.setLast(System.currentTimeMillis() - cfg.getTimeoutMilliSecs());
+                    break;
                 }
             }
         }
@@ -612,184 +627,17 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     }
     
     /**
-     * Validate config and set up folders for each data type. Here we have a few rules: if you provide no folders, then we will assume that the folder is the
-     * the data type which will be appended to the base directory (e.g. /data/ShardIngest). Users can provide absolute file paths by leading with a slash ("/")
-     */
-    private void setup() {
-        String prefix = "FlagDataTypeConfig Error: ";
-        // validate the config
-        if (fmc.getDefaultCfg().getScript() == null) {
-            throw new IllegalArgumentException(prefix + "default script is required");
-        }
-        String hdfsbasedir = fmc.getBaseHDFSDir();
-        if (hdfsbasedir == null) {
-            throw new IllegalArgumentException(prefix + "baseHDFSDir is required");
-        }
-        
-        if (!hdfsbasedir.endsWith("/")) {
-            fmc.setBaseHDFSDir(hdfsbasedir + "/");
-        }
-        
-        int socketPort = fmc.getSocketPort();
-        if (socketPort < 1025 || socketPort > 65534) {
-            throw new IllegalArgumentException(prefix + "socketPort is required and must be greater than 1024 and less than 65535");
-        }
-        
-        if (fmc.getFlagFileDirectory() == null) {
-            throw new IllegalArgumentException(prefix + "flagFileDirectory is required");
-        }
-        
-        if (fmc.getDefaultCfg().getMaxFlags() < 1) {
-            throw new IllegalArgumentException(prefix + "Default Max Flags must be set.");
-        }
-        
-        String dtype = fmc.getDistributorType();
-        if (dtype == null || !dtype.matches("(simple|date|folderdate)")) {
-            throw new IllegalArgumentException("Invalid Distributor type provided: " + dtype + ". Must be one of the following: simple|date|folderdate");
-        }
-        
-        if ("simple".equals(dtype)) {
-            fd = new SimpleFlagDistributor();
-        } else if ("date".equals(dtype)) {
-            fd = new DateFlagDistributor();
-        } else if ("folderdate".equals(dtype)) {
-            fd = new DateFolderFlagDistributor();
-        }
-        for (FlagDataTypeConfig cfg : fmc.getFlagConfigs()) {
-            if (cfg.getInputFormat() == null)
-                throw new IllegalArgumentException("Input Format Class must be specified for data type: " + cfg.getDataName());
-            if (cfg.getIngestPool() == null)
-                throw new IllegalArgumentException("Ingest Pool must be specified for data type: " + cfg.getDataName());
-            if (cfg.getFlagCountThreshold() == FlagMakerConfig.UNSET) {
-                cfg.setFlagCountThreshold(fmc.getFlagCountThreshold());
-            }
-            if (cfg.getTimeoutMilliSecs() == FlagMakerConfig.UNSET) {
-                cfg.setTimeoutMilliSecs(fmc.getTimeoutMilliSecs());
-            }
-            cfg.setLast(System.currentTimeMillis() + cfg.getTimeoutMilliSecs());
-            if (cfg.getMaxFlags() < 1) {
-                cfg.setMaxFlags(fmc.getDefaultCfg().getMaxFlags());
-            }
-            if (cfg.getReducers() < 1) {
-                cfg.setReducers(fmc.getDefaultCfg().getReducers());
-            }
-            if (cfg.getScript() == null || "".equals(cfg.getScript())) {
-                cfg.setScript(fmc.getDefaultCfg().getScript());
-            }
-            if (cfg.getFileListMarker() == null || "".equals(cfg.getFileListMarker())) {
-                cfg.setFileListMarker(fmc.getDefaultCfg().getFileListMarker());
-            }
-            if (cfg.getFileListMarker() != null) {
-                if (cfg.getFileListMarker().indexOf(' ') >= 0) {
-                    throw new IllegalArgumentException(prefix + "fileListMarker cannot contain spaces");
-                }
-            }
-            if (cfg.getCollectMetrics() == null || "".equals(cfg.getCollectMetrics())) {
-                cfg.setCollectMetrics(fmc.getDefaultCfg().getCollectMetrics());
-            }
-            List<String> folders = cfg.getFolder();
-            if (folders == null || folders.isEmpty()) {
-                folders = new ArrayList<>();
-                cfg.setFolder(folders);
-                // add the default path. we'll bomb later if it's not there.
-                folders.add(cfg.getDataName());
-            }
-            List<String> fixedFolders = new ArrayList<>();
-            for (int i = 0; i < folders.size(); i++) {
-                for (String folder : StringUtils.split(folders.get(i), ',')) {
-                    folder = folder.trim();
-                    // let someone specify an absolute path.
-                    if (!folder.startsWith("/")) {
-                        fixedFolders.add(fmc.getBaseHDFSDir() + folder);
-                    } else {
-                        fixedFolders.add(folder);
-                    }
-                }
-            }
-            cfg.setFolder(fixedFolders);
-        }
-        
-        // configure the executor per the FlagMakerConfig input
-        executor = Executors.newFixedThreadPool(fmc.getMaxHdfsThreads());
-    }
-    
-    private void initStats(long startTime) {
-        this.ctx = new StandaloneTaskAttemptContext<Object,Object,Object,Object>(new Configuration(), new StandaloneStatusReporter());
-        ctx.putIfAbsent(datawave.metrics.util.flag.InputFile.FLAGMAKER_START_TIME, startTime);
-    }
-    
-    private void updateStats() {
-        ctx.getCounter(datawave.metrics.util.flag.InputFile.FLAGMAKER_END_TIME).setValue(System.currentTimeMillis());
-    }
-    
-    protected void writeMetrics(final StandaloneStatusReporter reporter, final String metricsDirectory, final String baseName, final CompressionType ct,
-                    final CompressionCodec cc) throws IOException {
-        
-        FileSystem fs = getHadoopFS();
-        
-        if (reporter == null)
-            return;
-        
-        final Counters c = reporter.getCounters();
-        if (c == null || c.countCounters() <= 0)
-            return;
-        
-        final String baseFileName = metricsDirectory + File.separator + baseName + ".metrics";
-        
-        String fileName = baseFileName;
-        Path finishedMetricsFile = new Path(fileName);
-        Path src = new Path(fileName + ".working");
-        
-        if (!fs.exists(finishedMetricsFile.getParent())) {
-            fs.mkdirs(finishedMetricsFile.getParent());
-        }
-        
-        if (!fs.exists(src.getParent())) {
-            fs.mkdirs(src.getParent());
-        }
-        
-        int count = 0;
-        
-        while (true) {
-            while (fs.exists(finishedMetricsFile) || !fs.createNewFile(src)) {
-                count++;
-                
-                fileName = baseFileName + '.' + count;
-                finishedMetricsFile = new Path(fileName);
-                src = new Path(fileName + ".working");
-            }
-            
-            if (!fs.exists(finishedMetricsFile))
-                break;
-            fs.delete(src, false);
-        }
-        
-        final Writer writer = SequenceFile.createWriter(fs, new Configuration(), src, Text.class, Counters.class, ct, cc);
-        writer.append(new Text(baseName), c);
-        writer.close();
-        
-        if (!fs.rename(src, finishedMetricsFile))
-            log.error("Could not rename metrics file to completed name. Failed file will persist until manually removed.");
-    }
-    
-    /**
      * Get the length of the flag file that would be created using this set of files.
      * 
      * @param fc
      * @param inFiles
      * @return The size in characters of the flag file
      */
-    long getFlagFileSize(FlagDataTypeConfig fc, Collection<InputFile> inFiles) {
-        long length = 0;
-        length += fmc.getDatawaveHome().length() + 1 + fc.getScript().length();
+    private long getFlagFileSize(FlagDataTypeConfig fc, Collection<InputFile> inFiles) {
+        long length = fmc.getDatawaveHome().length() + 1 + fc.getScript().length();
         int first = -1;
         for (InputFile inFile : inFiles) {
-            if (first == -1) {
-                first = getDestPathLength(inFile, "flagged", fc);
-                length += 1 + first;
-            } else {
-                length += 1 + getDestPathLength(inFile, "flagged", fc);
-            }
+            length += 1 + inFile.getTrackedDirLength(InputFile.TrackedDir.FLAGGED_DIR);
         }
         
         length += 1 + Integer.toString(fc.getReducers()).length() + " -inputFormat ".length() + fc.getInputFormat().getName().length() + 1
@@ -803,7 +651,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         }
         
         return length;
-        
     }
     
     @Override
@@ -817,14 +664,14 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             maxCounters = Integer.parseInt(this.config.get(COUNTER_LIMIT_HADOOP_1));
         }
         if (calculateCounters(files.size()) > maxCounters) {
-            log.warn("Check hadoop configuration. Counter limit (" + maxCounters + ") exceeded for " + fc.getDataName() + ". " + "Restricting to "
-                            + filesPerPartition(maxCounters) + " files per flag file.");
+            log.warn("Check hadoop configuration. Counter limit ({}) exceeded for {}. Restricting to {} files per flag file.", maxCounters, fc.getDataName(),
+                            filesPerPartition(maxCounters));
             return false;
         }
         
         // now check the flag file size
         if (getFlagFileSize(fc, files) > fmc.getMaxFileLength()) {
-            log.warn("Flag file size for " + fc.getDataName() + " exceeding " + fmc.getMaxFileLength() + ".  Reducing number of files to compensate");
+            log.warn("Flag file size for {} exceeding {}.  Reducing number of files to compensate", fc.getDataName(), fmc.getMaxFileLength());
             return false;
         }
         
@@ -838,5 +685,4 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private int filesPerPartition(int maxCounters) {
         return ((maxCounters - 2) / 2);
     }
-    
 }

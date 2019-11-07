@@ -239,7 +239,8 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
                 }
             }
             
-            WikipediaTokenizer wikiTokenizer = new WikipediaTokenizer(contentReader);
+            WikipediaTokenizer wikiTokenizer = new WikipediaTokenizer();
+            wikiTokenizer.setReader(contentReader);
             CharTermAttribute termAttr = wikiTokenizer.addAttribute(CharTermAttribute.class);
             wikiTokenizer.reset();
             
@@ -335,7 +336,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
         if (this.ingestHelper.isIndexOnlyField(fieldName))
             return;
         
-        if (this.ingestHelper.isCompositeField(fieldName))
+        if (this.ingestHelper.isCompositeField(fieldName) && !this.ingestHelper.isOverloadedCompositeField(fieldName))
             return;
         
         if (StringUtils.isEmpty(fieldValue))
@@ -445,7 +446,6 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
         dw.k = k;
         dw.shardId = shardId;
         dw.visibility = visibility;
-        dw.event = event;
         dw.value = value;
         
         this.docWriterService.execute(dw);

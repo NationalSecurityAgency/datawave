@@ -25,13 +25,11 @@ public class JsonDataTypeHelper extends CSVHelper {
     }
     
     protected String columnVisibilityField = null;
-    protected boolean processExtraFields = false;
     protected FlattenMode jsonObjectFlattenMode = FlattenMode.NORMAL;
     
     @Override
     public void setup(Configuration config) throws IllegalArgumentException {
         super.setup(config);
-        setProcessExtraFields(super.processExtraFields());
         this.setJsonObjectFlattenModeByName(config.get(this.getType().typeName() + Properties.FLATTENER_MODE, FlattenMode.NORMAL.name()));
         this.setColumnVisibilityField(config.get(this.getType().typeName() + Properties.COLUMN_VISIBILITY_FIELD));
     }
@@ -42,15 +40,6 @@ public class JsonDataTypeHelper extends CSVHelper {
     
     public void setColumnVisibilityField(String columnVisibilityField) {
         this.columnVisibilityField = columnVisibilityField;
-    }
-    
-    @Override
-    public boolean processExtraFields() {
-        return processExtraFields;
-    }
-    
-    public void setProcessExtraFields(boolean processExtraFields) {
-        this.processExtraFields = processExtraFields;
     }
     
     public FlattenMode getJsonObjectFlattenMode() {

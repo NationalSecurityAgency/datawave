@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -25,7 +25,7 @@ import datawave.query.jexl.JexlASTHelper;
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
  * are returned.
  */
-public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
+public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     public static final byte[] FI_CF = new Text("fi").getBytes();
     public static final byte[] TF_CF = Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes();
@@ -61,9 +61,11 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      */
     private int anyFieldLimit;
     
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
+    private Set<String> nonEventFields;
+    
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
+                    long maxKeysBeforeSeek) {
+        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null, Collections.EMPTY_SET);
     }
     
     /**
@@ -76,14 +78,15 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      * 
      * @param script
      */
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField) {
-        super(script, attributeFactory, expressionFilterEnabled);
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
+                    long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
+        super(script, attributeFactory, nonEventFields);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
         this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
         this.limitFieldsField = limitFieldsField;
+        this.nonEventFields = nonEventFields;
         
         // set the anyFieldLimit once if specified otherwise set to -1
         anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
@@ -110,32 +113,56 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         limitFieldsField = other.limitFieldsField;
         limitFieldsMap = other.limitFieldsMap;
         anyFieldLimit = other.anyFieldLimit;
+        nonEventFields = other.nonEventFields;
     }
     
     @Override
-    public void setDocumentKey(Key document) {
-        super.setDocumentKey(document);
+    public void startNewDocument(Key document) {
+        super.startNewDocument(document);
         // clear the parse info so a length comparison can't be made against a new document
         lastParseInfo = null;
     }
     
-    /*
-     * (non-Javadoc)
+    /**
+     * Keep for context evaluation and potential return to the client. If a Key returns false the Key will not be used for context evaluation or returned to the
+     * client. If a Key returns true but keep() returns false the document will be used for context evaluation, but will not be returned to the client. If a Key
+     * returns true and keep() returns true the key will be used for context evaluation and returned to the client.
      * 
-     * @see datawave.query.function.Filter#accept(org.apache.accumulo .core.data.Key)
+     * @param input
+     * @return true if Key should be added to context, false otherwise
      */
     @Override
     public boolean apply(Entry<Key,String> input) {
+        return apply(input, true);
+    }
+    
+    @Override
+    public boolean peek(Entry<Key,String> input) {
+        return apply(input, false);
+    }
+    
+    private boolean apply(Entry<Key,String> input, boolean update) {
         // if a TLD, then accept em all, other wise defer to the query field
         // filter
         Key current = input.getKey();
         lastParseInfo = getParseInfo(current);
-        if (lastParseInfo.isRoot()) {
-            return keepField(current, true, lastParseInfo.isRoot());
-        } else {
-            keepField(current, true, lastParseInfo.isRoot());
-            return super.apply(input);
+        boolean root = lastParseInfo.isRoot();
+        boolean keep = keepField(current, update, root);
+        if (keep) {
+            if (root) {
+                // must return true on the root or the field cannot be returned
+                return true;
+            } else {
+                // delegate to the super
+                if (update) {
+                    return super.apply(input);
+                } else {
+                    return super.peek(input);
+                }
+            }
         }
+        
+        return false;
     }
     
     /**
@@ -149,17 +176,27 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         return new Key(from.getRow().toString(), from.getColumnFamily().toString() + '\uffff');
     }
     
-    /*
-     * (non-Javadoc)
+    /**
+     * Determine if a Key should be kept. If a Key is a part of the TLD it will always be kept as long as we have not exceeded the key count limit for that
+     * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
+     * for query evaluation (apply()==true)
      * 
-     * @see datawave.query.function.Filter#keep(org.apache.accumulo.core .data.Key)
+     * @see datawave.query.predicate.Filter#keep(Key)
+     *
+     * @param k
+     * @return true to keep, false otherwise
      */
     @Override
     public boolean keep(Key k) {
         // only keep the data from the top level document with fields that matter
         lastParseInfo = getParseInfo(k);
         boolean root = lastParseInfo.isRoot();
-        return root && (k.getColumnQualifier().getLength() == 0 || keepField(k, false, root));
+        
+        if (root) {
+            return k.getColumnQualifier().getLength() == 0 || keepField(k, false, true);
+        } else {
+            return nonEventFields.contains(lastParseInfo.getField()) && keepField(k, false, false) && apply(k, false);
+        }
     }
     
     /**
@@ -174,7 +211,8 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
             // initialize the new parseInfo
             ParseInfo parseInfo = new ParseInfo(current);
             boolean root;
-            if (lastParseInfo != null) {
+            // can only short-cut on CF length when dealing with an event key
+            if (lastParseInfo != null && isEventKey(current)) {
                 int lastLength = lastParseInfo.key.getColumnFamilyData().length();
                 int currentLength = current.getColumnFamilyData().length();
                 if (lastLength == currentLength) {
@@ -214,7 +252,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         return uid;
     }
     
-    protected boolean isRootPointer(Key k) {
+    private boolean isEventKey(Key k) {
+        ByteSequence cf = k.getColumnFamilyData();
+        return !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0)
+                        && !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 00);
+    }
+    
+    public static boolean isRootPointer(Key k) {
         ByteSequence cf = k.getColumnFamilyData();
         
         if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
@@ -238,23 +282,26 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
             
         } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
             ByteSequence seq = k.getColumnQualifierData();
-            int i = 3;
-            for (; i < seq.length(); i++) {
-                if (seq.byteAt(i) == 0x00) {
-                    break;
-                }
-            }
             
-            for (i += 20; i < seq.length(); i++) {
-                if (seq.byteAt(i) == '.') {
-                    return false;
-                } else if (seq.byteAt(i) == 0x00) {
+            // work front to back, just in case the TF value includes a null byte
+            boolean foundStart = false;
+            int dotCount = 0;
+            for (int i = 0; i < seq.length(); i++) {
+                if (!foundStart && seq.byteAt(i) == 0x00) {
+                    foundStart = true;
+                } else if (foundStart && seq.byteAt(i) == 0x00) {
+                    // end of uid, got here, is root
                     return true;
+                } else if (foundStart && seq.byteAt(i) == '.') {
+                    dotCount++;
+                    if (dotCount > 2) {
+                        return false;
+                    }
                 }
             }
             
-            return true;
-            
+            // can't parse
+            return false;
         } else {
             int i = 0;
             for (i = 0; i < cf.length(); i++) {
@@ -455,7 +502,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         // ensure this new key won't be beyond the end
         // new CF = current dataType\0uid\0 to ensure the next hit will be in another uid
         // new CQ = first whitelist field\0 to ensure the next hit will be the first whitelisted field or later
-        Key startKey = new Key(current.getRow(), new Text(current.getColumnFamily().toString() + Constants.NULL_BYTE_STRING), new Text(sortedWhitelist.get(0)
+        Key startKey = new Key(current.getRow(), new Text(current.getColumnFamily() + Constants.NULL_BYTE_STRING), new Text(sortedWhitelist.get(0)
                         + Constants.NULL_BYTE_STRING));
         
         if (startKey.compareTo(end) < 0) {
@@ -685,28 +732,52 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     }
     
     /**
-     * Parse the field from an event key, it should always be the value to to the first null in the cq or the first '.' whichever comes first. A '.' would
-     * indicate grouping notation where a null would indicate normal field notation
+     * Parse the field from a key. The field will always be stripped of grouping notation since that is how they have been parsed from the original query
      * 
      * @param current
      * @return
      */
     protected String getCurrentField(Key current) {
-        final byte[] cq = current.getColumnQualifierData().getBackingArray();
-        final int length = cq.length;
-        int stopIndex = -1;
-        for (int i = 0; i < length - 1; i++) {
-            if (cq[i] == 0x00) {
-                stopIndex = i;
-                break;
-            } else if (cq[i] == 0x2E) {
-                // test for '.' used in grouping notation
-                stopIndex = i;
-                break;
-            }
-        }
+        ByteSequence cf = current.getColumnFamilyData();
         
-        return new String(cq, 0, stopIndex);
+        if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
+            ArrayList<Integer> nullIndexes = TLD.instancesOf(0, cf, 1);
+            final int startFn = nullIndexes.get(0) + 1;
+            final int stopFn = cf.length();
+            
+            byte[] fn = new byte[stopFn - startFn];
+            
+            System.arraycopy(cf.getBackingArray(), startFn + cf.offset(), fn, 0, stopFn - startFn);
+            
+            return JexlASTHelper.deconstructIdentifier(new String(fn));
+        } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
+            ByteSequence cq = current.getColumnQualifierData();
+            ArrayList<Integer> nullIndexes = TLD.lastInstancesOf(0, cq, 1);
+            final int startFn = nullIndexes.get(0) + 1;
+            final int stopFn = cq.length();
+            
+            byte[] fn = new byte[stopFn - startFn];
+            
+            System.arraycopy(cq.getBackingArray(), startFn + cq.offset(), fn, 0, stopFn - startFn);
+            
+            return JexlASTHelper.deconstructIdentifier(new String(fn));
+        } else {
+            final byte[] cq = current.getColumnQualifierData().getBackingArray();
+            final int length = cq.length;
+            int stopIndex = -1;
+            for (int i = 0; i < length - 1; i++) {
+                if (cq[i] == 0x00) {
+                    stopIndex = i;
+                    break;
+                } else if (cq[i] == 0x2E) {
+                    // test for '.' used in grouping notation
+                    stopIndex = i;
+                    break;
+                }
+            }
+            
+            return new String(cq, 0, stopIndex);
+        }
     }
     
     /**

@@ -12,7 +12,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparator;
 import org.apache.log4j.Logger;
 
 /**
@@ -495,7 +494,7 @@ public class EdgeKey {
     public static final byte COL_SEPARATOR_BYTE = '/';
     public static final char COL_SUB_SEPARATOR = '-';
     
-    public static enum STATS_TYPE {
+    public enum STATS_TYPE {
         DURATION, ACTIVITY, LINKS;
         
         public static STATS_TYPE getStatsType(String statsLabel) {
@@ -532,7 +531,7 @@ public class EdgeKey {
      * Likewise, an "ACTIVITY*" type is simply a general term denoting that date in the edge key is associated with some other date value within the raw record,
      * not the event date (or 'shard date').
      */
-    public static enum DATE_TYPE {
+    public enum DATE_TYPE {
         ACTIVITY_ONLY("C"), EVENT_ONLY("A"), ACTIVITY_AND_EVENT("B"), OLD_EVENT("");
         
         String abbreviation;
@@ -557,7 +556,7 @@ public class EdgeKey {
         
     }
     
-    public static enum EDGE_FORMAT {
+    public enum EDGE_FORMAT {
         STANDARD(2), STATS(1), UNKNOWN(0);
         
         private final int splitLength;
@@ -585,7 +584,7 @@ public class EdgeKey {
      * 
      * indices assume colf and colq are in a single list.
      */
-    public static enum EDGE_VERSION {
+    public enum EDGE_VERSION {
         /* 0 1 2 3 4 5 6 7 */
         
         STATS_BASE(5, 1, 2, 3, 4, 5, -1, -1, -1, EDGE_FORMAT.STATS, false, false), /* STATS / STATTYPE / TYPE / RELATIONSHIP / CATEGORY : YYYYMMDD */
@@ -776,7 +775,7 @@ public class EdgeKey {
                 for (int i = 0; i < bLen; i++) {
                     if (pLen >= parts.length) {
                         throw new RuntimeException("Exceeded number of possible number of parts (" + parts.length + ")." + "  bytes as String: "
-                                        + new Text(bytes).toString() + " parts: " + Arrays.toString(parts));
+                                        + new Text(bytes) + " parts: " + Arrays.toString(parts));
                     }
                     if (bytes[i] == COL_SEPARATOR_BYTE) {
                         parts[pLen++] = Text.decode(bytes, start, i - start);
@@ -924,7 +923,7 @@ public class EdgeKey {
                 return encode(EDGE_VERSION.DATE_PROTOBUF);
             } else {
                 // EDGE_FORMAT.UNKNOWN
-                throw new IllegalStateException("Can't encode unknown edge key format." + this.toString());
+                throw new IllegalStateException("Can't encode unknown edge key format." + this);
             }
         }
         
@@ -937,7 +936,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.PROTOBUF);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException("Can't encode unknown edge key format." + this.toString());
+            throw new IllegalStateException("Can't encode unknown edge key format." + this);
         }
     }
     
@@ -948,7 +947,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.BASE_ATTRIBUTE2);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException("Can't encode unknown edge key format." + this.toString());
+            throw new IllegalStateException("Can't encode unknown edge key format." + this);
         }
     }
     
@@ -959,7 +958,7 @@ public class EdgeKey {
             return encode(EDGE_VERSION.BASE);
         } else {
             // EDGE_FORMAT.UNKNOWN
-            throw new IllegalStateException("Can't encode unknown edge key format." + this.toString());
+            throw new IllegalStateException("Can't encode unknown edge key format." + this);
         }
     }
     
@@ -973,9 +972,7 @@ public class EdgeKey {
         Text colf = new Text(EDGE_METADATA_COLUMN);
         Text colq = new Text(this.getAttribute1());
         
-        Key mKey = new Key(row, colf, colq, new Text(""), this.getTimestamp());
-        
-        return mKey;
+        return new Key(row, colf, colq, new Text(""), this.getTimestamp());
     }
     
     /**

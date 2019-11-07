@@ -11,8 +11,8 @@ import com.google.common.hash.PrimitiveSink;
 public class TermFilter<T> implements Funnel<T> {
     
     /**
-	 * 
-	 */
+     * 
+     */
     private static final long serialVersionUID = 5683986812953416483L;
     
     @Override

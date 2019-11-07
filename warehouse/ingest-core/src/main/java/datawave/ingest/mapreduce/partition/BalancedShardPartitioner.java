@@ -1,14 +1,5 @@
 package datawave.ingest.mapreduce.partition;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.TreeMap;
-
 import com.google.common.collect.Maps;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -22,6 +13,14 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * The BalancedShardPartitioner takes advantage of the way that shards are balanced. See ShardedTableTabletBalancer. * The partitioner is designed to have no
@@ -83,7 +82,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
                 }
                 return (shardId.hashCode() & Integer.MAX_VALUE);
             case "collapse":
-                ArrayList<Text> keys = new ArrayList<Text>(assignments.keySet());
+                ArrayList<Text> keys = new ArrayList<>(assignments.keySet());
                 Collections.sort(keys);
                 int closestAssignment = Collections.binarySearch(keys, shardId);
                 if (closestAssignment >= 0) {
@@ -166,12 +165,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     
     private TreeMap<Text,String> reverseSortByShardIds(TreeMap<Text,String> shardIdToLocations) {
         // drop the dates after today's date
-        TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap(new Comparator<Text>() {
-            @Override
-            public int compare(Text o1, Text o2) {
-                return o2.compareTo(o1);
-            }
-        });
+        TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap((o1, o2) -> o2.compareTo(o1));
         shardIdsToTservers.putAll(shardIdToLocations);
         return shardIdsToTservers;
     }

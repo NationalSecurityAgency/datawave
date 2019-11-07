@@ -10,9 +10,6 @@ import java.util.Collections;
  * 
  */
 public class EmptyTreeIterable implements NestedIterator<Key> {
-    public EmptyTreeIterable() {
-        super();
-    }
     
     @Override
     public void initialize() {

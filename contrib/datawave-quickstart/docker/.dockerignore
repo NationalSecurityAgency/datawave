@@ -6,6 +6,7 @@
 
 # Ignore any ide and repo dirs/files
 
+**/.m2
 **/.git
 **/.idea
 **/target

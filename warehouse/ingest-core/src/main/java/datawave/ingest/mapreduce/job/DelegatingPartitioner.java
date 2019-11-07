@@ -1,13 +1,17 @@
 package datawave.ingest.mapreduce.job;
 
 import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.conf.*;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This partitioner delegates the partitioning logic to other partitioners based on table name. * The table may have its own dedicated partitioner or may share
@@ -58,7 +62,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
      */
     private static void validateAndRegisterPartitioners(Job job, Configuration conf, String[] tableNames, PartitionerCache partitionerCache) {
         String commaSeparatedTableNames = StringUtils.join(",", partitionerCache.validatePartitioners(tableNames, job));
-        if (commaSeparatedTableNames.length() > 0) {
+        if (!commaSeparatedTableNames.isEmpty()) {
             conf.set(TABLE_NAMES_WITH_CUSTOM_PARTITIONERS, commaSeparatedTableNames);
         }
     }
@@ -76,7 +80,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
         if (null != offset) {
             return (offset + partition) % numPartitions;
         } else {
-            return partitioner.getPartition(key, value, numPartitions) % numPartitions;
+            return partition % numPartitions;
         }
     }
     
@@ -101,7 +105,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
     
     // looks at the property that specifies which tables have custom partitioners and registers each of those partitioners
     private void createDelegatesForTables() throws ClassNotFoundException {
-        tableOffsets = new HashMap<Text,Integer>();
+        tableOffsets = new HashMap<>();
         String commaSeparatedTableNames = conf.get(TABLE_NAMES_WITH_CUSTOM_PARTITIONERS);
         if (commaSeparatedTableNames == null) {
             log.info("No custom partitioners found");

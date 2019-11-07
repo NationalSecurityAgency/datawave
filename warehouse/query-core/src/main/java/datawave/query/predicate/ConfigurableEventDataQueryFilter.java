@@ -8,18 +8,20 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
 import java.util.Map;
+import java.util.Set;
 
+@Deprecated
 public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     
     private final EventDataQueryFilter filter;
     
     protected Key document = null;
     
-    public ConfigurableEventDataQueryFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled) {
+    public ConfigurableEventDataQueryFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled, Set<String> nonEventFields) {
         if (expressionFilterEnabled) {
-            filter = new EventDataQueryExpressionFilter(script, metadata);
+            filter = new EventDataQueryExpressionFilter(script, metadata, nonEventFields);
         } else {
-            filter = new EventDataQueryFieldFilter(script);
+            filter = new EventDataQueryFieldFilter(script, nonEventFields);
         }
     }
     
@@ -31,9 +33,9 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     }
     
     @Override
-    public void setDocumentKey(Key document) {
+    public void startNewDocument(Key document) {
         this.document = document;
-        filter.setDocumentKey(document);
+        filter.startNewDocument(document);
     }
     
     @Override
@@ -83,6 +85,11 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     @Override
     public boolean apply(Map.Entry<Key,String> input) {
         return filter.apply(input);
+    }
+    
+    @Override
+    public boolean peek(Map.Entry<Key,String> input) {
+        return filter.peek(input);
     }
     
     @Override

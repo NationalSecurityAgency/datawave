@@ -16,7 +16,8 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 
 public class MetricsTableConfigHelperTest {
     
@@ -109,7 +110,7 @@ public class MetricsTableConfigHelperTest {
         String type = newOptions.get("type");
         String columns = newOptions.get("columns");
         
-        assertEquals("COLUMN1," + Metric.KV_PER_TABLE.toString(), columns);
+        assertEquals("COLUMN1," + Metric.KV_PER_TABLE, columns);
         assertEquals("STRING", type);
     }
     

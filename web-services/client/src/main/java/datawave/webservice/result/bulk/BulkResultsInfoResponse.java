@@ -227,7 +227,7 @@ public class BulkResultsInfoResponse implements Serializable, Message<BulkResult
                 return false;
             if (!(o instanceof History))
                 return false;
-            return (this.compareTo((History) o) == 0) ? true : false;
+            return this.compareTo((History) o) == 0;
         }
         
         @Override

@@ -1,9 +1,5 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeNode;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

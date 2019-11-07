@@ -1,7 +1,10 @@
 package datawave.webservice.mr.state;
 
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createStrictMock;
 import static org.powermock.api.easymock.PowerMock.replayAll;
@@ -70,7 +73,7 @@ public class MapReduceStatePersisterTest {
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         connection = instance.getConnector("root", new PasswordToken(""));
         if (connection.tableOperations().exists(TABLE_NAME))
             connection.tableOperations().delete(TABLE_NAME);
@@ -131,33 +134,33 @@ public class MapReduceStatePersisterTest {
             String colq = entry.getKey().getColumnQualifier().toString();
             if (MapReduceStatePersisterBean.WORKING_DIRECTORY.equals(colq)) {
                 assertTrue(dirKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
-                assertTrue(dirValue.equals(entry.getValue()));
+                assertEquals(dirValue, entry.getValue());
                 dir = true;
             } else if (MapReduceStatePersisterBean.HDFS.equals(colq)) {
                 assertTrue(hdfsKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
-                assertTrue(hdfsValue.equals(entry.getValue()));
+                assertEquals(hdfsValue, entry.getValue());
                 hdfs = true;
             } else if (MapReduceStatePersisterBean.JT.equals(colq)) {
                 assertTrue(jtKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
-                assertTrue(jtValue.equals(entry.getValue()));
+                assertEquals(jtValue, entry.getValue());
                 jt = true;
             } else if (MapReduceStatePersisterBean.RESULTS_LOCATION.equals(colq)) {
                 assertTrue(outKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
-                assertTrue(outValue.equals(entry.getValue()));
+                assertEquals(outValue, entry.getValue());
                 output = true;
             } else if (MapReduceStatePersisterBean.PARAMS.equals(colq)) {
                 assertTrue(paramsKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
-                assertTrue(paramsVal.equals(entry.getValue()));
+                assertEquals(paramsVal, entry.getValue());
                 params = true;
             } else if (colq.startsWith(MapReduceStatePersisterBean.STATE)) {
                 assertTrue(stateKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
-                assertTrue(stateVal.equals(entry.getValue()));
+                assertEquals(stateVal, entry.getValue());
                 state = true;
             } else if (MapReduceStatePersisterBean.NAME.equals(colq)) {
                 assertTrue(nameKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
-                assertTrue(nameVal.equals(entry.getValue()));
+                assertEquals(nameVal, entry.getValue());
             } else {
-                fail("Unknown column, key: " + entry.getKey().toString());
+                fail("Unknown column, key: " + entry.getKey());
             }
         }
         if (!dir || !hdfs || !jt || !output || !params || !state)
@@ -171,7 +174,7 @@ public class MapReduceStatePersisterTest {
         s.fetchColumn(new Text(sid), new Text(id));
         for (Entry<Key,Value> entry : s) {
             assertTrue(indexKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
-            assertTrue(indexValue.equals(entry.getValue()));
+            assertEquals(indexValue, entry.getValue());
             index = true;
         }
         if (!index)
@@ -328,7 +331,7 @@ public class MapReduceStatePersisterTest {
         verifyAll();
         
         assertEquals(1, result.getResults().size());
-        assertEquals(null, result.getExceptions());
+        assertNull(result.getExceptions());
         MapReduceInfoResponse response = result.getResults().get(0);
         assertEquals(id, response.getId());
         assertEquals(hdfs, response.getHdfs());
@@ -388,11 +391,11 @@ public class MapReduceStatePersisterTest {
     private void dump() throws Exception {
         Scanner s = connection.createScanner(TABLE_NAME, new Authorizations(auths));
         for (Entry<Key,Value> entry : s) {
-            System.out.println(entry.getKey().toString() + " -> " + entry.getValue().toString());
+            System.out.println(entry.getKey() + " -> " + entry.getValue());
         }
         s = connection.createScanner(INDEX_TABLE_NAME, new Authorizations(auths));
         for (Entry<Key,Value> entry : s) {
-            System.out.println(entry.getKey().toString() + " -> " + entry.getValue().toString());
+            System.out.println(entry.getKey() + " -> " + entry.getValue());
         }
         
     }

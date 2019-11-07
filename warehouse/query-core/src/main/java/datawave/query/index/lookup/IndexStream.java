@@ -7,7 +7,7 @@ import datawave.query.util.Tuple2;
 import com.google.common.collect.PeekingIterator;
 
 public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
-    public enum StreamContext {
+    enum StreamContext {
         /**
          * INITIALIZED indicates that a given stream has yet to be evaluated against the global index
          */
@@ -63,13 +63,13 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
         IGNORED
     }
     
-    public StreamContext context();
+    StreamContext context();
     
     /**
      * This method is used to get an explanation of how we arrived at the provided context().
      */
-    public String getContextDebug();
+    String getContextDebug();
     
-    public JexlNode currentNode();
+    JexlNode currentNode();
     
 }

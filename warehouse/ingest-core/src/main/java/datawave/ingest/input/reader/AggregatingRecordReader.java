@@ -27,18 +27,8 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
     public AggregatingRecordReader() {
         delegate = new ReaderDelegate();
         delegate.setPositionAwareLineReader(this);
-        delegate.setNextKeyValueReader(new KeyValueReader() {
-            @Override
-            public boolean readKeyValue() throws IOException {
-                return readSuperNextKeyValue();
-            }
-        });
-        delegate.setCurrentValueReader(new ValueReader() {
-            @Override
-            public Text readValue() {
-                return readSuperCurrentValue();
-            }
-        });
+        delegate.setNextKeyValueReader(this::readSuperNextKeyValue);
+        delegate.setCurrentValueReader(this::readSuperCurrentValue);
     }
     
     private Text readSuperCurrentValue() {
@@ -89,8 +79,6 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
         private PositionAwareLineReader positionAwareLineReader;
         private KeyValueReader nextKeyValueReader;
         private ValueReader currentValueReader;
-        
-        public ReaderDelegate() {}
         
         public void setPositionAwareLineReader(PositionAwareLineReader positionAwareLineReader) {
             this.positionAwareLineReader = positionAwareLineReader;
@@ -240,7 +228,7 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
         private boolean process(Text t) {
             
             if (null != t)
-                remainder.append(t.toString());
+                remainder.append(t);
             while (remainder.length() > 0) {
                 if (!startFound) {
                     // If found, then begin aggregating at the start offset

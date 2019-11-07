@@ -10,14 +10,37 @@ import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
+import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 
 public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidator {
+    
+    /**
+     * A mechanism to get the normalized query without actually setting up the query. This can be called with having to call initialize.
+     *
+     * The default implementation is to return the query string as the normalized query
+     *
+     * @param connection
+     *            - Accumulo connector to use for this query
+     * @param settings
+     *            - query settings (query, begin date, end date, etc.)
+     * @param runtimeQueryAuthorizations
+     *            - authorizations that have been calculated for this query based on the caller and server.
+     * @param expandFields
+     *            - should unfielded terms be expanded
+     * @param expandValues
+     *            - should regex/ranges be expanded into discrete values
+     */
+    String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                    throws Exception;
     
     /**
      * Implementations create a configuration using the connection, settings, and runtimeQueryAuthorizations.
@@ -30,7 +53,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            - authorizations that have been calculated for this query based on the caller and server.
      * @throws Exception
      */
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
+    GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
     
     /**
      *
@@ -38,32 +61,42 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            - query settings (query, begin date, end date, etc.)
      * @return list of selectors used in the Query
      */
-    public List<String> getSelectors(Query settings);
+    List<String> getSelectors(Query settings);
     
-    public SelectorExtractor getSelectorExtractor();
+    SelectorExtractor getSelectorExtractor();
     
     /**
-     * Implementations use the configuration to run their query
+     * Implementations use the configuration to run their query. It is expected that initialize has already been called.
      * 
      * @param configuration
      *            Encapsulates all information needed to run a query (whether the query is a BatchScanner, a MapReduce job, etc)
      */
-    public void setupQuery(GenericQueryConfiguration configuration) throws Exception;
+    void setupQuery(GenericQueryConfiguration configuration) throws Exception;
     
     /**
      * @return a copy of this instance
      */
-    public Object clone() throws CloneNotSupportedException;
+    Object clone() throws CloneNotSupportedException;
     
     /**
      * @return priority from AccumuloConnectionFactory
      */
-    public AccumuloConnectionFactory.Priority getConnectionPriority();
+    AccumuloConnectionFactory.Priority getConnectionPriority();
     
     /**
      * @return Transformer that will convert Key,Value to a Result object
      */
-    public QueryLogicTransformer getTransformer(Query settings);
+    QueryLogicTransformer getTransformer(Query settings);
+    
+    default String getResponseClass(Query query) throws QueryException {
+        try {
+            QueryLogicTransformer t = this.getTransformer(query);
+            BaseResponse refResponse = t.createResponse(new ResultsPage());
+            return refResponse.getClass().getCanonicalName();
+        } catch (RuntimeException e) {
+            throw new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR);
+        }
+    }
     
     /**
      * Allows for the customization of handling query results, e.g. allows for aggregation of query results before returning to the client.
@@ -72,72 +105,85 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            The query settings object
      * @return Return a TransformIterator for the QueryLogic implementation
      */
-    public TransformIterator getTransformIterator(Query settings);
+    TransformIterator getTransformIterator(Query settings);
     
     /**
      * release resources
      */
-    public void close();
+    void close();
     
     /** @return the tableName */
-    public String getTableName();
+    String getTableName();
     
     /**
      * @return max number of results to pass back to the caller
      */
-    public long getMaxResults();
+    long getMaxResults();
     
     /**
-     * @return max number of rows to scan from the iterator
+     * @return the results of getMaxWork
      */
-    public long getMaxRowsToScan();
+    @Deprecated
+    long getMaxRowsToScan();
+    
+    /**
+     * @return max number of nexts + seeks performed by the underlying iterators in total
+     */
+    long getMaxWork();
     
     /**
      * @return max number of records to return in a page (max pagesize allowed)
      */
-    public int getMaxPageSize();
+    int getMaxPageSize();
     
     /**
      * @return the number of bytes at which a page will be returned, even if pagesize has not been reached
      */
-    public long getPageByteTrigger();
+    long getPageByteTrigger();
     
     /**
      * Returns the base iterator priority.
      * 
      * @return base iterator priority
      */
-    public int getBaseIteratorPriority();
+    int getBaseIteratorPriority();
     
     /**
      * @param tableName
      *            the name of the table
      */
-    public void setTableName(String tableName);
+    void setTableName(String tableName);
     
     /**
      * @param maxResults
      *            max number of results to pass back to the caller
      */
-    public void setMaxResults(long maxResults);
+    void setMaxResults(long maxResults);
     
     /**
      * @param maxRowsToScan
-     *            max number of rows to scan from the iterator
+     *            This is now deprecated and setMaxWork should be used instead. This is equivalent to setMaxWork.
      */
-    public void setMaxRowsToScan(long maxRowsToScan);
+    @Deprecated
+    void setMaxRowsToScan(long maxRowsToScan);
+    
+    /**
+     * @param maxWork
+     *            max work which is normally calculated as the number of next + seek calls made by the underlying iterators
+     */
+    void setMaxWork(long maxWork);
     
     /**
      * @param maxPageSize
      *            max number of records in a page (max pagesize allowed)
      */
-    public void setMaxPageSize(int maxPageSize);
+    void setMaxPageSize(int maxPageSize);
     
     /**
      * @param pageByteTrigger
      *            the number of bytes at which a page will be returned, even if pagesize has not been reached
      */
-    public void setPageByteTrigger(long pageByteTrigger);
+    void setPageByteTrigger(long pageByteTrigger);
     
     /**
      * Sets the base iterator priority
@@ -145,61 +191,56 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @param priority
      *            base iterator priority
      */
-    public void setBaseIteratorPriority(final int priority);
+    void setBaseIteratorPriority(final int priority);
     
     /**
      * @param logicName
      *            name of the query logic
      */
-    public void setLogicName(String logicName);
+    void setLogicName(String logicName);
     
     /**
      * @return name of the query logic
      */
-    public String getLogicName();
+    String getLogicName();
     
     /**
      * @param logicDescription
      *            a brief description of this logic type
      */
-    public void setLogicDescription(String logicDescription);
+    void setLogicDescription(String logicDescription);
     
     /**
      * @return the audit level for this logic
      */
-    public AuditType getAuditType(Query query);
+    AuditType getAuditType(Query query);
     
     /**
      * @return the audit level for this logic for a specific query
      */
-    public AuditType getAuditType();
+    AuditType getAuditType();
     
     /**
      * @param auditType
      *            the audit level for this logic
      */
-    public void setAuditType(AuditType auditType);
+    void setAuditType(AuditType auditType);
     
     /**
      * @return a brief description of this logic type
      */
-    public String getLogicDescription();
-    
-    /**
-     * @return set of column visibility markings that should not be presented
-     */
-    public Set<String> getUndisplayedVisibilities();
+    String getLogicDescription();
     
     /**
      * @return should query metrics be collected for this query logic
      */
-    public boolean getCollectQueryMetrics();
+    boolean getCollectQueryMetrics();
     
     /**
      * @param collectQueryMetrics
      *            whether query metrics be collected for this query logic
      */
-    public void setCollectQueryMetrics(boolean collectQueryMetrics);
+    void setCollectQueryMetrics(boolean collectQueryMetrics);
     
     void setRoleManager(RoleManager roleManager);
     
@@ -210,16 +251,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * 
      * @return the supported parameters
      */
-    public Set<String> getOptionalQueryParameters();
+    Set<String> getOptionalQueryParameters();
     
     /**
      * @param connPoolName
      *            The name of the connection pool to set.
      */
-    public void setConnPoolName(String connPoolName);
+    void setConnPoolName(String connPoolName);
     
     /** @return the connPoolName */
-    public String getConnPoolName();
+    String getConnPoolName();
     
     /**
      * Check that the user has one of the required roles principal my be null when there is no intent to control access to QueryLogic
@@ -227,7 +268,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @param principal
      * @return true/false
      */
-    public boolean canRunQuery(Principal principal);
+    boolean canRunQuery(Principal principal);
     
     boolean canRunQuery(); // uses member Principal
     
@@ -248,12 +289,12 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * 
      * @return the required parameters
      */
-    public Set<String> getRequiredQueryParameters();
+    Set<String> getRequiredQueryParameters();
     
     /**
      * 
      * @return set of example queries
      */
-    public Set<String> getExampleQueries();
+    Set<String> getExampleQueries();
     
 }

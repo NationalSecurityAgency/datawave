@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -11,8 +12,11 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.*;
+import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
+import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
+import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -23,11 +27,12 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfigurationFactory;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.util.TableName;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
@@ -62,20 +67,23 @@ import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
 import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
@@ -83,17 +91,12 @@ import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 
 @RunWith(Arquillian.class)
 public class ContentFunctionQueryTest {
     
     private static final int NUM_SHARDS = 241;
-    private static final String SHARD_TABLE_NAME = "shard";
-    private static final String KNOWLEDGE_SHARD_TABLE_NAME = "knowledgeShard";
-    private static final String ERROR_SHARD_TABLE_NAME = "errorShard";
-    private static final String SHARD_INDEX_TABLE_NAME = "shardIndex";
-    private static final String SHARD_REVERSE_INDEX_TABLE_NAME = "shardReverseIndex";
-    private static final String METADATA_TABLE_NAME = "DatawaveMetadata";
     private static final String DATA_TYPE_NAME = "test";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     
@@ -123,7 +126,8 @@ public class ContentFunctionQueryTest {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
+                        .deleteClass(DefaultEdgeEventQueryLogic.class)
+                        .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
@@ -185,28 +189,28 @@ public class ContentFunctionQueryTest {
         conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + ".data.category.index", "ID, BODY");
         // conf.set(DATA_TYPE_NAME + ".model.table.name", METADATA_TABLE_NAME);
-        
         conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
-        
-        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, METADATA_TABLE_NAME);
+        conf.set(DateIndexDataTypeHandler.DATEINDEX_TNAME, TableName.DATE_INDEX);
+        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         conf.set(ShardedDataTypeHandler.NUM_SHARDS, Integer.toString(NUM_SHARDS));
-        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, SHARD_TABLE_NAME + "," + KNOWLEDGE_SHARD_TABLE_NAME + "," + ERROR_SHARD_TABLE_NAME);
-        conf.set(ShardedDataTypeHandler.SHARD_TNAME, SHARD_TABLE_NAME);
+        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD + "," + TableName.ERROR_SHARD);
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
         conf.set(ShardedDataTypeHandler.SHARD_LPRIORITY, "30");
-        conf.set(SHARD_TABLE_NAME + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
-        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, SHARD_INDEX_TABLE_NAME);
+        conf.set(TableName.SHARD + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
+        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GIDX_LPRIORITY, "30");
-        conf.set(SHARD_INDEX_TABLE_NAME + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
-        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, SHARD_REVERSE_INDEX_TABLE_NAME);
+        conf.set(TableName.SHARD_INDEX + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
+        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_LPRIORITY, "30");
-        conf.set(SHARD_REVERSE_INDEX_TABLE_NAME + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
+        conf.set(TableName.SHARD_RINDEX + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
         
     }
     
     private static void writeKeyValues(Connector connector, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
         final TableOperations tops = connector.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
+        tops.create(TableName.DATE_INDEX);
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
             if (!tops.exists(tableName))
@@ -228,15 +232,28 @@ public class ContentFunctionQueryTest {
         String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
         
         final List<String> expected = Arrays.asList("dog", "cat");
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
+        Assert.assertEquals(1, events.size());
         evaluateEvents(events, expected);
+    }
+    
+    @Test
+    public void withinTestWithAlternateDate() throws Exception {
+        String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
+        
+        MultivaluedMap<String,String> optionalParams = new MultivaluedMapImpl<>();
+        optionalParams.putSingle(DATE_RANGE_TYPE, "BOGUSDATETYPE");
+        
+        final List<DefaultEvent> events = getQueryResults(query, true, optionalParams);
+        Assert.assertEquals(0, events.size());
     }
     
     @Test
     public void withinSkipTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','boy')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
+        Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("dog", "boy");
         evaluateEvents(events, expected);
     }
@@ -245,7 +262,8 @@ public class ContentFunctionQueryTest {
     public void phraseTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'boy','car')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
+        Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("boy", "car");
         evaluateEvents(events, expected);
     }
@@ -254,7 +272,8 @@ public class ContentFunctionQueryTest {
     public void phraseWithSkipTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'dog','gap')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
+        Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("dog", "gap");
         evaluateEvents(events, expected);
     }
@@ -263,7 +282,8 @@ public class ContentFunctionQueryTest {
     public void phraseScoreTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:phrase(-1.5, termOffsetMap,'boy','car')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
+        Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("boy", "car");
         evaluateEvents(events, expected);
     }
@@ -272,7 +292,8 @@ public class ContentFunctionQueryTest {
     public void phraseScoreFilterTest() throws Exception {
         String query = "ID == 'TEST_ID' && content:phrase(-1.4, termOffsetMap,'boy','car')";
         
-        final List<DefaultEvent> events = getQueryResults(query, true, true);
+        final List<DefaultEvent> events = getQueryResults(query, true, null);
+        Assert.assertEquals(0, events.size());
         Assert.assertEquals("Expected no results", 0, events.size());
     }
     
@@ -285,24 +306,25 @@ public class ContentFunctionQueryTest {
             List<String> fields = event.getFields().stream().filter((DefaultField field) -> expected.contains(field.getValueString()))
                             .map(DefaultField::getValueString).distinct().collect(Collectors.toList());
             
-            Assert.assertTrue("Missing values {" + expected.toString() + "} != {" + fields.toString() + "}", fields.containsAll(expected));
+            Assert.assertTrue("Missing values {" + expected + "} != {" + fields + "}", fields.containsAll(expected));
         }
     }
     
-    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, boolean queryOldData) throws Exception {
+    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultivaluedMap<String,String> optionalParams) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic(useIvarator);
         
-        Iterator iter = getResultsIterator(queryString, logic, queryOldData);
+        Iterator iter = getResultsIterator(queryString, logic, optionalParams);
         List<DefaultEvent> events = new ArrayList<>();
         while (iter.hasNext())
             events.add((DefaultEvent) iter.next());
         return events;
     }
     
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, boolean queryOldData) throws Exception {
+    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, MultivaluedMap<String,String> optionalParams) throws Exception {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, queryString);
         params.putSingle(QUERY_NAME, "contentQuery");
+        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
         params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
@@ -316,9 +338,9 @@ public class ContentFunctionQueryTest {
         auths.add(new Authorizations(AUTHS));
         
         Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
+        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, optionalParams);
         
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(logic, query);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
         logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
         
@@ -473,5 +495,21 @@ public class ContentFunctionQueryTest {
         public boolean isTermFrequencyField(String field) {
             return "BODY".equalsIgnoreCase(field);
         }
+        
+        @Override
+        public boolean isIndexListField(String field) {
+            return false;
+        };
+        
+        @Override
+        public boolean isReverseIndexListField(String field) {
+            return false;
+        };
+        
+        @Override
+        public String getListDelimiter() {
+            return ",";
+        }
+        
     }
 }

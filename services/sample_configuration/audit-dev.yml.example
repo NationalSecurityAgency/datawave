@@ -1,9 +1,0 @@
-# This template is for configuring your DEV profile for the audit microservice.
-# You should copy this file to audit-dev.yml before changing configuration.
-
-server:
-  port: 8743
-
-logging:
-  level:
-    datawave.microservice.audit: DEBUG

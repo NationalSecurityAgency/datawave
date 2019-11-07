@@ -255,7 +255,7 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
             return number == null ? 0 : number.intValue();
         }
         
-        private final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
+        private final HashMap<String,Integer> fieldMap = new HashMap<>();
         {
             fieldMap.put("columnVisibility", 1);
             fieldMap.put("timestamp", 2);

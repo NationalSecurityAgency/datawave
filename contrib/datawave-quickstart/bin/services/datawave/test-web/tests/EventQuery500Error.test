@@ -1,6 +1,0 @@
-TEST_ID="EventQueryCreate500Error"
-TEST_DESCRIPTION="Creates a 500 error for EventQuery by omitting all required query params"
-TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' -X POST ${URI_ROOT}/Query/EventQuery/create"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=500
-EXPECTED_RESPONSE_BODY_ASSERTION=false

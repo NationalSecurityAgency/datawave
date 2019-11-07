@@ -13,7 +13,6 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 @XmlAccessorType(XmlAccessType.NONE)
@@ -57,6 +56,12 @@ public abstract class Query {
     
     public abstract void setPageTimeout(int pageTimeout);
     
+    public abstract long getMaxResultsOverride();
+    
+    public abstract void setMaxResultsOverride(long maxResults);
+    
+    public abstract boolean isMaxResultsOverridden();
+    
     public abstract Set<Parameter> getParameters();
     
     public abstract void setParameters(Set<Parameter> params);
@@ -98,6 +103,8 @@ public abstract class Query {
     public abstract String getColumnVisibility();
     
     public abstract MultivaluedMap<String,String> toMap();
+    
+    public abstract Map<String,String> getCardinalityFields();
     
     public abstract void populateMetric(BaseQueryMetric metric);
     

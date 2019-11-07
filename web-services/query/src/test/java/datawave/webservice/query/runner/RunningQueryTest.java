@@ -40,7 +40,7 @@ import org.apache.accumulo.core.client.Connector;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,8 +56,8 @@ public class RunningQueryTest {
     }
     
     // variables common to all current tests
-    final private QueryImpl settings = new QueryImpl();
-    final private AccumuloConnectionFactory.Priority connectionPriority = AccumuloConnectionFactory.Priority.NORMAL;
+    private final QueryImpl settings = new QueryImpl();
+    private final AccumuloConnectionFactory.Priority connectionPriority = AccumuloConnectionFactory.Priority.NORMAL;
     private String methodAuths = "";
     private SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
     private final QueryLogic<?> logic = createMock(BaseQueryLogic.class);
@@ -66,7 +66,7 @@ public class RunningQueryTest {
     public void setup() throws MalformedURLException, IllegalArgumentException, IllegalAccessException {
         
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         
         settings.setQueryLogicName("testQueryLogic");
         settings.setQuery("FOO == BAR");

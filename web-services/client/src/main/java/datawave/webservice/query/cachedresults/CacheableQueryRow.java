@@ -75,7 +75,7 @@ public abstract class CacheableQueryRow implements HasMarkings {
     
     public abstract void setSizeInBytes(long sizeInBytes);
     
-    static protected String createColumnList(Set<String> columnNames, Map<String,Integer> columnMap) {
+    protected static String createColumnList(Set<String> columnNames, Map<String,Integer> columnMap) {
         StringBuilder sb = new StringBuilder();
         for (String s : columnNames) {
             if (sb.length() > 0) {

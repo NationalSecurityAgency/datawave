@@ -1,9 +1,15 @@
 package datawave.query.index.stats;
 
 import com.google.common.base.Objects;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.VLongWritable;
+import org.apache.hadoop.io.WritableComparable;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * See IndexStatsJob.java for how this fits into the index stats job.

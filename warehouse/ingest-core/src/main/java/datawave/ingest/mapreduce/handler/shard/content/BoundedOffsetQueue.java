@@ -1,6 +1,12 @@
 package datawave.ingest.mapreduce.handler.shard.content;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
 
 public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
     private static final long serialVersionUID = 452499360525244451L;

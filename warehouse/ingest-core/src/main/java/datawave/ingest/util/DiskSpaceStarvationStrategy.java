@@ -88,8 +88,7 @@ public class DiskSpaceStarvationStrategy extends AbstractNGramTokenizationStrate
         }
         
         // Tokenize as normal
-        int tokenized = super.tokenize(content, maxNGramLength);
-        return tokenized;
+        return super.tokenize(content, maxNGramLength);
     }
     
     @Override

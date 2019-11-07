@@ -20,15 +20,15 @@ public abstract class Lexer {
     public static final String[] TOKEN_TYPES = new String[] {"<ALPHANUM>", "<APOSTROPHE>", "<ACRONYM>", "<EMAIL>", "<HOST>", "<IP_ADDR>", "<NUM>", "<FILE>",
             "<URL>", "<TIMESTAMP>", "<UNDERSCORE>", "<HTTP_REQUEST>", "<SYMBOL>"};
     
-    abstract public int getNextToken() throws java.io.IOException;
+    public abstract int getNextToken() throws java.io.IOException;
     
-    abstract public int yychar();
+    public abstract int yychar();
     
     abstract void getText(CharTermAttribute t, int maxLength);
     
-    abstract public void yyreset(java.io.Reader reader);
+    public abstract void yyreset(java.io.Reader reader);
     
     abstract int yylength();
     
-    abstract public char yycharat(int i);
+    public abstract char yycharat(int i);
 }

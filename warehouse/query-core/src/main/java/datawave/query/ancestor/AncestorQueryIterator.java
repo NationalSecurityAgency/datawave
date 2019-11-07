@@ -2,7 +2,13 @@ package datawave.query.ancestor;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.Constants;
@@ -12,9 +18,7 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.tld.TLDIndexBuildingVisitor;
-import datawave.query.tld.TLDIndexIteratorBuilder;
-import datawave.query.util.*;
+import datawave.query.util.Tuple3;
 import datawave.util.StringUtils;
 import datawave.query.function.AncestorEquality;
 import datawave.query.iterator.NestedQueryIterator;
@@ -85,7 +89,7 @@ public class AncestorQueryIterator extends QueryIterator {
         // contains an "anded" chain of newly configured predicates following the existing
         // fieldIndexKeyDataTypeFilter value (assuming it is defined with something other than the default
         // "ALWAYS_TRUE" KeyIdentity.Function).
-        fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<String,String>(source, env, options));
+        fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<>(source, env, options));
         
         disableIndexOnlyDocuments = false;
     }
@@ -97,7 +101,7 @@ public class AncestorQueryIterator extends QueryIterator {
         // document specific range but not being inclusive start
         if (!range.isStartKeyInclusive()) {
             Key oldStartKey = range.getStartKey();
-            Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily().toString() + Constants.NULL_BYTE_STRING, oldStartKey
+            Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily() + Constants.NULL_BYTE_STRING, oldStartKey
                             .getColumnQualifier().toString());
             if (!startKey.equals(range.getStartKey())) {
                 Key endKey = range.getEndKey();
@@ -117,7 +121,7 @@ public class AncestorQueryIterator extends QueryIterator {
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (evaluationFilter == null && script != null) {
-            evaluationFilter = new AncestorEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled());
+            evaluationFilter = new AncestorEventDataFilter(script, typeMetadata, getNonEventFields());
         }
         // return a new script each time as this is not thread safe (maintains state)
         return evaluationFilter != null ? evaluationFilter.clone() : null;

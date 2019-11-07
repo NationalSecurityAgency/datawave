@@ -32,13 +32,12 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
     public boolean isMatched(Object scriptExecuteResult) {
         boolean matched = false;
         if (scriptExecuteResult != null && Boolean.class.isAssignableFrom(scriptExecuteResult.getClass())) {
-            Boolean result = (Boolean) scriptExecuteResult;
-            matched = result;
+            matched = (Boolean) scriptExecuteResult;
         } else if (scriptExecuteResult != null && Collection.class.isAssignableFrom(scriptExecuteResult.getClass())) {
             // if the function returns a collection of matches, return true/false
             // based on the number of matches
             Collection<?> matches = (Collection<?>) scriptExecuteResult;
-            matched = (matches.size() > 0);
+            matched = (!matches.isEmpty());
         } else if (log.isDebugEnabled()) {
             log.debug("Unable to process non-Boolean result from JEXL evaluation '" + scriptExecuteResult);
         }

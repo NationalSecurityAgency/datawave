@@ -138,7 +138,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                         String identifier = JexlASTHelper.getIdentifier(pos);
                         Object literal = JexlASTHelper.getLiteralValue(pos);
                         if (identifier != null && literal != null) {
-                            fields.put("POSITIVE_SELECTORS", identifier + ":" + literal.toString());
+                            fields.put("POSITIVE_SELECTORS", identifier + ":" + literal);
                         }
                     }
                     List<ASTEQNode> negativeEQNodes = JexlASTHelper.getNegativeEQNodes(jexlScript);
@@ -146,7 +146,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                         String identifier = JexlASTHelper.getIdentifier(neg);
                         Object literal = JexlASTHelper.getLiteralValue(neg);
                         if (identifier != null && literal != null) {
-                            fields.put("NEGATIVE_SELECTORS", identifier + ":" + literal.toString());
+                            fields.put("NEGATIVE_SELECTORS", identifier + ":" + literal);
                         }
                     }
                 }
@@ -189,7 +189,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             }
             
             Set<Parameter> parameters = updatedQueryMetric.getParameters();
-            if (parameters != null && parameters.isEmpty() == false) {
+            if (parameters != null && !parameters.isEmpty()) {
                 fields.put("PARAMETERS", QueryUtil.toParametersString(parameters));
             }
             if (updatedQueryMetric.getUser() != null) {
@@ -218,7 +218,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             fields.put("NUM_UPDATES", Long.toString(updatedQueryMetric.getNumUpdates()));
             fields.put("ELAPSED_TIME", Long.toString(updatedQueryMetric.getLastUpdated().getTime() - updatedQueryMetric.getCreateDate().getTime()));
             List<PageMetric> pageMetrics = updatedQueryMetric.getPageTimes();
-            if (pageMetrics != null && pageMetrics.isEmpty() == false) {
+            if (pageMetrics != null && !pageMetrics.isEmpty()) {
                 for (PageMetric p : pageMetrics) {
                     fields.put("PAGE_METRICS." + p.getPageNumber(),
                                     p.getPagesize() + "/" + p.getReturnTime() + "/" + p.getCallTime() + "/" + p.getSerializationTime() + "/"
@@ -228,10 +228,11 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             fields.put("SOURCE_COUNT", Long.toString(updatedQueryMetric.getSourceCount()));
             fields.put("NEXT_COUNT", Long.toString(updatedQueryMetric.getNextCount()));
             fields.put("SEEK_COUNT", Long.toString(updatedQueryMetric.getSeekCount()));
+            fields.put("YIELD_COUNT", Long.toString(updatedQueryMetric.getYieldCount()));
             fields.put("DOC_RANGES", Long.toString(updatedQueryMetric.getDocRanges()));
             fields.put("FI_RANGES", Long.toString(updatedQueryMetric.getFiRanges()));
             Set<Prediction> predictions = updatedQueryMetric.getPredictions();
-            if (predictions != null && predictions.isEmpty() == false) {
+            if (predictions != null && !predictions.isEmpty()) {
                 for (Prediction prediction : predictions) {
                     fields.put("PREDICTION", prediction.getName() + ":" + prediction.getPrediction());
                 }
@@ -259,7 +260,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (storedQueryMetric.getLastUpdated() != null && updatedQueryMetric.getLastUpdated() != null) {
                 String storedValue = sdf_date_time2.format(storedQueryMetric.getLastUpdated());
                 String updatedValue = sdf_date_time2.format(updatedQueryMetric.getLastUpdated());
-                if (updatedValue.equals(storedValue) == false) {
+                if (!updatedValue.equals(storedValue)) {
                     fields.put("LAST_UPDATED", storedValue);
                 }
             }
@@ -288,7 +289,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 fields.put("LOGIN_TIME", Long.toString(storedQueryMetric.getLoginTime()));
             }
             
-            Map<Long,PageMetric> storedPageMetricMap = new HashMap<Long,PageMetric>();
+            Map<Long,PageMetric> storedPageMetricMap = new HashMap<>();
             List<PageMetric> storedPageMetrics = storedQueryMetric.getPageTimes();
             if (storedPageMetrics != null) {
                 for (PageMetric p : storedPageMetrics) {
@@ -301,7 +302,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 for (PageMetric p : updatedPageMetrics) {
                     long pageNum = p.getPageNumber();
                     PageMetric storedPageMetric = storedPageMetricMap.get(pageNum);
-                    if (storedPageMetric != null && storedPageMetric.equals(p) == false) {
+                    if (storedPageMetric != null && !storedPageMetric.equals(p)) {
                         fields.put("PAGE_METRICS." + pageNum,
                                         storedPageMetric.getPagesize() + "/" + storedPageMetric.getReturnTime() + "/" + storedPageMetric.getCallTime() + "/"
                                                         + storedPageMetric.getSerializationTime() + "/" + storedPageMetric.getBytesWritten() + "/"
@@ -323,6 +324,9 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             }
             if (updatedQueryMetric.getSeekCount() != storedQueryMetric.getSeekCount()) {
                 fields.put("SEEK_COUNT", Long.toString(storedQueryMetric.getSeekCount()));
+            }
+            if (updatedQueryMetric.getYieldCount() != storedQueryMetric.getYieldCount()) {
+                fields.put("YIELD_COUNT", Long.toString(storedQueryMetric.getYieldCount()));
             }
             if (updatedQueryMetric.getDocRanges() != storedQueryMetric.getDocRanges()) {
                 fields.put("DOC_RANGES", Long.toString(storedQueryMetric.getDocRanges()));

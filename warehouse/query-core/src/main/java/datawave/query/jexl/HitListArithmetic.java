@@ -110,8 +110,6 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         boolean matches = false;
         for (final Object o : elements) {
             // normalize the element
-            Object fieldName = ValueTuple.getFieldName(o);
-            Object rawValue = ValueTuple.getStringValue(o);
             Object normalizedO = ValueTuple.getNormalizedValue(o);
             
             for (Pattern p : patterns) {
@@ -143,6 +141,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             Set<Object> set = (Set<Object>) left;
             Object normalizedRight = ValueTuple.getNormalizedValue(right);
             boolean matches = false;
+            
             for (final Object o : set) {
                 // take advantage of numeric conversions
                 // normalize the right side value
@@ -542,7 +541,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
     }
     
     public Set<String> getHitSet() {
-        Set<String> hits = new HashSet<String>();
+        Set<String> hits = new HashSet<>();
         for (ValueTuple value : hitSet) {
             hits.add(value.getFieldName().toString() + ':' + value.getValue());
         }
@@ -550,8 +549,6 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
     }
     
     private void addTheCorrectHitSetValue(Set<ValueTuple> hitSet, Object left, Object right) {
-        Object rawLeft = ValueTuple.getStringValue(left);
-        Object rawRight = ValueTuple.getStringValue(right);
         // the hitSet should get the value from the one that is a ValueTuple, not the one that is the String
         if (left instanceof ValueTuple) {
             hitSet.add((ValueTuple) left);

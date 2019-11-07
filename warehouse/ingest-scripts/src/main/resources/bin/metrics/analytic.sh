@@ -13,12 +13,11 @@ then
 	cd $THIS_DIR
 
 	. ../ingest/ingest-env.sh
-
+	. ../ingest/findJars.sh
 	#
 	# Get the classpath
 	#
-	cd ../../lib
-	CLASSPATH="../config"
+	CLASSPATH="../../config"
 	CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-core.jar
 	CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-start.jar
 	CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-server-base.jar
@@ -26,17 +25,15 @@ then
 	CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-trace.jar
 	CLASSPATH=${CLASSPATH}:$ZOOKEEPER_HOME/zookeeper-$ZOOKEEPER_VERSION.jar
 
-	CLASSPATH=datawave-metrics-core-$METRICS_VERSION.jar:${CLASSPATH}
-	CLASSPATH=datawave-ingest-core-$INGEST_VERSION.jar:${CLASSPATH}
+	CLASSPATH=${DATAWAVE_METRICS_CORE_JAR}:${CLASSPATH}
+	CLASSPATH=${DATAWAVE_INGEST_CORE_JAR}:${CLASSPATH}
 
-	findJar (){
-  	ls -1 $1-[0-9]*.jar | sort | tail -1
-	}
 	CLASSPATH=$(findJar gson):${CLASSPATH}
 	CLASSPATH=$(findJar libthrift):${CLASSPATH}
 	CLASSPATH=$(findJar guava):${CLASSPATH}
 	CLASSPATH=$(findJar javatuples):${CLASSPATH}
 	CLASSPATH=$(findJar datawave-core):${CLASSPATH}
+	CLASSPATH=$(findJar common-utils):${CLASSPATH}
 
 	#
 	# Transform the classpath into a comma-separated list also
@@ -45,7 +42,7 @@ then
 
 
 	export HADOOP_CLASSPATH=${CLASSPATH}
-	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar datawave.metrics.analytic.MetricsCorrelator -Dapp=MetricsCorrelator -D mapreduce.job.queuename=bulkIngestQueue -libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD  $@
+	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_METRICS_CORE_JAR} datawave.metrics.analytic.MetricsCorrelator -Dapp=MetricsCorrelator -D mapreduce.job.queuename=bulkIngestQueue -libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD  $@
 	RETURN_CODE=$?
 
 else

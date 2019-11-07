@@ -15,8 +15,8 @@ import org.apache.log4j.Logger;
 public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
     
     private static final Logger log = Logger.getLogger(AccumuloConnectionPool.class);
-    private final Map<Long,Map<String,String>> threadToTrackingMapMap = Collections.synchronizedMap(new HashMap<Long,Map<String,String>>());
-    private final Map<Connector,Map<String,String>> connectorToTrackingMapMap = Collections.synchronizedMap(new HashMap<Connector,Map<String,String>>());
+    private final Map<Long,Map<String,String>> threadToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Connector,Map<String,String>> connectorToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
     private AccumuloConnectionPoolFactory factory = null;
     
     public AccumuloConnectionPool(AccumuloConnectionPoolFactory factory) {
@@ -88,10 +88,10 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
             synchronized (threadToTrackingMapMap) {
                 // synchronize this last to prevent race condition for this lock underlying super type
                 synchronized (this) {
-                    if (threadToTrackingMapMap.size() > 0) {
+                    if (!threadToTrackingMapMap.isEmpty()) {
                         t.addAll(Collections.unmodifiableCollection(threadToTrackingMapMap.values()));
                     }
-                    if (connectorToTrackingMapMap.size() > 0) {
+                    if (!connectorToTrackingMapMap.isEmpty()) {
                         t.addAll(Collections.unmodifiableCollection(connectorToTrackingMapMap.values()));
                     }
                     maxTotal.setValue(getMaxTotal());

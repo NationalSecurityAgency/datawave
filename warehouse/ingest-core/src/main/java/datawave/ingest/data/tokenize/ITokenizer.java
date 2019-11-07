@@ -13,7 +13,7 @@ public interface ITokenizer {
      * @return true if a new token is available
      * @throws IOException
      */
-    public boolean incrementToken() throws IOException;
+    boolean incrementToken() throws IOException;
     
     /**
      * 
@@ -21,7 +21,7 @@ public interface ITokenizer {
      *            the attribute class
      * @return true if the tokenizer has that attribute available
      */
-    public boolean hasAttribute(Class<? extends Attribute> clazz);
+    boolean hasAttribute(Class<? extends Attribute> clazz);
     
     /**
      * 
@@ -29,10 +29,10 @@ public interface ITokenizer {
      *            the attribute class
      * @return the Attribute for the specified class
      */
-    public <A extends Attribute> A getAttribute(Class<A> clazz);
+    <A extends Attribute> A getAttribute(Class<A> clazz);
     
     /**
      * Free resources associated with this Tokenizer
      */
-    public void close() throws IOException;
+    void close() throws IOException;
 }

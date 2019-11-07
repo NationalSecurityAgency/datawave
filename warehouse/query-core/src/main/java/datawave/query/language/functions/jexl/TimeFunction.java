@@ -17,7 +17,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 public class TimeFunction extends JexlQueryFunction {
     
     public TimeFunction() {
-        super("time_function", new ArrayList<String>());
+        super("time_function", new ArrayList<>());
     }
     
     @Override

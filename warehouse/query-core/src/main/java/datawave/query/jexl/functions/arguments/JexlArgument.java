@@ -4,7 +4,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 
 public interface JexlArgument {
     
-    public static enum JexlArgumentType {
+    enum JexlArgumentType {
         FIELD_NAME, VALUE, REGEX
     }
     

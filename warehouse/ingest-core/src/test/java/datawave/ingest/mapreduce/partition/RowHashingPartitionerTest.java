@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.partition.RowHashingPartitioner;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -24,7 +23,7 @@ public class RowHashingPartitionerTest {
             String shard = "20110101_" + i;
             int expectedReducer = sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "fluff", "fluff")), null, nRed);
             for (int j = 0; j < 10; ++j) {
-                Assert.assertTrue(expectedReducer == sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, Integer.toHexString(j), "u")), null, nRed));
+                Assert.assertEquals(expectedReducer, sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, Integer.toHexString(j), "u")), null, nRed));
             }
         }
     }
@@ -48,7 +47,7 @@ public class RowHashingPartitionerTest {
             String shard = "20110101_" + i;
             int expectedReducer = sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "tf", "fluff")), null, nRed);
             for (int j = 0; j < 2; ++j) {
-                Assert.assertTrue(expectedReducer == sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "tf", Integer.toHexString(j))), null, nRed));
+                Assert.assertEquals(expectedReducer, sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "tf", Integer.toHexString(j))), null, nRed));
             }
         }
     }

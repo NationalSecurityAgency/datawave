@@ -23,7 +23,6 @@ import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.GlobFilter;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -109,7 +108,7 @@ public class MetadataTableSplits {
     public FileStatus getFileStatus() {
         FileStatus splitsStatus = null;
         try {
-            splitsStatus = FileSystem.get(conf).getFileStatus(this.splitsPath);
+            splitsStatus = FileSystem.get(this.splitsPath.toUri(), conf).getFileStatus(this.splitsPath);
         } catch (IOException ex) {
             String logMessage = ex instanceof FileNotFoundException ? "No splits file present" : "Could not get the FileStatus of the splits file";
             log.warn(logMessage);
@@ -130,7 +129,10 @@ public class MetadataTableSplits {
         Path tmpSplitsFile = null;
         try {
             do {
-                tmpSplitsFile = new Path(this.splitsPath.getParent(), SPLITS_CACHE_FILE + "." + count);
+                Path parentDirectory = this.splitsPath.getParent();
+                String fileName = SPLITS_CACHE_FILE + "." + count;
+                log.info("Attempting to create " + fileName + " under " + parentDirectory);
+                tmpSplitsFile = new Path(parentDirectory, fileName);
                 count++;
             } while (!fs.createNewFile(tmpSplitsFile));
         } catch (IOException ex) {
@@ -176,7 +178,7 @@ public class MetadataTableSplits {
      */
     public void update() {
         try {
-            FileSystem fs = FileSystem.get(conf);
+            FileSystem fs = FileSystem.get(this.splitsPath.toUri(), conf);
             initAccumuloHelper();
             Path tmpSplitsFile = createTempFile(fs);
             Map<String,Integer> tmpSplitsPerTable = writeSplits(fs, tmpSplitsFile);
@@ -184,6 +186,7 @@ public class MetadataTableSplits {
                 log.info("updating splits file");
                 createCacheFile(fs, tmpSplitsFile);
             } else {
+                log.info("Deleting " + tmpSplitsFile);
                 fs.delete(tmpSplitsFile, false);
             }
         } catch (IOException | AccumuloException | AccumuloSecurityException | TableNotFoundException ex) {
@@ -208,9 +211,11 @@ public class MetadataTableSplits {
                 this.splits = new HashMap<>();
                 // gather the splits and write to PrintStream
                 for (String table : tableNames) {
+                    log.info("Retrieving splits for " + table);
                     List<Text> splits = new ArrayList<>(tops.listSplits(table));
                     this.splits.put(table, splits);
                     splitsPerTable.put(table, splits.size());
+                    log.info("Writing " + splits.size() + " splits.");
                     for (Text split : splits) {
                         out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
                     }
@@ -258,7 +263,7 @@ public class MetadataTableSplits {
     
     private void read() throws IOException {
         log.info(String.format("Reading the metadata table splits (@ '%s')...", this.splitsPath.toUri().toString()));
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(conf).open(this.splitsPath)))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.splitsPath.toUri(), conf).open(this.splitsPath)))) {
             readCache(in);
         } catch (IOException ex) {
             if (shouldRefreshSplits(this.conf)) {

@@ -7,5 +7,5 @@ import org.apache.commons.jexl2.JexlArithmetic;
  * to create separate instances to be used concurrently.
  */
 public interface StatefulArithmetic extends Cloneable {
-    public JexlArithmetic clone();
+    JexlArithmetic clone();
 }

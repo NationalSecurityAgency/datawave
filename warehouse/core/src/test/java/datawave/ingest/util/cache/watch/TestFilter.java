@@ -1,13 +1,15 @@
 package datawave.ingest.util.cache.watch;
 
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.iterators.filter.ageoff.FilterRule;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
-public class TestFilter implements FilterRule {
+public class TestFilter extends AppliedRule {
     // public so that the tests can inspect the options
     public FilterOptions options;
     
@@ -17,7 +19,22 @@ public class TestFilter implements FilterRule {
     }
     
     @Override
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
+        this.options = options;
+    }
+    
+    @Override
+    public boolean isFilterRuleApplied() {
+        return false;
+    }
+    
+    @Override
     public boolean accept(SortedKeyValueIterator<Key,Value> iter) {
+        return false;
+    }
+    
+    @Override
+    public boolean accept(AgeOffPeriod period, Key k, Value V) {
         return false;
     }
     
@@ -33,6 +50,6 @@ public class TestFilter implements FilterRule {
     
     @Override
     public FilterRule deepCopy(long scanStart) {
-        return null;
+        return this;
     }
 }

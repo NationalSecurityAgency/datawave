@@ -2,7 +2,7 @@ package datawave.webservice.query.logic;
 
 import datawave.marking.MarkingFunctions;
 
-public abstract class BaseQueryLogicTransformer extends AbstractQueryLogicTransformer implements QueryLogicTransformer {
+public abstract class BaseQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements QueryLogicTransformer<I,O> {
     
     protected MarkingFunctions markingFunctions;
     

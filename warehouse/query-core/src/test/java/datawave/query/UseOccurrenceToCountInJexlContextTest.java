@@ -1,25 +1,28 @@
 package datawave.query;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.Multimap;
+import datawave.data.ColumnFamilyConstants;
+import datawave.data.hash.UID;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.protobuf.Uid;
+import datawave.marking.MarkingFunctions;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
+import datawave.query.util.MetadataHelperFactory;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -36,26 +39,20 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Multimap;
-
-import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.Type;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.util.MetadataHelperFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -75,6 +72,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         
         @BeforeClass
         public static void setUp() throws Exception {
+            System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
             QueryTestTableHelper qtth = new QueryTestTableHelper(UseOccurrenceToCountInJexlContextTest.ShardRange.class.toString(), log);
             connector = qtth.connector;
             
@@ -87,7 +85,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                        Multimap<String,String> expectedHitTerms) throws ParseException, Exception {
+                        Multimap<String,String> expectedHitTerms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, expectedHitTerms, connector);
         }
     }
@@ -97,6 +95,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         
         @BeforeClass
         public static void setUp() throws Exception {
+            System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
             QueryTestTableHelper qtth = new QueryTestTableHelper(UseOccurrenceToCountInJexlContextTest.DocumentRange.class.toString(), log);
             connector = qtth.connector;
             
@@ -109,7 +108,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                        Multimap<String,String> expectedHitTerms) throws ParseException, Exception {
+                        Multimap<String,String> expectedHitTerms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, expectedHitTerms, connector);
         }
     }
@@ -150,11 +149,11 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         logic.setIndexTableName(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
         logic.setReverseIndexTableName(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
         logic.setMaxResults(5000);
-        logic.setMaxRowsToScan(25000);
+        logic.setMaxWork(25000);
         logic.setModelTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
         logic.setQueryPlanner(new DefaultQueryPlanner());
         logic.setIncludeGroupingContext(true);
-        logic.setMarkingFunctions(new MarkingFunctions.NoOp());
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);
@@ -162,10 +161,10 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Multimap<String,String> expectedHitTerms) throws ParseException, Exception;
+                    Multimap<String,String> expectedHitTerms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Multimap<String,String> expectedHitTerms, Connector connector) throws ParseException, Exception {
+                    Multimap<String,String> expectedHitTerms, Connector connector) throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -184,10 +183,10 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             
             Document d = deserializer.apply(entry).getValue();
@@ -227,9 +226,8 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
                     }
                 }
             } else if (hitTermAttribute instanceof Attribute) {
-                Attribute<?> hitTerm = (Attribute<?>) hitTermAttribute;
-                log.debug("hitTerm:" + hitTerm);
-                String hitString = hitTerm.getData().toString();
+                log.debug("hitTerm:" + (Attribute<?>) hitTermAttribute);
+                String hitString = ((Attribute<?>) hitTermAttribute).getData().toString();
                 log.debug("as string:" + hitString);
                 log.debug("expectedHitTerms:" + expectedHitTerms);
                 boolean result = expectedHitTerms.get(uuid).remove(hitString);
@@ -237,7 +235,8 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
                     log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
                     Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
                 } else {
-                    log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerm:" + hitTerm);
+                    log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerm:"
+                                    + (Attribute<?>) hitTermAttribute);
                 }
             }
             
@@ -270,18 +269,20 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         
         Map<String,String> extraParameters = new HashMap<>();
         
+        // @formatter:off
         String[] queryStrings = {
-                
                 "NAME == 'haiqu' && BAR == 'bar' && filter:occurrence(NAME, '==', 3)",
                 "NAME == 'haiqu' && filter:occurrence(NAME, '==', filter:getAllMatches(NAME, 'NAME9').size() + filter:getAllMatches(NAME, 'NAME8').size() + filter:getAllMatches(NAME, 'Haiqu').size())",
-                "UUID == 'Second'",
-        
+                "UUID == 'Second'"
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
                 // just the expected uuids. I should always get both documents, the real test is in the hit terms
-                Arrays.asList("Second"), Arrays.asList("Third"), Arrays.asList("Second"),};
-        
+                Arrays.asList("Second"),
+                Arrays.asList("Third"),
+                Arrays.asList("Second")
+        };
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
                             ArrayListMultimap.create(expectedHitTerms[i]));
@@ -290,7 +291,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
     
     private static class MoreTestData {
         
-        static enum WhatKindaRange {
+        enum WhatKindaRange {
             SHARD, DOCUMENT;
         }
         

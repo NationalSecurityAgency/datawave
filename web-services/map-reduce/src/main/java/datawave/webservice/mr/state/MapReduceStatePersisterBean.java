@@ -1,7 +1,5 @@
 package datawave.webservice.mr.state;
 
-import java.util.LinkedList;
-import java.util.Queue;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
@@ -50,9 +48,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -135,7 +135,7 @@ import java.util.concurrent.TimeUnit;
 @Stateless
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class MapReduceStatePersisterBean {
-    public static enum MapReduceState {
+    public enum MapReduceState {
         STARTED, RUNNING, SUCCEEDED, FAILED, KILLED
     }
     
@@ -339,7 +339,7 @@ public class MapReduceStatePersisterBean {
             String previousRow = sid;
             Map<Key,Value> batch = new HashMap<>();
             for (Entry<Key,Value> entry : scanner) {
-                if (!previousRow.equals(entry.getKey().getRow().toString()) && batch.size() > 0) {
+                if (!previousRow.equals(entry.getKey().getRow().toString()) && !batch.isEmpty()) {
                     MapReduceInfoResponse response = populateResponse(batch.entrySet());
                     if (null != response)
                         result.getResults().add(response);
@@ -349,7 +349,7 @@ public class MapReduceStatePersisterBean {
                 }
                 previousRow = entry.getKey().getRow().toString();
             }
-            if (batch.size() > 0) {
+            if (!batch.isEmpty()) {
                 MapReduceInfoResponse response = populateResponse(batch.entrySet());
                 if (null != response)
                     result.getResults().add(response);
@@ -466,14 +466,14 @@ public class MapReduceStatePersisterBean {
         if (null != jobs)
             result.setJobExecutions(new ArrayList<>(jobs));
         try {
-            if (null != hdfs && hdfs.length() > 0 && null != result.getResultsDirectory()) {
+            if (null != hdfs && !hdfs.isEmpty() && null != result.getResultsDirectory()) {
                 Configuration conf = new Configuration();
                 conf.set("fs.defaultFS", hdfs);
                 // If we can't talk to HDFS then I want to fail fast, default is to retry 10 times.
                 conf.setInt("ipc.client.connect.max.retries", 0);
-                FileSystem fs = FileSystem.get(conf);
                 Path resultDirectoryPath = new Path(result.getResultsDirectory());
                 int resultDirectoryPathLength = resultDirectoryPath.toUri().getPath().length();
+                FileSystem fs = FileSystem.get(resultDirectoryPath.toUri(), conf);
                 
                 List<FileStatus> stats = new ArrayList<>();
                 // recurse through the directory to find all files
@@ -486,9 +486,7 @@ public class MapReduceStatePersisterBean {
                         stats.add(currentFileStatus);
                     } else {
                         FileStatus[] dirList = fs.listStatus(currentFileStatus.getPath());
-                        for (FileStatus fileStatus : dirList) {
-                            fileQueue.add(fileStatus);
-                        }
+                        Collections.addAll(fileQueue, dirList);
                     }
                 }
                 

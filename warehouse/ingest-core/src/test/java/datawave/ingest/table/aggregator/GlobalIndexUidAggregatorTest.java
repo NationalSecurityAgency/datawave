@@ -1,7 +1,6 @@
 package datawave.ingest.table.aggregator;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -44,13 +43,13 @@ public class GlobalIndexUidAggregatorTest {
         assertNotNull(result);
         assertNotNull(result.get());
         assertNotNull(val.get());
-        assertTrue(val.compareTo(result.get()) == 0);
+        assertEquals(0, val.compareTo(result.get()));
     }
     
     @Test
     public void testLessThanMax() throws Exception {
         agg.reset();
-        List<String> savedUUIDs = new ArrayList<String>();
+        List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX - 1; i++) {
             Builder b = createNewUidList();
@@ -65,8 +64,8 @@ public class GlobalIndexUidAggregatorTest {
         }
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertTrue(resultList.getIGNORE() == false);
-        assertTrue(resultList.getUIDCount() == (GlobalIndexUidAggregator.MAX - 1));
+        assertEquals(false, resultList.getIGNORE());
+        assertEquals(resultList.getUIDCount(), (GlobalIndexUidAggregator.MAX - 1));
         List<String> resultListUUIDs = resultList.getUIDList();
         for (String s : savedUUIDs)
             assertTrue(resultListUUIDs.contains(s));
@@ -75,7 +74,7 @@ public class GlobalIndexUidAggregatorTest {
     @Test
     public void testEqualsMax() throws Exception {
         agg.reset();
-        List<String> savedUUIDs = new ArrayList<String>();
+        List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX; i++) {
             Builder b = createNewUidList();
@@ -90,9 +89,9 @@ public class GlobalIndexUidAggregatorTest {
         }
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertFalse(resultList == null);
-        assertTrue(resultList.getIGNORE() == false);
-        assertTrue(resultList.getUIDCount() == (GlobalIndexUidAggregator.MAX));
+        assertNotNull(resultList);
+        assertEquals(false, resultList.getIGNORE());
+        assertEquals(resultList.getUIDCount(), (GlobalIndexUidAggregator.MAX));
         List<String> resultListUUIDs = resultList.getUIDList();
         for (String s : savedUUIDs)
             assertTrue(resultListUUIDs.contains(s));
@@ -101,7 +100,7 @@ public class GlobalIndexUidAggregatorTest {
     @Test
     public void testMoreThanMax() throws Exception {
         agg.reset();
-        List<String> savedUUIDs = new ArrayList<String>();
+        List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX + 10; i++) {
             Builder b = createNewUidList();
@@ -116,15 +115,15 @@ public class GlobalIndexUidAggregatorTest {
         }
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertTrue(resultList.getIGNORE() == true);
-        assertTrue(resultList.getUIDCount() == 0);
-        assertTrue(resultList.getCOUNT() == (GlobalIndexUidAggregator.MAX + 10));
+        assertEquals(true, resultList.getIGNORE());
+        assertEquals(0, resultList.getUIDCount());
+        assertEquals(resultList.getCOUNT(), (GlobalIndexUidAggregator.MAX + 10));
     }
     
     @Test
     public void testManyRemoval() throws Exception {
         agg.reset();
-        List<String> savedUUIDs = new ArrayList<String>();
+        List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX / 2; i++) {
             Builder b = createNewUidList();
@@ -183,9 +182,9 @@ public class GlobalIndexUidAggregatorTest {
         values.add(val);
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertTrue(resultList.getIGNORE() == true);
-        assertTrue(resultList.getUIDCount() == 0);
-        assertTrue(resultList.getCOUNT() == 1);
+        assertEquals(true, resultList.getIGNORE());
+        assertEquals(0, resultList.getUIDCount());
+        assertEquals(1, resultList.getCOUNT());
     }
     
     @Test
@@ -199,9 +198,9 @@ public class GlobalIndexUidAggregatorTest {
         values.add(val);
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertTrue(resultList.getIGNORE() == false);
-        assertTrue(resultList.getUIDCount() == 0);
-        assertTrue(resultList.getCOUNT() == 0);
+        assertEquals(false, resultList.getIGNORE());
+        assertEquals(0, resultList.getUIDCount());
+        assertEquals(0, resultList.getCOUNT());
         
         log.setLevel(origLevel);
     }
@@ -224,9 +223,9 @@ public class GlobalIndexUidAggregatorTest {
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
         
-        assertTrue(resultList.getCOUNT() == 5);
-        assertTrue(resultList.getIGNORE() == false);
-        assertTrue(resultList.getUIDCount() == 1);
+        assertEquals(5, resultList.getCOUNT());
+        assertEquals(false, resultList.getIGNORE());
+        assertEquals(1, resultList.getUIDCount());
         
     }
 }

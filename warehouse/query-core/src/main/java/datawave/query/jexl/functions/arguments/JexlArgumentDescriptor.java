@@ -2,10 +2,14 @@ package datawave.query.jexl.functions.arguments;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import datawave.query.jexl.JexlASTHelper;
+import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
@@ -29,6 +33,16 @@ public interface JexlArgumentDescriptor {
      * @return The query which will be used against the global index
      */
     JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
+    
+    /**
+     * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IFF the getIndexQuery does not add appropriate
+     * expression filters in the first place. This is because addFilters is used after the query had been expanded to include the index query. So for most
+     * implementations this function will do nothing. For the EvaluationPhaseFilterFunctions however this will have to be implemented.
+     * 
+     * @param attributeFactory
+     * @param filterMap
+     */
+    void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
     
     /**
      * Get the entire set of fields that are referenced by this function. If you need subsets of fields required to satisfy the function, then use fieldSets()
@@ -76,6 +90,13 @@ public interface JexlArgumentDescriptor {
     boolean regexArguments();
     
     /**
+     * Is this JexlFunction allowed to be run against values from the field index in the filtering ivarator? (see {@link DatawaveFieldIndexFilterIteratorJexl})
+     *
+     * @return true if this function can be used to filter inside an ivarator
+     */
+    boolean allowIvaratorFiltering();
+    
+    /**
      * This class of functions can be used to support the fieldSets method implementation. They look for nested OR nodes and then produce a product of the
      * underlying identifiers to produce sets of required fields.
      */
@@ -89,7 +110,7 @@ public interface JexlArgumentDescriptor {
             if (b instanceof ASTOrNode) {
                 for (String field2 : JexlASTHelper.getIdentifierNames(b)) {
                     for (Set<String> fields1 : a) {
-                        Set<String> fields = new HashSet<String>();
+                        Set<String> fields = new HashSet<>();
                         fields.addAll(fields1);
                         fields.add(field2);
                         fieldSets.add(fields);
@@ -111,7 +132,7 @@ public interface JexlArgumentDescriptor {
             Set<Set<String>> fieldSets = new HashSet<>();
             for (Set<String> fields2 : b) {
                 for (Set<String> fields1 : a) {
-                    Set<String> fields = new HashSet<String>();
+                    Set<String> fields = new HashSet<>();
                     fields.addAll(fields1);
                     fields.addAll(fields2);
                     fieldSets.add(fields);

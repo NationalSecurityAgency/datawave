@@ -4,19 +4,13 @@ import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
 import static datawave.webservice.metrics.Constants.REQUEST_START_TIME_HEADER;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMechanismFactory;
 import io.undertow.security.api.SecurityContext;
@@ -30,10 +24,6 @@ import io.undertow.server.handlers.form.FormParserFactory;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
-import org.jboss.as.security.plugins.SecurityDomainContext;
-import org.jboss.security.AuthenticationManager;
-import org.jboss.security.authentication.JBossCachedAuthenticationManager;
-import org.jboss.security.authentication.JBossCachedAuthenticationManager.DomainInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.SslClientAuthMode;
@@ -46,7 +36,6 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     public static final String PROXIED_ENTITIES_HEADER = "X-ProxiedEntitiesChain";
     public static final String PROXIED_ISSUERS_HEADER = "X-ProxiedIssuersChain";
     public static final String MECHANISM_NAME = "DATAWAVE-AUTH";
-    private static final long CACHE_TIMEOUT_SECONDS = 300L;
     private static final HttpString HEADER_START_TIME = new HttpString(REQUEST_START_TIME_HEADER);
     private static final HttpString HEADER_LOGIN_TIME = new HttpString(REQUEST_LOGIN_TIME_HEADER);
     protected static final HttpString HEADER_PROXIED_ENTITIES = new HttpString(PROXIED_ENTITIES_HEADER);
@@ -59,46 +48,33 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
      * If we should force a renegotiation if client certs were not supplied. <code>true</code> by default
      */
     private final boolean forceRenegotiation;
-    private final long cacheTimeoutSeconds;
     private final IdentityManager identityManager;
     protected final String SUBJECT_DN_HEADER;
     protected final String ISSUER_DN_HEADER;
     private final boolean trustedHeaderAuthentication;
-    private boolean checkedAuthenticationCache;
-    
-    private static Map<AuthenticationManager,ConcurrentMap<Principal,DomainInfo>> caches = new HashMap<>();
+    private final boolean jwtHeaderAuthentication;
     
     @SuppressWarnings("UnusedDeclaration")
     public DatawaveAuthenticationMechanism() {
-        this(MECHANISM_NAME, true, CACHE_TIMEOUT_SECONDS, null);
+        this(MECHANISM_NAME, true, null);
     }
     
     @SuppressWarnings("UnusedDeclaration")
     public DatawaveAuthenticationMechanism(String mechanismName) {
-        this(mechanismName, true, CACHE_TIMEOUT_SECONDS, null);
-    }
-    
-    @SuppressWarnings("UnusedDeclaration")
-    public DatawaveAuthenticationMechanism(String mechanismName, long cacheTimeoutSeconds) {
-        this(mechanismName, true, cacheTimeoutSeconds, null);
+        this(mechanismName, true, null);
     }
     
     @SuppressWarnings("UnusedDeclaration")
     public DatawaveAuthenticationMechanism(boolean forceRenegotiation) {
-        this(MECHANISM_NAME, forceRenegotiation, CACHE_TIMEOUT_SECONDS, null);
+        this(MECHANISM_NAME, forceRenegotiation, null);
     }
     
-    @SuppressWarnings("UnusedDeclaration")
-    public DatawaveAuthenticationMechanism(boolean forceRenegotiation, long cacheTimoutSeconds) {
-        this(MECHANISM_NAME, forceRenegotiation, cacheTimoutSeconds, null);
-    }
-    
-    public DatawaveAuthenticationMechanism(String mechanismName, boolean forceRenegotiation, long cacheTimeoutSeconds, IdentityManager identityManager) {
+    public DatawaveAuthenticationMechanism(String mechanismName, boolean forceRenegotiation, IdentityManager identityManager) {
         this.name = mechanismName;
         this.forceRenegotiation = forceRenegotiation;
-        this.cacheTimeoutSeconds = cacheTimeoutSeconds;
         this.identityManager = identityManager;
         trustedHeaderAuthentication = Boolean.valueOf(System.getProperty("dw.trusted.header.authentication", "false"));
+        jwtHeaderAuthentication = Boolean.valueOf(System.getProperty("dw.jwt.header.authentication", "false"));
         SUBJECT_DN_HEADER = System.getProperty("dw.trusted.header.subjectDn", "X-SSL-ClientCert-Subject".toLowerCase());
         ISSUER_DN_HEADER = System.getProperty("dw.trusted.header.issuerDn", "X-SSL-ClientCert-Issuer".toLowerCase());
     }
@@ -111,6 +87,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         try {
             proxiedEntities = getSingleHeader(exchange.getRequestHeaders(), PROXIED_ENTITIES_HEADER);
             proxiedIssuers = getSingleHeader(exchange.getRequestHeaders(), PROXIED_ISSUERS_HEADER);
+            logger.trace("Authenticating with proxiedEntities={} and proxiedIssuers={}", proxiedEntities, proxiedIssuers);
             if (proxiedEntities != null && proxiedIssuers == null) {
                 return notAuthenticated(exchange, securityContext, PROXIED_ENTITIES_HEADER + " supplied, but missing " + PROXIED_ISSUERS_HEADER
                                 + " is missing!");
@@ -133,11 +110,23 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
                 // No action - this mechanism can not attempt authentication without peer certificates, so allow it to drop out to NOT_ATTEMPTED
             }
         }
+        // If we're using JWT authentication, then trust the JWT in the header.
+        if (jwtHeaderAuthentication) {
+            try {
+                String authorizationHeader = getSingleHeader(exchange.getRequestHeaders(), "Authorization");
+                if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                    credential = new DatawaveCredential(authorizationHeader.substring(7));
+                }
+            } catch (MultipleHeaderException e) {
+                return notAuthenticated(exchange, securityContext, e.getMessage());
+            }
+        }
         // If we're either not using SSL and/or didn't get user info from the SSL session, then get it from the trusted headers, if we're configured to do so.
         if (credential == null && trustedHeaderAuthentication) {
             try {
                 String subjectDN = getSingleHeader(exchange.getRequestHeaders(), SUBJECT_DN_HEADER);
                 String issuerDN = getSingleHeader(exchange.getRequestHeaders(), ISSUER_DN_HEADER);
+                logger.trace("Authenticating with trusted subject header={} and trusted issuer header={}", subjectDN, issuerDN);
                 // If no DN headers supplied, then report that we did not authenticate
                 if (subjectDN == null && issuerDN == null) {
                     return notAttempted(exchange);
@@ -153,11 +142,11 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
             }
         }
         
+        logger.trace("Computed credential = {}", credential);
         if (credential != null) {
             String username = credential.getUserName();
             
             IdentityManager idm = getIdentityManager(securityContext);
-            replaceAuthenticationManagerCacheIfNecessary(idm);
             Account account = idm.verify(username, credential);
             if (account != null) {
                 return authenticated(exchange, securityContext, account);
@@ -194,57 +183,6 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         HeaderMap headers = exchange.getRequestHeaders();
         headers.add(HEADER_START_TIME, requestStartTime);
         headers.add(HEADER_LOGIN_TIME, loginTime);
-    }
-    
-    /**
-     * Replace the domain cache on the {@link JBossCachedAuthenticationManager} associated with the security context on {@code idm}. This method is fragile and
-     * unsafe. It will not work if a security manager is in use, it is specific to Wildfly, and may not work with Wildfly updates. It is here to work around a
-     * bug in Wildfly (<a href="https://issues.jboss.org/browse/WFLY-3858">WFLY-3858</a>) which prevents configuration of the infinispan caching for security
-     * domains. Without configuration of the caching, the authentication manager will cache entries potentially forever. This means we'll never re-try our back
-     * end authentication which may be necessary to check since user roles could change.
-     */
-    protected void replaceAuthenticationManagerCacheIfNecessary(IdentityManager idm) {
-        if (checkedAuthenticationCache)
-            return;
-        
-        try {
-            logger.trace("Checking to see if we need to replace the authentication manager cache in {}", this);
-            Field field = idm.getClass().getDeclaredField("securityDomainContext");
-            field.setAccessible(true);
-            SecurityDomainContext sdc = (SecurityDomainContext) field.get(idm);
-            logger.trace("Retrieved SecurityDomainContext from {}", idm);
-            JBossCachedAuthenticationManager am = (JBossCachedAuthenticationManager) sdc.getAuthenticationManager();
-            logger.trace("Retrieved authentication manager {} from {}", am, sdc);
-            field = am.getClass().getDeclaredField("domainCache");
-            field.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            ConcurrentMap<Principal,DomainInfo> cache = (ConcurrentMap<Principal,DomainInfo>) field.get(am);
-            logger.trace("Retrieved cache {} from authentication manager {}.", cache, am);
-            
-            synchronized (DatawaveAuthenticationMechanism.class) {
-                if (cacheTimeoutSeconds > 0) {
-                    ConcurrentMap<Principal,DomainInfo> replacementCache = caches.get(am);
-                    if (replacementCache == null) {
-                        Cache<Principal,DomainInfo> authenticationCache = CacheBuilder.newBuilder().expireAfterWrite(cacheTimeoutSeconds, TimeUnit.SECONDS)
-                                        .maximumSize(3000).build();
-                        replacementCache = authenticationCache.asMap();
-                        caches.put(am, replacementCache);
-                    }
-                    if (cache != replacementCache) {
-                        field.set(am, replacementCache);
-                    }
-                }
-            }
-            
-        } catch (NoSuchFieldException e) {
-            logger.warn("Unable to locate field {}. Will fall back to default authentication manager behavior.", e.getMessage(), e);
-        } catch (IllegalAccessException e) {
-            logger.warn("Unable to replace domain cache in authentication module. Will fall back to default authentication manager behavior.", e);
-        } catch (ClassCastException e) {
-            logger.warn("Unable to cast AuenticationManager to a JBossCachedAuthentication manager. Will fall back to default authentication manager behavior.",
-                            e);
-        }
-        checkedAuthenticationCache = true;
     }
     
     // impl copied from io.undertow.security.impl.ClientCertAuthenticationMechanism
@@ -302,15 +240,16 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         }
         
         @Override
+        @Deprecated
         public AuthenticationMechanism create(String mechanismName, FormParserFactory formParserFactory, Map<String,String> properties) {
+            return create(mechanismName, identityManager, formParserFactory, properties);
+        }
+        
+        @Override
+        public AuthenticationMechanism create(String mechanismName, IdentityManager identityManager, FormParserFactory formParserFactory,
+                        Map<String,String> properties) {
             String forceRenegotiation = properties.get(ClientCertAuthenticationMechanism.FORCE_RENEGOTIATION);
-            long cacheTimeoutSeconds = 300;
-            String timeoutOverride = properties.get("cache_timeout_seconds");
-            if (timeoutOverride != null) {
-                cacheTimeoutSeconds = Long.parseLong(timeoutOverride);
-            }
-            return new DatawaveAuthenticationMechanism(mechanismName, (forceRenegotiation == null) || "true".equals(forceRenegotiation), cacheTimeoutSeconds,
-                            identityManager);
+            return new DatawaveAuthenticationMechanism(mechanismName, (forceRenegotiation == null) || "true".equals(forceRenegotiation), identityManager);
         }
     }
 }

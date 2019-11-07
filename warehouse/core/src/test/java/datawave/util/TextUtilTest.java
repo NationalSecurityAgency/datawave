@@ -3,8 +3,6 @@ package datawave.util;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import datawave.util.TextUtil;
-
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Test;

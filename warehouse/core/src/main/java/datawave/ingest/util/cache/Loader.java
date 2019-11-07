@@ -6,9 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Callable;
 
-import com.google.common.util.concurrent.*;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListenableFutureTask;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.log4j.Logger;
 
 import com.google.common.cache.CacheLoader;
@@ -74,13 +77,9 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
             }
         } else {
             
-            task = ListenableFutureTask.create(new Callable<V>() {
-                
-                @Override
-                public V call() throws Exception {
-                    build(null);
-                    return load(key);
-                }
+            task = ListenableFutureTask.create(() -> {
+                build(null);
+                return load(key);
             });
             
             executor.execute(task);
@@ -98,7 +97,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
             }
         } else {
             if (log.isTraceEnabled())
-                log.trace("Cache already contains " + child.toString());
+                log.trace("Cache already contains " + child);
         }
         return this;
     }
@@ -132,7 +131,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
     @Override
     public V load(K key) throws Exception {
         
-        if (entryCache.size() == 0) {
+        if (entryCache.isEmpty()) {
             if (log.isTraceEnabled())
                 log.trace("Building initial cache");
             
@@ -161,7 +160,6 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
                 log.debug("Loading cache asynchronously");
             build(null);
         } catch (Throwable e) {
-            e.printStackTrace();
             log.error(e);
         }
         

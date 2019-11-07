@@ -1,32 +1,14 @@
 package datawave.query.jexl.lookups;
 
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.concurrent.Callable;
-
-import datawave.query.config.ShardQueryConfiguration;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.WholeRowIterator;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-
 import datawave.core.iterators.ColumnQualifierRangeIterator;
+import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
+import datawave.data.type.DiscreteIndexType;
 import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.LiteralRange;
@@ -36,18 +18,35 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.WholeRowIterator;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+import org.springframework.util.StringUtils;
+
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.concurrent.Callable;
 
 public class LookupBoundedRangeForTerms extends IndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(LookupBoundedRangeForTerms.class);
     
     protected Set<String> datatypeFilter;
-    protected Set<Text> fields;
     private final LiteralRange<?> literalRange;
     
     public LookupBoundedRangeForTerms(LiteralRange<?> literalRange) {
         this.literalRange = literalRange;
         datatypeFilter = Sets.newHashSet();
-        fields = Sets.newHashSet();
     }
     
     @Override
@@ -76,7 +75,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
         
         String lower = literalRange.getLower().toString(), upper = literalRange.getUpper().toString();
         
-        fields.add(new Text(literalRange.getFieldName()));
+        Set<String> fields = Collections.singleton(literalRange.getFieldName());
         Key startKey;
         if (literalRange.isLowerInclusive()) { // inclusive
             startKey = new Key(new Text(lower));
@@ -122,12 +121,37 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
             IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 50, "WholeRowIterator", WholeRowIterator.class);
             bs.addScanIterator(cfg);
             
-            cfg = new IteratorSetting(config.getBaseIteratorPriority() + 49, "DateFilter", ColumnQualifierRangeIterator.class);
+            cfg = new IteratorSetting(config.getBaseIteratorPriority() + 48, "DateFilter", ColumnQualifierRangeIterator.class);
             // search from 20YYddMM to 20ZZddMM\uffff to ensure we encompass all of the current day
             String end = endDay + Constants.MAX_UNICODE_STRING;
             cfg.addOption(ColumnQualifierRangeIterator.RANGE_NAME, ColumnQualifierRangeIterator.encodeRange(new Range(startDay, end)));
             
             bs.addScanIterator(cfg);
+            
+            // If this is a composite field, with multiple terms, we need to setup our query to filter based on each component of the composite range
+            if (config.getCompositeToFieldMap().get(literalRange.getFieldName()) != null) {
+                
+                String compositeSeparator = null;
+                if (config.getCompositeFieldSeparators() != null)
+                    compositeSeparator = config.getCompositeFieldSeparators().get(literalRange.getFieldName());
+                
+                if (compositeSeparator != null && (lower.contains(compositeSeparator) || upper.contains(compositeSeparator))) {
+                    IteratorSetting compositeIterator = new IteratorSetting(config.getBaseIteratorPriority() + 51, CompositeSeekingIterator.class);
+                    
+                    compositeIterator.addOption(CompositeSeekingIterator.COMPONENT_FIELDS,
+                                    StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
+                    
+                    for (String fieldName : config.getCompositeToFieldMap().get(literalRange.getFieldName())) {
+                        DiscreteIndexType type = config.getFieldToDiscreteIndexTypes().get(fieldName);
+                        if (type != null)
+                            compositeIterator.addOption(fieldName + CompositeSeekingIterator.DISCRETE_INDEX_TYPE, type.getClass().getName());
+                    }
+                    
+                    compositeIterator.addOption(CompositeSeekingIterator.SEPARATOR, compositeSeparator);
+                    
+                    bs.addScanIterator(compositeIterator);
+                }
+            }
             
             if (null != fairnessIterator) {
                 cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
@@ -135,7 +159,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
             }
             
             try {
-                timedScan(bs.iterator(), fieldToUniqueTerms, config, datatypeFilter, fields, false, maxLookup, null);
+                timedScan(bs.iterator(), fieldToUniqueTerms, config, false, fields, false, maxLookup, null);
             } finally {
                 scannerFactory.close(bs);
             }
@@ -156,118 +180,117 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
         }
         
         if (log.isDebugEnabled()) {
-            log.debug("Found " + fieldToUniqueTerms.size() + " matching terms for range: " + fieldToUniqueTerms.toString());
+            log.debug("Found " + fieldToUniqueTerms.size() + " matching terms for range: " + fieldToUniqueTerms);
         }
         
         return fieldToUniqueTerms;
     }
     
+    @Override
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
-                    Set<String> datatypeFilter, final Set<Text> fields, boolean isReverse, long timeout) {
+                    final boolean unfieldedLookup, final Set<String> fields, boolean isReverse, long timeout) {
         final Set<String> myDatatypeFilter = datatypeFilter;
-        return new Callable<Boolean>() {
-            public Boolean call() {
-                Text holder = new Text();
-                try {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Do we have next? " + iter.hasNext());
-                        
+        return () -> {
+            Text holder = new Text();
+            try {
+                if (log.isTraceEnabled()) {
+                    log.trace("Do we have next? " + iter.hasNext());
+                    
+                }
+                while (iter.hasNext()) {
+                    
+                    Entry<Key,Value> entry = iter.next();
+                    
+                    if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
+                        throw new Exception("Timeout exceeded for bounded range lookup");
                     }
-                    while (iter.hasNext()) {
-                        
-                        Entry<Key,Value> entry = iter.next();
-                        
-                        if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
-                            throw new Exception("Timeout exceeded for bounded range lookup");
-                        }
-                        Key k = entry.getKey();
-                        
-                        if (log.isTraceEnabled()) {
-                            log.trace("Foward Index entry: " + entry.getKey().toString());
-                        }
-                        
-                        k.getRow(holder);
-                        String uniqueTerm = holder.toString();
-                        
-                        SortedMap<Key,Value> keymap = WholeRowIterator.decodeRow(entry.getKey(), entry.getValue());
-                        
-                        String field = null;
-                        
-                        boolean foundDataType = false;
-                        
-                        for (Key topKey : keymap.keySet()) {
-                            if (null == field) {
-                                topKey.getColumnFamily(holder);
-                                field = holder.toString();
-                            }
-                            // Get the column qualifier from the key. It
-                            // contains the datatype and normalizer class
-                            
-                            if (null != topKey.getColumnQualifier()) {
-                                if (null != myDatatypeFilter && myDatatypeFilter.size() > 0) {
-                                    
-                                    String colq = topKey.getColumnQualifier().toString();
-                                    int idx = colq.indexOf(Constants.NULL);
-                                    
-                                    if (idx != -1) {
-                                        String type = colq.substring(idx + 1);
-                                        
-                                        // If types are specified and this type
-                                        // is not in the list, skip it.
-                                        if (myDatatypeFilter.contains(type)) {
-                                            
-                                            if (log.isTraceEnabled())
-                                                log.trace(myDatatypeFilter + " contains " + type);
-                                            foundDataType = true;
-                                            break;
-                                        }
-                                        
-                                    }
-                                } else
-                                    foundDataType = true;
-                            }
-                        }
-                        if (foundDataType) {
-                            
-                            // obtaining the size of a map can be expensive,
-                            // instead
-                            // track the count of each unique item added.
-                            fieldsToValues.put(field, uniqueTerm);
-                            
-                            // safety check...
-                            Preconditions.checkState(field.equals(literalRange.getFieldName()), "Got an unexpected field name when expanding range" + field
-                                            + " " + literalRange.getFieldName());
-                            
-                            // If this range expands into to many values, we can
-                            // stop
-                            if (fieldsToValues.get(field).isThresholdExceeded()) {
-                                return true;
-                                
-                            }
-                        }
+                    Key k = entry.getKey();
+                    
+                    if (log.isTraceEnabled()) {
+                        log.trace("Foward Index entry: " + entry.getKey());
                     }
                     
-                } catch (Exception e) {
-                    log.info("Failed or timed out expanding range fields: " + e.getMessage());
-                    if (log.isDebugEnabled())
-                        log.debug("Failed or Timed out ", e);
-                    if (fields.size() >= 1) {
-                        for (Text fieldTxt : fields) {
-                            String field = fieldTxt.toString();
-                            if (log.isTraceEnabled()) {
-                                log.trace("field is " + field);
-                                log.trace("field is " + (null == fieldsToValues));
-                            }
-                            fieldsToValues.put(field, "");
-                            fieldsToValues.get(field).setThresholdExceeded();
+                    k.getRow(holder);
+                    String uniqueTerm = holder.toString();
+                    
+                    SortedMap<Key,Value> keymap = WholeRowIterator.decodeRow(entry.getKey(), entry.getValue());
+                    
+                    String field = null;
+                    
+                    boolean foundDataType = false;
+                    
+                    for (Key topKey : keymap.keySet()) {
+                        if (null == field) {
+                            topKey.getColumnFamily(holder);
+                            field = holder.toString();
                         }
-                    } else
-                        fieldsToValues.setKeyThresholdExceeded();
-                    return false;
+                        // Get the column qualifier from the key. It
+                        // contains the datatype and normalizer class
+                        
+                        if (null != topKey.getColumnQualifier()) {
+                            if (null != myDatatypeFilter && !myDatatypeFilter.isEmpty()) {
+                                
+                                String colq = topKey.getColumnQualifier().toString();
+                                int idx = colq.indexOf(Constants.NULL);
+                                
+                                if (idx != -1) {
+                                    String type = colq.substring(idx + 1);
+                                    
+                                    // If types are specified and this type
+                                    // is not in the list, skip it.
+                                    if (myDatatypeFilter.contains(type)) {
+                                        
+                                        if (log.isTraceEnabled())
+                                            log.trace(myDatatypeFilter + " contains " + type);
+                                        foundDataType = true;
+                                        break;
+                                    }
+                                    
+                                }
+                            } else
+                                foundDataType = true;
+                        }
+                    }
+                    if (foundDataType) {
+                        
+                        // obtaining the size of a map can be expensive,
+                        // instead
+                        // track the count of each unique item added.
+                        fieldsToValues.put(field, uniqueTerm);
+                        
+                        // safety check...
+                        Preconditions.checkState(field.equals(literalRange.getFieldName()), "Got an unexpected field name when expanding range" + field + " "
+                                        + literalRange.getFieldName());
+                        
+                        // If this range expands into to many values, we can
+                        // stop
+                        if (fieldsToValues.get(field).isThresholdExceeded()) {
+                            return true;
+                            
+                        }
+                    }
                 }
                 
-                return true;
+            } catch (Exception e) {
+                log.info("Failed or timed out expanding range fields: " + e.getMessage());
+                if (log.isDebugEnabled())
+                    log.debug("Failed or Timed out ", e);
+                // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
+                if (!unfieldedLookup) {
+                    for (String field : fields) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("field is " + field);
+                            log.trace("field is " + (null == fieldsToValues));
+                        }
+                        fieldsToValues.put(field, "");
+                        fieldsToValues.get(field).setThresholdExceeded();
+                    }
+                } else
+                    fieldsToValues.setKeyThresholdExceeded();
+                return false;
             }
+            
+            return true;
         };
     }
     

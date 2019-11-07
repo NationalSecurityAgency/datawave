@@ -9,5 +9,5 @@ import datawave.util.flag.config.FlagDataTypeConfig;
  * An interface for a class that will validate the size of a set of input files for use in a flag file.
  */
 public interface SizeValidator {
-    public boolean isValidSize(FlagDataTypeConfig fc, Collection<InputFile> files);
+    boolean isValidSize(FlagDataTypeConfig fc, Collection<InputFile> files);
 }

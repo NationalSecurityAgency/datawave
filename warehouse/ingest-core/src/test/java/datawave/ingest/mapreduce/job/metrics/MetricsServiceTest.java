@@ -5,6 +5,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.mapreduce.TestContextWriter;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -16,7 +17,9 @@ import org.junit.Test;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -46,14 +49,14 @@ public class MetricsServiceTest {
         service = new MetricsService<>(contextWriter, context);
         
         labels = new HashMap<>();
-        labels.put("table", "shard");
+        labels.put("table", TableName.SHARD);
         labels.put("handler", DummyDataTypeHandler.class.getName());
     }
     
     @Test
     public void shouldGenerateMetricsWhenConfigured() throws Exception {
         // NOTE: user is not a configured field to be saved
-        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", "shard", "fileExtension", "gz", "user", "tommy");
+        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", TableName.SHARD, "fileExtension", "gz", "user", "tommy");
         
         labels.put("dataType", "flow1");
         service.collect(Metric.KV_PER_TABLE, labels, fields, 1L);
@@ -70,7 +73,7 @@ public class MetricsServiceTest {
     
     @Test
     public void shouldDropMetricsWhenNotConfigured() throws Exception {
-        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", "shard", "fileExtension", "gz");
+        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", TableName.SHARD, "fileExtension", "gz");
         
         // dataType 'flow2' is not enabled in the conf file
         labels.put("dataType", "flow2");
@@ -84,7 +87,7 @@ public class MetricsServiceTest {
     
     @Test
     public void shouldStillIncludeMetricsWithOnlyASubsetOfEnabledLabels() throws Exception {
-        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", "shard");
+        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", TableName.SHARD);
         
         // dataType is not set
         service.collect(Metric.KV_PER_TABLE, labels, fields, 1L);
@@ -113,7 +116,7 @@ public class MetricsServiceTest {
         service = new MetricsService(contextWriter, context);
         
         // metric fields
-        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", "shard", "fileExtension", "gz");
+        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", TableName.SHARD, "fileExtension", "gz");
         
         labels.put("dataType", "flow2");
         service.collect(Metric.KV_PER_TABLE, labels, fields, 1L);

@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.TimeZone;
 
-import datawave.ingest.csv.mr.handler.ContentCSVColumnBasedHandler;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
@@ -20,6 +19,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -103,9 +103,9 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         TypeRegistry.reset();
         conf = new Configuration();
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 131);
-        conf.set(ShardedDataTypeHandler.SHARD_TNAME, "shard");
-        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex");
-        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex");
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
+        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
     }
     
     @Test
@@ -125,7 +125,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         
         // Set up the ColumnBasedHandler
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
-        ContentCSVColumnBasedHandler<Text> csvHandler = new ContentCSVColumnBasedHandler<Text>();
+        ContentCSVColumnBasedHandler<Text> csvHandler = new ContentCSVColumnBasedHandler<>();
         csvHandler.setup(context);
         
         // Set up the Reader

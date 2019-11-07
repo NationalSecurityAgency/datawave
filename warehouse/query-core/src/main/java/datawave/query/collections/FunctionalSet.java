@@ -6,7 +6,14 @@ import datawave.query.attributes.ValueTuple;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.google.common.base.CharMatcher;
 import datawave.data.type.Type;
@@ -170,11 +177,11 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     }
     
     public static <T extends ValueTuple> FunctionalSet<T> singleton(T value) {
-        return new SingletonFunctionalSet<T>(value);
+        return new SingletonFunctionalSet<>(value);
     }
     
     public static <T extends ValueTuple> FunctionalSet<T> unmodifiableSet(FunctionalSet<T> set) {
-        return new UnmodifiableSet<T>(set);
+        return new UnmodifiableSet<>(set);
     }
     
     public static <T extends ValueTuple> FunctionalSet<T> empty() {
@@ -245,7 +252,7 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     
     public Collection<T> getValuesForGroups(Object in) {
         
-        Collection<T> values = new FunctionalSet<T>();
+        Collection<T> values = new FunctionalSet<>();
         if (in instanceof String) {
             
             Object value = this.getValueForGroup((String) in);
@@ -269,7 +276,7 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     }
     
     public Collection<T> getValuesForGroups(Collection<String> groups) {
-        Collection<T> values = new FunctionalSet<T>();
+        Collection<T> values = new FunctionalSet<>();
         for (String group : groups) {
             T obj = this.getValueForGroup(group);
             if (obj != null) {
@@ -303,7 +310,7 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
                 }
             }
         }
-        return groups.size() > 0 ? groups.iterator().next() : null;
+        return !groups.isEmpty() ? groups.iterator().next() : null;
     }
     
     public Object getGroupsForValue(int value) {
@@ -346,7 +353,7 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
      * instanceof Type && rightValue instanceof Type) { return ((Type) leftValue).getDelegate().compareTo(((Type) rightValue).getDelegate()); } return 0; }
      */
     public Object compareWith(Object reference, String operatorString) {
-        Collection<Object> values = new HashSet<Object>();
+        Collection<Object> values = new HashSet<>();
         for (Iterator<T> iterator = iterator(); iterator.hasNext();) {
             ValueTuple next = iterator.next();
             Object nextValue = next.getValue();

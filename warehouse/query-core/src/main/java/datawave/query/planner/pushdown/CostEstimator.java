@@ -51,7 +51,7 @@ public class CostEstimator {
                     String pattern = JexlASTHelper.getLiteralValue(node).toString();
                     
                     // if the term is _ANYFIELD_ (could not expand), then treat as 0 cost
-                    if (fieldName.equals(Constants.ANY_FIELD)) {
+                    if (fieldName.equals(Constants.ANY_FIELD) || fieldName.equals(Constants.NO_FIELD)) {
                         return new Cost(0l, 0l);
                     }
                     
@@ -85,7 +85,7 @@ public class CostEstimator {
                     String fieldName = JexlASTHelper.getIdentifier(node);
                     
                     // if the term is _ANYFIELD_ (could not expand), then treat as 0 cost
-                    if (fieldName.equals(Constants.ANY_FIELD)) {
+                    if (fieldName.equals(Constants.ANY_FIELD) || fieldName.equals(Constants.NO_FIELD)) {
                         return new Cost(0l, 0l);
                     }
                     

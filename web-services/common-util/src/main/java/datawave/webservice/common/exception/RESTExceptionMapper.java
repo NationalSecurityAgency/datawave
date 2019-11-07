@@ -62,17 +62,23 @@ public class RESTExceptionMapper implements ExceptionMapper<Exception> {
         if (e instanceof WebApplicationException) {
             WebApplicationException web = (WebApplicationException) e;
             Response r = web.getResponse();
-            r.getMetadata().put(Constants.RESPONSE_ORIGIN, Collections.singletonList((Object) RESPONSE_ORIGIN));
+            r.getHeaders().put(Constants.RESPONSE_ORIGIN, Collections.singletonList(RESPONSE_ORIGIN));
             // Add CORS headers in case this is a CORS request that has thrown an exception. We have to add
             // this so that they can see the response body
-            r.getMetadata().add(CorsHeaders.ACCESS_CONTROL_MAX_AGE, DatawaveCorsFilter.MAX_AGE);
-            r.getMetadata().add(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
-            r.getMetadata().add(CorsHeaders.ACCESS_CONTROL_ALLOW_HEADERS, DatawaveCorsFilter.ALLOWED_HEADERS);
-            r.getMetadata().add(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, DatawaveCorsFilter.ALLOW_CREDENTIALS);
+            r.getHeaders().add(CorsHeaders.ACCESS_CONTROL_MAX_AGE, DatawaveCorsFilter.MAX_AGE);
+            r.getHeaders().add(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
+            r.getHeaders().add(CorsHeaders.ACCESS_CONTROL_ALLOW_HEADERS, DatawaveCorsFilter.ALLOWED_HEADERS);
+            r.getHeaders().add(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, DatawaveCorsFilter.ALLOW_CREDENTIALS);
             if (e instanceof NoResultsException) {
                 NoResultsException noResultsException = (NoResultsException) e;
-                r.getMetadata().add(Constants.OPERATION_TIME, noResultsException.getEndTime() - noResultsException.getStartTime());
+                r.getHeaders().add(Constants.OPERATION_TIME, noResultsException.getEndTime() - noResultsException.getStartTime());
             }
+            
+            if (web.getCause() instanceof QueryException) {
+                QueryException qe = (QueryException) web.getCause();
+                r.getHeaders().add(Constants.ERROR_CODE, qe.getBottomQueryException().getErrorCode());
+            }
+            
             return r;
         } else {
             VoidResponse response = new VoidResponse();
@@ -103,11 +109,11 @@ public class RESTExceptionMapper implements ExceptionMapper<Exception> {
                 }
                 
                 if (message.startsWith("java.lang.IllegalArgumentException: ")) {
-                    qe.setErrorCode(Integer.toString(Response.Status.BAD_REQUEST.getStatusCode()) + "-1");
+                    qe.setErrorCode(Response.Status.BAD_REQUEST.getStatusCode() + "-1");
                 } else if ((e.getClass() == javax.ejb.EJBAccessException.class) && (message.equals("Caller unauthorized"))) {
-                    qe.setErrorCode(Integer.toString(Response.Status.FORBIDDEN.getStatusCode()) + "-1");
+                    qe.setErrorCode(Response.Status.FORBIDDEN.getStatusCode() + "-1");
                 } else if (e instanceof EJBAccessException && message.startsWith("WFLYEJB0364:")) {
-                    qe.setErrorCode(Integer.toString(Response.Status.FORBIDDEN.getStatusCode()) + "-1");
+                    qe.setErrorCode(Response.Status.FORBIDDEN.getStatusCode() + "-1");
                 } else {
                     qe.setErrorCode(DatawaveErrorCode.UNKNOWN_SERVER_ERROR.getErrorCode());
                 }
@@ -115,7 +121,7 @@ public class RESTExceptionMapper implements ExceptionMapper<Exception> {
             
             response.addException(qe.getBottomQueryException());
             ResponseBuilder r = Response.status(qe.getBottomQueryException().getStatusCode()).entity(response)
-                            .header(Constants.RESPONSE_ORIGIN, RESPONSE_ORIGIN);
+                            .header(Constants.RESPONSE_ORIGIN, RESPONSE_ORIGIN).header(Constants.ERROR_CODE, qe.getBottomQueryException().getErrorCode());
             // Add CORS headers in case this is a CORS request that has thrown an exception. We have to add
             // this so that they can see the response body
             r.header(CorsHeaders.ACCESS_CONTROL_MAX_AGE, DatawaveCorsFilter.MAX_AGE);

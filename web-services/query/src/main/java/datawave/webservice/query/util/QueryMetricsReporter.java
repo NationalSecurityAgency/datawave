@@ -11,9 +11,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import datawave.util.cli.PasswordConverter;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.MetricsMessages.QueryMetric;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -128,7 +128,7 @@ public class QueryMetricsReporter {
         String instanceName = cli.getOptionValue(instanceOpt.getOpt());
         String zookeepers = cli.getOptionValue(zookeepersOpt.getOpt());
         String username = cli.getOptionValue(userOpt.getOpt());
-        byte[] password = cli.getOptionValue(passwordOpt.getOpt()).getBytes();
+        byte[] password = PasswordConverter.parseArg(cli.getOptionValue(passwordOpt.getOpt())).getBytes();
         String tableName = cli.getOptionValue(tableOpt.getOpt());
         
         String begin = cli.getOptionValue(beginOpt.getOpt());

@@ -122,7 +122,7 @@ public final class TermWeight {
                         }
                         case 24: {
                             if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                                termOffset_ = new java.util.ArrayList<java.lang.Integer>();
+                                termOffset_ = new java.util.ArrayList<>();
                                 mutable_bitField0_ |= 0x00000001;
                             }
                             termOffset_.add(input.readUInt32());
@@ -132,7 +132,7 @@ public final class TermWeight {
                             int length = input.readRawVarint32();
                             int limit = input.pushLimit(length);
                             if (!((mutable_bitField0_ & 0x00000001) == 0x00000001) && input.getBytesUntilLimit() > 0) {
-                                termOffset_ = new java.util.ArrayList<java.lang.Integer>();
+                                termOffset_ = new java.util.ArrayList<>();
                                 mutable_bitField0_ |= 0x00000001;
                             }
                             while (input.getBytesUntilLimit() > 0) {
@@ -143,7 +143,7 @@ public final class TermWeight {
                         }
                         case 32: {
                             if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                                prevSkips_ = new java.util.ArrayList<java.lang.Integer>();
+                                prevSkips_ = new java.util.ArrayList<>();
                                 mutable_bitField0_ |= 0x00000002;
                             }
                             prevSkips_.add(input.readUInt32());
@@ -153,7 +153,7 @@ public final class TermWeight {
                             int length = input.readRawVarint32();
                             int limit = input.pushLimit(length);
                             if (!((mutable_bitField0_ & 0x00000002) == 0x00000002) && input.getBytesUntilLimit() > 0) {
-                                prevSkips_ = new java.util.ArrayList<java.lang.Integer>();
+                                prevSkips_ = new java.util.ArrayList<>();
                                 mutable_bitField0_ |= 0x00000002;
                             }
                             while (input.getBytesUntilLimit() > 0) {
@@ -164,7 +164,7 @@ public final class TermWeight {
                         }
                         case 40: {
                             if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                                score_ = new java.util.ArrayList<java.lang.Integer>();
+                                score_ = new java.util.ArrayList<>();
                                 mutable_bitField0_ |= 0x00000004;
                             }
                             score_.add(input.readUInt32());
@@ -174,7 +174,7 @@ public final class TermWeight {
                             int length = input.readRawVarint32();
                             int limit = input.pushLimit(length);
                             if (!((mutable_bitField0_ & 0x00000004) == 0x00000004) && input.getBytesUntilLimit() > 0) {
-                                score_ = new java.util.ArrayList<java.lang.Integer>();
+                                score_ = new java.util.ArrayList<>();
                                 mutable_bitField0_ |= 0x00000004;
                             }
                             while (input.getBytesUntilLimit() > 0) {
@@ -470,8 +470,7 @@ public final class TermWeight {
         
         @java.lang.Override
         protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-            Builder builder = new Builder(parent);
-            return builder;
+            return new Builder(parent);
         }
         
         /**
@@ -643,7 +642,7 @@ public final class TermWeight {
             
             private void ensureTermOffsetIsMutable() {
                 if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-                    termOffset_ = new java.util.ArrayList<java.lang.Integer>(termOffset_);
+                    termOffset_ = new java.util.ArrayList<>(termOffset_);
                     bitField0_ |= 0x00000001;
                 }
             }
@@ -714,7 +713,7 @@ public final class TermWeight {
             
             private void ensurePrevSkipsIsMutable() {
                 if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-                    prevSkips_ = new java.util.ArrayList<java.lang.Integer>(prevSkips_);
+                    prevSkips_ = new java.util.ArrayList<>(prevSkips_);
                     bitField0_ |= 0x00000002;
                 }
             }
@@ -785,7 +784,7 @@ public final class TermWeight {
             
             private void ensureScoreIsMutable() {
                 if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-                    score_ = new java.util.ArrayList<java.lang.Integer>(score_);
+                    score_ = new java.util.ArrayList<>(score_);
                     bitField0_ |= 0x00000004;
                 }
             }

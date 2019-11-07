@@ -1,7 +1,11 @@
 package datawave.ingest.table.config;
 
-import com.google.common.collect.*;
-import org.apache.accumulo.core.client.*;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
@@ -10,7 +14,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
 public class LoadDateTableConfigHelper extends AbstractTableConfigHelper {
     public static final String LOAD_DATES_ENABLED_PROP = "metadata.loaddates.enabled";
@@ -63,7 +68,7 @@ public class LoadDateTableConfigHelper extends AbstractTableConfigHelper {
     }
     
     public static String getLoadDatesTableName(Configuration conf) {
-        return conf.get(LOAD_DATES_TABLE_NAME_PROP, "LoadDates");
+        return conf.get(LOAD_DATES_TABLE_NAME_PROP, TableName.LOAD_DATES);
     }
     
     public static int getLoadDatesTableLoaderPriority(Configuration conf) {

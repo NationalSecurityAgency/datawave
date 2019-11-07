@@ -19,7 +19,7 @@ public class ContentQueryConfiguration extends GenericQueryConfiguration {
     private static final long serialVersionUID = 1662850178943683419L;
     
     private Query query;
-    private final Collection<Range> ranges = new TreeSet<Range>();
+    private final Collection<Range> ranges = new TreeSet<>();
     
     public ContentQueryConfiguration(BaseQueryLogic<?> configuredLogic, Query query) {
         super(configuredLogic);
@@ -41,7 +41,7 @@ public class ContentQueryConfiguration extends GenericQueryConfiguration {
     public Collection<Range> getRanges() {
         final Collection<Range> orderedCopy;
         synchronized (this.ranges) {
-            orderedCopy = new ArrayList<Range>(this.ranges);
+            orderedCopy = new ArrayList<>(this.ranges);
         }
         return orderedCopy;
     }

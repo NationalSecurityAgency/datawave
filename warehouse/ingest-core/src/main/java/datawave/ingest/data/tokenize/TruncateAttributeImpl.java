@@ -1,6 +1,7 @@
 package datawave.ingest.data.tokenize;
 
 import org.apache.lucene.util.AttributeImpl;
+import org.apache.lucene.util.AttributeReflector;
 
 public class TruncateAttributeImpl extends AttributeImpl implements TruncateAttribute {
     
@@ -21,6 +22,12 @@ public class TruncateAttributeImpl extends AttributeImpl implements TruncateAttr
     @Override
     public void clear() {
         this.truncated = false;
+    }
+    
+    @Override
+    public void reflectWith(AttributeReflector reflector) {
+        reflector.reflect(TruncateAttribute.class, "truncated", isTruncated());
+        reflector.reflect(TruncateAttribute.class, "originalLength", getOriginalLength());
     }
     
     @Override

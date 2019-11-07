@@ -22,7 +22,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
@@ -75,16 +74,8 @@ public class AccumuloTableIterable extends AccumuloTreeIterable<Key,DocumentData
     public Iterator<Entry<DocumentData,Document>> iterator() {
         final DocumentDataIterator docItr = new DocumentDataIterator(this.source, this.environment, this.options, this.totalRange, this.filter, this.eq,
                         this.evaluationFilter, this.includeChildCount, this.includeParent);
-        Iterator<Entry<DocumentData,Document>> itr = Iterators.transform(docItr, new Function<DocumentData,Entry<DocumentData,Document>>() {
-            
-            @Override
-            public Entry<DocumentData,Document> apply(DocumentData from) {
-                return Maps.immutableEntry(from, new Document());
-            }
-            
-        });
         
-        return itr;
+        return Iterators.transform(docItr, from -> Maps.immutableEntry(from, new Document()));
     }
     
     @Override

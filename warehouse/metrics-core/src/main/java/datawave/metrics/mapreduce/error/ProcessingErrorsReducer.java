@@ -1,6 +1,7 @@
 package datawave.metrics.mapreduce.error;
 
 import java.io.IOException;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -40,15 +41,13 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
             try {
                 writer.close();
             } catch (MutationsRejectedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Problem adding mutations: {}", e);
             }
         if (warehouseWriter != null)
             try {
                 warehouseWriter.close();
             } catch (MutationsRejectedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Problem adding mutations: {}", e);
             }
     }
     
@@ -106,9 +105,8 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         
         try {
             warehouseWriter.addMutation(m);
-        } catch (MutationsRejectedException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+        } catch (MutationsRejectedException e) {
+            log.error("Problem adding mutations: {}", e);
         }
         
         for (Text value : values) {
@@ -128,7 +126,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         try {
             date = DateHelper.parseTimeExactToSeconds(jobTime);
             timeString = Long.toString(date.getTime());
-        } catch (IllegalArgumentException e) {
+        } catch (DateTimeParseException e) {
             throw new IOException(e);
         }
         
@@ -144,8 +142,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
             try {
                 writer.addMutation(m);
             } catch (MutationsRejectedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Problem adding mutations: {}", e);
             }
             
             // context.write(table,m);
@@ -157,8 +154,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
             try {
                 writer.addMutation(m);
             } catch (MutationsRejectedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Problem adding mutations: {}", e);
             }
             
             // context.write(table,m);
@@ -175,8 +171,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
             try {
                 writer.addMutation(m);
             } catch (MutationsRejectedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Problem adding mutations: {}", e);
             }
             
             m = new Mutation(timeString);
@@ -187,8 +182,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
             try {
                 writer.addMutation(m);
             } catch (MutationsRejectedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Problem adding mutations: {}", e);
             }
             
             m = new Mutation(new Text(keySplit[2]));
@@ -200,12 +194,9 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
             try {
                 writer.addMutation(m);
             } catch (MutationsRejectedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Problem adding mutations: {}", e);
             }
-            
             // context.write(table,m);
-            
         }
     }
 }

@@ -33,18 +33,11 @@ import org.apache.lucene.search.TermQuery;
  */
 public class RegexpQueryNodeBuilder implements QueryBuilder {
     
-    public RegexpQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         JexlNode returnNode = null;
         
         if (queryNode instanceof RegexpQueryNode) {
             RegexpQueryNode regexpQueryNode = (RegexpQueryNode) queryNode;
-            
-            System.out.println(regexpQueryNode.getClass().getCanonicalName());
-            
             String field = regexpQueryNode.getFieldAsString();
             UnescapedCharSequence ecs = (UnescapedCharSequence) regexpQueryNode.getText();
             

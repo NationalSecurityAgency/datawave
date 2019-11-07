@@ -13,8 +13,15 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
  */
 public interface DocumentIterator extends SortedKeyValueIterator<Key,Value> {
     // get the document
-    public Document document();
+    Document document();
     
-    // move forward
-    public void move(Key pointer) throws IOException;
+    /**
+     * Move the iterator forward to the first Key great than or equal to pointer
+     *
+     * @param pointer
+     * @throws IOException
+     * @throws IllegalStateException
+     *             if getTopKey() is greater than or equal to pointer
+     */
+    void move(Key pointer) throws IOException;
 }

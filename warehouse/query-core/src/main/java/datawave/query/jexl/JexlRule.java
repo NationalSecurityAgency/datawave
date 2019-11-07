@@ -13,7 +13,6 @@ import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.util.StringUtils;
 
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -44,7 +43,12 @@ public class JexlRule extends AppliedRule {
     
     @Override
     public void init(FilterOptions options) {
-        super.init(options);
+        init(options, null);
+    }
+    
+    @Override
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
+        super.init(options, iterEnv);
         
         isApplied = false;
         
@@ -57,6 +61,7 @@ public class JexlRule extends AppliedRule {
         iterOptions.put(QueryOptions.FILTER_MASKED_VALUES, "true");
         iterOptions.put(QueryOptions.INCLUDE_DATATYPE, "true");
         iterOptions.put(QueryOptions.INDEX_ONLY_FIELDS, "");
+        iterOptions.put(QueryOptions.INDEXED_FIELDS, "");
         iterOptions.put(QueryOptions.START_TIME, "0");
         iterOptions.put(QueryOptions.END_TIME, Long.toString(Long.MAX_VALUE));
         iterOptions.put(QueryOptions.POSTPROCESSING_CLASSES, "");
@@ -108,7 +113,7 @@ public class JexlRule extends AppliedRule {
                 if (log.isDebugEnabled())
                     log.debug(topKey);
                 queryIter.seek(new Range(new Key(topKey.getRow(), topKey.getColumnFamily()), true, topKey.followingKey(PartialKey.ROW_COLFAM), false),
-                                Collections.<ByteSequence> emptyList(), false);
+                                Collections.emptyList(), false);
                 
             } catch (IOException e) {
                 log.error(e);

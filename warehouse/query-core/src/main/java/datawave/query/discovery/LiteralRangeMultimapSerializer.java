@@ -31,7 +31,7 @@ public class LiteralRangeMultimapSerializer implements JsonSerializer<Multimap<S
         for (Entry<String,JsonElement> e : json.getAsJsonObject().entrySet()) {
             JsonArray values = e.getValue().getAsJsonArray();
             if (values.size() == 0) {
-                mm.putAll(e.getKey(), Collections.<LiteralRange<String>> emptyList());
+                mm.putAll(e.getKey(), Collections.emptyList());
             } else {
                 for (JsonElement value : values)
                     mm.put(e.getKey(), lrSerializer.deserialize(value, typeOfT, context));

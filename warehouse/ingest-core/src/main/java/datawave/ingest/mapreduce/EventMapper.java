@@ -8,7 +8,6 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.filter.KeyValueFilter;
@@ -19,6 +18,7 @@ import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.input.reader.event.EventErrorSummary;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.error.ErrorDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.ConstraintChecker;
 import datawave.ingest.mapreduce.job.metrics.KeyValueCountingContextWriter;
@@ -109,6 +109,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     
     protected boolean createSequenceFileName = true;
     
+    protected boolean trimSequenceFileName = true;
+    
     protected boolean createRawFileName = true;
     
     public static final String LOAD_DATE_FIELDNAME = "LOAD_DATE";
@@ -116,6 +118,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     public static final String SEQUENCE_FILE_FIELDNAME = "ORIG_FILE";
     
     public static final String LOAD_SEQUENCE_FILE_NAME = "ingest.event.mapper.load.seq.filename";
+    
+    public static final String TRIM_SEQUENCE_FILE_NAME = "ingest.event.mapper.trim.sequence.filename";
     
     public static final String RAW_FILE_FIELDNAME = "RAW_FILE";
     
@@ -184,6 +188,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         
         // default to true, but it can be disabled
         createSequenceFileName = context.getConfiguration().getBoolean(LOAD_SEQUENCE_FILE_NAME, true);
+        
+        trimSequenceFileName = context.getConfiguration().getBoolean(TRIM_SEQUENCE_FILE_NAME, true);
         
         createRawFileName = context.getConfiguration().getBoolean(LOAD_RAW_FILE_NAME, true);
         
@@ -285,7 +291,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // Do not load the type twice
         if (!typeMap.containsKey(typeStr)) {
             
-            typeMap.put(typeStr, new ArrayList<DataTypeHandler<K1>>());
+            typeMap.put(typeStr, new ArrayList<>());
             
             long myInterval = context.getConfiguration().getLong(typeStr + "." + DISCARD_INTERVAL, interval);
             
@@ -398,21 +404,26 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         boolean reprocessedNDCPush = false;
         
         byte[] rawData = value.getRawData();
-        long rawDataBytes = rawData.length;
-        getCounter(context, IngestInput.LINE_BYTES.toString(), "TOTAL").increment(rawDataBytes);
-        long minBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").getValue();
-        if (rawDataBytes < minBytes) {
-            getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").setValue(rawDataBytes);
-        }
-        long maxBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").getValue();
-        if (rawDataBytes > maxBytes) {
-            getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").setValue(rawDataBytes);
+        if (rawData != null) {
+            long rawDataBytes = rawData.length;
+            getCounter(context, IngestInput.LINE_BYTES.toString(), "TOTAL").increment(rawDataBytes);
+            long minBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").getValue();
+            if (rawDataBytes < minBytes) {
+                getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").setValue(rawDataBytes);
+            }
+            long maxBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").getValue();
+            if (rawDataBytes > maxBytes) {
+                getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").setValue(rawDataBytes);
+            }
         }
         
         // First lets clear this event from the error table if we are reprocessing a previously errored event
         if (value.getAuxData() instanceof EventErrorSummary) {
             EventErrorSummary errorSummary = (EventErrorSummary) (value.getAuxData());
             value.setAuxData(null);
+            
+            // pass the processedCount through via the aux properties
+            value.setAuxProperty(ErrorDataTypeHandler.PROCESSED_COUNT, Integer.toString(errorSummary.getProcessedCount() + 1));
             
             // delete these keys from the error table. If this fails then nothing will have changed
             if (log.isInfoEnabled())
@@ -440,10 +451,13 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 contextWriter.commit(context);
                 context.progress();
             }
+        } else {
+            // pass the processedCount through via the aux properties
+            value.setAuxProperty(ErrorDataTypeHandler.PROCESSED_COUNT, "1");
         }
         
-        // Determine whether the event date is greater than the interval.
-        if (null != myInterval && 0L != myInterval && (value.getDate() < (now.get() - myInterval))) {
+        // Determine whether the event date is greater than the interval. Excluding fatal error events.
+        if (!value.fatalError() && null != myInterval && 0L != myInterval && (value.getDate() < (now.get() - myInterval))) {
             if (log.isInfoEnabled())
                 log.info("Event with time " + value.getDate() + " older than specified interval of " + (now.get() - myInterval) + ", skipping...");
             getCounter(context, IngestInput.OLD_EVENT).increment(1);
@@ -739,8 +753,12 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         if (handler.getHelper(value.getDataType()) instanceof CompositeIngest) {
             CompositeIngest vHelper = (CompositeIngest) handler.getHelper(value.getDataType());
             Multimap<String,NormalizedContentInterface> compositeFields = vHelper.getCompositeFields(newFields);
-            for (Entry<String,NormalizedContentInterface> v : compositeFields.entries())
-                newFields.put(v.getKey(), v.getValue());
+            for (String fieldName : compositeFields.keySet()) {
+                // if this is an overloaded composite field, we are replacing the existing field data
+                if (vHelper.isOverloadedCompositeField(fieldName))
+                    newFields.removeAll(fieldName);
+                newFields.putAll(fieldName, compositeFields.get(fieldName));
+            }
         }
         
         // Create a LOAD_DATE parameter, which is the current time in milliseconds, for all datatypes
@@ -755,7 +773,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // place the sequence filename into the event
         if (createSequenceFileName) {
             seqFileName = NDC.peek();
-            seqFileName = StringUtils.substringAfterLast(seqFileName, "/");
+            
+            if (trimSequenceFileName) {
+                seqFileName = StringUtils.substringAfterLast(seqFileName, "/");
+            }
+            
             if (null != seqFileName) {
                 StringBuilder seqFile = new StringBuilder(seqFileName);
                 

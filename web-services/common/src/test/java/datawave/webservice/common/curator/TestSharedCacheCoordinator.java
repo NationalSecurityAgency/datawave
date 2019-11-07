@@ -9,7 +9,6 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.recipes.shared.SharedCount;
@@ -347,24 +346,20 @@ public class TestSharedCacheCoordinator implements Serializable {
     public void watchForEvictions(final EvictionCallback callback) {
         ArgumentChecker.notNull(callback);
         
-        evictionPathCache.getListenable().addListener(new PathChildrenCacheListener() {
-            
-            @Override
-            public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-                if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
-                    // Call our eviction handler to do local eviction
-                    String path = event.getData().getPath();
-                    String dn = ZKPaths.getNodeFromPath(path);
-                    callback.evict(dn);
-                    
-                    // Now register ourselves under the eviction node that that once
-                    // a child for each running web server appears, the eviction node
-                    // can be cleaned up.
-                    String responsePath = ZKPaths.makePath(path, localName);
-                    curatorClient.newNamespaceAwareEnsurePath(responsePath).ensure(curatorClient.getZookeeperClient());
-                }
-            }
-        });
+        evictionPathCache.getListenable().addListener((client, event) -> {
+            if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
+                // Call our eviction handler to do local eviction
+                        String path = event.getData().getPath();
+                        String dn = ZKPaths.getNodeFromPath(path);
+                        callback.evict(dn);
+                        
+                        // Now register ourselves under the eviction node that that once
+                        // a child for each running web server appears, the eviction node
+                        // can be cleaned up.
+                        String responsePath = ZKPaths.makePath(path, localName);
+                        curatorClient.newNamespaceAwareEnsurePath(responsePath).ensure(curatorClient.getZookeeperClient());
+                    }
+                });
     }
     
     /**

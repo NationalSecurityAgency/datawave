@@ -5,7 +5,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.AuditParameterBuilder;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -20,7 +20,6 @@ import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.ModificationConfigurationResponse;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
@@ -44,11 +43,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-
 import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -86,7 +83,7 @@ public class ModificationBean {
     private ModificationConfiguration modificationConfiguration;
     
     @Inject
-    private AuditParameters auditParameters;
+    private AuditParameterBuilder auditParameterBuilder;
     
     /**
      * Returns a list of the Modification service names and their configurations
@@ -187,8 +184,7 @@ public class ModificationBean {
             
             if (service.getRequiresAudit()) {
                 try {
-                    auditParameters.clear();
-                    auditParameters.validate(request.toMap());
+                    auditParameterBuilder.convertAndValidate(request.toMap());
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
                     log.error(qe);
@@ -200,7 +196,7 @@ public class ModificationBean {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             con = connectionFactory.getConnection(modificationConfiguration.getPoolName(), priority, trackingMap);
             service.setQueryService(queryService);
-            log.info("Processing modification request from user=" + user + ": \n" + request.toString());
+            log.info("Processing modification request from user=" + user + ": \n" + request);
             service.process(con, request, cache.getCachedMutableFieldList(), cbAuths, user);
             return response;
         } catch (DatawaveWebApplicationException e) {

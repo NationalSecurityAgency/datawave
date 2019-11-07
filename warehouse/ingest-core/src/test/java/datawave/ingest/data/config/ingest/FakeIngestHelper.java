@@ -19,7 +19,7 @@ public class FakeIngestHelper extends BaseIngestHelper {
     @Override
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
         Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
-        Map<String,String> markings = new HashMap<String,String>();
+        Map<String,String> markings = new HashMap<>();
         markings.put("P", "PERSONAL");
         
         eventFields.put("FAKE_FIELD", new NormalizedFieldAndValue("FAKE_FIELD", "fake value", markings));

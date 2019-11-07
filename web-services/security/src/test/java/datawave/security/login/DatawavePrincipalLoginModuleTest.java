@@ -6,9 +6,15 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.net.Socket;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.security.acl.Group;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -17,7 +23,10 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.X509KeyManager;
 import javax.security.auth.Subject;
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.FailedLoginException;
@@ -29,6 +38,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.security.util.DnUtils.NpeUtils;
@@ -75,6 +85,60 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         callbackHandler = new MockCallbackHandler("Username: ", "Credentials: ");
         
+        truststore = KeyStore.getInstance("PKCS12");
+        truststore.load(getClass().getResourceAsStream("/ca.pkcs12"), "secret".toCharArray());
+        keystore = KeyStore.getInstance("PKCS12");
+        keystore.load(getClass().getResourceAsStream("/testUser.pkcs12"), "secret".toCharArray());
+        serverKeystore = KeyStore.getInstance("PKCS12");
+        serverKeystore.load(getClass().getResourceAsStream("/testServer.pkcs12"), "secret".toCharArray());
+        testUserCert = (X509Certificate) keystore.getCertificate("testuser");
+        testServerCert = (X509Certificate) serverKeystore.getCertificate("testserver");
+        
+        KeyManager keyManager = new X509KeyManager() {
+            @Override
+            public String[] getClientAliases(String s, Principal[] principals) {
+                return new String[0];
+            }
+            
+            @Override
+            public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+                return null;
+            }
+            
+            @Override
+            public String[] getServerAliases(String s, Principal[] principals) {
+                return new String[0];
+            }
+            
+            @Override
+            public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
+                return null;
+            }
+            
+            @Override
+            public X509Certificate[] getCertificateChain(String s) {
+                try {
+                    return Arrays.stream(keystore.getCertificateChain(s)).map(X509Certificate.class::cast).toArray(X509Certificate[]::new);
+                } catch (KeyStoreException e) {
+                    fail(e.getMessage());
+                    return null;
+                }
+            }
+            
+            @Override
+            public PrivateKey getPrivateKey(String s) {
+                try {
+                    return (PrivateKey) keystore.getKey(s, "secret".toCharArray());
+                } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
+                    fail(e.getMessage());
+                    return null;
+                }
+            }
+        };
+        
+        expect(securityDomain.getKeyStore()).andReturn(keystore);
+        expect(securityDomain.getKeyManagers()).andReturn(new KeyManager[] {keyManager});
+        
         replayAll();
         
         HashMap<String,String> sharedState = new HashMap<>();
@@ -84,6 +148,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         options.put("passwordStacking", "useFirstPass");
         options.put("ocspLevel", "required");
         options.put("blacklistUserRole", BLACKLIST_ROLE);
+        options.put("requiredRoles", "AuthorizedUser:AuthorizedServer:OtherRequiredRole");
         
         Whitebox.setInternalState(datawaveLoginModule, DatawaveUserService.class, datawaveUserService);
         Whitebox.setInternalState(datawaveLoginModule, JSSESecurityDomain.class, securityDomain);
@@ -91,15 +156,6 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         verifyAll();
         resetAll();
-        
-        truststore = KeyStore.getInstance("PKCS12");
-        truststore.load(getClass().getResourceAsStream("/ca.pkcs12"), "secret".toCharArray());
-        keystore = KeyStore.getInstance("PKCS12");
-        keystore.load(getClass().getResourceAsStream("/testUser.pkcs12"), "secret".toCharArray());
-        serverKeystore = KeyStore.getInstance("PKCS12");
-        serverKeystore.load(getClass().getResourceAsStream("/testServer.pkcs12"), "secret".toCharArray());
-        testUserCert = (X509Certificate) keystore.getCertificate("testuser");
-        testServerCert = (X509Certificate) serverKeystore.getCertificate("testserver");
         
         userDN = SubjectIssuerDNPair.of(testUserCert.getSubjectDN().getName(), testUserCert.getIssuerDN().getName());
         DatawaveUser defaultUser = new DatawaveUser(userDN, UserType.USER, null, null, null, System.currentTimeMillis());
@@ -165,6 +221,96 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         Principal p = members.nextElement();
         assertEquals(expected, p);
         assertFalse("CallerPrincipal group has too many members", members.hasMoreElements());
+        
+        verifyAll();
+    }
+    
+    @Test
+    public void testGetRoleSetsLeavesRequiredRoles() throws Exception {
+        // Proxied entities has the original user DN, plus it came through a server and
+        // the request is being made by a second server. Make sure that the resulting
+        // principal has all 3 server DNs in its list, and the user DN is not one of the
+        // server DNs.
+        String issuerDN = DnUtils.normalizeDN(testServerCert.getIssuerDN().getName());
+        String serverDN = DnUtils.normalizeDN("CN=testServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
+        String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
+        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + userDN.subjectDN() + ">";
+        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + userDN.issuerDN() + ">";
+        DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
+        callbackHandler.name = datawaveCredential.getUserName();
+        callbackHandler.credential = datawaveCredential;
+        
+        List<String> userRoles = Arrays.asList("Role1", "AuthorizedUser");
+        List<String> s1Roles = Arrays.asList("Role2", "AuthorizedServer");
+        List<String> s2Roles = Arrays.asList("Role3", "OtherRequiredRole");
+        
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, userRoles, null, System.currentTimeMillis());
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, s2Roles, null, System.currentTimeMillis());
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
+        
+        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
+        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
+        
+        replayAll();
+        
+        boolean success = datawaveLoginModule.login();
+        assertTrue("Login did not succeed.", success);
+        assertEquals(userDN, expected.getUserDN());
+        
+        Group[] roleSets = datawaveLoginModule.getRoleSets();
+        assertEquals(2, roleSets.length);
+        assertEquals("Roles", roleSets[0].getName());
+        List<String> groupSetRoles = Collections.list(roleSets[0].members()).stream().map(Principal::getName).collect(Collectors.toList());
+        assertEquals(Lists.newArrayList("Role1", "AuthorizedUser"), groupSetRoles);
+        
+        verifyAll();
+    }
+    
+    @Test
+    public void testGetRoleSetsFiltersRequiredRoles() throws Exception {
+        // Proxied entities has the original user DN, plus it came through a server and
+        // the request is being made by a second server. Make sure that the resulting
+        // principal has all 3 server DNs in its list, and the user DN is not one of the
+        // server DNs.
+        String issuerDN = DnUtils.normalizeDN(testServerCert.getIssuerDN().getName());
+        String serverDN = DnUtils.normalizeDN("CN=testServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
+        String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
+        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + userDN.subjectDN() + ">";
+        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + userDN.issuerDN() + ">";
+        DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
+        callbackHandler.name = datawaveCredential.getUserName();
+        callbackHandler.credential = datawaveCredential;
+        
+        List<String> userRoles = Arrays.asList("Role1", "AuthorizedUser");
+        List<String> s1Roles = Collections.singletonList("Role2");
+        List<String> s2Roles = Arrays.asList("Role3", "AuthorizedServer");
+        
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, userRoles, null, System.currentTimeMillis());
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, s2Roles, null, System.currentTimeMillis());
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
+        
+        expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
+        expect(securityDomain.getTrustStore()).andReturn(truststore);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
+        
+        replayAll();
+        
+        boolean success = datawaveLoginModule.login();
+        assertTrue("Login did not succeed.", success);
+        assertEquals(userDN, expected.getUserDN());
+        
+        Group[] roleSets = datawaveLoginModule.getRoleSets();
+        assertEquals(2, roleSets.length);
+        assertEquals("Roles", roleSets[0].getName());
+        List<String> groupSetRoles = Collections.list(roleSets[0].members()).stream().map(Principal::getName).collect(Collectors.toList());
+        assertEquals(Lists.newArrayList("Role1"), groupSetRoles);
         
         verifyAll();
     }
@@ -253,6 +399,39 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
         expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
+        
+        replayAll();
+        
+        boolean success = datawaveLoginModule.login();
+        assertTrue("Login did not succeed.", success);
+        assertEquals(userDN, expected.getUserDN());
+        
+        verifyAll();
+    }
+    
+    @Test
+    public void testJWTLogin() throws Exception {
+        Whitebox.setInternalState(datawaveLoginModule, "jwtHeaderLogin", true);
+        JWTTokenHandler tokenHandler = Whitebox.getInternalState(datawaveLoginModule, JWTTokenHandler.class);
+        
+        // Proxied entities has the original user DN, plus it came through a server and
+        // the request is being made by a second server. Make sure that the resulting
+        // principal has all 3 server DNs in its list, and the user DN is not one of the
+        // server DNs.
+        String issuerDN = DnUtils.normalizeDN(testServerCert.getIssuerDN().getName());
+        String serverDN = DnUtils.normalizeDN("CN=testServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
+        String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
+        SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
+        
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, null, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, null, null, System.currentTimeMillis());
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s1, s2));
+        
+        String token = tokenHandler.createTokenFromUsers(expected.getName(), expected.getProxiedUsers());
+        DatawaveCredential datawaveCredential = new DatawaveCredential(token);
+        callbackHandler.name = datawaveCredential.getUserName();
+        callbackHandler.credential = datawaveCredential;
         
         replayAll();
         

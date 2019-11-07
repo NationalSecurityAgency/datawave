@@ -13,6 +13,6 @@ public class Tuple1<A> {
     
     @Override
     public String toString() {
-        return "[" + first().toString() + "]";
+        return "[" + first() + "]";
     }
 }

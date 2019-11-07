@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -76,12 +77,12 @@ import java.util.concurrent.TimeUnit;
  * 
  */
 public class MetricsIngester extends Configured implements Tool {
-    private final static boolean createTables = true;
+    private static final boolean createTables = true;
     
-    private final static Logger log = Logger.getLogger(MetricsIngester.class);
+    private static final Logger log = Logger.getLogger(MetricsIngester.class);
     
-    protected final static byte[] emptyBytes = {};
-    protected final static Value emptyValue = new Value(emptyBytes);
+    protected static final byte[] emptyBytes = {};
+    protected static final Value emptyValue = new Value(emptyBytes);
     
     private static final int MAX_FILES = 2000;
     
@@ -111,8 +112,9 @@ public class MetricsIngester extends Configured implements Tool {
         Class<? extends Mapper<?,?,?,?>> mapperClass;
         String outTable;
         
-        FileSystem fs = FileSystem.get(conf);
-        FileStatus[] fstats = fs.listStatus(new Path(conf.get(MetricsConfig.INPUT_DIRECTORY)));
+        Path inputDirectoryPath = new Path(conf.get(MetricsConfig.INPUT_DIRECTORY));
+        FileSystem fs = FileSystem.get(inputDirectoryPath.toUri(), conf);
+        FileStatus[] fstats = fs.listStatus(inputDirectoryPath);
         Path[] files = FileUtil.stat2Paths(fstats);
         Path[] fileBuffer = new Path[MAX_FILES];
         for (int i = 0; i < files.length;) {
@@ -192,8 +194,9 @@ public class MetricsIngester extends Configured implements Tool {
         /*
          * This block allows for us to read from a virtual "snapshot" of a directory and remove only files we process.
          */
-        FileSystem fs = FileSystem.get(conf);
-        FileStatus[] fstats = fs.listStatus(new Path(conf.get(MetricsConfig.INPUT_DIRECTORY)));
+        Path inputDirectoryPath = new Path(conf.get(MetricsConfig.INPUT_DIRECTORY));
+        FileSystem fs = FileSystem.get(inputDirectoryPath.toUri(), conf);
+        FileStatus[] fstats = fs.listStatus(inputDirectoryPath);
         Path[] inPaths = {};
         if (fstats != null && fstats.length > 0) {
             inPaths = FileUtil.stat2Paths(fstats);
@@ -258,8 +261,7 @@ public class MetricsIngester extends Configured implements Tool {
             cf = iterKey.getColumnFamily().toString();
             try {
                 dateObj = DateHelper.parseTimeExactToSeconds(cf);
-                Date dateObjNext = (Date) dateObj.clone();
-                dateObjNext.setHours(dateObj.getHours() + 1);
+                Date dateObjNext = DateHelper.addHours(dateObj, 1);
                 if (calendar.getTime().compareTo(dateObj) > 0) {
                     // remove the entries older than 24 hrs. If we are restarting after a long pause,
                     // then those entries will be removed following successful access.
@@ -270,16 +272,15 @@ public class MetricsIngester extends Configured implements Tool {
                 ranges.add(new Range(new Key(new Text("IngestJob_" + outFormat.format(dateObj))), new Key(
                                 new Text("IngestJob_" + outFormat.format(dateObjNext)))));
                 
-            } catch (IllegalArgumentException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (DateTimeParseException e) {
+                log.error(e);
             }
             
         }
         
         Collection<Pair<Text,Text>> columns = new ArrayList<>();
-        columns.add(new Pair<Text,Text>(new Text("e"), null));
-        columns.add(new Pair<Text,Text>(new Text("info"), null));
+        columns.add(new Pair<>(new Text("e"), null));
+        columns.add(new Pair<>(new Text("info"), null));
         
         AccumuloInputFormat.fetchColumns(job, columns);
         
@@ -312,7 +313,7 @@ public class MetricsIngester extends Configured implements Tool {
         AccumuloOutputFormat.setBatchWriterOptions(job, new BatchWriterConfig().setMaxLatency(25, TimeUnit.MILLISECONDS));
         
         if (job.waitForCompletion(true)) {
-            if (keysToRemove.size() > 0) {
+            if (!keysToRemove.isEmpty()) {
                 bwConfig = new BatchWriterConfig().setMaxLatency(1024L, TimeUnit.MILLISECONDS).setMaxMemory(1024L).setMaxWriteThreads(8);
                 writer = Connections.metricsConnection(conf).createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE),
                                 bwConfig);

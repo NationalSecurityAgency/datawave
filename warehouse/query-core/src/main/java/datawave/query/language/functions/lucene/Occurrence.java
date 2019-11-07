@@ -14,7 +14,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public class Occurrence extends LuceneQueryFunction {
     public Occurrence() {
-        super("occurrence", new ArrayList<String>());
+        super("occurrence", new ArrayList<>());
     }
     
     @Override

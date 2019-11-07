@@ -7,5 +7,5 @@ import org.apache.accumulo.core.data.Key;
  * document.
  */
 public interface Filter {
-    public boolean keep(Key k);
+    boolean keep(Key k);
 }

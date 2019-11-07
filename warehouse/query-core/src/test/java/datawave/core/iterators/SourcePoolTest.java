@@ -15,7 +15,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Test the source pool logic
@@ -149,33 +154,28 @@ public class SourcePoolTest {
         final Set<SortedKeyValueIterator<Key,Value>> sources = new HashSet<>();
         final SourcePool<Key,Value> pool = new SourcePool(factory, 100);
         
-        final List<Throwable> failed = new ArrayList<Throwable>();
-        final List<Thread> threads = new ArrayList<Thread>();
+        final List<Throwable> failed = new ArrayList<>();
+        final List<Thread> threads = new ArrayList<>();
         
         for (int i = 0; i < 100; i++) {
-            Thread thread = new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        SortedKeyValueIterator<Key,Value> source = pool.checkOut();
-                        Assert.assertNotNull(source);
-                        Assert.assertFalse(sources.contains(source));
-                        sources.add(source);
-                        Assert.assertNotEquals(factory.source, source);
-                    } catch (Throwable e) {
-                        synchronized (failed) {
-                            e.printStackTrace();
-                            failed.add(e);
-                        }
+            Thread thread = new Thread(() -> {
+                try {
+                    SortedKeyValueIterator<Key,Value> source = pool.checkOut();
+                    Assert.assertNotNull(source);
+                    Assert.assertFalse(sources.contains(source));
+                    sources.add(source);
+                    Assert.assertNotEquals(factory.source, source);
+                } catch (Throwable e) {
+                    synchronized (failed) {
+                        log.error(e);
+                        failed.add(e);
                     }
                 }
             });
-            thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                @Override
-                public void uncaughtException(Thread t, Throwable e) {
-                    synchronized (failed) {
-                        e.printStackTrace();
-                        failed.add(e);
-                    }
+            thread.setUncaughtExceptionHandler((t, e) -> {
+                synchronized (failed) {
+                    log.error(e);
+                    failed.add(e);
                 }
             });
             thread.start();
@@ -204,25 +204,20 @@ public class SourcePoolTest {
         
         for (SortedKeyValueIterator<Key,Value> source : sources) {
             final SortedKeyValueIterator<Key,Value> threadSource = source;
-            Thread thread = new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        pool.checkIn(threadSource);
-                    } catch (Throwable e) {
-                        synchronized (failed) {
-                            e.printStackTrace();
-                            failed.add(e);
-                        }
+            Thread thread = new Thread(() -> {
+                try {
+                    pool.checkIn(threadSource);
+                } catch (Throwable e) {
+                    synchronized (failed) {
+                        log.error(e);
+                        failed.add(e);
                     }
                 }
             });
-            thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                @Override
-                public void uncaughtException(Thread t, Throwable e) {
-                    synchronized (failed) {
-                        e.printStackTrace();
-                        failed.add(e);
-                    }
+            thread.setUncaughtExceptionHandler((t, e) -> {
+                synchronized (failed) {
+                    log.error(e);
+                    failed.add(e);
                 }
             });
             thread.start();
@@ -261,35 +256,30 @@ public class SourcePoolTest {
             Assert.assertNull(source);
         }
         
-        final List<Throwable> failed = new ArrayList<Throwable>();
+        final List<Throwable> failed = new ArrayList<>();
         
         final MutableBoolean waitingForCheckOut = new MutableBoolean(true);
         final SortedKeyValueIterator<Key,Value> threadSource = sources.iterator().next();
         sources.remove(threadSource);
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    SortedKeyValueIterator<Key,Value> source = pool.checkOut(-1);
-                    waitingForCheckOut.setValue(false);
-                    Assert.assertNotNull(source);
-                    Assert.assertFalse(sources.contains(source));
-                    sources.add(source);
-                    Assert.assertNotEquals(factory.source, source);
-                } catch (Throwable e) {
-                    synchronized (failed) {
-                        e.printStackTrace();
-                        failed.add(e);
-                    }
+        Thread thread = new Thread(() -> {
+            try {
+                SortedKeyValueIterator<Key,Value> source = pool.checkOut(-1);
+                waitingForCheckOut.setValue(false);
+                Assert.assertNotNull(source);
+                Assert.assertFalse(sources.contains(source));
+                sources.add(source);
+                Assert.assertNotEquals(factory.source, source);
+            } catch (Throwable e) {
+                synchronized (failed) {
+                    log.error(e);
+                    failed.add(e);
                 }
             }
         });
-        thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                synchronized (failed) {
-                    e.printStackTrace();
-                    failed.add(e);
-                }
+        thread.setUncaughtExceptionHandler((t, e) -> {
+            synchronized (failed) {
+                log.error(e);
+                failed.add(e);
             }
         });
         

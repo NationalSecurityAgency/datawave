@@ -1,31 +1,29 @@
 package datawave.query.function;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-
+import com.google.common.base.Function;
+import datawave.query.attributes.Document;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.iterator.IndexOnlyFunctionIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.IndexOnlyJexlContext;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.IndexOnlyFunctionIterator;
-import datawave.query.iterator.QueryOptions;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.predicate.TimeFilter;
-import datawave.query.util.CompositeMetadata;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.JexlContext;
 
-import com.google.common.base.Function;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Creates a specialized, lazy-fetching IndexOnlyJexlContext if a query includes at least one filter evaluation for an index-only field (e.g., BODY, FOOT, HEAD,
@@ -103,7 +101,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, JexlContextValueComparator comparatorFactory) {
-        this(source, range, typeMetadata, compositeMetadata, options, Collections.<String> emptySet(), comparatorFactory);
+        this(source, range, typeMetadata, compositeMetadata, options, Collections.emptySet(), comparatorFactory);
     }
     
     @Override
@@ -138,11 +136,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     }
     
     public CompositeMetadata getCompositeMetadata() {
-        if (null != this.compositeMetadata) {
-            return new CompositeMetadata(this.compositeMetadata);
-        } else {
-            return new CompositeMetadata();
-        }
+        return compositeMetadata;
     }
     
     public Range getRange() {

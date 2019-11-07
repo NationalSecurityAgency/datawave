@@ -9,13 +9,16 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
- * function to test whether two key/value pairs match within datafields of the same (grouping context) group For example FROM_ADDRESS.1 == 1.2.3.4 and
- * DIRECTION.1 == 1
+ * <pre>
+ * function to test whether two key/value pairs match within datafields of the same (grouping context) group.
+ * For example GENDER.1 == 'male' and AGE.1 == 21
+ *
+ * </pre>
  */
 public class MatchesInGroupFunction extends JexlQueryFunction {
     
     public MatchesInGroupFunction() {
-        super("matches_in_group", new ArrayList<String>());
+        super("matches_in_group", new ArrayList<>());
     }
     
     @Override

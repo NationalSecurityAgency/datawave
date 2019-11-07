@@ -27,7 +27,7 @@ public class MultimapSerializer implements JsonSerializer<Multimap<String,String
         for (Entry<String,JsonElement> e : json.getAsJsonObject().entrySet()) {
             JsonArray values = e.getValue().getAsJsonArray();
             if (values.size() == 0) {
-                mm.putAll(e.getKey(), Collections.<String> emptyList());
+                mm.putAll(e.getKey(), Collections.emptyList());
             } else {
                 for (JsonElement value : values)
                     mm.put(e.getKey(), value.getAsString());

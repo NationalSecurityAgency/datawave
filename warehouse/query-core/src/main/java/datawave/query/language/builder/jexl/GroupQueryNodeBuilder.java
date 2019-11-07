@@ -35,10 +35,6 @@ import org.apache.lucene.search.Query;
  */
 public class GroupQueryNodeBuilder implements QueryBuilder {
     
-    public GroupQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         GroupQueryNode groupNode = (GroupQueryNode) queryNode;
         

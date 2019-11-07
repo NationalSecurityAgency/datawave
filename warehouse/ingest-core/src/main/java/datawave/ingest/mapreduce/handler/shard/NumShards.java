@@ -206,7 +206,8 @@ public class NumShards {
         return initialized;
     }
     
-    public void updateCache(FileSystem fs) throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
+    public void updateCache() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
+        FileSystem fs = this.numShardsCachePath.getFileSystem(this.conf);
         String metadataTableName = ConfigurationHelper.isNull(this.conf, ShardedDataTypeHandler.METADATA_TABLE_NAME, String.class);
         log.info("Reading the " + metadataTableName + " for multiple numshards configuration");
         

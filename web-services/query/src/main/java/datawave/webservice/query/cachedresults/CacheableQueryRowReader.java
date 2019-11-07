@@ -16,9 +16,9 @@ import org.apache.log4j.Logger;
 
 public class CacheableQueryRowReader {
     
-    static private Logger log = Logger.getLogger(CacheableQueryRowReader.class);
+    private static Logger log = Logger.getLogger(CacheableQueryRowReader.class);
     
-    static public CacheableQueryRow createRow(CachedRowSet cachedRowSet, Set<String> fixedFieldsInEvent) {
+    public static CacheableQueryRow createRow(CachedRowSet cachedRowSet, Set<String> fixedFieldsInEvent) {
         
         CacheableQueryRowImpl cqfc = new CacheableQueryRowImpl();
         
@@ -27,9 +27,9 @@ public class CacheableQueryRowReader {
             metadata = cachedRowSet.getMetaData();
             
             int numColumns = metadata.getColumnCount();
-            Map<String,Integer> columnToIndexMap = new HashMap<String,Integer>();
-            Map<String,Set<String>> columnValues = new HashMap<String,Set<String>>();
-            Set<String> variableColumnNames = new TreeSet<String>();
+            Map<String,Integer> columnToIndexMap = new HashMap<>();
+            Map<String,Set<String>> columnValues = new HashMap<>();
+            Set<String> variableColumnNames = new TreeSet<>();
             Set<String> fixedColumnNames = CacheableQueryRowImpl.getFixedColumnSet();
             // lets do a quick size estimate
             long characters = 0;
@@ -44,9 +44,9 @@ public class CacheableQueryRowReader {
                     characters += columnLabel.length();
                     variableColumnNames.add(columnLabel);
                     if (s == null) {
-                        columnValues.put(columnLabel, new LinkedHashSet<String>());
+                        columnValues.put(columnLabel, new LinkedHashSet<>());
                     } else {
-                        Set<String> columnValuesSet = new LinkedHashSet<String>();
+                        Set<String> columnValuesSet = new LinkedHashSet<>();
                         columnValuesSet.add(s);
                         columnValues.put(columnLabel, columnValuesSet);
                     }
@@ -87,8 +87,8 @@ public class CacheableQueryRowReader {
             if (columnToIndexMap.get("_column_markings_") != null) {
                 String columnMarkings = cachedRowSet.getString(columnToIndexMap.get("_column_markings_"));
                 Map<String,String> combinedColumnMarkings = parseColumnMarkings(columnMarkings, columnToIndexMap);
-                Map<String,Map<String,String>> columnMarkingsMap = new HashMap<String,Map<String,String>>();
-                Map<String,String> columnVisibilityMap = new HashMap<String,String>();
+                Map<String,Map<String,String>> columnMarkingsMap = new HashMap<>();
+                Map<String,String> columnVisibilityMap = new HashMap<>();
                 for (Map.Entry<String,String> entry : combinedColumnMarkings.entrySet()) {
                     String columnName = entry.getKey();
                     String combinedString = entry.getValue();
@@ -116,14 +116,14 @@ public class CacheableQueryRowReader {
         return cqfc;
     }
     
-    static private Map<String,String> parseColumnMarkings(String s, Map<String,Integer> columnToIndexMap) {
+    private static Map<String,String> parseColumnMarkings(String s, Map<String,Integer> columnToIndexMap) {
         
-        Map<Integer,String> indexToColumnMap = new HashMap<Integer,String>();
+        Map<Integer,String> indexToColumnMap = new HashMap<>();
         for (Map.Entry<String,Integer> entry : columnToIndexMap.entrySet()) {
             indexToColumnMap.put(entry.getValue(), entry.getKey());
         }
         
-        Map<String,String> colToMarkingMap = new HashMap<String,String>();
+        Map<String,String> colToMarkingMap = new HashMap<>();
         
         String[] split1 = s.split("\0\0");
         for (String currSplit : split1) {
@@ -143,14 +143,14 @@ public class CacheableQueryRowReader {
         return colToMarkingMap;
     }
     
-    static private Map<String,Long> parseColumnTimestamps(String s, Map<String,Integer> columnToIndexMap) {
+    private static Map<String,Long> parseColumnTimestamps(String s, Map<String,Integer> columnToIndexMap) {
         
-        Map<Integer,String> indexToColumnMap = new HashMap<Integer,String>();
+        Map<Integer,String> indexToColumnMap = new HashMap<>();
         for (Map.Entry<String,Integer> entry : columnToIndexMap.entrySet()) {
             indexToColumnMap.put(entry.getValue(), entry.getKey());
         }
         
-        Map<String,Long> colToTimestampMap = new HashMap<String,Long>();
+        Map<String,Long> colToTimestampMap = new HashMap<>();
         
         String[] split1 = s.split("\0\0");
         for (String currSplit : split1) {

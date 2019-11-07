@@ -7,10 +7,6 @@ import datawave.webservice.query.metric.QueryMetricSummary;
  */
 public class HudMetricSummaryBuilder {
     
-    public HudMetricSummaryBuilder() {
-        super();
-    }
-    
     public HudMetricSummary buildMetricsSummary(long hours, QueryMetricSummary qmSummary) {
         HudMetricSummary hmSummary = new HudMetricSummary();
         hmSummary.setHours(hours);

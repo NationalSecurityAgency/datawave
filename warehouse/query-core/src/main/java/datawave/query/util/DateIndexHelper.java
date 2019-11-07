@@ -14,9 +14,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.BeansException;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,6 +25,8 @@ import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
@@ -74,9 +73,11 @@ public class DateIndexHelper implements ApplicationContextAware {
     
     protected Connector connector;
     protected Instance instance;
+    
     protected String dateIndexTableName;
     protected Set<Authorizations> auths;
     protected int numQueryThreads;
+    
     protected float collapseDatePercentThreshold;
     protected boolean timeTravel = false;
     
@@ -90,6 +91,34 @@ public class DateIndexHelper implements ApplicationContextAware {
     
     public void setTimeTravel(boolean timeTravel) {
         this.timeTravel = timeTravel;
+    }
+    
+    public String getDateIndexTableName() {
+        return dateIndexTableName;
+    }
+    
+    public Connector getConnector() {
+        return connector;
+    }
+    
+    public Set<Authorizations> getAuths() {
+        return auths;
+    }
+    
+    public int getNumQueryThreads() {
+        return numQueryThreads;
+    }
+    
+    public float getCollapseDatePercentThreshold() {
+        return collapseDatePercentThreshold;
+    }
+    
+    public boolean isTimeTravel() {
+        return timeTravel;
+    }
+    
+    public ApplicationContext getApplicationContext() {
+        return applicationContext;
     }
     
     protected DateIndexHelper() {}
@@ -194,15 +223,15 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @return the date type description
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getTypeDescription", key = "{#dateType,#begin,#end,#datatypeFilter}", cacheManager = "dateIndexHelperCacheManager")
+    @Cacheable(value = "getTypeDescription", key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter}",
+                    cacheManager = "dateIndexHelperCacheManager")
     public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) throws TableNotFoundException {
-        log.debug("cache fault for getTypeDescription(" + dateType + ", " + begin + ", " + end + ", " + datatypeFilter + ")");
+        log.debug("cache fault for getTypeDescription(" + dateIndexTableName + ", " + auths + ", " + dateType + ", " + begin + ", " + end + ", "
+                        + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
             this.showMeDaCache("before getTypeDescription");
         }
         long startTime = System.currentTimeMillis();
-        if (log.isTraceEnabled())
-            log.trace("getTypeDescription from table: " + dateIndexTableName + " for " + dateType);
         
         DateTypeDescription desc = new DateTypeDescription();
         
@@ -250,7 +279,8 @@ public class DateIndexHelper implements ApplicationContextAware {
         
         if (log.isDebugEnabled()) {
             long endTime = System.currentTimeMillis();
-            log.debug("getTypeDescription from table: " + dateIndexTableName + " for " + dateType + " returned " + desc + " in " + (endTime - startTime) + "ms");
+            log.debug("getTypeDescription from table: " + dateIndexTableName + ", " + auths + ", " + dateType + ", " + begin + ", " + end + ", "
+                            + datatypeFilter + " returned " + desc + " in " + (endTime - startTime) + "ms");
         }
         
         return desc;
@@ -274,18 +304,18 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @return A string of comma delimited days and shards, order unspecified
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getShardsAndDaysHint", key = "{#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}", cacheManager = "dateIndexHelperCacheManager")
+    @Cacheable(
+                    value = "getShardsAndDaysHint",
+                    key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}",
+                    cacheManager = "dateIndexHelperCacheManager")
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
                     throws TableNotFoundException {
-        log.debug("cache fault for getShardsAndDaysHint(" + field + ", " + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter
-                        + ")");
+        log.debug("cache fault for getShardsAndDaysHint(" + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
+                        + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
             this.showMeDaCache("before getShardsAndDaysHint");
         }
         long startTime = System.currentTimeMillis();
-        if (log.isTraceEnabled())
-            log.trace("getShardsAndDaysHint from table: " + dateIndexTableName + " for " + field + ", " + begin + ", " + end + ", " + rangeBegin + ", "
-                            + rangeEnd + ", " + datatypeFilter);
         if (log.isDebugEnabled()) {
             log.debug("timeTravel is " + this.timeTravel);
         }
@@ -313,15 +343,15 @@ public class DateIndexHelper implements ApplicationContextAware {
                 String[] columnFamilyParts = StringUtils.split(k.getColumnFamily().toString(), '\0');
                 if (timeTravel == false && columnFamilyParts.length > 0 && columnFamilyParts[0].equals("ACTIVITY")) {
                     try {
-                        DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyyMMdd");
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
                         String rowDateString = k.getRow().toString();
                         // the row may be sharded, i need to get the date part
-                        if (rowDateString.indexOf("_") != -1) {
+                        if (rowDateString.contains("_")) {
                             // strip off the shard number part of the rowDate string
                             rowDateString = rowDateString.substring(0, rowDateString.indexOf("_"));
                         }
-                        LocalDate rowDate = formatter.parseLocalDate(rowDateString);
-                        LocalDate shardDate = formatter.parseLocalDate(date);
+                        LocalDate rowDate = LocalDate.parse(rowDateString, formatter);
+                        LocalDate shardDate = LocalDate.parse(date, formatter);
                         if (shardDate.isBefore(rowDate.minusDays(1))) {
                             continue;
                         }
@@ -365,7 +395,8 @@ public class DateIndexHelper implements ApplicationContextAware {
         
         if (log.isDebugEnabled()) {
             long endTime = System.currentTimeMillis();
-            log.debug("getShardsAndDaysHint from table: " + dateIndexTableName + " for " + field + " returned " + shardsAndDays + " in "
+            log.debug("getShardsAndDaysHint from table: " + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
+                            + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + " returned " + shardsAndDays + " in "
                             + (endTime - startTime) + "ms");
         }
         

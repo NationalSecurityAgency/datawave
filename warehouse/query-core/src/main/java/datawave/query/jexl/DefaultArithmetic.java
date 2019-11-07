@@ -3,7 +3,12 @@ package datawave.query.jexl;
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
 import org.apache.log4j.Logger;
+import org.apache.lucene.util.IntsRef;
+import org.apache.lucene.util.IntsRefBuilder;
+import org.apache.lucene.util.fst.FST;
+import org.apache.lucene.util.fst.Util;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -84,28 +89,6 @@ public class DefaultArithmetic extends DatawaveArithmetic {
     }
     
     /**
-     * This method deals with the ValueTuple objects and turns them into the normalized value parts
-     * 
-     * @param o
-     * @return
-     */
-    private Object normalizedValues(Object o) {
-        if (o instanceof Set) {
-            Set<Object> normalizedValues = new HashSet<>();
-            for (Object value : ((Set<?>) o)) {
-                addAll(normalizedValues, normalizedValues(value));
-            }
-            if (normalizedValues.size() == 1) {
-                return normalizedValues.iterator().next();
-            } else {
-                return normalizedValues;
-            }
-        } else {
-            return ValueTuple.getNormalizedValue(o);
-        }
-    }
-    
-    /**
      * This method deals with the ValueTuple objects and turns them into all of the value parts
      * 
      * @param o
@@ -125,14 +108,6 @@ public class DefaultArithmetic extends DatawaveArithmetic {
             return allValues.iterator().next();
         } else {
             return allValues;
-        }
-    }
-    
-    private void addAll(Collection<Object> set, Object o) {
-        if (o instanceof Collection) {
-            set.addAll((Collection<?>) o);
-        } else {
-            set.add(o);
         }
     }
     

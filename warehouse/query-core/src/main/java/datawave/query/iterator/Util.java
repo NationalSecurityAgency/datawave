@@ -29,58 +29,45 @@ public class Util {
     
     private static final Comparator<?> nestedIteratorComparator;
     
-    private final static TreeMultimap EMPTY;
+    private static final TreeMultimap EMPTY;
     
     static {
-        keyTransformer = new Transformer<Object>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public Object transform(Object o) {
-                if (o instanceof Key) {
-                    // for keys we only want to use the row and column family for comparison
-                    return new Key(((Key) o).getRow(), ((Key) o).getColumnFamily());
-                }
-                return o;
+        keyTransformer = (Transformer<Object>) o -> {
+            if (o instanceof Key) {
+                // for keys we only want to use the row and column family for comparison
+                return new Key(((Key) o).getRow(), ((Key) o).getColumnFamily());
             }
+            return o;
         };
         
-        comparableComparator = new Comparator<Comparable>() {
-            @SuppressWarnings("unchecked")
-            public int compare(Comparable o1, Comparable o2) {
-                if (o1 instanceof Key) {
-                    return ((Key) o1).compareTo((Key) o2, PartialKey.ROW_COLFAM);
-                }
-                return o1.compareTo(o2);
+        comparableComparator = (o1, o2) -> {
+            if (o1 instanceof Key) {
+                return ((Key) o1).compareTo((Key) o2, PartialKey.ROW_COLFAM);
             }
+            return o1.compareTo(o2);
         };
         
-        hashComparator = new Comparator<Object>() {
-            public int compare(Object o1, Object o2) {
-                return o1.hashCode() - o2.hashCode();
-            }
-        };
+        hashComparator = (Comparator<Object>) Comparator.comparingInt(Object::hashCode);
         
-        nestedIteratorComparator = new Comparator<NestedIterator>() {
-            public int compare(NestedIterator o1, NestedIterator o2) {
-                
-                // reversed order to sort bigger documents first
-                Document doc1 = o1.document();
-                Document doc2 = o2.document();
-                
-                if (o1 == o2) {
-                    return 0;
-                } else if (doc1 == null && doc2 == null) {
+        nestedIteratorComparator = (Comparator<NestedIterator>) (o1, o2) -> {
+            
+            // reversed order to sort bigger documents first
+            Document doc1 = o1.document();
+            Document doc2 = o2.document();
+            
+            if (o1 == o2) {
+                return 0;
+            } else if (doc1 == null && doc2 == null) {
+                return o2.hashCode() - o1.hashCode();
+            } else if (doc2 == null) {
+                return -1;
+            } else if (doc1 == null) {
+                return 1;
+            } else {
+                if (o2.document().compareTo(o1.document()) == 0) {
                     return o2.hashCode() - o1.hashCode();
-                } else if (doc2 == null) {
-                    return -1;
-                } else if (doc1 == null) {
-                    return 1;
                 } else {
-                    if (o2.document().compareTo(o1.document()) == 0) {
-                        return o2.hashCode() - o1.hashCode();
-                    } else {
-                        return o2.document().compareTo(o1.document());
-                    }
+                    return o2.document().compareTo(o1.document());
                 }
             }
         };

@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Throwables;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -52,94 +53,100 @@ public class CondensedRangeStreamScanner extends RangeStreamScanner {
     
     @Override
     public boolean hasNext() {
-        if (!initialized) {
-            for (IteratorSetting setting : options.getIterators()) {
-                String compressOpt = setting.getOptions().get(CondensedUidIterator.COMPRESS_MAPPING);
-                if (null != compressOpt && compressOpt.equalsIgnoreCase("true")) {
-                    compressUids = true;
-                    break;
+        try {
+            if (!initialized) {
+                for (IteratorSetting setting : options.getIterators()) {
+                    String compressOpt = setting.getOptions().get(CondensedUidIterator.COMPRESS_MAPPING);
+                    if (null != compressOpt && compressOpt.equalsIgnoreCase("true")) {
+                        compressUids = true;
+                        break;
+                    }
                 }
+                initialized = true;
             }
-            initialized = true;
-        }
-        boolean hasNext = false;
-        if (null == currentEntry || nextDay) {
-            nextDay = false;
-            currentEntry = null;
-            hasNext = super.hasNext();
-            currentShard = null;
-            if (!hasNext)
-                return false;
-            else
-                currentEntry = super.next();
-            
-            currentInfo = new CondensedIndexInfo();
-            try {
-                if (compressUids) {
-                    currentInfo.fromByteArray(currentEntry.getValue().get());
-                } else {
-                    currentInfo.readFields(new DataInputStream(new ByteArrayInputStream(currentEntry.getValue().get())));
-                }
-            } catch (IOException e) {
-                log.error(e);
-            }
-            
-            if (currentInfo.isDay()) {
+            boolean hasNext = false;
+            if (null == currentEntry || nextDay) {
+                nextDay = false;
+                currentEntry = null;
+                hasNext = super.hasNext();
+                currentShard = null;
+                if (!hasNext)
+                    return false;
+                else
+                    currentEntry = super.next();
                 
-                nextTopKey = currentEntry.getKey();
-                
-                if (log.isTraceEnabled())
-                    log.trace(nextTopKey + " CurrentInfo " + currentInfo.getDay() + " is a day ");
-                
-                ByteSequence sequence = currentEntry.getKey().getColumnQualifierData();
-                if (sequence.byteAt(sequence.length() - 1) == '_') {
-                    sequence = sequence.subSequence(0, sequence.length() - 1);
-                }
-                nextTopKey = new Key(currentEntry.getKey().getRow(), currentEntry.getKey().getColumnFamily(), new Text(sequence.toString()));
-                
-                IndexInfo info = new IndexInfo(-1);
-                
+                currentInfo = new CondensedIndexInfo();
                 try {
-                    
-                    ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
-                    DataOutputStream outDataStream = new DataOutputStream(outByteStream);
-                    info.write(outDataStream);
-                    
-                    outDataStream.close();
-                    outByteStream.close();
-                    nextTopValue = new Value(outByteStream.toByteArray());
+                    if (compressUids) {
+                        currentInfo.fromByteArray(currentEntry.getValue().get());
+                    } else {
+                        currentInfo.readFields(new DataInputStream(new ByteArrayInputStream(currentEntry.getValue().get())));
+                    }
                 } catch (IOException e) {
-                    throw new DatawaveFatalQueryException(e);
+                    log.error("Failed to read condensed index info", e);
                 }
-                
-                return true;
-            }
-            
-        }
-        
-        if (null == currentShard)
-        
-        {
-            currentShard = currentInfo.getShards().iterator();
-            if (null == currentShard || currentInfo.isDay()) {
                 
                 if (currentInfo.isDay()) {
+                    
+                    nextTopKey = currentEntry.getKey();
+                    
+                    if (log.isTraceEnabled())
+                        log.trace(nextTopKey + " CurrentInfo " + currentInfo.getDay() + " is a day ");
+                    
+                    ByteSequence sequence = currentEntry.getKey().getColumnQualifierData();
+                    if (sequence.byteAt(sequence.length() - 1) == '_') {
+                        sequence = sequence.subSequence(0, sequence.length() - 1);
+                    }
+                    nextTopKey = new Key(currentEntry.getKey().getRow(), currentEntry.getKey().getColumnFamily(), new Text(sequence.toString()));
+                    
+                    IndexInfo info = new IndexInfo(-1);
+                    
+                    try {
+                        
+                        ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
+                        DataOutputStream outDataStream = new DataOutputStream(outByteStream);
+                        info.write(outDataStream);
+                        
+                        outDataStream.close();
+                        outByteStream.close();
+                        nextTopValue = new Value(outByteStream.toByteArray());
+                    } catch (IOException e) {
+                        throw new DatawaveFatalQueryException(e);
+                    }
+                    
                     return true;
-                } else {
-                    return super.hasNext();
                 }
+                
             }
             
-            return currentShard.hasNext();
-        } else {
+            if (null == currentShard)
             
-            if (!currentShard.hasNext()) {
-                nextDay = true;
-                boolean hasNextDay = hasNext();
-                return hasNextDay;
+            {
+                currentShard = currentInfo.getShards().iterator();
+                if (null == currentShard || currentInfo.isDay()) {
+                    
+                    if (currentInfo.isDay()) {
+                        return true;
+                    } else {
+                        return super.hasNext();
+                    }
+                }
+                
+                return currentShard.hasNext();
             } else {
                 
-                return true;
+                if (!currentShard.hasNext()) {
+                    nextDay = true;
+                    return hasNext();
+                } else {
+                    
+                    return true;
+                }
+            }
+        } finally {
+            if (uncaughtExceptionHandler.getThrowable() != null) {
+                log.error("Exception discovered on hasNext call", uncaughtExceptionHandler.getThrowable());
+                Throwables.propagate(uncaughtExceptionHandler.getThrowable());
             }
         }
         
@@ -152,51 +159,57 @@ public class CondensedRangeStreamScanner extends RangeStreamScanner {
      */
     @Override
     public Entry<Key,Value> next() {
-        if (nextDay) {
-            hasNext();
-        }
-        
-        if (!currentInfo.isDay()) {
+        try {
+            if (nextDay) {
+                hasNext();
+            }
             
-            String nextShard = currentShard.next();
-            
-            if (log.isTraceEnabled())
-                log.trace(currentEntry.getKey() + " CurrentInfo " + currentInfo.getDay() + " is not a day " + nextShard);
-            
-            if (null != nextShard) {
-                Key currentTopKey = currentEntry.getKey();
-                nextTopKey = new Key(currentTopKey.getRow(), currentTopKey.getColumnFamily(), new Text(nextShard));
-                IndexInfo info = new IndexInfo(5);
-                if (!currentInfo.isIgnored(nextShard)) {
-                    info = currentInfo.getShard(nextShard);
-                    
-                }
+            if (!currentInfo.isDay()) {
+                
+                String nextShard = currentShard.next();
                 
                 if (log.isTraceEnabled())
-                    log.trace(nextTopKey + " CurrentInfo " + currentInfo.getDay() + " not a day " + nextShard + " " + info.uids().size());
+                    log.trace(currentEntry.getKey() + " CurrentInfo " + currentInfo.getDay() + " is not a day " + nextShard);
                 
-                try {
+                if (null != nextShard) {
+                    Key currentTopKey = currentEntry.getKey();
+                    nextTopKey = new Key(currentTopKey.getRow(), currentTopKey.getColumnFamily(), new Text(nextShard));
+                    IndexInfo info = new IndexInfo(5);
+                    if (!currentInfo.isIgnored(nextShard)) {
+                        info = currentInfo.getShard(nextShard);
+                        
+                    }
                     
-                    ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
-                    DataOutputStream outDataStream = new DataOutputStream(outByteStream);
-                    info.write(outDataStream);
+                    if (log.isTraceEnabled())
+                        log.trace(nextTopKey + " CurrentInfo " + currentInfo.getDay() + " not a day " + nextShard + " " + info.uids().size());
                     
-                    outDataStream.close();
-                    outByteStream.close();
-                    
-                    nextTopValue = new Value(outByteStream.toByteArray());
-                } catch (IOException e) {
-                    throw new DatawaveFatalQueryException(e);
+                    try {
+                        
+                        ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
+                        DataOutputStream outDataStream = new DataOutputStream(outByteStream);
+                        info.write(outDataStream);
+                        
+                        outDataStream.close();
+                        outByteStream.close();
+                        
+                        nextTopValue = new Value(outByteStream.toByteArray());
+                    } catch (IOException e) {
+                        throw new DatawaveFatalQueryException(e);
+                    }
                 }
+            } else {
+                if (log.isTraceEnabled())
+                    log.trace("CurrentInfo " + currentInfo.getDay() + " is a day ");
+                nextDay = true;
             }
-        } else {
-            if (log.isTraceEnabled())
-                log.trace("CurrentInfo " + currentInfo.getDay() + " is a day ");
-            nextDay = true;
+        } finally {
+            if (uncaughtExceptionHandler.getThrowable() != null) {
+                log.error("Exception discovered on next call", uncaughtExceptionHandler.getThrowable());
+                Throwables.propagate(uncaughtExceptionHandler.getThrowable());
+            }
         }
         
-        Entry<Key,Value> retVal = Maps.immutableEntry(nextTopKey, nextTopValue);
-        return retVal;
+        return Maps.immutableEntry(nextTopKey, nextTopValue);
         
     }
     

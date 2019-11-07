@@ -12,7 +12,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import com.google.common.base.Objects;
-import org.apache.commons.lang.builder.*;
+import org.apache.commons.lang.builder.CompareToBuilder;
 
 @XmlRootElement(name = "Connection")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -31,10 +31,6 @@ public class Connection implements Serializable, Comparable<Connection> {
     
     @XmlElement(name = "Property")
     private Set<ConnectionProperty> connectionProperty = new TreeSet<>();
-    
-    public Connection() {
-        
-    }
     
     public String getState() {
         return state;

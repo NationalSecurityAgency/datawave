@@ -19,6 +19,7 @@
         <bean class="datawave.query.language.functions.jexl.IsNotNull"/>
         <bean class="datawave.query.language.functions.jexl.Include"/>
         <bean class="datawave.query.language.functions.jexl.Exclude"/>
+        <bean class="datawave.query.language.functions.jexl.Text"/>
         <bean class="datawave.query.language.functions.jexl.Loaded"/>
         <bean class="datawave.query.language.functions.jexl.DateFunction"/>
         <bean class="datawave.query.language.functions.jexl.OccurrenceFunction"/>
@@ -34,6 +35,7 @@
         <bean class="datawave.query.language.functions.jexl.Geowave.Intersects"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Overlaps"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Within"/>
+        <bean class="datawave.query.language.functions.jexl.EvaluationOnly"/>
     </util:list>
 
 

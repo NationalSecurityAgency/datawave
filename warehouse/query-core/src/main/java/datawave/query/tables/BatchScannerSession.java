@@ -17,6 +17,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.common.base.Throwables;
 import org.apache.accumulo.core.client.impl.ScannerOptions;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
@@ -45,7 +46,6 @@ import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeScan;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 /**
  * 
@@ -106,8 +106,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     
     protected int threadCount = 5;
     
-    private QueryUncaughtExceptionHandler globalHandler;
-    
     private class BatchReaderThreadFactory implements ThreadFactory {
         
         private ThreadFactory dtf = Executors.defaultThreadFactory();
@@ -124,7 +122,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName("Datawave BatchScanner Session " + threadIdentifier.toString() + " -" + threadNum++);
+            thread.setName("Datawave BatchScanner Session " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             thread.setUncaughtExceptionHandler(uncaughtHandler);
             return thread;
@@ -176,8 +174,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         
         serverMap = Maps.newConcurrentMap();
         
-        globalHandler = settings.getUncaughtExceptionHandler();
-        
     }
     
     public BatchScannerSession updateThreadService(ExecutorService service) {
@@ -195,8 +191,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         if (service != null)
             service.shutdownNow();
         this.threadCount = threads;
-        service = new ThreadPoolExecutor(threads, threads, 120, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(), new BatchReaderThreadFactory(threadId,
-                        this));
+        service = new ThreadPoolExecutor(threads, threads, 120, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new BatchReaderThreadFactory(threadId, this));
         service = MoreExecutors.listeningDecorator(service);
         return this;
     }
@@ -271,64 +266,68 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      */
     @Override
     protected void run() throws Exception {
-        if (!scannerBatches.hasNext()) {
-            if (log.isTraceEnabled())
-                log.trace("Immediate shutdown of scanner session because no work available");
-            return;
-        }
-        
-        while (scannerBatches.hasNext())
-        
-        {
-            if (runnableCount.get() < (threadCount * RANGE_MULTIPLIER)) {
-                if (currentBatch.isEmpty()) {
-                    List<ScannerChunk> chunks = scannerBatches.next();
-                    
-                    submitTasks(chunks);
-                } else {
-                    submitTasks();
-                }
-            } else if (currentBatch.size() < (threadCount * QUEUE_MULTIPLIER)) {
-                
-                List<ScannerChunk> chunks = scannerBatches.next();
-                
-                pushChunks(chunks);
-                
-            } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("Parking for 10 milliseconds until we have additional work that can be done; " + threadCount + " "
-                                    + (threadCount * RANGE_MULTIPLIER) + " " + currentBatch.size() + " >= " + (threadCount * QUEUE_MULTIPLIER));
-                }
-                Thread.sleep(10);
-                if (Thread.interrupted() || !isRunning()) {
-                    service.shutdownNow();
-                    throw new InterruptedException("Interrupted while parking");
-                }
-            }
-            
-        }
-        if (log.isTraceEnabled())
-            log.trace("waiting " + runnableCount.get());
-        submitTasks();
-        while (runnableCount.get() > 0) {
-            Thread.sleep(1);
-            // if a failure did not occur, let's check the interrupted status
-            if (isRunning()) {
-                
-                if (Thread.interrupted()) {
-                    service.shutdownNow();
-                    throw new InterruptedException("Interrupted while parking");
-                }
-            } else {
+        try {
+            if (!scannerBatches.hasNext()) {
                 if (log.isTraceEnabled())
-                    log.trace(" no longer running");
-                service.shutdownNow();
+                    log.trace("Immediate shutdown of scanner session because no work available");
                 return;
             }
+            
+            while (scannerBatches.hasNext())
+            
+            {
+                if (runnableCount.get() < (threadCount * RANGE_MULTIPLIER)) {
+                    if (currentBatch.isEmpty()) {
+                        List<ScannerChunk> chunks = scannerBatches.next();
+                        
+                        submitTasks(chunks);
+                    } else {
+                        submitTasks();
+                    }
+                } else if (currentBatch.size() < (threadCount * QUEUE_MULTIPLIER)) {
+                    
+                    List<ScannerChunk> chunks = scannerBatches.next();
+                    
+                    pushChunks(chunks);
+                    
+                } else {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Parking for 10 milliseconds until we have additional work that can be done; " + threadCount + " "
+                                        + (threadCount * RANGE_MULTIPLIER) + " " + currentBatch.size() + " >= " + (threadCount * QUEUE_MULTIPLIER));
+                    }
+                    Thread.sleep(10);
+                    if (Thread.interrupted() || !isRunning()) {
+                        service.shutdownNow();
+                        throw new InterruptedException("Interrupted while parking");
+                    }
+                }
+                
+            }
+            if (log.isTraceEnabled())
+                log.trace("waiting " + runnableCount.get());
+            submitTasks();
+            while (runnableCount.get() > 0) {
+                Thread.sleep(1);
+                // if a failure did not occur, let's check the interrupted status
+                if (isRunning()) {
+                    
+                    if (Thread.interrupted()) {
+                        service.shutdownNow();
+                        throw new InterruptedException("Interrupted while parking");
+                    }
+                } else {
+                    if (log.isTraceEnabled())
+                        log.trace(" no longer running");
+                    service.shutdownNow();
+                    return;
+                }
+            }
+            service.shutdown();
+            while (!service.awaitTermination(250, TimeUnit.MILLISECONDS)) {}
+        } catch (Exception e) {
+            uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), e);
+            Throwables.propagate(e);
         }
-        service.shutdown();
-        while (!service.awaitTermination(250, TimeUnit.MILLISECONDS)) {}
-        
     }
     
     @Override
@@ -392,7 +391,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             scan.setVisitors(visitorFunctions);
             scan.setTimeout(scanLimitTimeout);
             if (log.isTraceEnabled()) {
-                log.trace("Adding scanner " + chunk.toString());
+                log.trace("Adding scanner " + chunk);
             }
             submitScan(scan, true);
         }
@@ -442,7 +441,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             scan.setVisitors(visitorFunctions);
             scan.setTimeout(scanLimitTimeout);
             if (log.isTraceEnabled()) {
-                log.trace("Adding scanner " + chunk.toString());
+                log.trace("Adding scanner " + chunk);
             }
             submitScan(scan, true);
         }
@@ -538,9 +537,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     @Override
     public void onFailure(Throwable t) {
         stop();
-        if (null != settings.getUncaughtExceptionHandler())
-            settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), t);
-        throw new RuntimeException(t);
+        uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), t);
+        Throwables.propagate(t);
         
     }
     
@@ -698,6 +696,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     public void uncaughtException(Thread t, Throwable e) {
         t.interrupt();
         close();
-        globalHandler.uncaughtException(t, e);
+        uncaughtExceptionHandler.uncaughtException(t, e);
     }
 }

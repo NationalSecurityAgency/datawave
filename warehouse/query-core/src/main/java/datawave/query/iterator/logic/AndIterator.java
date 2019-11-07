@@ -32,6 +32,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     private Transformer<T> transformer;
     
     private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads;
+    private T prev;
     private T next;
     
     private Document prevDocument, document;
@@ -64,7 +65,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         Comparator<NestedIterator<T>> itrComp = Util.nestedIteratorComparator();
         
         transformer = Util.keyTransformer();
-        transforms = new HashMap<T,T>();
+        transforms = new HashMap<>();
         
         includeHeads = TreeMultimap.create(keyComp, itrComp);
         includeHeads = initSubtree(includeHeads, includes, transformer, transforms, true);
@@ -80,9 +81,14 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         next();
     }
     
+    /**
+     * return the previously found next and set its document. If there are more head references, advance until the lowest and highest match that is not
+     * filtered, advancing all iterators tied to lowest and set next/document for the next call
+     * 
+     * @return the previously found next
+     */
     public T next() {
-        
-        T returnValue = next;
+        prev = next;
         prevDocument = document;
         
         while (!includeHeads.isEmpty()) {
@@ -100,18 +106,17 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     includeHeads = advanceIterators(lowest);
                 }
             } else {
-                includeHeads = advanceIterators(lowest);
-                
+                // jump the lowest to the highest
+                includeHeads = moveIterators(lowest, highest);
             }
-            
         }
         
         // if we didn't move after the loop, then we don't have a next after this
-        if (returnValue == next) {
+        if (prev == next) {
             next = null;
         }
         
-        return returnValue;
+        return prev;
     }
     
     public void remove() {
@@ -126,29 +131,43 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         return next != null;
     }
     
+    /**
+     * Test all layers of cache for the minimum, then if necessary advance heads
+     * 
+     * @param minimum
+     *            the minimum to return
+     * @return the first greater than or equal to minimum or null if none exists
+     * @throws IllegalStateException
+     *             if prev is greater than or equal to minimum
+     */
     public T move(T minimum) {
         if (null == includeHeads) {
             throw new IllegalStateException("initialize() was never called");
         }
         
-        Set<T> headSet = includeHeads.keySet().headSet(minimum);
+        if (prev != null && prev.compareTo(minimum) >= 0) {
+            throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + prev + ", movekey=" + minimum);
+        }
         
-        // If we are already at `minimum`, we can just call next which will
-        // return the current next and seed the next.
-        if (headSet.isEmpty()) {
+        // test if the cached next is already beyond the minimum
+        if (next != null && next.compareTo(minimum) >= 0) {
+            // simply advance to next
             return next();
         }
         
-        // first let's make sure all of the sub trees are at least at `minimum`
+        Set<T> headSet = includeHeads.keySet().headSet(minimum);
+        
+        // some iterators need to be moved into the target range before recalculating the next
         Iterator<T> topKeys = new LinkedList<>(headSet).iterator();
         while (!includeHeads.isEmpty() && topKeys.hasNext()) {
+            // advance each iterator that is under the threshold
             includeHeads = moveIterators(topKeys.next(), minimum);
         }
         
-        next = null;
+        // next < minimum, so advance throwing next away and re-populating next with what should be >= minimum
         next();
         
-        // now find the next match and return it; return <code>null</code> if not
+        // now as long as the newly computed next exists return it and advance
         if (hasNext()) {
             return next();
         } else {

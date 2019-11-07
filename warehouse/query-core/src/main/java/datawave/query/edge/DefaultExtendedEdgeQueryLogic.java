@@ -1,6 +1,5 @@
 package datawave.query.edge;
 
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -11,6 +10,7 @@ import java.util.Set;
 import datawave.audit.SelectorExtractor;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
+import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.config.EdgeExtendedSummaryConfiguration;
 import datawave.query.config.EdgeQueryConfiguration;
 import datawave.query.iterator.filter.EdgeFilterIterator;
@@ -135,7 +135,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
             if (log.isTraceEnabled()) {
                 log.trace("Query being sent to the filter iterator: " + normalizedQuery);
             }
-            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getName() + "."
+            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getSimpleName() + "_"
                             + currentIteratorPriority, EdgeFilterIterator.class);
             edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
             edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
@@ -204,24 +204,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         String[] sources = StringUtils.split(query, configuration.getDelimiter());
         for (String source : sources) {
             for (String normalizedSource : normalizeQualifiedSource(source)) {
-                Text startRow;
-                Text endRow;
-                
-                // Stats rows start at SourceA (inclusive) and run through SourceA\0SourceB (exclusive)
-                // Relationship rows start at SourceA\0SourceB (inclusive) and run through SourceA\1 (exclusive)
-                
-                if (configuration.includeStats() == false)
-                    startRow = new Text((normalizedSource + "\0").getBytes(Charset.forName("UTF-8")));
-                else
-                    startRow = new Text(normalizedSource.getBytes(Charset.forName("UTF-8")));
-                
-                if (configuration.isIncludeRelationships() == false)
-                    endRow = new Text((normalizedSource + "\0").getBytes(Charset.forName("UTF-8")));
-                else
-                    endRow = new Text((normalizedSource + "\1").getBytes(Charset.forName("UTF-8")));
-                
-                Range range = new Range(startRow, true, endRow, false);
-                ranges.add(range);
+                ranges.add(EdgeKeyUtil.createEscapedRange(normalizedSource, false, configuration.includeStats(), configuration.isIncludeRelationships()));
             }
         }
         return ranges;

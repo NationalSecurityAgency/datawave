@@ -4,6 +4,7 @@ import com.google.common.base.Objects;
 import datawave.iterators.filter.AgeOffConfigParams;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
@@ -27,6 +28,8 @@ public abstract class AppliedRule implements FilterRule {
      */
     protected FilterOptions currentOptions;
     
+    protected IteratorEnvironment iterEnv;
+    
     private static final Logger log = Logger.getLogger(AppliedRule.class);
     
     /*
@@ -36,13 +39,25 @@ public abstract class AppliedRule implements FilterRule {
      */
     @Override
     public void init(FilterOptions options) {
+        init(options, null);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see datawave.iterators.filter.ageoff.FilterRule#init(datawave.iterators.filter.ageoff.FilterOptions,
+     * org.apache.accumulo.core.iterators.IteratorEnvironment)
+     */
+    @Override
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
         this.currentOptions = options;
         ageOffPeriod = options.getAgeOffPeriod();
+        this.iterEnv = iterEnv;
     }
     
     /** Perform initialization in support of a deepCopy, copying any expensive state from the parent. */
     protected void deepCopyInit(FilterOptions newOptions, AppliedRule parentCopy) {
-        init(newOptions);
+        init(newOptions, iterEnv);
     }
     
     public abstract boolean isFilterRuleApplied();
@@ -82,7 +97,9 @@ public abstract class AppliedRule implements FilterRule {
         AppliedRule newFilter;
         try {
             newFilter = (AppliedRule) super.getClass().newInstance();
+            newFilter.iterEnv = iterEnv;
             newFilter.deepCopyInit(currentOptions, this);
+            // for some reason this needs to come after deep copy init
             newFilter.ageOffPeriod = new AgeOffPeriod(period.getCutOffMilliseconds());
             log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
             return newFilter;
@@ -106,7 +123,9 @@ public abstract class AppliedRule implements FilterRule {
             newFilter = (AppliedRule) super.getClass().newInstance();
             FilterOptions newOptions = new FilterOptions(currentOptions);
             newOptions.setOption(AgeOffConfigParams.SCAN_START_TIMESTAMP, Long.toString(scanStart));
+            newFilter.iterEnv = iterEnv;
             newFilter.deepCopyInit(newOptions, this);
+            // for some reason this needs to come after deep copy init
             newFilter.ageOffPeriod = new AgeOffPeriod(scanStart, currentOptions.ttl, currentOptions.ttlUnits);
             log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
             return newFilter;

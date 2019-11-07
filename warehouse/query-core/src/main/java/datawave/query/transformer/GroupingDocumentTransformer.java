@@ -1,9 +1,20 @@
 package datawave.query.transformer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -19,8 +30,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
-
-import com.beust.jcommander.internal.Sets;
 
 public class GroupingDocumentTransformer extends DocumentTransformer {
     
@@ -52,14 +61,14 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
         QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
         for (String groupField : groupFieldsSet) {
             String f = model.getReverseAliasForField(groupField);
-            if (f != null && f.length() > 0) {
+            if (f != null && !f.isEmpty()) {
                 this.groupFieldsList.add(f);
             }
         }
     }
     
     @Override
-    /** 
+    /**
      * count the desired fields and create a new response with one event.
      */
     public BaseQueryResponse createResponse(List<Object> resultList) {
@@ -121,7 +130,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
                     created = this.makeField(shortName, this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(field.getColumnVisibility())),
                                     field.getColumnVisibility(), 0L, field.getValueOfTypedValue());
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.error(ex);
                 }
                 if (created != null) {
                     if (fieldMap.containsKey(fieldName)) {
@@ -155,7 +164,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
     
     private void getListKeyCounts(EventBase e, Multiset<Collection<FieldBase<?>>> multiset) {
         
-        Set<String> expandedGroupFieldsList = Sets.newLinkedHashSet();
+        Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
         List<FieldBase<?>> fields = e.getFields();
         Multimap<String,String> fieldToFieldWithContextMap = this.getFieldToFieldWithGroupingContextMap(fields, expandedGroupFieldsList);
         if (log.isTraceEnabled())

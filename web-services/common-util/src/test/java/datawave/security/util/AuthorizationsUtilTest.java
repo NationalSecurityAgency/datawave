@@ -1,6 +1,8 @@
 package datawave.security.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -124,10 +126,25 @@ public class AuthorizationsUtilTest {
         LinkedHashSet<Authorizations> expected = new LinkedHashSet<>();
         expected.add(new Authorizations("A", "B", "C", "D"));
         expected.add(new Authorizations("B", "C", "F"));
-        expected.add(new Authorizations("A", "B", "C"));
+        expected.add(new Authorizations("A", "B", "E"));
         expected.add(new Authorizations("B", "C", "D", "E"));
         
         assertEquals(expected, AuthorizationsUtil.minimize(expected));
+    }
+    
+    @Test
+    public void testMinimizeWithMultipleSubsets() {
+        LinkedHashSet<Authorizations> testSet = new LinkedHashSet<>();
+        testSet.add(new Authorizations("A", "B", "C", "D"));
+        testSet.add(new Authorizations("B", "C"));
+        testSet.add(new Authorizations("A", "B", "E"));
+        testSet.add(new Authorizations("A", "B", "D", "E"));
+        
+        LinkedHashSet<Authorizations> expected = new LinkedHashSet<>();
+        expected.add(new Authorizations("B", "C"));
+        expected.add(new Authorizations("A", "B", "E"));
+        
+        assertEquals(expected, AuthorizationsUtil.minimize(testSet));
     }
     
     @Test

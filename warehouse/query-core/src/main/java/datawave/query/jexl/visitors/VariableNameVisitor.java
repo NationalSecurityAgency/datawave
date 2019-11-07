@@ -3,12 +3,15 @@ package datawave.query.jexl.visitors;
 import java.io.StringReader;
 import java.util.Set;
 
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.jexl2.parser.TokenMgrError;
 
 /**
  * Extracts all of the identifier names from a query. This exists only because the getVariables() method in JexlEngine is broken in the released versions of
@@ -18,8 +21,6 @@ import com.google.common.collect.Sets;
 public class VariableNameVisitor extends BaseVisitor {
     
     private Set<String> variableNames = Sets.newHashSet();
-    
-    public VariableNameVisitor() {}
     
     /**
      * Static method to run a depth-first traversal over the AST
@@ -32,7 +33,11 @@ public class VariableNameVisitor extends BaseVisitor {
         Parser parser = new Parser(new StringReader(";"));
         
         // Parse the query
-        return parseQuery(parser.parse(new StringReader(query), null));
+        try {
+            return parseQuery(parser.parse(new StringReader(query), null));
+        } catch (TokenMgrError e) {
+            throw new ParseException(e.getMessage());
+        }
     }
     
     /**
@@ -51,5 +56,15 @@ public class VariableNameVisitor extends BaseVisitor {
     public Object visit(ASTIdentifier node, Object data) {
         this.variableNames.add(node.image);
         return super.visit(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+            this.variableNames.add(ExceededOrThresholdMarkerJexlNode.getField(node));
+            return data;
+        } else {
+            return super.visit(node, data);
+        }
     }
 }

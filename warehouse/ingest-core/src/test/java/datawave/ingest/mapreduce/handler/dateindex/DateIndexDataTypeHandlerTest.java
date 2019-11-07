@@ -3,7 +3,6 @@ package datawave.ingest.mapreduce.handler.dateindex;
 import java.util.BitSet;
 
 import datawave.data.normalizer.DateNormalizer;
-import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.RawRecordContainerImplTest;
 import datawave.ingest.data.TypeRegistry;
@@ -17,6 +16,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.table.config.DateIndexTableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -49,7 +49,7 @@ public class DateIndexDataTypeHandlerTest {
         conf.set("testdatatype.handler.classes", DateIndexDataTypeHandler.class.getName());
         
         // date index configuration
-        conf.set("date.index.table.name", "DateIndex");
+        conf.set("date.index.table.name", TableName.DATE_INDEX);
         conf.set("date.index.table.loader.priority", "30");
         conf.set("DateIndex.table.config.class", DateIndexTableConfigHelper.class.getName());
         conf.set("date.index.table.locality.groups", "activity:ACTIVITY,loaded:LOADED");
@@ -61,7 +61,7 @@ public class DateIndexDataTypeHandlerTest {
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
         
-        handler = new DateIndexDataTypeHandler<Text>();
+        handler = new DateIndexDataTypeHandler<>();
         handler.setup(new TaskAttemptContextImpl(conf, new TaskAttemptID()));
     }
     
@@ -109,7 +109,7 @@ public class DateIndexDataTypeHandlerTest {
         for (BulkIngestKey bulkIngestKey : mutations.keySet()) {
             Assert.assertEquals(1, mutations.get(bulkIngestKey).size());
             Value value = mutations.get(bulkIngestKey).iterator().next();
-            Assert.assertEquals("DateIndex", bulkIngestKey.getTableName().toString());
+            Assert.assertEquals(TableName.DATE_INDEX, bulkIngestKey.getTableName().toString());
             Key key = bulkIngestKey.getKey();
             Assert.assertEquals(expectedValue, BitSet.valueOf(value.get()));
             if ("ACTIVITY".equals(key.getColumnFamily().toString())) {
@@ -121,7 +121,7 @@ public class DateIndexDataTypeHandlerTest {
                 Assert.assertEquals("20130430\0testdatatype\0LOAD_DATE", key.getColumnQualifier().toString());
                 Assert.assertEquals(dateNormalizer.denormalize("2014-01-01T00:00:00Z").getTime(), key.getTimestamp());
             } else {
-                Assert.fail("Unexpected colf: " + key.getColumnFamily().toString());
+                Assert.fail("Unexpected colf: " + key.getColumnFamily());
             }
         }
         
@@ -167,7 +167,7 @@ public class DateIndexDataTypeHandlerTest {
         for (BulkIngestKey bulkIngestKey : mutations.keySet()) {
             Assert.assertEquals(1, mutations.get(bulkIngestKey).size());
             Value value = mutations.get(bulkIngestKey).iterator().next();
-            Assert.assertEquals("DateIndex", bulkIngestKey.getTableName().toString());
+            Assert.assertEquals(TableName.DATE_INDEX, bulkIngestKey.getTableName().toString());
             Key key = bulkIngestKey.getKey();
             if ("ACTIVITY".equals(key.getColumnFamily().toString())) {
                 BitSet expectedValue = DateIndexUtil.merge(DateIndexUtil.getBits(shard1), DateIndexUtil.getBits(shard2));
@@ -182,7 +182,7 @@ public class DateIndexDataTypeHandlerTest {
                 Assert.assertEquals("20130430\0testdatatype\0LOAD_DATE", key.getColumnQualifier().toString());
                 Assert.assertEquals(dateNormalizer.denormalize("2014-01-01T00:00:00Z").getTime(), key.getTimestamp());
             } else {
-                Assert.fail("Unexpected colf: " + key.getColumnFamily().toString());
+                Assert.fail("Unexpected colf: " + key.getColumnFamily());
             }
         }
         
@@ -248,8 +248,6 @@ public class DateIndexDataTypeHandlerTest {
     
     public static class TestBaseIngestHelper extends BaseIngestHelper {
         private DateNormalizer dateNormalizer = new DateNormalizer();
-        
-        public TestBaseIngestHelper() {}
         
         @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {

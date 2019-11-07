@@ -1,8 +1,8 @@
 package datawave.query.util;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import datawave.query.QueryTestTableHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -11,9 +11,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -22,7 +20,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,13 +28,6 @@ import java.util.Set;
 public class TypeMetadataProviderTest {
     
     private static final Logger log = Logger.getLogger(TypeMetadataProviderTest.class);
-    
-    // the test that uses the factory defers loading the spring context until during the test
-    // it will use this temporary folder
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-    
-    private static List<TemporaryFolder> staticTempFolders = Lists.newArrayList();
     
     @Inject
     private TypeMetadataProvider typeMetadataProvider;
@@ -55,41 +45,29 @@ public class TypeMetadataProviderTest {
     public static void beforeClass() {
         // this will get property substituted into the TypeMetadataBridgeContext.xml file
         // for the injection test (when this unit test is first created)
-        String val = tempDirForInjectionTest;
-        System.setProperty("type.metadata.dir", val);
+        System.setProperty("type.metadata.dir", tempDirForInjectionTest);
     }
     
     @AfterClass
     public static void teardown() {
-        for (TemporaryFolder t : staticTempFolders) {
-            if (t.getRoot().exists()) {
-                try {
-                    FileUtils.deleteDirectory(t.getRoot());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            log.debug("after class " + t.getRoot() + " exists? " + t.getRoot().exists());
-        }
         // maybe delete the temp folder here
         File tempFolder = new File(tempDirForInjectionTest);
         if (tempFolder.exists()) {
             try {
                 FileUtils.forceDelete(tempFolder);
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log.error(ex);
             }
         }
     }
     
     @Before
     public void prepareTypeMetadataMap() {
-        // This is for the factory test. It will use the tempFolder which will
-        // be substituted into the TypeMetadataBridgeContext in time for its loading
-        // by the Factory methods in TypeMetadataWriter and TypeMetadataProvider
-        String val = tempFolder.getRoot().getAbsolutePath();
+        File tempDir = Files.createTempDir();
+        tempDir.deleteOnExit();
+        String val = tempDir.getAbsolutePath();
         System.setProperty("type.metadata.dir", val);
-        log.info("using tempFolder " + tempFolder.getRoot());
+        log.info("using tempFolder " + tempDir);
         
         TypeMetadata typeMetadata = new TypeMetadata();
         typeMetadata.put("field1", "ingest1", "LcType");
@@ -140,7 +118,6 @@ public class TypeMetadataProviderTest {
             } catch (InterruptedException iex) {
                 // ignored
             }
-            
         }
         Assert.assertEquals(typeMetadata, this.typeMetadataMap.get(Sets.newHashSet("AUTHA", "AUTHB")));
     }
@@ -154,13 +131,14 @@ public class TypeMetadataProviderTest {
             log.debug("powerset has " + s);
         }
         log.debug("got " + powerset);
-        
-        log.debug(Collections.singleton("AUTHA").hashCode());
-        log.debug(Sets.newHashSet("AUTHA").hashCode());
-        Set<Set<String>> stuff = Sets.newHashSet();
-        stuff.add(Collections.singleton("AUTHA"));
-        stuff.add(Sets.newHashSet("AUTHA"));
-        log.debug("stuff:" + stuff);
+        Assert.assertTrue(powerset.contains(Sets.newHashSet()));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHA")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHB")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("BAR")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHA", "AUTHB")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHB", "BAR")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHA", "BAR")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHA", "AUTHB", "BAR")));
     }
     
     @Test

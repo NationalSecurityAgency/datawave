@@ -3,12 +3,14 @@ package datawave.query.iterator.profile;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 
 public class QuerySpanCollector {
     private AtomicLong seekCount = new AtomicLong();
     private AtomicLong nextCount = new AtomicLong();
+    private AtomicBoolean yield = new AtomicBoolean();
     private AtomicLong sourceCount = new AtomicLong();
     private Map<String,Long> stageTimers = new LinkedHashMap<>();
     private Logger log = Logger.getLogger(QuerySpan.class);
@@ -19,6 +21,7 @@ public class QuerySpanCollector {
             synchronized (this) {
                 seekCount.addAndGet(querySpan.getSeekCount());
                 nextCount.addAndGet(querySpan.getNextCount());
+                yield.set(querySpan.getYield());
                 sourceCount.addAndGet(querySpan.getSourceCount());
                 Map<String,Long> timers = querySpan.getStageTimers();
                 for (Map.Entry<String,Long> entry : timers.entrySet()) {
@@ -32,7 +35,7 @@ public class QuerySpanCollector {
                 }
             }
             if (log.isTraceEnabled()) {
-                log.trace("thread:" + Thread.currentThread().getId() + " collector: " + toString() + " added querySpan: " + querySpan.toString());
+                log.trace("thread:" + Thread.currentThread().getId() + " collector: " + this + " added querySpan: " + querySpan);
             }
             querySpan.reset();
         }
@@ -46,6 +49,7 @@ public class QuerySpanCollector {
                 combinedQuerySpan = new QuerySpan(null);
                 combinedQuerySpan.setNext(this.nextCount.getAndSet(0));
                 combinedQuerySpan.setSeek(this.seekCount.getAndSet(0));
+                combinedQuerySpan.setYield(this.yield.getAndSet(false));
                 combinedQuerySpan.setSourceCount(this.sourceCount.getAndSet(0));
                 combinedQuerySpan.setStageTimers(this.stageTimers);
                 this.stageTimers.clear();
@@ -55,7 +59,8 @@ public class QuerySpanCollector {
     }
     
     public boolean hasEntries() {
-        if (this.seekCount.intValue() > 0 || this.nextCount.intValue() > 0 || this.sourceCount.intValue() > 0 || this.stageTimers.size() > 0) {
+        if (this.seekCount.intValue() > 0 || this.nextCount.intValue() > 0 || this.yield.get() || this.sourceCount.intValue() > 0
+                        || !this.stageTimers.isEmpty()) {
             return true;
         } else {
             return false;
@@ -79,17 +84,18 @@ public class QuerySpanCollector {
     
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(" seek:").append(seekCount).append(" next:").append(nextCount).append(" sources:").append(sourceCount);
+        sb.append(super.toString()).append(" seek:").append(seekCount).append(" next:").append(nextCount).append(" yield:").append(yield).append(" sources:")
+                        .append(sourceCount);
         return sb.toString();
     }
     
     private void logStack() {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         StringBuilder sb = new StringBuilder();
-        sb.append("thread:").append(Thread.currentThread().getId()).append(" ").append(this).append(" ").append(toString()).append("\n");
+        sb.append("thread:").append(Thread.currentThread().getId()).append(" ").append(this).append(" ").append(this).append("\n");
         for (int x = 1; x < (stack.length - 1); x++) {
             StackTraceElement element = stack[x];
-            sb.append(element.toString()).append("\n");
+            sb.append(element).append("\n");
         }
         if (log.isTraceEnabled()) {
             log.trace(sb.toString());
@@ -102,6 +108,10 @@ public class QuerySpanCollector {
     
     public long getNextCount() {
         return nextCount.longValue();
+    }
+    
+    public boolean getYield() {
+        return yield.get();
     }
     
     public long getSourceCount() {

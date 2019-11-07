@@ -20,46 +20,46 @@ import com.google.common.collect.Multimap;
 
 public class ExtendedCSVHelper extends CSVHelper {
     
-    public static interface Properties {
+    public interface Properties {
         /**
          * Parameter to specify the name of the field that contains the event id. This parameter supports multiple datatypes, for example
          * mydatatype.data.category.id.field
          */
-        public static final String EVENT_ID_FIELD_NAME = ".data.category.id.field";
+        String EVENT_ID_FIELD_NAME = ".data.category.id.field";
         /**
          * Parameter to specify that the incoming id should be downcased.
          */
-        public static final String EVENT_ID_FIELD_DOWNCASE = ".data.category.id.field.downcase";
+        String EVENT_ID_FIELD_DOWNCASE = ".data.category.id.field.downcase";
         /**
          * Comma-delimited list of fields in the header to use as security markings. This parameter supports multiple datatypes, for example
          * mydatatype.data.category.security.field.names. Field name N within this list must be paired with corresponding "domain" entry N within
-         * {@link EVENT_SECURITY_MARKING_FIELD_DOMAINS}
+         * EVENT_SECURITY_MARKING_FIELD_DOMAINS
          */
-        public static final String EVENT_SECURITY_MARKING_FIELD_NAMES = ".data.category.security.field.names";
+        String EVENT_SECURITY_MARKING_FIELD_NAMES = ".data.category.security.field.names";
         /**
          * Comma-delimited list of names to use as security marking domains. This parameter supports multiple datatypes, for example
          * mydatatype.data.category.security.field.domains. Domain N within this list must be paired with a corresponding field name entry N within
-         * {@link EVENT_SECURITY_MARKING_FIELD_NAMES}
+         * EVENT_SECURITY_MARKING_FIELD_NAMES
          */
-        public static final String EVENT_SECURITY_MARKING_FIELD_DOMAINS = ".data.category.security.field.domains";
+        String EVENT_SECURITY_MARKING_FIELD_DOMAINS = ".data.category.security.field.domains";
         /**
          * Property prefix that is used to specify the parsers to use on the event id. This property must specify the datatype at the beginning and the field
          * name at the end. This property supports multiple datatypes, valid values would look like: maydatatype.data.id.parser.EVENT_DATE.1 ,
          * maydatatype.data.id.parser.EVENT_DATE.2, etc.
          */
-        public static final String ID_PARSERS_PREFIX = ".data.id.parser.";
+        String ID_PARSERS_PREFIX = ".data.id.parser.";
         /**
          * Comma-delimited list of fully qualified class names to use to validate an event
          */
-        public static final String EVENT_VALIDATORS = ".event.validators";
+        String EVENT_VALIDATORS = ".event.validators";
         /**
          * Comma-delimited list of ignored fields
          */
-        public static final String IGNORED_FIELDS = ".data.field.drop";
+        String IGNORED_FIELDS = ".data.field.drop";
         
-        public static final String EVENT_DATA_TYPE_FIELD_NAME = ".data.type.field.name";
-        public static final String DATA_TYPE_KEYS = ".event.data.type.keys";
-        public static final String DATA_TYPE_VALUES = ".event.data.type.values";
+        String EVENT_DATA_TYPE_FIELD_NAME = ".data.type.field.name";
+        String DATA_TYPE_KEYS = ".event.data.type.keys";
+        String DATA_TYPE_VALUES = ".event.data.type.values";
     }
     
     /**
@@ -169,6 +169,7 @@ public class ExtendedCSVHelper extends CSVHelper {
         if (fieldValue.contains("\"\"")) {
             fieldValue = fieldValue.replaceAll("\"\"", "\"");
         }
+        
         return fieldValue;
     }
     
@@ -181,18 +182,24 @@ public class ExtendedCSVHelper extends CSVHelper {
     }
     
     /**
-     * Lowercase MD5,SHA1,SHA256 but do *not* remove any wildspace
-     * 
+     * Lowercase MD5,SHA1,SHA256 but do *not* remove any whitespace as CSVHelper does.
+     *
+     * @param fieldName
+     *            the name of the field to clean
      * @param fieldValue
-     * @return
+     *            the value to clean
+     * @return the cleaned field, null if the field value is empty.
      */
     @Override
     public String clean(String fieldName, String fieldValue) {
         if (StringUtils.isEmpty(fieldValue)) {
             return null;
         }
-        if (fieldName.equalsIgnoreCase("md5") || fieldName.equalsIgnoreCase("sha1") || fieldName.equalsIgnoreCase("sha256"))
-            return fieldValue.toLowerCase();
+        
+        if (fieldName.equalsIgnoreCase("md5") || fieldName.equalsIgnoreCase("sha1") || fieldName.equalsIgnoreCase("sha256")) {
+            fieldValue = fieldValue.toLowerCase();
+        }
+        
         return fieldValue;
     }
     

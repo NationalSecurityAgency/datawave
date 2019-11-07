@@ -9,8 +9,12 @@ else
 fi
 THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
+
 #stop scripts do not require force despite lock files
 . ../ingest/ingest-env.sh -force
+. ../util/logging_pdsh.sh
+
+script_name=$(basename ${0})
 
 export METRICS_BIN=$THIS_DIR/..
 
@@ -25,7 +29,8 @@ else
   trap 'rm -f "$ingestHost"; exit $?' INT TERM EXIT
   echo $INGEST_HOST > $ingestHost
 
-  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/stopMetricsIngest.sh $@" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
+  logging_pdsh "${script_name}" -cmd ingestHost_cmd \
+    -f 25 -w  ^${ingestHost} "$METRICS_BIN/metrics/stopMetricsIngest.sh $@"
 
   rm $ingestHost
   trap - INT TERM EXIT
@@ -45,7 +50,8 @@ else
       echo $host >> $stagingHosts
   done
 
-  pdsh -f 25 -w ^${stagingHosts} "$METRICS_BIN/metrics/stopMetricsIngest.sh $@" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
+  logging_pdsh "${script_name}" -cmd stagingHosts_cmd \
+    -f 25 -w ^${stagingHosts} "$METRICS_BIN/metrics/stopMetricsIngest.sh $@"
 
   rm $stagingHosts
   trap - INT TERM EXIT

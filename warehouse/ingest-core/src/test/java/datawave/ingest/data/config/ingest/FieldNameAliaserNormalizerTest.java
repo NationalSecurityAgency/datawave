@@ -45,7 +45,7 @@ public class FieldNameAliaserNormalizerTest {
         FieldNameAliaserNormalizer fnan = new FieldNameAliaserNormalizer();
         fnan.setup(TypeRegistry.getType("test"), conf);
         
-        Map<String,String> expectedFieldAliases = new HashMap<String,String>();
+        Map<String,String> expectedFieldAliases = new HashMap<>();
         expectedFieldAliases.put("HELLOWORLD", "HELLO_WORLD");
         
         Assert.assertEquals(expectedFieldAliases, fnan.getAliases());

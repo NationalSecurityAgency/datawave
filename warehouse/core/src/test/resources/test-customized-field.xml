@@ -1,0 +1,10 @@
+<ageoffConfiguration>
+    <parent>test-root-field.xml</parent>
+    <rules>
+        <!-- we want to inherit all of the extended options so we need mode="merge" -->
+        <rule label="test" mode="merge">
+            <filterClass>datawave.ingest.util.cache.watch.TestFieldFilter</filterClass>
+            <isindextable>true</isindextable>
+        </rule>
+    </rules>
+</ageoffConfiguration>

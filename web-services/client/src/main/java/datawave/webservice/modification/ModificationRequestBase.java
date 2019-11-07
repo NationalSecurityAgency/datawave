@@ -27,7 +27,7 @@ public class ModificationRequestBase implements Serializable {
     private static final long serialVersionUID = 1L;
     
     @XmlEnum(String.class)
-    public static enum MODE {
+    public enum MODE {
         INSERT, UPDATE, DELETE
     }
     

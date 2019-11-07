@@ -71,7 +71,7 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
     @Override
     public Set<String> load(String key) throws Exception {
         
-        if (entryCache.size() == 0) {
+        if (entryCache.isEmpty()) {
             super.load(null);
         }
         
@@ -115,7 +115,7 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
                     
                     dataNormalizer.add(type);
                     
-                    if (dataTypeFilters.size() > 0 && !dataTypeFilters.contains(type)) {
+                    if (!dataTypeFilters.isEmpty() && !dataTypeFilters.contains(type)) {
                         if (log.isTraceEnabled())
                             log.trace("Returning since " + type + " is not in the data type cache");
                         return false;

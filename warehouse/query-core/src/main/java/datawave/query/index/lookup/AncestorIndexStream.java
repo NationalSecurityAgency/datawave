@@ -4,7 +4,13 @@ import datawave.data.hash.UIDConstants;
 import datawave.query.util.Tuple2;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Specialty AncestorIndexStream implementation. Wraps existing IndexStream delegate to prevent returning overlapping ranges from ancestors during expansions
@@ -77,7 +83,7 @@ public class AncestorIndexStream implements IndexStream {
         Set<IndexMatch> matches = info.uids();
         
         // test if there are no specific uids for this tuple, if there are no uids, don't attempt to reduce it
-        if (matches.size() == 0) {
+        if (matches.isEmpty()) {
             return info;
         }
         
@@ -120,7 +126,7 @@ public class AncestorIndexStream implements IndexStream {
         Collection<String> nodeStrings;
         
         public MatchGroup(IndexMatch match) {
-            nodeStrings = match.nodeStrings;
+            nodeStrings = match.nodeSet.getNodeKeys();
         }
         
         @Override

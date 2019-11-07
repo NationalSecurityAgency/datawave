@@ -7,10 +7,6 @@ import datawave.webservice.query.Query;
  */
 public class HudQuerySummaryBuilder {
     
-    public HudQuerySummaryBuilder() {
-        super();
-    }
-    
     public HudQuerySummary build(Query query) {
         HudQuerySummary summary = new HudQuerySummary();
         summary.setQueryLogicName(query.getQueryLogicName());

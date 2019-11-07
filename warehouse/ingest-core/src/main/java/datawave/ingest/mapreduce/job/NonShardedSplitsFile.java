@@ -2,16 +2,29 @@ package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Extracted from IngestJob Creates a splits file with all the requested tables, omitting the sharded ones Adds it to the specified work dir and sets the confi
@@ -68,9 +81,12 @@ public class NonShardedSplitsFile {
         public void createFile(boolean isTrimmed) {
             try {
                 MetadataTableSplits splits = new MetadataTableSplits(conf);
-                if (MetadataTableSplits.shouldRefreshSplits(conf) && !MetadataTableSplitsCacheStatus.isCacheValid(conf))
+                boolean isCacheValid = MetadataTableSplitsCacheStatus.isCacheValid(conf);
+                boolean shouldRefreshSplits = MetadataTableSplits.shouldRefreshSplits(conf);
+                if (shouldRefreshSplits && !isCacheValid) {
+                    log.info("Recreating splits");
                     splits.update();
-                else if (!MetadataTableSplits.shouldRefreshSplits(conf) && !MetadataTableSplitsCacheStatus.isCacheValid(conf)) {
+                } else if (!shouldRefreshSplits && !isCacheValid) {
                     throw new Exception("Splits cache is invalid");
                 }
                 writeSplitsToFile(splits);

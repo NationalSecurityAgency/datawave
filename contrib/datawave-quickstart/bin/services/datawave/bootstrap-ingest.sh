@@ -1,6 +1,7 @@
 # Sourced by env.sh
 
 DW_DATAWAVE_INGEST_SYMLINK="datawave-ingest"
+DW_DATAWAVE_INGEST_BASEDIR="datawave-ingest-install"
 
 DW_DATAWAVE_INGEST_HOME="${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}"
 
@@ -8,7 +9,7 @@ DW_DATAWAVE_INGEST_HOME="${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}"
 # ingest reducers. Set to 1 for standalone instance, but typically set to the first prime number that is less than the
 # number of available Accumulo tablet servers...
 
-DW_DATAWAVE_INGEST_NUM_SHARDS=1
+DW_DATAWAVE_INGEST_NUM_SHARDS=${DW_DATAWAVE_INGEST_NUM_SHARDS:-1}
 
 # Ingest job logs, etc
 
@@ -28,51 +29,55 @@ DW_DATAWAVE_INGEST_PASSWD_FILE="${DW_DATAWAVE_INGEST_CONFIG_HOME}"/ingest-passwd
 
 DW_DATAWAVE_INGEST_PASSWD_SCRIPT="
 export PASSWORD="${DW_ACCUMULO_PASSWORD}"
-export TRUSTSTORE_PASSWORD="${DW_ACCUMULO_PASSWORD}"
-export KEYSTORE_PASSWORD="${DW_ACCUMULO_PASSWORD}"
+export TRUSTSTORE_PASSWORD="${DW_DATAWAVE_TRUSTSTORE_PASSWORD}"
+export KEYSTORE_PASSWORD="${DW_DATAWAVE_KEYSTORE_PASSWORD}"
 "
 
 # Directory to persist *.flag files, when automating ingest job processing via the FlagMaker process
 
 DW_DATAWAVE_INGEST_FLAGFILE_DIR="${DW_DATAWAVE_DATA_DIR}/flags"
 
-# Configuration for the FlagMaker process(es)
+# Comma-delimited list of configs for the FlagMaker process(es)
 
-DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS="${DW_DATAWAVE_INGEST_CONFIG_HOME}/flag-maker-live.xml"
+DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS=${DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS:-"${DW_DATAWAVE_INGEST_CONFIG_HOME}/flag-maker-live.xml"}
 
 # Dir for ingest-related 'pid' files
 
 DW_DATAWAVE_INGEST_LOCKFILE_DIR="${DW_DATAWAVE_DATA_DIR}/ingest-lock-files"
 
-# Base dir for any ingest-related HDFS IO
+# Base HDFS dir for ingest
 
-DW_DATAWAVE_INGEST_HDFS_BASEDIR="/Ingest"
+DW_DATAWAVE_INGEST_HDFS_BASEDIR=${DW_DATAWAVE_INGEST_HDFS_BASEDIR:-/datawave/ingest}
 
-# Example raw data files
+# Set to any non-empty value other than 'false' to skip ingest of the raw data examples below
 
-DW_DATAWAVE_INGEST_TEST_FILE_WIKI="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"
-DW_DATAWAVE_INGEST_TEST_FILE_CSV="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"
-DW_DATAWAVE_INGEST_TEST_FILE_JSON="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-json/src/test/resources/input/tvmaze-api.json"
+DW_DATAWAVE_INGEST_TEST_SKIP=${DW_DATAWAVE_INGEST_TEST_SKIP:-false}
+
+# Example raw data files to be ingested (unless DW_DATAWAVE_INGEST_TEST_SKIP != 'false')
+
+DW_DATAWAVE_INGEST_TEST_FILE_WIKI=${DW_DATAWAVE_INGEST_TEST_FILE_WIKI:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"}
+DW_DATAWAVE_INGEST_TEST_FILE_CSV=${DW_DATAWAVE_INGEST_TEST_FILE_CSV:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"}
+DW_DATAWAVE_INGEST_TEST_FILE_JSON=${DW_DATAWAVE_INGEST_TEST_FILE_JSON:-"${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-json/src/test/resources/input/tvmaze-api.json"}
+
 DW_DATAWAVE_INGEST_FLAGMETRICS_DIR="${DW_DATAWAVE_DATA_DIR}/flagMetrics"
 
-# Spring bean config defining edges to be created during ingest, for building large, Accumulo-based graph via DataWave
+# Spring config defining edges to be created during ingest, for building distributed graph(s) in DW's edge table
+# (For now, this file path must be relative to the ingest home directory)
 
-DW_DATAWAVE_INGEST_EDGE_DEFINITIONS="config/edge-definitions.xml"
+DW_DATAWAVE_INGEST_EDGE_DEFINITIONS=${DW_DATAWAVE_INGEST_EDGE_DEFINITIONS:-"config/edge-definitions.xml"}
 
-# Configured data types to be ingested via "live" ingest, ie via low-latency batch mutations into Accumulo tables
+# Comma-delimited data type identifiers to be ingested via "live" ingest, ie via low-latency batch mutations into Accumulo tables
 
-DW_DATAWAVE_INGEST_LIVE_DATA_TYPES="wikipedia,mycsv,myjson"
+DW_DATAWAVE_INGEST_LIVE_DATA_TYPES=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES:-"wikipedia,mycsv,myjson"}
 
-# Configured data types to be ingested via "bulk" ingest, ie via bulk import of RFiles into Accumulo tables
+# Comma-delimited data type identifiers to be ingested via "bulk" ingest, ie via bulk import of RFiles into Accumulo tables
 
-DW_DATAWAVE_INGEST_BULK_DATA_TYPES=""
+DW_DATAWAVE_INGEST_BULK_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES:-"shardStats"}
 
-DW_DATAWAVE_MAPRED_INGEST_OPTS="-useInlineCombiner -ingestMetricsDisabled"
+DW_DATAWAVE_MAPRED_INGEST_OPTS=${DW_DATAWAVE_MAPRED_INGEST_OPTS:-"-useInlineCombiner -ingestMetricsDisabled"}
 
 getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
 DW_DATAWAVE_INGEST_DIST="${tarball}"
-DW_DATAWAVE_INGEST_VERSION="$( echo "${DW_DATAWAVE_INGEST_DIST}" | sed "s/.*\///" | sed "s/datawave-${DW_DATAWAVE_BUILD_PROFILE}-//" | sed "s/-dist.tar.gz//" )"
-DW_DATAWAVE_INGEST_BASEDIR="datawave-ingest-${DW_DATAWAVE_INGEST_VERSION}"
 
 # Service helpers...
 
@@ -98,7 +103,16 @@ function datawaveIngestStop() {
 }
 
 function datawaveIngestStatus() {
-    datawaveIngestIsRunning && echo "DataWave Ingest is running. PIDs: ${DW_DATAWAVE_INGEST_PID_LIST}" || echo "DataWave Ingest is not running"
+
+    echo "======  DataWave Ingest Status  ======"
+    if datawaveIngestIsRunning ; then
+        echo "pids: ${DW_DATAWAVE_INGEST_PID_LIST}"
+        $DW_DATAWAVE_INGEST_HOME/bin/ingest/list-ingest.sh
+
+    else
+        info "No ingest processes are running"
+    fi
+
 }
 
 function datawaveIngestIsInstalled() {
@@ -108,13 +122,19 @@ function datawaveIngestIsInstalled() {
 }
 
 function datawaveIngestUninstall() {
-   if datawaveIngestIsInstalled ; then
+
+   # Guard against false negative (bug) by testing to see if a "datawave-ingest-*" dir does actually exist, since
+   # DW_DATAWAVE_INGEST_BASEDIR value may have been only partially defined (without the DW version, e.g., if build failed, etc)
+   # This is only for backward compatibility, since now the dir name is no longer defined dynamically
+   local install_dir="$( find "${DW_DATAWAVE_SERVICE_DIR}" -maxdepth 1 -type d -name "${DW_DATAWAVE_INGEST_BASEDIR}*" )"
+
+   if datawaveIngestIsInstalled || [ -n "${install_dir}" ] ; then
       if [ -L "${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}" ] ; then
           unlink "${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}" || error "Failed to remove DataWave Ingest symlink"
       fi
 
-      if [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_BASEDIR}" ] ; then
-          rm -rf "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_INGEST_BASEDIR}"
+      if [ -n "${install_dir}" ] ; then
+          rm -rf "${install_dir}"
       fi
 
       ! datawaveIngestIsInstalled && info "DataWave Ingest uninstalled" || error "Failed to uninstall DataWave Ingest"
@@ -124,6 +144,9 @@ function datawaveIngestUninstall() {
 }
 
 function datawaveIngestInstall() {
+
+   export DW_SKIP_INGEST_EXAMPLES=${DW_SKIP_INGEST_EXAMPLES:-false}
+
    "${DW_DATAWAVE_SERVICE_DIR}"/install-ingest.sh
 }
 
@@ -179,7 +202,7 @@ function datawaveIngestCsv() {
 
    # Same as with datawaveIngestWikipedia, we use live-ingest.sh, but this time to ingest some CSV data.
    # Note that the sample file, my.csv, has records that intentionally generate errors to demonstrate
-   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot 
+   # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot
    # data-related errors that arise during ingest. As a result, this job may terminate with warnings
 
    local csvRawFile="${1}"

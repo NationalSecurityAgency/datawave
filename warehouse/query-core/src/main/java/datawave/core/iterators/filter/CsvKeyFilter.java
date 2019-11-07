@@ -21,7 +21,7 @@ public class CsvKeyFilter extends Filter {
     public static final String ALLOWED_OPT = "kf.allowed";
     public static final String KEY_PART_OPT = "kf.part";
     
-    private static enum KeyPart {
+    private enum KeyPart {
         ROW, COLF, COLQ
     }
     
@@ -64,7 +64,7 @@ public class CsvKeyFilter extends Filter {
         }
         
         if (log.isDebugEnabled()) {
-            log.debug("Will filter on key part " + this.part.toString());
+            log.debug("Will filter on key part " + this.part);
         }
     }
     

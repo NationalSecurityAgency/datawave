@@ -57,12 +57,7 @@ public class QueryUtil {
         return params;
     }
     
-    private static ThreadLocal<LinkedBuffer> BUFFER = new ThreadLocal<LinkedBuffer>() {
-        @Override
-        protected LinkedBuffer initialValue() {
-            return LinkedBuffer.allocate(1024);
-        }
-    };
+    private static ThreadLocal<LinkedBuffer> BUFFER = ThreadLocal.withInitial(() -> LinkedBuffer.allocate(1024));
     
     public static <T extends Query> Mutation toMutation(T query, ColumnVisibility vis) {
         // Store by sid for backwards compatibility
@@ -71,8 +66,7 @@ public class QueryUtil {
             @SuppressWarnings("unchecked")
             Schema<T> schema = (Schema<T>) RuntimeSchema.getSchema(query.getClass());
             byte[] bytes = ProtobufIOUtil.toByteArray(query, schema, BUFFER.get());
-            m.put(query.getQueryName(), query.getId().toString() + NULL_BYTE + query.getClass().getName(), vis, query.getExpirationDate().getTime(), new Value(
-                            bytes));
+            m.put(query.getQueryName(), query.getId() + NULL_BYTE + query.getClass().getName(), vis, query.getExpirationDate().getTime(), new Value(bytes));
             return m;
         } finally {
             BUFFER.get().clear();

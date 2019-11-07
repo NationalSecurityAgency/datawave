@@ -12,7 +12,7 @@ public class NowTest {
     public void testSingleton() {
         Now now = Now.getInstance();
         Now now2 = Now.getInstance();
-        Assert.assertTrue(now == now2);
+        Assert.assertSame(now, now2);
     }
     
     @Test

@@ -17,12 +17,11 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import datawave.ingest.data.tokenize.StandardAnalyzer;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.config.ConfigurationKey;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfigHandler.ConfigurationKeys;
-import org.apache.lucene.util.Version;
 
 public class LuceneToJexlQueryParser implements QueryParser {
     private static final String[] DEFAULT_TOKENIZED_FIELDS = {"TOKFIELD"};
@@ -31,14 +30,14 @@ public class LuceneToJexlQueryParser implements QueryParser {
     private Set<String> tokenizedFields = new HashSet<>();
     private boolean tokenizeUnfieldedQueries = false;
     private boolean allowLeadingWildCard = true;
-    private boolean tokensAsPhrase = false;
+    private boolean useSlopForTokenizedTerms = true;
     private Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
     
     private boolean positionIncrementsEnabled = true;
     private Set<String> allowedFields = null;
     private Boolean allowAnyFieldQueries = true;
     private List<JexlQueryFunction> allowedFunctions = JexlTreeBuilder.DEFAULT_ALLOWED_FUNCTION_LIST;
-    private Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+    private Analyzer analyzer = new StandardAnalyzer();
     
     public LuceneToJexlQueryParser() {
         Collections.addAll(tokenizedFields, DEFAULT_TOKENIZED_FIELDS);
@@ -50,7 +49,7 @@ public class LuceneToJexlQueryParser implements QueryParser {
     public static final ConfigurationKey<Set<String>> SKIP_TOKENIZE_UNFIELDED_FIELDS = ConfigurationKey.newInstance();
     public static final ConfigurationKey<Set<String>> ALLOWED_FIELDS = ConfigurationKey.newInstance();
     public static final ConfigurationKey<Boolean> ALLOW_ANY_FIELD_QUERIES = ConfigurationKey.newInstance();
-    public static final ConfigurationKey<Boolean> TOKENS_AS_PHRASE = ConfigurationKey.newInstance();
+    public static final ConfigurationKey<Boolean> USE_SLOP_FOR_TOKENIZED_TERMS = ConfigurationKey.newInstance();
     
     @Override
     public QueryNode parse(String query) throws ParseException {
@@ -84,7 +83,7 @@ public class LuceneToJexlQueryParser implements QueryParser {
             queryConfigHandler.set(SKIP_TOKENIZE_UNFIELDED_FIELDS, skipTokenizeUnfieldedFields);
             queryConfigHandler.set(ALLOWED_FIELDS, allowedFields);
             queryConfigHandler.set(ALLOW_ANY_FIELD_QUERIES, allowAnyFieldQueries);
-            queryConfigHandler.set(TOKENS_AS_PHRASE, tokensAsPhrase);
+            queryConfigHandler.set(USE_SLOP_FOR_TOKENIZED_TERMS, useSlopForTokenizedTerms);
             
             queryConfigHandler.set(ConfigurationKeys.ALLOW_LEADING_WILDCARD, allowLeadingWildCard);
             
@@ -156,12 +155,12 @@ public class LuceneToJexlQueryParser implements QueryParser {
         this.allowAnyFieldQueries = allowAnyField;
     }
     
-    public boolean isTokensAsPhrase() {
-        return tokensAsPhrase;
+    public boolean isUseSlopForTokenizedTerms() {
+        return useSlopForTokenizedTerms;
     }
     
-    public void setTokensAsPhrase(boolean tokensAsPhrase) {
-        this.tokensAsPhrase = tokensAsPhrase;
+    public void setUseSlopForTokenizedTerms(boolean useSlopForTokenizedTerms) {
+        this.useSlopForTokenizedTerms = useSlopForTokenizedTerms;
     }
     
     public Analyzer getAnalyzer() {

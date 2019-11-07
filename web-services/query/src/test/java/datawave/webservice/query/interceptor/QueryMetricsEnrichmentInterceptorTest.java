@@ -42,8 +42,6 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.List;
-import java.util.Map.Entry;
 import java.util.UUID;
 
 import static org.easymock.EasyMock.anyObject;
@@ -117,7 +115,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
     @Before
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         
         // noinspection unchecked
         requestHeaders = PowerMock.createStrictMock(MultivaluedMap.class);
@@ -137,11 +135,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         expect(uriInfo.getRequestUri()).andReturn(requestUri);
         expect(requestContext.getMethod()).andReturn(null);
         expect(requestContext.getHeaders()).andReturn(requestHeaders);
-        expect(requestHeaders.keySet()).andReturn(new HashSet<String>());
+        expect(requestHeaders.keySet()).andReturn(new HashSet<>());
         expect(requestContext.getMediaType()).andReturn(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
         expect(requestContext.getHttpRequest()).andReturn(httpRequest);
         expect(httpRequest.getDecodedFormParameters()).andReturn(decodedFormParameters);
-        expect(decodedFormParameters.keySet()).andReturn(new HashSet<String>());
+        expect(decodedFormParameters.keySet()).andReturn(new HashSet<>());
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")), anyObject());
         
         // Run the test
@@ -158,7 +156,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         
         // Set expectations
         expect(responseContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.keySet()).andReturn(new HashSet<String>());
+        expect(writeHeaders.keySet()).andReturn(new HashSet<>());
         expect(responseContext.getStatus()).andReturn(HttpResponseCodes.SC_OK);
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         expect(jaxrsResponse.getAnnotations()).andReturn(new Annotation[] {enrichQueryMetrics});
@@ -183,11 +181,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         // Simulate the initial context
         TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
         
-        final Capture<QueryCall> qcCapture = new Capture<>();
+        final Capture<QueryCall> qcCapture = Capture.newInstance();
         
         // Set expectations for the postProcess
         expect(responseContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.keySet()).andReturn(new HashSet<String>());
+        expect(writeHeaders.keySet()).andReturn(new HashSet<>());
         expect(responseContext.getStatus()).andReturn(HttpResponseCodes.SC_OK);
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")), anyObject());
@@ -204,16 +202,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         writerContext.setOutputStream(isA(CountingOutputStream.class));
         writerContext.setOutputStream(outputStream);
         expect(writerContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.entrySet()).andReturn(new HashSet<Entry<String,List<Object>>>());
+        expect(writeHeaders.entrySet()).andReturn(new HashSet<>());
         writerContext.proceed();
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")))).andReturn(null);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")))).andReturn(null);
-        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer(new IAnswer<QueryCall>() {
-            @Override
-            public QueryCall answer() throws Throwable {
-                return qcCapture.getValue();
-            }
-        });
+        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer((IAnswer<QueryCall>) qcCapture::getValue);
         expect(queryCache.get(isA(String.class))).andReturn(runningQuery);
         expect(runningQuery.getLogic()).andReturn(queryLogic);
         expect(queryLogic.getCollectQueryMetrics()).andReturn(true);
@@ -245,11 +238,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         // Simulate the initial context
         TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
         
-        final Capture<QueryCall> qcCapture = new Capture<>();
+        final Capture<QueryCall> qcCapture = Capture.newInstance();
         
         // Set expectations for the postProcess
         expect(responseContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.keySet()).andReturn(new HashSet<String>());
+        expect(writeHeaders.keySet()).andReturn(new HashSet<>());
         expect(responseContext.getStatus()).andReturn(HttpResponseCodes.SC_OK);
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")), anyObject());
@@ -266,16 +259,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         writerContext.setOutputStream(isA(CountingOutputStream.class));
         writerContext.setOutputStream(outputStream);
         expect(writerContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.entrySet()).andReturn(new HashSet<Entry<String,List<Object>>>());
+        expect(writeHeaders.entrySet()).andReturn(new HashSet<>());
         writerContext.proceed();
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")))).andReturn(null);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")))).andReturn(null);
-        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer(new IAnswer<QueryCall>() {
-            @Override
-            public QueryCall answer() throws Throwable {
-                return qcCapture.getValue();
-            }
-        });
+        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer((IAnswer<QueryCall>) qcCapture::getValue);
         expect(queryCache.get(isA(String.class))).andReturn(runningQuery);
         expect(runningQuery.getLogic()).andReturn(queryLogic);
         expect(queryLogic.getCollectQueryMetrics()).andReturn(true);
@@ -310,11 +298,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         // Simulate the initial context
         TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
         
-        final Capture<QueryCall> qcCapture = new Capture<>();
+        final Capture<QueryCall> qcCapture = Capture.newInstance();
         
         // Set expectations for the postProcess
         expect(responseContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.keySet()).andReturn(new HashSet<String>());
+        expect(writeHeaders.keySet()).andReturn(new HashSet<>());
         expect(responseContext.getStatus()).andReturn(HttpResponseCodes.SC_OK);
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")), anyObject());
@@ -331,14 +319,9 @@ public class QueryMetricsEnrichmentInterceptorTest {
         writerContext.setOutputStream(isA(CountingOutputStream.class));
         writerContext.setOutputStream(outputStream);
         expect(writerContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.entrySet()).andReturn(new HashSet<Entry<String,List<Object>>>());
+        expect(writeHeaders.entrySet()).andReturn(new HashSet<>());
         writerContext.proceed();
-        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer(new IAnswer<QueryCall>() {
-            @Override
-            public QueryCall answer() throws Throwable {
-                return qcCapture.getValue();
-            }
-        });
+        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer((IAnswer<QueryCall>) qcCapture::getValue);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")))).andReturn(null);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")))).andReturn(null);
         expect(queryCache.get(isA(String.class))).andReturn(runningQuery);
@@ -380,11 +363,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         // Simulate the initial context
         TestInitialContextFactory.INITIAL_CONTEXT = this.initialContext;
         
-        final Capture<QueryCall> qcCapture = new Capture<>();
+        final Capture<QueryCall> qcCapture = Capture.newInstance();
         
         // Set expectations for the postProcess
         expect(responseContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.keySet()).andReturn(new HashSet<String>());
+        expect(writeHeaders.keySet()).andReturn(new HashSet<>());
         expect(responseContext.getStatus()).andReturn(HttpResponseCodes.SC_OK);
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")), anyObject());
@@ -401,16 +384,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         writerContext.setOutputStream(isA(CountingOutputStream.class));
         writerContext.setOutputStream(outputStream);
         expect(writerContext.getHeaders()).andReturn(writeHeaders);
-        expect(writeHeaders.entrySet()).andReturn(new HashSet<Entry<String,List<Object>>>());
+        expect(writeHeaders.entrySet()).andReturn(new HashSet<>());
         writerContext.proceed();
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")))).andReturn(null);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")))).andReturn(null);
-        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer(new IAnswer<QueryCall>() {
-            @Override
-            public QueryCall answer() throws Throwable {
-                return qcCapture.getValue();
-            }
-        });
+        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer((IAnswer<QueryCall>) qcCapture::getValue);
         expect(queryCache.get(isA(String.class))).andReturn(runningQuery);
         expect(runningQuery.getLogic()).andReturn(queryLogic);
         expect(queryLogic.getCollectQueryMetrics()).andReturn(true);

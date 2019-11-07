@@ -1,10 +1,11 @@
 package datawave.ingest.table.aggregator;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -12,6 +13,11 @@ import org.junit.Test;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class DateIndexDateAggregatorTest {
     
@@ -28,13 +34,13 @@ public class DateIndexDateAggregatorTest {
         assertNotNull(result);
         assertNotNull(result.get());
         assertNotNull(val.get());
-        assertTrue(val.compareTo(result.get()) == 0);
+        assertEquals(0, val.compareTo(result.get()));
     }
     
     @Test
     public void testMerge() throws Exception {
         agg.reset();
-        Set<Integer> shards = new HashSet<Integer>();
+        Set<Integer> shards = new HashSet<>();
         for (int i = 0; i <= 20; i++) {
             shards.add(i);
             shards.add(i * 3);
@@ -63,7 +69,7 @@ public class DateIndexDateAggregatorTest {
     @Test
     public void testMerge2() throws Exception {
         agg.reset();
-        Set<Integer> shards = new HashSet<Integer>();
+        Set<Integer> shards = new HashSet<>();
         for (int i = 0; i <= 20; i++) {
             shards.add(i);
             shards.add(i * 5);
@@ -91,7 +97,7 @@ public class DateIndexDateAggregatorTest {
     
     @Test
     public void testIncrementalMerge() throws Exception {
-        Set<Integer> shards = new HashSet<Integer>();
+        Set<Integer> shards = new HashSet<>();
         for (int i = 0; i <= 20; i++) {
             shards.add(i);
             shards.add(i * 3);
@@ -106,7 +112,7 @@ public class DateIndexDateAggregatorTest {
         }
         
         while (values.size() > 1) {
-            List<Value> subValues = new ArrayList<Value>();
+            List<Value> subValues = new ArrayList<>();
             int len = Math.min(3, values.size());
             for (int i = 0; i < len; i++) {
                 subValues.add(values.remove(values.size() - 1));
@@ -129,7 +135,7 @@ public class DateIndexDateAggregatorTest {
     
     @Test
     public void testIncrementalMerge2() throws Exception {
-        Set<Integer> shards = new HashSet<Integer>();
+        Set<Integer> shards = new HashSet<>();
         for (int i = 0; i <= 20; i++) {
             shards.add(i);
             shards.add(i * 5);
@@ -144,7 +150,7 @@ public class DateIndexDateAggregatorTest {
         }
         
         while (values.size() > 1) {
-            List<Value> subValues = new ArrayList<Value>();
+            List<Value> subValues = new ArrayList<>();
             int len = Math.min(3, values.size());
             for (int i = 0; i < len; i++) {
                 subValues.add(values.remove(values.size() - 1));

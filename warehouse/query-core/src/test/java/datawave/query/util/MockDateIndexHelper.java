@@ -10,10 +10,6 @@ import java.util.Set;
 
 public class MockDateIndexHelper extends DateIndexHelper {
     
-    public MockDateIndexHelper() {
-        
-    }
-    
     private final TreeMultimap<String,Entry> entries = TreeMultimap.create();
     
     private static class Entry implements Comparable<Entry> {

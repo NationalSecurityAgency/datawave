@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -35,7 +34,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
@@ -54,7 +53,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private AccumuloConnectionFactory.Priority connectionPriority = null;
     private transient QueryLogic<?> logic = null;
     private Query settings = null;
-    private long scanned = 0;
     private long numResults = 0;
     private long lastPageNumber = 0;
     private transient TransformIterator iter = null;
@@ -112,33 +110,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.settings.populateMetric(this.getMetric());
         this.getMetric().setQueryType(this.getClass().getSimpleName());
         if (this.queryMetrics != null) {
-            updateMetric(executor, queryMetrics, this.getMetric());
+            try {
+                this.queryMetrics.updateMetric(this.getMetric());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
         }
         // If connection is null, then we are likely not going to use this object for query, probably for removing or closing it.
         if (null != connection) {
             setConnection(connection);
-        }
-    }
-    
-    private void updateMetric(ExecutorService executor, final QueryMetricsBean bean, final BaseQueryMetric metric) {
-        if (executor != null) {
-            final BaseQueryMetric dupe = metric.duplicate();
-            executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    updateMetric(bean, dupe);
-                }
-            });
-        } else {
-            updateMetric(queryMetrics, getMetric());
-        }
-    }
-    
-    private void updateMetric(QueryMetricsBean bean, BaseQueryMetric metric) {
-        try {
-            bean.updateMetric(metric);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
         }
     }
     
@@ -155,7 +135,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         String user = this.settings.getUserDN();
         UUID uuid = this.settings.getId();
         if (user != null && uuid != null) {
-            NDC.push("[" + user + "] [" + uuid.toString() + "]");
+            NDC.push("[" + user + "] [" + uuid + "]");
         }
     }
     
@@ -195,7 +175,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             touch();
             removeNDC();
             if (this.queryMetrics != null) {
-                updateMetric(executor, queryMetrics, getMetric());
+                try {
+                    this.queryMetrics.updateMetric(this.getMetric());
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         }
     }
@@ -238,15 +222,21 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hitPageByteTrigger = true;
                     break;
                 }
-                // if the logic had a max rows to scan (across all pages) and we have reached that, then break out
-                if (this.logic.getMaxRowsToScan() > 0 && scanned >= this.logic.getMaxRowsToScan()) {
-                    log.info("Query logic max rows to scan has been reached, aborting query.next call");
-                    break;
-                }
-                // if the logic had a max num results (across all pages) and we have reached that, then break out
-                if (this.logic.getMaxResults() > 0 && numResults >= this.logic.getMaxResults()) {
+                // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
+                if (this.settings.isMaxResultsOverridden()) {
+                    if (this.settings.getMaxResultsOverride() >= 0 && numResults >= this.settings.getMaxResultsOverride()) {
+                        log.info("Max results override has been reached, aborting query.next call");
+                        this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                        break;
+                    }
+                } else if (this.logic.getMaxResults() >= 0 && numResults >= this.logic.getMaxResults()) {
                     log.info("Query logic max results has been reached, aborting query.next call");
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                    break;
+                }
+                if (this.logic.getMaxWork() >= 0 && (this.getMetric().getNextCount() + this.getMetric().getSeekCount()) >= this.logic.getMaxWork()) {
+                    log.info("Query logic max work has been reached, aborting query.next call");
+                    this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXWORK);
                     break;
                 }
                 // if we are the specified amount on the way to timing out on this call and we have results,
@@ -258,21 +248,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
                 if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                     log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
-                                    + pageTimeInCall + " " + timing.toString());
+                                    + pageTimeInCall + " " + timing);
                     hitPageTimeTrigger = true;
                     break;
                 }
-                scanned++;
                 
                 Object o = null;
                 if (executor != null) {
                     if (future == null) {
-                        future = executor.submit(new Callable<Object>() {
-                            @Override
-                            public Object call() throws Exception {
-                                return iter.next();
-                            }
-                        });
+                        future = executor.submit(() -> iter.next());
                     }
                     try {
                         o = future.get(1, TimeUnit.MINUTES);
@@ -290,6 +274,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 } else {
                     o = iter.next();
                 }
+                
+                // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+                if (iter.getTransformer() instanceof WritesQueryMetrics) {
+                    ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
+                }
+                
                 // if not still waiting on a future, then process the result (or lack thereof)
                 if (future == null) {
                     if (null == o) {
@@ -315,7 +305,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             long now = System.currentTimeMillis();
             this.getMetric().addPageTime(currentPageCount, now - pageStartTime, pageStartTime, now);
             this.lastPageNumber++;
-            if (resultList.size() > 0) {
+            if (!resultList.isEmpty()) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
             }
         } catch (Exception e) {
@@ -329,10 +319,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             
             if (this.queryMetrics != null) {
                 try {
-                    if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                        ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-                    }
-                    updateMetric(executor, queryMetrics, getMetric());
+                    this.queryMetrics.updateMetric(this.getMetric());
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -431,7 +418,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             } finally {
                 // only push metrics if this RunningQuery was initialized
                 if (this.queryMetrics != null) {
-                    updateMetric(executor, queryMetrics, getMetric());
+                    try {
+                        queryMetrics.updateMetric(this.getMetric());
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                    }
                 }
             }
         }
@@ -440,6 +431,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             try {
                 addNDC();
                 logic.close();
+            } catch (Exception e) {
+                log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
             } finally {
                 removeNDC();
             }
@@ -477,8 +470,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     
     /**
      * Gets the {@link TInfo} associated with this query, if any. If the query is not being traced, then {@code null} is returned. Callers can continue a trace
-     * on a different thread by calling {@link org.apache.accumulo.trace.instrument.Trace#trace(TInfo, String)} with the info returned here, and then
-     * interacting with the returned {@link org.apache.accumulo.trace.instrument.Span}.
+     * on a different thread by calling {@link org.apache.accumulo.core.trace.Trace#trace(TInfo, String)} with the info returned here, and then interacting with
+     * the returned {@link org.apache.accumulo.core.trace.Span}.
      * 
      * @return the {@link TInfo} associated with this query, if any
      */
@@ -499,7 +492,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     /**
      * An interface used to force returning from a next call within a running query.
      */
-    public static interface RunningQueryTiming {
+    public interface RunningQueryTiming {
         boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall);
     }
     

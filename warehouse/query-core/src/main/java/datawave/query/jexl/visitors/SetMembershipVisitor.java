@@ -8,8 +8,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.IndexOnlyContextCreator;
 import datawave.query.jexl.IndexOnlyJexlContext;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
@@ -42,8 +40,8 @@ public class SetMembershipVisitor extends BaseVisitor {
      * Note: The logic that originally appended this suffix appeared to have been inadvertently removed from this class (renamed from IndexOnlyVisitor) when the
      * dev branch was merged into version2.x. It has since been reapplied in conjunction with the two internal helper classes.
      */
-    public final static String INDEX_ONLY_FUNCTION_SUFFIX = "@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION";
-    public final static String FILTER = "filter";
+    public static final String INDEX_ONLY_FUNCTION_SUFFIX = "@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION";
+    public static final String FILTER = "filter";
     protected final Set<String> expectedFields;
     protected final MetadataHelper metadataHelper;
     protected final DateIndexHelper dateIndexHelper;
@@ -371,12 +369,6 @@ public class SetMembershipVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         if (traverse(data, fullTraversal)) {
-            // apply it to the index query first
-            JexlArgumentDescriptor d = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-            JexlNode tree = d.getIndexQuery(this.config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
-            data = tree.jjtAccept(this, data);
-            
-            // and then apply it to the args directory
             int i = 0;
             while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
                 data = node.jjtGetChild(i).jjtAccept(this, data);

@@ -7,5 +7,5 @@ import org.apache.accumulo.core.data.Key;
  * queries, where we want to compare subsections of keys.
  */
 public interface Equality {
-    public boolean partOf(Key docKey, Key test);
+    boolean partOf(Key docKey, Key test);
 }

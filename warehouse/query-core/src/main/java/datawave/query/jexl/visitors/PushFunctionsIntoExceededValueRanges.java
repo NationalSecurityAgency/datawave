@@ -4,13 +4,28 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
@@ -42,9 +57,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
     public static <T extends JexlNode> T pushFunctions(T script, MetadataHelper helper, Set<String> datatypeFilter) {
         PushFunctionsIntoExceededValueRanges visitor = new PushFunctionsIntoExceededValueRanges(helper, datatypeFilter);
         
-        T node = (T) (script.jjtAccept(visitor, null));
-        
-        return node;
+        return (T) (script.jjtAccept(visitor, null));
     }
     
     @Override
@@ -62,7 +75,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         Set<JexlNode> functionNodes = new HashSet<>();
         Multimap<String,JexlNode> functionNodesByField = HashMultimap.create();
         Multimap<String,JexlNode> exceededValueRangeNodes = HashMultimap.create();
-        List<JexlNode> children = new ArrayList<JexlNode>();
+        List<JexlNode> children = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
             if (isSingleFieldFunctionNode(child)) {
@@ -88,16 +101,26 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
             for (String field : fields) {
                 boolean copyFunction = exceededValueRangeNodes.get(field).size() > 1;
                 for (JexlNode range : exceededValueRangeNodes.removeAll(field)) {
-                    Collection<JexlNode> functions = functionNodesByField.get(field);
-                    functionNodes.removeAll(functions);
+                    
+                    // filter out functions which disallow ivarator filtering
+                    Collection<JexlNode> filterableFunctions = functionNodesByField
+                                    .get(field)
+                                    .stream()
+                                    .filter(functionNode -> {
+                                        JexlArgumentDescriptor argDesc = JexlFunctionArgumentDescriptorFactory.F
+                                                        .getArgumentDescriptor((ASTFunctionNode) JexlASTHelper.dereference(functionNode));
+                                        return argDesc != null && argDesc.allowIvaratorFiltering();
+                                    }).collect(Collectors.toList());
+                    
+                    functionNodes.removeAll(filterableFunctions);
                     if (copyFunction) {
-                        functions = new HashSet<>();
+                        filterableFunctions = new HashSet<>();
                         for (JexlNode function : functionNodesByField.get(field)) {
-                            functions.add(super.copy(function));
+                            filterableFunctions.add(super.copy(function));
                         }
                     }
-                    children.add(pushFunctionIntoExceededValueRange(functions, range));
-                    functionNodes.removeAll(functions);
+                    children.add(pushFunctionIntoExceededValueRange(filterableFunctions, range));
+                    functionNodes.removeAll(filterableFunctions);
                 }
             }
             

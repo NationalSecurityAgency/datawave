@@ -76,10 +76,10 @@ public class FieldNameAliaserNormalizer {
             String indexAliasesConfig = config.get(type.typeName() + INDEX_ALIASES, null);
             if (null != indexAliasesConfig) {
                 for (String indexAliasStr : StringUtils.split(indexAliasesConfig, ';')) {
-                    if (indexAliasStr.length() > 0) {
+                    if (!indexAliasStr.isEmpty()) {
                         String[] parts = StringUtils.split(indexAliasStr, ':');
                         if (parts.length == 2) {
-                            HashSet<String> aliases = new HashSet<String>();
+                            HashSet<String> aliases = new HashSet<>();
                             for (String alias : StringUtils.split(parts[1], ',')) {
                                 aliases.add(canonicalizeFieldName(alias, FIELD.NAME));
                             }

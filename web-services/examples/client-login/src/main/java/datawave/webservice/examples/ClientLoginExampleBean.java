@@ -3,6 +3,8 @@ package datawave.webservice.examples;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
+import javax.annotation.security.RunAs;
+import javax.ejb.LocalBean;
 import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -24,6 +26,8 @@ import org.jboss.security.auth.callback.ObjectCallback;
  */
 @Startup
 @Singleton
+@LocalBean
+@RunAs("InternalUser")
 public class ClientLoginExampleBean {
     
     // Inject a secured EJB that we need to call.
@@ -46,8 +50,8 @@ public class ClientLoginExampleBean {
             
             // Compute the username. This would either be just a user DN if you are using a user's client
             // certificate, or a server DN combined with a proxied user DN as we demonstrate here.
-            String userDN = System.getenv("USER"); // Normally a username would go here. Hack for local testing--query the sid running jboss.
-            String userIssuerDN = System.getenv("ISSUER"); // We need the issuer of the user's cert. This needs to be set in the environment for this test.
+            String userDN = System.getenv("USER_DN"); // Normally a username would go here. Hack for local testing--query the sid running jboss.
+            String userIssuerDN = System.getenv("ISSUER_DN"); // We need the issuer of the user's cert. This needs to be set in the environment for this test.
             String serverDN = cert.getSubjectX500Principal().getName();
             String serverIssuerDN = cert.getIssuerX500Principal().getName();
             final String dn = DnUtils.buildNormalizedProxyDN(serverDN, serverIssuerDN, userDN, userIssuerDN);

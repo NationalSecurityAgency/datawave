@@ -27,7 +27,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object> {
             if (nextEntry != null)
                 return true;
             try {
-                while (nextEntry == null && (results.size() > 0 || completionLatch.getCount() > 0)) {
+                while (nextEntry == null && (!results.isEmpty() || completionLatch.getCount() > 0)) {
                     nextEntry = results.poll(1, TimeUnit.SECONDS);
                 }
                 return true;

@@ -9,7 +9,7 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 
-import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections4.Transformer;
 
 public interface EventQueryTransformerInterface<Q> extends QueryLogicTransformer {
     

@@ -1,8 +1,15 @@
 package datawave.query.postprocessing.tf;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import datawave.core.iterators.TermFrequencyIterator;
 import datawave.core.iterators.TermFrequencyIterator.FieldValue;
@@ -28,7 +35,6 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -106,7 +112,7 @@ public class TermOffsetPopulator {
     protected Range getRange(Set<Key> keys) {
         // building a range from the begining of the term frequencies for the first datatype\0uid
         // to the end of the term frequencies for the last datatype\0uid
-        List<String> dataTypeUids = new ArrayList<String>();
+        List<String> dataTypeUids = new ArrayList<>();
         Text row = null;
         for (Key key : keys) {
             row = key.getRow();
@@ -138,7 +144,7 @@ public class TermOffsetPopulator {
         
         // set the document context on the filter
         if (evaluationFilter != null) {
-            evaluationFilter.setDocumentKey(docKey);
+            evaluationFilter.startNewDocument(docKey);
         }
         
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
@@ -216,18 +222,9 @@ public class TermOffsetPopulator {
         FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
         query.jjtAccept(visitor, null);
         
-        Multimap<String,Function> functionsInNamespace = Multimaps.index(visitor.functions().get(ContentFunctions.CONTENT_FUNCTION_NAMESPACE),
-                        new com.google.common.base.Function<Function,String>() {
-                            public String apply(Function from) {
-                                return from.name();
-                            }
-                        });
+        Multimap<String,Function> functionsInNamespace = Multimaps.index(visitor.functions().get(ContentFunctions.CONTENT_FUNCTION_NAMESPACE), Function::name);
         
-        return Multimaps.filterKeys(functionsInNamespace, new Predicate<String>() {
-            public boolean apply(String input) {
-                return isContentFunctionTerm(input);
-            }
-        });
+        return Multimaps.filterKeys(functionsInNamespace, TermOffsetPopulator::isContentFunctionTerm);
     }
     
     /**
@@ -278,11 +275,11 @@ public class TermOffsetPopulator {
     private static Set<String> getNormalizedTerms(String originalTerm, String zone, Multimap<String,Class<? extends Type<?>>> dataTypes,
                     Map<Class<? extends Type<?>>,Type<?>> dataTypeCacheMap) {
         
-        Set<String> normalizedTerms = new HashSet<String>();
+        Set<String> normalizedTerms = new HashSet<>();
         
         Collection<Class<? extends Type<?>>> dataTypesForZone = dataTypes.get(zone);
         if (dataTypesForZone.isEmpty()) {
-            dataTypesForZone = Collections.<Class<? extends Type<?>>> singleton(NoOpType.class);
+            dataTypesForZone = Collections.singleton(NoOpType.class);
         }
         
         // Get the dataType version of the term for each dataType set up on
@@ -357,7 +354,7 @@ public class TermOffsetPopulator {
         for (String key : contentFieldValues.keySet()) {
             Collection<String> contentValues = contentFieldValues.get(key);
             Collection<String> queryValues = queryFieldValues.get(key);
-            Set<String> intersection = new HashSet<String>(contentValues);
+            Set<String> intersection = new HashSet<>(contentValues);
             intersection.retainAll(queryValues);
             if (!intersection.isEmpty()) {
                 termFrequencyFieldValues.putAll(key, intersection);

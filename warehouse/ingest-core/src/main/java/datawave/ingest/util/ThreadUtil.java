@@ -1,10 +1,9 @@
 package datawave.ingest.util;
 
-import java.util.concurrent.Executor;
+import org.apache.log4j.Logger;
+
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.log4j.Logger;
 
 /**
  * Utilities for working with ThreadPools.

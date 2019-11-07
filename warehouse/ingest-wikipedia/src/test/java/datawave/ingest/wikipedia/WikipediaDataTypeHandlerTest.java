@@ -12,6 +12,7 @@ import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
@@ -72,8 +73,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(e);
         
-        VirtualIngest vHelper = (VirtualIngest) helper;
-        Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);
+        Multimap<String,NormalizedContentInterface> virtualFields = ((VirtualIngest) helper).getVirtualFields(eventFields);
         for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
             eventFields.put(v.getKey(), v.getValue());
         }
@@ -97,14 +97,14 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
         
-        Assert.assertEquals(80, tableToKey.get("shard").size());
-        Assert.assertEquals(38, tableToKey.get("shardIndex").size());
-        Assert.assertEquals(25, tableToKey.get("shardReverseIndex").size());
+        Assert.assertEquals(80, tableToKey.get(TableName.SHARD).size());
+        Assert.assertEquals(38, tableToKey.get(TableName.SHARD_INDEX).size());
+        Assert.assertEquals(25, tableToKey.get(TableName.SHARD_RINDEX).size());
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
         int numberOfLoadDateEntries = 14;
         int numberOfDatawaveMetadataEntries = 18;
-        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get("DatawaveMetadata").size());
+        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
         
         Assert.assertEquals(135 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
         
@@ -117,7 +117,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         e = reader.getEvent();
         
         eventFields = helper.getEventFields(e);
-        virtualFields = vHelper.getVirtualFields(eventFields);
+        virtualFields = ((VirtualIngest) helper).getVirtualFields(eventFields);
         for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
             eventFields.put(v.getKey(), v.getValue());
         }
@@ -140,14 +140,14 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
         
-        Assert.assertEquals(9801, tableToKey.get("shard").size());
-        Assert.assertEquals(4899, tableToKey.get("shardIndex").size());
-        Assert.assertEquals(4886, tableToKey.get("shardReverseIndex").size());
+        Assert.assertEquals(9783, tableToKey.get(TableName.SHARD).size());
+        Assert.assertEquals(4890, tableToKey.get(TableName.SHARD_INDEX).size());
+        Assert.assertEquals(4877, tableToKey.get(TableName.SHARD_RINDEX).size());
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
-        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get("DatawaveMetadata").size());
+        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
         
-        Assert.assertEquals(22799 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
+        Assert.assertEquals(22764 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
     }
     
 }

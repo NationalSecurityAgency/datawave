@@ -2,9 +2,6 @@ package datawave.query.discovery;
 
 import static com.google.common.collect.Iterators.concat;
 import static com.google.common.collect.Iterators.transform;
-import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter;
-import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter;
-import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.getLiteralRange;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,6 +76,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
+    private MetadataHelper metadataHelper;
     
     public DiscoveryLogic() {
         super();
@@ -94,7 +92,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         this.scannerFactory = new ScannerFactory(connection);
         
-        initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        this.metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -137,25 +135,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             config.setDatatypeFilter(dataTypeFilter);
             if (log.isDebugEnabled()) {
                 log.debug("Data type filter set to " + dataTypeFilter);
-            }
-        }
-        
-        // Get the MAX_RESULTS_OVERRIDE parameter if given
-        if (null != settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE)
-                        && null != settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue()
-                        && !settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue().isEmpty()) {
-            try {
-                long override = Long.parseLong(settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue());
-                
-                if (override < config.getMaxQueryResults()) {
-                    config.setMaxQueryResults(override);
-                    // this.maxresults is initially set to the value in the config, we are overriding it here for this instance
-                    // of the query.
-                    this.setMaxResults(override);
-                }
-            } catch (NumberFormatException nfe) {
-                log.error(QueryParameters.MAX_RESULTS_OVERRIDE + " query parameter is not a valid number: "
-                                + settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue() + ", using default value");
             }
         }
         
@@ -222,8 +201,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             log.debug("Normalized Patterns = " + config.getPatterns());
         }
         
-        config.setUndisplayedVisibilities(super.getUndisplayedVisibilities());
-        
         return config;
     }
     
@@ -263,7 +240,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         BatchScanner bs = scannerFactory.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
         bs.setRanges(seekRanges);
-        if (columnFamilies.size() > 0) {
+        if (!columnFamilies.isEmpty()) {
             for (Text family : columnFamilies) {
                 bs.fetchColumnFamily(family);
             }
@@ -281,15 +258,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
         configureIndexMatchingIterator(config, bs, literals, patterns, ranges, reverseIndex);
-        
-        // When seperating by colvis leave visibilities in tact
-        if (config.getSeparateCountsByColVis()) {
-            bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, new HashSet<Authorizations>(),
-                            config.getUndisplayedVisibilities()));
-        } else {
-            bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, config.getAuthorizations(),
-                            config.getUndisplayedVisibilities()));
-        }
         
         IteratorSetting discoveryIteratorSetting = new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class);
         discoveryIteratorSetting.addOption(REVERSE_INDEX, Boolean.toString(reverseIndex));
@@ -396,7 +364,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     @SuppressWarnings("unchecked")
     public static Pair<Set<Range>,Set<Range>> makeRanges(DiscoveryQueryConfiguration config, Set<Text> familiesToSeek, MetadataHelper metadataHelper)
                     throws TableNotFoundException, ExecutionException {
-        Set<Range> forwardRanges = new HashSet<Range>();
+        Set<Range> forwardRanges = new HashSet<>();
         for (Entry<String,String> literalAndField : config.getLiterals().entries()) {
             String literal = literalAndField.getKey(), field = literalAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
@@ -418,7 +386,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 continue;
             }
         }
-        Set<Range> reverseRanges = new HashSet<Range>();
+        Set<Range> reverseRanges = new HashSet<>();
         for (Entry<String,String> patternAndField : config.getPatterns().entries()) {
             String pattern = patternAndField.getKey(), field = patternAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
@@ -493,10 +461,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                     log.debug("Attempting to normalize [" + value + "] with [" + dataType.getClass() + "]");
                     String normalizedLower = normalization.normalize(dataType, field, value.getLower().toString());
                     String normalizedUpper = normalization.normalize(dataType, field, value.getUpper().toString());
-                    normalizedValuesToFields.put(
-                                    field,
-                                    new LiteralRange<String>(normalizedLower, value.isLowerInclusive(), normalizedUpper, value.isUpperInclusive(), value
-                                                    .getFieldName(), value.getNodeOperand()));
+                    normalizedValuesToFields.put(field, new LiteralRange<>(normalizedLower, value.isLowerInclusive(), normalizedUpper,
+                                    value.isUpperInclusive(), value.getFieldName(), value.getNodeOperand()));
                     log.debug("Normalization succeeded!");
                 } catch (Exception exception) {
                     log.debug("Normalization failed.");

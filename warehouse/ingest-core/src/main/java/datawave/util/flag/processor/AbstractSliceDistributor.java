@@ -34,12 +34,9 @@ public abstract class AbstractSliceDistributor<S extends Comparable<S>> implemen
     
     public Comparator<S> getComparator(boolean lifo) {
         if (lifo) {
-            return new Comparator<S>() {
-                @Override
-                public int compare(S o1, S o2) {
-                    // return the reverse order
-                    return Ordering.natural().compare(o2, o1);
-                }
+            return (o1, o2) -> {
+                // return the reverse order
+                return Ordering.natural().compare(o2, o1);
             };
         } else {
             return Ordering.natural();

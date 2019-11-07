@@ -3,6 +3,8 @@ package datawave.query.iterator.builder;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+
 import datawave.query.iterator.NestedIterator;
 
 import com.google.common.collect.HashMultimap;
@@ -60,7 +62,7 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
         includes.add(itr);
     }
     
-    public void canBuildDocument(boolean forceDocumentBuild) {
+    public void forceDocumentBuild(boolean forceDocumentBuild) {
         this.forceDocumentBuild = forceDocumentBuild;
     }
     
@@ -106,6 +108,16 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
             observedFieldValues.put(field, value);
             return false;
         }
+    }
+    
+    IteratorEnvironment env;
+    
+    public void setEnv(IteratorEnvironment env) {
+        this.env = env;
+    }
+    
+    public IteratorEnvironment getEnv() {
+        return this.env;
     }
     
     public abstract <T> NestedIterator<T> build();

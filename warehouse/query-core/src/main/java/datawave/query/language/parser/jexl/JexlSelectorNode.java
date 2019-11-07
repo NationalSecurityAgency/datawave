@@ -22,11 +22,11 @@ public class JexlSelectorNode extends JexlNode {
     private String selector = null;
     
     private JexlSelectorNode() {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
     }
     
     public JexlSelectorNode(Type type, String field, String selector) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.type = type;
         this.field = field;
         this.selector = selector;
@@ -36,7 +36,7 @@ public class JexlSelectorNode extends JexlNode {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         
-        if (field != null && field.length() > 0) {
+        if (field != null && !field.isEmpty()) {
             sb.append(field);
         } else {
             // Apply a special field name for "unfielded" queries
@@ -81,7 +81,7 @@ public class JexlSelectorNode extends JexlNode {
         return sb.toString();
     }
     
-    static public String convertToRegex(String s) {
+    public static String convertToRegex(String s) {
         StringBuilder sb = new StringBuilder();
         char[] chars = s.toCharArray();
         

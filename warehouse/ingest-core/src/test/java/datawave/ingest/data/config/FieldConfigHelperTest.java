@@ -1,7 +1,5 @@
 package datawave.ingest.data.config;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import datawave.TestBaseIngestHelper;
 import datawave.data.type.DateType;
@@ -18,17 +16,16 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Scanner;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class FieldConfigHelperTest {
@@ -72,16 +69,13 @@ public class FieldConfigHelperTest {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         
         server.setExecutor(null);
-        server.createContext("/", new HttpHandler() {
-            @Override
-            public void handle(HttpExchange e) throws IOException {
-                e.sendResponseHeaders(200, 0);
-                e.getResponseHeaders().set("Content-Type", "text/xml");
-                
-                OutputStream responseBody = e.getResponseBody();
-                responseBody.write(resp.getBytes());
-                responseBody.close();
-            }
+        server.createContext("/", e -> {
+            e.sendResponseHeaders(200, 0);
+            e.getResponseHeaders().set("Content-Type", "text/xml");
+            
+            OutputStream responseBody = e.getResponseBody();
+            responseBody.write(resp.getBytes());
+            responseBody.close();
         });
         
         return server;
@@ -263,7 +257,7 @@ public class FieldConfigHelperTest {
                 count++;
             }
         }
-        assertTrue("Expected a single type to match " + expected.getName() + ", but " + count + " types matched; List was: " + observedList, count == 1);
+        assertEquals("Expected a single type to match " + expected.getName() + ", but " + count + " types matched; List was: " + observedList, 1, count);
     }
     
     @Test

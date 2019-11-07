@@ -7,7 +7,6 @@ import datawave.webservice.query.runner.RunningQuery;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.util.Pair;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +21,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith(PowerMockRunner.class)
@@ -99,7 +99,7 @@ public class QueryCacheBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("List of running queries should not be null", null != result1);
+        assertNotNull("List of running queries should not be null", result1);
     }
     
     @Test
@@ -116,7 +116,7 @@ public class QueryCacheBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("List of running queries should not be null", null != result1);
+        assertNotNull("List of running queries should not be null", result1);
     }
     
     @Test
@@ -133,12 +133,12 @@ public class QueryCacheBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("List of running queries should not be null", null != result1);
+        assertNotNull("List of running queries should not be null", result1);
     }
     
     @Test
     public void testGetRunningQueries() {
         RunningQueries output = bean.getRunningQueries();
-        Assert.assertEquals(expectedResult, output.getQueries().get(0));
+        assertEquals(expectedResult, output.getQueries().get(0));
     }
 }

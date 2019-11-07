@@ -1,22 +1,41 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
-import datawave.query.attributes.AttributeFactory;
+import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeBag;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.TypeAttribute;
 import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.attributes.*;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.predicate.Filter;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.predicate.PeekingPredicate;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static datawave.query.Constants.EMPTY_STRING;
 
 /**
  * The EventDataQueryExpressionVisitor traverses the query parse tree and generates a series of ExpressionFilters that will be used to determine if Keys
@@ -38,7 +57,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
      * The null value flag is a bit of an unusual case and is generated in cases where a null (or non-null) comparison is performed for a field. It indicates
      * that at least one key for a field must be kept regardless of value. As such, this flag is set to false once its predicate has be satisfied.
      */
-    public static class ExpressionFilter implements Predicate<Key> {
+    public static class ExpressionFilter implements PeekingPredicate<Key>, Cloneable {
         final AttributeFactory attributeFactory;
         
         /** The field this filter apples to */
@@ -46,22 +65,47 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         /** fieldValues contains a set of literal values for which we need to keep data in order to satisfy the query */
         final Set<String> fieldValues;
         /** fieldPatterns contains a set of patterns for which we need to keep data in order to satisfy the query */
-        final Set<Matcher> fieldPatterns;
+        final Map<Pattern,Matcher> fieldPatterns;
         /** fieldRanges contains a set of ranges for which we need to keep data in order to satisfy the query */
         final Set<LiteralRange<?>> fieldRanges;
-        /**
-         * nullValueFlag indicates that we need to capture at least one instance of the field in order to satisfy a null value check in the query. It reset to
-         * false once a single instance of the field is collected.
-         */
-        final AtomicBoolean nullValueFlag;
+        /** nullValueFlag indicates that we need to capture at least one instance of the field in order to satisfy a null value check in the query */
+        boolean nullValueFlag;
+        /** nonNullValueSeen indicates that we have seen a nonNullValue. This is used with the nullValueFlag. */
+        boolean nonNullValueSeen;
+        /** acceptAll indicates that all values should be returned */
+        boolean acceptAll;
         
         public ExpressionFilter(AttributeFactory attributeFactory, String fieldName) {
             this.attributeFactory = attributeFactory;
             this.fieldName = fieldName;
             this.fieldValues = new HashSet<>();
-            this.fieldPatterns = new HashSet<>();
+            this.fieldPatterns = new HashMap<>();
             this.fieldRanges = new HashSet<>();
-            this.nullValueFlag = new AtomicBoolean(false);
+            this.nullValueFlag = false;
+            this.nonNullValueSeen = false;
+            this.acceptAll = false;
+        }
+        
+        public ExpressionFilter(ExpressionFilter other) {
+            this(other.attributeFactory, other.fieldName);
+            this.fieldValues.addAll(other.fieldValues);
+            // making new Matcher objects as they are not thread safe.
+            for (Map.Entry<Pattern,Matcher> entry : other.fieldPatterns.entrySet()) {
+                this.fieldPatterns.put(entry.getKey(), entry.getKey().matcher(""));
+            }
+            this.fieldRanges.addAll(other.fieldRanges);
+            this.nullValueFlag = other.nullValueFlag;
+            this.nonNullValueSeen = other.nonNullValueSeen;
+            this.acceptAll = other.acceptAll;
+        }
+        
+        @Override
+        public ExpressionFilter clone() {
+            return new ExpressionFilter(this);
+        }
+        
+        public void reset() {
+            nonNullValueSeen = false;
         }
         
         public String getFieldName() {
@@ -77,17 +121,21 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         }
         
         public void setNullValueFlag() {
-            nullValueFlag.set(true);
+            nullValueFlag = true;
         }
         
         public void addFieldPattern(String pattern) {
             Pattern p = Pattern.compile(pattern);
             Matcher m = p.matcher("");
-            fieldPatterns.add(m);
+            fieldPatterns.put(p, m);
         }
         
         public void addFieldRange(LiteralRange range) {
             fieldRanges.add(range);
+        }
+        
+        public void acceptAllValues() {
+            acceptAll = true;
         }
         
         /**
@@ -96,44 +144,128 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          *            the key to evaluate, must be parsable by DatawaveKey
          * @return true if the key should be kept in order to evaluare the query, false otherwise
          */
+        @Override
         public boolean apply(Key key) {
+            return apply(key, true);
+        }
+        
+        @Override
+        public boolean peek(Key key) {
+            return apply(key, false);
+        }
+        
+        private boolean apply(Key key, boolean update) {
             final DatawaveKey datawaveKey = new DatawaveKey(key);
             final String keyFieldName = JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
             
             if (fieldName.equals(keyFieldName)) {
+                if (acceptAll) {
+                    return true;
+                }
                 
                 final String keyFieldValue = datawaveKey.getFieldValue();
-                final Set<String> normalizedFieldValues = EventDataQueryExpressionVisitor.extractNormalizedAttributes(attributeFactory, keyFieldName,
-                                keyFieldValue, key);
+                final Set<Type> types = EventDataQueryExpressionVisitor.extractTypes(attributeFactory, keyFieldName, keyFieldValue, key);
+                // always add the NoOpType to ensure the original value gets propagated through
+                types.add(new NoOpType(keyFieldValue));
+                final Set<Matcher> normalizedPatternMatchers = new HashSet<>();
+                final Set<String> normalizedFieldValues = new HashSet<>();
+                final Set<LiteralRange> normalizedRanges = new HashSet<>();
+                for (Type type : types) {
+                    // normalize all patterns
+                    for (Pattern fieldPattern : fieldPatterns.keySet()) {
+                        try {
+                            String normalizedPattern = type.normalizeRegex(fieldPattern.toString());
+                            if (normalizedPattern != null) {
+                                normalizedPatternMatchers.add(Pattern.compile(normalizedPattern).matcher(EMPTY_STRING));
+                            } else {
+                                // can't normalize so add the original matcher
+                                normalizedPatternMatchers.add(fieldPatterns.get(fieldPattern));
+                            }
+                        } catch (Exception e) {
+                            // can't normalize this pattern, add the original matcher
+                            normalizedPatternMatchers.add(fieldPatterns.get(fieldPattern));
+                        }
+                    }
+                    
+                    // normalize all values
+                    for (String fieldValue : fieldValues) {
+                        try {
+                            String normalizedValue = type.normalize(fieldValue);
+                            if (normalizedValue != null) {
+                                normalizedFieldValues.add(normalizedValue);
+                            } else {
+                                // can't normalize this value, add the original
+                                normalizedFieldValues.add(fieldValue);
+                            }
+                        } catch (Exception e) {
+                            // can't normalize this value, add the original
+                            normalizedFieldValues.add(fieldValue);
+                        }
+                    }
+                    
+                    // normalize all ranges
+                    for (LiteralRange range : fieldRanges) {
+                        try {
+                            LiteralRange normalizedRange = new LiteralRange(range.getFieldName(), range.getNodeOperand());
+                            
+                            String normalizedLower = type.normalize(range.getLower().toString());
+                            String normalizedUpper = type.normalize(range.getUpper().toString());
+                            
+                            if (normalizedLower != null && normalizedUpper != null) {
+                                normalizedRange.updateLower(normalizedLower, range.isLowerInclusive());
+                                normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive());
+                                
+                                normalizedRanges.add(normalizedRange);
+                            } else {
+                                // can't normalize the range values, add the original
+                                normalizedRanges.add(range);
+                            }
+                        } catch (Exception e) {
+                            // can't normalize the range values, add the original
+                            normalizedRanges.add(range);
+                        }
+                    }
+                }
                 
-                for (String normalizedFieldValue : normalizedFieldValues) {
-                    if (fieldValues.contains(normalizedFieldValue)) {
+                Set<String> fieldValuesToEvaluate = EventDataQueryExpressionVisitor.extractNormalizedValues(types);
+                
+                for (String normalizedFieldValue : fieldValuesToEvaluate) {
+                    if (normalizedFieldValues.contains(normalizedFieldValue)) {
                         // field name matches and field value matches, keep.
-                        nullValueFlag.set(false);
+                        if (update) {
+                            nonNullValueSeen = true;
+                        }
                         return true;
                     }
                     
-                    for (Matcher m : fieldPatterns) {
+                    for (Matcher m : normalizedPatternMatchers) {
                         m.reset(normalizedFieldValue);
                         if (m.matches()) {
                             // field name matches and field pattern matches, keep.
-                            nullValueFlag.set(false);
+                            if (update) {
+                                nonNullValueSeen = true;
+                            }
                             return true;
                         }
                     }
                     
-                    for (LiteralRange r : fieldRanges) {
+                    for (LiteralRange r : normalizedRanges) {
                         if (r.contains(normalizedFieldValue)) {
                             // field name patches and value is within range, keep.
-                            nullValueFlag.set(false);
+                            if (update) {
+                                nonNullValueSeen = true;
+                            }
                             return true;
                         }
                     }
                     
-                    if (nullValueFlag.compareAndSet(true, false)) {
+                    if (nullValueFlag && !nonNullValueSeen) {
                         // field name has a nullValueFlag, keep one and only one instance
                         // of this field. (The fact of its presence will be sufficient
                         // to satisfy the null check condition assuming all other conditions are met
+                        if (update) {
+                            nonNullValueSeen = true;
+                        }
                         return true;
                     }
                 }
@@ -141,6 +273,38 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             
             // field name does not match any of the rules above, reject this key.
             return false;
+            
+        }
+        
+        /**
+         * A helper method to clone a set of filters
+         * 
+         * @param filters
+         * @return a cloned set of filters
+         */
+        public static Map<String,? extends PeekingPredicate<Key>> clone(Map<String,? extends PeekingPredicate<Key>> filters) {
+            Map<String,PeekingPredicate<Key>> cloned = new HashMap<>();
+            for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
+                if (entry.getValue() instanceof ExpressionFilter) {
+                    cloned.put(entry.getKey(), ((ExpressionFilter) entry.getValue()).clone());
+                } else {
+                    cloned.put(entry.getKey(), entry.getValue());
+                }
+            }
+            return cloned;
+        }
+        
+        /**
+         * A helper method to reset a set of filters
+         *
+         * @param filters
+         */
+        public static void reset(Map<String,? extends PeekingPredicate<Key>> filters) {
+            for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
+                if (entry.getValue() instanceof ExpressionFilter) {
+                    ((ExpressionFilter) entry.getValue()).reset();
+                }
+            }
         }
     }
     
@@ -156,6 +320,21 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         final EventDataQueryExpressionVisitor v = new EventDataQueryExpressionVisitor(factory);
         
         script.jjtAccept(v, "");
+        
+        return v.getFilterMap();
+    }
+    
+    /**
+     *
+     * @param node
+     *            the node that should be used to build the expression filters
+     * @param factory
+     * @return
+     */
+    public static Map<String,ExpressionFilter> getExpressionFilters(JexlNode node, AttributeFactory factory) {
+        final EventDataQueryExpressionVisitor v = new EventDataQueryExpressionVisitor(factory);
+        
+        node.jjtAccept(v, "");
         
         return v.getFilterMap();
     }
@@ -198,7 +377,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        List<JexlNode> otherNodes = new ArrayList<JexlNode>();
+        List<JexlNode> otherNodes = new ArrayList<>();
         Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, true);
         if (ranges.size() == 1 && otherNodes.isEmpty()) {
             LiteralRange<?> range = ranges.keySet().iterator().next();
@@ -206,6 +385,15 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         } else {
             super.visit(node, data);
         }
+        
+        return null;
+    }
+    
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        
+        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+        desc.addFilters(attributeFactory, filterMap);
         
         return null;
     }
@@ -268,8 +456,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         return iol.getIdentifier() + " " + iol.getOp() + " " + iol.getLiteral();
     }
     
-    public static Set<String> extractNormalizedAttributes(AttributeFactory attrFactory, String fieldName, String fieldValue, Key key) {
-        final Set<String> normalizedAttributes = new HashSet<String>();
+    public static Set<Type> extractTypes(AttributeFactory attrFactory, String fieldName, String fieldValue, Key key) {
+        final Set<Type> types = new HashSet<>();
         
         final Queue<Attribute<?>> attrQueue = new LinkedList<>();
         attrQueue.add(attrFactory.create(fieldName, fieldValue, key, true));
@@ -280,13 +468,23 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             if (TypeAttribute.class.isAssignableFrom(attr.getClass())) {
                 TypeAttribute dta = (TypeAttribute) attr;
                 Type t = dta.getType();
-                normalizedAttributes.add(t.getNormalizedValue());
+                types.add(t);
             } else if (AttributeBag.class.isAssignableFrom(attr.getClass())) {
                 attrQueue.addAll(((AttributeBag<?>) attr).getAttributes());
             } else {
-                log.warn("Unexpected attribute type when extracting normalized values: " + attr.getClass().getCanonicalName());
+                log.warn("Unexpected attribute type when extracting type: " + attr.getClass().getCanonicalName());
             }
         }
-        return normalizedAttributes;
+        return types;
+    }
+    
+    public static Set<String> extractNormalizedValues(Set<Type> types) {
+        final Set<String> normalizedValues = new HashSet<>();
+        
+        for (Type type : types) {
+            normalizedValues.add(type.getNormalizedValue());
+        }
+        
+        return normalizedValues;
     }
 }

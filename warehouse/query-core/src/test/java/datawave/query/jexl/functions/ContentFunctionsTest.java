@@ -10,10 +10,18 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList.Zone;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import org.apache.commons.jexl2.parser.*;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.commons.jexl2.*;
+import org.apache.commons.jexl2.Expression;
+import org.apache.commons.jexl2.JexlContext;
+import org.apache.commons.jexl2.JexlEngine;
+import org.apache.commons.jexl2.JexlException;
+import org.apache.commons.jexl2.MapContext;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,7 +29,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.fail;
 
@@ -1354,7 +1367,7 @@ public class ContentFunctionsTest {
     
     private void testJexlFunctionArgumentDescriptors(String query, String expected, Set<String> contentFields) throws ParseException {
         MockMetadataHelper metadataHelper = new MockMetadataHelper();
-        metadataHelper.addTermFrequencyFields(Arrays.asList(new String[] {"BODY", "META"}));
+        metadataHelper.addTermFrequencyFields(Arrays.asList("BODY", "META"));
         metadataHelper.setIndexedFields(Sets.newHashSet("BODY", "META"));
         
         if (contentFields != null) {
@@ -1421,7 +1434,7 @@ public class ContentFunctionsTest {
                                         list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList(new String[] {"foo", "bar", "car"}));
+        context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
         Assert.assertTrue(expect(o, false));
@@ -1447,7 +1460,7 @@ public class ContentFunctionsTest {
                                         list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList(new String[] {"foo", "bar", "car"}));
+        context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
         Assert.assertTrue(expect(o, false));
@@ -1473,7 +1486,7 @@ public class ContentFunctionsTest {
                                         list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList(new String[] {"foo", "bar", "car"}));
+        context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
         Assert.assertTrue(expect(o, false));

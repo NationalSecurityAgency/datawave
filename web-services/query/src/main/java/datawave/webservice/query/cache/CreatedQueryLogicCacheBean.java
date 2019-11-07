@@ -1,7 +1,6 @@
 package datawave.webservice.query.cache;
 
 import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
@@ -65,25 +64,19 @@ public class CreatedQueryLogicCacheBean {
         }
     }
     
-    private static final Function<Triple,Pair<QueryLogic<?>,Connector>> tripToPair = new Function<Triple,Pair<QueryLogic<?>,Connector>>() {
-        @Override
-        public Pair<QueryLogic<?>,Connector> apply(Triple from) {
-            if (null == from) {
-                return null;
-            }
-            return new Pair<QueryLogic<?>,Connector>(from.logic, from.cxn);
+    private static final Function<Triple,Pair<QueryLogic<?>,Connector>> tripToPair = from -> {
+        if (null == from) {
+            return null;
         }
+        return new Pair<>(from.logic, from.cxn);
     };
     
     // returns the logic and connection fields in a triple as a pair
-    private static final Function<Entry<Pair<String,Long>,Triple>,Entry<String,Pair<QueryLogic<?>,Connector>>> toPair = new Function<Entry<Pair<String,Long>,Triple>,Entry<String,Pair<QueryLogic<?>,Connector>>>() {
-        @Override
-        public Entry<String,Pair<QueryLogic<?>,Connector>> apply(Entry<Pair<String,Long>,Triple> from) {
-            if (from == null) {
-                return null;
-            } else {
-                return Maps.immutableEntry(from.getKey().getFirst(), tripToPair.apply(from.getValue()));
-            }
+    private static final Function<Entry<Pair<String,Long>,Triple>,Entry<String,Pair<QueryLogic<?>,Connector>>> toPair = from -> {
+        if (from == null) {
+            return null;
+        } else {
+            return Maps.immutableEntry(from.getKey().getFirst(), tripToPair.apply(from.getValue()));
         }
     };
     
@@ -124,19 +117,16 @@ public class CreatedQueryLogicCacheBean {
     }
     
     public Map<String,Pair<QueryLogic<?>,Connector>> entriesOlderThan(final Long now, final Long expiration) {
-        Iterable<Entry<Pair<String,Long>,Triple>> iter = Iterables.filter(cache.entrySet(), new Predicate<Entry<Pair<String,Long>,Triple>>() {
-            @Override
-            public boolean apply(Entry<Pair<String,Long>,Triple> input) {
-                Long timeInserted = input.getKey().getSecond();
-                
-                // If this entry was inserted more than the TTL 'time' ago, do not return it
-                if ((now - expiration) > timeInserted) {
-                    return true;
-                }
-                
-                return false;
-            }
-        });
+        Iterable<Entry<Pair<String,Long>,Triple>> iter = Iterables.filter(cache.entrySet(), input -> {
+            Long timeInserted = input.getKey().getSecond();
+            
+            // If this entry was inserted more than the TTL 'time' ago, do not return it
+                        if ((now - expiration) > timeInserted) {
+                            return true;
+                        }
+                        
+                        return false;
+                    });
         
         Map<String,Pair<QueryLogic<?>,Connector>> result = Maps.newHashMapWithExpectedSize(32);
         for (Entry<Pair<String,Long>,Triple> entry : iter) {

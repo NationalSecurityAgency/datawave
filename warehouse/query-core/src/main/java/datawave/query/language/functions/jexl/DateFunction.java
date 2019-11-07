@@ -15,7 +15,7 @@ public class DateFunction extends JexlQueryFunction {
     private static final Set<String> COMMANDS = Sets.newHashSet("after", "before", "between");
     
     public DateFunction() {
-        super("date", new ArrayList<String>());
+        super("date", new ArrayList<>());
     }
     
     @Override

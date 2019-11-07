@@ -3,7 +3,6 @@ package datawave.ingest.data.config.ingest;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import jline.internal.TestAccessible;
 import datawave.ingest.data.config.FieldConfigHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -32,17 +31,8 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     private final Set<String> contentIndexBlacklist = new HashSet<>();
     private final Set<String> contentReverseIndexBlacklist = new HashSet<>();
     
-    /**
-     * If we are using a tokenization blacklist but want to include-only certain fields from specific subtypes we can declare that here. For example say we only
-     * want one field tokenized from a subtype. We'd need to enumerate all of the unwanted fields in the blacklist, and that could be a lot of fields to
-     * configure. Instead we can do a whitelist on a per subtype basis.
-     *
-     * ONLY USE IN CONJUNCTION WITH A TOKENIZATION BLACKLIST
-     *
-     * If the TYPE=; is empty, then no fields will be tokenized
-     */
-    private Map<String,Set<String>> subtypeFieldTokenizationWhitelistMap = new HashMap<String,Set<String>>();
-    public static final String SUBTYPE_TOKENIZATION_WHITELIST_MAP = ".data.category.index.tokenize.whitelist.subtype.map";
+    private final Set<String> indexListEntriesFields = new HashSet<>();
+    private final Set<String> reverseIndexListEntriesFields = new HashSet<>();
     
     /**
      * Fields that we want to perform content indexing and reverse indexing (i.e. token and then index the tokens)
@@ -56,6 +46,10 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     public static final String TOKEN_FIELDNAME_DESIGNATOR = ".data.category.token.fieldname.designator";
     public static final String TOKEN_FIELDNAME_DESIGNATOR_ENABLED = ".data.category.token.fieldname.designator.enabled";
     
+    public static final String INDEX_LIST_FIELDS = ".data.category.index.list.fields";
+    public static final String REV_INDEX_LIST_FIELDS = ".data.category.index.reverse.list.fields";
+    public static final String LIST_DELIMITERS = ".data.category.list.delimiters";
+    
     /**
      * option to save raw data in the document column family.
      */
@@ -63,6 +57,9 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     public static final String RAW_DOCUMENT_VIEW_NAME = ".data.rawDocumentViewName";
     
     private String tokenFieldNameDesignator = "_TOKEN";
+    
+    private String listDelimiter = ",";
+    
     private boolean saveRawDataOption = false;
     private String rawDocumentViewName = "RAW"; // default value
     
@@ -101,10 +98,9 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         contentIndexBlacklist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_INDEX_BLACKLIST));
         contentReverseIndexBlacklist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_REV_INDEX_BLACKLIST));
         
-        String subtypeMapArg = config.get(getType().typeName() + SUBTYPE_TOKENIZATION_WHITELIST_MAP);
-        if (StringUtils.isNotEmpty(subtypeMapArg)) {
-            this.subtypeFieldTokenizationWhitelistMap = buildSubtypeTokenizationWhitelist(parseMultiLineConfigValue(subtypeMapArg, Pattern.compile(";")));
-        }
+        listDelimiter = config.get(getType().typeName() + LIST_DELIMITERS, listDelimiter);
+        indexListEntriesFields.addAll(trimConfigStrings(config, getType().typeName() + INDEX_LIST_FIELDS));
+        reverseIndexListEntriesFields.addAll(trimConfigStrings(config, getType().typeName() + REV_INDEX_LIST_FIELDS));
         
         this.saveRawDataOption = (null != config.get(getType().typeName() + SAVE_RAW_DATA_AS_DOCUMENT)) ? Boolean.parseBoolean(config.get(getType().typeName()
                         + SAVE_RAW_DATA_AS_DOCUMENT)) : saveRawDataOption;
@@ -143,6 +139,16 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         return contentReverseIndexBlacklist.isEmpty() ? contentReverseIndexWhitelist.contains(field) : !contentReverseIndexBlacklist.contains(field);
     }
     
+    @Override
+    public boolean isIndexListField(String field) {
+        return indexListEntriesFields.contains(field);
+    }
+    
+    @Override
+    public boolean isReverseIndexListField(String field) {
+        return reverseIndexListEntriesFields.contains(field);
+    }
+    
     @VisibleForTesting
     public FieldConfigHelper getFieldConfigHelper() {
         return fieldHelper;
@@ -151,6 +157,11 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     @Override
     public String getTokenFieldNameDesignator() {
         return tokenFieldNameDesignator;
+    }
+    
+    @Override
+    public String getListDelimiter() {
+        return listDelimiter;
     }
     
     /**
@@ -180,7 +191,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
      * @return unique Set of strings where whitespace has been trimmed.
      */
     public static Set<String> cleanSet(Collection<String> items) {
-        Set<String> itemSet = new HashSet<String>();
+        Set<String> itemSet = new HashSet<>();
         for (String item : items) {
             item = item.trim();
             if (!item.isEmpty()) {
@@ -188,46 +199,5 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
             }
         }
         return itemSet;
-    }
-    
-    private static final String EQUALS = "=";
-    private static final String COMMA = ",";
-    
-    /**
-     *
-     * @param items
-     *            Set of strings where each item is of the {@code pattern-> SUBTYPE=field1,field2,...,fieldN}
-     * @return {@code Map<String,Set<String>} which is a map of SUBTYPE to a set of fields to tokenize
-     */
-    public static Map<String,Set<String>> buildSubtypeTokenizationWhitelist(Set<String> items) {
-        Map<String,Set<String>> subtypeTokenizationMap = Maps.newHashMap();
-        for (String item : items) {
-            
-            // each item is SUBTYPE=field1,field2,...,fieldN
-            // split it up into SUBTYPE and fields
-            String[] parts = item.split(EQUALS);
-            String subtype = parts[0].trim().toLowerCase();
-            Set<String> fieldSet = Sets.newHashSet(); // SUBTYPE= We interpret as an empty whitelist
-            
-            // split the fields on comma and update the field set
-            if (parts.length == 2) {
-                String[] fields = parts[1].split(COMMA);
-                for (String field : fields) {
-                    fieldSet.add(field.trim().toUpperCase());
-                }
-            }
-            
-            // now push these into the subtype map
-            if (subtypeTokenizationMap.containsKey(subtype)) {
-                subtypeTokenizationMap.get(subtype).addAll(fieldSet);
-            } else {
-                subtypeTokenizationMap.put(subtype, fieldSet);
-            }
-        }
-        return subtypeTokenizationMap;
-    }
-    
-    public Map<String,Set<String>> getSubtypeFieldTokenizationWhitelistMap() {
-        return subtypeFieldTokenizationWhitelistMap;
     }
 }

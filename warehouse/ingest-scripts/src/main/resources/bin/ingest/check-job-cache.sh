@@ -10,8 +10,8 @@ fi
 THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
 
-. ../ingest/job-cache-env.sh
 . ../ingest/ingest-env.sh
+. ../ingest/job-cache-env.sh
 . ../ingest/ingest-libs.sh
 
 echo "Checking the consistency of $JOB_CACHE_DIR"

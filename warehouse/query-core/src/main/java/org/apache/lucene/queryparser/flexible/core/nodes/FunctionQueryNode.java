@@ -21,10 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.parser.lucene.ParseException;
 
-import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax.Type;
 import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
@@ -97,8 +95,8 @@ public class FunctionQueryNode extends QueryNodeImpl {
                 // anything else should cause a parse error
                 if (beginQuote == null && endQuote != null) {
                     if (Character.isWhitespace(c) == false && c != ')' && c != ',') {
-                        throw new RuntimeException("Unexpected characters '" + chars.subSequence(x, closeParen).toString()
-                                        + "' following quoted parameter in [" + text + "], expecting ',' or ')'");
+                        throw new RuntimeException("Unexpected characters '" + chars.subSequence(x, closeParen) + "' following quoted parameter in [" + text
+                                        + "], expecting ',' or ')'");
                     }
                 }
                 

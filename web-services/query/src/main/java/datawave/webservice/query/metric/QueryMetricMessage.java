@@ -58,7 +58,7 @@ public class QueryMetricMessage implements Serializable {
         if (o instanceof QueryMetricMessage)
             return (QueryMetricMessage) o;
         else
-            throw new IllegalArgumentException("Object is of wrong type: " + o.getClass().toString());
+            throw new IllegalArgumentException("Object is of wrong type: " + o.getClass());
     }
     
     public QueryMetricHolder getMetricHolder() {

@@ -2,6 +2,7 @@ package datawave.webservice.query.util;
 
 import java.security.Principal;
 import java.text.ParseException;
+import java.time.format.DateTimeParseException;
 import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public class LookupUUIDUtil {
     private static final String CONTENT_QUERY = "ContentQuery";
     private static final String DASH = "-";
     private static final String DOCUMENT_FIELD_NAME = "DOCUMENT:";
-    private static final List<FieldBase> EMPTY_FIELDS = new ArrayList<FieldBase>(0);
+    private static final List<FieldBase> EMPTY_FIELDS = new ArrayList<>(0);
     private static final String EVENT_TYPE_NAME = "event";
     private static final String FORWARD_SLASH = "/";
     
@@ -90,7 +91,7 @@ public class LookupUUIDUtil {
     
     private final QueryExecutor queryExecutor;
     
-    private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<String,UUIDType>());
+    private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
     
     MultivaluedMap<String,String> defaultOptionalParams;
     
@@ -138,7 +139,7 @@ public class LookupUUIDUtil {
         // Assign the begin date
         try {
             this.beginAsDate = DateHelper.parseWithGMT(this.lookupUUIDConfiguration.getBeginDate());
-        } catch (IllegalArgumentException e) {
+        } catch (DateTimeParseException e) {
             this.log.error(e.getMessage(), e);
         }
         
@@ -333,7 +334,7 @@ public class LookupUUIDUtil {
             try {
                 queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
             } catch (ParseException e) {
-                throw new RuntimeException("Unable to format new query begin date: " + this.beginAsDate.toString());
+                throw new RuntimeException("Unable to format new query begin date: " + this.beginAsDate);
             }
             
             final Date endDate = DateUtils.addDays(new Date(), 2);
@@ -343,7 +344,7 @@ public class LookupUUIDUtil {
             try {
                 queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
             } catch (ParseException e) {
-                throw new RuntimeException("Unable to format new query end date: " + endDate.toString());
+                throw new RuntimeException("Unable to format new query end date: " + endDate);
             }
             
             final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
@@ -353,7 +354,7 @@ public class LookupUUIDUtil {
             try {
                 queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
             } catch (ParseException e) {
-                throw new RuntimeException("Unable to format new query expr date: " + expireDate.toString());
+                throw new RuntimeException("Unable to format new query expr date: " + expireDate);
             }
             queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, QueryPersistence.TRANSIENT.name());
             queryParameters.putSingle(QueryParameters.QUERY_TRACE, "false");
@@ -537,12 +538,18 @@ public class LookupUUIDUtil {
         
         // Perform the lookup
         boolean allEventMockResponse = (uuidQueryResponse instanceof AllEventMockResponse);
-        if (null != validatedCriteria.getStreamingOutputHeaders()) {
-            contentResponse = (T) this.lookupStreamedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
-                            allEventMockResponse);
-        } else {
-            contentResponse = (T) this.lookupPagedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
-                            allEventMockResponse);
+        try {
+            if (null != validatedCriteria.getStreamingOutputHeaders()) {
+                contentResponse = (T) this.lookupStreamedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
+                                allEventMockResponse);
+            } else {
+                contentResponse = (T) this.lookupPagedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
+                                allEventMockResponse);
+            }
+        } catch (NoResultsException e) {
+            // close the original lookupId query and re-throw
+            queryExecutor.close(uuidQueryResponse.getQueryId());
+            throw e;
         }
         
         return contentResponse;
@@ -561,7 +568,7 @@ public class LookupUUIDUtil {
             //
             // DOCUMENT:shardId/datatype/uid [DOCUMENT:shardId/datatype/uid]*
             //
-            MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<String,String>();
+            MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
             queryParameters.putAll(this.defaultOptionalParams);
             queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
             queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
@@ -674,7 +681,7 @@ public class LookupUUIDUtil {
             }
             contentQuery.append(contentQueryString);
         }
-        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<String,String>();
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putAll(this.defaultOptionalParams);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
@@ -713,7 +720,7 @@ public class LookupUUIDUtil {
         final String queryId = mergedResponse.getQueryId();
         
         // Initialize a list to collect all queried events
-        final List<EventBase> mergedEvents = new LinkedList<EventBase>(mergedResponse.getEvents());
+        final List<EventBase> mergedEvents = new LinkedList<>(mergedResponse.getEvents());
         
         // Get each set of next events, remove irrelevant information, and merge them into the main response
         try {
@@ -749,7 +756,7 @@ public class LookupUUIDUtil {
                 }
             }
         } else {
-            guttedEvents = new ArrayList<EventBase>(0);
+            guttedEvents = new ArrayList<>(0);
         }
         
         return guttedEvents;
@@ -832,7 +839,7 @@ public class LookupUUIDUtil {
         
         List<String> paramList = criteria.getQueryParameters().remove(QueryParameters.QUERY_PARAMS);
         String params = null;
-        if (paramList != null && paramList.size() > 0) {
+        if (paramList != null && !paramList.isEmpty()) {
             params = paramList.get(0);
         }
         // Add Lucene syntax to the parameters, except during a call for next content

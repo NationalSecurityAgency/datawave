@@ -30,10 +30,6 @@ import org.apache.lucene.search.Query;
  */
 public class ModifierQueryNodeBuilder implements QueryBuilder {
     
-    public ModifierQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         ModifierQueryNode modifierQueryNode = (ModifierQueryNode) queryNode;
         

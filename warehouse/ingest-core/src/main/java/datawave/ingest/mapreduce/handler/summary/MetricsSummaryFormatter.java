@@ -1,23 +1,19 @@
 package datawave.ingest.mapreduce.handler.summary;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
 
 public class MetricsSummaryFormatter {
     
@@ -47,7 +43,7 @@ public class MetricsSummaryFormatter {
     }
     
     private List<Text> asListofTexts() {
-        List<Text> result = new ArrayList<Text>(builders.size());
+        List<Text> result = new ArrayList<>(builders.size());
         for (StringBuilder builder : builders) {
             result.add(new Text(builder.toString()));
         }
@@ -56,7 +52,7 @@ public class MetricsSummaryFormatter {
     
     private void resetFormattedFields(String prefix) {
         if (builders == null) {
-            builders = new ArrayList<StringBuilder>();
+            builders = new ArrayList<>();
         } else {
             builders.clear();
         }
@@ -91,9 +87,9 @@ public class MetricsSummaryFormatter {
             for (StringBuilder currRow : builders) {
                 
                 if (log.isTraceEnabled()) {
-                    log.trace("Adding value: [" + fieldValue + "] to [" + currRow.toString() + "]");
+                    log.trace("Adding value: [" + fieldValue + "] to [" + currRow + "]");
                 }
-                newValues.add(new StringBuilder(DEFAULT_CAPACITY).append(currRow.toString()).append(!isFirstToken ? SEPARATOR : "")
+                newValues.add(new StringBuilder(DEFAULT_CAPACITY).append(currRow).append(!isFirstToken ? SEPARATOR : "")
                                 .append(fieldValue.replaceAll("\0", "_")));
             }
         }
@@ -106,7 +102,7 @@ public class MetricsSummaryFormatter {
         if (fieldValues.length != 0) {
             String fieldValue = ((NormalizedContentInterface) fieldValues[0]).getEventFieldValue();
             if (log.isTraceEnabled()) {
-                log.trace("Adding formattedValue: [" + fieldValue + "] to [" + formattedValue.toString() + "]");
+                log.trace("Adding formattedValue: [" + fieldValue + "] to [" + formattedValue + "]");
             }
             formattedValue.append(fieldValue.replaceAll("\0", "_"));
         }
@@ -128,13 +124,10 @@ public class MetricsSummaryFormatter {
     }
     
     Iterable<Entry<String,NormalizedContentInterface>> getMatches(final Matcher matcher, Multimap<String,NormalizedContentInterface> fields) {
-        return Iterables.filter(fields.entries(), new Predicate<Map.Entry<String,NormalizedContentInterface>>() {
-            @Override
-            public boolean apply(Entry<String,NormalizedContentInterface> input) {
-                // check to see if entry key matches the supplied matcher
-                return matcher.reset(input.getKey()).matches();
-            }
-        });
+        return Iterables.filter(fields.entries(), input -> {
+            // check to see if entry key matches the supplied matcher
+                        return matcher.reset(input.getKey()).matches();
+                    });
         
     }
 }

@@ -39,7 +39,7 @@ public class IdTranslatorConfiguration {
     }
     
     public void setUuidTypes(List<UUIDType> uuidTypes) {
-        List<UUIDType> goodTypes = new ArrayList<UUIDType>();
+        List<UUIDType> goodTypes = new ArrayList<>();
         if (uuidTypes != null) {
             for (UUIDType uuidType : uuidTypes) {
                 if (uuidType.getDefinedView().equalsIgnoreCase("LuceneUUIDEventQuery")) {
@@ -51,7 +51,7 @@ public class IdTranslatorConfiguration {
     }
     
     public MultivaluedMap<String,String> optionalParamsToMap() {
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         if (this.columnVisibility != null) {
             p.putSingle(QueryParameters.QUERY_VISIBILITY, this.columnVisibility);
         }

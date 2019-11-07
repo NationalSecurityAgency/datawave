@@ -151,7 +151,7 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     public static Collection<ValueTuple> isNotNull(Object fieldValue) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             // fieldValue might be an empty collection.
             if (fieldValue instanceof Collection) {
@@ -181,7 +181,7 @@ public class EvaluationPhaseFilterFunctions {
     // this functionality
     // we do not want to return positive matches in the hit list, so return a boolean here
     public static boolean excludeRegex(Object fieldValue, String regex) {
-        return includeRegex(fieldValue, regex).size() == 0;
+        return includeRegex(fieldValue, regex).isEmpty();
     }
     
     // Evaluation does not perform any goofy rewriting of the JEXL query string into
@@ -189,7 +189,7 @@ public class EvaluationPhaseFilterFunctions {
     // this functionality
     // we do not want to return positive matches in the hit list, so return a boolean here
     public static boolean excludeRegex(Iterable<?> values, String regex) {
-        return includeRegex(values, regex).size() == 0;
+        return includeRegex(values, regex).isEmpty();
     }
     
     public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object... args) {
@@ -217,9 +217,9 @@ public class EvaluationPhaseFilterFunctions {
         return FunctionalSet.unmodifiableSet(matches);
     }
     
-    // Evaluate a regex. Note this is being done against the un-normalized value.
+    // Evaluate a regex. Note this is being done against the un-normalized value unless the regex is not case sensitive.
     public static FunctionalSet<ValueTuple> includeRegex(Object fieldValue, String regex) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null
                         && (JexlPatternCache.getPattern(regex).matcher(ValueTuple.getStringValue(fieldValue)).matches() || (JexlPatternCache.getPattern(regex)
                                         .matcher(ValueTuple.getNormalizedStringValue(fieldValue)).matches() && !regex.matches(CASE_SENSITIVE_EXPRESSION)))) {
@@ -228,9 +228,9 @@ public class EvaluationPhaseFilterFunctions {
         return matches;
     }
     
-    // Evaluate a regex. Note this is being done against the un-normalized value.
+    // Evaluate a regex. Note this is being done against the un-normalized value unless the regex is not case sensitive.
     public static FunctionalSet<ValueTuple> includeRegex(Iterable<?> values, String regex) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         // Important to note that a regex of ".*" still requires
         // a value to be present. In other words, searching for FIELD:'.*'
         // requires a value for FIELD to exist in the document to match
@@ -316,6 +316,34 @@ public class EvaluationPhaseFilterFunctions {
         return includeRegex(fieldValue, regex);
     }
     
+    // Evaluate text. Note this is being done against the un-normalized value.
+    public static FunctionalSet<ValueTuple> includeText(Object fieldValue, String valueToMatch) {
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
+        if (fieldValue != null && ValueTuple.getStringValue(fieldValue).equals(valueToMatch)) {
+            matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        }
+        return matches;
+    }
+    
+    // Evaluate text. Note this is being done against the un-normalized value.
+    public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
+        if (null == values) {
+            return matches;
+        }
+        
+        for (Object value : values) {
+            if (null == value)
+                continue;
+            
+            if (ValueTuple.getStringValue(value).equals(valueToMatch)) {
+                matches = FunctionalSet.singleton(getHitTerm(value));
+                return matches;
+            }
+        }
+        return matches;
+    }
+    
     /**
      * Searches for a load date after start (exclusively)
      * 
@@ -327,7 +355,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Object fieldValue, String start) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), getTime(start, true), Long.MAX_VALUE)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
@@ -351,7 +379,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Iterable<?> fieldValue, String start) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             for (Object o : fieldValue) {
                 if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(o)), getTime(start, true), Long.MAX_VALUE)) {
@@ -381,7 +409,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Object fieldValue, String start, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
@@ -409,7 +437,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Iterable<?> fieldValue, String start, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
@@ -438,7 +466,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Object fieldValue, String end) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), 0, getTime(end) - 1)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
@@ -462,7 +490,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Iterable<?> fieldValue, String end) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             for (Object o : fieldValue) {
                 if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(o)), 0, getTime(end) - 1)) {
@@ -491,7 +519,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Object fieldValue, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), 0, getTime(end, rangeFormat) - 1)) {
@@ -518,7 +546,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Iterable<?> fieldValue, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             for (Object o : fieldValue) {
@@ -548,7 +576,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Object fieldValue, String start, String end) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), getTime(start), getTime(end, true) - 1)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
@@ -574,7 +602,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Iterable<?> fieldValue, String start, String end) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             long lStart = getTime(start);
             long lEnd = getTime(end, true) - 1;
@@ -606,7 +634,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Object fieldValue, String start, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
@@ -637,7 +665,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Iterable<?> fieldValue, String start, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
@@ -668,7 +696,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String start) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             if (betweenInclusive(getTime(fieldValue), getTime(start, true), Long.MAX_VALUE)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
@@ -690,7 +718,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String start) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             for (Object o : fieldValue) {
                 if (betweenInclusive(getTime(o), getTime(start, true), Long.MAX_VALUE)) {
@@ -717,7 +745,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String start, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
@@ -743,7 +771,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String start, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
@@ -775,7 +803,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String pattern, String start, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat format = newSimpleDateFormat(pattern);
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
@@ -808,7 +836,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String pattern, String start, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat format = newSimpleDateFormat(pattern);
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
@@ -840,7 +868,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String end) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             if (betweenInclusive(getTime(fieldValue), 0, getTime(end) - 1)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
@@ -862,7 +890,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String end) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             for (Object o : fieldValue) {
                 if (betweenInclusive(getTime(o), 0, getTime(end) - 1)) {
@@ -889,7 +917,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             if (betweenInclusive(getTime(fieldValue), 0, getTime(end, rangeFormat) - 1)) {
@@ -914,7 +942,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             for (Object o : fieldValue) {
@@ -945,7 +973,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String pattern, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat format = newSimpleDateFormat(pattern);
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
@@ -977,7 +1005,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String pattern, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat format = newSimpleDateFormat(pattern);
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
@@ -1010,7 +1038,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String start, String end) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             if (betweenInclusive(getTime(fieldValue), getTime(start), getTime(end, true) - 1)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
@@ -1034,7 +1062,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String start, String end) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             long lStart = getTime(start);
             long lEnd = getTime(end, true) - 1;
@@ -1067,7 +1095,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String start, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
@@ -1095,7 +1123,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String start, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
@@ -1132,7 +1160,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String pattern, String start, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat format = newSimpleDateFormat(pattern);
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
@@ -1163,7 +1191,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String pattern, String start, String end, String rangePattern) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat format = newSimpleDateFormat(pattern);
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
@@ -1470,22 +1498,43 @@ public class EvaluationPhaseFilterFunctions {
         return ValueTuple.toValueTuple(valueTuple);
     }
     
+    /**
+     * <pre>
+     * for a field like:
+     * NAME.GGPARENT.GPARENT.PARENT.CHILD
+     * if the pos is 0, then GGPARENT.GPARENT.PARENT will be returned
+     * if the pos is 2, then GGPARENT will be returned
+     * </pre>
+     * 
+     * @param input
+     * @param pos
+     * @return
+     */
     public static String getMatchToLeftOfPeriod(String input, int pos) {
         // always peel off the fieldName before the first '.'
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)
             throw new RuntimeException("Input" + input + " does not have a '.' at position " + pos + " from the left.");
-        String match = input.substring(0, indices[indices.length - pos - 1]);
-        return match;
+        return input.substring(0, indices[indices.length - pos - 1]);
     }
     
+    /**
+     * <pre>
+     *     for a field like NAME.NAME_1.5
+     *     if the pos is 0, then '5' will be returned
+     *     if the pos it 1, then NAME_1.5 will be returned
+     * </pre>
+     * 
+     * @param input
+     * @param pos
+     * @return
+     */
     public static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)
             throw new RuntimeException("Input" + input + " does not have a '.' at position " + pos + " from the right.");
-        String match = input.substring(indices[indices.length - pos - 1] + 1);
-        return match;
+        return input.substring(indices[indices.length - pos - 1] + 1);
     }
     
     private static int[] indicesOf(String input, char c) {

@@ -2,16 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>datawave.webservices</groupId>
+        <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>2.2.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-web-root</artifactId>
     <packaging>war</packaging>
     <name>${project.artifactId}</name>
-    <properties>
-        <datawave.root>${project.parent.parent.basedir}</datawave.root>
-    </properties>
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
@@ -30,18 +27,26 @@
                                 <artifactItem>
                                     <groupId>org.webjars</groupId>
                                     <artifactId>datatables</artifactId>
-                                    <version>1.10.9</version>
+                                    <version>1.10.19</version>
                                     <type>jar</type>
                                     <outputDirectory>${project.build.directory}/webjars</outputDirectory>
-                                    <includes>META-INF/resources/webjars/datatables/1.10.9/js/jquery.dataTables.*</includes>
+                                    <includes>META-INF/resources/webjars/datatables/1.10.19/js/jquery.dataTables.*</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.webjars</groupId>
+                                    <artifactId>foundation</artifactId>
+                                    <version>6.4.3-1</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${project.build.directory}/webjars</outputDirectory>
+                                    <includes>META-INF/resources/webjars/foundation/6.4.3-1/dist/js/foundation.*,META-INF/resources/webjars/foundation/6.4.3-1/dist/css/foundation*</includes>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.webjars</groupId>
                                     <artifactId>jquery</artifactId>
-                                    <version>2.2.1</version>
+                                    <version>3.3.1-1</version>
                                     <type>jar</type>
                                     <outputDirectory>${project.build.directory}/webjars</outputDirectory>
-                                    <includes>META-INF/resources/webjars/jquery/2.2.1/jquery*</includes>
+                                    <includes>META-INF/resources/webjars/jquery/3.3.1-1/jquery*</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -61,10 +66,16 @@
                     </archive>
                     <webResources>
                         <resource>
-                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/jquery/2.2.1</directory>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/jquery/3.3.1-1</directory>
                         </resource>
                         <resource>
-                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/datatables/1.10.9/js</directory>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/foundation/6.4.3-1/dist/css</directory>
+                        </resource>
+                        <resource>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/foundation/6.4.3-1/dist/js</directory>
+                        </resource>
+                        <resource>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/datatables/1.10.19/js</directory>
                         </resource>
                     </webResources>
                 </configuration>

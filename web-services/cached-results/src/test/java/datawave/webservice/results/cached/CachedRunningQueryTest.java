@@ -32,7 +32,7 @@ public class CachedRunningQueryTest {
     @Before
     public void setup() throws Exception {
         crq = PowerMock.createPartialMock(CachedRunningQuery.class, "initialize");
-        PowerMock.field(CachedRunningQuery.class, "variableFields").set(crq, new TreeSet<String>());
+        PowerMock.field(CachedRunningQuery.class, "variableFields").set(crq, new TreeSet<>());
         List<String> columns = new ArrayList<>();
         columns.add("foo.bar");
         columns.add("hey.there");
@@ -308,10 +308,10 @@ public class CachedRunningQueryTest {
         }
         
         Assert.assertEquals(4, result.size());
-        Assert.assertTrue(result.get(0).equals("*"));
-        Assert.assertTrue(result.get(1).equals("COUNT(*) AS GROUP_TOTAL"));
-        Assert.assertTrue(result.get(2).equals(" MIN(STR_TO_DATE(`UPTIME.0`, '%a %b %e %H:%i:%s GMT %Y')) as FIRST_SEEN"));
-        Assert.assertTrue(result.get(3).equals("MAX(UPTIME.0) AS LAST_SEEN"));
+        Assert.assertEquals("*", result.get(0));
+        Assert.assertEquals("COUNT(*) AS GROUP_TOTAL", result.get(1));
+        Assert.assertEquals(" MIN(STR_TO_DATE(`UPTIME.0`, '%a %b %e %H:%i:%s GMT %Y')) as FIRST_SEEN", result.get(2));
+        Assert.assertEquals("MAX(UPTIME.0) AS LAST_SEEN", result.get(3));
         
     }
     

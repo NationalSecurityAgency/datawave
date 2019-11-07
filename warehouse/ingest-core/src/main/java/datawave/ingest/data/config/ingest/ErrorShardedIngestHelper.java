@@ -22,10 +22,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     
     private IngestHelperInterface delegate = null;
     
-    public ErrorShardedIngestHelper() {
-        super();
-    }
-    
     public void setDelegateHelper(IngestHelperInterface delegate) {
         this.delegate = delegate;
     }

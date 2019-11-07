@@ -9,7 +9,10 @@ else
 fi
 THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
+script_name=$(basename ${0})
+
 . ../ingest/ingest-env.sh
+. ../util/logging_pdsh.sh
 
 export METRICS_BIN=$THIS_DIR/..
 
@@ -32,9 +35,12 @@ else
   trap 'rm -f "$ingestHost"; exit $?' INT TERM EXIT
   echo $INGEST_HOST > $ingestHost
 
-  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh ingest $FORCE" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
-  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh loader $FORCE" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
-  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh flagmaker $FORCE" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
+  logging_pdsh "${script_name}" -cmd ingest_cmd \
+    -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh ingest $FORCE"
+  logging_pdsh "${script_name}" -cmd loader_cmd \
+    -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh loader $FORCE"
+  logging_pdsh "${script_name}" -cmd flagmaker_cmd \
+    -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh flagmaker $FORCE"
 
   rm $ingestHost
   trap - INT TERM EXIT

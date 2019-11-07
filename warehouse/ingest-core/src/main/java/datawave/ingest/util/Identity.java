@@ -33,7 +33,7 @@ public class Identity {
             try {
                 md = MessageDigest.getInstance(hasher);
             } catch (Exception e2) {
-                e2.printStackTrace();
+                log.warn(e2);
                 return "Can not set hasher, something is wrong";
             }
             

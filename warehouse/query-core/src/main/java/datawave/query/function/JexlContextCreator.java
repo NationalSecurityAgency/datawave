@@ -3,6 +3,7 @@ package datawave.query.function;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -22,14 +23,15 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
     
     protected Collection<String> variables;
     protected JexlContextValueComparator factory;
+    protected Map<String,Object> additionalEntries = new HashMap<>();
     
     public JexlContextCreator(Collection<String> variables, JexlContextValueComparator factory) {
-        this.variables = variables != null ? variables : Collections.<String> emptySet();
+        this.variables = variables != null ? variables : Collections.emptySet();
         this.factory = factory;
     }
     
     public JexlContextCreator() {
-        this(Collections.<String> emptySet(), null);
+        this(Collections.emptySet(), null);
     }
     
     @Override
@@ -49,11 +51,24 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
             }
         }
         
+        // add any additional entries
+        for (Entry<String,Object> entry : additionalEntries.entrySet()) {
+            if (context.has(entry.getKey())) {
+                throw new IllegalStateException("Conflict when merging Jexl contexts!");
+            } else {
+                context.set(entry.getKey(), entry.getValue());
+            }
+        }
+        
         if (log.isTraceEnabled()) {
             log.trace("Constructed context from index and attribute Documents: " + context);
         }
         
         return Tuples.tuple(from.first(), from.second(), context);
+    }
+    
+    public void addAdditionalEntries(Map<String,Object> additionalEntries) {
+        this.additionalEntries.putAll(additionalEntries);
     }
     
     /**
@@ -70,7 +85,7 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
     /**
      * An interface used to create a comparator for ordering lists of values within the jexl context.
      */
-    public static interface JexlContextValueComparator {
+    public interface JexlContextValueComparator {
         /**
          * Create a comparator for jexl context value lists. The values are expected to be ValueTuple objects however a jexl context does not enforce this, so
          * {@code Comparator<Object>} is required
@@ -78,7 +93,7 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
          * @param from
          * @return an object comparator
          */
-        public Comparator<Object> getValueComparator(final Tuple3<Key,Document,Map<String,Object>> from);
+        Comparator<Object> getValueComparator(final Tuple3<Key,Document,Map<String,Object>> from);
     }
     
 }

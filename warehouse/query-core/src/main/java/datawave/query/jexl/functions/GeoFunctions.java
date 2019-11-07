@@ -2,13 +2,19 @@ package datawave.query.jexl.functions;
 
 import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.GeoNormalizer.GeoPoint;
+import datawave.data.normalizer.Normalizer;
 import datawave.query.attributes.ValueTuple;
 
+import datawave.query.collections.FunctionalSet;
 import org.apache.log4j.Logger;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Provides functions for doing geo spacial queries, such as bounding boxes and circles of interest.
@@ -59,12 +65,11 @@ public class GeoFunctions {
      */
     public static boolean within_bounding_box(Object field, String lowerLeft, String upperRight) {
         String fieldValue = ValueTuple.getNormalizedStringValue(field);
-        GeoNormalizer geoNormalizer = new GeoNormalizer();
         try {
-            GeoPoint ll = geoNormalizer.isNormalized(lowerLeft) ? normalizedPoints.get(lowerLeft) : unnormalizedPoints.get(lowerLeft);
-            GeoPoint ur = geoNormalizer.isNormalized(upperRight) ? normalizedPoints.get(upperRight) : unnormalizedPoints.get(upperRight);
-            GeoPoint pp = geoNormalizer.isNormalized(fieldValue) ? normalizedPoints.get(fieldValue) : unnormalizedPoints.get(fieldValue);
-            boolean m = pp.within(ll, ur);
+            GeoPoint ll = GeoNormalizer.isNormalized(lowerLeft) ? normalizedPoints.get(lowerLeft) : unnormalizedPoints.get(lowerLeft);
+            GeoPoint ur = GeoNormalizer.isNormalized(upperRight) ? normalizedPoints.get(upperRight) : unnormalizedPoints.get(upperRight);
+            Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
+            boolean m = pts.stream().anyMatch(geoPt -> geoPt.within(ll, ur));
             if (log.isTraceEnabled())
                 log.trace("Checking if " + fieldValue + " is within BB " + lowerLeft + ", " + upperRight + ": [" + m + "]");
             return m;
@@ -75,34 +80,28 @@ public class GeoFunctions {
         }
     }
     
-    /**
-     * Handle multiple values
-     * 
-     * @param values
-     * @param lowerLeft
-     * @param upperRight
-     * @return
-     */
-    public static boolean within_bounding_box(Iterable<?> values, String lowerLeft, String upperRight) {
-        for (Object fieldValue : values) {
-            if (within_bounding_box(fieldValue, lowerLeft, upperRight)) {
-                return true;
-            }
-        }
-        return false;
+    public static boolean within_bounding_box(Object lonField, Object latField, String minLon, String minLat, String maxLon, String maxLat) {
+        return GeoFunctions.within_bounding_box(lonField, latField, Normalizer.NUMBER_NORMALIZER.denormalize(minLon).doubleValue(),
+                        Normalizer.NUMBER_NORMALIZER.denormalize(minLat).doubleValue(), Normalizer.NUMBER_NORMALIZER.denormalize(maxLon).doubleValue(),
+                        Normalizer.NUMBER_NORMALIZER.denormalize(maxLat).doubleValue());
     }
     
     public static boolean within_bounding_box(Object lonField, Object latField, double minLon, double minLat, double maxLon, double maxLat) {
-        String lon = ValueTuple.getStringValue(lonField);
-        String lat = ValueTuple.getStringValue(latField);
+        Set<Double> lonValues = null;
+        Set<Double> latValues = null;
         try {
-            double lonD = Double.parseDouble(lon), latD = Double.parseDouble(lat);
-            return lonD >= minLon && lonD <= maxLon && latD >= minLat && latD <= maxLat;
+            lonValues = getDoublesFromFieldValue(lonField);
+            latValues = getDoublesFromFieldValue(latField);
         } catch (IllegalArgumentException e) { // NumberFormatException extends IAE and sometimes IAE is thrown
             if (log.isTraceEnabled())
-                log.trace("Error parsing lat[" + lat + " or lon[" + lon + "]", e);
+                log.trace("Error parsing lat[" + latField + " or lon[" + lonField + "]", e);
             return false;
         }
+        
+        boolean lonMatch = lonValues.stream().anyMatch(lon -> lon >= minLon && lon <= maxLon);
+        boolean latMatch = latValues.stream().anyMatch(lat -> lat >= minLat && lat <= maxLat);
+        
+        return lonMatch && latMatch;
     }
     
     /**
@@ -119,13 +118,12 @@ public class GeoFunctions {
         if (log.isTraceEnabled()) {
             log.trace("Checking if " + fieldValue + " is within circle[center=" + center + ", radius=" + radius + "]");
         }
-        GeoNormalizer geoNormalizer = new GeoNormalizer();
         try {
-            GeoPoint p = geoNormalizer.isNormalized(fieldValue) ? normalizedPoints.get(fieldValue) : unnormalizedPoints.get(fieldValue);
-            GeoPoint c = geoNormalizer.isNormalized(center) ? normalizedPoints.get(center) : unnormalizedPoints.get(center);
-            double y = Math.pow(p.getLatitude() - c.getLatitude(), 2);
-            double x = Math.pow(p.getLongitude() - c.getLongitude(), 2);
-            boolean m = (x + y) <= Math.pow(radius, 2);
+            Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
+            GeoPoint c = GeoNormalizer.isNormalized(center) ? normalizedPoints.get(center) : unnormalizedPoints.get(center);
+            boolean m = pts.stream().anyMatch(
+                            geoPt -> (Math.pow(geoPt.getLongitude() - c.getLongitude(), 2) + Math.pow(geoPt.getLatitude() - c.getLatitude(), 2)) <= Math.pow(
+                                            radius, 2));
             if (log.isTraceEnabled())
                 log.trace("Checking if " + fieldValue + " is within circle[center=" + center + ", radius=" + radius + "]: [" + m + "]");
             return m;
@@ -136,20 +134,49 @@ public class GeoFunctions {
         }
     }
     
-    /**
-     * Handle multiple values
-     * 
-     * @param values
-     * @param center
-     * @param radius
-     * @return
-     */
-    public static boolean within_circle(Iterable<?> values, String center, double radius) {
-        for (Object fieldValue : values) {
-            if (within_circle(fieldValue, center, radius)) {
-                return true;
-            }
+    private static Set<Double> getDoublesFromFieldValue(Object fieldValue) {
+        if (fieldValue instanceof Number) {
+            Set<Double> numbers = new HashSet<>();
+            numbers.add(((Number) fieldValue).doubleValue());
+            return numbers;
+        } else if (fieldValue instanceof String) {
+            Set<Double> numbers = new HashSet<>();
+            numbers.add(Normalizer.NUMBER_NORMALIZER.denormalize((String) fieldValue).doubleValue());
+            return numbers;
+        } else if (fieldValue instanceof ValueTuple) {
+            Set<Double> numbers = new HashSet<>();
+            numbers.add(Normalizer.NUMBER_NORMALIZER.denormalize(ValueTuple.getStringValue(fieldValue)).doubleValue());
+            return numbers;
+        } else if (fieldValue instanceof FunctionalSet) {
+            Set<Double> numbers = new HashSet<>();
+            for (Object value : (FunctionalSet) fieldValue)
+                numbers.addAll(getDoublesFromFieldValue(value));
+            return numbers;
         }
-        return false;
+        throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a double");
+    }
+    
+    private static Set<GeoPoint> getGeoPointsFromFieldValue(Object fieldValue) throws ExecutionException {
+        if (fieldValue instanceof GeoPoint) {
+            Set<GeoPoint> geoPoints = new HashSet<>();
+            geoPoints.add((GeoPoint) fieldValue);
+            return geoPoints;
+        } else if (fieldValue instanceof String) {
+            Set<GeoPoint> geoPoints = new HashSet<>();
+            String stringValue = (String) fieldValue;
+            geoPoints.add(GeoNormalizer.isNormalized(stringValue) ? normalizedPoints.get(stringValue) : unnormalizedPoints.get(stringValue));
+            return geoPoints;
+        } else if (fieldValue instanceof ValueTuple) {
+            Set<GeoPoint> geoPoints = new HashSet<>();
+            String normFieldVal = ValueTuple.getNormalizedStringValue(fieldValue);
+            geoPoints.add(GeoNormalizer.isNormalized(normFieldVal) ? normalizedPoints.get(normFieldVal) : unnormalizedPoints.get(normFieldVal));
+            return geoPoints;
+        } else if (fieldValue instanceof FunctionalSet) {
+            Set<GeoPoint> geoPoints = new HashSet<>();
+            for (Object value : (FunctionalSet) fieldValue)
+                geoPoints.addAll(getGeoPointsFromFieldValue(value));
+            return geoPoints;
+        }
+        throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geo point");
     }
 }

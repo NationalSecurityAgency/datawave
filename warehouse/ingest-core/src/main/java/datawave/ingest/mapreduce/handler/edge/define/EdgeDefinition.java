@@ -1,9 +1,6 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
 import datawave.data.type.LcNoDiacriticsType;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDirection;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeGroup;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeNode;
 
 import java.util.List;
 

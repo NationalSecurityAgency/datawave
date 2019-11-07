@@ -170,7 +170,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
                     JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
         List<List<Type<?>>> lists = new ArrayList<>();
         
-        lists.add(new ArrayList<Type<?>>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));
+        lists.add(new ArrayList<>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));
         
         // first we go through the arguments and determine those that reference the same field.
         // this is done by assuming that if the fields returned by descriptor.fields is the same
@@ -180,19 +180,19 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         // for those arguments we want a cross-product of normalizations. However for content functions,
         // all of the arguments will refer to the same set of fields so we assume that the content
         // functions will be applied to each field in turn instead of every combination thereof.
-        Map<Set<String>,Set<Integer>> fieldGroups = new HashMap<Set<String>,Set<Integer>>();
-        Set<String> EMPTY_SET = new HashSet<String>();
+        Map<Set<String>,Set<Integer>> fieldGroups = new HashMap<>();
+        Set<String> EMPTY_SET = new HashSet<>();
         for (int i = 0; i < function.jjtGetNumChildren(); i++) {
             // get the fields that go with this argument IFF this is a string literal argument
             Set<String> fields = EMPTY_SET;
             List<JexlNode> literals = JexlASTHelper.getLiterals(function.jjtGetChild(i));
             if ((literals.size() == 1) && (literals.get(0) instanceof ASTStringLiteral)) {
-                fields = new HashSet<String>(descriptor.fieldsForNormalization(helper, datatypeFilter, i - 2));
+                fields = new HashSet<>(descriptor.fieldsForNormalization(helper, datatypeFilter, i - 2));
             }
             if (fieldGroups.containsKey(fields)) {
                 fieldGroups.get(fields).add(i);
             } else {
-                Set<Integer> args = new HashSet<Integer>();
+                Set<Integer> args = new HashSet<>();
                 args.add(i);
                 fieldGroups.put(fields, args);
             }
@@ -202,7 +202,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         // the other groups.
         for (Map.Entry<Set<String>,Set<Integer>> argGroup : fieldGroups.entrySet()) {
             // now compile all of the possible normalizers for this argument group
-            Set<Type<?>> normalizers = new HashSet<Type<?>>();
+            Set<Type<?>> normalizers = new HashSet<>();
             if (argGroup.getKey().isEmpty()) {
                 normalizers.add(NO_OP);
             } else {
@@ -222,10 +222,10 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
                 }
             } else {
                 // for each normalizer, create a separate copy of the maps
-                List<List<Type<?>>> lists2 = new ArrayList<List<Type<?>>>();
+                List<List<Type<?>>> lists2 = new ArrayList<>();
                 for (Type<?> normalizer : normalizers) {
                     for (List<Type<?>> list : lists) {
-                        List<Type<?>> list2 = new ArrayList<Type<?>>(list);
+                        List<Type<?>> list2 = new ArrayList<>(list);
                         for (Integer argIndex : argGroup.getValue()) {
                             list2.set(argIndex, normalizer);
                         }

@@ -1,23 +1,15 @@
 package datawave.query.language.tree;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import datawave.query.language.functions.lucene.Exclude;
-import datawave.query.language.functions.lucene.Include;
-import datawave.query.language.functions.lucene.IsNotNull;
-import datawave.query.language.functions.lucene.IsNull;
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
-import datawave.query.language.functions.lucene.Occurrence;
 import datawave.query.search.FieldedTerm;
 import datawave.query.search.Term;
 
 import org.apache.log4j.Logger;
 
 public class FunctionNode extends QueryNode {
-    private final static Logger log = Logger.getLogger(FunctionNode.class.getName());
+    private static final Logger log = Logger.getLogger(FunctionNode.class.getName());
     
     private Term query;
     private LuceneQueryFunction function = null;

@@ -10,7 +10,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,7 +27,7 @@ public class CardinalityRecord implements Serializable {
     private static final long serialVersionUID = 1L;
     private Set<String> resultCardinalityValueFields = null;
     private HashMultimap<Integer,DateFieldValueCardinalityRecord> cardinalityMap = HashMultimap.create();
-    static private Logger log = Logger.getLogger(CardinalityRecord.class);
+    private static Logger log = Logger.getLogger(CardinalityRecord.class);
     
     public enum DateType {
         DOCUMENT, CURRENT
@@ -92,7 +97,7 @@ public class CardinalityRecord implements Serializable {
             if (valueMap.containsKey(s)) {
                 valueLists.add(valueMap.get(s));
             } else {
-                valueLists.add(new ArrayList<String>());
+                valueLists.add(new ArrayList<>());
                 if (log.isTraceEnabled()) {
                     log.trace("Cardinalty field " + s + " of configured field " + field + " not found");
                 }
@@ -102,9 +107,7 @@ public class CardinalityRecord implements Serializable {
         }
         
         if (numSplits == 1) {
-            for (String s : valueLists.get(0)) {
-                values.add(s);
-            }
+            values.addAll(valueLists.get(0));
         } else {
             List<List<String>> cartesianProduct = cartesianProduct(valueLists);
             for (List<String> l : cartesianProduct) {
@@ -115,16 +118,16 @@ public class CardinalityRecord implements Serializable {
     }
     
     protected <T> List<List<T>> cartesianProduct(List<List<T>> lists) {
-        List<List<T>> resultLists = new ArrayList<List<T>>();
-        if (lists.size() == 0) {
-            resultLists.add(new ArrayList<T>());
+        List<List<T>> resultLists = new ArrayList<>();
+        if (lists.isEmpty()) {
+            resultLists.add(new ArrayList<>());
             return resultLists;
         } else {
             List<T> firstList = lists.get(0);
             List<List<T>> remainingLists = cartesianProduct(lists.subList(1, lists.size()));
             for (T condition : firstList) {
                 for (List<T> remainingList : remainingLists) {
-                    ArrayList<T> resultList = new ArrayList<T>();
+                    ArrayList<T> resultList = new ArrayList<>();
                     resultList.add(condition);
                     resultList.addAll(remainingList);
                     resultLists.add(resultList);
@@ -215,7 +218,7 @@ public class CardinalityRecord implements Serializable {
         CardinalityRecord.writeToDisk(newResulsCardinalityRecord, file);
     }
     
-    static public CardinalityRecord readFromDisk(File file) {
+    public static CardinalityRecord readFromDisk(File file) {
         
         CardinalityRecord cardinalityRecord = null;
         ObjectInputStream ois = null;
@@ -224,32 +227,29 @@ public class CardinalityRecord implements Serializable {
             ois = new ObjectInputStream(fis);
             cardinalityRecord = (CardinalityRecord) ois.readObject();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e);
         } finally {
             IOUtils.closeQuietly(ois);
         }
         return cardinalityRecord;
     }
     
-    static public void writeToDisk(final CardinalityRecord cardinalityRecord, final File file) {
+    public static void writeToDisk(final CardinalityRecord cardinalityRecord, final File file) {
         
-        if (cardinalityRecord.getCardinalityMap().size() > 0) {
+        if (!cardinalityRecord.getCardinalityMap().isEmpty()) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    synchronized (file) {
-                        ObjectOutputStream oos = null;
-                        try {
-                            FileOutputStream fos = new FileOutputStream(file);
-                            oos = new ObjectOutputStream(fos);
-                            oos.writeObject(cardinalityRecord);
-                        } catch (Exception e) {
-                            log.error(e.getMessage(), e);
-                        } finally {
-                            IOUtils.closeQuietly(oos);
-                            file.notify();
-                        }
+            executor.execute(() -> {
+                synchronized (file) {
+                    ObjectOutputStream oos = null;
+                    try {
+                        FileOutputStream fos = new FileOutputStream(file);
+                        oos = new ObjectOutputStream(fos);
+                        oos.writeObject(cardinalityRecord);
+                    } catch (Exception e) {
+                        log.error(e.getMessage(), e);
+                    } finally {
+                        IOUtils.closeQuietly(oos);
+                        file.notify();
                     }
                 }
             });

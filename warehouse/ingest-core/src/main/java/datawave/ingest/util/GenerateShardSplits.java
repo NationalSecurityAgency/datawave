@@ -1,6 +1,7 @@
 package datawave.ingest.util;
 
 import datawave.util.StringUtils;
+import datawave.util.cli.PasswordConverter;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -17,6 +18,7 @@ import org.apache.accumulo.server.client.HdfsZooInstance;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
 
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,6 +50,7 @@ public class GenerateShardSplits {
         Date startDate = null;
         int DAYS_TO_GENERATE = -1;
         int SHARDS = -1;
+        int splitStep = 1;
         boolean addSplits = true;
         boolean addShardMarkers = false;
         String[] shardMarkerTypes = null;
@@ -60,7 +63,7 @@ public class GenerateShardSplits {
             if (i == 0) {
                 try {
                     startDate = DateHelper.parse(args[i]);
-                } catch (IllegalArgumentException e) {
+                } catch (DateTimeParseException e) {
                     System.out.println("Start Date does not match format. Exception=" + e.getMessage());
                     System.exit(-2);
                 }
@@ -75,7 +78,14 @@ public class GenerateShardSplits {
                 try {
                     SHARDS = Integer.parseInt(args[i]);
                 } catch (NumberFormatException e) {
-                    System.out.println("Days to Generate argument is not an integer:" + e.getMessage());
+                    System.out.println("Shards argument is not an integer:" + e.getMessage());
+                    System.exit(-2);
+                }
+            } else if (i == 3) {
+                try {
+                    splitStep = Integer.parseInt(args[i]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Split Step argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
             } else if (args[i].equals("-markersOnly")) {
@@ -92,7 +102,7 @@ public class GenerateShardSplits {
                     printUsageAndExit();
                 } else {
                     username = args[i];
-                    password = args[i + 1].getBytes();
+                    password = PasswordConverter.parseArg(args[i + 1]).getBytes();
                     tableName = args[i + 2];
                     // skip over args
                     i += 3;
@@ -117,7 +127,7 @@ public class GenerateShardSplits {
         for (int x = 0; x < DAYS_TO_GENERATE; x++) {
             
             // Generate configured shards per day
-            for (int i = 0; i < SHARDS; i++) {
+            for (int i = 0; i < SHARDS; i += splitStep) {
                 Text split = new Text(DateHelper.format(startDate) + "_" + i);
                 splits.add(split);
                 
@@ -131,7 +141,7 @@ public class GenerateShardSplits {
                     if (shardMarkerTypes != null) {
                         for (String type : shardMarkerTypes) {
                             type = type.trim();
-                            if (type.length() > 0) {
+                            if (!type.isEmpty()) {
                                 m.put(new Text(type), EMPTY_TEXT, EMPTY_VIS, nextYear.getTime(), EMPTY_VALUE);
                             }
                         }
@@ -169,7 +179,7 @@ public class GenerateShardSplits {
         } else {
             if (addSplits) {
                 for (Text t : splits) {
-                    System.out.println(t.toString());
+                    System.out.println(t);
                 }
             }
             for (Mutation m : mutations) {

@@ -5,6 +5,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -64,7 +65,7 @@ public class MultiTableRRRangePartitionerTest {
     public void before() throws IOException {
         mockJob = new Job();
         configuration = mockJob.getConfiguration();
-        configuration.set("job.table.names", "shard");
+        configuration.set("job.table.names", TableName.SHARD);
     }
     
     @Test(expected = RuntimeException.class)
@@ -193,7 +194,7 @@ public class MultiTableRRRangePartitionerTest {
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
         
         Assert.assertEquals("Should have seen a total of 10 different partitions given the small reducer space", 10, numberTimesPartitionSeen.size());
-        System.out.println(numberTimesPartitionSeen.toString());
+        System.out.println(numberTimesPartitionSeen);
         // we partitioned 27 splits
         // over a space of 10 partitioners
         // so each partitioners should have 2 splits or 3 splits assigned to it

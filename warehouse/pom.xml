@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>datawave</groupId>
+        <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>2.2.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
@@ -14,29 +14,30 @@
         <module>common</module>
         <module>core</module>
         <module>edge-dictionary-core</module>
-        <module>data-dictionary-core</module>
         <module>ingest-core</module>
         <module>query-core</module>
         <module>ingest-configuration</module>
         <module>ingest-csv</module>
         <module>ingest-json</module>
+        <module>index-stats</module>
         <module>regression-testing</module>
         <module>ingest-scripts</module>
         <module>assemble</module>
         <module>ingest-wikipedia</module>
+        <module>ingest-nyctlc</module>
         <module>metrics-core</module>
         <module>ops-tools</module>
+        <module>data-dictionary-core</module>
+        <module>edge-model-configuration-core</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/warehouse/</connection>
         <developerConnection>scm:git:ssh://git@fixme/warehouse.git</developerConnection>
     </scm>
     <properties>
-        <assembly.basedir>.</assembly.basedir>
         <!-- set env property to its default value -->
         <!-- commented this out so profiles other than dev build properly.  May need to put it back.  -->
         <!-- <build.env>dev</build.env> -->
-        <datawave.root>${project.parent.basedir}</datawave.root>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
         <runOrder>filesystem</runOrder>
@@ -44,9 +45,9 @@
         <tests.to.skip />
         <!-- default value - override on command-line to skip tests -->
         <version.basis-rlp>7.5.0</version.basis-rlp>
+        <version.dropwizard-metrics>3.2.6</version.dropwizard-metrics>
         <version.hadoop.processors>2.2.3</version.hadoop.processors>
         <version.hamcrest>1.3</version.hamcrest>
-        <version.lucene>4.7.1</version.lucene>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -64,17 +65,12 @@
             <dependency>
                 <groupId>com.esotericsoftware.kryo</groupId>
                 <artifactId>kryo</artifactId>
-                <version>2.20</version>
+                <version>${version.kryo}</version>
             </dependency>
             <dependency>
                 <groupId>com.esotericsoftware.kryonet</groupId>
                 <artifactId>kryonet</artifactId>
-                <version>2.20</version>
-            </dependency>
-            <dependency>
-                <groupId>com.esotericsoftware.minlog</groupId>
-                <artifactId>minlog</artifactId>
-                <version>1.2</version>
+                <version>${version.kryonet}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -87,87 +83,82 @@
                 <version>2.2.2</version>
             </dependency>
             <dependency>
-                <groupId>commons-cli</groupId>
-                <artifactId>commons-cli</artifactId>
-                <version>1.2</version>
+                <groupId>dom4j</groupId>
+                <artifactId>dom4j</artifactId>
+                <version>1.6.1</version>
             </dependency>
             <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>2.1</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>1.1.1</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-pool</groupId>
-                <artifactId>commons-pool</artifactId>
-                <version>1.5.7</version>
-            </dependency>
-            <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>assemble-geowave</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-balancers</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-data-dictionary-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-edge-dictionary-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-edge-model-configuration-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-ingest-configuration</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-ingest-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-ingest-csv</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-ingest-scripts</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-metrics-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-query-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-regression-testing</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservices</groupId>
+                <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-client</artifactId>
                 <version>${project.version}</version>
                 <exclusions>
@@ -178,39 +169,34 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>datawave.webservices</groupId>
+                <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservices</groupId>
+                <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-common-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservices</groupId>
+                <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-map-reduce</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservices</groupId>
+                <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-modification</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservices</groupId>
+                <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-query</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>dom4j</groupId>
-                <artifactId>dom4j</artifactId>
-                <version>1.6.1</version>
-            </dependency>
-            <dependency>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-                <version>2.1</version>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${version.dropwizard-metrics}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.json-lib</groupId>
@@ -221,6 +207,17 @@
                 <groupId>net.sourceforge.javacsv</groupId>
                 <artifactId>javacsv</artifactId>
                 <version>2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-tserver</artifactId>
+                <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -315,21 +312,6 @@
                 <version>${version.hadoop}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-analyzers-common</artifactId>
-                <version>${version.lucene}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-core</artifactId>
-                <version>${version.lucene}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.lucene</groupId>
-                <artifactId>lucene-queryparser</artifactId>
-                <version>${version.lucene}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.xmlbeans</groupId>
                 <artifactId>xmlbeans</artifactId>
                 <version>2.4.0</version>
@@ -357,7 +339,7 @@
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
-                <version>5.0.0.FINAL</version>
+                <version>9.4.8.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.javatuples</groupId>
@@ -402,13 +384,7 @@
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.0.4.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.security</groupId>
-                <artifactId>jboss-security-spi</artifactId>
-                <version>3.0.0.CR2</version>
-                <scope>provided</scope>
+                <version>1.1.7.2</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
@@ -421,13 +397,6 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.mrunit</groupId>
-                <artifactId>mrunit</artifactId>
-                <version>1.0.0</version>
-                <classifier>hadoop2</classifier>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.easymock</groupId>
@@ -450,44 +419,20 @@
             <dependency>
                 <groupId>org.jmock</groupId>
                 <artifactId>jmock-junit4</artifactId>
-                <version>2.5.1</version>
+                <version>2.9.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jmock</groupId>
                 <artifactId>jmock-legacy</artifactId>
-                <version>2.5.1</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
-                <version>1.8.5</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4-common</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-reflect</artifactId>
-                <version>${version.powermock}</version>
+                <version>2.9.0</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
         </dependency>
     </dependencies>

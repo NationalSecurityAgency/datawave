@@ -1,7 +1,9 @@
 package datawave.security.login;
 
-import static org.junit.Assert.*;
-import static org.powermock.api.easymock.PowerMock.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.powermock.api.easymock.PowerMock.field;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;

@@ -21,12 +21,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
 public class JsonIngestHelperTest {
     
@@ -67,7 +62,7 @@ public class JsonIngestHelperTest {
         Assert.assertEquals(12, fieldMap.keySet().size());
         Assert.assertEquals(16, fieldMap.values().size());
         Assert.assertTrue(fieldMap.containsKey("EXTRATEXT_NESTED"));
-        Assert.assertTrue(fieldMap.get("EXTRATEXT_NESTED").iterator().next().getEventFieldValue().equals("Extra text 4, nested"));
+        Assert.assertEquals("Extra text 4, nested", fieldMap.get("EXTRATEXT_NESTED").iterator().next().getEventFieldValue());
         
         for (NormalizedContentInterface field : fieldMap.values()) {
             Assert.assertFalse(((NormalizedFieldAndValue) field).isGrouped());
@@ -116,7 +111,7 @@ public class JsonIngestHelperTest {
         
         for (NormalizedContentInterface field : fieldMap.values()) {
             if (((NormalizedFieldAndValue) field).isGrouped()) {
-                Assert.assertTrue(field.getIndexedFieldName().equals("NESTED"));
+                Assert.assertEquals("NESTED", field.getIndexedFieldName());
             } else {
                 Assert.assertFalse(((NormalizedFieldAndValue) field).isGrouped());
             }
@@ -215,13 +210,14 @@ public class JsonIngestHelperTest {
         URL data = JsonIngestHelperTest.class.getResource("/input/my.json");
         Assert.assertNotNull(data);
         
+        conf.set("myjson.data.process.extra.fields", String.valueOf(!parseHeaderOnly));
+        
         dataFile = new File(data.toURI());
         Path p = new Path(dataFile.toURI().toString());
         split = new FileSplit(p, 0, dataFile.length(), null);
         ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         
         JsonRecordReader reader = new JsonRecordReader();
-        reader.setParseHeaderOnly(parseHeaderOnly);
         reader.initialize(split, ctx);
         return reader;
     }

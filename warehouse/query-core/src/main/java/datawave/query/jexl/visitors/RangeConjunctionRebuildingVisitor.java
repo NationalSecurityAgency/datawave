@@ -1,14 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
@@ -19,20 +12,20 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.planner.pushdown.Cost;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -45,8 +38,14 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 /**
  * Visits an JexlNode tree, removing bounded ranges (a pair consisting of one GT or GE and one LT or LE node), and replacing them with concrete equality nodes.
@@ -66,9 +65,11 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
     protected Set<String> indexOnlyFields;
     protected Set<String> allFields;
     protected MetadataHelper helper;
+    protected boolean expandFields;
+    protected boolean expandValues;
     
-    public RangeConjunctionRebuildingVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
-                    throws TableNotFoundException, ExecutionException {
+    public RangeConjunctionRebuildingVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, boolean expandFields,
+                    boolean expandValues) throws TableNotFoundException, ExecutionException {
         this.config = config;
         this.helper = helper;
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
@@ -76,6 +77,8 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         this.scannerFactory = scannerFactory;
         stats = new IndexStatsClient(this.config.getConnector(), this.config.getIndexStatsTableName());
         costAnalysis = new CostEstimator(config, scannerFactory, helper);
+        this.expandFields = expandFields;
+        this.expandValues = expandValues;
     }
     
     /**
@@ -90,23 +93,26 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
      * @throws ExecutionException
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-                    throws TableNotFoundException, ExecutionException {
-        RangeConjunctionRebuildingVisitor visitor = new RangeConjunctionRebuildingVisitor(config, scannerFactory, helper);
-        
-        if (null == visitor.config.getQueryFieldsDatatypes()) {
-            QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
-            throw new DatawaveFatalQueryException(qe);
+    public static <T extends JexlNode> T expandRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script,
+                    boolean expandFields, boolean expandValues) throws TableNotFoundException, ExecutionException {
+        // if not expanding fields or values, then this is a noop
+        if (expandFields || expandValues) {
+            RangeConjunctionRebuildingVisitor visitor = new RangeConjunctionRebuildingVisitor(config, scannerFactory, helper, expandFields, expandValues);
+            
+            if (null == visitor.config.getQueryFieldsDatatypes()) {
+                QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
+                throw new DatawaveFatalQueryException(qe);
+            }
+            
+            return (T) (script.jjtAccept(visitor, null));
+        } else {
+            return script;
         }
-        
-        T node = (T) (script.jjtAccept(visitor, null));
-        
-        return node;
     }
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (ASTDelayedPredicate.instanceOf(node) || IndexHoleMarkerJexlNode.instanceOf(node)) {
+        if (ASTDelayedPredicate.instanceOf(node) || IndexHoleMarkerJexlNode.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             return node;
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
                         || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
@@ -204,7 +210,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
             }
             
             JexlNode orNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, new ASTEQNode(
-                            ParserTreeConstants.JJTEQNODE), onlyRangeNodes, fieldsToTerms);
+                            ParserTreeConstants.JJTEQNODE), onlyRangeNodes, fieldsToTerms, expandFields, expandValues);
             
             // Set the parent and child pointers accordingly
             orNode.jjtSetParent(newNode);
@@ -256,7 +262,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
                     // only want to fetch the range selectivity once
                     rangeSelectivity = JexlASTHelper.getNodeSelectivity(Sets.newHashSet(range.getFieldName()), config, stats);
                     if (log.isDebugEnabled())
-                        log.debug("Range selectivity:" + rangeSelectivity.toString());
+                        log.debug("Range selectivity:" + rangeSelectivity);
                 }
                 for (JexlNode child : JexlASTHelper.getEQNodes(node)) {
                     // Try to get selectivity for each child

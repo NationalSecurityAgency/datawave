@@ -6,7 +6,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.Iterator;
 
 /**
  * Combines count metadata with different values.

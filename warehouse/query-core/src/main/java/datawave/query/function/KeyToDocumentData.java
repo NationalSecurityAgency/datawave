@@ -131,7 +131,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             
             final List<Entry<Key,Value>> attrs; // Assign only once for
                                                 // efficiency
-            final Set<Key> docKeys = new HashSet<Key>();
+            final Set<Key> docKeys = new HashSet<>();
             if (source.hasTop()) {
                 attrs = this.collectDocumentAttributes(from.getKey(), docKeys, keyRange);
                 this.appendHierarchyFields(attrs, keyRange, from.getKey());
@@ -179,7 +179,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         
         // setup the document key we are filtering for on the EventDataQueryFilter
         if (filter != null) {
-            filter.setDocumentKey(documentStartKey);
+            filter.startNewDocument(documentStartKey);
         }
         
         final List<Entry<Key,Value>> documentAttributes;
@@ -344,8 +344,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * @return
      */
     protected Key getStartKey(Map.Entry<Key,Document> from) {
-        Key startKey = new Key(from.getKey().getRow(), from.getKey().getColumnFamily());
-        return startKey;
+        return new Key(from.getKey().getRow(), from.getKey().getColumnFamily());
     }
     
     /**
@@ -355,8 +354,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * @return
      */
     protected Key getStopKey(Map.Entry<Key,Document> from) {
-        Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString() + '\uffff');
-        return stopKey;
+        return filter == null ? from.getKey().followingKey(PartialKey.ROW_COLFAM) : filter.getStopKey(from.getKey());
     }
     
     /**

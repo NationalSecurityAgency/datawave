@@ -3,17 +3,15 @@ package datawave.query.predicate;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.google.common.base.Predicate;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
 
 /**
  * 
  */
-public class KeyProjection implements Predicate<Entry<Key,String>> {
+public class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
     
     protected Projection projection;
     
@@ -48,6 +46,12 @@ public class KeyProjection implements Predicate<Entry<Key,String>> {
         final String fieldName = JexlASTHelper.removeGroupingContext(parser.getFieldName());
         
         return projection.apply(fieldName);
+    }
+    
+    @Override
+    public boolean peek(Entry<Key,String> input) {
+        // no difference so just redirect
+        return apply(input);
     }
     
 }

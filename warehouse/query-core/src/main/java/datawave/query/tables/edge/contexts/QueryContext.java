@@ -39,8 +39,6 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
     
     private boolean hasCompleteColumnFamilies = false;
     
-    public QueryContext() {}
-    
     public void packageIdentities(List<IdentityContext> identityContexts) {
         packageIdentities(identityContexts, true);
     }
@@ -299,7 +297,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             trimmedStatsQuery.append(query.getNormalizedStatsQuery());
         }
         
-        if (this.otherContexts != null && otherContexts.size() > 0) {
+        if (this.otherContexts != null && !otherContexts.isEmpty()) {
             StringBuilder tempQueryString = new StringBuilder();
             StringBuilder tempQueryStatsString = new StringBuilder();
             

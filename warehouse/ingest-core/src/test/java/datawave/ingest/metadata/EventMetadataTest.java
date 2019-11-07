@@ -13,6 +13,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.IdentityDataType;
 import datawave.TestBaseIngestHelper;
+import datawave.TestAbstractContentIngestHelper;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -31,10 +32,15 @@ import org.junit.Test;
 
 // currently this only tests LoadDate counts
 public class EventMetadataTest {
-    private static final String FIELD_NAME_TO_COUNT = "FIELD_1";
+    private static final String FIELD_NAME = "FIELD_NAME";
+    private static final String FIELD_TO_COUNT = "FIELD_1";
+    private static final String FIELD_WITH_TOKEN_TO_COUNT = "FIELD_1_TOKEN";
     private static final String DATA_TYPE = "xyzabc";
     private static final String FIELD_NAME_FOR_LOAD_DATE = "LOAD_DATE";
+    private static final String TF = "tf";
+    private static final String T = "t";
     private static final String VALUE_FOR_LOAD_DATE = "20140404";
+    private static final String NUMBER_TYPE = "datawave.data.type.NumberType";
     private static final Text METADATA_TABLE_NAME = new Text("table123456");
     private static final Text LOADDATES_TABLE_NAME = new Text("loaddates");
     private static final Text INDEX_TABLE_NAME = new Text("index");
@@ -48,8 +54,38 @@ public class EventMetadataTest {
         helper = new TestBaseIngestHelper(createEventFields()) {
             @Override
             public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
-                return Arrays.<datawave.data.type.Type<?>> asList(new IdentityDataType());
+                return Arrays.asList(new IdentityDataType());
             }
+        };
+    }
+    
+    public void setupAbstractContentIngestHelper(boolean tokenIndex, boolean listIndex) {
+        helper = new TestAbstractContentIngestHelper(createEventFields()) {
+            
+            private boolean isTokenIndex = tokenIndex;
+            private boolean isListIndex = listIndex;
+            
+            @Override
+            public boolean isDataTypeField(String fieldname) {
+                return true;
+            }
+            
+            @Override
+            public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
+                datawave.data.type.Type<?> type[] = {datawave.data.type.Type.Factory.createType(NUMBER_TYPE)};
+                return Arrays.asList(type);
+            }
+            
+            @Override
+            public boolean isContentIndexField(String field) {
+                return isTokenIndex;
+            }
+            
+            @Override
+            public boolean isIndexListField(String field) {
+                return isListIndex;
+            };
+            
         };
     }
     
@@ -57,12 +93,49 @@ public class EventMetadataTest {
     public void testCreatesIndexedField() throws IOException {
         setupMocks();
         
-        helper.addIndexedField(FIELD_NAME_TO_COUNT);
+        helper.addIndexedField(FIELD_TO_COUNT);
         RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         
-        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_NAME_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_NAME_TO_COUNT));
+        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
+        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
+        assertNonIndexedFieldNameIsMissing(eventMetadata);
+        
+        EasyMock.verify(event);
+    }
+    
+    @Test
+    public void testCreatesTermFrequencyForTokenization() throws IOException {
+        setupAbstractContentIngestHelper(true, false);
+        setupMocks();
+        
+        helper.addIndexedField(FIELD_TO_COUNT);
+        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
+        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
+        
+        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
+        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
+        assertTfCountEquals(0L, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
+        Assert.assertFalse(assertTExists(FIELD_WITH_TOKEN_TO_COUNT, eventMetadata));
+        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
+        assertNonIndexedFieldNameIsMissing(eventMetadata);
+        
+        EasyMock.verify(event);
+    }
+    
+    @Test
+    public void testCreatesTermFrequencyForLists() throws IOException {
+        setupAbstractContentIngestHelper(false, true);
+        setupMocks();
+        
+        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
+        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
+        
+        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
+        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT));
+        assertTfCountEquals(0L, FIELD_TO_COUNT, eventMetadata);
+        assertTCountEquals(0L, FIELD_TO_COUNT, eventMetadata);
+        Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         
         EasyMock.verify(event);
@@ -72,12 +145,12 @@ public class EventMetadataTest {
     public void testCreatesReverseIndexedField() throws IOException {
         setupMocks();
         
-        helper.addReverseIndexedField(FIELD_NAME_TO_COUNT);
+        helper.addReverseIndexedField(FIELD_TO_COUNT);
         RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         
-        assertFieldNameCountEquals(1L, RINDEX_TABLE_NAME, FIELD_NAME_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_NAME_TO_COUNT));
+        assertFieldNameCountEquals(1L, RINDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
+        Assert.assertFalse(assertContainsKey(eventMetadata, INDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         
         EasyMock.verify(event);
@@ -87,14 +160,14 @@ public class EventMetadataTest {
     public void testCreatesBoth() throws IOException {
         setupMocks();
         
-        helper.addReverseIndexedField(FIELD_NAME_TO_COUNT);
-        helper.addIndexedField(FIELD_NAME_TO_COUNT);
+        helper.addReverseIndexedField(FIELD_TO_COUNT);
+        helper.addIndexedField(FIELD_TO_COUNT);
         
         RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         
-        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_NAME_TO_COUNT, eventMetadata);
-        assertFieldNameCountEquals(1L, RINDEX_TABLE_NAME, FIELD_NAME_TO_COUNT, eventMetadata);
+        assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
+        assertFieldNameCountEquals(1L, RINDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
         
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         
@@ -105,27 +178,58 @@ public class EventMetadataTest {
     public void testCountsTwo() throws IOException {
         setupMocks();
         
-        helper.addIndexedField(FIELD_NAME_TO_COUNT);
+        helper.addIndexedField(FIELD_TO_COUNT);
         RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
         
-        assertFieldNameCountEquals(2L, INDEX_TABLE_NAME, FIELD_NAME_TO_COUNT, eventMetadata);
+        assertFieldNameCountEquals(2L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
         
         EasyMock.verify(event);
     }
     
     private void assertFieldNameCountEquals(long expectedCount, Text tableName, String fieldName, RawRecordMetadata eventMetadata) {
-        assertCountEquals(expectedCount, tableName, fieldName, eventMetadata, "FIELD_NAME");
+        Text expectedColumnFamily = new Text(FIELD_NAME + RawRecordMetadata.DELIMITER + tableName);
+        Text expectedColumnQualifier = new Text(VALUE_FOR_LOAD_DATE + RawRecordMetadata.DELIMITER + DATA_TYPE);
+        assertCountEquals(expectedCount, fieldName, eventMetadata, LOADDATES_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
     }
     
-    private void assertCountEquals(long expectedCount, Text tableName, String rowId, RawRecordMetadata eventMetadata, String groupingIdentifier) {
-        Text expectedColumnFamily = new Text(groupingIdentifier + RawRecordMetadata.DELIMITER + tableName.toString());
-        Assert.assertTrue("Didn't have entry for " + expectedColumnFamily + ", " + rowId, assertContainsKey(eventMetadata, expectedColumnFamily, rowId));
-        Iterator<Value> values = getCorrespondingValue(eventMetadata, expectedColumnFamily, rowId).iterator();
+    private void assertTfCountEquals(long expectedCount, String fieldName, RawRecordMetadata eventMetadata) {
+        Text expectedColumnFamily = new Text(TF);
+        Text expectedColumnQualifier = new Text(DATA_TYPE);
+        assertCountEquals(expectedCount, fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
+    }
+    
+    private boolean assertTExists(String fieldName, RawRecordMetadata eventMetadata) {
+        Text expectedColumnFamily = new Text(T);
+        Text expectedColumnQualifier = new Text(DATA_TYPE + RawRecordMetadata.DELIMITER + NUMBER_TYPE);
+        return assertExists(fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
+    }
+    
+    private void assertTCountEquals(long expectedCount, String fieldName, RawRecordMetadata eventMetadata) {
+        Text expectedColumnFamily = new Text(T);
+        Text expectedColumnQualifier = new Text(DATA_TYPE + RawRecordMetadata.DELIMITER + NUMBER_TYPE);
+        assertCountEquals(expectedCount, fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
+    }
+    
+    private void assertCountEquals(long expectedCount, String rowId, RawRecordMetadata eventMetadata, Text tableName, Text expectedColumnFamily,
+                    Text expectedColumnQualifier) {
+        BulkIngestKey expectedBulkIngestKey = createExpectedBulkIngestKey(expectedColumnFamily, tableName, rowId, expectedColumnQualifier);
+        Assert.assertTrue("Didn't have entry for " + expectedColumnFamily + ", " + rowId, assertContainsKey(eventMetadata, expectedBulkIngestKey));
+        Iterator<Value> values = getCorrespondingValue(eventMetadata, expectedBulkIngestKey).iterator();
         Assert.assertTrue(values.hasNext());
-        Assert.assertEquals(expectedCount, (long) SummingCombiner.VAR_LEN_ENCODER.decode(values.next().get()));
+        
+        byte[] value = values.next().get();
+        if (expectedCount > 0) {
+            Assert.assertEquals(expectedCount, (long) SummingCombiner.VAR_LEN_ENCODER.decode(value));
+        }
+        
         Assert.assertFalse(values.hasNext());
+    }
+    
+    private boolean assertExists(String rowId, RawRecordMetadata eventMetadata, Text tableName, Text expectedColumnFamily, Text expectedColumnQualifier) {
+        BulkIngestKey expectedBulkIngestKey = createExpectedBulkIngestKey(expectedColumnFamily, tableName, rowId, expectedColumnQualifier);
+        return assertContainsKey(eventMetadata, expectedBulkIngestKey);
     }
     
     private void assertNonIndexedFieldNameIsMissing(RawRecordMetadata eventMetadata) {
@@ -134,11 +238,15 @@ public class EventMetadataTest {
     }
     
     private boolean assertContainsKey(RawRecordMetadata eventMetadata, Text columnFamily, String fieldName) {
-        return null != getCorrespondingValue(eventMetadata, columnFamily, fieldName);
+        BulkIngestKey expectedBulkIngestKey = createExpectedBulkIngestKey(columnFamily, fieldName);
+        return null != getCorrespondingValue(eventMetadata, expectedBulkIngestKey);
     }
     
-    private Collection<Value> getCorrespondingValue(RawRecordMetadata eventMetadata, Text columnFamily, String fieldName) {
-        BulkIngestKey expectedBulkIngestKey = createExpectedBulkIngestKey(columnFamily, fieldName);
+    private boolean assertContainsKey(RawRecordMetadata eventMetadata, BulkIngestKey expectedBulkIngestKey) {
+        return null != getCorrespondingValue(eventMetadata, expectedBulkIngestKey);
+    }
+    
+    private Collection<Value> getCorrespondingValue(RawRecordMetadata eventMetadata, BulkIngestKey expectedBulkIngestKey) {
         Multimap<BulkIngestKey,Value> bulkMetadata = eventMetadata.getBulkMetadata();
         for (BulkIngestKey actualBulkIngestKey : bulkMetadata.keySet()) {
             if (actualBulkIngestKey.getTableName().equals(expectedBulkIngestKey.getTableName())
@@ -161,15 +269,19 @@ public class EventMetadataTest {
     }
     
     private BulkIngestKey createExpectedBulkIngestKey(Text columnFamily, String fieldName) {
-        BulkIngestKey loadDateCounter = new BulkIngestKey();
-        Key k = new Key(new Text(fieldName), columnFamily, new Text(VALUE_FOR_LOAD_DATE + RawRecordMetadata.DELIMITER + DATA_TYPE));
-        return new BulkIngestKey(new Text(LOADDATES_TABLE_NAME), k);
+        return createExpectedBulkIngestKey(columnFamily, LOADDATES_TABLE_NAME, fieldName, new Text(VALUE_FOR_LOAD_DATE + RawRecordMetadata.DELIMITER
+                        + DATA_TYPE));
+    }
+    
+    private BulkIngestKey createExpectedBulkIngestKey(Text columnFamily, Text tableName, String fieldName, Text columnQualifier) {
+        Key k = new Key(new Text(fieldName), columnFamily, columnQualifier);
+        return new BulkIngestKey(new Text(tableName), k);
     }
     
     private Multimap<String,NormalizedContentInterface> createEventFields() {
         Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
         addToEventFields(eventFields, FIELD_NAME_FOR_LOAD_DATE, "" + getLoadDateAsMillis());
-        addToEventFields(eventFields, FIELD_NAME_TO_COUNT, "HEY HO HEY HO");
+        addToEventFields(eventFields, FIELD_TO_COUNT, "HEY HO HEY HO");
         return eventFields;
     }
     

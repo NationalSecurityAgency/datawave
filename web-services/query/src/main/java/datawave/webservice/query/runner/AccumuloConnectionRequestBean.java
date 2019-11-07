@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 // CDI singleton
 public class AccumuloConnectionRequestBean {
     
-    static private Logger log = Logger.getLogger(AccumuloConnectionRequestBean.class);
+    private static Logger log = Logger.getLogger(AccumuloConnectionRequestBean.class);
     
     @Resource
     private EJBContext ctx;

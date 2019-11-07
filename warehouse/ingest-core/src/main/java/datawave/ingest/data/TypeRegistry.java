@@ -14,6 +14,7 @@ import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.filter.KeyValueFilter;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
@@ -148,6 +149,11 @@ public class TypeRegistry extends HashMap<String,Type> {
     
     private TypeRegistry(Configuration config) {
         super();
+        
+        // Ensure the marking functions are initialized before initializing any helper classes, since
+        // they may in turn use marking functions (and related features) that depend on this having
+        // been initialized already.
+        MarkingFunctions.Factory.createMarkingFunctions();
         
         if (null == config)
             throw new IllegalArgumentException("Cannot pass null configuration to TypeRegistry");

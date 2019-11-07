@@ -1,7 +1,8 @@
 package datawave.webservice.query.configuration;
 
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,7 +16,8 @@ import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.RoleManager;
 
 import org.apache.accumulo.core.client.Connector;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -41,8 +43,7 @@ public class TestBaseQueryLogic {
         expect(this.copy.getAuditType(null)).andReturn(Auditor.AuditType.ACTIVE);
         expect(this.copy.getTableName()).andReturn("tableName");
         expect(this.copy.getMaxResults()).andReturn(Long.MAX_VALUE);
-        expect(this.copy.getMaxRowsToScan()).andReturn(10L);
-        expect(this.copy.getUndisplayedVisibilities()).andReturn(new HashSet<String>());
+        expect(this.copy.getMaxWork()).andReturn(10L);
         expect(this.copy.getMaxPageSize()).andReturn(25);
         expect(this.copy.getPageByteTrigger()).andReturn(1024L);
         expect(this.copy.getCollectQueryMetrics()).andReturn(false);
@@ -51,10 +52,8 @@ public class TestBaseQueryLogic {
         expect(this.copy.getPrincipal()).andReturn(null);
         RoleManager roleManager = new EasyRoleManager();
         expect(this.copy.getRoleManager()).andReturn(roleManager);
-        expect(this.copy.getMarkingFunctions()).andReturn(null);
-        expect(this.copy.getResponseObjectFactory()).andReturn(null);
         expect(this.copy.getSelectorExtractor()).andReturn(null);
-        expect(this.copy.isBypassAccumulo()).andReturn(false);
+        expect(this.copy.getBypassAccumulo()).andReturn(false);
         
         // Run the test
         PowerMock.replayAll();
@@ -65,9 +64,9 @@ public class TestBaseQueryLogic {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Incorrect max page size", result1 == 25);
-        assertTrue("Incorrect page byte trigger", result2 == 1024L);
-        assertTrue("Iterator should not be null", null != result3);
+        assertEquals("Incorrect max page size", 25, result1);
+        assertEquals("Incorrect page byte trigger", 1024L, result2);
+        assertNotNull("Iterator should not be null", result3);
     }
     
     private class TestQueryLogic<T> extends BaseQueryLogic<T> {
@@ -84,6 +83,12 @@ public class TestBaseQueryLogic {
         @Override
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
             // No op
+        }
+        
+        @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
         }
         
         @Override

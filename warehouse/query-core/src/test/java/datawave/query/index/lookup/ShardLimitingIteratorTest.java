@@ -13,13 +13,10 @@ import java.util.TreeMap;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.util.SortedKeyValueIteratorToIterator;
 
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -49,7 +46,7 @@ public class ShardLimitingIteratorTest {
         CreateUidsIterator itr = new CreateUidsIterator();
         itr.init(new SortedMapIterator(data), null, null);
         Range range = new Range(new Key("t", "v", "20130325"), true, new Key("t", "v", "20130325_\uffff"), false);
-        itr.seek(range, Collections.<ByteSequence> emptySet(), false);
+        itr.seek(range, Collections.emptySet(), false);
         assertTrue(itr.hasTop());
         
         ShardLimitingIterator iter = new ShardLimitingIterator(new SortedKeyValueIteratorToIterator(itr), 25);
@@ -96,7 +93,7 @@ public class ShardLimitingIteratorTest {
         CreateUidsIterator itr = new CreateUidsIterator();
         itr.init(new SortedMapIterator(data), null, null);
         Range range = new Range(new Key("t", "v", "20130320"), true, new Key("t", "v", "20130330_\uffff"), false);
-        itr.seek(range, Collections.<ByteSequence> emptySet(), false);
+        itr.seek(range, Collections.emptySet(), false);
         
         ShardLimitingIterator iter = new ShardLimitingIterator(new SortedKeyValueIteratorToIterator(itr), 25);
         assertTrue(iter.hasNext());

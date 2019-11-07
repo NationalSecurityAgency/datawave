@@ -36,8 +36,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 /**
  * <p>
  * Iterator used for global index lookups in ShardQueryLogic. This iterator will aggregate range information for a query term so that we don't pass back too
- * many ranges to the web service. This iterator is set up in the RangeCalculator and is constructed with ranges that contain the start and end term, field
- * name, and start and end dates
+ * many ranges to the web service. This iterator is constructed with ranges that contain the start and end term, field name, and start and end dates.
  *
  * <p>
  * This iterator has two required properties (SHARDS_PER_DAY and EVENTS_PER_DAY) that must be set and one optional property (DATA_TYPES). This iterator uses
@@ -218,7 +217,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             
             // If we have passed the day boundary and we have ranges to pass back, then lets break out
             // of this loop.
-            if (!startDate.equals(parseDateFromColQual(currentKey)) && ranges.size() > 0) {
+            if (!startDate.equals(parseDateFromColQual(currentKey)) && !ranges.isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Not on the desired startDate and have found ranges to return");
                 }
@@ -263,7 +262,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             shardsSeen.add(shardId);
             
             // If the types have been set, then determine if we need to skip or continue
-            if (types.size() > 0 && !types.contains(datatype)) {
+            if (!types.isEmpty() && !types.contains(datatype)) {
                 this.iterator.next();
                 continue;
             }
@@ -338,7 +337,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                     // Add a Range for the entire shard and datatype.
                     Text cf = new Text(datatype);
                     Key startKey = new Key(shard, cf);
-                    Key endKey = new Key(shard, new Text(cf.toString() + Constants.MAX_UNICODE_STRING + Constants.NULL_BYTE_STRING));
+                    Key endKey = new Key(shard, new Text(cf + Constants.MAX_UNICODE_STRING + Constants.NULL_BYTE_STRING));
                     Range shardDatatypeRange = new Range(startKey, true, endKey, false);
                     
                     // Remove all event-specific ranges for this shard/datatype
@@ -369,7 +368,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                             Text cf = new Text(datatype);
                             TextUtil.textAppend(cf, uuid);
                             Key startKey = new Key(shard, cf);
-                            Key endKey = new Key(shard, new Text(cf.toString() + Constants.NULL_BYTE_STRING));
+                            Key endKey = new Key(shard, new Text(cf + Constants.NULL_BYTE_STRING));
                             Range eventRange = new Range(startKey, true, endKey, false);
                             this.ranges.add(eventRange);
                         }
@@ -381,7 +380,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             
         } while (!done);
         
-        if (this.ranges.size() > 0) {
+        if (!this.ranges.isEmpty()) {
             // Set the returnKey with the following structure
             // row = original row
             // colf = original colf
@@ -400,7 +399,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
         try {
             return DateHelper.parse(Text.decode(k.getColumnQualifierData().getBackingArray(), 0, 8));
         } catch (Exception e) {
-            throw new IOException("Index entry column qualifier is not correct format: " + k.toString());
+            throw new IOException("Index entry column qualifier is not correct format: " + k);
         }
     }
     

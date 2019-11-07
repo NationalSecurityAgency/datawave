@@ -101,7 +101,6 @@ public class UpgradeCounterValues {
             }
         }
         
-        writer.flush();
         writer.close();
         scanner.close();
     }
