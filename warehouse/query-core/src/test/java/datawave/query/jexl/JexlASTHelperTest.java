@@ -6,6 +6,7 @@ import java.util.Map;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 
@@ -280,4 +281,250 @@ public class JexlASTHelperTest {
         Assert.assertEquals(ASTNotNode.class, nonRangeChildNodes.get(0).getClass());
     }
     
+    @Test
+    public void parseTest1() throws Exception {
+        String query = "CITY == 'city\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest2() throws Exception {
+        String query = "CITY =~ 'city\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest3() throws Exception {
+        String query = "CITY == 'city\\\\\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest4() throws Exception {
+        String query = "CITY =~ 'city\\\\\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest5() throws Exception {
+        String query = "CITY == 'city\\\\\\\\\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest6() throws Exception {
+        String query = "CITY =~ 'city\\\\\\\\\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest7() throws Exception {
+        String query = "CITY == '\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest8() throws Exception {
+        String query = "CITY =~ '\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest9() throws Exception {
+        String query = "CITY == '\\\\\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest10() throws Exception {
+        String query = "CITY =~ '\\\\\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest11() throws Exception {
+        String query = "CITY == '\\\\\\\\\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest12() throws Exception {
+        String query = "CITY =~ '\\\\\\\\\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest13() throws Exception {
+        String query = "CITY == 'ci\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest14() throws Exception {
+        String query = "CITY =~ 'ci\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest15() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest16() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest17() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parseTest18() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // This test is here to ensure that we can freely convert between a jexl tree and
+    // a query string, without impact to the string literal for the regex node.
+    // WEB QUERY: CITY =~ 'ci\\\\\\ty\.blah'
+    // StringLiteral.image: "ci\\\\\\ty\.blah"
+    @Test
+    public void parseTest19() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\.blah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        JexlNode newNode = JexlASTHelper.parseJexlQuery(interpretedQuery);
+        String reinterpretedQuery = JexlStringBuildingVisitor.buildQuery(newNode);
+        Assert.assertEquals("CITY =~ 'ci\\\\\\\\\\\\ty\\.blah'", interpretedQuery);
+        Assert.assertEquals(reinterpretedQuery, interpretedQuery);
+        Assert.assertEquals("ci\\\\\\\\\\\\ty\\.blah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image, newNode.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+    }
+    
+    // This test is here to ensure that we can freely convert between a jexl tree and
+    // a query string, without impact to the string literal for the regex node.
+    // This also shows that an unescaped backslash (the one before '.blah') will be preserved between conversions.
+    // WEB QUERY: CITY == 'ci\\\\\\ty\.blah'
+    // StringLiteral.image: "ci\\\ty\.blah"
+    @Test
+    public void parseTest20() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty\\.blah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        JexlNode newNode = JexlASTHelper.parseJexlQuery(interpretedQuery);
+        String reinterpretedQuery = JexlStringBuildingVisitor.buildQuery(newNode);
+        // note: while this is different from the original query, it produces the same string literal
+        Assert.assertEquals("CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'", interpretedQuery);
+        Assert.assertEquals(reinterpretedQuery, interpretedQuery);
+        Assert.assertEquals("ci\\\\\\ty\\.blah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image, newNode.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+    }
+    
+    // This is similar to the last test, but shows the usage of an explicit, escaped backslash before '.blah'
+    // WEB QUERY: CITY == 'ci\\\\\\ty\\.blah'
+    // StringLiteral.image: "ci\\\ty\.blah"
+    @Test
+    public void parseTest20b() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        JexlNode newNode = JexlASTHelper.parseJexlQuery(interpretedQuery);
+        String reinterpretedQuery = JexlStringBuildingVisitor.buildQuery(newNode);
+        // note: while this is different from the original query, it produces the same string literal
+        Assert.assertEquals("CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'", interpretedQuery);
+        Assert.assertEquals(reinterpretedQuery, interpretedQuery);
+        Assert.assertEquals("ci\\\\\\ty\\.blah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image, newNode.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+    }
+    
+    // This test ensures that the literal value of a regex node preserves the full number of backslashes as present in the query.
+    // This is also testing that an escaped single quote is handled correctly for a regex node.
+    // WEB QUERY: CITY =~ 'ci\\\\\\ty\\.bl\'ah'
+    // StringLiteral.image: "ci\\\\\\ty\\.bl'ah"
+    @Test
+    public void parseTest21() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\\\.bl\\'ah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Assert.assertEquals("ci\\\\\\\\\\\\ty\\\\.bl'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // This test is is similar to the previous one, but with multiple backslashes before the embedded single quote.
+    // WEB QUERY: CITY =~ 'ci\\\\\\ty\\.bl\\\'ah'
+    // StringLiteral.image: "ci\\\\\\ty\\.bl\\'ah"
+    @Test
+    public void parseTest22() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\\\.bl\\\\\\'ah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Assert.assertEquals("ci\\\\\\\\\\\\ty\\\\.bl\\\\'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // This test ensures that the literal value of an equals node has had the escape characters removed for each backslash.
+    // This is also testing that an escaped single quote is handled correctly for an equals node.
+    // WEB QUERY: CITY == 'ci\\\\\\ty\\.bl\'ah'
+    // StringLiteral.image: "ci\\\ty\.bl'ah"
+    @Test
+    public void parseTest23() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.bl\\'ah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Assert.assertEquals("ci\\\\\\ty\\.bl'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // This test is is similar to the previous one, but with multiple backslashes before the embedded single quote.
+    // WEB QUERY: CITY == 'ci\\\\\\ty\\.bl\\\'ah'
+    // StringLiteral.image: "ci\\\ty\.bl\'ah"
+    @Test
+    public void parseTest24() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.bl\\\\\\'ah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Assert.assertEquals("ci\\\\\\ty\\.bl\\'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(query, interpretedQuery);
+    }
 }

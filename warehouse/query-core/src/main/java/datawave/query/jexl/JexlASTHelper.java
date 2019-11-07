@@ -63,6 +63,8 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.StringReader;
@@ -95,6 +97,10 @@ public class JexlASTHelper {
     public static final Character GROUPING_CHARACTER_SEPARATOR = '.';
     public static final Character IDENTIFIER_PREFIX = '$';
     
+    public static final String SINGLE_BACKSLASH = "\\";
+    public static final String DOUBLE_BACKSLASH = "\\\\";
+    private static final String PLACEHOLDER = "PH";
+    
     public static final Set<Class<?>> RANGE_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTGTNode.class, ASTGENode.class, ASTLTNode.class, ASTLENode.class);
     
     public static final Set<Class<?>> INCLUSIVE_RANGE_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTGENode.class, ASTLENode.class);
@@ -112,7 +118,7 @@ public class JexlASTHelper {
     /**
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
-     * 
+     *
      * @param query
      *            The query string in JEXL syntax to parse
      * @return Root node of the query parse tree.
@@ -126,12 +132,99 @@ public class JexlASTHelper {
         caseFixQuery = caseFixQuery.replaceAll("\\s+[Oo][Rr]\\s+", " or ");
         caseFixQuery = caseFixQuery.replaceAll("\\s+[Nn][Oo][Tt]\\s+", " not ");
         
-        // Parse the query
+        if (caseFixQuery.contains(DOUBLE_BACKSLASH)) {
+            try {
+                return parseQueryWithBackslashes(query, parser);
+            } catch (Exception e) {
+                log.warn("Unable to perform backslash substitution while parsing the query.", e);
+            }
+        }
+        
+        // Parse the original query
+        ASTJexlScript jexlScript;
         try {
-            return parser.parse(new StringReader(caseFixQuery), null);
+            jexlScript = parser.parse(new StringReader(caseFixQuery), null);
         } catch (TokenMgrError e) {
             throw new ParseException(e.getMessage());
         }
+        
+        return jexlScript;
+    }
+    
+    // generate a random alphanumeric placeholder value which will replace instances
+    // of double backslashes in the qquery before parsing. This algorithm ensures that
+    // the placeholder string does not exist in the original query.
+    private static String generatePlaceholder(String query) {
+        String placeholder;
+        do {
+            placeholder = PLACEHOLDER + RandomStringUtils.randomAlphanumeric(4);
+        } while (query.contains(placeholder));
+        
+        return placeholder;
+    }
+    
+    // we need to replace double backslashes in the query with a placeholder value
+    // before parsing in order to prevent the parser from interpreting doubles as singles
+    private static ASTJexlScript parseQueryWithBackslashes(String query, Parser parser) throws Exception {
+        // determine how many doubles need to be replaced
+        int numFound = StringUtils.countMatches(query, DOUBLE_BACKSLASH);
+        
+        // replace the doubles with a unique placeholder
+        String placeholder = generatePlaceholder(query);
+        query = query.replace(DOUBLE_BACKSLASH, placeholder);
+        
+        // Parse the query with the placeholders
+        ASTJexlScript jexlScript;
+        try {
+            jexlScript = parser.parse(new StringReader(query), null);
+        } catch (TokenMgrError e) {
+            throw new ParseException(e.getMessage());
+        }
+        
+        Deque<JexlNode> workingStack = new LinkedList<>();
+        workingStack.push(jexlScript);
+        int numReplaced = 0;
+        
+        // iteratively traverse the tree, and replace the placeholder with single or double backslashes
+        while (!workingStack.isEmpty()) {
+            JexlNode node = workingStack.pop();
+            
+            if (node.image != null) {
+                int numToReplace = StringUtils.countMatches(node.image, placeholder);
+                if (numToReplace > 0) {
+                    // get the parent node (skipping references)
+                    JexlNode parent = node;
+                    do {
+                        parent = parent.jjtGetParent();
+                    } while (parent instanceof ASTReference);
+                    
+                    // if not a regex, use single backslash. otherwise, use double.
+                    // this is necessary to ensure that non-regex nodes use the escaped
+                    // value when determining equality, and to ensure that regex nodes
+                    // use the pre-compiled form of the string literal.
+                    if (!(parent instanceof ASTERNode || parent instanceof ASTNRNode))
+                        node.image = node.image.replace(placeholder, SINGLE_BACKSLASH);
+                    else
+                        node.image = node.image.replace(placeholder, DOUBLE_BACKSLASH);
+                    
+                    numReplaced += numToReplace;
+                }
+            }
+            
+            if (node.jjtGetNumChildren() > 0) {
+                for (JexlNode child : children(node)) {
+                    if (child != null) {
+                        workingStack.push(child);
+                    }
+                }
+            }
+        }
+        
+        if (numFound != numReplaced)
+            throw new ParseException("Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: "
+                            + numReplaced);
+        
+        return jexlScript;
     }
     
     /**
