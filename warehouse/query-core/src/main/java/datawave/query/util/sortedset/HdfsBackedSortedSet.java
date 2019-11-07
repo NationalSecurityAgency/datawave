@@ -132,11 +132,11 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
             
             // determine whether this fs is a good candidate
             if (fsStatus != null) {
-                long availableStorageMB = fsStatus.getRemaining() / 0x100000L;
+                long availableStorageMiB = fsStatus.getRemaining() / 0x100000L;
                 double availableStoragePercent = (double) fsStatus.getRemaining() / fsStatus.getCapacity();
                 
                 // if we are using less than our storage limit, the cache dir is valid
-                return availableStorageMB >= ivaratorCacheDir.getConfig().getMinAvailableStorageMiB()
+                return availableStorageMiB >= ivaratorCacheDir.getConfig().getMinAvailableStorageMiB()
                                 && availableStoragePercent >= ivaratorCacheDir.getConfig().getMinAvailableStoragePercent();
             }
             
