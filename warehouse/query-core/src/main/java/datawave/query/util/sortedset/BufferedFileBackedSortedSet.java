@@ -47,6 +47,8 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
      */
     public interface SortedSetFileHandlerFactory {
         SortedSetFileHandler createHandler() throws IOException;
+        
+        boolean isValid();
     }
     
     public BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
@@ -80,31 +82,7 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     }
     
     private SortedSetFileHandler createFileHandler(SortedSetFileHandlerFactory handlerFactory) throws IOException {
-        boolean isCacheDirValid = false;
-        if (handlerFactory instanceof HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) {
-            IvaratorCacheDir ivaratorCacheDir = ((HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) handlerFactory).getIvaratorCacheDir();
-            
-            FsStatus fsStatus = null;
-            try {
-                fsStatus = ivaratorCacheDir.getFs().getStatus();
-            } catch (IOException e) {
-                log.warn("Unable to determine status of the filesystem: " + ivaratorCacheDir.getFs());
-            }
-            
-            // determine whether this fs is a good candidate
-            if (fsStatus != null) {
-                long availableStorageMB = fsStatus.getRemaining() / 0x100000L;
-                double availableStoragePercent = (double) fsStatus.getRemaining() / fsStatus.getCapacity();
-                
-                // if we are using less than our storage limit, the cache dir is valid
-                isCacheDirValid = availableStorageMB >= ivaratorCacheDir.getConfig().getMinAvailableStorageMB()
-                                && availableStoragePercent >= ivaratorCacheDir.getConfig().getMinAvailableStoragePercent();
-            }
-        } else {
-            isCacheDirValid = true;
-        }
-        
-        if (isCacheDirValid) {
+        if (handlerFactory.isValid()) {
             try {
                 return handlerFactory.createHandler();
             } catch (IOException e) {

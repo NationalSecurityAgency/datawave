@@ -5,13 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.apache.log4j.Logger;
 
-import javax.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,7 +17,7 @@ public class IvaratorCacheDirConfig {
     private static final Logger log = Logger.getLogger(IvaratorCacheDir.class);
     
     public static final int DEFAULT_PRIORITY = Integer.MAX_VALUE;
-    public static final long DEFAULT_MIN_AVAILABLE_STORAGE_MB = 0L;
+    public static final long DEFAULT_MIN_AVAILABLE_STORAGE_MiB = 0L;
     public static final double DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT = 0f;
     
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -34,7 +29,7 @@ public class IvaratorCacheDirConfig {
     final protected int priority;
     
     // the minimum amount of available storage required to use this filesystem
-    final protected long minAvailableStorageMB;
+    final protected long minAvailableStorageMiB;
     
     // the minimum percent of available storage required to use this filesystem
     final protected double minAvailableStoragePercent;
@@ -53,21 +48,21 @@ public class IvaratorCacheDirConfig {
     }
     
     public IvaratorCacheDirConfig(String basePathURI, int priority) {
-        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT);
+        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MiB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT);
     }
     
-    public IvaratorCacheDirConfig(String basePathURI, int priority, long minAvailableStorageMB) {
-        this(basePathURI, priority, minAvailableStorageMB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT);
+    public IvaratorCacheDirConfig(String basePathURI, int priority, long minAvailableStorageMiB) {
+        this(basePathURI, priority, minAvailableStorageMiB, DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT);
     }
     
     public IvaratorCacheDirConfig(String basePathURI, int priority, double minAvailableStoragePercent) {
-        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MB, minAvailableStoragePercent);
+        this(basePathURI, priority, DEFAULT_MIN_AVAILABLE_STORAGE_MiB, minAvailableStoragePercent);
     }
     
-    private IvaratorCacheDirConfig(String basePathURI, int priority, long minAvailableStorageMB, double minAvailableStoragePercent) {
+    private IvaratorCacheDirConfig(String basePathURI, int priority, long minAvailableStorageMiB, double minAvailableStoragePercent) {
         this.basePathURI = basePathURI;
         this.priority = priority;
-        this.minAvailableStorageMB = minAvailableStorageMB;
+        this.minAvailableStorageMiB = minAvailableStorageMiB;
         this.minAvailableStoragePercent = minAvailableStoragePercent;
     }
     
@@ -80,7 +75,7 @@ public class IvaratorCacheDirConfig {
             result = false;
         }
         
-        if (minAvailableStorageMB < 0l) {
+        if (minAvailableStorageMiB < 0l) {
             log.warn("Invalid minAvailableStorageMB for IvaratorCacheDirConfig.  'minAvailableStorageMB' must be greater than or equal to 0");
             result = false;
         }
@@ -101,8 +96,8 @@ public class IvaratorCacheDirConfig {
         return priority;
     }
     
-    public long getMinAvailableStorageMB() {
-        return minAvailableStorageMB;
+    public long getMinAvailableStorageMiB() {
+        return minAvailableStorageMiB;
     }
     
     public double getMinAvailableStoragePercent() {
@@ -123,7 +118,7 @@ public class IvaratorCacheDirConfig {
     
     @Override
     public String toString() {
-        return "IvaratorCacheDirConfig: [basePathURI: " + basePathURI + ", priority: " + priority + ", minAvailableStorageMB: " + minAvailableStorageMB
+        return "IvaratorCacheDirConfig: [basePathURI: " + basePathURI + ", priority: " + priority + ", minAvailableStorageMiB: " + minAvailableStorageMiB
                         + ", minAvailableStoragePercent: " + minAvailableStoragePercent + "]";
     }
     
@@ -134,12 +129,12 @@ public class IvaratorCacheDirConfig {
         if (!(o instanceof IvaratorCacheDirConfig))
             return false;
         IvaratorCacheDirConfig that = (IvaratorCacheDirConfig) o;
-        return priority == that.priority && minAvailableStorageMB == that.minAvailableStorageMB
+        return priority == that.priority && minAvailableStorageMiB == that.minAvailableStorageMiB
                         && Double.compare(that.minAvailableStoragePercent, minAvailableStoragePercent) == 0 && Objects.equals(basePathURI, that.basePathURI);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(basePathURI, priority, minAvailableStorageMB, minAvailableStoragePercent);
+        return Objects.hash(basePathURI, priority, minAvailableStorageMiB, minAvailableStoragePercent);
     }
 }

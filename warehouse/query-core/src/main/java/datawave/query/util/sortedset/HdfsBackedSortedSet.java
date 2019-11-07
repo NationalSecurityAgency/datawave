@@ -18,6 +18,7 @@ import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -119,6 +120,27 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         
         void setFileCount(int count) {
             this.fileCount = count;
+        }
+        
+        public boolean isValid() {
+            FsStatus fsStatus = null;
+            try {
+                fsStatus = ivaratorCacheDir.getFs().getStatus();
+            } catch (IOException e) {
+                log.warn("Unable to determine status of the filesystem: " + ivaratorCacheDir.getFs());
+            }
+            
+            // determine whether this fs is a good candidate
+            if (fsStatus != null) {
+                long availableStorageMB = fsStatus.getRemaining() / 0x100000L;
+                double availableStoragePercent = (double) fsStatus.getRemaining() / fsStatus.getCapacity();
+                
+                // if we are using less than our storage limit, the cache dir is valid
+                return availableStorageMB >= ivaratorCacheDir.getConfig().getMinAvailableStorageMiB()
+                                && availableStoragePercent >= ivaratorCacheDir.getConfig().getMinAvailableStoragePercent();
+            }
+            
+            return false;
         }
         
         @Override

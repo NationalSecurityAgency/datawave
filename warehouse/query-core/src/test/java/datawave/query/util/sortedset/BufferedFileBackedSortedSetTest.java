@@ -46,6 +46,11 @@ public class BufferedFileBackedSortedSetTest {
                             public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
                                 return new SortedSetTempFileHandler();
                             }
+                            
+                            @Override
+                            public boolean isValid() {
+                                return true;
+                            }
                         }));
         
         // adding in the data set multiple times to create underlying files with duplicate values making the

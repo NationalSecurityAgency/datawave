@@ -41,7 +41,7 @@ public class IvaratorCacheDirConfigTest {
         
         Assert.assertNull(config.getBasePathURI());
         Assert.assertEquals(IvaratorCacheDirConfig.DEFAULT_PRIORITY, config.getPriority());
-        Assert.assertEquals(IvaratorCacheDirConfig.DEFAULT_MIN_AVAILABLE_STORAGE_MB, config.getMinAvailableStorageMB());
+        Assert.assertEquals(IvaratorCacheDirConfig.DEFAULT_MIN_AVAILABLE_STORAGE_MiB, config.getMinAvailableStorageMiB());
         Assert.assertEquals(IvaratorCacheDirConfig.DEFAULT_MIN_AVAILABLE_STORAGE_PERCENT, config.getMinAvailableStoragePercent(), 0.0);
     }
 }
