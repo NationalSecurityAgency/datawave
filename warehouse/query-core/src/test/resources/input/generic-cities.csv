@@ -14,12 +14,3 @@
 20151111,par-ita-11,Paris,Lazio,Italy,Europe,ITA,Euro,30
 20151111,rom-bel-11,Rome,Hainaut,Belgium,Europe,BEL,Euro,50
 20151111,ldn-fra-lle-11,London,lle-de-France,France,Europe,FRA,Euro,20
-20151111,edge-case-id-1,\Edge-City-1,Edgeville,Edgeland,Edgeope,EDG,NA,110
-20151111,edge-case-id-2,\\Edge-City-2,Edgeville,Edgeland,Edgeope,EDG,NA,220
-20151111,edge-case-id-3,\\\Edge-City-3,Edgeville,Edgeland,Edgeope,EDG,NA,330
-20151111,edge-case-id-4,Edge-City-4\,Edgeville,Edgeland,Edgeope,EDG,NA,110
-20151111,edge-case-id-5,Edge-City-5\\,Edgeville,Edgeland,Edgeope,EDG,NA,220
-20151111,edge-case-id-6,Edge-City-6\\\,Edgeville,Edgeland,Edgeope,EDG,NA,330
-20151111,edge-case-id-7,Edge-C\ity-7,Edgeville,Edgeland,Edgeope,EDG,NA,110
-20151111,edge-case-id-8,Edge-C\\ity-8,Edgeville,Edgeland,Edgeope,EDG,NA,220
-20151111,edge-case-id-9,Edge-C\\\ity-9,Edgeville,Edgeland,Edgeope,EDG,NA,330

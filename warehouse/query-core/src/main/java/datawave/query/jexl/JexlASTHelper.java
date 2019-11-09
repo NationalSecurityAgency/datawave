@@ -111,7 +111,7 @@ public class JexlASTHelper {
     /**
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
-     *
+     * 
      * @param query
      *            The query string in JEXL syntax to parse
      * @return Root node of the query parse tree.

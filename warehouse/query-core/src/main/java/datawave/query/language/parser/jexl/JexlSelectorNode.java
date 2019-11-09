@@ -95,11 +95,11 @@ public class JexlSelectorNode extends JexlNode {
                     
                     // For these chars, we need to escape them to do what the user wants
                     if (ESCAPE_CHARS.contains(chars[x])) {
-                        sb.append(BACKSLASH);
+                        sb.append(UNICODE_BACKSLASH);
                     }
                     
                     if (chars[x] == BACKSLASH) {
-                        sb.append(BACKSLASH);
+                        sb.append(UNICODE_BACKSLASH);
                     } else {
                         sb.append(chars[x]);
                     }
@@ -109,7 +109,7 @@ public class JexlSelectorNode extends JexlNode {
             } else if (currChar == '?') {
                 sb.append(".");
             } else if (currChar == '.') {
-                sb.append(BACKSLASH).append(currChar);
+                sb.append(UNICODE_BACKSLASH).append(currChar);
             } else if (currChar == '\'' && (x == 0 || (x > 0 && chars[x - 1] != BACKSLASH))) {
                 sb.append(BACKSLASH).append(currChar);
             } else {
@@ -122,11 +122,11 @@ public class JexlSelectorNode extends JexlNode {
             if (sb.length() > 1) {
                 // If we have more than two chars, we need to make sure we don't inadvertently undo the correct escape
                 if (!BACKSLASH.equals(sb.charAt(sb.length() - 2))) {
-                    sb.append(BACKSLASH);
+                    sb.append(UNICODE_BACKSLASH);
                 }
             } else {
                 // Is only a backslash, and as such we need to escape it
-                sb.append(BACKSLASH);
+                sb.append(UNICODE_BACKSLASH);
             }
         }
         
