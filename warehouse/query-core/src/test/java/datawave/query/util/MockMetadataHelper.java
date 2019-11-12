@@ -44,6 +44,7 @@ public class MockMetadataHelper extends MetadataHelper {
     private Set<String> expansionFields = new HashSet<>();
     private Set<String> contentFields = new HashSet<>();
     private Set<String> riFields = new HashSet<>();
+    private Set<String> nonEventFields = new HashSet<>();
     private Multimap<String,String> fieldsToDatatype = HashMultimap.create();
     protected Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     protected Map<String,Map<String,MetadataCardinalityCounts>> termCounts = new HashMap<>();
@@ -160,7 +161,11 @@ public class MockMetadataHelper extends MetadataHelper {
         }
         return Collections.unmodifiableSet(fields);
     }
-    
+
+    @Override public Set<String> getNonEventFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        return nonEventFields;
+    }
+
     @Override
     public Set<String> getIndexOnlyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         return indexOnlyFields;
@@ -368,6 +373,10 @@ public class MockMetadataHelper extends MetadataHelper {
     
     public void setIndexedFields(Set<String> indexedFields) {
         getMetadata().indexedFields = indexedFields;
+    }
+
+    public void setNonEventFields(Set<String> fields) {
+        this.nonEventFields = fields;
     }
     
     public void setIndexOnlyFields(Set<String> indexOnlyFields) {

@@ -5,6 +5,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -62,9 +63,11 @@ public class NodeTransformVisitorTest {
     private void testPushdown(String query, String expected, List<NodeTransformRule> rules) throws Exception {
         // create a query tree
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        
+
+        MockMetadataHelper helper = new MockMetadataHelper();
+
         // apply the visitor
-        script = NodeTransformVisitor.transform(script, rules, new ShardQueryConfiguration(), null);
+        script = NodeTransformVisitor.transform(script, rules, new ShardQueryConfiguration(), helper);
         
         // test the query tree
         String result = JexlStringBuildingVisitor.buildQuery(script);
