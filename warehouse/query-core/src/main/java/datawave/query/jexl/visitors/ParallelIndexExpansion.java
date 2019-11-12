@@ -293,11 +293,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        negate();
+        toggleNegation();
         try {
             return super.visit(node, data);
         } finally {
-            revertNegation();
+            toggleNegation();
         }
     }
     
@@ -383,21 +383,21 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        negate();
+        toggleNegation();
         try {
             return super.visit(node, data);
         } finally {
-            revertNegation();
+            toggleNegation();
         }
     }
     
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        negate();
+        toggleNegation();
         try {
             return super.visit(node, data);
         } finally {
-            revertNegation();
+            toggleNegation();
         }
     }
     
@@ -555,11 +555,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     // This flag should keep track of whether we are in a negated portion of the tree.
     protected boolean negated = false;
     
-    protected void negate() {
-        this.negated = !this.negated;
-    }
-    
-    protected void revertNegation() {
+    protected void toggleNegation() {
         this.negated = !this.negated;
     }
     

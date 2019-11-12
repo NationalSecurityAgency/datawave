@@ -51,8 +51,8 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     protected JexlNode currentNode;
     
     public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, boolean expandFields,
-                    boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        super(config, scannerFactory, helper, null, expandFields, expandValues, "Datawave Unfielded Lookup");
+                    boolean expandValues, boolean expandNegations) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        super(config, scannerFactory, helper, null, expandFields, expandValues, expandNegations, "Datawave Unfielded Lookup");
     }
     
     public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
@@ -255,11 +255,11 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        negate();
+        toggleNegation();
         try {
             return expandFieldNames(node);
         } finally {
-            revertNegation();
+            toggleNegation();
         }
     }
     
@@ -270,11 +270,11 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        negate();
+        toggleNegation();
         try {
             return expandFieldNames(node);
         } finally {
-            revertNegation();
+            toggleNegation();
         }
     }
     
