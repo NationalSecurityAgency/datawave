@@ -1252,6 +1252,12 @@ public class JexlASTHelper {
     
     /**
      * Generate a key for the given JexlNode. This may be used to determine node equality.
+     * <p>
+     * Original Comment: <code>
+     * // Note: This method assumes that the node passed in is already flattened.
+     * // If not, and our tree contains functionally equivalent subtrees, we would
+     * // be duplicating some of our efforts which is bad, m'kay?
+     * </code>
      *
      * @param node
      *            - a JexlNode.
