@@ -63,9 +63,9 @@ public class NodeTransformVisitorTest {
     private void testPushdown(String query, String expected, List<NodeTransformRule> rules) throws Exception {
         // create a query tree
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-
+        
         MockMetadataHelper helper = new MockMetadataHelper();
-
+        
         // apply the visitor
         script = NodeTransformVisitor.transform(script, rules, new ShardQueryConfiguration(), helper);
         
