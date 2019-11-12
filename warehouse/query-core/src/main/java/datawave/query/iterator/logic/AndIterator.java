@@ -167,18 +167,9 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         Iterator<NestedIterator<T>> exclude = excludes.iterator();
         while (exclude.hasNext()) {
             NestedIterator<T> child = exclude.next();
-            try {
-                for (NestedIterator<T> itr : child.leaves()) {
-                    if (itr instanceof SeekableIterator) {
-                        ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
-                    }
-                }
-            } catch (Exception e) {
-                exclude.remove();
-                if (includes.isEmpty()) {
-                    throw e;
-                } else {
-                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
+            for (NestedIterator<T> itr : child.leaves()) {
+                if (itr instanceof SeekableIterator) {
+                    ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
                 }
             }
         }
@@ -236,7 +227,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     
     public Collection<NestedIterator<T>> leaves() {
         LinkedList<NestedIterator<T>> leaves = new LinkedList<>();
-        // treat this node as a leaf as it's seek
+        // treat this node as a leaf to allow us to pass through the seek method and appropriately drop branches if possible.
         leaves.add(this);
         return leaves;
     }
