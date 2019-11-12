@@ -1,6 +1,7 @@
 package datawave.query.planner.rules;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 public interface NodeTransformRule {
@@ -10,9 +11,10 @@ public interface NodeTransformRule {
      * 
      * @param node
      * @param config
+     * @param helper
      * @return the replacement node
      */
-    default JexlNode apply(JexlNode node, ShardQueryConfiguration config) {
+    default JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         return node;
     }
 }

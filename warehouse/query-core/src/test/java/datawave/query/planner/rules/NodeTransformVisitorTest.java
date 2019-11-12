@@ -4,6 +4,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -26,7 +27,7 @@ public class NodeTransformVisitorTest {
     private static final RegexPushdownTransformRule regexPushdownRule = new RegexPushdownTransformRule();
     private static final NodeTransformRule reverseAndRule = new NodeTransformRule() {
         @Override
-        public JexlNode apply(JexlNode node, ShardQueryConfiguration config) {
+        public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
             if (node instanceof ASTAndNode) {
                 // reverse the children
                 ArrayList<JexlNode> children = newArrayList();
@@ -41,7 +42,7 @@ public class NodeTransformVisitorTest {
     };
     private static final NodeTransformRule pullUpRule = new NodeTransformRule() {
         @Override
-        public JexlNode apply(JexlNode node, ShardQueryConfiguration config) {
+        public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
             if (QueryPropertyMarker.instanceOf(node, null)) {
                 return QueryPropertyMarker.getQueryPropertySource(node, null);
             }
@@ -63,7 +64,7 @@ public class NodeTransformVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         
         // apply the visitor
-        script = NodeTransformVisitor.transform(script, rules, new ShardQueryConfiguration());
+        script = NodeTransformVisitor.transform(script, rules, new ShardQueryConfiguration(), null);
         
         // test the query tree
         String result = JexlStringBuildingVisitor.buildQuery(script);

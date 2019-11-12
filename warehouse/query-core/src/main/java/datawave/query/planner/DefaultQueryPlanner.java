@@ -911,7 +911,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         // apply the node transform rules
         // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
-        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, "Pre unfielded expansions");
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre unfielded expansions");
         
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
@@ -1000,7 +1000,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         // apply the node transform rules
         // running it here before any regex or range expansions to enable potentially pushing down terms before index lookups
-        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, "Pre regex/range expansions");
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre regex/range expansions");
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fetch required dataTypes");
         Multimap<String,Type<?>> fieldToDatatypeMap = null;
@@ -1102,7 +1102,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         // apply the node transform rules
-        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, "Pre pushdown-pullup");
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre pushdown-pullup");
         
         // push down terms that are over the min selectivity
         if (config.getMinSelectivity() > 0) {
@@ -1591,12 +1591,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
     /*
      * Apply the configured node transforms
      */
-    public ASTJexlScript applyNodeTransformRules(ASTJexlScript queryTree, List<NodeTransformRule> rules, ShardQueryConfiguration config, String instance) {
+    public ASTJexlScript applyNodeTransformRules(ASTJexlScript queryTree, List<NodeTransformRule> rules, ShardQueryConfiguration config, MetadataHelper helper,
+                    String instance) {
         
-        if (!getTransformRules().isEmpty()) {
+        if (!rules.isEmpty()) {
             final TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Apply Node Transform Rules: " + instance);
             
-            queryTree = NodeTransformVisitor.transform(queryTree, rules, config);
+            queryTree = NodeTransformVisitor.transform(queryTree, rules, config, helper);
             
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after function index queries were expanded:");

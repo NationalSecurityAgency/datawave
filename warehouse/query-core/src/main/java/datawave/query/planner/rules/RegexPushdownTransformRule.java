@@ -4,6 +4,8 @@ import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MetadataHelper;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
@@ -19,20 +21,25 @@ public class RegexPushdownTransformRule implements NodeTransformRule {
     private List<Pattern> patterns = null;
     
     @Override
-    public JexlNode apply(JexlNode node, ShardQueryConfiguration config) {
-        if (node instanceof ASTERNode) {
-            final String regex = String.valueOf(JexlASTHelper.getLiteralValue(node));
-            if (patterns.stream().anyMatch(p -> p.matcher(regex).matches())) {
-                if (JexlASTHelper.getIdentifierNames(node).contains(Constants.ANY_FIELD)) {
-                    log.error("RegexPushdownTransformRule.apply: Not allowing _ANYFIELD =~ " + regex);
-                    throw new DatawaveFatalQueryException("Not allowing _ANYFIELD =~ \" + regex");
-                } else {
-                    log.error("RegexPushdownTransformRule.apply: Forcing evaluation only for " + regex);
-                    return ASTEvaluationOnly.create(node);
+    public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
+        try {
+            if (node instanceof ASTERNode) {
+                final String regex = String.valueOf(JexlASTHelper.getLiteralValue(node));
+                if (patterns.stream().anyMatch(p -> p.matcher(regex).matches())) {
+                    String identifier = JexlASTHelper.getIdentifier(node);
+                    if (identifier.equals(Constants.ANY_FIELD) || helper.getNonEventFields(config.getDatatypeFilter()).contains(identifier)) {
+                        log.error("RegexPushdownTransformRule.apply: Not allowing " + identifier + " =~ " + regex);
+                        throw new DatawaveFatalQueryException("Not allowing " + identifier + " =~ " + regex);
+                    } else {
+                        log.error("RegexPushdownTransformRule.apply: Forcing evaluation only for " + regex);
+                        return ASTEvaluationOnly.create(node);
+                    }
                 }
             }
+            return node;
+        } catch (TableNotFoundException tnfe) {
+            throw new DatawaveFatalQueryException("Failure to apply node transform rule", tnfe);
         }
-        return node;
     }
     
     public void setRegexPatterns(List<String> patterns) {

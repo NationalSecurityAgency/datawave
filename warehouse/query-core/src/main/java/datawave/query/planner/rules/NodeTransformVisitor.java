@@ -1,8 +1,10 @@
 package datawave.query.planner.rules;
 
+import com.google.common.base.Preconditions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -26,16 +28,17 @@ public class NodeTransformVisitor extends RebuildingVisitor {
     
     private final ShardQueryConfiguration config;
     private final List<NodeTransformRule> rules;
+    private final MetadataHelper helper;
     
-    public NodeTransformVisitor(ShardQueryConfiguration config, List<NodeTransformRule> rules) {
-        assert (rules != null);
-        assert (config != null);
+    public NodeTransformVisitor(ShardQueryConfiguration config, MetadataHelper helper, List<NodeTransformRule> rules) {
+        Preconditions.checkNotNull(rules, "Must supply non-null rules to NodeTransformVisitor");
+        this.helper = helper;
         this.config = config;
         this.rules = rules;
     }
     
-    public static ASTJexlScript transform(ASTJexlScript tree, List<NodeTransformRule> rules, ShardQueryConfiguration config) {
-        NodeTransformVisitor visitor = new NodeTransformVisitor(config, rules);
+    public static ASTJexlScript transform(ASTJexlScript tree, List<NodeTransformRule> rules, ShardQueryConfiguration config, MetadataHelper helper) {
+        NodeTransformVisitor visitor = new NodeTransformVisitor(config, helper, rules);
         return visitor.apply(tree);
     }
     
@@ -103,7 +106,7 @@ public class NodeTransformVisitor extends RebuildingVisitor {
     public Object visit(ASTReference node, Object data) {
         // do not recurse on a marker node
         if (QueryPropertyMarker.instanceOf(node, null)) {
-            return applyTransforms(node);
+            return applyTransforms(RebuildingVisitor.copy(node));
         } else {
             return applyTransforms(super.visit(node, data));
         }
@@ -115,10 +118,8 @@ public class NodeTransformVisitor extends RebuildingVisitor {
     }
     
     private Object applyTransforms(Object node) {
-        if (!rules.isEmpty()) {
-            for (NodeTransformRule rule : rules) {
-                node = rule.apply((JexlNode) node, config);
-            }
+        for (NodeTransformRule rule : rules) {
+            node = rule.apply((JexlNode) node, config, helper);
         }
         return node;
     }
