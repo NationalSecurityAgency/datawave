@@ -4,8 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Range;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +17,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ActiveQueryLog {
     
     private static final String DEFAULT_EMPTY_QUERY_ID = new UUID(0, 0).toString();
-    private static Logger LOG = LoggerFactory.getLogger(ActiveQueryLog.class);
+    private static Logger log = Logger.getLogger(ActiveQueryLog.class);
     private static ActiveQueryLog instance = null;
     private static AccumuloConfiguration conf = null;
     
@@ -80,7 +79,7 @@ public class ActiveQueryLog {
                 this.timer.schedule(new ActiveQueryTimerTask(), this.logPeriod, this.logPeriod);
             }
         } else {
-            LOG.error("Bad value: (" + logPeriod + ") for logPeriod");
+            log.error("Bad value: (" + logPeriod + ") for logPeriod");
         }
         
     }
@@ -93,7 +92,7 @@ public class ActiveQueryLog {
         if (windowSize > 0) {
             this.windowSize = windowSize;
         } else {
-            LOG.error("Bad value: (" + windowSize + ") for windowSize");
+            log.error("Bad value: (" + windowSize + ") for windowSize");
         }
     }
     
@@ -114,7 +113,7 @@ public class ActiveQueryLog {
                     cacheLock.writeLock().unlock();
                 }
             } else {
-                LOG.error("Bad value: (" + maxIdle + ") for maxIdle");
+                log.error("Bad value: (" + maxIdle + ") for maxIdle");
             }
         }
     }
@@ -126,7 +125,7 @@ public class ActiveQueryLog {
             try {
                 setMaxIdle(Long.valueOf(maxIdleStr));
             } catch (NumberFormatException e) {
-                LOG.error("Bad value: (" + maxIdleStr + ") in " + MAX_IDLE + " : " + e.getMessage());
+                log.error("Bad value: (" + maxIdleStr + ") in " + MAX_IDLE + " : " + e.getMessage());
             }
         } else if (useDefaults) {
             setMaxIdle(this.maxIdle);
@@ -137,7 +136,7 @@ public class ActiveQueryLog {
             try {
                 setLogPeriod(Long.valueOf(logPeriodStr));
             } catch (NumberFormatException e) {
-                LOG.error("Bad value: (" + logPeriodStr + ") in " + LOG_PERIOD + " : " + e.getMessage());
+                log.error("Bad value: (" + logPeriodStr + ") in " + LOG_PERIOD + " : " + e.getMessage());
             }
         } else if (useDefaults) {
             setLogPeriod(this.logPeriod);
@@ -148,7 +147,7 @@ public class ActiveQueryLog {
             try {
                 setLogMaxQueries(Integer.valueOf(logMaxQueriesStr));
             } catch (NumberFormatException e) {
-                LOG.error("Bad value: (" + logMaxQueriesStr + ") in " + LOG_MAX_QUERIES + " : " + e.getMessage());
+                log.error("Bad value: (" + logMaxQueriesStr + ") in " + LOG_MAX_QUERIES + " : " + e.getMessage());
             }
         }
         
@@ -157,7 +156,7 @@ public class ActiveQueryLog {
             try {
                 setWindowSize(Integer.valueOf(windowSizeStr));
             } catch (NumberFormatException e) {
-                LOG.error("Bad value: (" + windowSizeStr + ") in " + WINDOW_SIZE + " : " + e.getMessage());
+                log.error("Bad value: (" + windowSizeStr + ") in " + WINDOW_SIZE + " : " + e.getMessage());
             }
         }
     }
@@ -220,7 +219,7 @@ public class ActiveQueryLog {
             }
             
             for (ActiveQuerySnapshot q : sublist) {
-                LOG.debug(q.toString());
+                log.debug(q.toString());
             }
         }
     }
