@@ -35,7 +35,7 @@ public class ActiveQueryLog {
     
     private Cache<String,ActiveQuery> CACHE = null;
     private ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
-    private Timer timer = new Timer("ActiveQueryLog");
+    private Timer timer = null;
     
     synchronized public static void setConfig(AccumuloConfiguration conf) {
         if (conf != null) {
@@ -73,9 +73,9 @@ public class ActiveQueryLog {
             if (logPeriod != this.logPeriod || this.timer == null) {
                 if (this.timer != null) {
                     this.timer.cancel();
-                    this.timer = new Timer("ActiveQueryLog");
                 }
                 this.logPeriod = logPeriod;
+                this.timer = new Timer("ActiveQueryLog");
                 this.timer.schedule(new ActiveQueryTimerTask(), this.logPeriod, this.logPeriod);
             }
         } else {
