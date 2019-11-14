@@ -40,8 +40,8 @@ public class ActiveQueryLog {
     synchronized public static void setConfig(AccumuloConfiguration conf) {
         if (conf != null) {
             if (ActiveQueryLog.conf == null || conf.getUpdateCount() > ActiveQueryLog.conf.getUpdateCount()) {
-                ActiveQueryLog.getInstance().checkSettings(conf, false);
                 ActiveQueryLog.conf = conf;
+                ActiveQueryLog.getInstance().checkSettings(conf, false);
             }
         }
     }
@@ -51,7 +51,7 @@ public class ActiveQueryLog {
         if (ActiveQueryLog.instance == null) {
             synchronized (ActiveQueryLog.class) {
                 if (ActiveQueryLog.instance == null) {
-                    ActiveQueryLog.instance = new ActiveQueryLog(conf);
+                    ActiveQueryLog.instance = new ActiveQueryLog(ActiveQueryLog.conf);
                 }
             }
         }
