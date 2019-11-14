@@ -35,13 +35,13 @@ public class ActiveQueryLog {
     
     private Cache<String,ActiveQuery> CACHE = null;
     private ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
-    private Timer timer = new Timer("ActiveQueryLog");
+    private Timer timer = null;
     
     synchronized public static void setConfig(AccumuloConfiguration conf) {
         if (conf != null) {
             if (ActiveQueryLog.conf == null || conf.getUpdateCount() > ActiveQueryLog.conf.getUpdateCount()) {
-                ActiveQueryLog.getInstance().checkSettings(conf, false);
                 ActiveQueryLog.conf = conf;
+                ActiveQueryLog.getInstance().checkSettings(conf, false);
             }
         }
     }
@@ -51,7 +51,7 @@ public class ActiveQueryLog {
         if (ActiveQueryLog.instance == null) {
             synchronized (ActiveQueryLog.class) {
                 if (ActiveQueryLog.instance == null) {
-                    ActiveQueryLog.instance = new ActiveQueryLog(conf);
+                    ActiveQueryLog.instance = new ActiveQueryLog(ActiveQueryLog.conf);
                 }
             }
         }
@@ -73,9 +73,9 @@ public class ActiveQueryLog {
             if (logPeriod != this.logPeriod || this.timer == null) {
                 if (this.timer != null) {
                     this.timer.cancel();
-                    this.timer = new Timer("ActiveQueryLog");
                 }
                 this.logPeriod = logPeriod;
+                this.timer = new Timer("ActiveQueryLog");
                 this.timer.schedule(new ActiveQueryTimerTask(), this.logPeriod, this.logPeriod);
             }
         } else {
