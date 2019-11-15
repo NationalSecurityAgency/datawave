@@ -5,8 +5,7 @@ import com.codahale.metrics.Timer;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Range;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ActiveQuery {
     
-    private static Logger LOG = LoggerFactory.getLogger(ActiveQuery.class);
+    private static Logger log = Logger.getLogger(ActiveQuery.class);
     
     private String queryId = null;
     private long initTs = 0;
@@ -136,7 +135,7 @@ public class ActiveQuery {
             newNumCalls = numCalls.intValue() - 1;
         }
         if (newNumCalls < 0) {
-            LOG.warn("inCall count for callType:" + type.toString() + "=" + newNumCalls + ", resetting to 0");
+            log.warn("inCall count for callType:" + type.toString() + "=" + newNumCalls + ", resetting to 0");
             newNumCalls = 0;
         }
         this.inCallMap.put(type, newNumCalls);
