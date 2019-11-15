@@ -39,7 +39,7 @@ public class GenerateShardSplits {
     private static final Value EMPTY_VALUE = new Value(EMPTY_TEXT.getBytes());
     
     private static void printUsageAndExit() {
-        System.out.println("Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
+        System.out.println("Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
         System.exit(-1);
     }
     
@@ -52,6 +52,7 @@ public class GenerateShardSplits {
         Date startDate = null;
         int DAYS_TO_GENERATE = -1;
         int SHARDS = -1;
+        int splitStep = 1;
         boolean addSplits = true;
         boolean addShardMarkers = false;
         String[] shardMarkerTypes = null;
@@ -79,7 +80,14 @@ public class GenerateShardSplits {
                 try {
                     SHARDS = Integer.parseInt(args[i]);
                 } catch (NumberFormatException e) {
-                    System.out.println("Days to Generate argument is not an integer:" + e.getMessage());
+                    System.out.println("Shards argument is not an integer:" + e.getMessage());
+                    System.exit(-2);
+                }
+            } else if (i == 3) {
+                try {
+                    splitStep = Integer.parseInt(args[i]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Split Step argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
             } else if (args[i].equals("-markersOnly")) {
@@ -121,7 +129,7 @@ public class GenerateShardSplits {
         for (int x = 0; x < DAYS_TO_GENERATE; x++) {
             
             // Generate configured shards per day
-            for (int i = 0; i < SHARDS; i++) {
+            for (int i = 0; i < SHARDS; i += splitStep) {
                 Text split = new Text(DateHelper.format(startDate) + "_" + i);
                 splits.add(split);
                 

@@ -6,9 +6,6 @@ import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -95,9 +92,6 @@ public class ActiveQueryLogTest {
     
     @Test
     public void testThreadSafety() {
-        
-        Logger.getLogger(ActiveQueryLog.class).setLevel(Level.DEBUG);
-        Logger.getLogger(ActiveQueryLog.class).addAppender(new ConsoleAppender());
         
         ActiveQueryLog.getInstance().setLogPeriod(2000);
         

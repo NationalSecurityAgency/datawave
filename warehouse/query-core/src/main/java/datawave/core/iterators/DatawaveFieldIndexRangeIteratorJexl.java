@@ -117,7 +117,11 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     
     @Override
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
-        if (subRanges != null && !subRanges.isEmpty()) {
+        if (ANY_FINAME.equals(fiName)) {
+            Key startKey = new Key(rowId, FI_START);
+            Key endKey = new Key(rowId, FI_END);
+            return new RangeSplitter(new Range(startKey, true, endKey, false), getMaxRangeSplit());
+        } else if (subRanges != null && !subRanges.isEmpty()) {
             List<Range> ranges = new ArrayList<>();
             
             // Note: The IndexRangeIteratorBuilder hard codes 'negated' to false, so unless that changes, this logic will never be executed.

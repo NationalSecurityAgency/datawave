@@ -3,10 +3,12 @@ package datawave.core.iterators;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.PeekingIterator;
 import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.iterator.CachingIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
@@ -59,6 +61,10 @@ import java.util.stream.Collectors;
  * 
  */
 public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator {
+    
+    public static final Text ANY_FINAME = new Text("fi\0" + Constants.ANY_FIELD);
+    public static final Text FI_START = new Text("fi\0");
+    public static final Text FI_END = new Text("fi\0~");
     
     public abstract static class Builder<B extends Builder<B>> {
         private Text fieldName;
@@ -273,7 +279,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // a thread safe wrapper around the sorted set used by the scan threads
     private SortedSet<KeyValueSerializable> threadSafeSet = null;
     // the iterator (merge sort) of key values once the sorted set has been filled
-    private Iterator<KeyValueSerializable> keyValues = null;
+    private PeekingIterator<KeyValueSerializable> keyValues = null;
     // the current row covered by the hdfs set
     private String currentRow = null;
     // did we created the row directory
@@ -472,6 +478,15 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             // the start of this range is beyond the end of the last range seeked
             // we must reset keyValues to null and empty the underlying collection
             clearRowBasedHdfsBackedSet();
+        } else {
+            // inside the original range, so potentially need to reposition keyValues
+            if (keyValues != null) {
+                Key startKey = r.getStartKey();
+                // decide if keyValues needs to be rebuilt or can be reused
+                if (!keyValues.hasNext() || (keyValues.peek().getKey().compareTo(startKey) > 0)) {
+                    keyValues = new CachingIterator<>(threadSafeSet.iterator());
+                }
+            }
         }
         
         // if we are not sorting UIDs, then determine whether we have a cq and capture the lastFiKey
@@ -731,7 +746,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 }
                 
                 if (this.keyValues == null) {
-                    this.keyValues = this.threadSafeSet.iterator();
+                    this.keyValues = new CachingIterator<>(this.threadSafeSet.iterator());
                 }
             }
             
@@ -1134,7 +1149,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.set.clear();
                 this.keyValues = null;
             } else {
-                this.keyValues = this.set.iterator();
+                this.keyValues = new CachingIterator<>(this.set.iterator());
             }
             
             // reset the keyValues counter as we have a new set here

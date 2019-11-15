@@ -85,30 +85,30 @@ public class FieldNameLookup extends IndexLookup {
         
         try {
             
-            for (String term : terms) {
-                
-                Set<Range> ranges = Sets.newHashSet();
-                
-                ranges.add(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
-                if (limitToTerms) {
-                    log.trace("Creating configureTermMatchOnly");
-                    bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
-                                    Collections.singleton(term), Collections.emptySet(), false, true);
-                } else {
-                    log.trace("Creating configureLimitedDiscovery");
-                    bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                    Collections.singleton(term), Collections.emptySet(), false, true);
+            if (!fields.isEmpty()) {
+                for (String term : terms) {
+                    
+                    Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
+                    if (limitToTerms) {
+                        log.trace("Creating configureTermMatchOnly");
+                        bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
+                                        Collections.singleton(term), Collections.emptySet(), false, true);
+                    } else {
+                        log.trace("Creating configureLimitedDiscovery");
+                        bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                                        Collections.singleton(term), Collections.emptySet(), false, true);
+                    }
+                    /**
+                     * Fetch the limited field names for the given rows
+                     */
+                    for (Text field : fields) {
+                        bs.getOptions().fetchColumnFamily(field);
+                    }
+                    
+                    sessions.add(bs);
+                    
+                    iter = Iterators.concat(iter, bs);
                 }
-                /**
-                 * Fetch the limited field names for the given rows
-                 */
-                for (Text field : fields) {
-                    bs.getOptions().fetchColumnFamily(field);
-                }
-                
-                sessions.add(bs);
-                
-                iter = Iterators.concat(iter, bs);
             }
             
             if (iter != null) {
