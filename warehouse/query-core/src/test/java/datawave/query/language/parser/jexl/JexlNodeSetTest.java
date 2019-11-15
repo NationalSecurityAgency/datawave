@@ -4,7 +4,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -137,6 +140,20 @@ public class JexlNodeSetTest {
     }
     
     @Test
+    public void testRemoveByKey() {
+        JexlNode node = JexlNodeFactory.buildEQNode("FOO", "bar");
+        
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(node);
+        assertFalse(nodeSet.isEmpty());
+        
+        String nodeKey = JexlASTHelper.nodeToKey(node);
+        nodeSet.remove(nodeKey);
+        
+        assertTrue(nodeSet.isEmpty());
+    }
+    
+    @Test
     public void testContainsAll() {
         JexlNode node1 = JexlNodeFactory.buildEQNode("FOO", "bar");
         JexlNode node2 = JexlNodeFactory.buildEQNode("FOO2", "bar2");
@@ -266,5 +283,43 @@ public class JexlNodeSetTest {
         assertFalse(nodeSet.contains(node2));
         assertFalse(nodeSet.contains(node3));
         assertTrue(nodeSet.isEmpty());
+    }
+    
+    @Test
+    public void testAddingDelayedPredicate() throws ParseException {
+        String source = "FOO == 'bar'";
+        JexlNode sourceNode = JexlASTHelper.parseJexlQuery(source);
+        assertEquals(source, JexlStringBuildingVisitor.buildQueryWithoutParse(sourceNode));
+        
+        String delayed = "((ASTDelayedPredicate = true) && (FOO == 'bar'))";
+        JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
+        assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
+        
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(sourceNode);
+        nodeSet.add(delayedNode);
+        
+        assertEquals(1, nodeSet.size());
+        assertEquals(source, nodeSet.getNodeKeys().iterator().next());
+        assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(nodeSet.getNodes().iterator().next()));
+    }
+    
+    @Test
+    public void testAddingDelayedPredicateFirst() throws ParseException {
+        String source = "FOO == 'bar'";
+        JexlNode sourceNode = JexlASTHelper.parseJexlQuery(source);
+        assertEquals(source, JexlStringBuildingVisitor.buildQueryWithoutParse(sourceNode));
+        
+        String delayed = "((ASTDelayedPredicate = true) && (FOO == 'bar'))";
+        JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
+        assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
+        
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(delayedNode);
+        nodeSet.add(sourceNode);
+        
+        assertEquals(1, nodeSet.size());
+        assertEquals(source, nodeSet.getNodeKeys().iterator().next());
+        assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(nodeSet.getNodes().iterator().next()));
     }
 }
