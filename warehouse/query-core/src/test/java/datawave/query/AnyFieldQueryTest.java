@@ -950,7 +950,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         } finally {
             this.logic.setFullTableScanEnabled(false);
         }
-
+    }
+    
     @Test
     public void testRegexPushdownAnyfield() throws Exception {
         String roPhrase = RE_OP + "'ro.*'";
