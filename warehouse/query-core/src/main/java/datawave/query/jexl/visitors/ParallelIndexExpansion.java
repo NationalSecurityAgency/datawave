@@ -19,6 +19,7 @@ import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
@@ -42,6 +43,7 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
 import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.Node;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
@@ -282,8 +284,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
         
         // check to see if this is a delayed node already
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node) || ASTDelayedPredicate.instanceOf(node)
-                        || IndexHoleMarkerJexlNode.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
+        if (QueryPropertyMarker.instanceOf(node, null)) {
             markedParents = new HashSet<>();
             markedParents.add(node);
         }
@@ -308,8 +309,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         // we've already been delayed.
         if (markedParents != null) {
             for (JexlNode markedParent : markedParents) {
-                if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ExceededOrThresholdMarkerJexlNode.instanceOf(markedParent)
-                                || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ASTEvaluationOnly.instanceOf(markedParent))
+                if (QueryPropertyMarker.instanceOf(markedParent, null))
                     return node;
             }
         }
@@ -343,9 +343,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 }
                 if (markedParents != null) {
                     for (JexlNode markedParent : markedParents) {
-                        if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ExceededOrThresholdMarkerJexlNode.instanceOf(markedParent)
-                                        || ASTDelayedPredicate.instanceOf(markedParent) || IndexHoleMarkerJexlNode.instanceOf(markedParent)
-                                        || ASTEvaluationOnly.instanceOf(node))
+                        if (QueryPropertyMarker.instanceOf(markedParent, null))
                             return node;
                     }
                 }
@@ -398,6 +396,20 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             return super.visit(node, data);
         } finally {
             toggleNegation();
+        }
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        if (!QueryPropertyMarker.instanceOf(node, null)) {
+            ASTReference ref = (ASTReference) super.visit(node, data);
+            if (JexlNodes.children(ref).length == 0) {
+                return null;
+            } else {
+                return ref;
+            }
+        } else {
+            return node;
         }
     }
     
@@ -467,7 +479,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             }
             default: {
                 JexlNode[] children = children(node);
-                if (children.length == 1 && !ASTDelayedPredicate.instanceOf(children[0]) && !ASTEvaluationOnly.instanceOf(children[0])) {
+                if (children.length == 1 && !QueryPropertyMarker.instanceOf(children[0], null)) {
                     boolean expand = descendIntoSubtree(children[0], visited);
                     visited.put(node, expand);
                     return expand;

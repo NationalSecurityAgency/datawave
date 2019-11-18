@@ -305,17 +305,6 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     }
     
     @Override
-    public Object visit(ASTReference node, Object data) {
-        
-        ASTReference ref = (ASTReference) super.visit(node, data);
-        if (JexlNodes.children(ref).length == 0) {
-            return null;
-        } else {
-            return ref;
-        }
-    }
-    
-    @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         ASTReferenceExpression ref = (ASTReferenceExpression) super.visit(node, data);
         if (JexlNodes.children(ref).length == 0) {
