@@ -282,7 +282,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest1() throws Exception {
+    public void parse1TrailingBackslashEquals() throws Exception {
         String query = "CITY == 'city\\\\'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -290,7 +290,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest2() throws Exception {
+    public void parse1TrailingBackslashRegex() throws Exception {
         String query = "CITY =~ 'city\\\\'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -298,7 +298,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest3() throws Exception {
+    public void parse2TrailingBackslashesEquals() throws Exception {
         String query = "CITY == 'city\\\\\\\\'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -306,7 +306,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest4() throws Exception {
+    public void parse2TrailingBackslashesRegex() throws Exception {
         String query = "CITY =~ 'city\\\\\\\\'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -314,7 +314,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest5() throws Exception {
+    public void parse3TrailingBackslashesEquals() throws Exception {
         String query = "CITY == 'city\\\\\\\\\\\\'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -322,7 +322,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest6() throws Exception {
+    public void parse3TrailingBackslashesRegex() throws Exception {
         String query = "CITY =~ 'city\\\\\\\\\\\\'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -330,7 +330,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest7() throws Exception {
+    public void parse1LeadingBackslashEquals() throws Exception {
         String query = "CITY == '\\\\city'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -338,7 +338,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest8() throws Exception {
+    public void parse1LeadingBackslashRegex() throws Exception {
         String query = "CITY =~ '\\\\city'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -346,7 +346,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest9() throws Exception {
+    public void parse2LeadingBackslashesEquals() throws Exception {
         String query = "CITY == '\\\\\\\\city'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -354,7 +354,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest10() throws Exception {
+    public void parse2LeadingBackslashesRegex() throws Exception {
         String query = "CITY =~ '\\\\\\\\city'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -362,7 +362,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest11() throws Exception {
+    public void parse3LeadingBackslashesEquals() throws Exception {
         String query = "CITY == '\\\\\\\\\\\\city'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -370,7 +370,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest12() throws Exception {
+    public void parse3LeadingBackslashesRegex() throws Exception {
         String query = "CITY =~ '\\\\\\\\\\\\city'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -378,7 +378,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest13() throws Exception {
+    public void parse1InteriorBackslashEquals() throws Exception {
         String query = "CITY == 'ci\\\\ty'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -386,7 +386,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest14() throws Exception {
+    public void parse1InteriorBackslashRegex() throws Exception {
         String query = "CITY =~ 'ci\\\\ty'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -394,7 +394,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest15() throws Exception {
+    public void parse2InteriorBackslashesEquals() throws Exception {
         String query = "CITY == 'ci\\\\\\\\ty'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -402,7 +402,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest16() throws Exception {
+    public void parse2InteriorBackslashesRegex() throws Exception {
         String query = "CITY =~ 'ci\\\\\\\\ty'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -410,7 +410,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest17() throws Exception {
+    public void parse3InteriorBackslashesEquals() throws Exception {
         String query = "CITY == 'ci\\\\\\\\\\\\ty'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -418,7 +418,7 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void parseTest18() throws Exception {
+    public void parse3InteriorBackslashesRegex() throws Exception {
         String query = "CITY =~ 'ci\\\\\\\\\\\\ty'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -430,7 +430,7 @@ public class JexlASTHelperTest {
     // WEB QUERY: CITY =~ 'ci\\\\\\ty\.blah'
     // StringLiteral.image: "ci\\\\\\ty\.blah"
     @Test
-    public void parseTest19() throws Exception {
+    public void transitiveRegexParseTest() throws Exception {
         String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\.blah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -448,7 +448,7 @@ public class JexlASTHelperTest {
     // WEB QUERY: CITY == 'ci\\\\\\ty\.blah'
     // StringLiteral.image: "ci\\\ty\.blah"
     @Test
-    public void parseTest20() throws Exception {
+    public void transitiveEqualsParseWithEscapedRegexTest() throws Exception {
         String query = "CITY == 'ci\\\\\\\\\\\\ty\\.blah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -465,7 +465,7 @@ public class JexlASTHelperTest {
     // WEB QUERY: CITY == 'ci\\\\\\ty\\.blah'
     // StringLiteral.image: "ci\\\ty\.blah"
     @Test
-    public void parseTest20b() throws Exception {
+    public void transitiveEqualsParseTest() throws Exception {
         String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
@@ -483,7 +483,7 @@ public class JexlASTHelperTest {
     // WEB QUERY: CITY =~ 'ci\\\\\\ty\\.bl\'ah'
     // StringLiteral.image: "ci\\\\\\ty\\.bl'ah"
     @Test
-    public void parseTest21() throws Exception {
+    public void parseRegexWithEscapedQuoteTest() throws Exception {
         String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\\\.bl\\'ah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
@@ -495,7 +495,7 @@ public class JexlASTHelperTest {
     // WEB QUERY: CITY =~ 'ci\\\\\\ty\\.bl\\\'ah'
     // StringLiteral.image: "ci\\\\\\ty\\.bl\\'ah"
     @Test
-    public void parseTest22() throws Exception {
+    public void parseRegexWithEscapedQuoteAndBackslashesTest() throws Exception {
         String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\\\.bl\\\\\\'ah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
@@ -508,7 +508,7 @@ public class JexlASTHelperTest {
     // WEB QUERY: CITY == 'ci\\\\\\ty\\.bl\'ah'
     // StringLiteral.image: "ci\\\ty\.bl'ah"
     @Test
-    public void parseTest23() throws Exception {
+    public void parseEqualsWithEscapedQuoteTest() throws Exception {
         String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.bl\\'ah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
@@ -520,7 +520,7 @@ public class JexlASTHelperTest {
     // WEB QUERY: CITY == 'ci\\\\\\ty\\.bl\\\'ah'
     // StringLiteral.image: "ci\\\ty\.bl\'ah"
     @Test
-    public void parseTest24() throws Exception {
+    public void parseEqualsWithEscapedQuoteAndBackslashesTest() throws Exception {
         String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.bl\\\\\\'ah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);

@@ -99,7 +99,6 @@ public class JexlASTHelper {
     
     public static final String SINGLE_BACKSLASH = "\\";
     public static final String DOUBLE_BACKSLASH = "\\\\";
-    private static final String PLACEHOLDER = "PH";
     
     public static final Set<Class<?>> RANGE_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTGTNode.class, ASTGENode.class, ASTLTNode.class, ASTLENode.class);
     
@@ -136,31 +135,28 @@ public class JexlASTHelper {
             try {
                 return parseQueryWithBackslashes(query, parser);
             } catch (Exception e) {
-                log.warn("Unable to perform backslash substitution while parsing the query.", e);
+                throw new ParseException("Unable to perform backslash substitution while parsing the query: " + e.getMessage());
+            }
+        } else {
+            // Parse the original query
+            try {
+                return parser.parse(new StringReader(caseFixQuery), null);
+            } catch (TokenMgrError e) {
+                throw new ParseException(e.getMessage());
             }
         }
-        
-        // Parse the original query
-        ASTJexlScript jexlScript;
-        try {
-            jexlScript = parser.parse(new StringReader(caseFixQuery), null);
-        } catch (TokenMgrError e) {
-            throw new ParseException(e.getMessage());
-        }
-        
-        return jexlScript;
     }
     
     // generate a random alphanumeric placeholder value which will replace instances
-    // of double backslashes in the qquery before parsing. This algorithm ensures that
+    // of double backslashes in the query before parsing. This algorithm ensures that
     // the placeholder string does not exist in the original query.
     private static String generatePlaceholder(String query) {
         String placeholder;
         do {
-            placeholder = PLACEHOLDER + RandomStringUtils.randomAlphanumeric(4);
+            placeholder = RandomStringUtils.randomAlphanumeric(4);
         } while (query.contains(placeholder));
         
-        return placeholder;
+        return "_" + placeholder + "_";
     }
     
     // we need to replace double backslashes in the query with a placeholder value
