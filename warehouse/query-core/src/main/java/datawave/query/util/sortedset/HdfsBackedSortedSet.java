@@ -107,10 +107,18 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
             this.file = file;
         }
         
+        private String getScheme() {
+            String scheme = file.toUri().getScheme();
+            if (scheme == null) {
+                scheme = fs.getScheme();
+            }
+            return scheme;
+        }
+        
         @Override
         public SortedSetInputStream getSortedSetInputStream() throws IOException {
             // only need to compress if we are using a local file system
-            return new SortedSetInputStream(getInputStream(), ("file".equals(file.toUri().getScheme())));
+            return new SortedSetInputStream(getInputStream(), "file".equals(getScheme()));
         }
         
         @Override
@@ -124,7 +132,7 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         @Override
         public SortedSetOutputStream getSortedSetOutputStream() throws IOException {
             // only need to compress if we are using a local file system
-            return new SortedSetOutputStream(getOutputStream(), ("file".equals(file.toUri().getScheme())));
+            return new SortedSetOutputStream(getOutputStream(), "file".equals(getScheme()));
         }
         
         private OutputStream getOutputStream() throws IOException {
