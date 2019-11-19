@@ -1667,6 +1667,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setMaxIvaratorSources(maxIvaratorSources);
     }
     
+    public long getMaxIvaratorResults() {
+        return getConfig().getMaxIvaratorResults();
+    }
+    
+    public void setMaxIvaratorResults(long maxIvaratorResults) {
+        getConfig().setMaxIvaratorResults(maxIvaratorResults);
+    }
+    
     public int getMaxEvaluationPipelines() {
         return getConfig().getMaxEvaluationPipelines();
     }
@@ -1984,6 +1992,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
         getConfig().setAllowTermFrequencyLookup(allowTermFrequencyLookup);
+    }
+    
+    public boolean isExpandUnfieldedNegations() {
+        return getConfig().isExpandUnfieldedNegations();
+    }
+    
+    public void setExpandUnfieldedNegations(boolean expandUnfieldedNegations) {
+        getConfig().setExpandUnfieldedNegations(expandUnfieldedNegations);
     }
     
     public boolean getAccrueStats() {

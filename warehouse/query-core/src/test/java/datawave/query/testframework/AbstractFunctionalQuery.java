@@ -51,6 +51,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Level;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -213,6 +214,13 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * Performs any instance initialization required for the specific test case.
      */
     protected abstract void testInit();
+    
+    public void debugQuery() {
+        Logger.getRootLogger().setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner.DefaultQueryPlanner").setLevel(Level.DEBUG);
+    }
     
     // ============================================
     // implementation interface methods
@@ -515,8 +523,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating cache
      */
-    protected void ivaratorConfig() throws IOException {
-        ivaratorConfig(1, false);
+    protected List<String> ivaratorConfig() throws IOException {
+        return ivaratorConfig(1, false)[0];
     }
     
     /**
@@ -525,8 +533,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating cache
      */
-    protected void ivaratorFstConfig() throws IOException {
-        ivaratorConfig(1, true);
+    protected List<String>[] ivaratorFstConfig() throws IOException {
+        return ivaratorConfig(1, true);
     }
     
     /**
@@ -539,7 +547,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating HDFS cache directory
      */
-    protected void ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
+    protected List<String>[] ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
         Assert.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
@@ -562,6 +570,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             log.info("fst dirs(" + uriList + ")");
             this.logic.setIvaratorFstHdfsBaseURIs(uriList);
         }
+        
+        return new List[] {dirs, fstDirs};
     }
     
     /**

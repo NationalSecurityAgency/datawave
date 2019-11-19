@@ -19,6 +19,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected int ivaratorCacheBufferSize = 10000;
     protected int maxRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
+    protected long maxIvaratorResults = -1;
     protected boolean collectTimingDetails = false;
     protected QuerySpanCollector querySpanCollector = null;
     protected CompositeMetadata compositeMetadata;
@@ -94,6 +95,14 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+    }
+    
+    public long getMaxIvaratorResults() {
+        return maxIvaratorResults;
+    }
+    
+    public void setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
     }
     
     public void setCollectTimingDetails(boolean collectTimingDetails) {
