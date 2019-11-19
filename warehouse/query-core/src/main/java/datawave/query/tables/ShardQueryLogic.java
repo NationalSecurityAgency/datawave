@@ -1994,6 +1994,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setAllowTermFrequencyLookup(allowTermFrequencyLookup);
     }
     
+    public boolean isExpandUnfieldedNegations() {
+        return getConfig().isExpandUnfieldedNegations();
+    }
+    
+    public void setExpandUnfieldedNegations(boolean expandUnfieldedNegations) {
+        getConfig().setExpandUnfieldedNegations(expandUnfieldedNegations);
+    }
+    
     public boolean getAccrueStats() {
         return getConfig().getAccrueStats();
     }
