@@ -79,6 +79,8 @@ import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
+import datawave.query.planner.rules.NodeTransformRule;
+import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
@@ -230,6 +232,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
     private static Set<String> cachedNormalizedFields = null;
     
     protected List<PushDownRule> rules = Lists.newArrayList();
+    
+    // A set of node plans. Basically these are transforms that will be applied to nodes. One example use is to
+    // force certain regex patterns to be pushed down to evaluation
+    private List<NodeTransformRule> transformRules = Lists.newArrayList();
     
     protected Class<? extends SortedKeyValueIterator<Key,Value>> queryIteratorClazz = QueryIterator.class;
     
@@ -903,6 +909,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
             stopwatch.stop();
         }
         
+        // apply the node transform rules
+        // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre unfielded expansions");
+        
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
         // If the max term expansion is reached, then the original query tree is
@@ -918,7 +928,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 config.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
                 config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
-                                config.isExpandFields(), config.isExpandValues());
+                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
             } catch (EmptyUnfieldedTermExpansionException e) {
                 // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
@@ -987,6 +997,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
             stopwatch.stop();
             
         }
+        
+        // apply the node transform rules
+        // running it here before any regex or range expansions to enable potentially pushing down terms before index lookups
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre regex/range expansions");
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fetch required dataTypes");
         Multimap<String,Type<?>> fieldToDatatypeMap = null;
@@ -1072,7 +1086,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             stopwatch.stop();
         }
         
-        // lets precomputed the indexed fields and index only fields for the specific datatype if needed below
+        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;
         Set<String> indexOnlyFields = null;
         Set<String> nonEventFields = null;
@@ -1086,6 +1100,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 throw new DatawaveFatalQueryException(qe);
             }
         }
+        
+        // apply the node transform rules
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre pushdown-pullup");
         
         // push down terms that are over the min selectivity
         if (config.getMinSelectivity() > 0) {
@@ -1135,7 +1152,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
-                                config.isExpandFields(), config.isExpandValues());
+                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding regex:");
@@ -1571,6 +1588,26 @@ public class DefaultQueryPlanner extends QueryPlanner {
         return pushDownPlanner.applyRules(queryTree);
     }
     
+    /*
+     * Apply the configured node transforms
+     */
+    public ASTJexlScript applyNodeTransformRules(ASTJexlScript queryTree, List<NodeTransformRule> rules, ShardQueryConfiguration config, MetadataHelper helper,
+                    String instance) {
+        
+        if (!rules.isEmpty()) {
+            final TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Apply Node Transform Rules: " + instance);
+            
+            queryTree = NodeTransformVisitor.transform(queryTree, rules, config, helper);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after function index queries were expanded:");
+            }
+            stopwatch.stop();
+        }
+        
+        return queryTree;
+    }
+    
     /**
      * Get the list of alternatives, randomizing the order so that the tserver spread out the disk usage.
      */
@@ -1636,6 +1673,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(config.getCollectTimingDetails()), false);
                         addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
+                        addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
                         addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                         addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
@@ -2165,6 +2203,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
     @Override
     public Collection<PushDownRule> getRules() {
         return Collections.unmodifiableCollection(rules);
+    }
+    
+    public List<NodeTransformRule> getTransformRules() {
+        return Collections.unmodifiableList(transformRules);
+    }
+    
+    public void setTransformRules(List<NodeTransformRule> transformRules) {
+        this.transformRules.addAll(transformRules);
     }
     
     /*

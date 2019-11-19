@@ -9,6 +9,7 @@ import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.CachingIterator;
+import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
@@ -78,6 +79,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         private Path uniqueDir;
         private QueryLock queryLock;
         private boolean allowDirReuse;
+        private long maxResults = -1;
         private long scanThreshold = 10000;
         private int hdfsBackedSetBufferSize = 10000;
         private int maxOpenFiles = 100;
@@ -150,6 +152,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         public B withMaxOpenFiles(int maxOpenFiles) {
             this.maxOpenFiles = maxOpenFiles;
+            return self();
+        }
+        
+        public B withMaxResults(long maxResults) {
+            this.maxResults = maxResults;
             return self();
         }
         
@@ -312,6 +319,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // have we timed out
     private volatile boolean timedOut = false;
     
+    // The max number of results that can be returned from this iterator.
+    private final long maxResults;
+    
     protected CompositeMetadata compositeMetadata;
     protected FieldIndexCompositeSeeker compositeSeeker;
     protected int compositeSeekThreshold;
@@ -338,20 +348,21 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.hdfsBackedSetBufferSize = 10000;
         this.maxOpenFiles = 100;
         this.maxRangeSplit = 11;
+        this.maxResults = -1;
         
         this.sortedUIDs = true;
     }
     
     protected DatawaveFieldIndexCachingIteratorJexl(Builder builder) {
         this(builder.fieldName, builder.fieldValue, builder.timeFilter, builder.datatypeFilter, builder.negated, builder.scanThreshold, builder.scanTimeout,
-                        builder.hdfsBackedSetBufferSize, builder.maxRangeSplit, builder.maxOpenFiles, builder.fs, builder.uniqueDir, builder.queryLock,
-                        builder.allowDirReuse, builder.returnKeyType, builder.sortedUIDs, builder.compositeMetadata, builder.compositeSeekThreshold,
-                        builder.typeMetadata, builder.env);
+                        builder.maxResults, builder.hdfsBackedSetBufferSize, builder.maxRangeSplit, builder.maxOpenFiles, builder.fs, builder.uniqueDir,
+                        builder.queryLock, builder.allowDirReuse, builder.returnKeyType, builder.sortedUIDs, builder.compositeMetadata,
+                        builder.compositeSeekThreshold, builder.typeMetadata, builder.env);
     }
     
     @SuppressWarnings("hiding")
     private DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
+                    long scanThreshold, long scanTimeout, long maxResults, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
                     QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs, CompositeMetadata compositeMetadata,
                     int compositeSeekThreshold, TypeMetadata typeMetadata, IteratorEnvironment env) {
         if (fieldName.toString().startsWith("fi" + NULL_BYTE)) {
@@ -374,6 +385,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.allowDirReuse = allowDirReuse;
         this.scanThreshold = scanThreshold;
         this.scanTimeout = scanTimeout;
+        this.maxResults = maxResults;
         this.hdfsBackedSetBufferSize = bufferSize;
         this.maxOpenFiles = maxOpenFiles;
         this.maxRangeSplit = maxRangeSplit;
@@ -411,6 +423,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.allowDirReuse = other.allowDirReuse;
         this.scanThreshold = other.scanThreshold;
         this.scanTimeout = other.scanTimeout;
+        this.maxResults = other.maxResults;
         this.hdfsBackedSetBufferSize = other.hdfsBackedSetBufferSize;
         this.maxOpenFiles = other.maxOpenFiles;
         
@@ -763,6 +776,33 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
     }
     
+    /**
+     * A class to keep track of the total result size across all of the bounding ranges
+     */
+    public static class TotalResults {
+        
+        private final long maxResults;
+        private AtomicLong size = new AtomicLong();
+        
+        public TotalResults(long maxResults) {
+            this.maxResults = maxResults;
+        }
+        
+        public boolean increment() {
+            if (maxResults <= 0) {
+                return true;
+            }
+            return size.incrementAndGet() <= maxResults;
+        }
+        
+        public boolean add(long val) {
+            if (maxResults <= 0) {
+                return true;
+            }
+            return size.addAndGet(val) <= maxResults;
+        }
+    }
+    
     private void fillSortedSets() throws IOException {
         String sourceRow = this.fiRow.toString();
         setupRowBasedHdfsBackedSet(sourceRow);
@@ -773,11 +813,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             log.debug("Processing " + boundingFiRanges + " for " + this);
         }
         
+        TotalResults totalResults = new TotalResults(maxResults);
+        
         for (Range range : boundingFiRanges) {
             if (log.isTraceEnabled()) {
                 log.trace("range -> " + range);
             }
-            futures.add(fillSet(range));
+            futures.add(fillSet(range, totalResults));
         }
         
         boolean failed = false;
@@ -952,7 +994,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * @param boundingFiRange
      * @return the Future
      */
-    protected Future<?> fillSet(final Range boundingFiRange) {
+    protected Future<?> fillSet(final Range boundingFiRange, final TotalResults totalResults) {
         
         // create runnable
         Runnable runnable = () -> {
@@ -1051,6 +1093,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     
                     if (addKey(top, source.getTopValue())) {
                         matched++;
+                        if (!totalResults.increment()) {
+                            throw new DatawaveIvaratorMaxResultsException("Exceeded the maximum set size");
+                        }
                     }
                     
                     source.next();
