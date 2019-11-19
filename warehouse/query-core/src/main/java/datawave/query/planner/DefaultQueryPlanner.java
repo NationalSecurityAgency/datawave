@@ -928,7 +928,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 config.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
                 config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
-                                config.isExpandFields(), config.isExpandValues());
+                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
             } catch (EmptyUnfieldedTermExpansionException e) {
                 // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
@@ -1152,7 +1152,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
-                                config.isExpandFields(), config.isExpandValues());
+                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding regex:");
@@ -1673,6 +1673,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(config.getCollectTimingDetails()), false);
                         addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
+                        addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
                         addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                         addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
