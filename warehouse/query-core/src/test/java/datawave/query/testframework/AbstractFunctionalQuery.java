@@ -523,8 +523,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating cache
      */
-    protected void ivaratorConfig() throws IOException {
-        ivaratorConfig(1, false);
+    protected List<String> ivaratorConfig() throws IOException {
+        return ivaratorConfig(1, false)[0];
     }
     
     /**
@@ -533,8 +533,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating cache
      */
-    protected void ivaratorFstConfig() throws IOException {
-        ivaratorConfig(1, true);
+    protected List<String>[] ivaratorFstConfig() throws IOException {
+        return ivaratorConfig(1, true);
     }
     
     /**
@@ -547,7 +547,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating HDFS cache directory
      */
-    protected void ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
+    protected List<String>[] ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
         Assert.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
@@ -570,6 +570,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             log.info("fst dirs(" + uriList + ")");
             this.logic.setIvaratorFstHdfsBaseURIs(uriList);
         }
+        
+        return new List[] {dirs, fstDirs};
     }
     
     /**

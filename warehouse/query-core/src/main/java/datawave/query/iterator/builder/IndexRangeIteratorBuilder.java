@@ -73,16 +73,35 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexRangeIteratorJexl rangeIterator = DatawaveFieldIndexRangeIteratorJexl.builder().withFieldName(new Text(range.getFieldName()))
-                                .withLowerBound(range.getLower().toString()).lowerInclusive(range.isLowerInclusive())
-                                .withUpperBound(range.getUpper().toString()).upperInclusive(range.isUpperInclusive()).withTimeFilter(this.timeFilter)
-                                .withDatatypeFilter(this.datatypeFilter).negated(false).withScanThreshold(ivaratorCacheScanPersistThreshold)
-                                .withScanTimeout(ivaratorCacheScanTimeout).withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
-                                .withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles).withFileSystem(hdfsFileSystem)
-                                .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
-                                .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
-                                .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                .withSubRanges(subRanges).withIteratorEnv(env).build();
+                // @formatter:off
+                DatawaveFieldIndexRangeIteratorJexl rangeIterator = DatawaveFieldIndexRangeIteratorJexl.builder()
+                        .withFieldName(new Text(range.getFieldName()))
+                        .withLowerBound(range.getLower().toString())
+                        .lowerInclusive(range.isLowerInclusive())
+                        .withUpperBound(range.getUpper().toString())
+                        .upperInclusive(range.isUpperInclusive())
+                        .withTimeFilter(this.timeFilter)
+                        .withDatatypeFilter(this.datatypeFilter)
+                        .negated(false)
+                        .withScanThreshold(ivaratorCacheScanPersistThreshold)
+                        .withScanTimeout(ivaratorCacheScanTimeout)
+                        .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
+                        .withMaxRangeSplit(maxRangeSplit)
+                        .withMaxOpenFiles(ivaratorMaxOpenFiles)
+                        .withFileSystem(hdfsFileSystem)
+                        .withMaxResults(maxIvaratorResults)
+                        .withUniqueDir(new Path(hdfsCacheURI))
+                        .withQueryLock(queryLock)
+                        .allowDirResuse(true)
+                        .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
+                        .withSortedUUIDs(sortedUIDs)
+                        .withCompositeMetadata(compositeMetadata)
+                        .withCompositeSeekThreshold(compositeSeekThreshold)
+                        .withTypeMetadata(typeMetadata)
+                        .withSubRanges(subRanges)
+                        .withIteratorEnv(env)
+                        .build();
+                // @formatter:on
                 
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
