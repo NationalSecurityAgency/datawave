@@ -57,14 +57,31 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexRegexIteratorJexl regexIterator = DatawaveFieldIndexRegexIteratorJexl.builder().withFieldName(new Text(field))
-                                .withFieldValue(new Text(value)).withTimeFilter(timeFilter).withDatatypeFilter(datatypeFilter).negated(negated)
-                                .withScanThreshold(ivaratorCacheScanPersistThreshold).withScanTimeout(ivaratorCacheScanTimeout)
-                                .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize).withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles)
-                                .withFileSystem(hdfsFileSystem).withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
-                                .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
-                                .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                .withIteratorEnv(env).build();
+                // @formatter:off
+                DatawaveFieldIndexRegexIteratorJexl regexIterator = DatawaveFieldIndexRegexIteratorJexl.builder()
+                        .withFieldName(new Text(field))
+                        .withFieldValue(new Text(value))
+                        .withTimeFilter(timeFilter)
+                        .withDatatypeFilter(datatypeFilter)
+                        .negated(negated)
+                        .withScanThreshold(ivaratorCacheScanPersistThreshold)
+                        .withScanTimeout(ivaratorCacheScanTimeout)
+                        .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
+                        .withMaxRangeSplit(maxRangeSplit)
+                        .withMaxOpenFiles(ivaratorMaxOpenFiles)
+                        .withMaxResults(maxIvaratorResults)
+                        .withFileSystem(hdfsFileSystem)
+                        .withUniqueDir(new Path(hdfsCacheURI))
+                        .withQueryLock(queryLock)
+                        .allowDirResuse(true)
+                        .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
+                        .withSortedUUIDs(sortedUIDs)
+                        .withCompositeMetadata(compositeMetadata)
+                        .withCompositeSeekThreshold(compositeSeekThreshold)
+                        .withTypeMetadata(typeMetadata)
+                        .withIteratorEnv(env)
+                        .build();
+                // @formatter:on
                 
                 if (collectTimingDetails) {
                     regexIterator.setCollectTimingDetails(true);

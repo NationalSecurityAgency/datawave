@@ -1673,6 +1673,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(config.getCollectTimingDetails()), false);
                         addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
+                        addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
                         addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                         addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
