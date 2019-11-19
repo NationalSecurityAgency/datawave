@@ -243,6 +243,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     newOptions.removeScanIterator(setting.getName());
                     newOptions.addScanIterator(newIteratorSetting);
                     
+                    if (log.isDebugEnabled()) {
+                        log.debug("VisitorFunction result: " + newSettings.getRanges() + " -> " + newQuery);
+                    }
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
                 }

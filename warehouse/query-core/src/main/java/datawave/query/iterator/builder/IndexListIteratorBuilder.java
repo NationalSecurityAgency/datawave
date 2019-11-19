@@ -82,28 +82,36 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexListIteratorJexl listIterator = null;
+                // @formatter:off
+                DatawaveFieldIndexListIteratorJexl.Builder builder = DatawaveFieldIndexListIteratorJexl.builder()
+                        .withFieldName(new Text(field))
+                        .withTimeFilter(timeFilter)
+                        .withDatatypeFilter(datatypeFilter)
+                        .negated(negated)
+                        .withScanThreshold(ivaratorCacheScanPersistThreshold)
+                        .withScanTimeout(ivaratorCacheScanTimeout)
+                        .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
+                        .withMaxRangeSplit(maxRangeSplit)
+                        .withMaxOpenFiles(ivaratorMaxOpenFiles)
+                        .withFileSystem(hdfsFileSystem)
+                        .withMaxResults(maxIvaratorResults)
+                        .withUniqueDir(new Path(hdfsCacheURI))
+                        .withQueryLock(queryLock)
+                        .allowDirResuse(true)
+                        .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
+                        .withSortedUUIDs(sortedUIDs)
+                        .withCompositeMetadata(compositeMetadata)
+                        .withCompositeSeekThreshold(compositeSeekThreshold)
+                        .withTypeMetadata(typeMetadata)
+                        .withIteratorEnv(env);
+                // @formatter:on
                 if (values != null) {
-                    listIterator = DatawaveFieldIndexListIteratorJexl.builder().withFieldName(new Text(field)).withValues(values).withTimeFilter(timeFilter)
-                                    .withDatatypeFilter(datatypeFilter).negated(negated).withScanThreshold(ivaratorCacheScanPersistThreshold)
-                                    .withScanTimeout(ivaratorCacheScanTimeout).withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
-                                    .withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles).withFileSystem(hdfsFileSystem)
-                                    .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
-                                    .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
-                                    .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                    .withIteratorEnv(env).build();
-                    
+                    builder = builder.withValues(values);
                 } else {
-                    listIterator = DatawaveFieldIndexListIteratorJexl.builder().withFieldName(new Text(field)).withFST(fst).withTimeFilter(timeFilter)
-                                    .withDatatypeFilter(datatypeFilter).negated(negated).withScanThreshold(ivaratorCacheScanPersistThreshold)
-                                    .withScanTimeout(ivaratorCacheScanTimeout).withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
-                                    .withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles).withFileSystem(hdfsFileSystem)
-                                    .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
-                                    .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
-                                    .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                    .withIteratorEnv(env).build();
-                    
+                    builder = builder.withFST(fst);
                 }
+                DatawaveFieldIndexListIteratorJexl listIterator = builder.build();
+                
                 if (collectTimingDetails) {
                     listIterator.setCollectTimingDetails(true);
                     listIterator.setQuerySpanCollector(this.querySpanCollector);

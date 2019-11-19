@@ -142,6 +142,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorCacheBufferSize = 10000;
     protected int maxRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
+    protected long maxIvaratorResults = -1;
     protected SourcePool ivaratorSources = null;
     protected SortedKeyValueIterator<Key,Value> ivaratorSource = null;
     protected int ivaratorCount = 0;
@@ -1327,6 +1328,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
         builder.setMaxRangeSplit(maxRangeSplit);
         builder.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
+        builder.setMaxIvaratorResults(maxIvaratorResults);
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
@@ -1547,6 +1549,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
         return this;
     }
     
