@@ -248,6 +248,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * By default enable using term frequency instead of field index when possible for value lookup
      */
     private boolean allowTermFrequencyLookup = true;
+    /**
+     * By default we will expand unfielded expressions in a negation. May want to disable if there are non-indexed fields.
+     */
+    private boolean expandUnfieldedNegations = true;
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
@@ -422,6 +426,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setContainsCompositeTerms(other.isContainsCompositeTerms());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
         this.setAllowTermFrequencyLookup(other.isAllowTermFrequencyLookup());
+        this.setExpandUnfieldedNegations(other.isExpandUnfieldedNegations());
         this.setReturnType(other.getReturnType());
         this.setEventPerDayThreshold(other.getEventPerDayThreshold());
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
@@ -1634,6 +1639,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
         this.allowTermFrequencyLookup = allowTermFrequencyLookup;
+    }
+    
+    public boolean isExpandUnfieldedNegations() {
+        return expandUnfieldedNegations;
+    }
+    
+    public void setExpandUnfieldedNegations(boolean expandUnfieldedNegations) {
+        this.expandUnfieldedNegations = expandUnfieldedNegations;
     }
     
     public boolean isAllTermsIndexOnly() {
