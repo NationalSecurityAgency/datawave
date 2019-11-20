@@ -300,7 +300,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                             
                             // if there are other fields, recreate the geo function node
                             if (!otherFields.isEmpty()) {
-                                // using dereference of the child node since we do not want the JexlASTScript not the JexlASTReference parent nodes
+                                // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
                                 JexlNode geoNode = JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery(
                                                 namespace + ":" + name + "(" + getFieldParam(otherFields) + ", '" + args.get(1).image + "', '"
                                                                 + args.get(2).image + "')").jjtGetChild(0));
@@ -356,7 +356,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             }
             
             if (wkt != null) {
-                // using dereference of the child node since we do not want the JexlASTScript not the JexlASTReference parent nodes
+                // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
                 return JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')")
                                 .jjtGetChild(0));
             }
