@@ -300,8 +300,10 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                             
                             // if there are other fields, recreate the geo function node
                             if (!otherFields.isEmpty()) {
-                                JexlNode geoNode = JexlASTHelper.parseJexlQuery(namespace + ":" + name + "(" + getFieldParam(otherFields) + ", '"
-                                                + args.get(1).image + "', '" + args.get(2).image + "')");
+                                // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
+                                JexlNode geoNode = JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery(
+                                                namespace + ":" + name + "(" + getFieldParam(otherFields) + ", '" + args.get(1).image + "', '"
+                                                                + args.get(2).image + "')").jjtGetChild(0));
                                 return JexlNodeFactory.createOrNode(Arrays.asList(geoNode, geoWaveNode));
                             } else {
                                 return geoWaveNode;
@@ -353,8 +355,11 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 }
             }
             
-            if (wkt != null)
-                return JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')");
+            if (wkt != null) {
+                // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
+                return JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')")
+                                .jjtGetChild(0));
+            }
             
             return null;
         }
