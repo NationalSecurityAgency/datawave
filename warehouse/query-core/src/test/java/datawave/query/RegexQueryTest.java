@@ -20,7 +20,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
@@ -189,6 +191,204 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         String regex = "'.*uro.*'";
         String query = CityField.CONTINENT.name() + RE_OP + regex;
         logic.setFullTableScanEnabled(true);
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: '\Edge-City-1'
+    // EQUALS QUERY: CITY == '\Edge-City-1'
+    // REGEX QUERY: CITY =~ '\\Edge-City-1'
+    @Test
+    public void test1LeadingBackslashEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'\\\\Edge-City-1'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: '\Edge-City-1'
+    // EQUALS QUERY: CITY == '\\Edge-City-1'
+    // REGEX QUERY: CITY =~ '\\Edge-City-1'
+    @Test
+    public void test1LeadingBackslashRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'\\\\Edge-City-1'";
+        String query = CityField.CITY.name() + RE_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: '\\Edge-City-2'
+    // EQUALS QUERY: CITY == '\\\\Edge-City-2'
+    // REGEX QUERY: CITY =~ '\\\\Edge-City-2'
+    @Test
+    public void test2LeadingBackslashesEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'\\\\\\\\Edge-City-2'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: '\\Edge-City-2'
+    // EQUALS QUERY: CITY == '\\\\Edge-City-2'
+    // REGEX QUERY: CITY =~ '\\\\Edge-City-2'
+    @Test
+    public void test2LeadingBackslashesRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'\\\\\\\\Edge-City-2'";
+        String query = CityField.CITY.name() + RE_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: '\\\Edge-City-3'
+    // EQUALS QUERY: CITY == '\\\\\\Edge-City-2'
+    // REGEX QUERY: CITY =~ '\\\\\\Edge-City-2'
+    @Test
+    public void test3LeadingBackslashesEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'\\\\\\\\\\\\Edge-City-3'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: '\\\Edge-City-3'
+    // EQUALS QUERY: CITY == '\\\\\\Edge-City-2'
+    // REGEX QUERY: CITY =~ '\\\\\\Edge-City-2'
+    @Test
+    public void test3LeadingBackslashesRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'\\\\\\\\\\\\Edge-City-3'";
+        String query = CityField.CITY.name() + RE_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-City-4\'
+    // EQUALS QUERY: CITY == 'Edge-City-2\\'
+    // REGEX QUERY: CITY =~ 'Edge-City-2\\'
+    @Test
+    public void test1TrailingBackslashEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-City-4\\\\'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-City-4\'
+    // EQUALS QUERY: CITY == 'Edge-City-2\\'
+    // REGEX QUERY: CITY =~ 'Edge-City-2\\'
+    @Test
+    public void test1TrailingBackslashRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-City-4\\\\'";
+        String query = CityField.CITY.name() + RE_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-City-5\\'
+    // EQUALS QUERY: CITY == 'Edge-City-5\\\\'
+    // REGEX QUERY: CITY =~ 'Edge-City-5\\\\'
+    @Test
+    public void test2TrailingBackslashesEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-City-5\\\\\\\\'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-City-5\\'
+    // EQUALS QUERY: CITY == 'Edge-City-5\\\\'
+    // REGEX QUERY: CITY =~ 'Edge-City-5\\\\'
+    @Test
+    public void test2TrailingBackslashesRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-City-5\\\\\\\\'";
+        String query = CityField.CITY.name() + RE_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-City-6\\\'
+    // EQUALS QUERY: CITY == 'Edge-City-6\\\\\\'
+    // REGEX QUERY: CITY =~ 'Edge-City-6\\\\\\'
+    @Test
+    public void test3TrailingBackslashesEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-City-6\\\\\\\\\\\\'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-City-6\\\'
+    // EQUALS QUERY: CITY == 'Edge-City-6\\\\\\'
+    // REGEX QUERY: CITY =~ 'Edge-City-6\\\\\\'
+    @Test
+    public void test4TrailingBackslashesRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-City-6\\\\\\\\\\\\'";
+        String query = CityField.CITY.name() + RE_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-C\ity-7'
+    // EQUALS QUERY: CITY == 'Edge-C\\ity-7'
+    // REGEX QUERY: CITY =~ 'Edge-C\\ity-7'
+    @Test
+    public void test1InternalBackslashEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-C\\\\ity-7'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-C\ity-7'
+    // EQUALS QUERY: CITY == 'Edge-C\\ity-7'
+    // REGEX QUERY: CITY =~ 'Edge-C\\ity-7'
+    @Test
+    public void test1InternalBackslashRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-C\\\\ity-7'";
+        String query = CityField.CITY.name() + RE_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-C\\ity-8'
+    // EQUALS QUERY: CITY == 'Edge-C\\\\ity-8'
+    // REGEX QUERY: CITY =~ 'Edge-C\\\\ity-8'
+    @Test
+    public void test2InternalBackslashesEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-C\\\\\\\\ity-8'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-C\\ity-8'
+    // EQUALS QUERY: CITY == 'Edge-C\\\\ity-8'
+    // REGEX QUERY: CITY =~ 'Edge-C\\\\ity-8'
+    @Test
+    public void test2InternalBackslashesRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-C\\\\\\\\ity-8'";
+        String query = CityField.CITY.name() + RE_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-C\\\ity-9'
+    // EQUALS QUERY: CITY == 'Edge-C\\\\\\ity-9'
+    // REGEX QUERY: CITY =~ 'Edge-C\\\\\\ity-9'
+    @Test
+    public void test3InternalBackslashesEquals() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-C\\\\\\\\\\\\ity-9'";
+        String query = CityField.CITY.name() + EQ_OP + term;
+        runTest(query, query);
+    }
+    
+    // THE EVENT VALUE: 'Edge-C\\\ity-9'
+    // EQUALS QUERY: CITY == 'Edge-C\\\\\\ity-9'
+    // REGEX QUERY: CITY =~ 'Edge-C\\\\\\ity-9'
+    @Test
+    public void test3InternalBackslashesRegex() throws Exception {
+        // NOTE: JAVA REQUIRES THAT WE ESCAPE OUR BACKSLASHES
+        String term = "'Edge-C\\\\\\\\\\\\ity-9'";
+        String query = CityField.CITY.name() + RE_OP + term;
         runTest(query, query);
     }
     
