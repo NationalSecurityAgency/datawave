@@ -4,12 +4,13 @@ import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.PeekingIterator;
-import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
 import datawave.query.iterator.CachingIterator;
 import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
@@ -39,7 +40,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -75,14 +75,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         private boolean negated;
         private PartialKey returnKeyType = DEFAULT_RETURN_KEY_TYPE;
         private int maxRangeSplit = 11;
-        private FileSystem fs;
-        private Path uniqueDir;
+        private List<IvaratorCacheDir> ivaratorCacheDirs;
         private QueryLock queryLock;
         private boolean allowDirReuse;
         private long maxResults = -1;
         private long scanThreshold = 10000;
         private int hdfsBackedSetBufferSize = 10000;
         private int maxOpenFiles = 100;
+        private int numRetries = 2;
         private boolean sortedUIDs = true;
         protected QuerySpanCollector querySpanCollector = null;
         protected volatile boolean collectTimingDetails = false;
@@ -160,13 +160,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             return self();
         }
         
-        public B withFileSystem(FileSystem fs) {
-            this.fs = fs;
+        public B withNumRetries(int numRetries) {
+            this.numRetries = numRetries;
             return self();
         }
         
-        public B withUniqueDir(Path uniqueDir) {
-            this.uniqueDir = uniqueDir;
+        public B withIvaratorCacheDirs(List<IvaratorCacheDir> ivaratorCacheDirs) {
+            this.ivaratorCacheDirs = ivaratorCacheDirs;
             return self();
         }
         
@@ -253,10 +253,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // The max number of field index ranges to be executed individually by the ivarator thread pool
     private final int maxRangeSplit;
     
-    // The hdfs fs
-    private final FileSystem fs;
-    // the directory for the hdfs cache
-    private final Path uniqueDir;
+    // The configured ivarator cache paths
+    private final List<IvaratorCacheDir> ivaratorCacheDirs;
+    // The control filesystem to use for this ivarator
+    private final FileSystem controlFs;
+    // The control directory to use for this ivarator
+    private final Path controlDir;
     // A query lock to verify if the query is still running
     private final QueryLock queryLock;
     // are we allowing reuse of the hdfs directories
@@ -267,6 +269,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private final int hdfsBackedSetBufferSize;
     // the max number of files to open simultaneously during a merge source
     private final int maxOpenFiles;
+    // the max number of retries when attempting to persist a sorted set to a filesystem
+    private final int numRetries;
     
     // the current top key
     private Key topKey = null;
@@ -289,7 +293,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private PeekingIterator<KeyValueSerializable> keyValues = null;
     // the current row covered by the hdfs set
     private String currentRow = null;
-    // did we created the row directory
+    // did we create the row directory
     private boolean createdRowDir = false;
     
     // The last range seeked used to filter the final results
@@ -340,70 +344,78 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.timeFilter = null;
         this.datatypeFilter = null;
         
-        this.fs = null;
+        this.ivaratorCacheDirs = null;
+        this.controlFs = null;
+        this.controlDir = null;
         this.queryLock = null;
-        this.uniqueDir = null;
         this.allowDirReuse = false;
         this.scanThreshold = 10000;
         this.hdfsBackedSetBufferSize = 10000;
         this.maxOpenFiles = 100;
+        this.numRetries = 2;
         this.maxRangeSplit = 11;
         this.maxResults = -1;
         
         this.sortedUIDs = true;
     }
     
+    /**
+     * Creates an ivarator using the specified builder.
+     * 
+     * @param builder
+     *            may be any builder which extends the abstract builder defined above. Specialized builders exist for regex, range, filter, and list ivarators.
+     */
     protected DatawaveFieldIndexCachingIteratorJexl(Builder builder) {
-        this(builder.fieldName, builder.fieldValue, builder.timeFilter, builder.datatypeFilter, builder.negated, builder.scanThreshold, builder.scanTimeout,
-                        builder.maxResults, builder.hdfsBackedSetBufferSize, builder.maxRangeSplit, builder.maxOpenFiles, builder.fs, builder.uniqueDir,
-                        builder.queryLock, builder.allowDirReuse, builder.returnKeyType, builder.sortedUIDs, builder.compositeMetadata,
-                        builder.compositeSeekThreshold, builder.typeMetadata, builder.env);
-    }
-    
-    @SuppressWarnings("hiding")
-    private DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, long maxResults, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs, CompositeMetadata compositeMetadata,
-                    int compositeSeekThreshold, TypeMetadata typeMetadata, IteratorEnvironment env) {
-        if (fieldName.toString().startsWith("fi" + NULL_BYTE)) {
-            this.fieldName = new Text(fieldName.toString().substring(3));
-            this.fiName = fieldName;
+        if (builder.fieldName.toString().startsWith("fi" + NULL_BYTE)) {
+            this.fieldName = new Text(builder.fieldName.toString().substring(3));
+            this.fiName = builder.fieldName;
         } else {
-            this.fieldName = fieldName;
-            this.fiName = new Text("fi" + NULL_BYTE + fieldName);
+            this.fieldName = builder.fieldName;
+            this.fiName = new Text("fi" + NULL_BYTE + builder.fieldName);
         }
         log.trace("fName : " + fiName.toString().replaceAll(NULL_BYTE, "%00"));
-        this.fieldValue = fieldValue;
-        this.negated = neg;
-        this.returnKeyType = returnKeyType;
-        this.timeFilter = timeFilter;
-        this.datatypeFilter = datatypeFilter;
         
-        this.fs = fs;
-        this.queryLock = queryLock;
-        this.uniqueDir = uniqueDir;
-        this.allowDirReuse = allowDirReuse;
-        this.scanThreshold = scanThreshold;
-        this.scanTimeout = scanTimeout;
-        this.maxResults = maxResults;
-        this.hdfsBackedSetBufferSize = bufferSize;
-        this.maxOpenFiles = maxOpenFiles;
-        this.maxRangeSplit = maxRangeSplit;
+        this.fieldValue = builder.fieldValue;
+        this.negated = builder.negated;
+        this.returnKeyType = builder.returnKeyType;
+        this.timeFilter = builder.timeFilter;
+        this.datatypeFilter = builder.datatypeFilter;
         
-        this.sortedUIDs = sortedUIDs;
+        this.ivaratorCacheDirs = builder.ivaratorCacheDirs;
+        
+        // Note: We have already selected the control directory at random in the DefaultQueryPlanner
+        // @see DefaultQueryPlanner#getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration)
+        if (ivaratorCacheDirs.size() > 0) {
+            this.controlFs = ivaratorCacheDirs.get(0).getFs();
+            this.controlDir = new Path(ivaratorCacheDirs.get(0).getPathURI());
+        } else {
+            throw new IllegalStateException("No ivarator cache dirs specified!");
+        }
+        
+        this.queryLock = builder.queryLock;
+        this.allowDirReuse = builder.allowDirReuse;
+        this.scanThreshold = builder.scanThreshold;
+        this.scanTimeout = builder.scanTimeout;
+        this.maxResults = builder.maxResults;
+        this.hdfsBackedSetBufferSize = builder.hdfsBackedSetBufferSize;
+        this.maxOpenFiles = builder.maxOpenFiles;
+        this.numRetries = builder.numRetries;
+        this.maxRangeSplit = builder.maxRangeSplit;
+        
+        this.sortedUIDs = builder.sortedUIDs;
         
         // setup composite logic if this is a composite field
-        if (compositeMetadata != null) {
-            List<String> compositeFields = compositeMetadata.getCompositeFieldMapByType().entrySet().stream().flatMap(x -> x.getValue().keySet().stream())
-                            .distinct().collect(Collectors.toList());
-            if (compositeFields.contains(fieldName.toString())) {
-                this.compositeMetadata = compositeMetadata;
-                this.compositeSeeker = new FieldIndexCompositeSeeker(typeMetadata.fold());
+        if (builder.compositeMetadata != null) {
+            List<String> compositeFields = builder.compositeMetadata.getCompositeFieldMapByType().entrySet().stream()
+                            .flatMap(x -> x.getValue().keySet().stream()).distinct().collect(Collectors.toList());
+            if (compositeFields.contains(builder.fieldName.toString())) {
+                this.compositeMetadata = builder.compositeMetadata;
+                this.compositeSeeker = new FieldIndexCompositeSeeker(builder.typeMetadata.fold());
             }
         }
         
-        this.compositeSeekThreshold = compositeSeekThreshold;
-        this.initEnv = env;
+        this.compositeSeekThreshold = builder.compositeSeekThreshold;
+        this.initEnv = builder.env;
     }
     
     public DatawaveFieldIndexCachingIteratorJexl(DatawaveFieldIndexCachingIteratorJexl other, IteratorEnvironment env) {
@@ -417,15 +429,17 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.boundingFiRanges.addAll(other.boundingFiRanges);
         this.negated = other.negated;
         
-        this.fs = other.fs;
+        this.ivaratorCacheDirs = other.ivaratorCacheDirs == null ? null : new ArrayList<>(other.ivaratorCacheDirs);
+        this.controlFs = other.controlFs;
+        this.controlDir = other.controlDir;
         this.queryLock = other.queryLock;
-        this.uniqueDir = other.uniqueDir;
         this.allowDirReuse = other.allowDirReuse;
         this.scanThreshold = other.scanThreshold;
         this.scanTimeout = other.scanTimeout;
         this.maxResults = other.maxResults;
         this.hdfsBackedSetBufferSize = other.hdfsBackedSetBufferSize;
         this.maxOpenFiles = other.maxOpenFiles;
+        this.numRetries = other.numRetries;
         
         this.set = other.set;
         this.keyValues = other.keyValues;
@@ -1136,12 +1150,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     /**
      * Get the unique directory for a specific row
-     * 
+     *
+     * @param uniqueDir
      * @param row
      * @return the unique dir
      */
-    protected Path getRowDir(String row) {
-        return new Path(this.uniqueDir, row);
+    protected Path getRowDir(Path uniqueDir, String row) {
+        return new Path(uniqueDir, row);
     }
     
     /**
@@ -1168,23 +1183,29 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
         
         try {
-            // get the row specific dir
-            Path rowDir = getRowDir(row);
-            
-            // if we are not allowing reuse of directories, then delete it
-            if (!allowDirReuse && this.fs.exists(rowDir)) {
-                this.fs.delete(rowDir, true);
+            // for each of the ivarator cache dirs
+            for (IvaratorCacheDir ivaratorCacheDir : ivaratorCacheDirs) {
+                // get the row specific dir
+                Path rowDir = getRowDir(new Path(ivaratorCacheDir.getPathURI()), row);
+                
+                FileSystem fs = ivaratorCacheDir.getFs();
+                
+                // if we are not allowing reuse of directories, then delete it
+                if (!allowDirReuse && fs.exists(rowDir)) {
+                    fs.delete(rowDir, true);
+                }
             }
             
-            // ensure the directory is created
-            if (!this.fs.exists(rowDir)) {
-                this.fs.mkdirs(rowDir);
+            // ensure the control directory is created
+            Path controlRowDir = getRowDir(this.controlDir, row);
+            if (!this.controlFs.exists(controlRowDir)) {
+                this.controlFs.mkdirs(controlRowDir);
                 this.createdRowDir = true;
             } else {
                 this.createdRowDir = false;
             }
             
-            this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, fs, rowDir, maxOpenFiles);
+            this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, ivaratorCacheDirs, row, maxOpenFiles, numRetries);
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
             this.currentRow = row;
             this.setControl.takeOwnership(row, this);
@@ -1335,11 +1356,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         private final int bufferSize = 128;
         
         protected Path getOwnershipFile(String row) {
-            return new Path(getRowDir(row), OWNERSHIP_FILE);
+            return new Path(getRowDir(controlDir, row), OWNERSHIP_FILE);
         }
         
         protected Path getCompleteFile(String row) {
-            return new Path(getRowDir(row), COMPLETE_FILE);
+            return new Path(getRowDir(controlDir, row), COMPLETE_FILE);
         }
         
         protected String getOwnerId(Object owner) {
@@ -1355,14 +1376,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             byte[] ownerId = getOwnerId(owner).getBytes();
             
             Path file = getOwnershipFile(row);
-            if (fs.exists(file)) {
+            if (controlFs.exists(file)) {
                 return hasContents(file, ownerId);
             }
             return false;
         }
         
         private boolean hasContents(Path file, byte[] contents) throws IOException {
-            FSDataInputStream stream = fs.open(file, bufferSize);
+            FSDataInputStream stream = controlFs.open(file, bufferSize);
             int len;
             byte[] buffer;
             try {
@@ -1412,7 +1433,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         public boolean isCompleteAndPersisted(String row) throws IOException {
             Path file = getCompleteFile(row);
-            return fs.exists(file);
+            return controlFs.exists(file);
         }
         
         private void writeFile(Path file, byte[] value) throws IOException {
@@ -1427,22 +1448,22 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             String reason = null;
             Exception exc = null;
             
-            while (!done && count < 3) {
+            while (!done && count <= numRetries) {
                 count++;
                 try {
                     FSDataOutputStream stream = null;
                     if (append) {
                         try {
-                            stream = fs.append(file, bufferSize);
+                            stream = controlFs.append(file, bufferSize);
                         } catch (IOException ioe) {
                             if (ioe.getMessage().equals("Not supported")) {
-                                stream = fs.create(file, true, bufferSize);
+                                stream = controlFs.create(file, true, bufferSize);
                             } else {
                                 throw ioe;
                             }
                         }
                     } else {
-                        stream = fs.create(file, true, bufferSize);
+                        stream = controlFs.create(file, true, bufferSize);
                     }
                     try {
                         stream.write(value);
@@ -1455,11 +1476,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     exc = e;
                     try {
                         // see if we can determine why
-                        if (fs.exists(DatawaveFieldIndexCachingIteratorJexl.this.uniqueDir)) {
+                        if (controlFs.exists(controlDir)) {
                             // so the directory exists, try the row dir
-                            if (fs.exists(getRowDir(currentRow))) {
+                            if (controlFs.exists(new Path(controlDir, currentRow))) {
                                 // so the directory exists, how about the file
-                                if (fs.exists(file)) {
+                                if (controlFs.exists(file)) {
                                     append = true;
                                     reason = "Failed to create file, but the file exists: " + file;
                                     // check if the contents actually got written
@@ -1477,7 +1498,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                         } else {
                             reason = "Failed to create file, query dir does not exist: " + file;
                             // in this case, we really want to stop this iterator as we are cancelled
-                            count = 3;
+                            count = numRetries + 1;
                         }
                     } catch (Exception e2) {
                         reason = "Failed to create file: " + file;
