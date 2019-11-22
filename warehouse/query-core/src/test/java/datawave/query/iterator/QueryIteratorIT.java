@@ -5,9 +5,9 @@ import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -43,7 +43,7 @@ import static datawave.query.iterator.QueryOptions.HDFS_SITE_CONFIG_URLS;
 import static datawave.query.iterator.QueryOptions.HIT_LIST;
 import static datawave.query.iterator.QueryOptions.INDEXED_FIELDS;
 import static datawave.query.iterator.QueryOptions.INDEX_ONLY_FIELDS;
-import static datawave.query.iterator.QueryOptions.IVARATOR_CACHE_BASE_URI_ALTERNATIVES;
+import static datawave.query.iterator.QueryOptions.IVARATOR_CACHE_DIR_CONFIG;
 import static datawave.query.iterator.QueryOptions.NON_INDEXED_DATATYPES;
 import static datawave.query.iterator.QueryOptions.QUERY;
 import static datawave.query.iterator.QueryOptions.QUERY_ID;
@@ -51,7 +51,6 @@ import static datawave.query.iterator.QueryOptions.SERIAL_EVALUATION_PIPELINE;
 import static datawave.query.iterator.QueryOptions.START_TIME;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -100,7 +99,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(QUERY_ID, "000001");
         
         // setup ivarator settings
-        options.put(IVARATOR_CACHE_BASE_URI_ALTERNATIVES, "file://" + temporaryFolder.toAbsolutePath().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig("file://" + temporaryFolder.toAbsolutePath().toString());
+        options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(config));
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         options.put(HDFS_SITE_CONFIG_URLS, hdfsSiteConfig.toExternalForm());
         

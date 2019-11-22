@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
@@ -126,19 +127,20 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 public class DefaultQueryPlanner extends QueryPlanner {
     
@@ -552,9 +554,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     private QueryLock getQueryLock(ShardQueryConfiguration config, Query settings) throws Exception {
-        return new QueryLock.Builder().forQueryId(settings.getId() == null ? null : settings.getId().toString()).forZookeeper(config.getZookeeperConfig(), 0)
-                        .forHdfs(config.getHdfsSiteConfigURLs()).forIvaratorDirs(config.getIvaratorCacheBaseURIs())
-                        .forFstDirs(config.getIvaratorFstHdfsBaseURIs()).build();
+        return new QueryLock.Builder()
+                        .forQueryId(settings.getId() == null ? null : settings.getId().toString())
+                        .forZookeeper(config.getZookeeperConfig(), 0)
+                        .forHdfs(config.getHdfsSiteConfigURLs())
+                        .forFstDirs(config.getIvaratorFstHdfsBaseURIs())
+                        .forIvaratorDirs(
+                                        config.getIvaratorCacheDirConfigs().stream().map(IvaratorCacheDirConfig::getBasePathURI)
+                                                        .collect(Collectors.joining(","))).build();
     }
     
     private void markQueryStopped(ShardQueryConfiguration config, Query settings) throws Exception {
@@ -1609,23 +1616,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     /**
-     * Get the list of alternatives, randomizing the order so that the tserver spread out the disk usage.
-     */
-    protected String getIvaratorQueryCacheBaseUriAlternatives(ShardQueryConfiguration config) {
-        StringBuilder baseUriAlternatives = new StringBuilder();
-        List<String> alternatives = new LinkedList<>(config.getIvaratorCacheBaseURIsAsList());
-        Random random = new Random();
-        while (!alternatives.isEmpty()) {
-            if (baseUriAlternatives.length() > 0) {
-                baseUriAlternatives.append(',');
-            }
-            baseUriAlternatives.append(alternatives.remove(random.nextInt(alternatives.size())));
-            
-        }
-        return baseUriAlternatives.toString();
-    }
-    
-    /**
      * Extend to further configure QueryIterator
      *
      * @param config
@@ -1664,8 +1654,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         if (config.getZookeeperConfig() != null) {
                             addOption(cfg, QueryOptions.ZOOKEEPER_CONFIG, config.getZookeeperConfig(), false);
                         }
-                        if (config.getIvaratorCacheBaseURIs() != null) {
-                            addOption(cfg, QueryOptions.IVARATOR_CACHE_BASE_URI_ALTERNATIVES, getIvaratorQueryCacheBaseUriAlternatives(config), false);
+                        if (config.getIvaratorCacheDirConfigs() != null && !config.getIvaratorCacheDirConfigs().isEmpty()) {
+                            addOption(cfg, QueryOptions.IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(getShuffledIvaratoCacheDirConfigs(config)),
+                                            false);
                         }
                         addOption(cfg, QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, Integer.toString(config.getIvaratorCacheBufferSize()), false);
                         addOption(cfg, QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, Long.toString(config.getIvaratorCacheScanPersistThreshold()), false);
@@ -1674,6 +1665,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
+                        addOption(cfg, QueryOptions.IVARATOR_NUM_RETRIES, Integer.toString(config.getIvaratorNumRetries()), false);
                         addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                         addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
@@ -1736,6 +1728,26 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         
                         return cfg;
                     });
+    }
+    
+    /**
+     * Get the list of ivarator cache dirs, randomizing the order (while respecting priority) so that the tservers spread out the disk usage.
+     */
+    private List<IvaratorCacheDirConfig> getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration config) {
+        List<IvaratorCacheDirConfig> shuffledIvaratorCacheDirs = new ArrayList<>();
+        
+        // group the ivarator cache dirs by their priority
+        Map<Integer,List<IvaratorCacheDirConfig>> groupedConfigs = config.getIvaratorCacheDirConfigs().stream()
+                        .collect(Collectors.groupingBy(IvaratorCacheDirConfig::getPriority));
+        
+        // iterate over the sorted priorities, and shuffle the subsets
+        for (Integer priority : new TreeSet<>(groupedConfigs.keySet())) {
+            List<IvaratorCacheDirConfig> cacheDirs = groupedConfigs.get(priority);
+            Collections.shuffle(cacheDirs);
+            shuffledIvaratorCacheDirs.addAll(cacheDirs);
+        }
+        
+        return shuffledIvaratorCacheDirs;
     }
     
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
