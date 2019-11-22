@@ -201,6 +201,10 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public boolean allowIvaratorFiltering() {
             return false;
         }
+        
+        public String getWkt() {
+            return args.get(1).image;
+        }
     }
     
     @Override
