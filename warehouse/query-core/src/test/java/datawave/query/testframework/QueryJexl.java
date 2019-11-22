@@ -2,6 +2,7 @@ package datawave.query.testframework;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
+import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.Expression;
 import org.apache.commons.jexl2.ExpressionImpl;
 import org.apache.commons.jexl2.JexlContext;
@@ -139,8 +140,7 @@ public class QueryJexl {
     // private methods
     private Expression createNormalizedExpression(final String query) {
         try {
-            Parser parser = new Parser(new StringReader(";"));
-            ASTJexlScript script = parser.parse(new StringReader(query), null);
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             Deque<SimpleNode> nodes = new LinkedList<>();
             normalizeScript(script, nodes);
             return new NormalizedExpression(jEngine, query, script);

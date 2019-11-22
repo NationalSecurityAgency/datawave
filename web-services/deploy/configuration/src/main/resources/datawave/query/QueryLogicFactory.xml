@@ -199,7 +199,7 @@
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
         <property name="zookeeperConfig" value="${ivarator.zookeeper.hosts}" />
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
-        <property name="ivaratorCacheBaseURIs" value="${ivarator.cache.base.uris}" />
+        <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
         <property name="ivaratorFstHdfsBaseURIs" value ="${ivarator.fst.hdfs.base.uris}" />
         <!-- the size after which a buffer is flushed to a file. -->
@@ -232,7 +232,11 @@
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
-    
+
+    <util:list id="IvaratorCacheDirConfigs">
+        ${ivarator.cache.dir.config}
+    </util:list>
+
     <util:map id="BaseEventQueryFilterOptions">
         ${event.query.filters.options}
     </util:map>
@@ -499,7 +503,7 @@
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
         <property name="zookeeperConfig" value="${ivarator.zookeeper.hosts}" />
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
-        <property name="ivaratorCacheBaseURIs" value="${ivarator.cache.base.uris}" />
+        <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
         <property name="ivaratorFstHdfsBaseURIs" value ="${ivarator.fst.hdfs.base.uris}" />
         <!-- the size after which a buffer is flushed to a file. -->

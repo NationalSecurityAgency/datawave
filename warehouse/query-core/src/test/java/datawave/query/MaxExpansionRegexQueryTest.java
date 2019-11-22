@@ -9,7 +9,11 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.MaxExpandCityFields;
 
 import java.io.File;
+import java.net.URI;
 import java.util.List;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -318,10 +322,10 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         assertEquals(0, countComplete(dirs));
     }
     
-    private int countComplete(List<String> dirs) {
+    private int countComplete(List<String> dirs) throws Exception {
         int count = 0;
         for (String dir : dirs) {
-            File file = new File(dir);
+            File file = new File(new URI(dir));
             for (File leaf : getLeaves(file)) {
                 if (leaf.getName().equals("complete")) {
                     count++;
