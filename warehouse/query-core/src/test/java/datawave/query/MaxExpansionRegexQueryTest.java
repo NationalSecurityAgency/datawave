@@ -7,6 +7,7 @@ import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.MaxExpandCityFields;
+
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;

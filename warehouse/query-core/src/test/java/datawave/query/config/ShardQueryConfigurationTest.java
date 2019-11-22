@@ -160,7 +160,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertNull(config.getHdfsSiteConfigURLs());
         Assert.assertNull(config.getHdfsFileCompressionCodec());
         Assert.assertNull(config.getZookeeperConfig());
-        Assert.assertNull(config.getIvaratorCacheBaseURIs());
+        Assert.assertTrue(config.getIvaratorCacheDirConfigs().isEmpty());
+        Assert.assertEquals(2, config.getIvaratorNumRetries());
         Assert.assertNull(config.getIvaratorFstHdfsBaseURIs());
         Assert.assertEquals(10000, config.getIvaratorCacheBufferSize());
         Assert.assertEquals(100000, config.getIvaratorCacheScanPersistThreshold());

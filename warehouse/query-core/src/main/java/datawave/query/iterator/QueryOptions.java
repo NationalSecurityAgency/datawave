@@ -16,6 +16,7 @@ import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -79,6 +80,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -191,7 +193,7 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String ZOOKEEPER_CONFIG = "zookeeper.config";
     
-    public static final String IVARATOR_CACHE_BASE_URI_ALTERNATIVES = "ivarator.cache.base.uri.alternatives";
+    public static final String IVARATOR_CACHE_DIR_CONFIG = "ivarator.cache.dir.config";
     
     public static final String IVARATOR_CACHE_BUFFER_SIZE = "ivarator.cache.buffer.size";
     
@@ -204,6 +206,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String MAX_INDEX_RANGE_SPLIT = "max.index.range.split";
     
     public static final String MAX_IVARATOR_OPEN_FILES = "max.ivarator.open.files";
+    
+    public static final String IVARATOR_NUM_RETRIES = "ivarator.num.retries";
     
     public static final String MAX_IVARATOR_SOURCES = "max.ivarator.sources";
     
@@ -303,13 +307,14 @@ public class QueryOptions implements OptionDescriber {
     
     protected String zookeeperConfig = null;
     
-    protected List<String> ivaratorCacheBaseURIAlternatives = null;
+    protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     protected int ivaratorCacheBufferSize = 10000;
     
     protected int maxIndexRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
+    protected int ivaratorNumRetries = 2;
     
     protected int maxIvaratorSources = 33;
     
@@ -421,7 +426,7 @@ public class QueryOptions implements OptionDescriber {
         this.evaluationFilter = other.evaluationFilter;
         this.fiAggregator = other.fiAggregator;
         
-        this.ivaratorCacheBaseURIAlternatives = other.ivaratorCacheBaseURIAlternatives;
+        this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
@@ -791,7 +796,8 @@ public class QueryOptions implements OptionDescriber {
     }
     
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
-        return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache()).forIvaratorDirs(getIvaratorCacheBaseURIAlternatives())
+        return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
+                        .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
                         .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
     }
     
@@ -811,31 +817,12 @@ public class QueryOptions implements OptionDescriber {
         this.zookeeperConfig = zookeeperConfig;
     }
     
-    public List<String> getIvaratorCacheBaseURIsAsList() {
-        return ivaratorCacheBaseURIAlternatives;
+    public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
+        return ivaratorCacheDirConfigs;
     }
     
-    public String getIvaratorCacheBaseURIAlternatives() {
-        if (ivaratorCacheBaseURIAlternatives == null) {
-            return null;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIAlternatives) {
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(hdfsCacheBaseURI);
-            }
-            return builder.toString();
-        }
-    }
-    
-    public void setIvaratorCacheBaseURIAlternatives(String ivaratorCacheBaseURIAlternatives) {
-        if (ivaratorCacheBaseURIAlternatives == null || ivaratorCacheBaseURIAlternatives.isEmpty()) {
-            this.ivaratorCacheBaseURIAlternatives = null;
-        } else {
-            this.ivaratorCacheBaseURIAlternatives = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIAlternatives, ','));
-        }
+    public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
     }
     
     public int getIvaratorCacheBufferSize() {
@@ -876,6 +863,14 @@ public class QueryOptions implements OptionDescriber {
     
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+    }
+    
+    public int getIvaratorNumRetries() {
+        return ivaratorNumRetries;
+    }
+    
+    public void setIvaratorNumRetries(int ivaratorNumRetries) {
+        this.ivaratorNumRetries = ivaratorNumRetries;
     }
     
     public int getMaxIvaratorSources() {
@@ -1029,8 +1024,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(CONTENT_EXPANSION_FIELDS, "comma-delimited list of fields used for content function expansions");
         options.put(HDFS_SITE_CONFIG_URLS, "URLs (comma delimited) of where to find the hadoop hdfs and core site configuration files");
         options.put(HDFS_FILE_COMPRESSION_CODEC, "A hadoop compression codec to use for files if supported");
-        options.put(IVARATOR_CACHE_BASE_URI_ALTERNATIVES,
-                        "A list of URIs of where all query's caches are to be located for ivarators (caching field index iterators)");
+        options.put(IVARATOR_CACHE_DIR_CONFIG,
+                        "A JSON-formatted array of ivarator cache config objects.  Each config object MUST specify a pathURI to use when caching field index iterator output.");
         options.put(IVARATOR_CACHE_BUFFER_SIZE, "The size of the hdfs cache buffer size (items held in memory before dumping to hdfs).  Default is 10000.");
         options.put(IVARATOR_SCAN_PERSIST_THRESHOLD,
                         "The number of underlying field index keys scanned before the hdfs cache buffer is forced to persist).  Default is 100000.");
@@ -1039,6 +1034,8 @@ public class QueryOptions implements OptionDescriber {
                         "The maximum number of ranges to split a field index scan (ivarator) range into for multithreading.  Note the thread pool size is controlled via an accumulo property.");
         options.put(MAX_IVARATOR_OPEN_FILES,
                         "The maximum number of files that can be opened at one time during a merge sort.  If more that this number of files are created, then compactions will occur");
+        options.put(IVARATOR_NUM_RETRIES,
+                        "The number of times an ivarator should attempt to persist a sorted set to a given ivarator cache directory.  We will use the specified number of retries for each of the configured ivarator cache directories.");
         options.put(MAX_IVARATOR_SOURCES,
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(YIELD_THRESHOLD_MS,
@@ -1393,8 +1390,12 @@ public class QueryOptions implements OptionDescriber {
             this.setZookeeperConfig(options.get(ZOOKEEPER_CONFIG));
         }
         
-        if (options.containsKey(IVARATOR_CACHE_BASE_URI_ALTERNATIVES)) {
-            this.setIvaratorCacheBaseURIAlternatives(options.get(IVARATOR_CACHE_BASE_URI_ALTERNATIVES));
+        if (options.containsKey(IVARATOR_CACHE_DIR_CONFIG)) {
+            try {
+                this.setIvaratorCacheDirConfigs(IvaratorCacheDirConfig.fromJson(options.get(IVARATOR_CACHE_DIR_CONFIG)));
+            } catch (IOException e) {
+                log.warn("Unable to parse ivaratorCacheDirConfig.", e);
+            }
         }
         
         if (options.containsKey(IVARATOR_CACHE_BUFFER_SIZE)) {
@@ -1415,6 +1416,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(MAX_IVARATOR_OPEN_FILES)) {
             this.setIvaratorMaxOpenFiles(Integer.parseInt(options.get(MAX_IVARATOR_OPEN_FILES)));
+        }
+        
+        if (options.containsKey(IVARATOR_NUM_RETRIES)) {
+            this.setIvaratorNumRetries(Integer.parseInt(options.get(IVARATOR_NUM_RETRIES)));
         }
         
         if (options.containsKey(MAX_IVARATOR_SOURCES)) {

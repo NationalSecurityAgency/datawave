@@ -1,19 +1,42 @@
 package datawave.core.iterators;
 
+import com.google.common.io.Files;
 import datawave.query.Constants;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 public class DatawaveFieldIndexIteratorJexlTest {
+    
+    private List<IvaratorCacheDir> ivaratorCacheDirs;
+    
+    @Before
+    public void setup() throws Exception {
+        File tmpDir = Files.createTempDir();
+        tmpDir.deleteOnExit();
+        
+        LocalFileSystem fs = new LocalFileSystem();
+        fs.initialize(tmpDir.toURI(), new Configuration());
+        
+        ivaratorCacheDirs = Collections
+                        .singletonList(new IvaratorCacheDir(new IvaratorCacheDirConfig(tmpDir.toURI().toString()), fs, tmpDir.toURI().toString()));
+    }
+    
     @Test
     public void buildBoundingFiRange_notUpperInclusive_singleChar_test() {
         DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
-                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("b").build();
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("b").withIvaratorCacheDirs(ivaratorCacheDirs).build();
         
         Text row = new Text("row");
         Text fiName = new Text("fi" + Constants.NULL + "FIELD");
@@ -36,7 +59,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
     @Test
     public void buildBoundingFiRange_notUpperInclusive_singleCharAZ_test() {
         DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
-                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").build();
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").withIvaratorCacheDirs(ivaratorCacheDirs).build();
         
         Text row = new Text("row");
         Text fiName = new Text("fi" + Constants.NULL + "FIELD");
@@ -59,7 +82,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
     @Test
     public void buildBoundingFiRange_notUpperInclusive_multiChar_test() {
         DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
-                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("az").build();
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("az").withIvaratorCacheDirs(ivaratorCacheDirs).build();
         
         Text row = new Text("row");
         Text fiName = new Text("fi" + Constants.NULL + "FIELD");
@@ -82,7 +105,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
     @Test
     public void buildBoundingFiRange_notUpperInclusive_multiCharStartSingleEnd_test() {
         DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
-                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").build();
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").withIvaratorCacheDirs(ivaratorCacheDirs).build();
         
         Text row = new Text("row");
         Text fiName = new Text("fi" + Constants.NULL + "FIELD");
