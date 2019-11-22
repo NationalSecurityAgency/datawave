@@ -552,14 +552,14 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private List<String> getViewColumnNames(Connection connection, String view) throws SQLException {
         CachedResultsParameters.validate(view);
         List<String> columns = new ArrayList<>();
-        Statement s = connection.createStatement();
-        ResultSet rs = s.executeQuery("show columns from " + view);
-        Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
-        
-        while (rs.next()) {
-            String column = rs.getString(1);
-            if (fixedColumns.contains(column) == false) {
-                columns.add(column);
+        try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery("show columns from " + view)) {
+            Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
+            
+            while (rs.next()) {
+                String column = rs.getString(1);
+                if (fixedColumns.contains(column) == false) {
+                    columns.add(column);
+                }
             }
         }
         

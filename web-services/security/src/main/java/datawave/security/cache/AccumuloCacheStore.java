@@ -249,8 +249,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
     
     @Override
     public boolean contains(Object key) {
-        try {
-            Scanner scanner = connector.createScanner(tableName, authorizations);
+        try (Scanner scanner = connector.createScanner(tableName, authorizations)) {
             scanner.setRange(new Range(String.valueOf(key)));
             Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
             return iterator.hasNext();
@@ -261,8 +260,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
     
     @Override
     public int size() {
-        try {
-            BatchScanner batchScanner = connector.createBatchScanner(tableName, authorizations, 5);
+        try (BatchScanner batchScanner = connector.createBatchScanner(tableName, authorizations, 5)) {
             batchScanner.setRanges(Collections.singleton(new Range()));
             try {
                 int rows = 0;
@@ -285,8 +283,8 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
     
     @Override
     public void process(KeyFilter<? super K> filter, CacheLoaderTask<K,V> task, Executor executor, boolean fetchValue, boolean fetchMetadata) {
-        try {
-            BatchScanner batchScanner = connector.createBatchScanner(tableName, authorizations, 5);
+        try (BatchScanner batchScanner = connector.createBatchScanner(tableName, authorizations, 5)) {
+            
             batchScanner.setRanges(Collections.singleton(new Range()));
             try {
                 TaskContext taskContext = new TaskContextImpl();
