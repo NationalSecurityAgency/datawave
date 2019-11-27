@@ -12,6 +12,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ActiveQueryLog {
@@ -31,16 +32,16 @@ public class ActiveQueryLog {
     private static long MINUTES_1_MS = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
     
     // Changeable via Accumulo properties
-    private long maxIdle = MINUTES_15_MS;
-    private long logPeriod = MINUTES_1_MS;
-    private int logMaxQueries = 5;
-    private int windowSize = 10;
+    volatile private long maxIdle = MINUTES_15_MS;
+    volatile private long logPeriod = MINUTES_1_MS;
+    volatile private int logMaxQueries = 5;
+    volatile private int windowSize = 10;
+    private AtomicLong lastAccess = new AtomicLong(System.currentTimeMillis());
     
     private Cache<String,ActiveQuery> CACHE = null;
     private ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Timer timer = null;
     private TimerTask timerTask = null;
-    private long lastAccess = System.currentTimeMillis();
     
     synchronized public static void setConfig(AccumuloConfiguration conf) {
         if (conf != null) {
@@ -67,7 +68,11 @@ public class ActiveQueryLog {
         }
         return ActiveQueryLog.instance;
     }
-
+    
+    private ActiveQueryLog() {
+        this(null);
+    }
+    
     private ActiveQueryLog(AccumuloConfiguration conf) {
         if (conf != null) {
             checkSettings(conf, true);
@@ -78,12 +83,12 @@ public class ActiveQueryLog {
         }
     }
     
-    synchronized private void touch() {
-        this.lastAccess = System.currentTimeMillis();
+    private void touch() {
+        this.lastAccess.set(System.currentTimeMillis());
     }
     
-    synchronized long getLastAccess() {
-        return this.lastAccess;
+    long getLastAccess() {
+        return this.lastAccess.get();
     }
     
     synchronized private void cancelTimer() {
