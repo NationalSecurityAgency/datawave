@@ -362,6 +362,32 @@ public class MixedGeoAndGeoWaveTest {
         Assert.assertEquals(0, geoList.size());
     }
     
+    @Test
+    public void withinLargeBoundingBoxAcrossAntimeridianTest() throws Exception {
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_0.01', '90_-0.01')";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(8, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(GEO_5, GEO_6));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
     // Note: Trying to ingest non-point WKT as PointType will not work. PointType can only be used for POINT wkt
     @Test(expected = InvalidQueryException.class)
     public void polyPointTest() throws Exception {
