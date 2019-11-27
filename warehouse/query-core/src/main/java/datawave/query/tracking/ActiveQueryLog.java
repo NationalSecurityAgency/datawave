@@ -12,6 +12,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ActiveQueryLog {
@@ -26,16 +27,21 @@ public class ActiveQueryLog {
     public static final String LOG_PERIOD = "datawave.query.active.logPeriodMs";
     public static final String LOG_MAX_QUERIES = "datawave.query.active.logMaxQueries";
     public static final String WINDOW_SIZE = "datawave.query.active.windowSize";
+    private static long HOURS_24_MS = TimeUnit.MILLISECONDS.convert(24, TimeUnit.HOURS);
+    private static long MINUTES_15_MS = TimeUnit.MILLISECONDS.convert(15, TimeUnit.MINUTES);
+    private static long MINUTES_1_MS = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
     
     // Changeable via Accumulo properties
-    private long maxIdle = 900000;
-    private long logPeriod = 60000;
-    private int logMaxQueries = 5;
-    private int windowSize = 10;
+    volatile private long maxIdle = MINUTES_15_MS;
+    volatile private long logPeriod = MINUTES_1_MS;
+    volatile private int logMaxQueries = 5;
+    volatile private int windowSize = 10;
+    private AtomicLong lastAccess = new AtomicLong(System.currentTimeMillis());
     
     private Cache<String,ActiveQuery> CACHE = null;
     private ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Timer timer = null;
+    private TimerTask timerTask = null;
     
     synchronized public static void setConfig(AccumuloConfiguration conf) {
         if (conf != null) {
@@ -55,7 +61,16 @@ public class ActiveQueryLog {
                 }
             }
         }
+        ActiveQueryLog.instance.touch();
+        // timer was cancelled, but now we need to restart it
+        if (ActiveQueryLog.instance.timer == null) {
+            ActiveQueryLog.instance.setLogPeriod(ActiveQueryLog.instance.logPeriod);
+        }
         return ActiveQueryLog.instance;
+    }
+    
+    private ActiveQueryLog() {
+        this(null);
     }
     
     private ActiveQueryLog(AccumuloConfiguration conf) {
@@ -68,20 +83,49 @@ public class ActiveQueryLog {
         }
     }
     
+    private void touch() {
+        this.lastAccess.set(System.currentTimeMillis());
+    }
+    
+    long getLastAccess() {
+        return this.lastAccess.get();
+    }
+    
+    synchronized private void cancelTimer() {
+        this.timer.cancel();
+        this.timer = null;
+    }
+    
     synchronized public void setLogPeriod(long logPeriod) {
         if (logPeriod > 0) {
             if (logPeriod != this.logPeriod || this.timer == null) {
-                if (this.timer != null) {
-                    this.timer.cancel();
+                // this.timer will be null on initial call within a classloader
+                // this.timer will be null if it was shut down due to inactivity
+                // create timer and schedule a periodic check for inactivity
+                if (this.timer == null) {
+                    this.timer = new Timer("ActiveQueryLog");
+                    this.timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            long elapsed = System.currentTimeMillis() - ActiveQueryLog.this.getLastAccess();
+                            // if no queries have been logged in a
+                            // long time then inactivate the timer
+                            if (elapsed > HOURS_24_MS) {
+                                ActiveQueryLog.this.cancelTimer();
+                            }
+                        }
+                    }, MINUTES_15_MS, MINUTES_15_MS);
                 }
+                if (this.timerTask != null) {
+                    this.timerTask.cancel();
+                }
+                this.timerTask = new ActiveQueryTimerTask();
                 this.logPeriod = logPeriod;
-                this.timer = new Timer("ActiveQueryLog");
-                this.timer.schedule(new ActiveQueryTimerTask(), this.logPeriod, this.logPeriod);
+                this.timer.schedule(this.timerTask, this.logPeriod, this.logPeriod);
             }
         } else {
             log.error("Bad value: (" + logPeriod + ") for logPeriod");
         }
-        
     }
     
     synchronized public void setLogMaxQueries(int logMaxQueries) {
@@ -218,10 +262,14 @@ public class ActiveQueryLog {
                 sublist = activeQueryList.subList(0, Math.min(ActiveQueryLog.this.logMaxQueries, activeQueryList.size()));
             }
             
+            // ensure that the timer doesn't get cancelled if we have queries being logged
+            if (sublist.size() > 0) {
+                ActiveQueryLog.this.touch();
+            }
+            
             for (ActiveQuerySnapshot q : sublist) {
                 log.debug(q.toString());
             }
         }
     }
-    
 }
