@@ -40,6 +40,7 @@ public class LookupUUIDTune implements Profile {
     protected int reduceFieldCount = -1;
     protected boolean reduceFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
+    protected boolean reduceQuery = false;
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -75,6 +76,8 @@ public class LookupUUIDTune implements Profile {
             DefaultQueryPlanner dqp = DefaultQueryPlanner.class.cast(planner);
             dqp.setCacheDataTypes(enableCaching);
             dqp.setCondenseUidsInRangeStream(false);
+            // Should the query planner attempt to de-dupe query terms post model expansion?
+            dqp.setEnforceUniqueTermsWithinExpressions(reduceQuery);
             if (disableComplexFunctions) {
                 dqp.setDisableAnyFieldLookup(true);
                 dqp.setDisableBoundedLookup(true);
@@ -266,5 +269,13 @@ public class LookupUUIDTune implements Profile {
     
     public String getLimitFieldsField() {
         return limitFieldsField;
+    }
+    
+    public boolean isReduceQuery() {
+        return reduceQuery;
+    }
+    
+    public void setReduceQuery(boolean reduceQuery) {
+        this.reduceQuery = reduceQuery;
     }
 }
