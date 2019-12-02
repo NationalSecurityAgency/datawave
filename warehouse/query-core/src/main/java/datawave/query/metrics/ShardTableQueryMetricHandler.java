@@ -41,6 +41,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
@@ -552,6 +553,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
             
             response.setResult(queryMetrics);
+            
+            response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
         } finally {
             enableLogs(true);
         }

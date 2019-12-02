@@ -585,8 +585,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     Key myStartKey = myRange.getStartKey();
                     
                     /*
-                     * if our seek key is greater than our start key we can skip this batched query. myStartKey.compareto(seekstartKey) must be <= 0, which
-                     * means that startkey must be greater than or equal be seekstartkey
+                     * if our seek key is greater than our start key we can skip this batched query. myStartKey.compareTo(seekStartKey) must be <= 0, which
+                     * means that startKey must be greater than or equal be seekStartKey
                      */
                     if (null != myStartKey && null != seekStartKey && !seekRange.contains(myStartKey)) {
                         
@@ -940,7 +940,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource), typeMetadataForEval,
                             compositeMetadata, this, variables, QueryIterator.this);
             
-            if (exceededOrEvaluationCache != null)
+            if (exceededOrEvaluationCache != null && !exceededOrEvaluationCache.isEmpty())
                 contextCreator.addAdditionalEntries(exceededOrEvaluationCache);
             
             final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
@@ -1069,7 +1069,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.value = entry.getValue();
             
             if (Trace.isTracing()) {
-                span.data("Key", rowColfamToString(this.key));
+                span.data("Key", rowColFamToString(this.key));
             }
         } else {
             if (log.isTraceEnabled()) {
@@ -1203,7 +1203,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *            - a {@link Key}
      * @return - a string representation of the given key's row &amp; column family.
      */
-    public static String rowColfamToString(Key k) {
+    public static String rowColFamToString(Key k) {
         if (null == k) {
             return "null";
         }
@@ -1330,7 +1330,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setFiAggregator(this.fiAggregator)
                 .setHdfsFileSystem(this.getFileSystemCache())
                 .setQueryLock(this.getQueryLock())
-                .setIvaratorCacheDirURIAlternatives(this.getIvaratorCacheBaseURIsAsList())
+                .setIvaratorCacheDirConfigs(this.getIvaratorCacheDirConfigs())
                 .setQueryId(this.getQueryId())
                 .setScanId(this.getScanId())
                 .setIvaratorCacheSubDirPrefix(this.getHdfsCacheSubDirPrefix())
@@ -1340,6 +1340,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIvaratorCacheScanTimeout(this.getIvaratorCacheScanTimeout())
                 .setMaxRangeSplit(this.getMaxIndexRangeSplit())
                 .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles())
+                .setIvaratorNumRetries(this.getIvaratorNumRetries())
                 .setIvaratorSources(this, this.getMaxIvaratorSources())
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
                 .setIncludes(indexedFields)
@@ -1368,13 +1369,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (isDocumentSpecificRange(this.range)) {
             hdfsPrefix = range.getStartKey().getColumnFamily().toString().replace('\0', '_');
         } else if (batchedQueries > 0) {
-            StringBuilder hdfsPrefixBuilder = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             for (Entry<Range,String> queries : batchStack) {
-                if (hdfsPrefixBuilder.length() > 0) {
-                    hdfsPrefixBuilder.append('-');
+                if (sb.length() > 0) {
+                    sb.append('-');
                 }
-                hdfsPrefixBuilder.append(queries.getKey().getStartKey().getColumnFamily().toString().replace('\0', '_'));
+                sb.append(queries.getKey().getStartKey().getColumnFamily().toString().replace('\0', '_'));
             }
+            hdfsPrefix = sb.toString();
         }
         return hdfsPrefix;
     }

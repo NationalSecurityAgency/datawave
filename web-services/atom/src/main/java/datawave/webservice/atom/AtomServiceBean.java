@@ -130,17 +130,18 @@ public class AtomServiceBean {
             
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connection = connectionFactory.getConnection(poolName, Priority.NORMAL, trackingMap);
-            Scanner scanner = ScannerHelper.createScanner(connection, tableName + "Categories", auths);
-            Map<String,String> props = new HashMap<>();
-            props.put(MatchingKeySkippingIterator.ROW_DELIMITER_OPTION, "\0");
-            props.put(MatchingKeySkippingIterator.NUM_SCANS_STRING_NAME, "5");
-            IteratorSetting setting = new IteratorSetting(30, MatchingKeySkippingIterator.class, props);
-            scanner.addScanIterator(setting);
-            for (Map.Entry<Key,Value> entry : scanner) {
-                String collectionName = entry.getKey().getRow().toString();
-                result.addCategory(collectionName);
+            try (Scanner scanner = ScannerHelper.createScanner(connection, tableName + "Categories", auths)) {
+                Map<String,String> props = new HashMap<>();
+                props.put(MatchingKeySkippingIterator.ROW_DELIMITER_OPTION, "\0");
+                props.put(MatchingKeySkippingIterator.NUM_SCANS_STRING_NAME, "5");
+                IteratorSetting setting = new IteratorSetting(30, MatchingKeySkippingIterator.class, props);
+                scanner.addScanIterator(setting);
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    String collectionName = entry.getKey().getRow().toString();
+                    result.addCategory(collectionName);
+                }
+                
             }
-            
             if (result.getCategories().isEmpty())
                 throw new NoResultsException(null);
             else
@@ -210,26 +211,28 @@ public class AtomServiceBean {
             result.addAuthor(clustername);
             result.setTitle(category);
             
-            Scanner scanner = ScannerHelper.createScanner(connection, tableName, auths);
-            if (null != lastKey) {
-                Key lastSeenKey = deserializeKey(lastKey);
-                scanner.setRange(new Range(lastSeenKey, false, new Key(category + "\1"), false));
-            } else {
-                scanner.setRange(new Range(category, true, category + "\1", false));
-            }
             Key nextLastKey = null;
             int count = 0;
-            for (Map.Entry<Key,Value> entry : scanner) {
-                AtomKeyValueParser atom = AtomKeyValueParser.parse(entry.getKey(), entry.getValue());
-                if (atom.getUpdated().after(maxDate)) {
-                    maxDate = atom.getUpdated();
+            
+            try (Scanner scanner = ScannerHelper.createScanner(connection, tableName, auths)) {
+                if (null != lastKey) {
+                    Key lastSeenKey = deserializeKey(lastKey);
+                    scanner.setRange(new Range(lastSeenKey, false, new Key(category + "\1"), false));
+                } else {
+                    scanner.setRange(new Range(category, true, category + "\1", false));
                 }
-                nextLastKey = entry.getKey();
-                Entry e = atom.toEntry(abdera, this.host, this.port);
-                result.addEntry(e);
-                count++;
-                if (count >= pagesize)
-                    break;
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    AtomKeyValueParser atom = AtomKeyValueParser.parse(entry.getKey(), entry.getValue());
+                    if (atom.getUpdated().after(maxDate)) {
+                        maxDate = atom.getUpdated();
+                    }
+                    nextLastKey = entry.getKey();
+                    Entry e = atom.toEntry(abdera, this.host, this.port);
+                    result.addEntry(e);
+                    count++;
+                    if (count >= pagesize)
+                        break;
+                }
             }
             
             String thisLastKey = "";
@@ -293,13 +296,14 @@ public class AtomServiceBean {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connection = connectionFactory.getConnection(poolName, Priority.NORMAL, trackingMap);
             
-            Scanner scanner = ScannerHelper.createScanner(connection, tableName, auths);
-            scanner.setRange(new Range(category, true, category + "\1", false));
-            // ID is fieldValue\0UUID
-            scanner.fetchColumnFamily(new Text(AtomKeyValueParser.decodeId(id)));
-            for (Map.Entry<Key,Value> entry : scanner) {
-                result = AtomKeyValueParser.parse(entry.getKey(), entry.getValue()).toEntry(abdera, this.host, this.port);
-                break;
+            try (Scanner scanner = ScannerHelper.createScanner(connection, tableName, auths)) {
+                scanner.setRange(new Range(category, true, category + "\1", false));
+                // ID is fieldValue\0UUID
+                scanner.fetchColumnFamily(new Text(AtomKeyValueParser.decodeId(id)));
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    result = AtomKeyValueParser.parse(entry.getKey(), entry.getValue()).toEntry(abdera, this.host, this.port);
+                    break;
+                }
             }
             if (null == result)
                 throw new NoResultsException(null);

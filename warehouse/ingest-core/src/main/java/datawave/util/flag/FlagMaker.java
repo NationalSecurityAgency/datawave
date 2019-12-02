@@ -213,7 +213,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     
     @Override
     public void run() {
-        log.info(this.getClass().getSimpleName() + " run() starting");
+        log.trace(this.getClass().getSimpleName() + " run() starting");
         startSocket();
         try {
             while (running) {
@@ -228,7 +228,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         } finally {
             executor.shutdown();
         }
-        log.info(this.getClass().getSimpleName() + " Exiting.");
+        log.trace(this.getClass().getSimpleName() + " Exiting.");
     }
     
     /**
@@ -270,7 +270,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     void loadFilesForDistributor(FlagDataTypeConfig fc, FileSystem fs) throws IOException {
         for (String folder : fc.getFolder()) {
             String folderPattern = folder + "/" + fmc.getFilePattern();
-            log.debug("searching for " + fc.getDataName() + " files in " + folderPattern);
+            log.trace("searching for " + fc.getDataName() + " files in " + folderPattern);
             FileStatus[] files = fs.globStatus(new Path(folderPattern));
             if (files == null || files.length == 0) {
                 continue;
@@ -301,7 +301,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     }
     
     protected void logFileInfo(FlagDataTypeConfig fc, FileStatus status) {
-        log.info("File {} : {}", fc.getDataName(), status);
+        log.trace("File {} : {}", fc.getDataName(), status);
     }
     
     private boolean shouldOnlyCreateFullFlags(FlagDataTypeConfig fc) {

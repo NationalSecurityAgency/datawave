@@ -891,7 +891,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         /**
          * Return a rfile with .1 appended before the extension. {@code foo.ext -> foo.1.ext foo -> foo.1}
-         * 
+         *
          * @param rfile
          * @return a rfile with .1 appended before the extension
          */
@@ -1055,12 +1055,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
         ArrayList<String> files = new ArrayList<>();
         
         final FileSystem destFs = getFileSystem(destHdfs);
-        BufferedReader rdr = new BufferedReader(new InputStreamReader(destFs.open(new Path(jobDirectory, INPUT_FILES_MARKER))));
-        String line;
-        while ((line = rdr.readLine()) != null) {
-            files.add(line);
+        try (BufferedReader rdr = new BufferedReader(new InputStreamReader(destFs.open(new Path(jobDirectory, INPUT_FILES_MARKER))))) {
+            String line;
+            while ((line = rdr.readLine()) != null) {
+                files.add(line);
+            }
+            
         }
-        rdr.close();
         
         final FileSystem sourceFs = getFileSystem(seqFileHdfs);
         List<Callable<Boolean>> renameCallables = Lists.newArrayList();

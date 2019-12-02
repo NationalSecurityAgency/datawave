@@ -34,6 +34,8 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.map.QueryGeometryHandler;
+import datawave.webservice.query.map.QueryGeometryResponse;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 
 import org.apache.commons.lang.time.DateUtils;
@@ -64,6 +66,8 @@ public class QueryMetricsBean {
     private EJBContext ctx;
     @Inject
     private QueryMetricHandler<? extends BaseQueryMetric> queryHandler;
+    @Inject
+    private QueryGeometryHandler queryGeometryHandler;
     
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
@@ -120,6 +124,24 @@ public class QueryMetricsBean {
             user = dp.getShortName();
         }
         return queryHandler.query(user, id, dp);
+    }
+    
+    @GET
+    @POST
+    @Path("/id/{id}/map")
+    @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
+    public QueryGeometryResponse map(@PathParam("id") @Required("id") String id) {
+        
+        // Find out who/what called this method
+        DatawavePrincipal dp = null;
+        Principal p = ctx.getCallerPrincipal();
+        String user = p.getName();
+        if (p instanceof DatawavePrincipal) {
+            dp = (DatawavePrincipal) p;
+            user = dp.getShortName();
+        }
+        
+        return queryGeometryHandler.getQueryGeometryResponse(id, queryHandler.query(user, id, dp).getResult());
     }
     
     /**

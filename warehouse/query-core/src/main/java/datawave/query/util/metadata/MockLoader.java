@@ -86,14 +86,15 @@ public class MockLoader extends CacheLoader<LoaderKey,InMemoryInstance> {
             }
             
             Connector instanceConnector = instance.getConnector(key.user, MOCK_PASSWORD);
-            BatchScanner scanner = key.connector.createBatchScanner(key.table, auths, 11);
+            
             instanceConnector.securityOperations().changeUserAuthorizations(key.user, auths);
             if (instanceConnector.tableOperations().exists(key.table))
                 instanceConnector.tableOperations().delete(key.table);
             
             instanceConnector.tableOperations().create(key.table);
-            BatchWriter writer = instanceConnector.createBatchWriter(key.table, 100L * (1024L * 1024L), 100L, 1);
-            try {
+            
+            try (BatchScanner scanner = key.connector.createBatchScanner(key.table, auths, 11);
+                            BatchWriter writer = instanceConnector.createBatchWriter(key.table, 100L * (1024L * 1024L), 100L, 1)) {
                 
                 scanner.setRanges(Lists.newArrayList(new Range()));
                 Iterator<Entry<Key,Value>> iter = scanner.iterator();
@@ -109,9 +110,6 @@ public class MockLoader extends CacheLoader<LoaderKey,InMemoryInstance> {
                     writer.addMutation(m);
                     
                 }
-            } finally {
-                scanner.close();
-                writer.close();
             }
             if (log.isTraceEnabled())
                 log.trace("Built new instance " + instance.hashCode() + " now returning for use");
