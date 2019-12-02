@@ -35,6 +35,7 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -46,6 +47,7 @@ import org.apache.hadoop.util.bloom.BloomFilter;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
+import org.infinispan.commons.util.Base64;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -83,11 +85,8 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
     public void setup(TaskAttemptContext context) {
         super.setup(context);
         
-        // Dealing with the stupid in AbstractDataTypeHandler
-        if (this.getHelper(null) instanceof WikipediaIngestHelper) {
-            this.ingestHelper = (WikipediaIngestHelper) this.getHelper(null);
-            this.helper = this.ingestHelper.getHelper();
-        }
+        this.ingestHelper = (WikipediaIngestHelper) this.getHelper(null);
+        this.helper = this.ingestHelper.getDataTypeHelper();
         
         try {
             this.parser = factory.newDocumentBuilder();
@@ -394,62 +393,6 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
                 createIndexColumn(event, contextWriter, context, reverseNfv, shardId, this.getShardReverseIndexTableName(), fieldVisibility, false, false);
             }
         }
-    }
-    
-    /**
-     * Writes the document's content into the {@link ExtendedDataTypeHandler#FULL_CONTENT_COLUMN_FAMILY} column family. The data is compressed (GZIP) and Base64
-     * encoded before being placed into the value.
-     * 
-     * @param event
-     * @param contextWriter
-     * @param context
-     * @param reporter
-     * @param uid
-     * @param visibility
-     * @param shardId
-     * @param rawValue
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws MutationsRejectedException
-     */
-    @Override
-    protected void createContentRecord(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
-                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, StatusReporter reporter, Text uid, byte[] visibility,
-                    byte[] shardId, byte[] rawValue) throws IOException, InterruptedException, MutationsRejectedException {
-        
-        if (disableDCol) {
-            return;
-        }
-        
-        Key k = createKey(shardId, new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY), uid, visibility, event.getDate(),
-                        this.ingestHelper.getDeleteMode());
-        
-        ByteArrayOutputStream baos = null;
-        GZIPOutputStream gzos = null;
-        Value value = null;
-        try {
-            baos = new ByteArrayOutputStream(Math.max(rawValue.length / 2, 1024));
-            gzos = new GZIPOutputStream(baos);
-            
-            gzos.write(rawValue);
-        } finally {
-            closeOutputStreams(gzos, baos);
-            if (baos != null) {
-                value = new Value(baos.toByteArray());
-            }
-            gzos = null;
-            baos = null;
-        }
-        
-        this.counters.increment(ContentIndexCounters.CONTENT_RECORDS_CREATED, reporter);
-        
-        DocWriter dw = new DocWriter(this.docWriter);
-        dw.k = k;
-        dw.shardId = shardId;
-        dw.visibility = visibility;
-        dw.value = value;
-        
-        this.docWriterService.execute(dw);
     }
     
     /**
