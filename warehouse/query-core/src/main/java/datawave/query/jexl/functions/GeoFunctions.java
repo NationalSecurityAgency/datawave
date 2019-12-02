@@ -69,7 +69,7 @@ public class GeoFunctions {
             GeoPoint ll = GeoNormalizer.isNormalized(lowerLeft) ? normalizedPoints.get(lowerLeft) : unnormalizedPoints.get(lowerLeft);
             GeoPoint ur = GeoNormalizer.isNormalized(upperRight) ? normalizedPoints.get(upperRight) : unnormalizedPoints.get(upperRight);
             Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
-            boolean m = pts.stream().anyMatch(geoPt -> geoPt.within(ll, ur));
+            boolean m = pts.stream().anyMatch(geoPt -> evaluate(geoPt, ll, ur));
             if (log.isTraceEnabled())
                 log.trace("Checking if " + fieldValue + " is within BB " + lowerLeft + ", " + upperRight + ": [" + m + "]");
             return m;
@@ -78,6 +78,18 @@ public class GeoFunctions {
                 log.trace("Could not verify point " + fieldValue + " to be within BB " + lowerLeft + ", " + upperRight, e);
             return false;
         }
+    }
+    
+    public static boolean evaluate(GeoPoint point, GeoPoint boundMin, GeoPoint boundMax) {
+        // if the minLon is greater than maxLon, we have crossed the antimeridian and must split the bounds for evaluation
+        // @formatter:off
+        return (point.getLatitude() >= boundMin.getLatitude() && point.getLatitude() <= boundMax.getLatitude() &&
+                (boundMin.getLongitude() > boundMax.getLongitude() &&
+                        ((point.getLongitude() >= boundMin.getLongitude() && point.getLongitude() <= 180.0) ||
+                         (point.getLongitude() >= -180 && point.getLongitude() <= boundMax.getLongitude()))) ||
+                (boundMin.getLongitude() <= boundMax.getLongitude() &&
+                        point.getLongitude() >= boundMin.getLongitude() && point.getLongitude() <= boundMax.getLongitude()));
+        // @formatter:on
     }
     
     public static boolean within_bounding_box(Object lonField, Object latField, String minLon, String minLat, String maxLon, String maxLat) {
@@ -98,7 +110,14 @@ public class GeoFunctions {
             return false;
         }
         
-        boolean lonMatch = lonValues.stream().anyMatch(lon -> lon >= minLon && lon <= maxLon);
+        // @formatter:off
+        boolean lonMatch = lonValues.stream().anyMatch(lon ->
+                (minLon > maxLon &&
+                        ((lon >= minLon && lon <= 180.0) || (lon >= -180.0 && lon <= maxLon))) ||
+                (minLon <= maxLon &&
+                        lon >= minLon && lon <= maxLon));
+        // @formatter:on
+        
         boolean latMatch = latValues.stream().anyMatch(lat -> lat >= minLat && lat <= maxLat);
         
         return lonMatch && latMatch;
