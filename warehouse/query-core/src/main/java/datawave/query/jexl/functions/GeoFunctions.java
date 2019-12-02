@@ -84,11 +84,11 @@ public class GeoFunctions {
         // if the minLon is greater than maxLon, we have crossed the antimeridian and must split the bounds for evaluation
         // @formatter:off
         return (point.getLatitude() >= boundMin.getLatitude() && point.getLatitude() <= boundMax.getLatitude() &&
-                (boundMin.getLongitude() > boundMax.getLongitude() &&
+                ((boundMin.getLongitude() > boundMax.getLongitude() &&
                         ((point.getLongitude() >= boundMin.getLongitude() && point.getLongitude() <= 180.0) ||
                          (point.getLongitude() >= -180 && point.getLongitude() <= boundMax.getLongitude()))) ||
-                (boundMin.getLongitude() <= boundMax.getLongitude() &&
-                        point.getLongitude() >= boundMin.getLongitude() && point.getLongitude() <= boundMax.getLongitude()));
+                 (boundMin.getLongitude() <= boundMax.getLongitude() &&
+                         point.getLongitude() >= boundMin.getLongitude() && point.getLongitude() <= boundMax.getLongitude())));
         // @formatter:on
     }
     
