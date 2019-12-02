@@ -183,8 +183,7 @@ function datawaveIngestWikipedia() {
    [ -z "${wikipediaRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${wikipediaRawFile}" ] && error "File not found: ${wikipediaRawFile}" && return 1
 
-   local wikipediaHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/wikipedia"
-   local wikipediaHdfsFile="${wikipediaHdfsDir}/$( basename ${wikipediaRawFile} )"
+   local wikipediaHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${wikipediaRawFile} )"
    local putFileCommand="hdfs dfs -copyFromLocal ${wikipediaRawFile} ${wikipediaHdfsDir}"
 
    local inputFormat="datawave.ingest.wikipedia.WikipediaEventInputFormat"
@@ -211,8 +210,7 @@ function datawaveIngestCsv() {
    [ -z "${csvRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${csvRawFile}" ] && error "File not found: ${csvRawFile}" && return 1
 
-   local csvHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/mycsv"
-   local csvHdfsFile="${csvHdfsDir}/$( basename ${csvRawFile} )"
+   local csvHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${csvRawFile} )"
    local putFileCommand="hdfs dfs -copyFromLocal ${csvRawFile} ${csvHdfsDir}"
 
    local inputFormat="datawave.ingest.csv.mr.input.CSVFileInputFormat"
@@ -233,8 +231,7 @@ function datawaveIngestJson() {
    [ -z "${jsonRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${jsonRawFile}" ] && error "File not found: ${jsonRawFile}" && return 1
 
-   local jsonHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/myjson"
-   local jsonHdfsFile="${jsonHdfsDir}/$( basename ${jsonRawFile} )"
+   local jsonHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${jsonRawFile} )"
    local putFileCommand="hdfs dfs -copyFromLocal ${jsonRawFile} ${jsonHdfsDir}"
 
    local inputFormat="datawave.ingest.json.mr.input.JsonInputFormat"
