@@ -10,6 +10,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.IndexOnlyIngestHelperInterface;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
+import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIngestHelper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
@@ -25,7 +26,7 @@ import java.util.Set;
 /**
  * 
  */
-public class WikipediaIngestHelper extends BaseIngestHelper implements TermFrequencyIngestHelperInterface, IndexOnlyIngestHelperInterface {
+public class WikipediaIngestHelper extends ExtendedContentIngestHelper implements TermFrequencyIngestHelperInterface, IndexOnlyIngestHelperInterface {
     private static final Logger log = Logger.getLogger(WikipediaIngestHelper.class);
     
     private static final String LANGUAGE = "LANGUAGE";
@@ -36,7 +37,7 @@ public class WikipediaIngestHelper extends BaseIngestHelper implements TermFrequ
     
     public static final Map<String,String> fieldNameReplacements = ImmutableMap.<String,String> builder().put("PAGE_NS", "PAGE_NAMESPACE").build();
     
-    public WikipediaHelper getHelper() {
+    public WikipediaHelper getDataTypeHelper() {
         return this.helper;
     }
     
