@@ -39,6 +39,8 @@ public class EventMetadataTest {
     private static final String FIELD_NAME_FOR_LOAD_DATE = "LOAD_DATE";
     private static final String TF = "tf";
     private static final String T = "t";
+    private static final String E = "e";
+    private static final String I = "i";
     private static final String VALUE_FOR_LOAD_DATE = "20140404";
     private static final String NUMBER_TYPE = "datawave.data.type.NumberType";
     private static final Text METADATA_TABLE_NAME = new Text("table123456");
@@ -100,6 +102,9 @@ public class EventMetadataTest {
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
         Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
+        
+        Assert.assertTrue(assertEExists(FIELD_TO_COUNT, eventMetadata));
+        Assert.assertTrue(assertIExists(FIELD_TO_COUNT, eventMetadata));
         
         EasyMock.verify(event);
     }
@@ -188,10 +193,34 @@ public class EventMetadataTest {
         EasyMock.verify(event);
     }
     
+    @Test
+    public void testWithExclusions() throws IOException {
+        setupMocks();
+        helper.addShardExclusionField(FIELD_TO_COUNT);
+        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
+        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
+        
+        Assert.assertFalse(assertEExists(FIELD_TO_COUNT, eventMetadata));
+        
+        EasyMock.verify(event);
+    }
+    
     private void assertFieldNameCountEquals(long expectedCount, Text tableName, String fieldName, RawRecordMetadata eventMetadata) {
         Text expectedColumnFamily = new Text(FIELD_NAME + RawRecordMetadata.DELIMITER + tableName);
         Text expectedColumnQualifier = new Text(VALUE_FOR_LOAD_DATE + RawRecordMetadata.DELIMITER + DATA_TYPE);
         assertCountEquals(expectedCount, fieldName, eventMetadata, LOADDATES_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
+    }
+    
+    private boolean assertEExists(String fieldName, RawRecordMetadata eventMetadata) {
+        Text expectedColumnFamily = new Text(E);
+        Text expectedColumnQualifier = new Text(DATA_TYPE);
+        return assertExists(fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
+    }
+    
+    private boolean assertIExists(String fieldName, RawRecordMetadata eventMetadata) {
+        Text expectedColumnFamily = new Text(I);
+        Text expectedColumnQualifier = new Text(DATA_TYPE);
+        return assertExists(fieldName, eventMetadata, METADATA_TABLE_NAME, expectedColumnFamily, expectedColumnQualifier);
     }
     
     private void assertTfCountEquals(long expectedCount, String fieldName, RawRecordMetadata eventMetadata) {
