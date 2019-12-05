@@ -112,6 +112,40 @@ public class ContentOrderedEvaluatorTest {
         
         Assert.assertTrue(evaluator.evaluate(offsets));
     }
+
+    @Test
+    public void evaluate_alternatingExtremesFORWARDTest() {
+        // 20->21->22
+        List<List<TermWeightPosition>> offsets = new ArrayList<>();
+        List<TermWeightPosition> offsetsA = asList(1, 10, 20);
+        List<TermWeightPosition> offsetsB = asList(21, 24, 30);
+        List<TermWeightPosition> offsetsC = asList(3, 8, 12, 19, 22);
+
+        offsets.add(offsetsA);
+        offsets.add(offsetsB);
+        offsets.add(offsetsC);
+
+        evaluator = new WrappedContentOrderedEvaluator(null, 1, new HashMap<>(), "a", "b", "c");
+
+        Assert.assertTrue(evaluator.evaluate(offsets));
+    }
+
+    @Test
+    public void evaluate_alternatingExtremesREVERSETest() {
+        // 102->101->100
+        List<List<TermWeightPosition>> offsets = new ArrayList<>();
+        List<TermWeightPosition> offsetsA = asList(100, 200, 300, 500, 601);
+        List<TermWeightPosition> offsetsB = asList(1, 5, 29, 87, 101);
+        List<TermWeightPosition> offsetsC = asList(102, 400, 434);
+
+        offsets.add(offsetsA);
+        offsets.add(offsetsB);
+        offsets.add(offsetsC);
+
+        evaluator = new WrappedContentOrderedEvaluator(null, 1, new HashMap<>(), "a", "b", "c");
+
+        Assert.assertTrue(evaluator.evaluate(offsets));
+    }
     
     @Test
     public void evaluate_notEnoughOffsetsTest() {
