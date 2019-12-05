@@ -216,6 +216,11 @@ public class EventMetadata implements RawRecordMetadata {
             return;
         }
         
+        if (helper.isShardExcluded(fieldName)) {
+            log.debug("{} is an excluded field, not adding to event", fieldName);
+            return;
+        }
+        
         log.debug("createOrUpdate for {}", fieldName);
         eventFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
         
