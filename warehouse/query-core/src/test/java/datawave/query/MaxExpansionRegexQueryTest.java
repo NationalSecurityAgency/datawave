@@ -7,6 +7,13 @@ import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.MaxExpandCityFields;
+
+import java.io.File;
+import java.net.URI;
+import java.util.List;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -22,6 +29,10 @@ import static datawave.query.testframework.RawDataManager.NOT_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * These tests are highly dependent upon the test data due to the fact that thresholds are tested. Because the test data contains multivalue fields with
@@ -231,6 +242,109 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 4);
+    }
+    
+    /**
+     * This tests a query without an intersection such that when we force the ivarators to fail with a maxResults setting of 1, the query will fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMaxIvaratorResultsFailsQuery() throws Exception {
+        log.info("------  testMaxIvaratorResultsFailsQuery  ------");
+        String regex = RE_OP + "'b.*'";
+        String query = Constants.ANY_FIELD + regex;
+        
+        String anyRegex = this.dataManager.convertAnyField(regex);
+        String expect = anyRegex;
+        
+        List<String> dirs = ivaratorConfig();
+        // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
+        this.logic.setCollapseUids(true);
+        // force the regex lookup into an ivarator
+        this.logic.setMaxValueExpansionThreshold(1);
+        // set a small buffer size to ensure we actually persist the buffers so that we can detect this below
+        this.logic.setIvaratorCacheBufferSize(2);
+        
+        runTest(query, expect);
+        // verify that the ivarators ran and completed
+        assertEquals(3, countComplete(dirs));
+        
+        // now get a new set of ivarator directories
+        dirs = ivaratorConfig();
+        // set the max ivarator results to 1
+        this.logic.setMaxIvaratorResults(1);
+        try {
+            // verify the query actually fails
+            runTest(query, expect);
+            fail("Expected the query to fail with the ivarators fail");
+        } catch (Exception e) {
+            // expected
+        }
+    }
+    
+    /**
+     * This test case tests and query that has an intersection such that when we force the ivarators to fail with a maxResults setting of 1, that the query can
+     * still complete.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMaxIvaratorResults() throws Exception {
+        log.info("------  testMaxIvaratorResults  ------");
+        String regex = RE_OP + "'b.*'";
+        String city = EQ_OP + "'b-city'";
+        String query = Constants.ANY_FIELD + regex + AND_OP + Constants.ANY_FIELD + city;
+        
+        String anyRegex = this.dataManager.convertAnyField(regex);
+        String anyCity = this.dataManager.convertAnyField(city);
+        String expect = anyRegex + AND_OP + anyCity;
+        
+        List<String> dirs = ivaratorConfig();
+        // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
+        this.logic.setCollapseUids(true);
+        // force the regex lookup into an ivarator
+        this.logic.setMaxValueExpansionThreshold(1);
+        // set a small buffer size to ensure we actually persist the buffers so that we can detect this below
+        this.logic.setIvaratorCacheBufferSize(2);
+        
+        runTest(query, expect);
+        // verify that the ivarators ran and completed
+        assertEquals(3, countComplete(dirs));
+        
+        // now get a new set of ivarator directories
+        dirs = ivaratorConfig();
+        // set the max ivarator results to 1
+        this.logic.setMaxIvaratorResults(1);
+        // verify we still get our expected results
+        runTest(query, expect);
+        // and verify that the ivarators indeed did not complete (i.e. failed)
+        assertEquals(0, countComplete(dirs));
+    }
+    
+    private int countComplete(List<String> dirs) throws Exception {
+        int count = 0;
+        for (String dir : dirs) {
+            File file = new File(new URI(dir));
+            for (File leaf : getLeaves(file)) {
+                if (leaf.getName().equals("complete")) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+    
+    private Collection<File> getLeaves(File file) {
+        List<File> children = new ArrayList<>();
+        for (File child : file.listFiles()) {
+            if (child.isDirectory()) {
+                children.addAll(getLeaves(child));
+            } else {
+                children.add(child);
+            }
+        }
+        return children;
     }
     
     // ============================================

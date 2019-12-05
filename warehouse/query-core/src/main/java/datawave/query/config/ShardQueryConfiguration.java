@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -248,6 +249,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * By default enable using term frequency instead of field index when possible for value lookup
      */
     private boolean allowTermFrequencyLookup = true;
+    /**
+     * By default we will expand unfielded expressions in a negation. May want to disable if there are non-indexed fields.
+     */
+    private boolean expandUnfieldedNegations = true;
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
@@ -266,14 +271,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
-    private List<String> ivaratorCacheBaseURIs = null;
+    private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
     private long ivaratorCacheScanPersistThreshold = 100000L;
     private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     private int maxFieldIndexRangeSplit = 11;
     private int ivaratorMaxOpenFiles = 100;
+    private int ivaratorNumRetries = 2;
     private int maxIvaratorSources = 33;
+    private long maxIvaratorResults = -1;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;
     private boolean expandAllTerms = false;
@@ -421,6 +428,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setContainsCompositeTerms(other.isContainsCompositeTerms());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
         this.setAllowTermFrequencyLookup(other.isAllowTermFrequencyLookup());
+        this.setExpandUnfieldedNegations(other.isExpandUnfieldedNegations());
         this.setReturnType(other.getReturnType());
         this.setEventPerDayThreshold(other.getEventPerDayThreshold());
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
@@ -439,14 +447,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setZookeeperConfig(other.getZookeeperConfig());
-        this.setIvaratorCacheBaseURIs(other.getIvaratorCacheBaseURIs());
+        this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
         this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
         this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
         this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
+        this.setIvaratorNumRetries(other.getIvaratorNumRetries());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
+        this.setMaxIvaratorResults(other.getMaxIvaratorResults());
         this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
         this.setMaxPipelineCachedResults(other.getMaxPipelineCachedResults());
         this.setExpandAllTerms(other.isExpandAllTerms());
@@ -569,7 +579,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @return
      */
     public boolean canHandleExceededValueThreshold() {
-        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheBaseURIs && !this.ivaratorCacheBaseURIs.isEmpty());
+        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
     }
     
     /**
@@ -1111,31 +1121,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.zookeeperConfig = zookeeperConfig;
     }
     
-    public List<String> getIvaratorCacheBaseURIsAsList() {
-        return ivaratorCacheBaseURIs;
+    public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
+        return ivaratorCacheDirConfigs;
     }
     
-    public String getIvaratorCacheBaseURIs() {
-        if (ivaratorCacheBaseURIs == null) {
-            return null;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIs) {
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(hdfsCacheBaseURI);
-            }
-            return builder.toString();
-        }
-    }
-    
-    public void setIvaratorCacheBaseURIs(String ivaratorCacheBaseURIs) {
-        if (ivaratorCacheBaseURIs == null || ivaratorCacheBaseURIs.isEmpty()) {
-            this.ivaratorCacheBaseURIs = null;
-        } else {
-            this.ivaratorCacheBaseURIs = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIs, ','));
-        }
+    public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
     }
     
     public String getIvaratorFstHdfsBaseURIs() {
@@ -1186,12 +1177,28 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
     
+    public int getIvaratorNumRetries() {
+        return ivaratorNumRetries;
+    }
+    
+    public void setIvaratorNumRetries(int ivaratorNumRetries) {
+        this.ivaratorNumRetries = ivaratorNumRetries;
+    }
+    
     public int getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
     
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+    
+    public long getMaxIvaratorResults() {
+        return maxIvaratorResults;
+    }
+    
+    public void setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
     }
     
     public int getMaxEvaluationPipelines() {
@@ -1624,6 +1631,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
         this.allowTermFrequencyLookup = allowTermFrequencyLookup;
+    }
+    
+    public boolean isExpandUnfieldedNegations() {
+        return expandUnfieldedNegations;
+    }
+    
+    public void setExpandUnfieldedNegations(boolean expandUnfieldedNegations) {
+        this.expandUnfieldedNegations = expandUnfieldedNegations;
     }
     
     public boolean isAllTermsIndexOnly() {

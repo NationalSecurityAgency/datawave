@@ -25,9 +25,9 @@ public class QueryResponseMessageJsonEncoder implements Encoder.TextStream<Query
     
     @Override
     public void encode(QueryResponseMessage object, Writer writer) throws EncodeException, IOException {
-        JsonGenerator jsonGenerator = mapper.getFactory().createGenerator(writer);
-        jsonGenerator.writeObject(object);
-        jsonGenerator.flush();
+        try (JsonGenerator jsonGenerator = mapper.getFactory().createGenerator(writer)) {
+            jsonGenerator.writeObject(object);
+        }
     }
     
     @Override

@@ -63,8 +63,8 @@ public class AccumuloCounterSource extends CounterSource {
         
         if (null == iterator) {
             try {
-                Authorizations auths = connector.securityOperations().getUserAuthorizations(username);
-                BatchScanner scanner = connector.createBatchScanner(queryTable, auths, 100);
+                BatchScanner scanner = connector.createBatchScanner(queryTable, connector.securityOperations().getUserAuthorizations(username), 100);
+                
                 scanner.setRanges(ranges);
                 for (String cf : cfs) {
                     

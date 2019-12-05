@@ -28,6 +28,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
@@ -298,10 +299,16 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         
                         if (geoWaveNode != null) {
                             
+                            String geoFields = getFieldParam(otherFields);
+                            String arg1 = "'" + args.get(1).image + "'";
+                            
+                            // handle the case where the second argument may be a numeric literal (pt/radius query)
+                            String arg2 = (args.get(2) instanceof ASTNumberLiteral) ? args.get(2).image : "'" + args.get(2).image + "'";
+                            
                             // if there are other fields, recreate the geo function node
                             if (!otherFields.isEmpty()) {
-                                JexlNode geoNode = JexlASTHelper.parseJexlQuery(namespace + ":" + name + "(" + getFieldParam(otherFields) + ", '"
-                                                + args.get(1).image + "', '" + args.get(2).image + "')");
+                                // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
+                                JexlNode geoNode = JexlASTHelper.parseJexlQuery(namespace + ":" + name + "(" + geoFields + ", " + arg1 + ", " + arg2 + ")");
                                 return JexlNodeFactory.createOrNode(Arrays.asList(geoNode, geoWaveNode));
                             } else {
                                 return geoWaveNode;
@@ -353,8 +360,11 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 }
             }
             
-            if (wkt != null)
-                return JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')");
+            if (wkt != null) {
+                // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
+                return JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')")
+                                .jjtGetChild(0));
+            }
             
             return null;
         }

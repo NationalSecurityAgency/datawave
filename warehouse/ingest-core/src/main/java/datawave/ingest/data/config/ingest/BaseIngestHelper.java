@@ -548,6 +548,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
     
     @Override
+    public void addShardExclusionField(String fieldName) {
+        shardExclusions.add(fieldName);
+    }
+    
+    @Override
     public boolean isOverloadedCompositeField(String fieldName) {
         return CompositeIngest.isOverloadedCompositeField(getCompositeFieldDefinitions(), fieldName);
     }

@@ -83,24 +83,27 @@ public class CachedResultsCleanupBean {
             String schema = con.getCatalog();
             if (null == schema || "".equals(schema))
                 throw new RuntimeException("Unable to determine schema from connection");
-            Statement s = con.createStatement();
-            ResultSet rs = s.executeQuery(GET_TABLES_TO_REMOVE.replace("?", schema).replace("XYZ",
-                            Integer.toString(cachedResultsCleanupConfiguration.getDaysToLive())));
-            while (rs.next()) {
-                String objectName = CachedResultsParameters.validate(rs.getString(1));
-                // Drop the table
-                String dropTable = "DROP TABLE " + objectName;
-                con.createStatement().execute(dropTable);
-                removeCrqRow(objectName);
-                
-                String viewName = CachedResultsParameters.validate(objectName.replaceFirst("t", "v"));
-                // Drop the associated view
-                String dropView = "DROP VIEW " + viewName;
-                con.createStatement().execute(dropView);
-                removeCrqRow(viewName);
+            try (Statement s = con.createStatement();
+                            ResultSet rs = s.executeQuery(GET_TABLES_TO_REMOVE.replace("?", schema).replace("XYZ",
+                                            Integer.toString(cachedResultsCleanupConfiguration.getDaysToLive())))) {
+                while (rs.next()) {
+                    String objectName = CachedResultsParameters.validate(rs.getString(1));
+                    // Drop the table
+                    String dropTable = "DROP TABLE " + objectName;
+                    try (Statement statement = con.createStatement()) {
+                        statement.execute(dropTable);
+                    }
+                    removeCrqRow(objectName);
+                    
+                    String viewName = CachedResultsParameters.validate(objectName.replaceFirst("t", "v"));
+                    // Drop the associated view
+                    String dropView = "DROP VIEW " + viewName;
+                    try (Statement statement = con.createStatement()) {
+                        statement.execute(dropView);
+                    }
+                    removeCrqRow(viewName);
+                }
             }
-            rs.close();
-            s.close();
         } catch (SQLException e) {
             log.error("Error cleaning up cached result objects: " + e.getMessage());
         }

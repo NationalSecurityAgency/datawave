@@ -5,11 +5,11 @@ import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 
@@ -17,22 +17,19 @@ import datawave.util.StringUtils;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicates;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 /**
  * Creates a union of global index range streams.
  */
 public class Union implements IndexStream {
     protected final PriorityQueue<IndexStream> children;
-    protected final List<JexlNode> childrenNodes;
+    protected final JexlNodeSet childNodes;
     protected final StreamContext context;
     protected final String contextDebug;
     protected final List<String> childrenContextDebug = new ArrayList<>();
     protected JexlNode currNode = null;
-    protected List<JexlNode> delayedNodes;
+    protected JexlNodeSet delayedNodes;
     protected Tuple2<String,IndexInfo> next;
     
     private static final Logger log = Logger.getLogger(Union.class);
@@ -40,8 +37,8 @@ public class Union implements IndexStream {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Union(Iterable<? extends IndexStream> children) {
         this.children = new PriorityQueue(16, PeekOrdering.make(new TupleComparator<>()));
-        this.childrenNodes = Lists.newArrayList();
-        delayedNodes = Lists.newArrayList();
+        this.childNodes = new JexlNodeSet();
+        this.delayedNodes = new JexlNodeSet();
         int childrenCount = 0;
         boolean childrenIgnored = false;
         boolean unindexedField = false;
@@ -67,12 +64,12 @@ public class Union implements IndexStream {
             } else if (StreamContext.EXCEEDED_TERM_THRESHOLD == stream.context()) {
                 exceededTermThreshold = true;
             } else if (StreamContext.UNINDEXED == stream.context()) {
-                this.childrenNodes.add(stream.currentNode());
+                this.childNodes.add(stream.currentNode());
                 this.delayedNodes.add(stream.currentNode());
                 unindexedField = true;
                 continue;
             } else if (StreamContext.DELAYED_FIELD == stream.context()) {
-                this.childrenNodes.add(stream.currentNode());
+                this.childNodes.add(stream.currentNode());
                 this.delayedNodes.add(stream.currentNode());
                 delayedField = true;
                 continue;
@@ -81,7 +78,7 @@ public class Union implements IndexStream {
             if (stream.hasNext()) {
                 
                 this.children.add(stream);
-                this.childrenNodes.add(stream.currentNode());
+                this.childNodes.add(stream.currentNode());
             } else {
                 switch (stream.context()) {
                 
@@ -90,36 +87,34 @@ public class Union implements IndexStream {
                         throw new RuntimeException("Invalid state in RangeStream");
                     case IGNORED:
                         childrenIgnored = true;
-                        this.childrenNodes.add(stream.currentNode());
+                        this.childNodes.add(stream.currentNode());
                         this.delayedNodes.add(stream.currentNode());
                         break;
                     case EXCEEDED_VALUE_THRESHOLD:
                     case EXCEEDED_TERM_THRESHOLD:
                         if (log.isTraceEnabled())
                             log.trace("Adding current node to stream");
-                        /**
+                        /*
                          * Helpful for debugging
                          */
-                        this.childrenNodes.add(stream.currentNode());
+                        this.childNodes.add(stream.currentNode());
                         break;
                     case VARIABLE:
                     case UNKNOWN_FIELD:
                         this.delayedNodes.add(stream.currentNode());
                     case ABSENT:
                     case PRESENT:
-                        
-                        break;
                     default:
                         break;
                 }
             }
         }
         if (log.isTraceEnabled())
-            log.trace("children count is " + childrenCount + " " + childrenNodes.size() + " " + this.children.size());
-        if (childrenNodes.size() == 1)
-            currNode = JexlNodeFactory.createUnwrappedOrNode(this.childrenNodes);
+            log.trace("children count is " + childrenCount + " " + childNodes.size() + " " + this.children.size());
+        if (childNodes.size() == 1)
+            currNode = JexlNodeFactory.createUnwrappedOrNode(this.childNodes.getNodes());
         else
-            currNode = JexlNodeFactory.createOrNode(this.childrenNodes);
+            currNode = JexlNodeFactory.createOrNode(this.childNodes.getNodes());
         
         if (this.children.isEmpty()) {
             if (childrenIgnored || childrenCount == 0) {
@@ -183,8 +178,6 @@ public class Union implements IndexStream {
         if (log.isTraceEnabled())
             log.trace("advancing " + pointers.getNode() + " " + children.peek().context());
         
-        Set<JexlNode> nodes = Sets.newHashSet();
-        
         boolean childrenAdded = false;
         while (!children.isEmpty()) {
             String streamDayOrShard = children.peek().peek().first();
@@ -198,22 +191,24 @@ public class Union implements IndexStream {
             }
             IndexStream itr = children.poll();
             
-            pointers = pointers.union(itr.peek().second(), delayedNodes);
+            pointers = pointers.union(itr.peek().second(), Lists.newArrayList(delayedNodes.getNodes()));
             itr.next();
             if (itr.hasNext())
                 children.add(itr);
             childrenAdded = true;
         }
         
-        nodes.add(pointers.myNode);
-        nodes.addAll(delayedNodes);
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        if (pointers.myNode != null)
+            nodeSet.add(pointers.myNode);
+        if (delayedNodes != null && !delayedNodes.isEmpty())
+            nodeSet.addAll(delayedNodes);
         
         currNode = null;
-        if (nodes.size() == 1) {
-            currNode = nodes.iterator().next();
-            
+        if (nodeSet.size() == 1) {
+            currNode = nodeSet.iterator().next();
         } else {
-            currNode = JexlNodeFactory.createUnwrappedOrNode(FluentIterable.from(nodes).filter(Predicates.notNull()).toList());
+            currNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
         }
         
         if (!childrenAdded) {
@@ -314,7 +309,6 @@ public class Union implements IndexStream {
      */
     @Override
     public JexlNode currentNode() {
-        
         return currNode;
     }
 }

@@ -221,15 +221,11 @@ public class CardinalityRecord implements Serializable {
     public static CardinalityRecord readFromDisk(File file) {
         
         CardinalityRecord cardinalityRecord = null;
-        ObjectInputStream ois = null;
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            ois = new ObjectInputStream(fis);
+        try (FileInputStream fis = new FileInputStream(file); ObjectInputStream ois = new ObjectInputStream(fis)) {
+            
             cardinalityRecord = (CardinalityRecord) ois.readObject();
         } catch (Exception e) {
             log.error(e);
-        } finally {
-            IOUtils.closeQuietly(ois);
         }
         return cardinalityRecord;
     }

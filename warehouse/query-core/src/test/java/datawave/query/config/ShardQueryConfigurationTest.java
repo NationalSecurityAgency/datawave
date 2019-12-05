@@ -160,7 +160,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertNull(config.getHdfsSiteConfigURLs());
         Assert.assertNull(config.getHdfsFileCompressionCodec());
         Assert.assertNull(config.getZookeeperConfig());
-        Assert.assertNull(config.getIvaratorCacheBaseURIs());
+        Assert.assertTrue(config.getIvaratorCacheDirConfigs().isEmpty());
+        Assert.assertEquals(2, config.getIvaratorNumRetries());
         Assert.assertNull(config.getIvaratorFstHdfsBaseURIs());
         Assert.assertEquals(10000, config.getIvaratorCacheBufferSize());
         Assert.assertEquals(100000, config.getIvaratorCacheScanPersistThreshold());
@@ -430,7 +431,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 165;
+        int expectedObjectCount = 167;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

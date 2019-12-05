@@ -266,8 +266,7 @@ public class CachedResultsBean {
         CachedRunningQuery.setResponseObjectFactory(responseObjectFactory);
         
         String template = null;
-        try (Connection con = ds.getConnection()) {
-            Statement s = con.createStatement();
+        try (Connection con = ds.getConnection(); Statement s = con.createStatement()) {
             template = cachedResultsConfiguration.getParameters().get("TEMPLATE_TABLE");
             s.execute(template);
         } catch (SQLException sqle) {
@@ -2495,9 +2494,9 @@ public class CachedResultsBean {
             if (log.isTraceEnabled()) {
                 log.trace("Creating view using sql: " + view);
             }
-            Statement viewStmt = con.createStatement();
-            viewStmt.execute(view.toString());
-            viewStmt.close();
+            try (Statement viewStmt = con.createStatement()) {
+                viewStmt.execute(view.toString());
+            }
             viewCreated = true;
         } catch (SQLException e) {
             log.error("Error creating view with sql: " + view, e);

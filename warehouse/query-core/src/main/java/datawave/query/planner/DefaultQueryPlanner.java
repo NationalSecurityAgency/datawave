@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
@@ -79,6 +80,8 @@ import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
+import datawave.query.planner.rules.NodeTransformRule;
+import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
@@ -124,19 +127,20 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
@@ -230,6 +234,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private static Set<String> cachedNormalizedFields = null;
     
     protected List<PushDownRule> rules = Lists.newArrayList();
+    
+    // A set of node plans. Basically these are transforms that will be applied to nodes. One example use is to
+    // force certain regex patterns to be pushed down to evaluation
+    private List<NodeTransformRule> transformRules = Lists.newArrayList();
     
     protected Class<? extends SortedKeyValueIterator<Key,Value>> queryIteratorClazz = QueryIterator.class;
     
@@ -546,9 +554,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     private QueryLock getQueryLock(ShardQueryConfiguration config, Query settings) throws Exception {
-        return new QueryLock.Builder().forQueryId(settings.getId() == null ? null : settings.getId().toString()).forZookeeper(config.getZookeeperConfig(), 0)
-                        .forHdfs(config.getHdfsSiteConfigURLs()).forIvaratorDirs(config.getIvaratorCacheBaseURIs())
-                        .forFstDirs(config.getIvaratorFstHdfsBaseURIs()).build();
+        return new QueryLock.Builder()
+                        .forQueryId(settings.getId() == null ? null : settings.getId().toString())
+                        .forZookeeper(config.getZookeeperConfig(), 0)
+                        .forHdfs(config.getHdfsSiteConfigURLs())
+                        .forFstDirs(config.getIvaratorFstHdfsBaseURIs())
+                        .forIvaratorDirs(
+                                        config.getIvaratorCacheDirConfigs().stream().map(IvaratorCacheDirConfig::getBasePathURI)
+                                                        .collect(Collectors.joining(","))).build();
     }
     
     private void markQueryStopped(ShardQueryConfiguration config, Query settings) throws Exception {
@@ -903,6 +916,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
         }
         
+        // apply the node transform rules
+        // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre unfielded expansions");
+        
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
         // If the max term expansion is reached, then the original query tree is
@@ -918,7 +935,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
                 config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
-                                config.isExpandFields(), config.isExpandValues());
+                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
             } catch (EmptyUnfieldedTermExpansionException e) {
                 // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
@@ -987,6 +1004,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
             
         }
+        
+        // apply the node transform rules
+        // running it here before any regex or range expansions to enable potentially pushing down terms before index lookups
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre regex/range expansions");
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fetch required dataTypes");
         Multimap<String,Type<?>> fieldToDatatypeMap = null;
@@ -1072,7 +1093,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
         }
         
-        // lets precomputed the indexed fields and index only fields for the specific datatype if needed below
+        // lets precompute the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;
         Set<String> indexOnlyFields = null;
         Set<String> nonEventFields = null;
@@ -1086,6 +1107,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new DatawaveFatalQueryException(qe);
             }
         }
+        
+        // apply the node transform rules
+        queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre pushdown-pullup");
         
         // push down terms that are over the min selectivity
         if (config.getMinSelectivity() > 0) {
@@ -1135,7 +1159,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
-                                config.isExpandFields(), config.isExpandValues());
+                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding regex:");
@@ -1571,21 +1595,24 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return pushDownPlanner.applyRules(queryTree);
     }
     
-    /**
-     * Get the list of alternatives, randomizing the order so that the tserver spread out the disk usage.
+    /*
+     * Apply the configured node transforms
      */
-    protected String getIvaratorQueryCacheBaseUriAlternatives(ShardQueryConfiguration config) {
-        StringBuilder baseUriAlternatives = new StringBuilder();
-        List<String> alternatives = new LinkedList<>(config.getIvaratorCacheBaseURIsAsList());
-        Random random = new Random();
-        while (!alternatives.isEmpty()) {
-            if (baseUriAlternatives.length() > 0) {
-                baseUriAlternatives.append(',');
-            }
-            baseUriAlternatives.append(alternatives.remove(random.nextInt(alternatives.size())));
+    public ASTJexlScript applyNodeTransformRules(ASTJexlScript queryTree, List<NodeTransformRule> rules, ShardQueryConfiguration config, MetadataHelper helper,
+                    String instance) {
+        
+        if (!rules.isEmpty()) {
+            final TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Apply Node Transform Rules: " + instance);
             
+            queryTree = NodeTransformVisitor.transform(queryTree, rules, config, helper);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after function index queries were expanded:");
+            }
+            stopwatch.stop();
         }
-        return baseUriAlternatives.toString();
+        
+        return queryTree;
     }
     
     /**
@@ -1627,8 +1654,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         if (config.getZookeeperConfig() != null) {
                             addOption(cfg, QueryOptions.ZOOKEEPER_CONFIG, config.getZookeeperConfig(), false);
                         }
-                        if (config.getIvaratorCacheBaseURIs() != null) {
-                            addOption(cfg, QueryOptions.IVARATOR_CACHE_BASE_URI_ALTERNATIVES, getIvaratorQueryCacheBaseUriAlternatives(config), false);
+                        if (config.getIvaratorCacheDirConfigs() != null && !config.getIvaratorCacheDirConfigs().isEmpty()) {
+                            addOption(cfg, QueryOptions.IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(getShuffledIvaratoCacheDirConfigs(config)),
+                                            false);
                         }
                         addOption(cfg, QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, Integer.toString(config.getIvaratorCacheBufferSize()), false);
                         addOption(cfg, QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, Long.toString(config.getIvaratorCacheScanPersistThreshold()), false);
@@ -1636,6 +1664,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(config.getCollectTimingDetails()), false);
                         addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
+                        addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
+                        addOption(cfg, QueryOptions.IVARATOR_NUM_RETRIES, Integer.toString(config.getIvaratorNumRetries()), false);
                         addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                         addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
@@ -1698,6 +1728,26 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         
                         return cfg;
                     });
+    }
+    
+    /**
+     * Get the list of ivarator cache dirs, randomizing the order (while respecting priority) so that the tservers spread out the disk usage.
+     */
+    private List<IvaratorCacheDirConfig> getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration config) {
+        List<IvaratorCacheDirConfig> shuffledIvaratorCacheDirs = new ArrayList<>();
+        
+        // group the ivarator cache dirs by their priority
+        Map<Integer,List<IvaratorCacheDirConfig>> groupedConfigs = config.getIvaratorCacheDirConfigs().stream()
+                        .collect(Collectors.groupingBy(IvaratorCacheDirConfig::getPriority));
+        
+        // iterate over the sorted priorities, and shuffle the subsets
+        for (Integer priority : new TreeSet<>(groupedConfigs.keySet())) {
+            List<IvaratorCacheDirConfig> cacheDirs = groupedConfigs.get(priority);
+            Collections.shuffle(cacheDirs);
+            shuffledIvaratorCacheDirs.addAll(cacheDirs);
+        }
+        
+        return shuffledIvaratorCacheDirs;
     }
     
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
@@ -2165,6 +2215,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     @Override
     public Collection<PushDownRule> getRules() {
         return Collections.unmodifiableCollection(rules);
+    }
+    
+    public List<NodeTransformRule> getTransformRules() {
+        return Collections.unmodifiableList(transformRules);
+    }
+    
+    public void setTransformRules(List<NodeTransformRule> transformRules) {
+        this.transformRules.addAll(transformRules);
     }
     
     /*

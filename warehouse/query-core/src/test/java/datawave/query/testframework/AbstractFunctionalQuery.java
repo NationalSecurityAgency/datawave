@@ -11,6 +11,7 @@ import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
@@ -51,12 +52,14 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Level;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -75,6 +78,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Provides the basic initialization required to initialize and execute queries. This class will initialize the following runtime settings:
@@ -213,6 +217,13 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * Performs any instance initialization required for the specific test case.
      */
     protected abstract void testInit();
+    
+    public void debugQuery() {
+        Logger.getRootLogger().setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner.DefaultQueryPlanner").setLevel(Level.DEBUG);
+    }
     
     // ============================================
     // implementation interface methods
@@ -515,8 +526,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating cache
      */
-    protected void ivaratorConfig() throws IOException {
-        ivaratorConfig(1, false);
+    protected List<String> ivaratorConfig() throws IOException {
+        return ivaratorConfig(1, false)[0];
     }
     
     /**
@@ -525,8 +536,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating cache
      */
-    protected void ivaratorFstConfig() throws IOException {
-        ivaratorConfig(1, true);
+    protected List<String>[] ivaratorFstConfig() throws IOException {
+        return ivaratorConfig(1, true);
     }
     
     /**
@@ -539,7 +550,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating HDFS cache directory
      */
-    protected void ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
+    protected List<String>[] ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
         Assert.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
@@ -548,7 +559,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
             Path ivCache = Paths.get(Files.createTempDir().toURI());
-            dirs.add(ivCache.toAbsolutePath().toString());
+            dirs.add(ivCache.toUri().toString());
             if (fst) {
                 ivCache = Paths.get(Files.createTempDir().toURI());
                 fstDirs.add(ivCache.toAbsolutePath().toString());
@@ -556,12 +567,14 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         }
         String uriList = String.join(",", dirs);
         log.info("hdfs dirs(" + uriList + ")");
-        this.logic.setIvaratorCacheBaseURIs(uriList);
+        this.logic.setIvaratorCacheDirConfigs(dirs.stream().map(IvaratorCacheDirConfig::new).collect(Collectors.toList()));
         if (fst) {
             uriList = String.join(",", fstDirs);
             log.info("fst dirs(" + uriList + ")");
             this.logic.setIvaratorFstHdfsBaseURIs(uriList);
         }
+        
+        return new List[] {dirs, fstDirs};
     }
     
     /**
