@@ -183,9 +183,8 @@ function datawaveIngestWikipedia() {
    [ -z "${wikipediaRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${wikipediaRawFile}" ] && error "File not found: ${wikipediaRawFile}" && return 1
 
-   local wikipediaHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/wikipedia"
-   local wikipediaHdfsFile="${wikipediaHdfsDir}/$( basename ${wikipediaRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${wikipediaRawFile} ${wikipediaHdfsDir}"
+   local wikipediaHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${wikipediaRawFile} )"
+   local putFileCommand="hdfs dfs -copyFromLocal ${wikipediaRawFile} ${wikipediaHdfsFile}"
 
    local inputFormat="datawave.ingest.wikipedia.WikipediaEventInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${wikipediaHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=wikipedia ${extraOpts}"
@@ -211,9 +210,8 @@ function datawaveIngestCsv() {
    [ -z "${csvRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${csvRawFile}" ] && error "File not found: ${csvRawFile}" && return 1
 
-   local csvHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/mycsv"
-   local csvHdfsFile="${csvHdfsDir}/$( basename ${csvRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${csvRawFile} ${csvHdfsDir}"
+   local csvHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${csvRawFile} )"
+   local putFileCommand="hdfs dfs -copyFromLocal ${csvRawFile} ${csvHdfsFile}"
 
    local inputFormat="datawave.ingest.csv.mr.input.CSVFileInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${csvHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=mycsv ${extraOpts}"
@@ -233,9 +231,8 @@ function datawaveIngestJson() {
    [ -z "${jsonRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${jsonRawFile}" ] && error "File not found: ${jsonRawFile}" && return 1
 
-   local jsonHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/myjson"
-   local jsonHdfsFile="${jsonHdfsDir}/$( basename ${jsonRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${jsonRawFile} ${jsonHdfsDir}"
+   local jsonHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${jsonRawFile} )"
+   local putFileCommand="hdfs dfs -copyFromLocal ${jsonRawFile} ${jsonHdfsFile}"
 
    local inputFormat="datawave.ingest.json.mr.input.JsonInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${jsonHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=myjson ${extraOpts}"
