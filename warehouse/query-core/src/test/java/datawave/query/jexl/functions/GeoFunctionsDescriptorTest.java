@@ -1,5 +1,6 @@
 package datawave.query.jexl.functions;
 
+import datawave.data.normalizer.GeoNormalizer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -29,5 +30,15 @@ public class GeoFunctionsDescriptorTest {
         Assert.assertEquals(
                         "(((LON_FIELD >= '170.0' && LON_FIELD <= '180') && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0')) && ((LON_FIELD >= '-180' && LON_FIELD <= '-170.0') && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0')))",
                         JexlStringBuildingVisitor.buildQuery(queryNode));
+    }
+    
+    @Test
+    public void antiMeridianTest3() throws Exception {
+        Assert.assertTrue(GeoFunctions.within_bounding_box("-175", "0", "170", "-10", "-170", "10"));
+        Assert.assertTrue(GeoFunctions.within_bounding_box("-175", "0", "170", "-10", "-170", "10"));
+        Assert.assertFalse(GeoFunctions.within_bounding_box("-165", "0", "170", "-10", "-170", "10"));
+        Assert.assertFalse(GeoFunctions.within_bounding_box("165", "0", "170", "-10", "-170", "10"));
+        Assert.assertFalse(GeoFunctions.within_bounding_box("1", "6", "-2", "-2", "2", "2"));
+        Assert.assertFalse(GeoFunctions.within_bounding_box("6_1", "-2_-2", "2_2"));
     }
 }
