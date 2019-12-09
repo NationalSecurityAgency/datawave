@@ -1,22 +1,29 @@
 package datawave.query.function;
 
 import com.google.common.base.Function;
+import com.google.common.collect.Multimap;
+import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.IndexOnlyFunctionIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.jexl.IndexOnlyJexlContext;
+import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
+import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TypeMetadata;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.JexlContext;
+import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -60,6 +67,12 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     private final CompositeMetadata compositeMetadata;
     private final Range range;
     
+    private final IteratorBuildingVisitor iteratorBuildingVisitor;
+    private final Multimap<String,JexlNode> delayedNonEventFieldMap;
+    private final Equality equality;
+    private final Collection<ByteSequence> columnFamilies;
+    private final boolean inclusive;
+    
     private static final String SIMPLE_NAME = IndexOnlyContextCreator.class.getSimpleName();
     private static final String SKVI_SIMPLE_NAME = SortedKeyValueIterator.class.getSimpleName();
     private static final String QO_SIMPLE_NAME = QueryOptions.class.getSimpleName();
@@ -80,7 +93,8 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
      */
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, Collection<String> variables,
-                    JexlContextValueComparator comparatorFactory) {
+                    IteratorBuildingVisitor iteratorBuildingVisitor, Multimap<String,JexlNode> delayedNonEventFieldMap, Equality equality,
+                    Collection<ByteSequence> columnFamilies, boolean inclusive, JexlContextValueComparator comparatorFactory) {
         super(variables, comparatorFactory);
         checkNotNull(source, SIMPLE_NAME + " cannot be initialized with a null " + SKVI_SIMPLE_NAME);
         checkNotNull(range, SIMPLE_NAME + " cannot be initialized with a null Range");
@@ -93,6 +107,13 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         this.includeRecordId = options.isIncludeRecordId();
         this.indexOnlyFields = options.getIndexOnlyFields();
         
+        // for delayed index lookup
+        this.iteratorBuildingVisitor = iteratorBuildingVisitor;
+        this.delayedNonEventFieldMap = delayedNonEventFieldMap;
+        this.equality = equality;
+        this.columnFamilies = columnFamilies;
+        this.inclusive = inclusive;
+        
         this.range = range;
         this.timeFilter = options.getTimeFilter();
         final String query = options.getQuery();
@@ -101,7 +122,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, JexlContextValueComparator comparatorFactory) {
-        this(source, range, typeMetadata, compositeMetadata, options, Collections.emptySet(), comparatorFactory);
+        this(source, range, typeMetadata, compositeMetadata, options, Collections.emptySet(), null, null, null, null, false, comparatorFactory);
     }
     
     @Override
@@ -158,7 +179,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     @Override
     protected DatawaveJexlContext newDatawaveJexlContext(final Tuple3<Key,Document,Map<String,Object>> from) {
         final DatawaveJexlContext parentContext = super.newDatawaveJexlContext(from);
-        final DatawaveJexlContext newContext;
+        DatawaveJexlContext newContext;
         if (this.createIndexOnlyJexlContext) {
             final Key key = from.first();
             final IndexOnlyFunctionIterator<Tuple3<Key,Document,DatawaveJexlContext>> iterator = new IndexOnlyFunctionIterator<>(this.documentSpecificSource,
@@ -166,6 +187,18 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
             newContext = new IndexOnlyJexlContext<>(parentContext, iterator);
         } else {
             newContext = parentContext;
+        }
+        
+        // see if there are any delayed nodes that need to be processed
+        if (delayedNonEventFieldMap != null && delayedNonEventFieldMap.keySet().size() > 0) {
+            // build the current document range from the document Key to end of the document, even though for some query logics this may be too large a range,
+            // it will be narrowed with equality later
+            Key startKey = new Key(from.first().getRow(), from.first().getColumnFamily());
+            Key endKey = new Key(startKey.getRow().toString(), startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
+            Range docRange = new Range(startKey, true, endKey, false);
+            
+            newContext = new DelayedNonEventIndexContext(newContext, iteratorBuildingVisitor, delayedNonEventFieldMap, docRange, columnFamilies, inclusive,
+                            equality);
         }
         
         return newContext;

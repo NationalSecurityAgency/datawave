@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
@@ -52,7 +53,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     private QueryPropertyMarkerVisitor() {}
     
     public static boolean instanceOfAny(JexlNode node) {
-        return instanceOfAny(node, null);
+        return instanceOfAny(node, (List) null);
     }
     
     public static boolean instanceOfAny(JexlNode node, List<JexlNode> sourceNodes) {
@@ -60,6 +61,27 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     }
     
     public static boolean instanceOf(JexlNode node, Set<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
+        return instanceOf(node, types != null ? Lists.newArrayList(types) : null, sourceNodes);
+    }
+    
+    public static boolean instanceOfAny(JexlNode node, Class<? extends QueryPropertyMarker> except) {
+        return instanceOfAny(node, except, null);
+    }
+    
+    public static boolean instanceOfAny(JexlNode node, Class<? extends QueryPropertyMarker> except, List<JexlNode> sourceNodes) {
+        return instanceOf(node, null, except, sourceNodes);
+    }
+    
+    public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, List<JexlNode> sourceNodes) {
+        return instanceOf(node, type == null ? null : Collections.singletonList(type), null, sourceNodes);
+    }
+    
+    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
+        return instanceOf(node, types, null, sourceNodes);
+    }
+    
+    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, Class<? extends QueryPropertyMarker> except,
+                    List<JexlNode> sourceNodes) {
         QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor();
         
         if (node != null) {
@@ -67,6 +89,10 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                 types.stream().forEach(type -> visitor.typeIdentifiers.add(type.getSimpleName()));
             else
                 visitor.typeIdentifiers.addAll(TYPE_IDENTIFIERS);
+            
+            if (except != null) {
+                visitor.typeIdentifiers.remove(except.getSimpleName());
+            }
             
             node.jjtAccept(visitor, null);
             
@@ -79,15 +105,6 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         }
         
         return false;
-    }
-    
-    public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, List<JexlNode> sourceNodes) {
-        Set<Class<? extends QueryPropertyMarker>> types = null;
-        if (type != null) {
-            types = Collections.singleton(type);
-        }
-        
-        return instanceOf(node, types, sourceNodes);
     }
     
     private static JexlNode trimReferenceNodes(JexlNode node) {

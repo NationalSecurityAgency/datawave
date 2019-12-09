@@ -33,7 +33,8 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
     public static Collection testCases() {
         // @formatter:off
         return Arrays.asList(new Object[][] {
-            // executable against the global index, but an error against the field index because of the negated mix of an index only and filter
+            // executable against the global index
+            // executable against the field index after adding a delay
             {
                 "AndNegatedAndPartial",
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && filter:includeRegex(INDEXED_FIELD, '.*'))",
@@ -41,10 +42,11 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
-                ExecutableDeterminationVisitor.STATE.ERROR,
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))))))"
             },
-            // executable against the global index, but an error against the field index because of the negated mix of an index only and filter
+            // executable against the global index
+            // executable against the field index after adding a delay
             {
                 "AndNegatedAndPartialExtended",
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && filter:includeRegex(INDEXED_FIELD, '.*')) && EVENT_FIELD == 'd'",
@@ -52,10 +54,11 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))) && EVENT_FIELD == 'd'",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
-                ExecutableDeterminationVisitor.STATE.ERROR,
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))))) && EVENT_FIELD == 'd'",
             },
-            // executable against the global index, but an error against the field index because of the negated mix of an index only and event field
+            // executable against the global index,
+            // executable against the field index after adding a delay
             {
                 "AndNegatedAndPartialEventField",
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && EVENT_FIELD == 'c')",
@@ -63,7 +66,7 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c')))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
-                ExecutableDeterminationVisitor.STATE.ERROR,
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c')))))"
             },
             // executable against the global index, and executable against the field index since the OR is negated its sufficient for a single term to exclude, the other term
@@ -158,15 +161,15 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && ((INDEXED_FIELD == 'b' || !(INDEXED_FIELD == 'd') || !(EVENT_FIELD == 'c'))))",
             },
-            // Both global and field index result in an error because the OR requires a delay, but the delay has a non-event field within it
+            // after adding delays these are both executable
             {
                 "AndOrNestedDelayedError",
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || !(TF_FIELD == 'd' && EVENT_FIELD == 'c'))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
-                ExecutableDeterminationVisitor.STATE.ERROR,
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && ((INDEXED_FIELD == 'b' || !(TF_FIELD == 'd') || !(EVENT_FIELD == 'c'))))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
-                ExecutableDeterminationVisitor.STATE.ERROR,
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && ((INDEXED_FIELD == 'b' || !(TF_FIELD == 'd') || !(EVENT_FIELD == 'c'))))",
             },
             // Global index results in a delayed node because it will not evaluate the negation
@@ -182,14 +185,13 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || ((!(INDEXED_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",
             },
-            // Global index is an ERROR after the delay because the delay contains an index only field. Executability is blind here to the context
-            // of the index only field so marks it as an error
+            // Global can be executed after adding a delay
             // Field index will allow this to be executed with no delay because the context of the negation, see above
             {
                 "AndOrNestedOrDelayedError",
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || !(INDEX_ONLY_FIELD == 'd' || EVENT_FIELD == 'c'))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
-                ExecutableDeterminationVisitor.STATE.ERROR,
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && ((INDEXED_FIELD == 'b' || ((!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c'))))))",
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
