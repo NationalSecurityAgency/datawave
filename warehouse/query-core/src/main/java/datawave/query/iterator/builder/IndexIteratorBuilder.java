@@ -88,7 +88,7 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
                 canBuildDocument = true;
             }
             IndexIteratorBridge itr = new IndexIteratorBridge(newIndexIterator(new Text(field), new Text(value), source, this.timeFilter, this.typeMetadata,
-                            canBuildDocument, this.datatypeFilter, this.keyTform));
+                            canBuildDocument, this.datatypeFilter, this.keyTform), field);
             field = null;
             value = null;
             source = null;

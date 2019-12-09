@@ -394,8 +394,6 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         else if (ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             if (isNoFieldOnly(node)) {
                 state = STATE.IGNORABLE;
-            } else if (isNonEvent(node)) {
-                state = STATE.ERROR;
             } else {
                 state = STATE.NON_EXECUTABLE;
             }

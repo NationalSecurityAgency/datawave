@@ -981,7 +981,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     public Object visit(ASTStringLiteral node, Object o) {
         // Set the literal in the IndexIterator
         AbstractIteratorBuilder builder = (AbstractIteratorBuilder) o;
-        builder.setValue(node.image);
+        if (builder != null) {
+            builder.setValue(node.image);
+        }
         
         return null;
     }

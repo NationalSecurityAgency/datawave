@@ -126,7 +126,7 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                 throw new IllegalStateException("Unable to initialize list iterator stack", e);
             }
             
-            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator);
+            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, field);
             field = null;
             value = null;
             negated = null;

@@ -199,4 +199,37 @@ public class JexlNodes {
         l.literal = n;
         return l;
     }
+    
+    /**
+     * Remove childToRemove from parent, updating all references on both the parent and childToRemove to be consistent
+     * 
+     * @param parent
+     *            the parent to remove from
+     * @param childToRemove
+     *            the child to remove from parent
+     * @return true if childToRemove was successfully found and removed from parent, false otherwise
+     */
+    public static boolean removeFromParent(JexlNode parent, JexlNode childToRemove) {
+        boolean found = false;
+        JexlNode[] children = new JexlNode[parent.jjtGetNumChildren() - 1];
+        int childIndex = 0;
+        for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
+            JexlNode child = parent.jjtGetChild(i);
+            if (!child.equals(childToRemove)) {
+                children[childIndex++] = child;
+            } else {
+                // clear the praent of the node that is removed
+                childToRemove.jjtSetParent(null);
+                found = true;
+            }
+        }
+        
+        // update the children references if they changed
+        if (found) {
+            // reset the children on the parent node to remove this one
+            JexlNodes.children(parent, children);
+        }
+        
+        return found;
+    }
 }

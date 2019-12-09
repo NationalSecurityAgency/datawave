@@ -55,6 +55,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
+import datawave.query.jexl.visitors.DelayedIndexOnlySubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
@@ -937,18 +938,27 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 itrWithContext = Iterators.transform(tupleItr, new EmptyContext<>());
             }
             
-            final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource), typeMetadataForEval,
-                            compositeMetadata, this, variables, QueryIterator.this);
-            
-            if (exceededOrEvaluationCache != null)
-                contextCreator.addAdditionalEntries(exceededOrEvaluationCache);
-            
-            final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
-            Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction);
-            if (log.isTraceEnabled()) {
-                log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
+            try {
+                IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
+                DelayedIndexOnlySubTreeVisitor delayedIndexOnlySubTreeVisitor = DelayedIndexOnlySubTreeVisitor.processDelayedSubTrees(script,
+                                getNonEventFields());
+                
+                final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource),
+                                typeMetadataForEval, compositeMetadata, this, variables, iteratorBuildingVisitor, delayedIndexOnlySubTreeVisitor, equality,
+                                QueryIterator.this);
+                
+                if (exceededOrEvaluationCache != null)
+                    contextCreator.addAdditionalEntries(exceededOrEvaluationCache);
+                
+                final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
+                Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction);
+                if (log.isTraceEnabled()) {
+                    log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
+                }
+                return Iterators.transform(matchedDocuments, new TupleToEntry<>());
+            } catch (InstantiationException | MalformedURLException | IllegalAccessException | ConfigException e) {
+                throw new IllegalStateException("Could not perform delayed index only evaluation", e);
             }
-            return Iterators.transform(matchedDocuments, new TupleToEntry<>());
         } else if (log.isTraceEnabled()) {
             log.trace("Evaluation is disabled, not instantiating Jexl evaluation logic");
         }

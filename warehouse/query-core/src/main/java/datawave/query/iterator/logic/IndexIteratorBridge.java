@@ -2,6 +2,7 @@ package datawave.query.iterator.logic;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.DocumentIterator;
+import datawave.query.iterator.FieldedIterator;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -20,13 +21,18 @@ import java.util.HashSet;
  * 
  * 
  */
-public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterator {
+public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterator, FieldedIterator {
     private final static Logger log = Logger.getLogger(IndexIteratorBridge.class);
     
     /*
      * The AccumuloIterator this object wraps.
      */
     private DocumentIterator delegate;
+    
+    /**
+     * track the field this iterator is bridging
+     */
+    private String field;
     
     /*
      * Pointer to the next Key.
@@ -39,8 +45,9 @@ public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterato
     private Key prevKey;
     private Document prevDocument, nextDocument;
     
-    public IndexIteratorBridge(DocumentIterator delegate) {
+    public IndexIteratorBridge(DocumentIterator delegate, String field) {
         this.delegate = delegate;
+        this.field = field;
     }
     
     public Key next() {
@@ -165,5 +172,10 @@ public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterato
     public Document document() {
         // If we can assert that this Document won't be reused, we can use _document()
         return prevDocument;
+    }
+    
+    @Override
+    public String getField() {
+        return field;
     }
 }
