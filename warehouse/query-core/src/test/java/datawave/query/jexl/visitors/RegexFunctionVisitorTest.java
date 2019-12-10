@@ -78,4 +78,16 @@ public class RegexFunctionVisitorTest {
         exception.expect(DatawaveFatalQueryException.class);
         JexlNode result = RegexFunctionVisitor.expandRegex(null, null, indexOnlyFields, JexlASTHelper.parseJexlQuery(query));
     }
+    
+    @Test
+    public void testMixedEventNonEvent() throws ParseException {
+        String query = "filter:includeRegex(EVENT_FIELD || NON_EVENT_FIELD,'all_.*?')";
+        
+        Set<String> indexOnlyFields = Sets.newHashSet();
+        indexOnlyFields.add("NON_EVENT_FIELD");
+        
+        JexlNode result = RegexFunctionVisitor.expandRegex(null, null, indexOnlyFields, JexlASTHelper.parseJexlQuery(query));
+        
+        Assert.assertTrue(JexlASTHelper.validateLineage(result, true));
+    }
 }
