@@ -41,7 +41,6 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             String cityPhrase = " != " + "'" + city.name() + "'";
             String query = Constants.ANY_FIELD + cityPhrase;
             // Test list of cities for each plan
-            
             try {
                 GenericQueryConfiguration config = setupConfig(query);
                 fail("Expected FullTableScanDisallowedException.");
