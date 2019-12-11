@@ -6,11 +6,11 @@ import datawave.query.iterator.FieldedIterator;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import javax.print.Doc;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,12 +23,14 @@ import java.util.Set;
  * Responsible for retrieving delayed fields for the specified docRange on demand and merging it with any values already in the delegate. Use the
  * IteratorBuildingVisitor on each delayed sub tree to generate iterators over the docRange.
  */
-public class DelayedIndexOnlyContext extends DatawaveJexlContext {
+public class DelayedNonEventIndexContext extends DatawaveJexlContext {
     private DatawaveJexlContext delegate;
     private Set<String> delayedFields;
     private IteratorBuildingVisitor iteratorBuildingVisitor;
     private Set<JexlNode> delayedSubTrees;
     private Range docRange;
+    private Collection<ByteSequence> columnFamilies;
+    private boolean inclusive;
     private Equality equality;
     
     /**
@@ -36,13 +38,15 @@ public class DelayedIndexOnlyContext extends DatawaveJexlContext {
      */
     private Set<String> fetched;
     
-    public DelayedIndexOnlyContext(DatawaveJexlContext delegate, IteratorBuildingVisitor iteratorBuildingVisitor, Set<JexlNode> delayedSubTrees,
-                    Set<String> delayedFields, Range docRange, Equality equality) {
+    public DelayedNonEventIndexContext(DatawaveJexlContext delegate, IteratorBuildingVisitor iteratorBuildingVisitor, Set<JexlNode> delayedSubTrees,
+                    Set<String> delayedFields, Range docRange, Collection<ByteSequence> columnFamilies, boolean inclusive, Equality equality) {
         this.delegate = delegate;
         this.iteratorBuildingVisitor = iteratorBuildingVisitor;
         this.delayedSubTrees = delayedSubTrees;
         this.delayedFields = delayedFields;
         this.docRange = docRange;
+        this.columnFamilies = columnFamilies;
+        this.inclusive = inclusive;
         this.equality = equality;
         
         fetched = new HashSet<>();
@@ -93,11 +97,6 @@ public class DelayedIndexOnlyContext extends DatawaveJexlContext {
         
         // for each sub tree build the nested iterator
         for (JexlNode subTree : delayedSubTrees) {
-            // short circuit trees that have no identifiers
-            if (JexlASTHelper.getIdentifiers(subTree).size() == 0) {
-                continue;
-            }
-            
             // construct all index iterators for this sub tree
             subTree.jjtAccept(iteratorBuildingVisitor, null);
             NestedIterator<Key> subTreeNestedIterator = iteratorBuildingVisitor.root();
@@ -111,7 +110,7 @@ public class DelayedIndexOnlyContext extends DatawaveJexlContext {
                         // init/seek the leaf
                         leaf.initialize();
                         if (leaf instanceof SeekableIterator) {
-                            ((SeekableIterator) leaf).seek(docRange, null, false);
+                            ((SeekableIterator) leaf).seek(docRange, columnFamilies, inclusive);
                         }
                         
                         // for each value off the leaf add it to the document list as long as equality accepts it

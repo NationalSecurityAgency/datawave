@@ -23,36 +23,36 @@ import java.util.Set;
  * Visitor builds a list of all delayed sub trees within a script, and removes any nodes which are not based on index only lookups. This visitor will
  * modify/destroy the tree so a copy should always be used
  */
-public class DelayedIndexOnlySubTreeVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(DelayedIndexOnlySubTreeVisitor.class);
+public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
+    private static final Logger log = Logger.getLogger(DelayedNonEventSubTreeVisitor.class);
     
     private Set<String> nonEventFields;
     private Set<JexlNode> delayedSubTrees;
-    private Set<String> foundIndexOnlyFields;
+    private Set<String> foundNonEventFields;
     
-    public static DelayedIndexOnlySubTreeVisitor processDelayedSubTrees(ASTJexlScript script, Set<String> nonEventFields) {
+    public static DelayedNonEventSubTreeVisitor processDelayedSubTrees(ASTJexlScript script, Set<String> nonEventFields) {
         // create a safe copy to rip apart
         ASTJexlScript copy = (ASTJexlScript) RebuildingVisitor.copy(script);
         
         // run the visitor on the copy
-        DelayedIndexOnlySubTreeVisitor visitor = new DelayedIndexOnlySubTreeVisitor(nonEventFields);
+        DelayedNonEventSubTreeVisitor visitor = new DelayedNonEventSubTreeVisitor(nonEventFields);
         copy.jjtAccept(visitor, null);
         
         return visitor;
     }
     
-    private DelayedIndexOnlySubTreeVisitor(Set<String> nonEventFields) {
+    private DelayedNonEventSubTreeVisitor(Set<String> nonEventFields) {
         this.nonEventFields = nonEventFields;
         delayedSubTrees = new HashSet<>();
-        foundIndexOnlyFields = new HashSet<>();
+        foundNonEventFields = new HashSet<>();
     }
     
     public Set<JexlNode> getDelayedSubTrees() {
         return delayedSubTrees;
     }
     
-    public Set<String> getFoundIndexOnlyFields() {
-        return foundIndexOnlyFields;
+    public Set<String> getFoundNonEventFields() {
+        return foundNonEventFields;
     }
     
     /**
@@ -74,7 +74,7 @@ public class DelayedIndexOnlySubTreeVisitor extends BaseVisitor {
                 boolean keep = false;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(candidate)) {
                     if (nonEventFields.contains(identifier.image)) {
-                        foundIndexOnlyFields.add(identifier.image);
+                        foundNonEventFields.add(identifier.image);
                         keep = true;
                     }
                 }

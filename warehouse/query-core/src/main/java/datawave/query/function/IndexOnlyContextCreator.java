@@ -7,15 +7,16 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.IndexOnlyFunctionIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.DelayedIndexOnlyContext;
+import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.jexl.IndexOnlyJexlContext;
-import datawave.query.jexl.visitors.DelayedIndexOnlySubTreeVisitor;
+import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TypeMetadata;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -65,8 +66,10 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     private final Range range;
     
     private final IteratorBuildingVisitor iteratorBuildingVisitor;
-    private final DelayedIndexOnlySubTreeVisitor delayedIndexOnlySubTreeVisitor;
+    private final DelayedNonEventSubTreeVisitor delayedNonEventSubTreeVisitor;
     private final Equality equality;
+    private final Collection<ByteSequence> columnFamilies;
+    private final boolean inclusive;
     
     private static final String SIMPLE_NAME = IndexOnlyContextCreator.class.getSimpleName();
     private static final String SKVI_SIMPLE_NAME = SortedKeyValueIterator.class.getSimpleName();
@@ -88,8 +91,8 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
      */
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, Collection<String> variables,
-                    IteratorBuildingVisitor iteratorBuildingVisitor, DelayedIndexOnlySubTreeVisitor delayedIndexOnlySubTreeVisitor, Equality equality,
-                    JexlContextValueComparator comparatorFactory) {
+                    IteratorBuildingVisitor iteratorBuildingVisitor, DelayedNonEventSubTreeVisitor delayedNonEventSubTreeVisitor, Equality equality,
+                    Collection<ByteSequence> columnFamilies, boolean inclusive, JexlContextValueComparator comparatorFactory) {
         super(variables, comparatorFactory);
         checkNotNull(source, SIMPLE_NAME + " cannot be initialized with a null " + SKVI_SIMPLE_NAME);
         checkNotNull(range, SIMPLE_NAME + " cannot be initialized with a null Range");
@@ -104,8 +107,10 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         
         // for delayed index lookup
         this.iteratorBuildingVisitor = iteratorBuildingVisitor;
-        this.delayedIndexOnlySubTreeVisitor = delayedIndexOnlySubTreeVisitor;
+        this.delayedNonEventSubTreeVisitor = delayedNonEventSubTreeVisitor;
         this.equality = equality;
+        this.columnFamilies = columnFamilies;
+        this.inclusive = inclusive;
         
         this.range = range;
         this.timeFilter = options.getTimeFilter();
@@ -115,7 +120,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, JexlContextValueComparator comparatorFactory) {
-        this(source, range, typeMetadata, compositeMetadata, options, Collections.emptySet(), null, null, null, comparatorFactory);
+        this(source, range, typeMetadata, compositeMetadata, options, Collections.emptySet(), null, null, null, null, false, comparatorFactory);
     }
     
     @Override
@@ -183,15 +188,15 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         }
         
         // see if there are any delayed subtrees that are index only
-        if (delayedIndexOnlySubTreeVisitor != null && delayedIndexOnlySubTreeVisitor.getFoundIndexOnlyFields().size() > 0) {
+        if (delayedNonEventSubTreeVisitor != null && delayedNonEventSubTreeVisitor.getFoundNonEventFields().size() > 0) {
             // build the current document range from the document Key to end of the document, even though for some query logics this may be too large a range,
             // it will be narrowed with equality later
             Key startKey = new Key(from.first().getRow(), from.first().getColumnFamily());
             Key endKey = new Key(startKey.getRow().toString(), startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
-            Range docRange = new Range(startKey, true, endKey, true);
+            Range docRange = new Range(startKey, true, endKey, false);
             
-            newContext = new DelayedIndexOnlyContext(newContext, iteratorBuildingVisitor, delayedIndexOnlySubTreeVisitor.getDelayedSubTrees(),
-                            delayedIndexOnlySubTreeVisitor.getFoundIndexOnlyFields(), docRange, equality);
+            newContext = new DelayedNonEventIndexContext(newContext, iteratorBuildingVisitor, delayedNonEventSubTreeVisitor.getDelayedSubTrees(),
+                            delayedNonEventSubTreeVisitor.getFoundNonEventFields(), docRange, columnFamilies, inclusive, equality);
         }
         
         return newContext;

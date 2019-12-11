@@ -55,7 +55,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
-import datawave.query.jexl.visitors.DelayedIndexOnlySubTreeVisitor;
+import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
@@ -383,7 +383,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // evaluation within a thread pool
             PipelineIterator pipelineIter = PipelineFactory.createIterator(this.seekKeySource, getMaxEvaluationPipelines(), getMaxPipelineCachedResults(),
                             getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, sourceForDeepCopies.deepCopy(myEnvironment), myEnvironment,
-                            yield, yieldThresholdMs);
+                            yield, yieldThresholdMs, columnFamilies, inclusive);
             
             pipelineIter.setCollectTimingDetails(collectTimingDetails);
             // TODO pipelineIter.setStatsdHostAndPort(statsdHostAndPort);
@@ -742,7 +742,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @return iterator of keys and values
      */
     public Iterator<Entry<Key,Document>> createDocumentPipeline(SortedKeyValueIterator<Key,Value> deepSourceCopy,
-                    final NestedQueryIterator<Key> documentSpecificSource, QuerySpanCollector querySpanCollector) {
+                    final NestedQueryIterator<Key> documentSpecificSource, Collection<ByteSequence> columnFamilies, boolean inclusive,
+                    QuerySpanCollector querySpanCollector) {
         
         QuerySpan trackingSpan = null;
         if (gatherTimingDetails()) {
@@ -814,9 +815,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         
         if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, deepSourceCopy,
-                            documents, compositeMetadata, typeMetadataWithNonIndexed));
+                            documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies, inclusive));
         } else {
-            documents = getEvaluation(documentSpecificSource, deepSourceCopy, documents, compositeMetadata, typeMetadataWithNonIndexed);
+            documents = getEvaluation(documentSpecificSource, deepSourceCopy, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
+                            inclusive);
         }
         
         // a hook to allow mapping the document such as with the TLD or Parent
@@ -905,12 +907,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected Iterator<Entry<Key,Document>> getEvaluation(SortedKeyValueIterator<Key,Value> sourceDeepCopy, Iterator<Entry<Key,Document>> documents,
-                    CompositeMetadata compositeMetadata, TypeMetadata typeMetadataForEval) {
-        return getEvaluation(null, sourceDeepCopy, documents, compositeMetadata, typeMetadataForEval);
+                    CompositeMetadata compositeMetadata, TypeMetadata typeMetadataForEval, Collection<ByteSequence> columnFamilies, boolean inclusive) {
+        return getEvaluation(null, sourceDeepCopy, documents, compositeMetadata, typeMetadataForEval, columnFamilies, inclusive);
     }
     
     protected Iterator<Entry<Key,Document>> getEvaluation(NestedQueryIterator<Key> documentSource, SortedKeyValueIterator<Key,Value> sourceDeepCopy,
-                    Iterator<Entry<Key,Document>> documents, CompositeMetadata compositeMetadata, TypeMetadata typeMetadataForEval) {
+                    Iterator<Entry<Key,Document>> documents, CompositeMetadata compositeMetadata, TypeMetadata typeMetadataForEval,
+                    Collection<ByteSequence> columnFamilies, boolean inclusive) {
         // Filter the Documents by testing them against the JEXL query
         if (!this.disableEvaluation) {
             
@@ -940,12 +943,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             try {
                 IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
-                DelayedIndexOnlySubTreeVisitor delayedIndexOnlySubTreeVisitor = DelayedIndexOnlySubTreeVisitor.processDelayedSubTrees(script,
-                                getNonEventFields());
+                DelayedNonEventSubTreeVisitor delayedNonEventSubTreeVisitor = DelayedNonEventSubTreeVisitor.processDelayedSubTrees(script, getNonEventFields());
                 
                 final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource),
-                                typeMetadataForEval, compositeMetadata, this, variables, iteratorBuildingVisitor, delayedIndexOnlySubTreeVisitor, equality,
-                                QueryIterator.this);
+                                typeMetadataForEval, compositeMetadata, this, variables, iteratorBuildingVisitor, delayedNonEventSubTreeVisitor, equality,
+                                columnFamilies, inclusive, QueryIterator.this);
                 
                 if (exceededOrEvaluationCache != null)
                     contextCreator.addAdditionalEntries(exceededOrEvaluationCache);

@@ -1,6 +1,9 @@
 package org.apache.commons.jexl2.parser;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import com.google.common.base.Preconditions;
 
@@ -211,14 +214,16 @@ public class JexlNodes {
      */
     public static boolean removeFromParent(JexlNode parent, JexlNode childToRemove) {
         boolean found = false;
-        JexlNode[] children = new JexlNode[parent.jjtGetNumChildren() - 1];
-        int childIndex = 0;
+        // at most as many children as currently exist
+        List<JexlNode> children = new ArrayList<>(parent.jjtGetNumChildren());
+        JexlNode[] nodeArray = new JexlNode[0];
+        
         for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
             JexlNode child = parent.jjtGetChild(i);
             if (!child.equals(childToRemove)) {
-                children[childIndex++] = child;
+                children.add(child);
             } else {
-                // clear the praent of the node that is removed
+                // clear the parent of the node that is removed
                 childToRemove.jjtSetParent(null);
                 found = true;
             }
@@ -227,7 +232,7 @@ public class JexlNodes {
         // update the children references if they changed
         if (found) {
             // reset the children on the parent node to remove this one
-            JexlNodes.children(parent, children);
+            JexlNodes.children(parent, children.toArray(nodeArray));
         }
         
         return found;
