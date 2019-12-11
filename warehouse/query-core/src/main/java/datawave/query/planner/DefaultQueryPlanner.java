@@ -418,19 +418,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         final QueryStopwatch timers = config.getTimers();
-        Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
-        
-        // a full table scan is required if
-        final boolean isFullTable = queryRanges.second();
-        
-        // abort if we cannot handle full table scans
-        if (isFullTable && !config.getFullTableScanEnabled()) {
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
-            throw new FullTableScansDisallowedException(qe);
-        }
-        
+
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rebuild JEXL String from AST");
-        
+
         // Set the final query after we're done mucking with it
         String newQueryString = JexlStringBuildingVisitor.buildQuery(queryTree);
         if (log.isTraceEnabled())
@@ -440,8 +430,21 @@ public class DefaultQueryPlanner extends QueryPlanner {
             QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_QUERY_STRING_AFTER_MODIFICATION);
             throw new DatawaveFatalQueryException(qe);
         }
-        
+
         stopwatch.stop();
+        this.plannedScript = newQueryString;
+
+        Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
+        
+        // a full table scan is required if
+        final boolean isFullTable = queryRanges.second();
+
+        // abort if we cannot handle full table scans
+        if (isFullTable && !config.getFullTableScanEnabled()) {
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
+            throw new FullTableScansDisallowedException(qe);
+        }
+
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
         
         queryData.setQuery(newQueryString);
@@ -455,8 +458,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         queryData.setSettings(Lists.newArrayList(cfg));
         
         stopwatch.stop();
-        
-        this.plannedScript = newQueryString;
+
         // docsToCombineForEvaluation is only enabled when threading is used
         if (config.getMaxEvaluationPipelines() == 1)
             docsToCombineForEvaluation = -1;

@@ -26,6 +26,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private GenericQueryConfiguration baseConfig;
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
+    protected String queryPlan = "No Query Plan was set.";
     private AuditType auditType = null;
     protected long maxResults = -1L;
     protected ScannerBase scanner;
@@ -322,4 +323,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public SelectorExtractor getSelectorExtractor() {
         return selectorExtractor;
     }
+
+    public String getQueryPlan() { return queryPlan; }
+
+    public void setQueryPlan(String queryPlan) { this.queryPlan = queryPlan;}
 }

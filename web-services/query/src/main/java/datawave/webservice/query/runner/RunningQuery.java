@@ -150,18 +150,17 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.connection = null;
             return;
         }
-        
+
+        GenericQueryConfiguration configuration = null;
         try {
             addNDC();
             applyPrediction(null);
             this.connection = connection;
             long start = System.currentTimeMillis();
-            GenericQueryConfiguration configuration = this.logic.initialize(this.connection, this.settings, this.calculatedAuths);
+            configuration = this.logic.initialize(this.connection, this.settings, this.calculatedAuths);
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
-            // the configuration query string should now hold the planned query
-            this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
             this.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);
             testForUncaughtException(0);
@@ -171,6 +170,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.getMetric().setError(e);
             throw e;
         } finally {
+            // if configuration didn't fail, get plan. otherwise pull what the plan was supposed to be from logic
+            if(configuration != null){
+                this.getMetric().setPlan(configuration.getQueryString());
+            } else {
+                this.getMetric().setPlan(this.logic.getQueryPlan());
+            }
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
             touch();
             removeNDC();
