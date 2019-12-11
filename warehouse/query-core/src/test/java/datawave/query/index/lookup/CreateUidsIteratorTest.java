@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -240,6 +241,69 @@ public class CreateUidsIteratorTest {
         // Five uids from builder plus four documents per key for three keys
         assertEquals(5 + (4 * 3), indexInfo.count());
         assertTrue(indexInfo.uids().isEmpty());
+        
+        iterator.next();
+        assertFalse(iterator.hasTop());
+    }
+    
+    // For a dataset of TLD uuids, confirm root uid parsing behavior.
+    @Test
+    public void testParseRootUidsOption() throws IOException {
+        // Setup data for test.
+        TreeMap<Key,Value> data = new TreeMap<>();
+        List<String> docIds = Arrays.asList("parent.doc.id", "parent.doc.id.child01", "parent.doc.id.child02");
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.addAllUID(docIds);
+        builder.setCOUNT(docIds.size());
+        builder.setIGNORE(false);
+        Value hasDocs = new Value(builder.build().toByteArray());
+        
+        List<IndexMatch> expectedDocs = new LinkedList<>();
+        
+        data.put(new Key("bar", "FOO", "20190314_1\u0000A"), hasDocs);
+        addToExpectedDocs("A", docIds, expectedDocs, null);
+        
+        // Setup iterator
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        Map<String,String> iteratorOptions = new HashMap<>();
+        iteratorOptions.put(CreateUidsIterator.PARSE_ROOT_UIDS, "false");
+        iterator.init(new SortedMapIterator(data), iteratorOptions, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        assertTrue(iterator.hasTop());
+        assertEquals(new Key("bar", "FOO", "20190314_1"), iterator.getTopKey());
+        
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        // 3 uids
+        assertEquals(3, indexInfo.count());
+        assertFalse(indexInfo.uids().isEmpty());
+        Iterator<IndexMatch> matchIter = indexInfo.uids().iterator();
+        assertEquals("A\u0000parent.doc.id", matchIter.next().getUid());
+        assertEquals("A\u0000parent.doc.id.child01", matchIter.next().getUid());
+        assertEquals("A\u0000parent.doc.id.child02", matchIter.next().getUid());
+        assertFalse(matchIter.hasNext());
+        
+        iterator.next();
+        assertFalse(iterator.hasTop());
+        
+        // Now test again but with the PARSE_ROOT_UIDS option set to true.
+        iterator = new CreateUidsIterator();
+        iteratorOptions = new HashMap<>();
+        iteratorOptions.put(CreateUidsIterator.PARSE_ROOT_UIDS, "true");
+        iterator.init(new SortedMapIterator(data), iteratorOptions, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        assertTrue(iterator.hasTop());
+        assertEquals(new Key("bar", "FOO", "20190314_1"), iterator.getTopKey());
+        
+        indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        // The three uids all share the same root uid, only 1 uid was returned.
+        assertEquals(1, indexInfo.count());
+        assertFalse(indexInfo.uids().isEmpty());
+        
+        matchIter = indexInfo.uids().iterator();
+        assertEquals("A\u0000parent.doc.id", matchIter.next().getUid());
+        assertFalse(matchIter.hasNext());
         
         iterator.next();
         assertFalse(iterator.hasTop());

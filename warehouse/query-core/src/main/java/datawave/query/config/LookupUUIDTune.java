@@ -12,7 +12,6 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tld.CreateTLDUidsIterator;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.BaseQueryLogic;
@@ -51,7 +50,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setCacheModel(enableCaching);
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
             if (reduceResponse) {
-                rsq.setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
+                rsq.setParseRootUids(true);
                 
                 // setup SeekingQueryPlanner in case the queryIterator requires it
                 SeekingQueryPlanner planner = new SeekingQueryPlanner();

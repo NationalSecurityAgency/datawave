@@ -5,8 +5,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
+import com.google.common.collect.Sets;
 import datawave.ingest.protobuf.Uid;
+import datawave.query.tld.TLD;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
 
@@ -51,6 +57,8 @@ import com.google.common.collect.Lists;
  * 
  * If COLLAPSE_UIDS is set to "false" then this iterator will return as many document specific ranges as there are hits.
  * 
+ * If PARSE_ROOT_UIDS option is set to "true" then this iterator will parse out the root pointer from a TLD uid. This will effectively ignore hits in child documents. See {@link TLD#parseRootPointerFromId(String)} for details.
+ * 
  * In addition to collapsing the document-specific ranges into a single range, the resulting {@link IndexInfo} object
  * will not track the document uids, thus reducing memory usage and increasing performance.
  * 
@@ -62,8 +70,10 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
     private static final Logger log = Logger.getLogger(CreateUidsIterator.class);
     
     public static final String COLLAPSE_UIDS = "index.lookup.collapse";
+    public static final String PARSE_ROOT_UIDS = "index.lookup.parse.root.uids";
     
     protected boolean collapseUids = false;
+    protected boolean parseRootUids = false;
     protected SortedKeyValueIterator<Key,Value> src;
     protected Key tk;
     protected IndexInfo tv;
@@ -79,6 +89,10 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 } catch (Exception e) {
                     collapseUids = false;
                 }
+            }
+            final String parseRootUidsOption = options.get(PARSE_ROOT_UIDS);
+            if (null != parseRootUidsOption) {
+                parseRootUids = Boolean.parseBoolean(parseRootUidsOption);
             }
         }
     }
@@ -112,7 +126,17 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                     }
                 src.next();
             }
-            tv = ignore ? new IndexInfo(count) : new IndexInfo(uids);
+            if (ignore) {
+                tv = new IndexInfo(count);
+            } else {
+                if (parseRootUids) {
+                    // For each uid in the list of uids, parse out the root pointer.
+                    SortedSet<String> rootUids = uids.stream().map(TLD::parseRootPointerFromId).collect(Collectors.toCollection(TreeSet::new));
+                    tv = new IndexInfo(rootUids);
+                } else {
+                    tv = new IndexInfo(uids);
+                }
+            }
             tk = reference;
         }
     }
