@@ -448,10 +448,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             if(getQueryPlanner().getPlannedScript() != null)
                 this.setQueryPlan(getQueryPlanner().getPlannedScript());
             throw new FullTableScansDisallowedException(e);
-        } catch (DatawaveFatalQueryException e) {
-            if(getQueryPlanner().getPlannedScript() != null)
-                this.setQueryPlan(getQueryPlanner().getPlannedScript());
-            throw new DatawaveFatalQueryException(e);
         } catch (DatawaveQueryException e){
             if(getQueryPlanner().getPlannedScript() != null)
                 this.setQueryPlan(getQueryPlanner().getPlannedScript());
