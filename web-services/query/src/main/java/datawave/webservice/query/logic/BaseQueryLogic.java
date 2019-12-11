@@ -323,8 +323,12 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public SelectorExtractor getSelectorExtractor() {
         return selectorExtractor;
     }
-
-    public String getQueryPlan() { return queryPlan; }
-
-    public void setQueryPlan(String queryPlan) { this.queryPlan = queryPlan;}
+    
+    public String getQueryPlan() {
+        return queryPlan;
+    }
+    
+    public void setQueryPlan(String queryPlan) {
+        this.queryPlan = queryPlan;
+    }
 }

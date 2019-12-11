@@ -150,7 +150,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.connection = null;
             return;
         }
-
+        
         GenericQueryConfiguration configuration = null;
         try {
             addNDC();
@@ -171,7 +171,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             throw e;
         } finally {
             // if configuration didn't fail, get plan. otherwise pull what the plan was supposed to be from logic
-            if(configuration != null){
+            if (configuration != null) {
                 this.getMetric().setPlan(configuration.getQueryString());
             } else {
                 this.getMetric().setPlan(this.logic.getQueryPlan());
