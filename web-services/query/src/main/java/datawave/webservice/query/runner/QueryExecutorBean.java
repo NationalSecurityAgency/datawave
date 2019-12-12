@@ -915,14 +915,6 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception e) {
                 log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
             }
-            
-            if (null != connection) {
-                try {
-                    connectionFactory.returnConnection(connection);
-                } catch (Exception e) {
-                    log.error("Error returning connection on failed create", e);
-                }
-            }
         }
     }
     

@@ -420,7 +420,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rebuild JEXL String from AST");
         
-        // Set the final query after we're done mucking with it
+        // Saving state of query string prior to global index lookup
         String newQueryString = JexlStringBuildingVisitor.buildQuery(queryTree);
         if (log.isTraceEnabled())
             log.trace("newQueryString is " + newQueryString);
