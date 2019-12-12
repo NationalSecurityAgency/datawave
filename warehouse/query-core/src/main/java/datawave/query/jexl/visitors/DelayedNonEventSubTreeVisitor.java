@@ -1,62 +1,54 @@
 package datawave.query.jexl.visitors;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.log4j.Logger;
 
-import java.util.HashSet;
-import java.util.NoSuchElementException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Visitor builds a list of all delayed sub trees within a script, and removes any nodes which are not based on index only lookups. This visitor will
- * modify/destroy the tree so a copy should always be used
+ * Visitor builds a map from all nonEvent fields contained within delayed subtrees to their respective processing nodes. This map then can be used with the
+ * DelayedNonEventIndexContext to fetch these values at evaluation time. This visitor will modify/destroy the tree so a copy should always be used.
  */
 public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(DelayedNonEventSubTreeVisitor.class);
-    
     private Set<String> nonEventFields;
-    private Set<JexlNode> delayedSubTrees;
-    private Set<String> foundNonEventFields;
+    private Multimap<String,JexlNode> delayedNonEventFieldMapNodes;
     
-    public static DelayedNonEventSubTreeVisitor processDelayedSubTrees(ASTJexlScript script, Set<String> nonEventFields) {
+    public static Multimap<String,JexlNode> getDelayedNonEventFieldMap(ASTJexlScript script, Set<String> nonEventFields) {
         // create a safe copy to rip apart
-        ASTJexlScript copy = (ASTJexlScript) RebuildingVisitor.copy(script);
+        ASTJexlScript copy = TreeFlatteningRebuildingVisitor.flatten(script);
         
         // run the visitor on the copy
         DelayedNonEventSubTreeVisitor visitor = new DelayedNonEventSubTreeVisitor(nonEventFields);
         copy.jjtAccept(visitor, null);
         
-        return visitor;
+        return visitor.delayedNonEventFieldMapNodes;
     }
     
     private DelayedNonEventSubTreeVisitor(Set<String> nonEventFields) {
         this.nonEventFields = nonEventFields;
-        delayedSubTrees = new HashSet<>();
-        foundNonEventFields = new HashSet<>();
-    }
-    
-    public Set<JexlNode> getDelayedSubTrees() {
-        return delayedSubTrees;
-    }
-    
-    public Set<String> getFoundNonEventFields() {
-        return foundNonEventFields;
+        delayedNonEventFieldMapNodes = HashMultimap.create();
     }
     
     /**
-     * Check if the node is an instance of a DelayedPredicate and if so capture the subtree and the found index only fields
+     * Check if the node is an instance of a DelayedPredicate and if so capture all nonEvent delayed nodes, ranges, and node operators into
+     * delayedNonEventFieldMapNodes.
      * 
      * @param node
      * @param data
@@ -65,101 +57,118 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         if (JexlASTHelper.isDelayedPredicate(node)) {
-            // check for expected form
-            if (node.jjtGetNumChildren() == 2) {
-                // grab the sub tree off the delayed node for processing, the second node is always the one that
-                JexlNode candidate = node.jjtGetChild(1);
-                
-                // get all the index only fields nested underneath and add them to the tracked list of nodes
-                boolean keep = false;
-                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(candidate)) {
-                    if (nonEventFields.contains(identifier.image)) {
-                        foundNonEventFields.add(identifier.image);
-                        keep = true;
-                    }
-                }
-                
-                // only keep sub trees that have nonEventFields
-                if (keep) {
-                    delayedSubTrees.add(candidate);
-                }
+            JexlNode candidate = QueryPropertyMarker.getQueryPropertySource(node, null);
+            
+            // This is to handle long list ivarators
+            if (ExceededOrThresholdMarkerJexlNode.instanceOf(candidate)) {
+                handleLongListIvarator(candidate);
             } else {
-                // should never get here, but log a warning to validate the assumption
-                log.warn("Unexpected structure for DelayedPredicate:\n" + JexlStringBuildingVisitor.buildQuery(node));
+                handleDelayedNodes(candidate);
+            }
+            
+            // this delayed node has been totally handled at this point there is no further processing to do
+            return null;
+        }
+        
+        // it wasn't a delayed node, process down the tree
+        return super.visit(node, data);
+    }
+    
+    /**
+     * Outside of LongListIvarators which are delayed, there are two other categories of nodes, bounded ranges and everything else. Use the JexlASTHelper to
+     * extract both and process. Each bounded range should have a new ASTAndNode generated to wrap them only as opposed to whatever is actually in the tree
+     * since there may be other nodes included. Everything that isn't a bounded range should still be processed looking for nonEvent fields.
+     * 
+     * @param node
+     */
+    private void handleDelayedNodes(JexlNode node) {
+        // special handling for bounded ranges
+        List<JexlNode> nonBoundedNodes = new ArrayList<>();
+        Map<LiteralRange<?>,List<JexlNode>> boundedRangeMap = JexlASTHelper.getBoundedRangesIndexAgnostic(node, nonBoundedNodes, true);
+        for (LiteralRange<?> literalRange : boundedRangeMap.keySet()) {
+            String fieldName = literalRange.getFieldName();
+            if (nonEventFields.contains(fieldName)) {
+                // create an AND node to track for delayed bounded range evaluation
+                List<JexlNode> literalRangeNodes = boundedRangeMap.get(literalRange);
+                JexlNode rangeNode = JexlNodeFactory.createAndNode(literalRangeNodes);
+                delayedNonEventFieldMapNodes.put(fieldName, rangeNode);
             }
         }
         
-        return super.visit(node, data);
+        // for all nodes that are not bounded ranges process them individually
+        for (JexlNode otherNode : nonBoundedNodes) {
+            otherNode.jjtAccept(this, true);
+        }
+    }
+    
+    /**
+     * Extract the field and id from an ExceededOrThresholdMarker and its id. If the field is nonEvent add the node to the nodeMap under the id value rather
+     * than the field
+     * 
+     * @param node
+     *            the node that was the source of the ExceededOrThresholdMarker
+     */
+    private void handleLongListIvarator(JexlNode node) {
+        // the context lookup will be on the id, but the test should still be against the field
+        String field = ExceededOrThresholdMarkerJexlNode.getField(node);
+        String id = ExceededOrThresholdMarkerJexlNode.getId(node);
+        if (nonEventFields.contains(field)) {
+            // long list ivarators require a context lookup on their id, not the field name
+            delayedNonEventFieldMapNodes.put(id, node);
+        }
     }
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return prune(node, data);
+        processLeaf(node, data);
+        return null;
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return prune(node, data);
+        processLeaf(node, data);
+        return null;
     }
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return prune(node, data);
+        processLeaf(node, data);
+        return null;
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return prune(node, data);
+        processLeaf(node, data);
+        return null;
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return prune(node, data);
+        processLeaf(node, data);
+        return null;
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return prune(node, data);
-    }
-    
-    @Override
-    public Object visit(ASTFunctionNode node, Object data) {
-        return prune(node, data);
+        processLeaf(node, data);
+        return null;
     }
     
     /**
-     * Prune any nodes that are not against the index only fields or are against functions
+     * When inside of an ASTDelayedPredicate, test the leaf operator's identifier to see if it needs to be processed. If the leaf does need to be processed at
+     * this node to the map under that field name
      * 
-     * @param node
+     * @param leaf
+     *            an operator node which should be tested for inclusion of delayed execution
      * @param data
-     * @return
+     *            a marker to determine if this node is a child of an ASTDelayedPredicate or not
      */
-    private Object prune(JexlNode node, Object data) {
-        JexlNode parent = node.jjtGetParent();
-        if (node instanceof ASTFunctionNode && parent != null) {
-            JexlNodes.removeFromParent(parent, node);
-            return data;
-        } else {
-            try {
-                String identifier = JexlASTHelper.getIdentifier(node);
-                if (identifier != null && !nonEventFields.contains(identifier)) {
-                    // remove this node from the parent
-                    if (parent != null) {
-                        JexlNodes.removeFromParent(parent, node);
-                        
-                        // reprocess the parent since the lengths have shifted, so can't continue from this point
-                        parent.jjtAccept(this, node);
-                    }
-                    
-                    // if parent is null this is the top level node and there is nothing to do since the top level node is not delayed so this can't back
-                    // propagate for evaluation anyway
-                }
-            } catch (NoSuchElementException e) {
-                // no-op, caught when there is no identifier, which is fine
+    private void processLeaf(JexlNode leaf, Object data) {
+        if (data instanceof Boolean && ((Boolean) data)) {
+            String fieldName = JexlASTHelper.getIdentifier(leaf);
+            if (nonEventFields.contains(fieldName)) {
+                delayedNonEventFieldMapNodes.put(fieldName, leaf);
             }
         }
-        
-        // not pruned, keep going down the tree
-        return super.visit(node, data);
     }
 }

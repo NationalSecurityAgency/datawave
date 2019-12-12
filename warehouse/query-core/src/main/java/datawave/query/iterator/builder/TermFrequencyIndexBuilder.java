@@ -107,8 +107,7 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     public NestedIterator<Key> build() {
         if (notNull(field, range, source, datatypeFilter, timeFilter)) {
             IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range, source, this.timeFilter, this.typeMetadata,
-                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, termFrequencyAggregator),
-                            field);
+                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, termFrequencyAggregator));
             field = null;
             range = null;
             source = null;

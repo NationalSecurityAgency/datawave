@@ -213,6 +213,11 @@ public class JexlNodes {
      * @return true if childToRemove was successfully found and removed from parent, false otherwise
      */
     public static boolean removeFromParent(JexlNode parent, JexlNode childToRemove) {
+        // sanity check
+        if (childToRemove == null || parent == null) {
+            return false;
+        }
+        
         boolean found = false;
         // at most as many children as currently exist
         List<JexlNode> children = new ArrayList<>(parent.jjtGetNumChildren());
@@ -220,7 +225,7 @@ public class JexlNodes {
         
         for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
             JexlNode child = parent.jjtGetChild(i);
-            if (!child.equals(childToRemove)) {
+            if (child != childToRemove) {
                 children.add(child);
             } else {
                 // clear the parent of the node that is removed

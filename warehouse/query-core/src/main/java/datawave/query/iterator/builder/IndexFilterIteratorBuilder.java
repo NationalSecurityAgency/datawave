@@ -100,7 +100,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                 throw new IllegalStateException("Unable to initialize regex iterator stack", e);
             }
             
-            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, field);
+            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator);
             range = null;
             filter = null;
             source = null;

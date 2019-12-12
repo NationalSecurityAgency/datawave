@@ -1,8 +1,8 @@
 package datawave.query.jexl;
 
+import com.google.common.collect.Multimap;
 import datawave.query.attributes.Document;
 import datawave.query.function.Equality;
-import datawave.query.iterator.FieldedIterator;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
@@ -15,8 +15,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -25,9 +27,8 @@ import java.util.Set;
  */
 public class DelayedNonEventIndexContext extends DatawaveJexlContext {
     private DatawaveJexlContext delegate;
-    private Set<String> delayedFields;
     private IteratorBuildingVisitor iteratorBuildingVisitor;
-    private Set<JexlNode> delayedSubTrees;
+    private Multimap<String,JexlNode> delayedNonEventFieldMap;
     private Range docRange;
     private Collection<ByteSequence> columnFamilies;
     private boolean inclusive;
@@ -38,18 +39,24 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
      */
     private Set<String> fetched;
     
-    public DelayedNonEventIndexContext(DatawaveJexlContext delegate, IteratorBuildingVisitor iteratorBuildingVisitor, Set<JexlNode> delayedSubTrees,
-                    Set<String> delayedFields, Range docRange, Collection<ByteSequence> columnFamilies, boolean inclusive, Equality equality) {
+    /**
+     * Set once for binding long list ivarator ids back to the current context
+     */
+    private Map<String,Object> exceededOrEvaluationContext;
+    
+    public DelayedNonEventIndexContext(DatawaveJexlContext delegate, IteratorBuildingVisitor iteratorBuildingVisitor,
+                    Multimap<String,JexlNode> delayedNonEventFieldMap, Range docRange, Collection<ByteSequence> columnFamilies, boolean inclusive,
+                    Equality equality) {
         this.delegate = delegate;
         this.iteratorBuildingVisitor = iteratorBuildingVisitor;
-        this.delayedSubTrees = delayedSubTrees;
-        this.delayedFields = delayedFields;
+        this.delayedNonEventFieldMap = delayedNonEventFieldMap;
         this.docRange = docRange;
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
         this.equality = equality;
         
         fetched = new HashSet<>();
+        exceededOrEvaluationContext = new HashMap<>();
     }
     
     @Override
@@ -60,11 +67,15 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
     @Override
     public Object get(String name) {
         // only do something special if there is delayed work to do
-        if ((null != name) && delayedFields.contains(name) && !fetched.contains(name)) {
+        if ((null != name) && delayedNonEventFieldMap.keySet().contains(name) && !fetched.contains(name)) {
             // fetch the field that was delayed
             List<Document> documentFragments = null;
             try {
                 documentFragments = fetchOnDemand(name);
+                
+                for (Map.Entry<String,Object> entry : exceededOrEvaluationContext.entrySet()) {
+                    delegate.set(entry.getKey(), entry.getValue());
+                }
             } catch (IOException e) {
                 throw new RuntimeException("Failed to fetch delayed index only fragments for field: " + name, e);
             }
@@ -94,31 +105,30 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
         
         // limit the ranges to use to the current document
         iteratorBuildingVisitor.limit(docRange);
+        // bind the long list ivarator context map, this is safe to re-use for each fetch
+        iteratorBuildingVisitor.setExceededOrEvaluationCache(exceededOrEvaluationContext);
         
         // for each sub tree build the nested iterator
-        for (JexlNode subTree : delayedSubTrees) {
+        for (JexlNode delayedNonEventNode : delayedNonEventFieldMap.get(name)) {
             // construct all index iterators for this sub tree
-            subTree.jjtAccept(iteratorBuildingVisitor, null);
-            NestedIterator<Key> subTreeNestedIterator = iteratorBuildingVisitor.root();
-            if (subTreeNestedIterator != null) {
-                // get all the leaf nodes, discarding the rest
-                Collection<NestedIterator<Key>> subTreeLeaves = subTreeNestedIterator.leaves();
+            delayedNonEventNode.jjtAccept(iteratorBuildingVisitor, null);
+            NestedIterator<Key> delayedNodeIterator = iteratorBuildingVisitor.root();
+            if (delayedNodeIterator != null) {
+                // get all the leaf nodes, this is very likely (always?) 1
+                Collection<NestedIterator<Key>> leaves = delayedNodeIterator.leaves();
                 // for each leaf, see if its a match for the target field
-                for (NestedIterator<Key> leaf : subTreeLeaves) {
-                    // grab the field off the leaf and make sure it matches
-                    if (leaf instanceof FieldedIterator && name.equals(((FieldedIterator) leaf).getField())) {
-                        // init/seek the leaf
-                        leaf.initialize();
-                        if (leaf instanceof SeekableIterator) {
-                            ((SeekableIterator) leaf).seek(docRange, columnFamilies, inclusive);
-                        }
-                        
-                        // for each value off the leaf add it to the document list as long as equality accepts it
-                        while (leaf.hasNext()) {
-                            Key nextKey = leaf.next();
-                            if (equality.partOf(docRange.getStartKey(), nextKey)) {
-                                documentList.add(leaf.document());
-                            }
+                for (NestedIterator<Key> leaf : leaves) {
+                    // init/seek the leaf
+                    leaf.initialize();
+                    if (leaf instanceof SeekableIterator) {
+                        ((SeekableIterator) leaf).seek(docRange, columnFamilies, inclusive);
+                    }
+                    
+                    // for each value off the leaf add it to the document list as long as equality accepts it
+                    while (leaf.hasNext()) {
+                        Key nextKey = leaf.next();
+                        if (equality.partOf(docRange.getStartKey(), nextKey)) {
+                            documentList.add(leaf.document());
                         }
                     }
                 }

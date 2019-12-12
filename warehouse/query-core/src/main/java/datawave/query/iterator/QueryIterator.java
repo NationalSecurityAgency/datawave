@@ -88,6 +88,7 @@ import org.apache.accumulo.trace.instrument.Trace;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -943,10 +944,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             try {
                 IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
-                DelayedNonEventSubTreeVisitor delayedNonEventSubTreeVisitor = DelayedNonEventSubTreeVisitor.processDelayedSubTrees(script, getNonEventFields());
+                Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(script, getNonEventFields());
                 
                 final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource),
-                                typeMetadataForEval, compositeMetadata, this, variables, iteratorBuildingVisitor, delayedNonEventSubTreeVisitor, equality,
+                                typeMetadataForEval, compositeMetadata, this, variables, iteratorBuildingVisitor, delayedNonEventFieldMap, equality,
                                 columnFamilies, inclusive, QueryIterator.this);
                 
                 if (exceededOrEvaluationCache != null)

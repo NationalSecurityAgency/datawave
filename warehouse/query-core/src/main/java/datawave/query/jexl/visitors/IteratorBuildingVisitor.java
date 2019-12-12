@@ -224,30 +224,20 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     public Object visit(ASTAndNode and, Object data) {
         
         if (ExceededOrThresholdMarkerJexlNode.instanceOf(and)) {
-            if (!limitLookup) {
-                
-                JexlNode source = ExceededOrThresholdMarkerJexlNode.getExceededOrThresholdSource(and);
-                // if the parent is our ExceededOrThreshold marker, then use an
-                // Ivarator to get the job done
-                if (source instanceof ASTAndNode) {
-                    try {
-                        ivarateList(source, data);
-                    } catch (IOException ioe) {
-                        throw new DatawaveFatalQueryException(ioe);
-                    }
-                } else {
-                    QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}",
-                                    "Limited ExceededOrThresholdMarkerJexlNode"));
-                    throw new DatawaveFatalQueryException(qe);
-                    
+            JexlNode source = ExceededOrThresholdMarkerJexlNode.getExceededOrThresholdSource(and);
+            // if the parent is our ExceededOrThreshold marker, then use an
+            // Ivarator to get the job done
+            if (source instanceof ASTAndNode) {
+                try {
+                    ivarateList(source, data);
+                } catch (IOException ioe) {
+                    throw new DatawaveFatalQueryException(ioe);
                 }
             } else {
                 QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}",
                                 "Limited ExceededOrThresholdMarkerJexlNode"));
                 throw new DatawaveFatalQueryException(qe);
             }
-            // we should not reach this case. This is an unallowed case.
-            
         } else if (null != data && data instanceof IndexRangeIteratorBuilder) {
             // index checking has already been done, otherwise we would not have
             // an "ExceededValueThresholdMarker"
@@ -1103,8 +1093,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         exceededOrEvaluationCache.put(id, values);
                 } else if (params.getFstURI() != null) {
                     URI fstUri = new URI(params.getFstURI());
-                    FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
-                                    hdfsFileSystem.getFileSystem(fstUri));
+                    FST fst;
+                    // only recompute this if not already set since this is potentially expensive
+                    if (exceededOrEvaluationCache.containsKey(id)) {
+                        fst = (FST) exceededOrEvaluationCache.get(id);
+                    } else {
+                        fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
+                                        hdfsFileSystem.getFileSystem(fstUri));
+                    }
                     listIterBuilder.setFst(fst);
                     
                     // cache this fst for use during JexlEvaluation.

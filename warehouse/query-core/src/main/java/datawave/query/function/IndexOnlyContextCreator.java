@@ -1,6 +1,7 @@
 package datawave.query.function;
 
 import com.google.common.base.Function;
+import com.google.common.collect.Multimap;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
@@ -22,6 +23,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.JexlContext;
+import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -66,7 +68,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     private final Range range;
     
     private final IteratorBuildingVisitor iteratorBuildingVisitor;
-    private final DelayedNonEventSubTreeVisitor delayedNonEventSubTreeVisitor;
+    private final Multimap<String,JexlNode> delayedNonEventFieldMap;
     private final Equality equality;
     private final Collection<ByteSequence> columnFamilies;
     private final boolean inclusive;
@@ -91,7 +93,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
      */
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, Collection<String> variables,
-                    IteratorBuildingVisitor iteratorBuildingVisitor, DelayedNonEventSubTreeVisitor delayedNonEventSubTreeVisitor, Equality equality,
+                    IteratorBuildingVisitor iteratorBuildingVisitor, Multimap<String,JexlNode> delayedNonEventFieldMap, Equality equality,
                     Collection<ByteSequence> columnFamilies, boolean inclusive, JexlContextValueComparator comparatorFactory) {
         super(variables, comparatorFactory);
         checkNotNull(source, SIMPLE_NAME + " cannot be initialized with a null " + SKVI_SIMPLE_NAME);
@@ -107,7 +109,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         
         // for delayed index lookup
         this.iteratorBuildingVisitor = iteratorBuildingVisitor;
-        this.delayedNonEventSubTreeVisitor = delayedNonEventSubTreeVisitor;
+        this.delayedNonEventFieldMap = delayedNonEventFieldMap;
         this.equality = equality;
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
@@ -187,16 +189,16 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
             newContext = parentContext;
         }
         
-        // see if there are any delayed subtrees that are index only
-        if (delayedNonEventSubTreeVisitor != null && delayedNonEventSubTreeVisitor.getFoundNonEventFields().size() > 0) {
+        // see if there are any delayed nodes that need to be processed
+        if (delayedNonEventFieldMap != null && delayedNonEventFieldMap.keySet().size() > 0) {
             // build the current document range from the document Key to end of the document, even though for some query logics this may be too large a range,
             // it will be narrowed with equality later
             Key startKey = new Key(from.first().getRow(), from.first().getColumnFamily());
             Key endKey = new Key(startKey.getRow().toString(), startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
             Range docRange = new Range(startKey, true, endKey, false);
             
-            newContext = new DelayedNonEventIndexContext(newContext, iteratorBuildingVisitor, delayedNonEventSubTreeVisitor.getDelayedSubTrees(),
-                            delayedNonEventSubTreeVisitor.getFoundNonEventFields(), docRange, columnFamilies, inclusive, equality);
+            newContext = new DelayedNonEventIndexContext(newContext, iteratorBuildingVisitor, delayedNonEventFieldMap, docRange, columnFamilies, inclusive,
+                            equality);
         }
         
         return newContext;

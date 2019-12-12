@@ -89,7 +89,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 // throw new IllegalStateException("Unable to parse regex " + value, e);
             }
             
-            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, field);
+            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator);
             field = null;
             value = null;
             negated = null;
