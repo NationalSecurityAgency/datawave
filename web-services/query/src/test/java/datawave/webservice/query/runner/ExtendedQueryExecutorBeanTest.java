@@ -3356,7 +3356,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations of the cleanup
         this.connectionFactory.returnConnection(this.connector);
-        EasyMock.expectLastCall().times(2);
+        EasyMock.expectLastCall();
         queryLogic1.close();
         EasyMock.expectLastCall();
         
@@ -3496,7 +3496,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations of the cleanup
         this.connectionFactory.returnConnection(this.connector);
-        EasyMock.expectLastCall().times(2);
+        EasyMock.expectLastCall();
         queryLogic1.close();
         EasyMock.expectLastCall();
         
