@@ -59,7 +59,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         // Test the plan
         try {
             GenericQueryConfiguration config = setupConfig(query);
-            fail("Expected DatawaveFatalQueryException but got plan: " + this.logic.getQueryPlan());
+            fail("Expected DatawaveFatalQueryException.");
         } catch (DatawaveFatalQueryException e) {
             // assure that Query Plan is not default value
             assertNotEquals("There is no plan.", "No Query Plan was set.", this.logic.getQueryPlan());
