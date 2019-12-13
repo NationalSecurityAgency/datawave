@@ -202,7 +202,7 @@ public class Union implements IndexStream {
         if (pointers.myNode != null)
             nodeSet.add(pointers.myNode);
         if (delayedNodes != null && !delayedNodes.isEmpty())
-            nodeSet.addAll(delayedNodes);
+            nodeSet.directAddAll(delayedNodes);
         
         currNode = null;
         if (nodeSet.size() == 1) {

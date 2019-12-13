@@ -33,7 +33,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     private boolean useSourceNodeForKeys = false;
     
     // Internal map of node keys to nodes;
-    private final Map<String,JexlNode> nodeMap;
+    protected final Map<String,JexlNode> nodeMap;
     
     public JexlNodeSet() {
         this(true);
@@ -59,8 +59,8 @@ public class JexlNodeSet implements Set<JexlNode> {
     }
     
     /**
-     * Get the set of generated node keys.
-     * 
+     * Get the set of node keys.
+     *
      * @return the underlying node map keySet.
      */
     public Set<String> getNodeKeys() {
@@ -101,12 +101,35 @@ public class JexlNodeSet implements Set<JexlNode> {
         throw new UnsupportedOperationException("JexlNodeSet does not support toArray() calls to pre-allocated arrays.");
     }
     
+    /**
+     * Add a JexlNode to the underlying node map, generating a node key in the process.
+     * 
+     * @param node
+     *            the JexlNode to be added
+     * @return true if the underlying collection was modified
+     */
     @Override
     public boolean add(JexlNode node) {
         String nodeKey = buildKey(node);
+        return directAdd(nodeKey, node);
+    }
+    
+    /**
+     * Add a JexlNode to the underlying node map without generating a new node key.
+     *
+     * In the case that a node key is already generated and the JexlNode has not changed, this method should be preferred over {@link #add(JexlNode)} in order
+     * to avoid regenerating the node key.
+     * 
+     * @param nodeKey
+     *            a string representation of the JexlNode
+     * @param node
+     *            a JexlNode representation of a query
+     * @return true if the underlying collection was modified
+     */
+    public boolean directAdd(String nodeKey, JexlNode node) {
         if (nodeMap.containsKey(nodeKey)) {
             
-            // If the node mapped to our node key is delayed, do not overwrite.
+            // If node key is already mapped to a delayed node, do not overwrite the delayed node.
             // If we are not delayed but a delayed version of our node already exists, do not add.
             if (isDelayed(nodeMap.get(nodeKey)) || !isDelayed(node)) {
                 return false;
@@ -154,12 +177,35 @@ public class JexlNodeSet implements Set<JexlNode> {
     public boolean addAll(Collection<? extends JexlNode> collection) {
         boolean modified = false;
         if (collection != null) {
+            
+            // If the collection is a JexlNodeSet then avoid regenerating all of the node keys.
+            if (collection instanceof JexlNodeSet) {
+                return directAddAll((JexlNodeSet) collection);
+            }
+            
             for (Object o : collection) {
                 if (o instanceof JexlNode) {
                     if (add((JexlNode) o)) {
                         modified = true;
                     }
                 }
+            }
+        }
+        return modified;
+    }
+    
+    /**
+     * Convenience method to perform a bulk add without generating new node keys.
+     *
+     * @param other
+     * @return
+     */
+    public boolean directAddAll(JexlNodeSet other) {
+        boolean modified = false;
+        Set<Map.Entry<String,JexlNode>> otherEntries = other.nodeMap.entrySet();
+        for (Map.Entry<String,JexlNode> entry : otherEntries) {
+            if (directAdd(entry.getKey(), entry.getValue())) {
+                modified = true;
             }
         }
         return modified;
@@ -211,7 +257,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     /**
      * Build a key for the provided Jexl node. If the {@link #useSourceNodeForKeys} flag is set, this method will unwrap
      * {@link datawave.query.jexl.nodes.QueryPropertyMarker} nodes when generating the node key.
-     * 
+     *
      * @param node
      * @return
      */
