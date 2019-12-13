@@ -70,12 +70,12 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                     JexlNode child = node0.jjtGetChild(i);
                     
                     if (child instanceof ASTIdentifier) {
-                        this.adopt(newParent, buildRegexNode((ASTIdentifier) child, functionMetadata.name(), arguments.get(1).image), i);
+                        this.adopt(newParent, buildRegexNode((ASTIdentifier) child, functionMetadata.name(), arguments.get(1).image));
                     } else { // probably a Reference
                         for (int j = 0; j < child.jjtGetNumChildren(); j++) {
                             JexlNode maybeIdentifier = child.jjtGetChild(j);
                             if (maybeIdentifier instanceof ASTIdentifier) {
-                                this.adopt(newParent, buildRegexNode((ASTIdentifier) maybeIdentifier, functionMetadata.name(), arguments.get(1).image), i + j);
+                                this.adopt(newParent, buildRegexNode((ASTIdentifier) maybeIdentifier, functionMetadata.name(), arguments.get(1).image));
                             }
                         }
                     }
@@ -102,10 +102,10 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
         return returnNode;
     }
     
-    private void adopt(JexlNode parent, JexlNode child, int i) {
+    private void adopt(JexlNode parent, JexlNode child) {
         if (child != null && parent != null) {
             child.jjtSetParent(parent);
-            parent.jjtAddChild(child, i);
+            parent.jjtAddChild(child, parent.jjtGetNumChildren());
         }
     }
     
