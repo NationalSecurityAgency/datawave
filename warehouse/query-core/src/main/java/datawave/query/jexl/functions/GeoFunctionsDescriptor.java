@@ -308,7 +308,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                             // if there are other fields, recreate the geo function node
                             if (!otherFields.isEmpty()) {
                                 // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
-                                JexlNode geoNode = JexlASTHelper.parseJexlQuery(namespace + ":" + name + "(" + geoFields + ", " + arg1 + ", " + arg2 + ")");
+                                JexlNode geoNode = JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery(
+                                                namespace + ":" + name + "(" + geoFields + ", " + arg1 + ", " + arg2 + ")").jjtGetChild(0));
                                 return JexlNodeFactory.createOrNode(Arrays.asList(geoNode, geoWaveNode));
                             } else {
                                 return geoWaveNode;
