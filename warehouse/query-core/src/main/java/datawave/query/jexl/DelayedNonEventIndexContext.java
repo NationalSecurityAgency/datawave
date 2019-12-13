@@ -15,10 +15,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,11 +37,6 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
      */
     private Set<String> fetched;
     
-    /**
-     * Set once for binding long list ivarator ids back to the current context
-     */
-    private Map<String,Object> exceededOrEvaluationContext;
-    
     public DelayedNonEventIndexContext(DatawaveJexlContext delegate, IteratorBuildingVisitor iteratorBuildingVisitor,
                     Multimap<String,JexlNode> delayedNonEventFieldMap, Range docRange, Collection<ByteSequence> columnFamilies, boolean inclusive,
                     Equality equality) {
@@ -56,7 +49,6 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
         this.equality = equality;
         
         fetched = new HashSet<>();
-        exceededOrEvaluationContext = new HashMap<>();
     }
     
     @Override
@@ -72,10 +64,6 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
             List<Document> documentFragments = null;
             try {
                 documentFragments = fetchOnDemand(name);
-                
-                for (Map.Entry<String,Object> entry : exceededOrEvaluationContext.entrySet()) {
-                    delegate.set(entry.getKey(), entry.getValue());
-                }
             } catch (IOException e) {
                 throw new RuntimeException("Failed to fetch delayed index only fragments for field: " + name, e);
             }
@@ -105,16 +93,17 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
         
         // limit the ranges to use to the current document
         iteratorBuildingVisitor.limit(docRange);
-        // bind the long list ivarator context map, this is safe to re-use for each fetch
-        iteratorBuildingVisitor.setExceededOrEvaluationCache(exceededOrEvaluationContext);
         
         // for each sub tree build the nested iterator
         for (JexlNode delayedNonEventNode : delayedNonEventFieldMap.get(name)) {
-            // construct all index iterators for this sub tree
+            // reset the root
+            iteratorBuildingVisitor.resetRoot();
+            
+            // construct the index iterator for this node
             delayedNonEventNode.jjtAccept(iteratorBuildingVisitor, null);
             NestedIterator<Key> delayedNodeIterator = iteratorBuildingVisitor.root();
             if (delayedNodeIterator != null) {
-                // get all the leaf nodes, this is very likely (always?) 1
+                // get all the leaf nodes, this is very likely (always?)
                 Collection<NestedIterator<Key>> leaves = delayedNodeIterator.leaves();
                 // for each leaf, see if its a match for the target field
                 for (NestedIterator<Key> leaf : leaves) {

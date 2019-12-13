@@ -311,7 +311,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                      * expression 4) Return a stubbed range in case we have a disjunction that breaks the current doc.
                      */
                     if (!limitOverride && !negatedOverall)
-                        nested = createExceededCheck(identifier, range);
+                        nested = createExceededCheck(identifier, range, and);
                 }
                 
                 if (null != nested && null != data && data instanceof AbstractIteratorBuilder) {
@@ -427,6 +427,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
             builder.setTermFrequencyAggregator(getTermFrequencyAggregator(node, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
+            builder.setNode(node);
             
             Range fiRange = getFiRangeForTF(range);
             
@@ -563,6 +564,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setTimeFilter(timeFilter);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setNode(node);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -635,6 +637,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.setNode(node);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -851,7 +854,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param range
      * @return
      */
-    protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range) {
+    protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range, JexlNode node) {
         IndexIteratorBuilder builder = null;
         try {
             builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
@@ -868,6 +871,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setNode(node);
         
         return builder.build();
     }
@@ -982,7 +986,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     public Object visit(ASTNumberLiteral node, Object o) {
         // Set the literal in the IndexIterator
         AbstractIteratorBuilder builder = (AbstractIteratorBuilder) o;
-        builder.setValue(node.image);
+        if (builder != null) {
+            builder.setValue(node.image);
+        }
         
         return null;
     }
@@ -1323,6 +1329,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
+        builder.setNode(node);
         
         // We have no parent already defined
         if (data == null) {
@@ -1582,5 +1589,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     public IteratorBuildingVisitor setExceededOrEvaluationCache(Map<String,Object> exceededOrEvaluationCache) {
         this.exceededOrEvaluationCache = exceededOrEvaluationCache;
         return this;
+    }
+    
+    public void resetRoot() {
+        this.root = null;
     }
 }

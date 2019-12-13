@@ -17,6 +17,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
@@ -34,6 +35,15 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected Set<String> fieldsToAggregate;
     protected EventDataQueryFilter attrFilter;
     protected TermFrequencyAggregator termFrequencyAggregator;
+    protected JexlNode node;
+    
+    public void setNode(JexlNode node) {
+        this.node = node;
+    }
+    
+    public JexlNode getNode() {
+        return node;
+    }
     
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
@@ -107,12 +117,14 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     public NestedIterator<Key> build() {
         if (notNull(field, range, source, datatypeFilter, timeFilter)) {
             IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range, source, this.timeFilter, this.typeMetadata,
-                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, termFrequencyAggregator));
+                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, termFrequencyAggregator),
+                            getNode(), getField());
             field = null;
             range = null;
             source = null;
             timeFilter = null;
             datatypeFilter = null;
+            node = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

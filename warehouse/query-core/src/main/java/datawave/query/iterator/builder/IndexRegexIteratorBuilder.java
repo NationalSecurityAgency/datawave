@@ -37,7 +37,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(field, value, negated, source, datatypeFilter, timeFilter, keyTform, ivaratorCacheDirURI, hdfsFileSystem)) {
+        if (notNull(field, value, negated, source, datatypeFilter, timeFilter, keyTform, ivaratorCacheDirURI, hdfsFileSystem, getField(), getNode())) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + field + (negated ? "!~" : "=~") + value);
             }
@@ -89,7 +89,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 // throw new IllegalStateException("Unable to parse regex " + value, e);
             }
             
-            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator);
+            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, getNode(), getField());
             field = null;
             value = null;
             negated = null;
@@ -100,6 +100,8 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
             timeFilter = null;
             hdfsFileSystem = null;
             ivaratorCacheDirURI = null;
+            field = null;
+            node = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

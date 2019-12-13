@@ -944,7 +944,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             try {
                 IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
-                Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(script, getNonEventFields());
+                iteratorBuildingVisitor.setExceededOrEvaluationCache(exceededOrEvaluationCache);
+                Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor, script,
+                                getNonEventFields());
                 
                 final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource),
                                 typeMetadataForEval, compositeMetadata, this, variables, iteratorBuildingVisitor, delayedNonEventFieldMap, equality,
