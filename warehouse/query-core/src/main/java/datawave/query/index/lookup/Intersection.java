@@ -2,15 +2,10 @@ package datawave.query.index.lookup;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicates;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.PeekingIterator;
-import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -18,7 +13,6 @@ import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -26,6 +20,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 import datawave.util.StringUtils;
@@ -49,10 +44,11 @@ public class Intersection implements IndexStream {
     private final StreamContext context;
     private final String contextDebug;
     private final List<String> childrenContextDebug = new ArrayList<>();
-    Multimap<String,JexlNode> nodesMap = ArrayListMultimap.create();
+    
+    private JexlNodeSet nodeSet = new JexlNodeSet();
     private Tuple2<String,IndexInfo> next;
     private JexlNode currNode;
-    protected List<JexlNode> delayedNodes;
+    protected JexlNodeSet delayedNodes;
     protected boolean isVariable;
     protected UidIntersector uidIntersector;
     
@@ -61,7 +57,7 @@ public class Intersection implements IndexStream {
     public Intersection(Iterable<? extends IndexStream> children, UidIntersector uidIntersector) {
         this.children = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
         this.uidIntersector = uidIntersector;
-        delayedNodes = Lists.newArrayList();
+        this.delayedNodes = new JexlNodeSet();
         Iterator<? extends IndexStream> childrenItr = children.iterator();
         
         boolean allExceededValueThreshold = true;
@@ -94,19 +90,19 @@ public class Intersection implements IndexStream {
                             log.trace("Setting variable nodes");
                         isVariable = true;
                         JexlNode node = stream.peek().second().getNode();
-                        nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(node), node);
+                        this.nodeSet.add(node);
                         this.children.put(key(stream), stream);
                     } else {
                         
                         if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context())
                             exceededValueThreshold = true;
                         
-                        nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(stream.currentNode()), stream.currentNode());
+                        this.nodeSet.add(stream.currentNode());
                         this.children.put(key(stream), stream);
                     }
                 } else {
                     if (StreamContext.EXCEEDED_TERM_THRESHOLD == stream.context()) {
-                        delayedNodes.add(stream.currentNode());
+                        this.delayedNodes.add(stream.currentNode());
                     } else if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
                         exceededValueThreshold = true;
                         absent = true;
@@ -116,8 +112,8 @@ public class Intersection implements IndexStream {
                                     || StreamContext.DELAYED_FIELD == stream.context() || StreamContext.IGNORED == stream.context()) {
                         if (StreamContext.DELAYED_FIELD == stream.context())
                             delayedField = true;
-                        delayedNodes.add(stream.currentNode());
-                        nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(stream.currentNode()), stream.currentNode());
+                        this.delayedNodes.add(stream.currentNode());
+                        this.nodeSet.add(stream.currentNode());
                     } else {
                         QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_RANGE_STREAM, MessageFormat.format("{0}", stream.context()));
                         throw new DatawaveFatalQueryException(qe);
@@ -130,7 +126,7 @@ public class Intersection implements IndexStream {
             if (log.isTraceEnabled())
                 log.trace("size is " + this.children.size());
             
-            currNode = buildCurrentNode();
+            currNode = JexlNodeFactory.createAndNode(nodeSet.getNodes());
             
             Preconditions.checkNotNull(currNode);
             
@@ -159,32 +155,6 @@ public class Intersection implements IndexStream {
         }
         if (log.isTraceEnabled())
             log.trace("Stream context " + this.context);
-    }
-    
-    private JexlNode buildCurrentNode() {
-        Set<JexlNode> allNodes = Sets.newHashSet();
-        for (JexlNode node : delayedNodes) {
-            nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(node), node);
-        }
-        
-        for (String key : nodesMap.keySet()) {
-            Collection<JexlNode> nodeColl = nodesMap.get(key);
-            JexlNode delayedNode = null;
-            if (nodeColl.size() > 1) {
-                log.trace(key + " has more than one node. taking first");
-                for (JexlNode node : nodeColl) {
-                    if (isDelayed(node)) {
-                        delayedNode = node;
-                        break;
-                    }
-                }
-            }
-            if (null != delayedNode)
-                allNodes.add(delayedNode);
-            else
-                allNodes.add(nodeColl.iterator().next());
-        }
-        return JexlNodeFactory.createAndNode(FluentIterable.from(allNodes).filter(Predicates.notNull()).toList());
     }
     
     protected boolean isDelayed(JexlNode testNode) {
@@ -258,8 +228,8 @@ public class Intersection implements IndexStream {
         Iterator<IndexInfo> infos = convert(iterators).iterator();
         IndexInfo merged = infos.next();
         
-        nodesMap = ArrayListMultimap.create();
-        nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(merged.getNode()), merged.getNode());
+        nodeSet.clear();
+        nodeSet.add(merged.getNode());
         
         boolean childrenAdded = false;
         
@@ -267,23 +237,22 @@ public class Intersection implements IndexStream {
             
             IndexInfo next = infos.next();
             
-            nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(next.getNode()), next.getNode());
-            merged = merged.intersect(next, delayedNodes, uidIntersector);
+            nodeSet.add(next.getNode());
+            merged = merged.intersect(next, Lists.newArrayList(delayedNodes.getNodes()), uidIntersector);
             childrenAdded = true;
         }
         
         if (log.isTraceEnabled())
             log.trace("intersect " + childrenAdded);
         
-        for (JexlNode node : delayedNodes) {
-            nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(node), node);
-        }
+        // Add all delayed nodes.
+        nodeSet.addAll(delayedNodes);
         
-        currNode = buildCurrentNode();
+        currNode = JexlNodeFactory.createAndNode(nodeSet.getNodes());
         
         if (!childrenAdded) {
             if (!delayedNodes.isEmpty())
-                childrenAdded = merged.intersect(delayedNodes);
+                childrenAdded = merged.intersect(Lists.newArrayList(delayedNodes.getNodes()));
         }
         
         if (!childrenAdded) {
