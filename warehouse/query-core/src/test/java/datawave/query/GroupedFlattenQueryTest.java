@@ -64,7 +64,7 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(flatten);
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes, FileLoaderFactory.FileType.JSON);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public GroupedFlattenQueryTest() {

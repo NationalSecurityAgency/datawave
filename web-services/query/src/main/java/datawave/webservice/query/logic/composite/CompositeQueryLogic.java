@@ -23,7 +23,7 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseResponse;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.functors.NOPTransformer;
@@ -142,7 +142,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         
         for (BaseQueryLogic<?> logic : queryLogics) {
             final BaseQueryLogic<?> queryLogic = logic;
@@ -172,7 +172,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             BaseQueryLogic<?> logic = itr.next();
             GenericQueryConfiguration config = null;
             try {
-                config = logic.initialize(connection, settings, runtimeQueryAuthorizations);
+                config = logic.initialize(client, settings, runtimeQueryAuthorizations);
                 logicQueryStringBuilder.append("(table=" + config.getTableName());
                 logicQueryStringBuilder.append(",query=" + config.getQueryString());
                 logicQueryStringBuilder.append(") ");
@@ -210,7 +210,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+    public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         
         StringBuilder plans = new StringBuilder();
@@ -218,7 +218,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         String separator = Integer.toString(count++) + ": ";
         for (Entry<BaseQueryLogic<?>,QueryLogicHolder> entry : logicState.entrySet()) {
             plans.append(separator);
-            plans.append(entry.getKey().getPlan(connection, settings, runtimeQueryAuthorizations, expandFields, expandValues));
+            plans.append(entry.getKey().getPlan(client, settings, runtimeQueryAuthorizations, expandFields, expandValues));
             separator = "\n" + Integer.toString(count++) + ": ";
         }
         return plans.toString();

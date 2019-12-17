@@ -49,7 +49,6 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.sql.DataSource;
-import javax.sql.rowset.CachedRowSet;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
@@ -125,9 +124,9 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.TotalResultsAware;
 import datawave.webservice.result.VoidResponse;
 
-import org.apache.accumulo.core.client.Connector;
 import datawave.webservice.query.runner.Span;
 import datawave.webservice.query.runner.Trace;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
@@ -357,7 +356,7 @@ public class CachedResultsBean {
         }
         
         AccumuloConnectionFactory.Priority priority;
-        Connector connector = null;
+        AccumuloClient client = null;
         RunningQuery query = null;
         String tableName = "t" + nameBase;
         String viewName = "v" + nameBase;
@@ -417,8 +416,8 @@ public class CachedResultsBean {
                     // remove original query from the cache to avoid duplicate metrics
                     // when it is expired by the QueryExpirationBean
                     rq.setActiveCall(false);
-                    if (rq.getConnection() != null) {
-                        connectionFactory.returnConnection(rq.getConnection());
+                    if (rq.getClient() != null) {
+                        connectionFactory.returnClient(rq.getClient());
                     }
                     runningQueryCache.remove(queryId);
                 }
@@ -439,7 +438,7 @@ public class CachedResultsBean {
             addQueryToTrackingMap(trackingMap, q);
             accumuloConnectionRequestBean.requestBegin(queryId);
             try {
-                connector = connectionFactory.getConnection(priority, trackingMap);
+                client = connectionFactory.getClient(priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(queryId);
             }
@@ -477,7 +476,7 @@ public class CachedResultsBean {
             
             if (t instanceof CacheableLogic) {
                 // hold on to a reference of the query logic so we cancel it if need be.
-                qlCache.add(q.getId().toString(), owner, logic, connector);
+                qlCache.add(q.getId().toString(), owner, logic, client);
                 
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
@@ -486,7 +485,7 @@ public class CachedResultsBean {
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
-                    query.setConnection(connector);
+                    query.setClient(client);
                     // Copy trace info from a clone of the original query
                     query.setTraceInfo(traceInfo);
                 } finally {
@@ -759,9 +758,9 @@ public class CachedResultsBean {
                 } catch (Exception e) {
                     response.addException(new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e).getBottomQueryException());
                 }
-            } else if (connector != null) {
+            } else if (client != null) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error(new QueryException(DatawaveErrorCode.CONNECTOR_RETURN_ERROR, e));
                 }

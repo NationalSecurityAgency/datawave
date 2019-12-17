@@ -19,10 +19,10 @@ import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.runner.RunningQuery;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -301,7 +301,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     
     private QuerySettings setupQuery(String sid, String queryId, Principal principal) throws Exception {
         
-        Connector connector = null;
+        AccumuloClient client = null;
         QueryLogic<?> logic = null;
         try {
             // Get the query by the query id
@@ -315,20 +315,20 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             
             // Get an accumulo connection
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = connectionFactory.getConnection(logic.getConnectionPriority(), trackingMap);
+            client = connectionFactory.getClient(logic.getConnectionPriority(), trackingMap);
             
             // Merge user auths with the auths that they use in the Query
             Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), principal);
             
             // Initialize the logic so that the configuration contains all of the iterator options
-            GenericQueryConfiguration queryConfig = logic.initialize(connector, q, runtimeQueryAuthorizations);
+            GenericQueryConfiguration queryConfig = logic.initialize(client, q, runtimeQueryAuthorizations);
             
             String base64EncodedQuery = BulkResultsFileOutputMapper.serializeQuery(q);
             
             return new QuerySettings(logic, queryConfig, base64EncodedQuery, q.getClass(), runtimeQueryAuthorizations);
         } finally {
-            if (null != logic && null != connector)
-                connectionFactory.returnConnection(connector);
+            if (null != logic && null != client)
+                connectionFactory.returnClient(client);
         }
         
     }

@@ -12,8 +12,6 @@ import java.io.File;
 import java.net.URI;
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,8 +28,6 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -51,7 +47,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public MaxExpansionRegexQueryTest() {

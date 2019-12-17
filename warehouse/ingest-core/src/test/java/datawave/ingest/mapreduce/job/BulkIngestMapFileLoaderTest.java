@@ -71,7 +71,8 @@ public class BulkIngestMapFileLoaderTest {
     public void testShutdownPortAlreadyInUse() throws IOException {
         exit.expectSystemExitWithStatus(-3);
         try (final ServerSocket socket = new ServerSocket(0)) {
-            new BulkIngestMapFileLoader(".", null, null, null, null, null, null, null, null, null, null, null, socket.getLocalPort());
+            new BulkIngestMapFileLoader(".", null, "test", "localhost:2181", "root", new PasswordToken(""), null, null, null, null, null, null,
+                            socket.getLocalPort());
         }
     }
     

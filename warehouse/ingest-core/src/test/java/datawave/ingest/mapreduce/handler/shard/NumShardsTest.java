@@ -10,7 +10,10 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -186,7 +189,7 @@ public class NumShardsTest {
         // configure mock accumulo instance and populate with a couple of multiple numshards entries
         PasswordToken noPasswordToken = new PasswordToken();
         InMemoryInstance i = new InMemoryInstance("mock");
-        Connector connector = i.getConnector("root", noPasswordToken);
+        AccumuloClient client = new InMemoryAccumuloClient("root", i);
         
         Configuration conf = new Configuration();
         conf.set(AccumuloHelper.USERNAME, "root");
@@ -195,8 +198,8 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         
-        connector.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
-        BatchWriter recordWriter = connector.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
+        client.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
+        BatchWriter recordWriter = client.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
         
         // write a couiple of entries for multiple numshards
         Mutation m = new Mutation(NumShards.NUM_SHARDS);
@@ -227,7 +230,7 @@ public class NumShardsTest {
         AccumuloHelper mockedAccumuloHelper = EasyMock.createMock(AccumuloHelper.class);
         mockedAccumuloHelper.setup(conf);
         EasyMock.expectLastCall();
-        EasyMock.expect(mockedAccumuloHelper.getConnector()).andReturn(connector);
+        EasyMock.expect(mockedAccumuloHelper.getClient()).andReturn(client);
         EasyMock.replay(mockedAccumuloHelper);
         
         NumShards numShards = new NumShards(conf);
@@ -260,7 +263,7 @@ public class NumShardsTest {
         // configure mock accumulo instance and populate with a couple of multiple numshards entries
         PasswordToken noPasswordToken = new PasswordToken();
         InMemoryInstance i = new InMemoryInstance("mock2");
-        Connector connector = i.getConnector("root", noPasswordToken);
+        AccumuloClient client = new InMemoryAccumuloClient("root", i);
         
         Configuration conf = new Configuration();
         conf.set(AccumuloHelper.USERNAME, "root");
@@ -269,8 +272,8 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         
-        connector.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
-        BatchWriter recordWriter = connector.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
+        client.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
+        BatchWriter recordWriter = client.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
         
         // write a couiple of entries for multiple numshards
         Mutation m = new Mutation(NumShards.NUM_SHARDS);
@@ -290,7 +293,7 @@ public class NumShardsTest {
         AccumuloHelper mockedAccumuloHelper = EasyMock.createMock(AccumuloHelper.class);
         mockedAccumuloHelper.setup(conf);
         EasyMock.expectLastCall();
-        EasyMock.expect(mockedAccumuloHelper.getConnector()).andReturn(connector);
+        EasyMock.expect(mockedAccumuloHelper.getClient()).andReturn(client);
         EasyMock.replay(mockedAccumuloHelper);
         
         NumShards numShards = new NumShards(conf);

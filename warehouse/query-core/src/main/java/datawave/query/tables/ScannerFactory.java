@@ -12,8 +12,8 @@ import datawave.webservice.common.connection.WrappedConnector;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -30,7 +30,7 @@ public class ScannerFactory {
     protected int maxQueue = 1000;
     protected HashSet<ScannerBase> instances = new HashSet<>();
     protected HashSet<ScannerSession> sessionInstances = new HashSet<>();
-    protected Connector cxn;
+    protected AccumuloClient cxn;
     protected boolean open = true;
     protected boolean accrueStats = false;
     protected Query settings;
@@ -41,7 +41,7 @@ public class ScannerFactory {
     
     public ScannerFactory(GenericQueryConfiguration queryConfiguration) {
         
-        this.cxn = queryConfiguration.getConnector();
+        this.cxn = queryConfiguration.getClient();
         
         if (queryConfiguration instanceof ShardQueryConfiguration) {
             this.settings = ((ShardQueryConfiguration) queryConfiguration).getQuery();
@@ -61,15 +61,15 @@ public class ScannerFactory {
         }
     }
     
-    public ScannerFactory(Connector cxn) {
-        this(cxn, 100);
+    public ScannerFactory(AccumuloClient client) {
+        this(client, 100);
         
     }
     
-    public ScannerFactory(Connector connector, int queueSize) {
+    public ScannerFactory(AccumuloClient client, int queueSize) {
         try {
-            this.cxn = connector;
-            scanQueue = new ResourceQueue(queueSize, connector);
+            this.cxn = client;
+            scanQueue = new ResourceQueue(queueSize, client);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

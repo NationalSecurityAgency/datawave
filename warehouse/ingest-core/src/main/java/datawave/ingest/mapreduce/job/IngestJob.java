@@ -34,6 +34,7 @@ import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.Constants;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
@@ -738,10 +739,12 @@ public class IngestJob implements Tool {
      */
     private boolean configureTables(AccumuloHelper cbHelper, Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException,
                     ClassNotFoundException {
-        // Check to see if the tables exist
-        TableOperations tops = cbHelper.getConnector().tableOperations();
-        NamespaceOperations namespaceOperations = cbHelper.getConnector().namespaceOperations();
-        createAndConfigureTablesIfNecessary(tableNames, tops, namespaceOperations, conf, log, enableBloomFilters);
+        try (AccumuloClient client = cbHelper.getClient()) {
+            // Check to see if the tables exist
+            TableOperations tops = client.tableOperations();
+            NamespaceOperations namespaceOperations = client.namespaceOperations();
+            createAndConfigureTablesIfNecessary(tableNames, tops, namespaceOperations, conf, log, enableBloomFilters);
+        }
         
         return true;
     }
@@ -1248,93 +1251,94 @@ public class IngestJob implements Tool {
      */
     void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloSecurityException, AccumuloException,
                     TableNotFoundException, ClassNotFoundException {
-        TableOperations tops = accumuloHelper.getConnector().tableOperations();
-        
-        // We're arbitrarily choosing the scan scope for gathering aggregator information.
-        // For the aggregators configured in this job, that's ok since they are added to all
-        // scopes. If someone manually added another aggregator and didn't apply it to scan
-        // time, then we wouldn't pick that up here, but the chances of that are very small
-        // since any aggregation we care about in the reducer doesn't make sense unless the
-        // aggregator is a scan aggregator.
-        IteratorScope scope = IteratorScope.scan;
-        for (String table : tableNames) {
-            ArrayList<IteratorSetting> iters = new ArrayList<>();
-            HashMap<String,Map<String,String>> allOptions = new HashMap<>();
+        try (AccumuloClient client = accumuloHelper.getClient()) {
+            TableOperations tops = client.tableOperations();
             
-            // Go through all of the configuration properties of this table and figure out which
-            // properties represent iterator configuration. For those that do, store the iterator
-            // setup and options in a map so that we can group together all of the options for each
-            // iterator.
-            for (Entry<String,String> entry : tops.getProperties(table)) {
+            // We're arbitrarily choosing the scan scope for gathering aggregator information.
+            // For the aggregators configured in this job, that's ok since they are added to all
+            // scopes. If someone manually added another aggregator and didn't apply it to scan
+            // time, then we wouldn't pick that up here, but the chances of that are very small
+            // since any aggregation we care about in the reducer doesn't make sense unless the
+            // aggregator is a scan aggregator.
+            IteratorScope scope = IteratorScope.scan;
+            for (String table : tableNames) {
+                ArrayList<IteratorSetting> iters = new ArrayList<>();
+                HashMap<String,Map<String,String>> allOptions = new HashMap<>();
                 
-                if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
+                // Go through all of the configuration properties of this table and figure out which
+                // properties represent iterator configuration. For those that do, store the iterator
+                // setup and options in a map so that we can group together all of the options for each
+                // iterator.
+                for (Entry<String,String> entry : tops.getProperties(table)) {
                     
-                    String suffix = entry.getKey().substring(Property.TABLE_ITERATOR_PREFIX.getKey().length());
-                    String suffixSplit[] = suffix.split("\\.", 4);
-                    
-                    if (!suffixSplit[0].equals(scope.name())) {
-                        continue;
-                    }
-                    
-                    if (suffixSplit.length == 2) {
-                        String sa[] = entry.getValue().split(",");
-                        int prio = Integer.parseInt(sa[0]);
-                        String className = sa[1];
-                        iters.add(new IteratorSetting(prio, suffixSplit[1], className));
-                    } else if (suffixSplit.length == 4 && suffixSplit[2].equals("opt")) {
-                        String iterName = suffixSplit[1];
-                        String optName = suffixSplit[3];
+                    if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
                         
-                        Map<String,String> options = allOptions.get(iterName);
-                        if (options == null) {
-                            options = new HashMap<>();
-                            allOptions.put(iterName, options);
+                        String suffix = entry.getKey().substring(Property.TABLE_ITERATOR_PREFIX.getKey().length());
+                        String suffixSplit[] = suffix.split("\\.", 4);
+                        
+                        if (!suffixSplit[0].equals(scope.name())) {
+                            continue;
                         }
                         
-                        options.put(optName, entry.getValue());
+                        if (suffixSplit.length == 2) {
+                            String sa[] = entry.getValue().split(",");
+                            int prio = Integer.parseInt(sa[0]);
+                            String className = sa[1];
+                            iters.add(new IteratorSetting(prio, suffixSplit[1], className));
+                        } else if (suffixSplit.length == 4 && suffixSplit[2].equals("opt")) {
+                            String iterName = suffixSplit[1];
+                            String optName = suffixSplit[3];
+                            
+                            Map<String,String> options = allOptions.get(iterName);
+                            if (options == null) {
+                                options = new HashMap<>();
+                                allOptions.put(iterName, options);
+                            }
+                            
+                            options.put(optName, entry.getValue());
+                            
+                        } else {
+                            log.warn("Unrecognizable option: " + entry.getKey());
+                        }
+                    }
+                }
+                
+                // Now go through all of the iterators, and for those that are aggregators, store
+                // the options in the Hadoop config so that we can parse it back out in the reducer.
+                for (IteratorSetting iter : iters) {
+                    Class<?> klass = Class.forName(iter.getIteratorClass());
+                    if (PropogatingIterator.class.isAssignableFrom(klass)) {
+                        Map<String,String> options = allOptions.get(iter.getName());
+                        if (null != options) {
+                            for (Entry<String,String> option : options.entrySet()) {
+                                String key = String.format("aggregator.%s.%d.%s", table, iter.getPriority(), option.getKey());
+                                conf.set(key, option.getValue());
+                            }
+                        } else
+                            log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
                         
                     } else {
-                        log.warn("Unrecognizable option: " + entry.getKey());
+                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
+                    }
+                }
+                
+                for (IteratorSetting iter : iters) {
+                    Class<?> klass = Class.forName(iter.getIteratorClass());
+                    if (Combiner.class.isAssignableFrom(klass)) {
+                        Map<String,String> options = allOptions.get(iter.getName());
+                        if (null != options) {
+                            String key = String.format("combiner.%s.%d.iterClazz", table, iter.getPriority());
+                            conf.set(key, iter.getIteratorClass());
+                            for (Entry<String,String> option : options.entrySet()) {
+                                key = String.format("combiner.%s.%d.%s", table, iter.getPriority(), option.getKey());
+                                conf.set(key, option.getValue());
+                            }
+                        } else
+                            log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+                        
                     }
                 }
             }
-            
-            // Now go through all of the iterators, and for those that are aggregators, store
-            // the options in the Hadoop config so that we can parse it back out in the reducer.
-            for (IteratorSetting iter : iters) {
-                Class<?> klass = Class.forName(iter.getIteratorClass());
-                if (PropogatingIterator.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getName());
-                    if (null != options) {
-                        for (Entry<String,String> option : options.entrySet()) {
-                            String key = String.format("aggregator.%s.%d.%s", table, iter.getPriority(), option.getKey());
-                            conf.set(key, option.getValue());
-                        }
-                    } else
-                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
-                    
-                } else {
-                    log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
-                }
-            }
-            
-            for (IteratorSetting iter : iters) {
-                Class<?> klass = Class.forName(iter.getIteratorClass());
-                if (Combiner.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getName());
-                    if (null != options) {
-                        String key = String.format("combiner.%s.%d.iterClazz", table, iter.getPriority());
-                        conf.set(key, iter.getIteratorClass());
-                        for (Entry<String,String> option : options.entrySet()) {
-                            key = String.format("combiner.%s.%d.%s", table, iter.getPriority(), option.getKey());
-                            conf.set(key, option.getValue());
-                        }
-                    } else
-                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
-                    
-                }
-            }
-            
         }
     }
     

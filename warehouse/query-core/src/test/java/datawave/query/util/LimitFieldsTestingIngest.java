@@ -6,9 +6,9 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -41,7 +41,7 @@ public class LimitFieldsTestingIngest {
      * 
      * @return
      */
-    public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
+    public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -51,7 +51,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + myUID, "FOO_1.FOO.1.0" + "\u0000" + "yawn", columnVisibility, timeStamp, emptyValue);
@@ -88,7 +88,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
             
             mutation = new Mutation(lcNoDiacriticsType.normalize("abcd"));
             mutation.put("FOO_3".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
@@ -150,7 +150,7 @@ public class LimitFieldsTestingIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
             
             mutation = new Mutation(shard);
             
@@ -194,7 +194,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write metadata table:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("FOO_3");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);

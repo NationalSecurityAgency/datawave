@@ -34,7 +34,7 @@ public class IpAddressQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new IpAddressDataType(IpAddrEntry.ipbase, fieldInfo));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public IpAddressQueryTest() {

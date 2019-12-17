@@ -10,9 +10,9 @@ import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.testframework.FileLoaderFactory.FileType;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
@@ -88,7 +88,7 @@ public class AccumuloSetupHelper {
      * @throws AccumuloException
      *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
      */
-    public Connector loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
+    public AccumuloClient loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
                     TableExistsException, TableNotFoundException, URISyntaxException {
         return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
     }
@@ -102,9 +102,9 @@ public class AccumuloSetupHelper {
      * @throws AccumuloException
      *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
      */
-    public Connector loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException,
-                    URISyntaxException {
+    public AccumuloClient loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown,
+                    RebuildingScannerTestHelper.INTERRUPT interrupt) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
+                    TableExistsException, TableNotFoundException, URISyntaxException {
         log.debug("------------- loadTables -------------");
         
         if (this.fileFormat != FileType.GROUPING) {
@@ -113,7 +113,7 @@ public class AccumuloSetupHelper {
         }
         
         QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetupHelper.class.getName(), parentLog, teardown, interrupt);
-        final Connector connector = tableHelper.connector;
+        final AccumuloClient client = tableHelper.client;
         tableHelper.configureTables(this.recordWriter);
         
         for (DataTypeHadoopConfig dt : this.dataTypes) {
@@ -135,12 +135,12 @@ public class AccumuloSetupHelper {
             }
         }
         
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_TABLE_NAME);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
         
-        return connector;
+        return client;
     }
     
     private void ingestTestData(Configuration conf, TestFileLoader loader) throws IOException, InterruptedException {

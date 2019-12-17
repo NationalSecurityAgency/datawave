@@ -20,7 +20,6 @@ import java.util.Collections;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class TextFunctionQueryTest extends AbstractFunctionalQuery {
     
@@ -33,7 +32,7 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public TextFunctionQueryTest() {

@@ -10,7 +10,6 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -20,7 +19,7 @@ import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -65,7 +64,7 @@ public abstract class CompositeFunctionsTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends CompositeFunctionsTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTestShardRange";
         
         @BeforeClass
@@ -75,14 +74,14 @@ public abstract class CompositeFunctionsTest {
             System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_INDEX_TABLE_NAME);
+            PrintUtility.printTable(client, auths, METADATA_TABLE_NAME);
+            PrintUtility.printTable(client, auths, MODEL_TABLE_NAME);
         }
         
         @AfterClass
@@ -101,13 +100,13 @@ public abstract class CompositeFunctionsTest {
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends CompositeFunctionsTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTestDocumentRange";
         
         @BeforeClass
@@ -117,14 +116,14 @@ public abstract class CompositeFunctionsTest {
             System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_INDEX_TABLE_NAME);
+            PrintUtility.printTable(client, auths, METADATA_TABLE_NAME);
+            PrintUtility.printTable(client, auths, MODEL_TABLE_NAME);
         }
         
         @AfterClass
@@ -143,7 +142,7 @@ public abstract class CompositeFunctionsTest {
         
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
+            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
@@ -187,7 +186,7 @@ public abstract class CompositeFunctionsTest {
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
+    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient client)
                     throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
@@ -204,11 +203,11 @@ public abstract class CompositeFunctionsTest {
         log.debug("logic: " + settings.getQueryLogicName());
         logic.setMaxEvaluationPipelines(1);
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, MODEL_TABLE_NAME, authSet, false);
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(client, MODEL_TABLE_NAME, authSet, false);
         Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
         typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         

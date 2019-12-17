@@ -75,7 +75,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
         this.scannerFactory = scannerFactory;
-        stats = new IndexStatsClient(this.config.getConnector(), this.config.getIndexStatsTableName());
+        stats = new IndexStatsClient(this.config.getClient(), this.config.getIndexStatsTableName());
         costAnalysis = new CostEstimator(config, scannerFactory, helper);
         this.expandFields = expandFields;
         this.expandValues = expandValues;
