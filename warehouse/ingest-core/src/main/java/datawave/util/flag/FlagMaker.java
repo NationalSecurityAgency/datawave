@@ -3,7 +3,6 @@ package datawave.util.flag;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
-import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import datawave.metrics.util.flag.FlagFile;
 import datawave.util.flag.config.ConfigUtil;
 import datawave.util.flag.config.FlagDataTypeConfig;
@@ -83,7 +82,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private FlagSocket flagSocket;
     private final DecimalFormat df = new DecimalFormat("#0.00");
     private DateUtils util = new DateUtils();
-    private StandaloneTaskAttemptContext<?,?,?,?> ctx;
     
     protected JobConf config;
     
@@ -430,8 +428,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                             + first.getName() + "+" + flagging.size();
             flagFile = write(flagging, fc, baseName);
             for (InputFile entry : flagging) {
-                long time = entry.getTimestamp();
-                metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), time);
+                metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), entry.getTimestamp());
                 latestTime.set(Math.max(entry.getTimestamp(), latestTime.get()));
             }
             
@@ -502,13 +499,17 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             throw new IOException("Unable to create flag file " + f);
         }
         
+        final FileSystem fs = getHadoopFS();
+        final FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
+        
         try (FileOutputStream flagOS = new FileOutputStream(f)) {
             StringBuilder sb = new StringBuilder(fmc.getDatawaveHome() + File.separator + fc.getScript());
             if (fc.getFileListMarker() == null) {
                 String sep = " ";
                 for (InputFile inFile : flagging) {
-                    if (fc.isCollectMetrics())
-                        ctx.getCounter(InputFile.class.getSimpleName(), inFile.getFileName()).setValue(inFile.getTimestamp());
+                    if (fc.isCollectMetrics()) {
+                        metrics.updateCounter(InputFile.class.getSimpleName(), inFile.getFileName(), inFile.getTimestamp());
+                    }
                     sb.append(sep).append(inFile.getFlagged().toUri());
                     sep = ",";
                 }
@@ -528,7 +529,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 sb.append(fc.getFileListMarker()).append('\n');
                 for (InputFile inFile : flagging) {
                     if (fc.isCollectMetrics())
-                        ctx.getCounter(InputFile.class.getSimpleName(), inFile.getFileName()).setValue(inFile.getTimestamp());
+                        metrics.updateCounter(InputFile.class.getSimpleName(), inFile.getFileName(), inFile.getTimestamp());
                     sb.append(inFile.getFlagged().toUri()).append('\n');
                 }
             }
