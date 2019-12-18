@@ -173,8 +173,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             log.debug("JEXL Query = " + node.getOriginalQuery());
         }
         
-        // Parse the query
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(config.getQueryString());
+        // Parse & flatten the query
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(config.getQueryString());
         
         Set<String> dataTypes = config.getDatatypeFilter();
         Set<String> allFields;
