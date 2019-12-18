@@ -101,8 +101,11 @@ import datawave.webservice.result.VoidResponse;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.htrace.Span;
+import org.apache.htrace.Trace;
+import org.apache.htrace.TraceInfo;
+import org.apache.htrace.TraceScope;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -122,7 +125,7 @@ import com.google.common.collect.Multimap;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.security.auth.Subject")
-@PrepareForTest({Trace.class, Tracer.class})
+@PrepareForTest({Trace.class})
 public class ExtendedQueryExecutorBeanTest {
     private static final Throwable ILLEGAL_STATE_EXCEPTION = new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION");
     @Mock
@@ -194,19 +197,22 @@ public class ExtendedQueryExecutorBeanTest {
     RunningQuery runningQuery;
     
     @Mock
+    TraceScope traceScope;
+    
+    @Mock
     Span span;
     
     @Mock
     QueryTraceCache traceCache;
     
     @Mock
-    TInfo traceInfo;
+    TraceInfo traceInfo;
     
     @Mock
     Multimap<String,PatternWrapper> traceInfos;
     
     @Mock
-    Tracer tracer;
+    Trace tracer;
     
     @Mock
     QueryLogicTransformer transformer;
@@ -326,10 +332,11 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getId()).andReturn(queryId);
         cache.remove(queryId.toString());
         expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
-        PowerMock.mockStaticPartial(Trace.class, "trace");
-        expect(Trace.trace(this.traceInfo, "query:close")).andReturn(this.span);
-        this.span.data(eq("closedAt"), isA(String.class));
-        this.span.stop();
+        PowerMock.mockStaticPartial(Trace.class, "startSpan");
+        expect(Trace.startSpan("query:close", this.traceInfo)).andReturn(this.traceScope);
+        expect(traceScope.getSpan()).andReturn(span).times(2);
+        this.span.addKVAnnotation(eq("closedAt"), isA(String.class));
+        this.traceScope.close();
         // TODO: 1.8.1: no longer done
         // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
         // expect(Tracer.getInstance()).andReturn(this.tracer);
@@ -579,10 +586,11 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getId()).andReturn(queryId);
         cache.remove(queryId.toString());
         expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
-        PowerMock.mockStaticPartial(Trace.class, "trace");
-        expect(Trace.trace(this.traceInfo, "query:close")).andReturn(this.span);
-        this.span.data(eq("closedAt"), isA(String.class));
-        this.span.stop();
+        PowerMock.mockStaticPartial(Trace.class, "startSpan");
+        expect(Trace.startSpan("query:close", this.traceInfo)).andReturn(this.traceScope);
+        expect(traceScope.getSpan()).andReturn(span).times(2);
+        this.span.addKVAnnotation(eq("closedAt"), isA(String.class));
+        this.traceScope.close();
         // TODO: 1.8.1: no longer done
         // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
         // expect(Tracer.getInstance()).andReturn(this.tracer);
@@ -1667,12 +1675,12 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
         PowerMock.mockStaticPartial(Trace.class, "start");
-        expect(Trace.start("query:define")).andReturn(this.span);
+        expect(Trace.startSpan("query:define")).andReturn(this.traceScope);
         expect(this.queryLogic1.getConnectionPriority()).andThrow(ILLEGAL_STATE_EXCEPTION);
         // TODO: 1.8.1: no longer done
         // expect(this.span.parent()).andReturn(this.span);
         // expect(this.span.parent()).andReturn(this.span);
-        this.span.stop();
+        this.traceScope.close();
         
         // Run the test
         PowerMock.replayAll();

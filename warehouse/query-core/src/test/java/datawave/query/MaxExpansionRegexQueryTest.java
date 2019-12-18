@@ -28,6 +28,7 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -264,7 +265,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         
         runTest(query, expect);
         // verify that the ivarators ran and completed
-        assertEquals(3, countComplete(dirs));
+        assertTrue(countComplete(dirs) >= 1);
         
         // now get a new set of ivarator directories
         dirs = ivaratorConfig();
@@ -306,7 +307,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         
         runTest(query, expect);
         // verify that the ivarators ran and completed
-        assertEquals(3, countComplete(dirs));
+        assertTrue(countComplete(dirs) >= 1);
         
         // now get a new set of ivarator directories
         dirs = ivaratorConfig();

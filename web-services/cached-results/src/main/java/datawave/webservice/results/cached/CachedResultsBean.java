@@ -124,10 +124,7 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.TotalResultsAware;
 import datawave.webservice.result.VoidResponse;
 
-import datawave.webservice.query.runner.Span;
-import datawave.webservice.query.runner.Trace;
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.jexl2.parser.TokenMgrError;
@@ -135,6 +132,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.htrace.Trace;
+import org.apache.htrace.TraceInfo;
+import org.apache.htrace.TraceScope;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -365,7 +365,7 @@ public class CachedResultsBean {
         boolean tableCreated = false;
         boolean viewCreated = false;
         CachedRunningQuery crq = null;
-        Span span = null;
+        TraceScope span = null;
         boolean queryLockedException = false;
         int rowsPerBatch = cachedResultsConfiguration.getRowsPerBatch();
         try {
@@ -376,7 +376,7 @@ public class CachedResultsBean {
             QueryLogic<?> logic = null;
             Query q = null;
             BaseQueryMetric queryMetric = null;
-            TInfo traceInfo = null;
+            TraceInfo traceInfo = null;
             try {
                 rq = getQueryById(queryId);
                 
@@ -407,9 +407,7 @@ public class CachedResultsBean {
                 // rq and RunningQuery.close will call close on the logic. This is causing the batch scanner to
                 // be closed after 15 minutes
                 logic = (QueryLogic<?>) logic.clone();
-                if (rq.getTraceInfo() != null) {
-                    traceInfo = rq.getTraceInfo().deepCopy();
-                }
+                traceInfo = rq.getTraceInfo();
             } finally {
                 if (rq != null) {
                     // the original query was cloned including the queryId
@@ -525,7 +523,7 @@ public class CachedResultsBean {
             
             // If we're tracing this query, then continue the trace for the next call.
             if (traceInfo != null) {
-                span = Trace.trace(traceInfo, "cachedresults:load");
+                span = Trace.startSpan("cachedresults:load", traceInfo);
             }
             
             int rowsWritten = 0;
@@ -536,15 +534,15 @@ public class CachedResultsBean {
                     throw new QueryCanceledQueryException(DatawaveErrorCode.QUERY_CANCELED);
                 }
                 
-                Span nextSpan = (span == null) ? null : Trace.start("cachedresults:next");
+                TraceScope nextSpan = (span == null) ? null : Trace.startSpan("cachedresults:next");
                 try {
-                    if (nextSpan != null)
-                        nextSpan.data("pageNumber", Long.toString(query.getLastPageNumber() + 1));
+                    if (nextSpan != null && nextSpan.getSpan() != null)
+                        nextSpan.getSpan().addKVAnnotation("pageNumber", Long.toString(query.getLastPageNumber() + 1));
                     
                     results = query.next();
                 } finally {
                     if (nextSpan != null)
-                        nextSpan.stop();
+                        nextSpan.close();
                 }
                 if (results.getResults().isEmpty()) {
                     go = false;
@@ -735,10 +733,12 @@ public class CachedResultsBean {
             }
             
             if (span != null) {
-                span.stop();
+                span.close();
                 
-                span = Trace.trace(query.getTraceInfo(), "query:close");
-                span.data("closedAt", new Date().toString());
+                span = Trace.startSpan("query:close", query.getTraceInfo());
+                if (span.getSpan() != null) {
+                    span.getSpan().addKVAnnotation("closedAt", new Date().toString());
+                }
                 // Spans aren't recorded if they take no time, so sleep for a
                 // couple milliseconds just to ensure we get something saved.
                 try {
@@ -746,7 +746,7 @@ public class CachedResultsBean {
                 } catch (InterruptedException e) {
                     // ignore
                 }
-                span.stop();
+                span.close();
                 // TODO: 1.8.1: no longer done?
                 // Tracer.getInstance().flush();
             }
