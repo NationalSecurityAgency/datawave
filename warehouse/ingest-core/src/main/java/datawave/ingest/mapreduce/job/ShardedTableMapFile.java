@@ -334,7 +334,7 @@ public class ShardedTableMapFile {
         boolean keepRetrying = true;
         int attempts = 0;
         while (keepRetrying && attempts < MAX_RETRY_ATTEMPTS) {
-            try (AccumuloClient client = accumuloHelper.getClient()) {
+            try (AccumuloClient client = accumuloHelper.newClient()) {
                 TableOperations tableOps = client.tableOperations();
                 attempts++;
                 // if table does not exist don't want to catch the errors and end up in infinite loop

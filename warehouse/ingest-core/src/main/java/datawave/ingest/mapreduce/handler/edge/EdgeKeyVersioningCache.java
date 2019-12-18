@@ -102,26 +102,26 @@ public class EdgeKeyVersioningCache {
         
         // a temporary date map. using tree map so we can print out the version/dates in order
         Map<Integer,String> versionDates = new TreeMap<>();
-        try (AccumuloClient client = cbHelper.getClient();
-                        org.apache.accumulo.core.client.Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
-            
+        try (AccumuloClient client = cbHelper.newClient()) {
             ensureTableExists(client);
-            scanner.setRange(new Range(EDGE_KEY_VERSION_ROW));
             
-            // Read the edge key version dates from the datawave metadata table
-            // If there happen to be the same version numbers but with different dates then the one with the earliest date is kept
-            for (Map.Entry<Key,Value> entry : scanner) {
-                String cq = entry.getKey().getColumnQualifier().toString();
+            try (org.apache.accumulo.core.client.Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
+                scanner.setRange(new Range(EDGE_KEY_VERSION_ROW));
                 
-                String parts[] = StringUtils.split(cq, '/');
-                
-                Integer versionNum = NumericalEncoder.decode(parts[0]).intValue();
-                
-                // Earlier dates will sort first so only remember the first date for each version number
-                if (!versionDates.containsKey(versionNum)) {
-                    versionDates.put(versionNum, parts[1]);
+                // Read the edge key version dates from the datawave metadata table
+                // If there happen to be the same version numbers but with different dates then the one with the earliest date is kept
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    String cq = entry.getKey().getColumnQualifier().toString();
+                    
+                    String parts[] = StringUtils.split(cq, '/');
+                    
+                    Integer versionNum = NumericalEncoder.decode(parts[0]).intValue();
+                    
+                    // Earlier dates will sort first so only remember the first date for each version number
+                    if (!versionDates.containsKey(versionNum)) {
+                        versionDates.put(versionNum, parts[1]);
+                    }
                 }
-                
             }
             // If Datawave Metadatatable does not have any key versions automatically populate it with one
             if (versionDates.isEmpty()) {
@@ -222,7 +222,7 @@ public class EdgeKeyVersioningCache {
         }
         cbHelper.setup(conf);
         
-        try (AccumuloClient client = cbHelper.getClient()) {
+        try (AccumuloClient client = cbHelper.newClient()) {
             
             ensureTableExists(client);
             

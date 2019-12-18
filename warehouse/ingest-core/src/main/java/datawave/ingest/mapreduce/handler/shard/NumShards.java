@@ -217,7 +217,7 @@ public class NumShards {
         }
         
         ArrayList<String> nsEntries = new ArrayList<>();
-        try (AccumuloClient client = aHelper.getClient()) {
+        try (AccumuloClient client = aHelper.newClient()) {
             ensureTableExists(client, metadataTableName);
             
             try (Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {

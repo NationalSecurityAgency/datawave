@@ -199,7 +199,7 @@ public class MetadataTableSplits {
     private Map<String,Integer> writeSplits(FileSystem fs, Path tmpSplitsFile) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
                     IOException {
         initAccumuloHelper();
-        try (AccumuloClient client = cbHelper.getClient()) {
+        try (AccumuloClient client = cbHelper.newClient()) {
             TableOperations tops = client.tableOperations();
             Set<String> tableNames = getIngestTableNames();
             Map<String,Integer> splitsPerTable = new HashMap<>();

@@ -34,16 +34,17 @@ import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.Constants;
+import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
@@ -739,7 +740,7 @@ public class IngestJob implements Tool {
      */
     private boolean configureTables(AccumuloHelper cbHelper, Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException,
                     ClassNotFoundException {
-        try (AccumuloClient client = cbHelper.getClient()) {
+        try (AccumuloClient client = cbHelper.newClient()) {
             // Check to see if the tables exist
             TableOperations tops = client.tableOperations();
             NamespaceOperations namespaceOperations = client.namespaceOperations();
@@ -966,8 +967,9 @@ public class IngestJob implements Tool {
         // Setup the Output
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
-            CBMutationOutputFormatter.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-            CBMutationOutputFormatter.setOutputInfo(job, userName, password, true, null);
+            CBMutationOutputFormatter.configure()
+                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
+                            .createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));
@@ -1251,7 +1253,7 @@ public class IngestJob implements Tool {
      */
     void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloSecurityException, AccumuloException,
                     TableNotFoundException, ClassNotFoundException {
-        try (AccumuloClient client = accumuloHelper.getClient()) {
+        try (AccumuloClient client = accumuloHelper.newClient()) {
             TableOperations tops = client.tableOperations();
             
             // We're arbitrarily choosing the scan scope for gathering aggregator information.

@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -18,7 +17,6 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -230,7 +228,7 @@ public class NumShardsTest {
         AccumuloHelper mockedAccumuloHelper = EasyMock.createMock(AccumuloHelper.class);
         mockedAccumuloHelper.setup(conf);
         EasyMock.expectLastCall();
-        EasyMock.expect(mockedAccumuloHelper.getClient()).andReturn(client);
+        EasyMock.expect(mockedAccumuloHelper.newClient()).andReturn(client);
         EasyMock.replay(mockedAccumuloHelper);
         
         NumShards numShards = new NumShards(conf);
@@ -293,7 +291,7 @@ public class NumShardsTest {
         AccumuloHelper mockedAccumuloHelper = EasyMock.createMock(AccumuloHelper.class);
         mockedAccumuloHelper.setup(conf);
         EasyMock.expectLastCall();
-        EasyMock.expect(mockedAccumuloHelper.getClient()).andReturn(client);
+        EasyMock.expect(mockedAccumuloHelper.newClient()).andReturn(client);
         EasyMock.replay(mockedAccumuloHelper);
         
         NumShards numShards = new NumShards(conf);

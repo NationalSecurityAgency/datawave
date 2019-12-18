@@ -8,6 +8,8 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
+import java.util.Properties;
+
 /**
  * Helper class to validate configuration of Accumulo required parameters
  * 
@@ -53,8 +55,12 @@ public class AccumuloHelper {
     /**
      * @return an {@link AccumuloClient} to Accumulo given this object's settings.
      */
-    public AccumuloClient getClient() {
+    public AccumuloClient newClient() {
         return Accumulo.newClient().to(instanceName, zooKeepers).as(username, password).build();
+    }
+    
+    public Properties newClientProperties() {
+        return Accumulo.newClientProperties().to(instanceName, zooKeepers).as(username, password).build();
     }
     
     public static void setUsername(Configuration conf, String username) {

@@ -125,7 +125,7 @@ public class StatsJob extends IngestJob {
         
         // get authorizations
         Authorizations auths;
-        try (AccumuloClient client = cbHelper.getClient()) {
+        try (AccumuloClient client = cbHelper.newClient()) {
             SecurityOperations secOps = client.securityOperations();
             auths = secOps.getUserAuthorizations(cbHelper.getUsername());
         }
