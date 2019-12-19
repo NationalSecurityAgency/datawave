@@ -137,7 +137,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     protected boolean collapseUids = false;
     
-    private boolean setCondenseUids = true;
+    private boolean setCondenseUids = false;
     
     private boolean compressUidsInRangeStream = false;
     

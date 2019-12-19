@@ -202,14 +202,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
     protected int docsToCombineForEvaluation = -1;
     
     /**
-     * Boolean it identify if we wish to condense
+     * Boolean that identifies if we wish to use the {@link datawave.query.tables.CondensedRangeStreamScanner}
      */
-    protected boolean condenseUidsInRangeStream = true;
+    protected boolean condenseUidsInRangeStream = false;
     
     /**
-     * Boolean it identify if we wish to condense
+     * Boolean it identify if we wish to set the {@link datawave.query.index.lookup.CondensedUidIterator#COMPRESS_MAPPING} option.
      */
-    protected boolean compressUidsInRangeStream = true;
+    protected boolean compressUidsInRangeStream = false;
     
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
