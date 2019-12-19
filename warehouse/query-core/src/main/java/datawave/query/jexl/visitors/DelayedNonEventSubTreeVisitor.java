@@ -8,6 +8,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 
@@ -50,8 +51,16 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (JexlASTHelper.isDelayedPredicate(node)) {
-            JexlNode candidate = QueryPropertyMarker.getQueryPropertySource(node, null);
+        // TODO should this test for ASTEvaluationOnly also?
+        if (ASTDelayedPredicate.instanceOf(node)) {
+            // strip off only the delayed predicate, leave any other markers intact since they may be necessary to properly process inside the
+            // IteratorBuildingVisitor
+            JexlNode candidate = QueryPropertyMarker.getQueryPropertySource(node, ASTDelayedPredicate.class);
+            
+            if (candidate == null) {
+                // something unexpected
+                throw new IllegalStateException("Could not locate source node for DelayedPredicate: " + JexlStringBuildingVisitor.buildQuery(node));
+            }
             
             // reset the root before processing a a node
             iteratorBuildingVisitor.resetRoot();
@@ -65,7 +74,14 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
                     if (leaf instanceof IndexIteratorBridge) {
                         String fieldName = ((IndexIteratorBridge) leaf).getField();
                         if (nonEventFields.contains(fieldName)) {
-                            delayedNonEventFieldMapNodes.put(fieldName, ((IndexIteratorBridge) leaf).getSourceNode());
+                            JexlNode leafNode = ((IndexIteratorBridge) leaf).getSourceNode();
+                            JexlNode targetNode = leafNode;
+                            // IteratorBuildingVisitor may have stripped the associated QueryPropertyMarker, so if it exists add it back in
+                            JexlNode markedNode = QueryPropertyMarker.getQueryPropertyMarker(leafNode, null);
+                            if (markedNode != null) {
+                                targetNode = markedNode;
+                            }
+                            delayedNonEventFieldMapNodes.put(fieldName, targetNode);
                         }
                     }
                 }
