@@ -4,7 +4,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -51,7 +50,6 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        // TODO should this test for ASTEvaluationOnly also?
         if (ASTDelayedPredicate.instanceOf(node)) {
             // strip off only the delayed predicate, leave any other markers intact since they may be necessary to properly process inside the
             // IteratorBuildingVisitor

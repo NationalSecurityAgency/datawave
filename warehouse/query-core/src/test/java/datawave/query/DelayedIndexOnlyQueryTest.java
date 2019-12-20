@@ -1,5 +1,7 @@
 package datawave.query;
 
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
@@ -13,6 +15,8 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Tests to confirm operation of delayed index evaluation until jexl evaluation
@@ -26,6 +30,17 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
         FieldConfig generic = new GenericCityFields();
         generic.addIndexOnlyField(CitiesDataType.CityField.STATE.name());
         generic.addIndexOnlyField(CitiesDataType.CityField.GEO.name());
+        
+        // remove any pre-defined composites
+        for (Set<String> fields : generic.getCompositeFields()) {
+            generic.removeCompositeField(fields);
+        }
+        
+        // composite field must be non-index only
+        Set<String> compositeFields = new HashSet<>();
+        compositeFields.add(CitiesDataType.CityField.CITY.name());
+        compositeFields.add(CitiesDataType.CityField.NUM.name());
+        generic.addCompositeField(compositeFields);
         
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
         
@@ -147,6 +162,26 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String query = "CITY == 'rome' && (COUNTRY == 'Italy' || STATE == 'mississippi' || STATE == 'ohio')";
         String expectedQuery = "CITY == 'rome' && (COUNTRY == 'Italy' || STATE == 'mississippi' || STATE == 'ohio')";
         ivaratorFstConfig();
+        runTest(query, expectedQuery);
+    }
+    
+    // composite index-event-only delayed
+    @Test
+    public void testCompositeIndexOnlyEventOnlyDelayed() throws Exception {
+        log.info("------  testCompositeIndexOnlyEventOnlyDelayed  ------");
+        
+        String query = "STATE == 'ohio' && ((NUM == '100' && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
+        String expectedQuery = "STATE == 'ohio' && ((NUM == '100' && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
+        runTest(query, expectedQuery);
+    }
+    
+    // composite range index-event-only delayed
+    @Test
+    public void testCompositeRangeIndexOnlyEventOnlyDelayed() throws Exception {
+        log.info("------  testCompositeRangeIndexOnlyEventOnlyDelayed  ------");
+        
+        String query = "STATE == 'ohio' && ((NUM > '0' && NUM < '200' && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
+        String expectedQuery = "STATE == 'ohio' && ((NUM > '0' && NUM < 200 && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
         runTest(query, expectedQuery);
     }
 }

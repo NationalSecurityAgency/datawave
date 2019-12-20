@@ -21,6 +21,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -173,8 +174,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     public Object visit(ASTAndNode node, Object data) {
         ExpandData parentData = (ExpandData) data;
         
-        // ignore marked nodes
-        if (QueryPropertyMarkerVisitor.instanceOfAny(node))
+        // ignore marked nodes except delays
+        if (QueryPropertyMarkerVisitor.instanceOfAny(node) && !QueryPropertyMarkerVisitor.instanceOf(node, ASTDelayedPredicate.class, null))
             return node;
         
         // if we only have one child, just pass through
@@ -291,8 +292,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     // don't descend into delayed predicates
     @Override
     public Object visit(ASTReference node, Object data) {
-        // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+        // ignore marked nodes except delays
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node) || QueryPropertyMarkerVisitor.instanceOf(node, ASTDelayedPredicate.class, null)) {
             return super.visit(node, data);
         }
         return node;
@@ -301,8 +302,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     // don't descend into delayed predicates
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node))
+        // ignore marked nodes except delays
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node) || QueryPropertyMarkerVisitor.instanceOf(node, ASTDelayedPredicate.class, null))
             return super.visit(node, data);
         return node;
     }
