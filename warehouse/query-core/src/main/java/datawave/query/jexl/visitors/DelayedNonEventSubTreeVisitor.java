@@ -74,11 +74,7 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
                         if (nonEventFields.contains(fieldName)) {
                             JexlNode leafNode = ((IndexIteratorBridge) leaf).getSourceNode();
                             JexlNode targetNode = leafNode;
-                            // IteratorBuildingVisitor may have stripped the associated QueryPropertyMarker, so if it exists add it back in
-                            JexlNode markedNode = QueryPropertyMarker.getQueryPropertyMarker(leafNode, null);
-                            if (markedNode != null) {
-                                targetNode = markedNode;
-                            }
+                            
                             delayedNonEventFieldMapNodes.put(fieldName, targetNode);
                         }
                     }

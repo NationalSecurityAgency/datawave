@@ -105,7 +105,7 @@ public class QueryPropertyMarker extends ASTReference {
     }
     
     /**
-     * Find the QueryPropertyMarker node that would have been constructed from the source node. This reverses the setupSource() above
+     * Find the QueryPropertyMarker node that would have been constructed from the source node. This reverses the setupSource() above. Subject to issue #603
      * 
      * @param source
      *            the source node that would have been used to construct this QueryPropertyMarker
@@ -146,7 +146,7 @@ public class QueryPropertyMarker extends ASTReference {
     
     /**
      * Unwrap ReferenceExpression/Reference nodes from node.jjtGetParent() until there are no more pairs of ASTReferenceExpression/ASTReference nodes, return
-     * the last thing that wasn't
+     * the last thing that wasn't. Subject to issue #603
      * 
      * @param node
      *            to unwrap
