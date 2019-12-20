@@ -1080,7 +1080,7 @@ public class JexlASTHelper {
         return nodes;
     }
     
-    public static boolean isDelayedPredicate(JexlNode currNode) {
+    protected static boolean isDelayedPredicate(JexlNode currNode) {
         if (ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
                         || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
                         || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode))
