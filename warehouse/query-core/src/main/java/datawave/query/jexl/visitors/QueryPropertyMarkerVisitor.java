@@ -16,6 +16,7 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -54,18 +55,37 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         return instanceOfAny(node, null);
     }
     
-    public static boolean instanceOfAny(JexlNode node, List<JexlNode> sourceNodes) {
-        return instanceOf(node, null, sourceNodes);
+    public static boolean instanceOfAny(JexlNode node, Class<? extends QueryPropertyMarker> except) {
+        return instanceOfAny(node, except, null);
+    }
+    
+    public static boolean instanceOfAny(JexlNode node, Class<? extends QueryPropertyMarker> except, List<JexlNode> sourceNodes) {
+        return instanceOf(node, null, except, sourceNodes);
     }
     
     public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, List<JexlNode> sourceNodes) {
+        return instanceOf(node, type == null ? null : Collections.singletonList(type), null, sourceNodes);
+    }
+    
+    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
+        return instanceOf(node, types, null, sourceNodes);
+    }
+    
+    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, Class<? extends QueryPropertyMarker> except,
+                    List<JexlNode> sourceNodes) {
         QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor();
         
         if (node != null) {
-            if (type != null)
-                visitor.typeIdentifiers.add(type.getSimpleName());
+            if (types != null)
+                for (Class<? extends QueryPropertyMarker> type : types) {
+                    visitor.typeIdentifiers.add(type.getSimpleName());
+                }
             else
                 visitor.typeIdentifiers.addAll(TYPE_IDENTIFIERS);
+            
+            if (except != null) {
+                visitor.typeIdentifiers.remove(except.getSimpleName());
+            }
             
             node.jjtAccept(visitor, null);
             

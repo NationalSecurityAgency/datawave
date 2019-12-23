@@ -175,8 +175,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         ExpandData parentData = (ExpandData) data;
         
         // ignore marked nodes except delays
-        if (QueryPropertyMarkerVisitor.instanceOfAny(node) && !QueryPropertyMarkerVisitor.instanceOf(node, ASTDelayedPredicate.class, null))
+        if (QueryPropertyMarkerVisitor.instanceOfAny(node, ASTDelayedPredicate.class)) {
             return node;
+        }
         
         // if we only have one child, just pass through
         // this shouldn't ever really happen, but it could
@@ -293,7 +294,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // ignore marked nodes except delays
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node) || QueryPropertyMarkerVisitor.instanceOf(node, ASTDelayedPredicate.class, null)) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node, ASTDelayedPredicate.class)) {
             return super.visit(node, data);
         }
         return node;
@@ -303,8 +304,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // ignore marked nodes except delays
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node) || QueryPropertyMarkerVisitor.instanceOf(node, ASTDelayedPredicate.class, null))
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node, ASTDelayedPredicate.class)) {
             return super.visit(node, data);
+        }
         return node;
     }
     
