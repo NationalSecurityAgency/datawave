@@ -81,7 +81,7 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
-        if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter)) {
+        if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter, getField(), getNode())) {
             
             boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
             if (forceDocumentBuild) {
@@ -108,6 +108,9 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
             }
             if (source == null) {
                 msg.append("\tSource was null!\n");
+            }
+            if (getNode() == null) {
+                msg.append("\tNode was null!\n");
             }
             msg.setLength(msg.length() - 1);
             throw new IllegalStateException(msg.toString());

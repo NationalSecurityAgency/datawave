@@ -96,6 +96,11 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
         
         // for each sub tree build the nested iterator
         for (JexlNode delayedNonEventNode : delayedNonEventFieldMap.get(name)) {
+            // sanity check
+            if (delayedNonEventNode == null) {
+                throw new IllegalStateException("Delayed nonEventNode must not be null");
+            }
+            
             // reset the root
             iteratorBuildingVisitor.resetRoot();
             

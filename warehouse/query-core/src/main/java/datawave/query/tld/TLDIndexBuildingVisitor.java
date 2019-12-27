@@ -49,6 +49,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
         builder.setTimeFilter(timeFilter);
+        builder.setNode(node);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -142,6 +143,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.setNode(node);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
