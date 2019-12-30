@@ -112,7 +112,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         NON_EXECUTABLE(3, 2, 1),
         
         /**
-         * The executable state of the underlying expression does not matter.
+         * The expression does not matter for determining executability against the global index.
          */
         IGNORABLE(4, 4, 4),
         
