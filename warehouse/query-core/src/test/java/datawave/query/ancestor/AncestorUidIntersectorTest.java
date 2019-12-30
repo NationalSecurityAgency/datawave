@@ -11,11 +11,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 public class AncestorUidIntersectorTest {
     private AncestorUidIntersector intersector;
@@ -200,9 +196,26 @@ public class AncestorUidIntersectorTest {
         List<IndexMatch> resultList = new ArrayList<>();
         resultList.addAll(result);
         List<IndexMatch> expected = new ArrayList<>();
-        expected.add(new IndexMatch("a.b.c.1", null));
-        expected.add(new IndexMatch("a.b.c.2.1", null));
-        Assert.assertTrue(CollectionUtils.isEqualCollection(expected, resultList));
+        
+        IndexMatch match1 = new IndexMatch("a.b.c.1");
+        match1.add(node1);
+        match1.add(node2);
+        
+        IndexMatch match2 = new IndexMatch("a.b.c.2.1");
+        match2.add(node1);
+        match2.add(node2);
+        
+        expected.add(match1);
+        expected.add(match2);
+        
+        Iterator<IndexMatch> resultIter = resultList.iterator();
+        Iterator<IndexMatch> expectedIter = expected.iterator();
+        
+        Assert.assertEquals(expectedIter.next(), resultIter.next());
+        Assert.assertEquals(expectedIter.next(), resultIter.next());
+        
+        Assert.assertFalse(resultIter.hasNext());
+        Assert.assertFalse(expectedIter.hasNext());
     }
     
     @Test

@@ -12,8 +12,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -22,6 +21,27 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class IndexMatchTest {
+    
+    @Test
+    public void testSetOfIndexMatches() {
+        JexlNode node = JexlNodeFactory.buildEQNode("FOO", "bar");
+        JexlNode otherNode = JexlNodeFactory.buildEQNode("FOO2", "bar2");
+        
+        IndexMatch match1 = new IndexMatch("uid0");
+        IndexMatch match2 = new IndexMatch("uid0");
+        
+        match1.add(node);
+        match2.add(otherNode);
+        
+        Set<IndexMatch> matchSet = new HashSet<>();
+        matchSet.add(match1);
+        matchSet.add(match2);
+        
+        assertEquals(2, matchSet.size());
+        Iterator<IndexMatch> matchIter = matchSet.iterator();
+        assertEquals(Collections.singleton("FOO == 'bar'"), matchIter.next().nodeSet.getNodeKeys());
+        assertEquals(Collections.singleton("FOO2 == 'bar2'"), matchIter.next().nodeSet.getNodeKeys());
+    }
     
     @Test
     public void testEmptyConstructor() {
@@ -173,8 +193,8 @@ public class IndexMatchTest {
         IndexMatch left = new IndexMatch("uid0", leftNode);
         IndexMatch right = new IndexMatch("uid0", rightNode);
         
-        assertEquals(left, right);
-        assertEquals(right, left);
+        assertNotEquals(left, right);
+        assertNotEquals(right, left);
     }
     
     @Test
