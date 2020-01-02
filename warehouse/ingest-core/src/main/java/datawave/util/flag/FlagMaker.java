@@ -239,9 +239,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         log.trace("Querying for files on {}", fs.getUri().toString());
         
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
-            long startTime = System.currentTimeMillis();
             String dataName = fc.getDataName();
-            FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
+            final FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
             fd.setup(fc);
             log.trace("Checking for files for {}", dataName);
             
