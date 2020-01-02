@@ -433,7 +433,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                             + first.getName() + "+" + flagging.size();
             flagFile = write(flagging, fc, baseName, metrics);
             for (InputFile entry : flagging) {
-                metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), entry.getTimestamp());
+                if (fc.isCollectMetrics())
+                    metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), entry.getTimestamp());
                 latestTime.set(Math.max(entry.getTimestamp(), latestTime.get()));
             }
             
@@ -458,7 +459,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             }
             
             for (InputFile entry : flagged) {
-                metrics.updateCounter(FlagFile.class.getSimpleName(), entry.getCurrentDir().getName(), System.currentTimeMillis());
+                if (fc.isCollectMetrics())
+                    metrics.updateCounter(FlagFile.class.getSimpleName(), entry.getCurrentDir().getName(), System.currentTimeMillis());
             }
             
             File f2 = new File(baseName + ".flag");
@@ -469,8 +471,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             
             // after we write a file, set the timeout to the forceInterval
             fc.setLast(now + fc.getTimeoutMilliSecs());
-            
-            metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
+            if (fc.isCollectMetrics())
+                metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
         } catch (IOException ex) {
             log.error("Unable to complete flag file ", ex);
             moveFilesBack(inFiles, futures, fs);
@@ -492,6 +494,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      *            data type for ingest
      * @param baseName
      *            base name for flag file
+     * @param metrics
+     *            FlagMetrics object for this source type
      * @return handle for flag file
      * @throws IOException
      *             error creating flag file
