@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -236,9 +237,11 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     protected void processFlags() throws IOException {
         FileSystem fs = getHadoopFS();
         log.trace("Querying for files on {}", fs.getUri().toString());
+        
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
             long startTime = System.currentTimeMillis();
             String dataName = fc.getDataName();
+            FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
             fd.setup(fc);
             log.trace("Checking for files for {}", dataName);
             
@@ -250,8 +253,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                     throw new IllegalStateException(fd.getClass().getName()
                                     + " has input files but returned zero candidates for flagging. Please validate configuration");
                 }
-                writeFlagFile(fc, inFiles);
+                writeFlagFile(fc, inFiles, metrics);
             }
+            
         }
     }
     
@@ -395,14 +399,15 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * 
      * @param fc flag configuration
      * @param inFiles input files to write to flag file
+     * @param metrics FlagMetrics object for this source type
      * @throws IOException
      */
     //@formatter:on
-    void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
+    void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inFiles, FlagMetrics metrics) throws IOException {
         File flagFile = null;
         final FileSystem fs = getHadoopFS();
         long now = System.currentTimeMillis();
-        final FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
+        
         List<Future<InputFile>> futures = Lists.newArrayList();
         
         try {
@@ -426,7 +431,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             Path first = flagging.iterator().next().getCurrentDir();
             String baseName = fmc.getFlagFileDirectory() + File.separator + df.format(now / 1000) + "_" + fc.getIngestPool() + "_" + fc.getDataName() + "_"
                             + first.getName() + "+" + flagging.size();
-            flagFile = write(flagging, fc, baseName);
+            flagFile = write(flagging, fc, baseName, metrics);
             for (InputFile entry : flagging) {
                 metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), entry.getTimestamp());
                 latestTime.set(Math.max(entry.getTimestamp(), latestTime.get()));
@@ -491,16 +496,13 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * @throws IOException
      *             error creating flag file
      */
-    protected File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName) throws IOException {
+    protected File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName, FlagMetrics metrics) throws IOException {
         // create the flag.generating file
         log.debug("Creating flag file" + baseName + ".flag" + " for data type " + fc.getDataName() + " containing " + flagging.size() + " files");
         File f = new File(baseName + ".flag.generating");
         if (!f.createNewFile()) {
             throw new IOException("Unable to create flag file " + f);
         }
-        
-        final FileSystem fs = getHadoopFS();
-        final FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
         
         try (FileOutputStream flagOS = new FileOutputStream(f)) {
             StringBuilder sb = new StringBuilder(fmc.getDatawaveHome() + File.separator + fc.getScript());

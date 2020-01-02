@@ -327,7 +327,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         final List<Collection<InputFile>> flagFileLists = new ArrayList<>();
         FlagMaker instance = new TestWrappedFlagMaker(fmc) {
             @Override
-            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
+            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles, FlagMetrics metrics) throws IOException {
                 flagFileLists.add(inFiles);
             }
         };
@@ -358,7 +358,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         fmc.getFlagConfigs().get(0).setLifo(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc) {
             @Override
-            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
+            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles, FlagMetrics metrics) throws IOException {
                 flagFileLists.add(inFiles);
             }
         };
@@ -497,7 +497,8 @@ public class FlagMakerTest extends AbstractFlagConfig {
         cfg.setFileListMarker(FLAG_MARKER);
         
         assertTrue("Should be 10 InputFiles", inFiles != null && inFiles.size() == 10);
-        File flag = instance.write(inFiles, fc, FLAG_DIR + "/testflagwriter");
+        FlagMetrics metrics = new FlagMetrics(instance.getHadoopFS(), fc.isCollectMetrics());
+        File flag = instance.write(inFiles, fc, FLAG_DIR + "/testflagwriter", metrics);
         flag.deleteOnExit();
         String b;
         try (BufferedReader br = new BufferedReader(new FileReader(flag))) {
