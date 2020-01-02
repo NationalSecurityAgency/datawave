@@ -133,7 +133,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      * Initializes the instance with a provided update interval.
      * 
      * @param client
-     *            A client connectoin to Accumulo
+     *            A client connection to Accumulo
      * @param dateIndexTableName
      *            The name of the date index table
      * @param auths
