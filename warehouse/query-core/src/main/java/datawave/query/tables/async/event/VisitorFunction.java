@@ -136,7 +136,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         if (null == script)
                             script = JexlASTHelper.parseJexlQuery(query);
                         
-                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, debug,
+                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
                                         this.metadataHelper)) {
                             
                             if (log.isTraceEnabled()) {
@@ -146,11 +146,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 }
                                 DefaultQueryPlanner.logQuery(script, "Failing query:");
                             }
-                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, config, indexedFields, indexOnlyFields,
-                                            nonEventFields, metadataHelper);
+                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, true, config, indexedFields,
+                                            indexOnlyFields, nonEventFields, metadataHelper);
                             madeChange = true;
                             
-                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, false, debug,
+                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
                                             metadataHelper);
                             
                             /**
@@ -165,11 +165,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                         log.trace(debugStatement);
                                     }
                                 }
-                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, indexedFields, indexOnlyFields,
-                                                nonEventFields, metadataHelper);
+                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, true, config, indexedFields,
+                                                indexOnlyFields, nonEventFields, metadataHelper);
                             }
                             
-                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, false, debug,
+                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
                                             metadataHelper);
                             
                             if (state != STATE.EXECUTABLE) {
