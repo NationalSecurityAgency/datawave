@@ -146,7 +146,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     
     protected Map<String,Map<TabletId,List<Range>>> binRanges(List<Range> ranges) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         Map<String,Map<TabletId,List<Range>>> binnedRanges = new HashMap<>();
-        Locations locations = config.getConnector().tableOperations().locate(tableName, ranges);
+        Locations locations = config.getClient().tableOperations().locate(tableName, ranges);
         Map<TabletId,List<Range>> tabletToRange = locations.groupByTablet();
         for (TabletId tid : tabletToRange.keySet()) {
             binnedRanges.put(locations.getTabletLocation(tid), tabletToRange);

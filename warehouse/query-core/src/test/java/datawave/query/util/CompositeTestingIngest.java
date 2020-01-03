@@ -13,9 +13,9 @@ import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.QueryTestTableHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -69,7 +69,7 @@ public class CompositeTestingIngest {
      * 
      * @return
      */
-    public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
+    public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -81,7 +81,7 @@ public class CompositeTestingIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + oneUUID, "COLOR.0" + "\u0000" + "red", columnVisibility, timeStamp, emptyValue);
@@ -112,7 +112,7 @@ public class CompositeTestingIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
             // Ones
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("One"));
@@ -249,7 +249,7 @@ public class CompositeTestingIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
             
             mutation = new Mutation(shard);
             // corleones
@@ -317,7 +317,7 @@ public class CompositeTestingIngest {
         
         try {
             // write metadata table:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("UUID");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);

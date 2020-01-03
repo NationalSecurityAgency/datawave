@@ -21,7 +21,6 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
@@ -63,7 +62,7 @@ public class PushdownScheduler extends Scheduler {
     protected MetadataHelper metadataHelper;
     
     public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
-        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations()));
+        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()));
     }
     
     protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
@@ -71,7 +70,7 @@ public class PushdownScheduler extends Scheduler {
         this.metadataHelper = helper;
         this.scannerFactory = scannerFactory;
         customizedFunctionList = Lists.newArrayList();
-        Preconditions.checkNotNull(config.getConnector());
+        Preconditions.checkNotNull(config.getClient());
     }
     
     public void addSetting(IteratorSetting customSetting) {

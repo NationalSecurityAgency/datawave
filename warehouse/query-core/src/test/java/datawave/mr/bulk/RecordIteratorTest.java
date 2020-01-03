@@ -14,7 +14,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.accumulo.core.iterators.system.DeletingIterator;
 import org.apache.accumulo.core.iterators.system.MultiIterator;
-import org.apache.accumulo.core.iterators.system.SynchronizedIterator;
 import org.apache.accumulo.core.iterators.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
@@ -74,7 +73,6 @@ public class RecordIteratorTest {
         // VisibilityFilter: C1,C2,C3
         // ConfigurableVisibilityFilter:
         // VisibilityFilter: B1,B2,B3
-        // SynchronizedIterator
         // VisibilityFilter: A1,A2,A3
         // DeletingIterator
         // MultiIterator
@@ -104,11 +102,6 @@ public class RecordIteratorTest {
         actualAuths = new TreeSet<>(Arrays.asList(Whitebox.getInternalState(vf, Authorizations.class).toString().split(",")));
         assertEquals(new TreeSet<>(Arrays.asList("B1", "B2", "B3")), actualAuths);
         source = Whitebox.getInternalState(vf, "source");
-        
-        // Next on the stack is the "table iterators" which should be a SynchronizedIterator first.
-        assertEquals(SynchronizedIterator.class, source.getClass());
-        SynchronizedIterator si = SynchronizedIterator.class.cast(source);
-        source = Whitebox.getInternalState(si, "source");
         
         // The next table iterator should be the standard VisibilityFilter which will have auths A1,A2,A3
         assertEquals(VisibilityFilter.class, source.getClass());

@@ -49,7 +49,7 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.usa, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public UnindexedNumericQueryTest() {

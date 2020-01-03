@@ -10,13 +10,13 @@ import datawave.metrics.mapreduce.util.JobSetupUtil;
 import datawave.metrics.util.Connections;
 import datawave.util.time.DateHelper;
 
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
@@ -87,11 +87,9 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
             
             useHourlyPrecision = HourlyPrecisionHelper.checkForHourlyPrecisionOption(context.getConfiguration(), log);
             
-            try {
-                ZooKeeperInstance inst = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instance).withZkHosts(zookeepers));
-                Connector con = inst.getConnector(user, new PasswordToken(password));
-                ingestScanner = con.createScanner(conf.get(MetricsConfig.INGEST_TABLE, MetricsConfig.DEFAULT_INGEST_TABLE), Authorizations.EMPTY);
-            } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+            try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(user, password).build()) {
+                ingestScanner = client.createScanner(conf.get(MetricsConfig.INGEST_TABLE, MetricsConfig.DEFAULT_INGEST_TABLE), Authorizations.EMPTY);
+            } catch (TableNotFoundException e) {
                 throw new IOException(e);
             }
         }

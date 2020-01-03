@@ -15,11 +15,12 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -126,10 +127,11 @@ public class ShardedTableMapFileTest {
         accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
         accumuloCluster.start();
         
-        Connector connector = accumuloCluster.getConnector(USERNAME, PASSWORD);
-        TableOperations tableOperations = connector.tableOperations();
-        tableOperations.create(TABLE_NAME);
-        tableOperations.addSplits(TABLE_NAME, sortedSet);
+        try (AccumuloClient client = Accumulo.newClient().from(accumuloCluster.getClientProperties()).build()) {
+            TableOperations tableOperations = client.tableOperations();
+            tableOperations.create(TABLE_NAME);
+            tableOperations.addSplits(TABLE_NAME, sortedSet);
+        }
         
         return accumuloCluster;
     }

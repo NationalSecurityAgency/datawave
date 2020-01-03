@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPOutputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -19,7 +18,6 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
 import datawave.ingest.mapreduce.handler.shard.content.ContentIndexCounters;
@@ -35,8 +33,6 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -47,7 +43,6 @@ import org.apache.hadoop.util.bloom.BloomFilter;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
-import org.infinispan.commons.util.Base64;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -105,7 +100,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
             accumuloHelper.setup(conf);
             
             log.debug("Attempting to create Accumulo connection.");
-            docWriter = accumuloHelper.getConnector().createBatchWriter(conf.get("shard.table.name"),
+            docWriter = accumuloHelper.newClient().createBatchWriter(conf.get("shard.table.name"),
                             new BatchWriterConfig().setMaxLatency(60, TimeUnit.SECONDS).setMaxMemory(100000000L).setMaxWriteThreads(10));
             log.debug("Created connection to Accumulo for asynchronous document storage.");
         } catch (Exception e) {

@@ -52,7 +52,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         }
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public DataTypeQueryTest() {

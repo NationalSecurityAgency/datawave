@@ -16,7 +16,7 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.LimitFieldsTestingIngest;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -58,49 +58,49 @@ public abstract class HitsAreAlwaysIncludedTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends HitsAreAlwaysIncludedTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            LimitFieldsTestingIngest.writeItAll(connector, LimitFieldsTestingIngest.WhatKindaRange.SHARD);
+            LimitFieldsTestingIngest.writeItAll(client, LimitFieldsTestingIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_INDEX_TABLE_NAME);
+            PrintUtility.printTable(client, auths, MODEL_TABLE_NAME);
         }
         
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                         throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+            super.runTestQuery(client, queryString, startDate, endDate, extraParms, goodResults);
         }
     }
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends HitsAreAlwaysIncludedTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            LimitFieldsTestingIngest.writeItAll(connector, LimitFieldsTestingIngest.WhatKindaRange.DOCUMENT);
+            LimitFieldsTestingIngest.writeItAll(client, LimitFieldsTestingIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_INDEX_TABLE_NAME);
+            PrintUtility.printTable(client, auths, MODEL_TABLE_NAME);
         }
         
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                         throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+            super.runTestQuery(client, queryString, startDate, endDate, extraParms, goodResults);
         }
     }
     
@@ -150,7 +150,7 @@ public abstract class HitsAreAlwaysIncludedTest {
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                     throws Exception;
     
-    protected void runTestQuery(Connector connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
+    protected void runTestQuery(AccumuloClient client, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> goodResults) throws Exception {
         
         QueryImpl settings = new QueryImpl();
@@ -165,7 +165,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         Set<Document> docs = new HashSet<>();

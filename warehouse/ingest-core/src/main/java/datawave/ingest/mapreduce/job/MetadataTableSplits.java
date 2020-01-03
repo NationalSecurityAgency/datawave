@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.StringUtils;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -46,7 +47,7 @@ public class MetadataTableSplits {
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
     private final Configuration conf;
     private AccumuloHelper cbHelper = null;
-    private Path splitsPath = null;
+    private Path splitsPath;
     private Map<String,List<Text>> splits = null;
     
     /**
@@ -197,35 +198,34 @@ public class MetadataTableSplits {
     
     private Map<String,Integer> writeSplits(FileSystem fs, Path tmpSplitsFile) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
                     IOException {
-        TableOperations tops = null;
         initAccumuloHelper();
-        try {
-            tops = this.cbHelper.getConnector().tableOperations();
+        try (AccumuloClient client = cbHelper.newClient()) {
+            TableOperations tops = client.tableOperations();
+            Set<String> tableNames = getIngestTableNames();
+            Map<String,Integer> splitsPerTable = new HashMap<>();
+            if (tops != null) {
+                try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
+                    this.splits = new HashMap<>();
+                    // gather the splits and write to PrintStream
+                    for (String table : tableNames) {
+                        log.info("Retrieving splits for " + table);
+                        List<Text> splits = new ArrayList<>(tops.listSplits(table));
+                        this.splits.put(table, splits);
+                        splitsPerTable.put(table, splits.size());
+                        log.info("Writing " + splits.size() + " splits.");
+                        for (Text split : splits) {
+                            out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
+                        }
+                    }
+                } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
+                    log.error("Unable to write new splits file", ex);
+                    throw ex;
+                }
+            }
+            return splitsPerTable;
         } catch (AccumuloSecurityException | AccumuloException ex) {
             throw new AccumuloException("Could not get TableOperations", ex);
         }
-        Set<String> tableNames = getIngestTableNames();
-        Map<String,Integer> splitsPerTable = new HashMap<>();
-        if (tops != null) {
-            try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
-                this.splits = new HashMap<>();
-                // gather the splits and write to PrintStream
-                for (String table : tableNames) {
-                    log.info("Retrieving splits for " + table);
-                    List<Text> splits = new ArrayList<>(tops.listSplits(table));
-                    this.splits.put(table, splits);
-                    splitsPerTable.put(table, splits.size());
-                    log.info("Writing " + splits.size() + " splits.");
-                    for (Text split : splits) {
-                        out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
-                    }
-                }
-            } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
-                log.error("Unable to write new splits file", ex);
-                throw ex;
-            }
-        }
-        return splitsPerTable;
     }
     
     private boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) throws IOException {

@@ -3,14 +3,12 @@ package datawave.metrics.analytic;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Longs;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.lib.aggregate.LongValueSum;
@@ -170,16 +168,18 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
         return m;
     }
     
-    public static void configureJob(Job job, int numDays, String instance, String zookeepers, String userName, String password, String outputTable)
-                    throws AccumuloSecurityException {
+    public static void configureJob(Job job, int numDays, String instance, String zookeepers, String userName, String password, String outputTable) {
         job.setNumReduceTasks(Math.min(numDays, 100)); // Cap the number of reducers at 100, just in case we have a large day range (shouldn't really happen
                                                        // though)
         job.setReducerClass(MetricsDailySummaryReducer.class);
         job.setOutputFormatClass(AccumuloOutputFormat.class);
-        AccumuloOutputFormat.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instance).withZkHosts(zookeepers));
-        AccumuloOutputFormat.setConnectorInfo(job, userName, new PasswordToken(password));
-        AccumuloOutputFormat.setCreateTables(job, true);
-        AccumuloOutputFormat.setDefaultTableName(job, outputTable);
+        // @formatter:off
+        AccumuloOutputFormat.configure()
+                .clientProperties(Accumulo.newClientProperties().to(instance,zookeepers).as(userName, password).build())
+                .createTables(true)
+                .defaultTable(outputTable)
+                .store(job);
+        // @formatter:on
     }
     
     public static class WeightedPair implements Writable, Comparable<WeightedPair> {
