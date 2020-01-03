@@ -246,9 +246,9 @@ public class CreateUidsIteratorTest {
         assertFalse(iterator.hasTop());
     }
     
-    // For a dataset of TLD uuids, confirm root uid parsing behavior.
+    // For a dataset of TLD uuids, confirm tld uid parsing behavior.
     @Test
-    public void testParseRootUidsOption() throws IOException {
+    public void testParseTldUidsOption() throws IOException {
         // Setup data for test.
         TreeMap<Key,Value> data = new TreeMap<>();
         List<String> docIds = Arrays.asList("parent.doc.id", "parent.doc.id.child01", "parent.doc.id.child02");
@@ -266,7 +266,7 @@ public class CreateUidsIteratorTest {
         // Setup iterator
         CreateUidsIterator iterator = new CreateUidsIterator();
         Map<String,String> iteratorOptions = new HashMap<>();
-        iteratorOptions.put(CreateUidsIterator.PARSE_ROOT_UIDS, "false");
+        iteratorOptions.put(CreateUidsIterator.PARSE_TLD_UIDS, "false");
         iterator.init(new SortedMapIterator(data), iteratorOptions, null);
         iterator.seek(new Range(), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
@@ -286,10 +286,10 @@ public class CreateUidsIteratorTest {
         iterator.next();
         assertFalse(iterator.hasTop());
         
-        // Now test again but with the PARSE_ROOT_UIDS option set to true.
+        // Now test again but with the PARSE_TLD_UIDS option set to true.
         iterator = new CreateUidsIterator();
         iteratorOptions = new HashMap<>();
-        iteratorOptions.put(CreateUidsIterator.PARSE_ROOT_UIDS, "true");
+        iteratorOptions.put(CreateUidsIterator.PARSE_TLD_UIDS, "true");
         iterator.init(new SortedMapIterator(data), iteratorOptions, null);
         iterator.seek(new Range(), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());

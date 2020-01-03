@@ -80,7 +80,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String accumuloPassword = "";
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
-    private boolean parseRootUids = false;
+    private boolean parseTldUids = false;
     private boolean collapseUids = false;
     private int collapseUidsThreshold = -1;
     private boolean sequentialScheduler = false;
@@ -341,7 +341,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
-        this.setParseRootUids(other.getParseRootUids());
+        this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
@@ -1773,12 +1773,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxIndexScanTimeMillis = maxTime;
     }
     
-    public boolean getParseRootUids() {
-        return parseRootUids;
+    public boolean getParseTldUids() {
+        return parseTldUids;
     }
     
-    public void setParseRootUids(boolean parseRootUids) {
-        this.parseRootUids = parseRootUids;
+    public void setParseTldUids(boolean parseTldUids) {
+        this.parseTldUids = parseTldUids;
     }
     
     public boolean getCollapseUids() {

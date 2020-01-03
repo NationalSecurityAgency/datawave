@@ -50,7 +50,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setCacheModel(enableCaching);
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
             if (reduceResponse) {
-                rsq.setParseRootUids(true);
+                rsq.setParseTldUids(true);
                 
                 // setup SeekingQueryPlanner in case the queryIterator requires it
                 SeekingQueryPlanner planner = new SeekingQueryPlanner();

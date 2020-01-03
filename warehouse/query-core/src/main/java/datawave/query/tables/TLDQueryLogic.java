@@ -14,14 +14,14 @@ public class TLDQueryLogic extends ShardQueryLogic {
     public TLDQueryLogic() {
         super();
         setIsTldQuery(true);
-        setParseRootUids(true);
+        setParseTldUids(true);
         setIter();
     }
     
     public TLDQueryLogic(TLDQueryLogic other) {
         super(other);
         setIsTldQuery(true);
-        setParseRootUids(true);
+        setParseTldUids(true);
         setIter();
     }
     

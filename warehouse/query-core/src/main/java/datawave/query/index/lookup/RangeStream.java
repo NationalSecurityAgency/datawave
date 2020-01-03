@@ -168,7 +168,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         
         tree = node;
         
-        if (!collapseUids && config.getParseRootUids()) {
+        if (!collapseUids && config.getParseTldUids()) {
             collapseUids = !(EvaluationRendering.canDisableEvaluation(script, config, metadataHelper, true));
             
             if (log.isTraceEnabled()) {
@@ -477,11 +477,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.valueOf(compressUidsInRangeStream).toString());
                     
                     // Add TLD option, if applicable
-                    if (config.getParseRootUids()) {
-                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(config.getParseRootUids()).toString());
+                    if (config.getParseTldUids()) {
+                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(config.getParseTldUids()).toString());
                     }
                     uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                    uidSetting.addOption(CreateUidsIterator.PARSE_ROOT_UIDS, Boolean.valueOf(config.getParseRootUids()).toString());
+                    uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                     
                     options.addScanIterator(uidSetting);
                     String queryString = fieldName + "=='" + literal + "'";
@@ -508,7 +508,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     
                     final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                     uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                    uidSetting.addOption(CreateUidsIterator.PARSE_ROOT_UIDS, Boolean.valueOf(config.getParseRootUids()).toString());
+                    uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                     options.addScanIterator(uidSetting);
                     
                     String queryString = fieldName + "=='" + literal + "'";
@@ -528,7 +528,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
                 final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                uidSetting.addOption(CreateUidsIterator.PARSE_ROOT_UIDS, Boolean.valueOf(config.getParseRootUids()).toString());
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                 scanner.addScanIterator(uidSetting);
                 
                 itr = Iterators.transform(scanner.iterator(), new EntryParser(node, fieldName, literal, indexOnlyFields));

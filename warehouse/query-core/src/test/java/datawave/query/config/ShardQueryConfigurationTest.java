@@ -58,7 +58,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals("", config.getAccumuloPassword());
         Assert.assertEquals(Long.MAX_VALUE, config.getMaxIndexScanTimeMillis());
         Assert.assertFalse(config.getCollapseUids());
-        Assert.assertFalse(config.getParseRootUids());
+        Assert.assertFalse(config.getParseTldUids());
         Assert.assertFalse(config.getSequentialScheduler());
         Assert.assertFalse(config.getCollectTimingDetails());
         Assert.assertFalse(config.getLogTimingDetails());
