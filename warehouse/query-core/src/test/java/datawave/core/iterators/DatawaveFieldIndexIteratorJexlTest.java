@@ -1,19 +1,50 @@
 package datawave.core.iterators;
 
+import com.google.common.io.Files;
 import datawave.query.Constants;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 public class DatawaveFieldIndexIteratorJexlTest {
+    
+    FileSystem fs;
+    List<IvaratorCacheDir> cacheDirs;
+    
+    @Before
+    public void setup() throws IOException {
+        File cacheDir = Files.createTempDir();
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(cacheDir.toURI().toString());
+        fs = FileSystem.get(cacheDir.toURI(), new Configuration());
+        File queryDirFile = new File(cacheDir, "query");
+        queryDirFile.deleteOnExit();
+        Assert.assertTrue(queryDirFile.mkdirs());
+        String queryDir = queryDirFile.toURI().toString();
+        cacheDirs = Collections.singletonList(new IvaratorCacheDir(config, fs, queryDir));
+    }
+    
+    @After
+    public void cleanup() throws IOException {
+        fs.close();
+    }
+    
     @Test
     public void buildBoundingFiRange_notUpperInclusive_singleChar_test() {
         DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
-                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("b").build();
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("b").withIvaratorCacheDirs(cacheDirs).build();
         
         Text row = new Text("row");
         Text fiName = new Text("fi" + Constants.NULL + "FIELD");
@@ -36,7 +67,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
     @Test
     public void buildBoundingFiRange_notUpperInclusive_singleCharAZ_test() {
         DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
-                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").build();
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").withIvaratorCacheDirs(cacheDirs).build();
         
         Text row = new Text("row");
         Text fiName = new Text("fi" + Constants.NULL + "FIELD");
@@ -57,9 +88,9 @@ public class DatawaveFieldIndexIteratorJexlTest {
     }
     
     @Test
-    public void buildBoundingFiRange_notUpperInclusive_multiChar_test() {
+    public void buildBoundingFiRange_notUpperInclusive_multiChar_test() throws IOException {
         DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
-                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("az").build();
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("az").withIvaratorCacheDirs(cacheDirs).build();
         
         Text row = new Text("row");
         Text fiName = new Text("fi" + Constants.NULL + "FIELD");
@@ -82,7 +113,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
     @Test
     public void buildBoundingFiRange_notUpperInclusive_multiCharStartSingleEnd_test() {
         DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
-                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").build();
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").withIvaratorCacheDirs(cacheDirs).build();
         
         Text row = new Text("row");
         Text fiName = new Text("fi" + Constants.NULL + "FIELD");
