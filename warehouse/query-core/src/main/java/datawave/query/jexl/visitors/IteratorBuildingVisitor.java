@@ -578,6 +578,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
+            if (this.indexOnlyFields.contains(builder.getField())) {
+                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, MessageFormat.format("{0} {1} {2}",
+                                "Unable to compare index only field", builder.getField(), "against null"));
+                throw new DatawaveFatalQueryException(qe);
+            }
             
             // SatisfactionVisitor should have already initialized this to false
             if (isQueryFullySatisfied == true) {
@@ -650,6 +655,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
+            if (this.indexOnlyFields.contains(builder.getField())) {
+                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, MessageFormat.format("{0} {1} {2}",
+                                "Unable to compare index only field", builder.getField(), "against null"));
+                throw new DatawaveFatalQueryException(qe);
+            }
             return null;
         }
         

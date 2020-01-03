@@ -29,10 +29,38 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     @Test
     public void testNegationErrorCheck() throws ParseException, TableNotFoundException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar' && !(INDEXONLYFIELD == null)");
-        
+
         HashSet indexedFields = new HashSet();
         indexedFields.add("INDEXONLYFIELD");
         indexedFields.add("INDEXEDFIELD");
+        HashSet<String> indexOnlyFields = new HashSet<>();
+        indexOnlyFields.add("INDEXONLYFIELD");
+
+        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
+
+        replayAll();
+
+        boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper);
+        Assert.assertFalse(executable);
+
+        boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true);
+        Assert.assertFalse(fiExecutable);
+
+        ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
+
+        ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
+
+        verifyAll();
+    }
+
+    public void testIndexOnlyEqNull() throws ParseException, TableNotFoundException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXONLYFIELD == null");
+        
+        HashSet indexedFields = new HashSet();
+        indexedFields.add("INDEXONLYFIELD");
         
         HashSet<String> indexOnlyFields = new HashSet<>();
         indexOnlyFields.add("INDEXONLYFIELD");
@@ -53,6 +81,98 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true);
         Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
+        
+        verifyAll();
+    }
+    
+    @Test
+    public void testIndexOnlyNeNull() throws ParseException, TableNotFoundException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXONLYFIELD != null");
+        
+        HashSet indexedFields = new HashSet();
+        indexedFields.add("INDEXONLYFIELD");
+        
+        HashSet<String> indexOnlyFields = new HashSet<>();
+        indexOnlyFields.add("INDEXONLYFIELD");
+        
+        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
+        
+        replayAll();
+        
+        boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper);
+        Assert.assertFalse(executable);
+        
+        boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true);
+        Assert.assertFalse(fiExecutable);
+        
+        ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
+        
+        ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
+        
+        verifyAll();
+    }
+    
+    @Test
+    public void testIndexedEqNull() throws ParseException, TableNotFoundException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXEDFIELD == null");
+        
+        HashSet indexedFields = new HashSet();
+        indexedFields.add("INDEXONLYFIELD");
+        indexedFields.add("INDEXEDFIELD");
+        
+        HashSet<String> indexOnlyFields = new HashSet<>();
+        indexOnlyFields.add("INDEXONLYFIELD");
+        
+        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
+        
+        replayAll();
+        
+        boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper);
+        Assert.assertFalse(executable);
+        
+        boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true);
+        Assert.assertFalse(fiExecutable);
+        
+        ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, state);
+        
+        ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, fiState);
+        
+        verifyAll();
+    }
+    
+    @Test
+    public void testIndexedNeNull() throws ParseException, TableNotFoundException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXEDFIELD != null");
+        
+        HashSet indexedFields = new HashSet();
+        indexedFields.add("INDEXONLYFIELD");
+        indexedFields.add("INDEXEDFIELD");
+        
+        HashSet<String> indexOnlyFields = new HashSet<>();
+        indexOnlyFields.add("INDEXONLYFIELD");
+        
+        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
+        
+        replayAll();
+        
+        boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper);
+        Assert.assertFalse(executable);
+        
+        boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true);
+        Assert.assertFalse(fiExecutable);
+        
+        ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, state);
+        
+        ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, fiState);
         
         verifyAll();
     }

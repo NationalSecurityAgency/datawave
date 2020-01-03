@@ -368,9 +368,19 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         } else if (isUnindexed(node)) {
             state = STATE.NON_EXECUTABLE;
         } else if (forFieldIndex) {
-            state = STATE.EXECUTABLE;
+            // make an executability check on the children
+            state = unlessAnyNonExecutable(node, data + PREFIX);
+            // the only non-executable case here would be with a null literal, which only cannot be computed if index only
+            if (state == STATE.NON_EXECUTABLE && isIndexOnly(node)) {
+                state = STATE.ERROR;
+            }
         } else {
+            // global index checks won't run against negations at this time
             state = STATE.NON_EXECUTABLE;
+            // no support for index only fields being not-null at this time
+            if (isIndexOnly(node)) {
+                state = STATE.ERROR;
+            }
         }
         if (output != null) {
             output.writeLine(data + node.toString() + '(' + JexlASTHelper.getIdentifier(node) + ") -> " + state);
