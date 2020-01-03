@@ -607,11 +607,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        STATE state;
-        if (forFieldIndex) {
-            // return the state of the underlying expression
-            state = allOrNone(node, data + PREFIX);
-        } else {
+        // grab the recursive state because its either necessary directly or the error state of the branch needs to be checked
+        STATE state = allOrNone(node, data + PREFIX);
+        // if there is no error and executability is being checked against the global index just return non-executable
+        if (!forFieldIndex && state != STATE.ERROR) {
             state = STATE.NON_EXECUTABLE;
         }
         return state;
