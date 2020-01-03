@@ -126,7 +126,7 @@ public class JexlNodeSet implements Set<JexlNode> {
      *            a JexlNode representation of a query
      * @return true if the underlying collection was modified
      */
-    public boolean directAdd(String nodeKey, JexlNode node) {
+    private boolean directAdd(String nodeKey, JexlNode node) {
         if (nodeMap.containsKey(nodeKey)) {
             
             // If node key is already mapped to a delayed node, do not overwrite the delayed node.
@@ -200,7 +200,7 @@ public class JexlNodeSet implements Set<JexlNode> {
      * @param other
      * @return
      */
-    public boolean directAddAll(JexlNodeSet other) {
+    private boolean directAddAll(JexlNodeSet other) {
         boolean modified = false;
         Set<Map.Entry<String,JexlNode>> otherEntries = other.nodeMap.entrySet();
         for (Map.Entry<String,JexlNode> entry : otherEntries) {

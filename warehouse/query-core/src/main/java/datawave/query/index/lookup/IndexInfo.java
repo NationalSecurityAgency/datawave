@@ -389,7 +389,7 @@ public class IndexInfo implements Writable, UidIntersector {
             for (String uid : ids.keySet()) {
                 JexlNodeSet nodeSet = new JexlNodeSet();
                 nodeSet.addAll(ids.get(uid));
-                nodeSet.directAddAll(infiniteNodeSet);
+                nodeSet.addAll(infiniteNodeSet);
                 
                 IndexMatch currentMatch = new IndexMatch(Sets.newHashSet(nodeSet.getNodes()), uid, IndexMatchType.AND);
                 matches.add(currentMatch);
@@ -425,7 +425,7 @@ public class IndexInfo implements Writable, UidIntersector {
             newNode = TreeFlatteningRebuildingVisitor.flatten(matches.iterator().next().getNode());
         } else {
             JexlNodeSet nodeSet = new JexlNodeSet();
-            nodeSet.directAddAll(infiniteNodeSet);
+            nodeSet.addAll(infiniteNodeSet);
             nodeSet.add(matchNode);
             
             newNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodeSet.getNodes()));

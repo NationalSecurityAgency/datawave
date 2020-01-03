@@ -323,6 +323,7 @@ public class JexlNodeSetTest {
         assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(nodeSet.getNodes().iterator().next()));
     }
     
+    // Test exercises the directAddAll() codepath found within the addAll() method.
     @Test
     public void testDirectAddAll() {
         JexlNode node1 = JexlNodeFactory.buildEQNode("FOO", "bar");
@@ -340,7 +341,7 @@ public class JexlNodeSetTest {
         assertEquals(2, nodeSet.size());
         assertEquals(2, otherSet.size());
         
-        nodeSet.directAddAll(otherSet);
+        nodeSet.addAll(otherSet);
         assertEquals(4, nodeSet.size());
         assertTrue(nodeSet.contains(node1));
         assertTrue(nodeSet.contains(node2));
