@@ -185,6 +185,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     protected Set<String> indexOnlyFields = null;
     protected Set<String> nonEventFields = null;
     protected ShardQueryConfiguration config;
+    protected boolean debugStates;
     
     private StringListOutput output = null;
     
@@ -193,12 +194,17 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
     
     public ExecutableDeterminationVisitor(ShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex, List<String> debugOutput) {
+        this(conf, metadata, forFieldIndex, debugOutput, false);
+    }
+    
+    public ExecutableDeterminationVisitor(ShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex, List<String> debugOutput, boolean debugStates) {
         this.helper = metadata;
         this.config = conf;
         this.forFieldIndex = forFieldIndex;
         if (debugOutput != null) {
             this.output = new StringListOutput(debugOutput);
         }
+        this.debugStates = debugStates;
     }
     
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
@@ -1393,10 +1399,13 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     private void readStatesFromChildren(final JexlNode node, final Object data, final Set<STATE> states) {
         final int numChildren = node.jjtGetNumChildren();
         for (int i = 0; i < numChildren; i++) {
-            states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data)));
-            // Break early if all possibly unique states have already been added.
-            if (states.size() == STATE.size) {
+            STATE state = (STATE) node.jjtGetChild(i).jjtAccept(this, data);
+            states.add(state);
+            // Break early if all possibly unique states have already been added if the debugStates flag is not true.
+            if (!debugStates && states.size() == STATE.size) {
                 break;
+            } else if (debugStates) {
+                writeStateResultToOutput(PREFIX + data + node.toString(), state);
             }
         }
     }

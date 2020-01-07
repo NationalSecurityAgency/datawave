@@ -93,15 +93,15 @@ public class ExecutableDeterminationVisitorTest {
     
     @Before
     public void setUp() throws Exception {
-        initVisitor(true);
+        initVisitor(true, false);
     }
     
-    private void initVisitor(final boolean forFieldIndex) {
+    private void initVisitor(final boolean forFieldIndex, final boolean debugStates) {
         shardQueryConfiguration = mock(ShardQueryConfiguration.class);
         metadataHelper = mock(MetadataHelper.class);
         output = new ArrayList<>();
         // Instantiate the test class with debug output enabled.
-        visitor = new ExecutableDeterminationVisitor(shardQueryConfiguration, metadataHelper, forFieldIndex, output);
+        visitor = new ExecutableDeterminationVisitor(shardQueryConfiguration, metadataHelper, forFieldIndex, output, debugStates);
     }
     
     @Test
@@ -248,7 +248,7 @@ public class ExecutableDeterminationVisitorTest {
     
     @Test
     public void visitASTNENode_givenIsIndexedAndForFieldIndexIsFalse_returnsNonExecutableState() throws ParseException {
-        initVisitor(false);
+        initVisitor(false, false);
         
         expect(shardQueryConfiguration.getIndexedFields()).andReturn(Sets.newHashSet("B")).anyTimes();
         replay(shardQueryConfiguration);
@@ -725,7 +725,7 @@ public class ExecutableDeterminationVisitorTest {
     
     @Test
     public void visitASTNotNode_givenForFieldIndexIsFalse_returnsNonExecutableState() {
-        initVisitor(false);
+        initVisitor(false, false);
         ASTNotNode node = new ASTNotNode(ParserTreeConstants.JJTNOTNODE);
         
         STATE state = (STATE) visitor.visit(node, "data");
@@ -1893,6 +1893,31 @@ public class ExecutableDeterminationVisitorTest {
         
         assertEquals(STATE.PARTIAL, state);
         assertOutputLine(0, "dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode[PARTIAL, EXECUTABLE, IGNORABLE] -> PARTIAL");
+    }
+    
+    @Test
+    public void givenDebugStatesIsTrue_thenDebugsAllIndividualRetrievedStates() {
+        initVisitor(true, true);
+        
+        JexlNode child1 = createMockChild(STATE.IGNORABLE);
+        JexlNode child2 = createMockChild(STATE.EXECUTABLE);
+        JexlNode child3 = createMockChild(STATE.PARTIAL);
+        JexlNode child4 = createMockChild(STATE.IGNORABLE);
+        JexlNode child5 = createMockChild(STATE.EXECUTABLE);
+        JexlNode child6 = createMockChild(STATE.PARTIAL);
+        JexlNode parent = createMockParent(child1, child2, child3, child4, child5, child6);
+        replay(child1, child2, child3, child4, child5, child6, parent);
+    
+        STATE state = visitor.executableUnlessItIsnt(parent, "data");
+    
+        assertEquals(STATE.PARTIAL, state);
+        assertOutputLine(0, "  dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode -> IGNORABLE");
+        assertOutputLine(1, "  dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode -> EXECUTABLE");
+        assertOutputLine(2, "  dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode -> PARTIAL");
+        assertOutputLine(3, "  dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode -> IGNORABLE");
+        assertOutputLine(4, "  dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode -> EXECUTABLE");
+        assertOutputLine(5, "  dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode -> PARTIAL");
+        assertOutputLine(6, "dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode[PARTIAL, EXECUTABLE, IGNORABLE] -> PARTIAL");
     }
     
     private void assertOutputLine(final int index, final String message) {
