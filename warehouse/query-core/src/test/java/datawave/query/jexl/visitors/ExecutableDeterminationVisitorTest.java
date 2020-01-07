@@ -1907,9 +1907,9 @@ public class ExecutableDeterminationVisitorTest {
         JexlNode child6 = createMockChild(STATE.PARTIAL);
         JexlNode parent = createMockParent(child1, child2, child3, child4, child5, child6);
         replay(child1, child2, child3, child4, child5, child6, parent);
-    
+        
         STATE state = visitor.executableUnlessItIsnt(parent, "data");
-    
+        
         assertEquals(STATE.PARTIAL, state);
         assertOutputLine(0, "  dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode -> IGNORABLE");
         assertOutputLine(1, "  dataEasyMock for class org.apache.commons.jexl2.parser.JexlNode -> EXECUTABLE");

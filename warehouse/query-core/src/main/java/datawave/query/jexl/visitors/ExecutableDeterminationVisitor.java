@@ -99,65 +99,32 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         /**
          * The expression is executable against the index.
          */
-        EXECUTABLE(2, 3, 3),
+        EXECUTABLE,
         
         /**
          * The expression has an OR or cannot be completely satisfied by the index.
          */
-        PARTIAL(1, 1, 2),
+        PARTIAL,
         
         /**
          * The expression cannot be executed against the index.
          */
-        NON_EXECUTABLE(3, 2, 1),
+        NON_EXECUTABLE,
         
         /**
          * The expression does not matter for determining executability against the global index.
          */
-        IGNORABLE(4, 4, 4),
+        IGNORABLE,
         
         /**
          * The expression is index-only, but cannot be run against the index (negation, delayed prefix).
          */
-        ERROR(0, 0, 0);
+        ERROR;
         
         /**
          * The number of unique {@link STATE} values.
          */
         private static final int size = STATE.values().length;
-        
-        /**
-         * The priority order of the {@link STATE} values for {@link #allOrSome(JexlNode, Object)}.
-         */
-        private final int allOrSomePriority;
-        
-        /**
-         * The priority order of the {@link STATE values for {@link #allOrNone(JexlNode, Object)}.
-         */
-        private final int allOrNonePriority;
-        
-        /**
-         * The priority order of the {@link STATE values for {@link #executableUnlessItIsnt(JexlNode, Object)}.
-         */
-        private final int executableUnlessItIsntPriority;
-        
-        STATE(final int allOrSomePriority, final int allOrNonePriority, final int executableUnlessItIsntPriority) {
-            this.allOrSomePriority = allOrSomePriority;
-            this.allOrNonePriority = allOrNonePriority;
-            this.executableUnlessItIsntPriority = executableUnlessItIsntPriority;
-        }
-        
-        int getAllOrSomePriority() {
-            return allOrSomePriority;
-        }
-        
-        int getAllOrNonePriority() {
-            return allOrNonePriority;
-        }
-        
-        int getExecutableUnlessItIsntPriority() {
-            return executableUnlessItIsntPriority;
-        }
     }
     
     private static class StringListOutput {
@@ -173,10 +140,45 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
     }
     
+    /**
+     * This comparator is used to sort {@link STATE} elements in a specified order.
+     */
+    private static final class StateOrder implements Comparator<STATE> {
+        
+        private final STATE[] states;
+        
+        StateOrder(STATE... states) {
+            if (states.length < STATE.size) {
+                throw new IllegalArgumentException("Must supply all possible STATE permutations in desired order");
+            }
+            this.states = states;
+        }
+        
+        @Override
+        public int compare(STATE first, STATE second) {
+            if (first == second) {
+                return 0;
+            } else {
+                for (int i = 0; i < STATE.size; i++) {
+                    STATE state = states[i];
+                    if (state == first) {
+                        return -1;
+                    } else if (state == second) {
+                        return 1;
+                    }
+                }
+            }
+            
+            // In theory this should never actually be thrown.
+            throw new IllegalStateException("Failed to iterate all possible STATE permutations");
+        }
+    }
+    
     private static final Logger log = Logger.getLogger(ExecutableDeterminationVisitor.class);
-    private static final Comparator<STATE> allOrSomeComparator = Comparator.comparing(STATE::getAllOrSomePriority);
-    private static final Comparator<STATE> allOrNoneComparator = Comparator.comparing(STATE::getAllOrNonePriority);
-    private static final Comparator<STATE> executableUnlessItIsntComparator = Comparator.comparing(STATE::getExecutableUnlessItIsntPriority);
+    private static final Comparator<STATE> allOrSomeOrder = new StateOrder(STATE.ERROR, STATE.PARTIAL, STATE.EXECUTABLE, STATE.NON_EXECUTABLE, STATE.IGNORABLE);
+    private static final Comparator<STATE> allOrNoneOrder = new StateOrder(STATE.ERROR, STATE.PARTIAL, STATE.NON_EXECUTABLE, STATE.EXECUTABLE, STATE.IGNORABLE);
+    private static final Comparator<STATE> executableUnlessItIsntOrder = new StateOrder(STATE.ERROR, STATE.NON_EXECUTABLE, STATE.PARTIAL, STATE.EXECUTABLE,
+                    STATE.IGNORABLE);
     private static final String PREFIX = "  ";
     
     protected MetadataHelper helper;
@@ -197,7 +199,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         this(conf, metadata, forFieldIndex, debugOutput, false);
     }
     
-    public ExecutableDeterminationVisitor(ShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex, List<String> debugOutput, boolean debugStates) {
+    public ExecutableDeterminationVisitor(ShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex, List<String> debugOutput,
+                    boolean debugStates) {
         this.helper = metadata;
         this.config = conf;
         this.forFieldIndex = forFieldIndex;
@@ -1121,7 +1124,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
      */
     protected STATE allOrNone(JexlNode node, Object data) {
         // Find the states of each child, sorting them in all-or-none priority.
-        final SortedSet<STATE> states = new TreeSet<>(allOrNoneComparator);
+        final SortedSet<STATE> states = new TreeSet<>(allOrNoneOrder);
         readStatesFromChildren(node, data + PREFIX, states);
         
         if (log.isTraceEnabled()) {
@@ -1194,7 +1197,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         
         // Find the states of each child, sorting them in all-or-some priority.
-        final SortedSet<STATE> states = new TreeSet<>(allOrSomeComparator);
+        final SortedSet<STATE> states = new TreeSet<>(allOrSomeOrder);
         readStatesFromChildren(node, data + PREFIX, states);
         
         // The correct state will always be the first priority state.
@@ -1229,7 +1232,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
      */
     protected STATE executableUnlessItIsnt(JexlNode node, Object data) {
         // Find the states of each child, sorting them in executable-unless-it-isn't priority.
-        SortedSet<STATE> states = new TreeSet<>(executableUnlessItIsntComparator);
+        SortedSet<STATE> states = new TreeSet<>(executableUnlessItIsntOrder);
         readStatesFromChildren(node, data, states);
         
         STATE state;
