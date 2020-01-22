@@ -21,6 +21,14 @@ mvn -Pdev,examples -Ddeploy -Dtar -Ddist -DskipTests clean install
 
 Note that this will build javadocs and source jars.
 
+### Building an RPM
+
+In order to build the RPM, you should specify both the assemble and rpm profiles, as follows:
+
+```bash
+mvn -Pdev,assemble,rpm -Ddeploy -Dtar -Ddist -DskipTests clean install
+```
+
 # Building Microservices
 
 Datawave web services utilize several microservices at runtime (currently authorization and auditing, although that
