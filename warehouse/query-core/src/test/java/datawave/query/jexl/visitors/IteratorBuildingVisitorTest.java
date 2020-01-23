@@ -102,7 +102,8 @@ public class IteratorBuildingVisitorTest {
         
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        Collections.emptySet());
         
         List<String> expected = new ArrayList<>();
         expected.add("f");
@@ -110,7 +111,35 @@ public class IteratorBuildingVisitorTest {
         fooMap.put("FOO", expected);
         
         // turn on aggregation and see the document
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "f" + Constants.NULL + "FOO"), new Value()));
+        
+        Set<String> termFrequencyFields = new HashSet<>();
+        termFrequencyFields.add("FOO");
+        
+        // must have doc to get tf field values are within the bounds
+        // aggregation fields are not set so no document is created
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        termFrequencyFields);
+        
+        List<String> expected = new ArrayList<>();
+        expected.add("f");
+        Map<String,List<String>> fooMap = new HashMap<>();
+        fooMap.put("FOO", expected);
+        
+        // turn on aggregation and see the document
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap, true);
     }
     
     @Test
@@ -129,7 +158,8 @@ public class IteratorBuildingVisitorTest {
         
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        Collections.emptySet());
         
         List<String> expected = new ArrayList<>();
         expected.add("e");
@@ -137,7 +167,35 @@ public class IteratorBuildingVisitorTest {
         fooMap.put("FOO", expected);
         
         // turn on aggregation and see the document
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarkerJexlNodeRange_LowerBoundaryIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
+        
+        Set<String> termFrequencyFields = new HashSet<>();
+        termFrequencyFields.add("FOO");
+        
+        // must have doc to get tf field values are within the bounds
+        // aggregation fields are not set so no document is created
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        termFrequencyFields);
+        
+        List<String> expected = new ArrayList<>();
+        expected.add("e");
+        Map<String,List<String>> fooMap = new HashMap<>();
+        fooMap.put("FOO", expected);
+        
+        // turn on aggregation and see the document
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap, true);
     }
     
     @Test
@@ -156,7 +214,8 @@ public class IteratorBuildingVisitorTest {
         
         // must have doc to get tf field values are within the bounds
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        Collections.emptySet());
         
         List<String> expected = new ArrayList<>();
         expected.add("m");
@@ -164,7 +223,35 @@ public class IteratorBuildingVisitorTest {
         fooMap.put("FOO", expected);
         
         // turn on aggregation and see the document
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeUpperBoundaryIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "m" + Constants.NULL + "FOO"), new Value()));
+        
+        Set<String> termFrequencyFields = new HashSet<>();
+        termFrequencyFields.add("FOO");
+        
+        // must have doc to get tf field values are within the bounds
+        // aggregation fields are not set so no document is created
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        termFrequencyFields);
+        
+        List<String> expected = new ArrayList<>();
+        expected.add("m");
+        Map<String,List<String>> fooMap = new HashMap<>();
+        fooMap.put("FOO", expected);
+        
+        // turn on aggregation and see the document
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, fooMap, true);
     }
     
     @Test
@@ -182,7 +269,27 @@ public class IteratorBuildingVisitorTest {
         
         // create bounded range filter
         // value outside upper bound so no document found
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        Collections.emptySet());
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeUpperBoundaryOutsideIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "mn" + Constants.NULL
+                        + "FOO"), new Value()));
+        
+        Set<String> termFrequencyFields = new HashSet<>();
+        termFrequencyFields.add("FOO");
+        
+        // create bounded range filter
+        // value outside upper bound so no document found
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        termFrequencyFields);
     }
     
     @Test
@@ -200,7 +307,27 @@ public class IteratorBuildingVisitorTest {
         
         // create bounded range filter
         // value outside lower bound so no document found
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        Collections.emptySet());
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeLowerBoundaryOutsideIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        
+        Set<String> termFrequencyFields = new HashSet<>();
+        termFrequencyFields.add("FOO");
+        
+        // create bounded range filter
+        // value outside lower bound so no document found
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        termFrequencyFields);
     }
     
     @Test
@@ -219,7 +346,28 @@ public class IteratorBuildingVisitorTest {
         
         // must have doc to get tf field values that match regex
         // aggregation fields are not set so no document is created
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        Collections.emptySet());
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardNoAggregationIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ 'd.*'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        
+        Set<String> termFrequencyFields = new HashSet<>();
+        termFrequencyFields.add("FOO");
+        
+        // must have doc to get tf field values that match regex
+        // aggregation fields are not set so no document is created
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, termFrequencyFields, Collections.EMPTY_SET,
+                        Collections.emptySet());
     }
     
     @Test
@@ -243,7 +391,31 @@ public class IteratorBuildingVisitorTest {
         expectedDocValues.put("FOO", expectedValues);
         
         // must have doc to get tf field values that match regex
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardAggregatedFieldsIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ 'd.*'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
+        
+        Map<String,List<String>> expectedDocValues = new HashMap<>();
+        List<String> expectedValues = new ArrayList<>();
+        expectedValues.add("de");
+        expectedDocValues.put("FOO", expectedValues);
+        
+        // must have doc to get tf field values that match regex
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues, true);
     }
     
     @Test
@@ -270,7 +442,34 @@ public class IteratorBuildingVisitorTest {
         expectedDocValues.put("FOO", expectedValues);
         
         // must have doc including trailing values matching the regex
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardAggregatedMultipleFieldsIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ 'd.*'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
+        
+        Map<String,List<String>> expectedDocValues = new HashMap<>();
+        List<String> expectedValues = new ArrayList<>();
+        expectedValues.add("de");
+        expectedValues.add("dd");
+        expectedDocValues.put("FOO", expectedValues);
+        
+        // must have doc including trailing values matching the regex
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues, true);
     }
     
     @Test
@@ -299,7 +498,36 @@ public class IteratorBuildingVisitorTest {
         expectedDocValues.put("FOO", expectedValues);
         
         // must have doc to get tf field values that match regex
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_RegexMiddleWildcardIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ 'd.*foo'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
+        
+        Map<String,List<String>> expectedDocValues = new HashMap<>();
+        List<String> expectedValues = new ArrayList<>();
+        expectedValues.add("ddfoo");
+        expectedValues.add("dzzzzfoo");
+        expectedDocValues.put("FOO", expectedValues);
+        
+        // must have doc to get tf field values that match regex
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues, true);
     }
     
     @Test
@@ -328,7 +556,82 @@ public class IteratorBuildingVisitorTest {
         expectedDocValues.put("FOO", expectedValues);
         
         // leading wildcard match foo values must have doc including those values
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_RegexLeadingWildcardIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ '.*foo'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
+        
+        Map<String,List<String>> expectedDocValues = new HashMap<>();
+        List<String> expectedValues = new ArrayList<>();
+        expectedValues.add("ddfoo");
+        expectedValues.add("dzzzzfoo");
+        expectedDocValues.put("FOO", expectedValues);
+        
+        // leading wildcard match foo values must have doc including those values
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, true, expectedDocValues, true);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_NegatedRegexLeadingWildcardTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ '.*a'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
+        
+        // leading wildcard match foo values must have doc including those values
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_NegatedRegexLeadingWildcardIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ '.*a'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
+        
+        // leading wildcard match foo values must have doc including those values
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, true);
     }
     
     @Test
@@ -350,7 +653,29 @@ public class IteratorBuildingVisitorTest {
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
         // doc contains the regex so should not be evaluated
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_RegexLeadingWildcardNegationNoHitsIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ '.*foo'))");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
+        
+        // doc contains the regex so should not be evaluated
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, true);
     }
     
     @Test
@@ -373,28 +698,59 @@ public class IteratorBuildingVisitorTest {
         // empty document because it didn't find the pattern match (.*foo)
         // ultimately the non .*foo entries don't need to be built because the query only cares if they exist
         // however should be evaluated as a hit since the regex as NOT hit
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null);
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, false);
+    }
+    
+    @Test
+    public void visitAnd_ExceededValueThresholdMarker_RegexLeadingWildcardNegationAltHitIndexOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ '.*foo'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
+                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL
+                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzz" + Constants.NULL
+                        + "FOO"), new Value()));
+        
+        // empty document because it didn't find the pattern match (.*foo)
+        // ultimately the non .*foo entries don't need to be built because the query only cares if they exist
+        // however should be evaluated as a hit since the regex as NOT hit
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, true);
     }
     
     private void vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(ASTJexlScript query, Key docKeyHit, List<Map.Entry<Key,Value>> source,
-                    boolean buildDoc, Map<String,List<String>> docKeys) throws Exception {
+                    boolean buildDoc, Map<String,List<String>> docKeys, boolean indexOnly) throws Exception {
         Set<String> termFrequencyFields = new HashSet();
         termFrequencyFields.add("FOO");
         
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(query, docKeyHit, source, buildDoc, docKeys, termFrequencyFields, termFrequencyFields);
+        Set<String> indexOnlyFields = null;
+        if (indexOnly) {
+            indexOnlyFields = termFrequencyFields;
+        }
+        
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(query, docKeyHit, source, buildDoc, docKeys, termFrequencyFields, termFrequencyFields,
+                        indexOnlyFields);
     }
     
     private void vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(ASTJexlScript query, Key docKeyHit, List<Map.Entry<Key,Value>> source,
-                    boolean buildDoc, Map<String,List<String>> docKeys, Set<String> termFrequencyFields, Set<String> aggregationFields) throws Exception {
+                    boolean buildDoc, Map<String,List<String>> docKeys, Set<String> termFrequencyFields, Set<String> aggregationFields,
+                    Set<String> indexOnlyFields) throws Exception {
         Key startRangeKey = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         Key endRangeKey = new Key("row", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + Constants.MAX_UNICODE_STRING);
         Range docRange = new Range(startRangeKey, true, endRangeKey, true);
         
-        eval(query, docRange, docKeyHit, source, buildDoc, docKeys, termFrequencyFields, aggregationFields);
+        eval(query, docRange, docKeyHit, source, buildDoc, docKeys, termFrequencyFields, aggregationFields, indexOnlyFields);
     }
     
     private void eval(ASTJexlScript query, Range docRange, Key docKeyHit, List<Map.Entry<Key,Value>> source, boolean buildDoc,
-                    Map<String,List<String>> docKeys, Set<String> termFrequencyFields, Set<String> aggregationFields) throws IOException {
+                    Map<String,List<String>> docKeys, Set<String> termFrequencyFields, Set<String> aggregationFields, Set<String> indexOnlyFields)
+                    throws IOException {
         IteratorBuildingVisitor visitor = new IteratorBuildingVisitor();
         TypeMetadata typeMetadata = new TypeMetadata();
         
@@ -404,6 +760,7 @@ public class IteratorBuildingVisitorTest {
         // configure the visitor for use
         visitor.setTermFrequencyFields(termFrequencyFields);
         visitor.setFieldsToAggregate(aggregationFields);
+        visitor.setIndexOnlyFields(indexOnlyFields);
         visitor.setRange(docRange);
         visitor.setTimeFilter(TimeFilter.alwaysTrue());
         visitor.setLimitLookup(true);
