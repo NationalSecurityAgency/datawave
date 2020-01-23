@@ -128,7 +128,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 
                 try {
                     // if we have an hdfs cache directory and if past the fst threshold, then create the fst and replace the list with an assignment
-                    if (rangeNodesByField.isEmpty() && fstHdfsUri != null && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold())) {
+                    if (fstHdfsUri != null && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold())) {
                         URI fstPath = createFst(values);
                         markers.add(ExceededOrThresholdMarkerJexlNode.createFromFstURI(field, fstPath));
                         eqNodes = null;
