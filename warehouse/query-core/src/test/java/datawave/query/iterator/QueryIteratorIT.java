@@ -170,6 +170,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTime), new Value()));
         
+        // add an index only TF
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD4", "d", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid, eventTime), new Value()));
+        
         // add some index only field data
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid, eventTime), new Value()));
@@ -760,6 +764,20 @@ public class QueryIteratorIT extends EasyMockSupport {
         tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
+    @Test
+    public void tf_exceededValue_negated_leadingWildcardMissIndexOnly_documentSpecific_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD4 =~ '.*z'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void tf_exceededValue_negated_leadingWildcardMissIndexOnly_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD4 =~ '.*z'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
     protected void configureIterator() {
         // configure iterator
         iterator.setEvaluationFilter(filter);
@@ -869,7 +887,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // we need term frequencies
         options.put(TERM_FREQUENCIES_REQUIRED, "true");
         // set to be the index only fields required for the query?
-        options.put(INDEX_ONLY_FIELDS, "INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3");
+        options.put(INDEX_ONLY_FIELDS, "INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3,TF_FIELD4");
         // set because we have index only fields used
         options.put(CONTAINS_INDEX_ONLY_TERMS, "true");
         
@@ -914,9 +932,9 @@ public class QueryIteratorIT extends EasyMockSupport {
         // we need term frequencies
         options.put(TERM_FREQUENCIES_REQUIRED, "true");
         // set to be the index only fields required for the query?
-        options.put(INDEX_ONLY_FIELDS, "INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3");
+        options.put(INDEX_ONLY_FIELDS, "INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3,TF_FIELD4");
         // set t obe the term frequency fields required for the query?
-        options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD1,TF_FIELD2");
+        options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD1,TF_FIELD2,TF_FIELD4");
         
         replayAll();
         
