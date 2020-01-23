@@ -23,7 +23,7 @@ Note that this will build javadocs and source jars.
 
 ### Building an RPM
 
-In order to build the RPM, you should specify both the assemble and rpm profiles, as follows:
+To build the RPM specify both the assemble and rpm profiles should be specified, as follows:
 
 ```bash
 mvn -Pdev,assemble,rpm -Ddeploy -Dtar -Ddist -DskipTests clean install
@@ -98,4 +98,3 @@ Due to our use of the **git-commit-id-plugin** Maven plugin, your build could fa
 ### Resolution
 * Use `git clone ...` to retrieve the source code into a new local directory and then retry the build
 * If `git clone` is not an option for some reason, either edit POMs to disable the `git-commit-id-plugin` or `git init` a new local repo in the directory containing the source code and make at least one commit. This option is not recommended and only intended as a last resort, as you will be prevented from submitting pull requests and performing other Git workflows associated with this repository
-
