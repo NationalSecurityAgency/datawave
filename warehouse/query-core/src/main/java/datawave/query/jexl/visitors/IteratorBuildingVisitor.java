@@ -6,8 +6,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
-import datawave.core.iterators.SourcePool;
-import datawave.core.iterators.ThreadLocalPooledSource;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
@@ -105,6 +103,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
@@ -142,9 +141,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorCacheBufferSize = 10000;
     protected int maxRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
-    protected SourcePool ivaratorSources = null;
     protected SortedKeyValueIterator<Key,Value> ivaratorSource = null;
     protected int ivaratorCount = 0;
+    protected ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = new ArrayBlockingQueue<>(33, true);
     
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
@@ -1325,6 +1324,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
+        builder.setIvaratorSourcePool(ivaratorSourcePool);
+        builder.setEnv(env);
         
         // We have no parent already defined
         if (data == null) {
@@ -1544,9 +1545,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public IteratorBuildingVisitor setIvaratorSources(SourceFactory sourceFactory, int maxIvaratorSources) {
-        this.ivaratorSources = new SourcePool(sourceFactory, maxIvaratorSources);
-        this.ivaratorSource = new ThreadLocalPooledSource<>(ivaratorSources);
+    public IteratorBuildingVisitor setIvaratorSource(SortedKeyValueIterator<Key,Value> ivaratorSource) {
+        this.ivaratorSource = ivaratorSource;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorSourcePool(ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+        this.ivaratorSourcePool = ivaratorSourcePool;
         return this;
     }
     

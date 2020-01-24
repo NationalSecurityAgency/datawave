@@ -104,6 +104,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -1328,13 +1329,22 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                         .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())
                         .setIvaratorCacheScanPersistThreshold(this.getIvaratorCacheScanPersistThreshold())
                         .setIvaratorCacheScanTimeout(this.getIvaratorCacheScanTimeout()).setMaxRangeSplit(this.getMaxIndexRangeSplit())
-                        .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles()).setIvaratorSources(this, this.getMaxIvaratorSources())
+                        .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles()).setIvaratorSource(this.sourceForDeepCopies)
+                        .setIvaratorSourcePool(createIvaratorSourcePool(this.sourceForDeepCopies, this.maxIvaratorSources, this.myEnvironment))
                         .setIncludes(indexedFields).setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied)
                         .setSortedUIDs(sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit)
                         .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector)
                         .setIndexOnlyFields(this.getAllIndexOnlyFields()).setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
                         .setCompositeMetadata(compositeMetadata).setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // TODO: .setStatsPort(this.statsdHostAndPort);
+    }
+    
+    protected ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> createIvaratorSourcePool(SortedKeyValueIterator<Key,Value> sourceForDeepCopies,
+                    int maxIvaratorSources, IteratorEnvironment env) {
+        ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = new ArrayBlockingQueue<>(maxIvaratorSources, true);
+        for (int i = 0; i < maxIvaratorSources; i++)
+            ivaratorSourcePool.add(sourceForDeepCopies.deepCopy(env));
+        return ivaratorSourcePool;
     }
     
     protected String getHdfsCacheSubDirPrefix() {

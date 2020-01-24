@@ -64,13 +64,13 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                                 .withFileSystem(hdfsFileSystem).withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
                                 .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
                                 .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                .build();
+                                .withIvaratorSourcePool(ivaratorSourcePool).build();
                 
                 if (collectTimingDetails) {
                     regexIterator.setCollectTimingDetails(true);
                     regexIterator.setQuerySpanCollector(this.querySpanCollector);
                 }
-                regexIterator.init(source, null, null);
+                regexIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexRegexIteratorJexl: " + regexIterator);
                 
                 boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
