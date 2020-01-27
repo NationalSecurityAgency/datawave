@@ -16,6 +16,7 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -55,15 +56,15 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     }
     
     public static boolean instanceOfAny(JexlNode node, List<JexlNode> sourceNodes) {
-        return instanceOf(node, null, sourceNodes);
+        return instanceOf(node, (Set) null, sourceNodes);
     }
     
-    public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, List<JexlNode> sourceNodes) {
+    public static boolean instanceOf(JexlNode node, Set<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
         QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor();
         
         if (node != null) {
-            if (type != null)
-                visitor.typeIdentifiers.add(type.getSimpleName());
+            if (types != null)
+                types.stream().forEach(type -> visitor.typeIdentifiers.add(type.getSimpleName()));
             else
                 visitor.typeIdentifiers.addAll(TYPE_IDENTIFIERS);
             
@@ -78,6 +79,15 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         }
         
         return false;
+    }
+    
+    public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, List<JexlNode> sourceNodes) {
+        Set<Class<? extends QueryPropertyMarker>> types = null;
+        if (type != null) {
+            types = Collections.singleton(type);
+        }
+        
+        return instanceOf(node, types, sourceNodes);
     }
     
     private static JexlNode trimReferenceNodes(JexlNode node) {

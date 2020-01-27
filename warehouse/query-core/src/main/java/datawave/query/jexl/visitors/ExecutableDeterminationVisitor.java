@@ -65,6 +65,7 @@ import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -126,6 +127,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
     
     private static final String PREFIX = "  ";
+    private static final String NEGATION_PREFIX = "!";
     
     private StringListOutput output = null;
     
@@ -149,6 +151,51 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
     }
     
+    /**
+     * Negate the current data object
+     * 
+     * @param data
+     *            the data passed along to hte visitor, may be null or a string
+     * @return NEGATION_PREFIX if the string was null or the old string appended with NEGATION_PREFIX
+     */
+    public static Object negateData(Object data) {
+        if (data == null) {
+            return NEGATION_PREFIX;
+        } else {
+            return data.toString() + NEGATION_PREFIX;
+        }
+    }
+    
+    /**
+     * Determine if a node is in a negated state or not
+     * 
+     * @param data
+     *            the data passed along to the visitor. Should be either null or a string containing ! for each negation
+     * @return true if the statement is negated, false otherwise
+     */
+    public static boolean isNegated(Object data) {
+        if (data == null || StringUtils.isEmpty(data.toString().trim())) {
+            return false;
+        } else {
+            // flatten the string
+            String trimmed = data.toString().trim();
+            int notCount = 0;
+            // loop over the characters and count nots to see if negated or not
+            for (int i = 0; i < trimmed.length(); i++) {
+                if (trimmed.charAt(i) == NEGATION_PREFIX.charAt(0)) {
+                    notCount++;
+                }
+            }
+            
+            // odd number of nots apply negation
+            if (notCount % 2 == 1) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         return getState(node, config, helper, false);
     }
@@ -163,14 +210,25 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex, List<String> debugOutput) {
         ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, helper, forFieldIndex, debugOutput);
-        return (STATE) node.jjtAccept(visitor, "");
+        
+        // push down any negations to ensure the state is accurate
+        JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
+        return (STATE) pushedDownTree.jjtAccept(visitor, "");
     }
     
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
                     Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
+        return getState(node, "", config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
+    }
+    
+    public static STATE getState(JexlNode node, Object parentage, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
         ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, metadataHelper, forFieldIndex, debugOutput)
                         .setNonEventFields(nonEventFields).setIndexOnlyFields(indexOnlyFields).setIndexedFields(indexedFields);
-        return (STATE) node.jjtAccept(visitor, "");
+        
+        // push down any negations to ensure the state is accurate
+        JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
+        return (STATE) pushedDownTree.jjtAccept(visitor, parentage);
     }
     
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
@@ -197,7 +255,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
                     Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
-        STATE state = getState(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
+        return isExecutable(node, "", config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
+    }
+    
+    public static boolean isExecutable(JexlNode node, Object parentage, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
+        STATE state = getState(node, parentage, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
         return state == STATE.EXECUTABLE;
     }
     
@@ -618,7 +681,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNotNode node, Object data) {
         // grab the recursive state because its either necessary directly or the error state of the branch needs to be checked
-        STATE state = allOrNone(node, data + PREFIX);
+        STATE state = allOrNone(node, negateData(data + PREFIX));
         // if there is no error and executability is being checked against the global index just return non-executable
         if (!forFieldIndex && state != STATE.ERROR) {
             state = STATE.NON_EXECUTABLE;
@@ -643,16 +706,26 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTOrNode node, Object data) {
         STATE state;
-        state = allOrNone(node, data + PREFIX);
+        if (isNegated(data)) {
+            // a negated OR should be treated like an AND for executability
+            state = allOrSome(node, data + PREFIX);
+        } else {
+            state = allOrNone(node, data + PREFIX);
+        }
         return state;
     }
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
         STATE state;
-        // at least one child must be executable for an AND expression to be executable, and none of the other nodes should be partially executable
-        // all children must be executable for an OR expression to be executable
-        state = allOrSome(node, data + PREFIX);
+        if (isNegated(data)) {
+            // a negated AND should be treated like an OR for executability
+            state = allOrNone(node, data + PREFIX);
+        } else {
+            // at least one child must be executable for an AND expression to be executable, and none of the other nodes should be partially executable
+            // all children must be executable for an OR expression to be executable
+            state = allOrSome(node, data + PREFIX);
+        }
         return state;
     }
     
