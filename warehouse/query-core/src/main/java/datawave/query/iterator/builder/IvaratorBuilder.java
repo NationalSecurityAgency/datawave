@@ -6,9 +6,8 @@ import datawave.query.iterator.profile.QuerySpanCollector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileSystem;
-
-import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * A base class used to build ivarators
@@ -28,7 +27,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected QuerySpanCollector querySpanCollector = null;
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold;
-    protected ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
     
     public FileSystem getHdfsFileSystem() {
         return hdfsFileSystem;
@@ -126,11 +125,11 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
         this.compositeSeekThreshold = compositeSeekThreshold;
     }
     
-    public ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> getIvaratorSourcePool() {
+    public GenericObjectPool<SortedKeyValueIterator<Key,Value>> getIvaratorSourcePool() {
         return ivaratorSourcePool;
     }
     
-    public void setIvaratorSourcePool(ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+    public void setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
         this.ivaratorSourcePool = ivaratorSourcePool;
     }
 }

@@ -25,6 +25,7 @@ import org.apache.accumulo.core.iterators.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -43,7 +44,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -88,7 +88,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         protected TypeMetadata typeMetadata;
         private CompositeMetadata compositeMetadata;
         private int compositeSeekThreshold;
-        private ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
+        private GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
         
         @SuppressWarnings("unchecked")
         protected B self() {
@@ -198,7 +198,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             return self();
         }
         
-        public B withIvaratorSourcePool(ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+        public B withIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
             this.ivaratorSourcePool = ivaratorSourcePool;
             return self();
         }
@@ -316,7 +316,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected FieldIndexCompositeSeeker compositeSeeker;
     protected int compositeSeekThreshold;
     
-    protected ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
     
     // -------------------------------------------------------------------------
     // ------------- Constructors
@@ -355,7 +355,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
                     QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs, CompositeMetadata compositeMetadata,
-                    int compositeSeekThreshold, TypeMetadata typeMetadata, ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+                    int compositeSeekThreshold, TypeMetadata typeMetadata, GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
         
         this.ivaratorSourcePool = ivaratorSourcePool;
         
@@ -900,7 +900,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     }
     
     /**
-     * Get a source copy. If the source is setup as a ThreadLocalPooledSource, then no copy is needed.
+     * Get a source copy. This is only used when retrieving unsorted values.
      *
      * @return a source
      */
@@ -920,9 +920,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected SortedKeyValueIterator<Key,Value> takePoolSource() {
         final SortedKeyValueIterator<Key,Value> source;
         try {
-            source = ivaratorSourcePool.take();
-        } catch (InterruptedException e) {
-            throw new IterationInterruptedException("Ivarator source pool take interrupted" + e.getMessage());
+            source = ivaratorSourcePool.borrowObject();
+        } catch (Exception e) {
+            throw new IterationInterruptedException("Unable to borrow object from ivarator source pool.  " + e.getMessage());
         }
         return source;
     }
@@ -931,7 +931,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * Return a source copy to the source pool.
      */
     protected void returnPoolSource(SortedKeyValueIterator<Key,Value> source) {
-        ivaratorSourcePool.offer(source);
+        try {
+            ivaratorSourcePool.returnObject(source);
+        } catch (Exception e) {
+            throw new IterationInterruptedException("Unable to return object to ivarator source pool.  " + e.getMessage());
+        }
     }
     
     /**

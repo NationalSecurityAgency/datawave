@@ -88,6 +88,11 @@ import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.pool2.BasePooledObjectFactory;
+import org.apache.commons.pool2.PooledObject;
+import org.apache.commons.pool2.impl.DefaultPooledObject;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -104,7 +109,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -689,8 +693,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @return
      */
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-        SortedKeyValueIterator<Key,Value> sourceDeepCopy = null;
-        sourceDeepCopy = sourceForDeepCopies.deepCopy(this.myEnvironment);
+        SortedKeyValueIterator<Key,Value> sourceDeepCopy;
+        synchronized (sourceForDeepCopies) {
+            sourceDeepCopy = sourceForDeepCopies.deepCopy(this.myEnvironment);
+        }
         return sourceDeepCopy;
     }
     
@@ -1329,22 +1335,43 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                         .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())
                         .setIvaratorCacheScanPersistThreshold(this.getIvaratorCacheScanPersistThreshold())
                         .setIvaratorCacheScanTimeout(this.getIvaratorCacheScanTimeout()).setMaxRangeSplit(this.getMaxIndexRangeSplit())
-                        .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles()).setIvaratorSource(this.sourceForDeepCopies)
-                        .setIvaratorSourcePool(createIvaratorSourcePool(this.sourceForDeepCopies, this.maxIvaratorSources, this.myEnvironment))
-                        .setIncludes(indexedFields).setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied)
-                        .setSortedUIDs(sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit)
-                        .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector)
-                        .setIndexOnlyFields(this.getAllIndexOnlyFields()).setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
-                        .setCompositeMetadata(compositeMetadata).setExceededOrEvaluationCache(exceededOrEvaluationCache);
+                        .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles()).setUnsortedIvaratorSource(this.sourceForDeepCopies)
+                        .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources)).setIncludes(indexedFields)
+                        .setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied).setSortedUIDs(sortedUIDs)
+                        .limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit).setCollectTimingDetails(this.collectTimingDetails)
+                        .setQuerySpanCollector(this.querySpanCollector).setIndexOnlyFields(this.getAllIndexOnlyFields())
+                        .setAllowTermFrequencyLookup(this.allowTermFrequencyLookup).setCompositeMetadata(compositeMetadata)
+                        .setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // TODO: .setStatsPort(this.statsdHostAndPort);
     }
     
-    protected ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> createIvaratorSourcePool(SortedKeyValueIterator<Key,Value> sourceForDeepCopies,
-                    int maxIvaratorSources, IteratorEnvironment env) {
-        ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = new ArrayBlockingQueue<>(maxIvaratorSources, true);
-        for (int i = 0; i < maxIvaratorSources; i++)
-            ivaratorSourcePool.add(sourceForDeepCopies.deepCopy(env));
-        return ivaratorSourcePool;
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> createIvaratorSourcePool(int maxIvaratorSources) {
+        return new GenericObjectPool<>(createIvaratorSourceFactory(this), createIvaratorSourcePoolConfig(maxIvaratorSources));
+    }
+    
+    private BasePooledObjectFactory<SortedKeyValueIterator<Key,Value>> createIvaratorSourceFactory(SourceFactory<Key,Value> sourceFactory) {
+        return new BasePooledObjectFactory<SortedKeyValueIterator<Key,Value>>() {
+            @Override
+            public SortedKeyValueIterator<Key,Value> create() throws Exception {
+                return sourceFactory.getSourceDeepCopy();
+            }
+            
+            @Override
+            public PooledObject<SortedKeyValueIterator<Key,Value>> wrap(SortedKeyValueIterator<Key,Value> obj) {
+                return new DefaultPooledObject<>(obj);
+            }
+        };
+    }
+    
+    private GenericObjectPoolConfig<SortedKeyValueIterator<Key,Value>> createIvaratorSourcePoolConfig(int maxIvaratorSources) {
+        GenericObjectPoolConfig<SortedKeyValueIterator<Key,Value>> poolConfig = new GenericObjectPoolConfig<>();
+        poolConfig.setMaxTotal(maxIvaratorSources);
+        poolConfig.setMaxIdle(maxIvaratorSources);
+        poolConfig.setMinIdle(0);
+        poolConfig.setFairness(true);
+        poolConfig.setBlockWhenExhausted(true);
+        poolConfig.setJmxEnabled(false);
+        return poolConfig;
     }
     
     protected String getHdfsCacheSubDirPrefix() {

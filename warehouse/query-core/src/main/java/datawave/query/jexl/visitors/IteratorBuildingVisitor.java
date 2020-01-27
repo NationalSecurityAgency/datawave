@@ -83,6 +83,7 @@ import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -103,7 +104,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
@@ -141,9 +141,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorCacheBufferSize = 10000;
     protected int maxRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
-    protected SortedKeyValueIterator<Key,Value> ivaratorSource = null;
+    protected SortedKeyValueIterator<Key,Value> unsortedIvaratorSource = null;
     protected int ivaratorCount = 0;
-    protected ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = new ArrayBlockingQueue<>(33, true);
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
     
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
@@ -1303,7 +1303,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param data
      */
     public void ivarate(IvaratorBuilder builder, JexlNode node, Object data) throws IOException {
-        builder.setSource(ivaratorSource);
+        builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
         builder.setCompositeMetadata(compositeMetadata);
@@ -1545,12 +1545,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public IteratorBuildingVisitor setIvaratorSource(SortedKeyValueIterator<Key,Value> ivaratorSource) {
-        this.ivaratorSource = ivaratorSource;
+    public IteratorBuildingVisitor setUnsortedIvaratorSource(SortedKeyValueIterator<Key,Value> unsortedIvaratorSource) {
+        this.unsortedIvaratorSource = unsortedIvaratorSource;
         return this;
     }
     
-    public IteratorBuildingVisitor setIvaratorSourcePool(ArrayBlockingQueue<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+    public IteratorBuildingVisitor setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
         this.ivaratorSourcePool = ivaratorSourcePool;
         return this;
     }
