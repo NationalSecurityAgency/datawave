@@ -6,7 +6,7 @@ import datawave.query.iterator.profile.QuerySpanCollector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileSystem;
 
 /**

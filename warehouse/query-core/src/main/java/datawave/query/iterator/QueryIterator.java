@@ -88,11 +88,9 @@ import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.pool2.BasePooledObjectFactory;
+import org.apache.commons.pool.BasePoolableObjectFactory;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.commons.pool2.PooledObject;
-import org.apache.commons.pool2.impl.DefaultPooledObject;
-import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -111,6 +109,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
 /**
  * <p>
@@ -1349,28 +1348,21 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return new GenericObjectPool<>(createIvaratorSourceFactory(this), createIvaratorSourcePoolConfig(maxIvaratorSources));
     }
     
-    private BasePooledObjectFactory<SortedKeyValueIterator<Key,Value>> createIvaratorSourceFactory(SourceFactory<Key,Value> sourceFactory) {
-        return new BasePooledObjectFactory<SortedKeyValueIterator<Key,Value>>() {
+    private BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>> createIvaratorSourceFactory(SourceFactory<Key,Value> sourceFactory) {
+        return new BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>>() {
             @Override
-            public SortedKeyValueIterator<Key,Value> create() throws Exception {
+            public SortedKeyValueIterator<Key,Value> makeObject() throws Exception {
                 return sourceFactory.getSourceDeepCopy();
-            }
-            
-            @Override
-            public PooledObject<SortedKeyValueIterator<Key,Value>> wrap(SortedKeyValueIterator<Key,Value> obj) {
-                return new DefaultPooledObject<>(obj);
             }
         };
     }
     
-    private GenericObjectPoolConfig<SortedKeyValueIterator<Key,Value>> createIvaratorSourcePoolConfig(int maxIvaratorSources) {
-        GenericObjectPoolConfig<SortedKeyValueIterator<Key,Value>> poolConfig = new GenericObjectPoolConfig<>();
-        poolConfig.setMaxTotal(maxIvaratorSources);
-        poolConfig.setMaxIdle(maxIvaratorSources);
-        poolConfig.setMinIdle(0);
-        poolConfig.setFairness(true);
-        poolConfig.setBlockWhenExhausted(true);
-        poolConfig.setJmxEnabled(false);
+    private GenericObjectPool.Config createIvaratorSourcePoolConfig(int maxIvaratorSources) {
+        GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
+        poolConfig.maxActive = maxIvaratorSources;
+        poolConfig.maxIdle = maxIvaratorSources;
+        poolConfig.minIdle = 0;
+        poolConfig.whenExhaustedAction = WHEN_EXHAUSTED_BLOCK;
         return poolConfig;
     }
     

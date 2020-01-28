@@ -83,7 +83,7 @@ import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
