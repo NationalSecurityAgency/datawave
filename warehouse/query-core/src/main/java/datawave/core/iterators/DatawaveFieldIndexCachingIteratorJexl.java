@@ -25,6 +25,7 @@ import org.apache.accumulo.core.iterators.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -38,7 +39,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -88,6 +88,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         protected TypeMetadata typeMetadata;
         private CompositeMetadata compositeMetadata;
         private int compositeSeekThreshold;
+        private GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
         
         @SuppressWarnings("unchecked")
         protected B self() {
@@ -194,6 +195,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         public B withCompositeSeekThreshold(int compositeSeekThreshold) {
             this.compositeSeekThreshold = compositeSeekThreshold;
+            return self();
+        }
+        
+        public B withIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+            this.ivaratorSourcePool = ivaratorSourcePool;
             return self();
         }
         
@@ -310,6 +316,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected FieldIndexCompositeSeeker compositeSeeker;
     protected int compositeSeekThreshold;
     
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
+    
     // -------------------------------------------------------------------------
     // ------------- Constructors
     
@@ -340,14 +348,17 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this(builder.fieldName, builder.fieldValue, builder.timeFilter, builder.datatypeFilter, builder.negated, builder.scanThreshold, builder.scanTimeout,
                         builder.hdfsBackedSetBufferSize, builder.maxRangeSplit, builder.maxOpenFiles, builder.fs, builder.uniqueDir, builder.queryLock,
                         builder.allowDirReuse, builder.returnKeyType, builder.sortedUIDs, builder.compositeMetadata, builder.compositeSeekThreshold,
-                        builder.typeMetadata);
+                        builder.typeMetadata, builder.ivaratorSourcePool);
     }
     
     @SuppressWarnings("hiding")
     private DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
                     QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs, CompositeMetadata compositeMetadata,
-                    int compositeSeekThreshold, TypeMetadata typeMetadata) {
+                    int compositeSeekThreshold, TypeMetadata typeMetadata, GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+        
+        this.ivaratorSourcePool = ivaratorSourcePool;
+        
         if (fieldName.toString().startsWith("fi" + NULL_BYTE)) {
             this.fieldName = new Text(fieldName.toString().substring(3));
             this.fiName = fieldName;
@@ -423,6 +434,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
         
         this.lastRangeSeeked = other.lastRangeSeeked;
+        this.initEnv = env;
     }
     
     // -------------------------------------------------------------------------
@@ -498,7 +510,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         try {
             this.fiRow = null;
-            SortedKeyValueIterator<Key,Value> source = getSource();
+            
+            // this will block until an ivarator source becomes available
+            final SortedKeyValueIterator<Key,Value> source = takePoolSource();
             
             try {
                 
@@ -560,7 +574,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     this.topValue = null;
                 }
             } finally {
-                releaseSource(source);
+                returnPoolSource(source);
             }
             
             // now lets find the top key
@@ -826,7 +840,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         // if this is the first time through, then create a separate source, and seek
         if (this.fiSource == null) {
-            this.fiSource = getSourceCopy(true);
+            this.fiSource = getSourceCopy();
             if (!this.boundingFiRanges.isEmpty()) {
                 if (log.isTraceEnabled()) {
                     log.trace("Seeking fisource to " + this.boundingFiRanges.get(0));
@@ -886,20 +900,42 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     }
     
     /**
-     * Get a source copy. If the source is setup as a ThreadLocalPooledSource, then no copy is needed.
+     * Get a source copy. This is only used when retrieving unsorted values.
      *
-     * @param force
-     *            a deepcopy. This is needed if a separate copy is needed within the same thread (i.e. ThreadLocalPooledSource is not enough)
      * @return a source
      */
-    protected SortedKeyValueIterator<Key,Value> getSourceCopy(boolean force) {
+    protected SortedKeyValueIterator<Key,Value> getSourceCopy() {
         SortedKeyValueIterator<Key,Value> source = getSource();
-        if (force || !(source instanceof ThreadLocalPooledSource)) {
-            synchronized (source) {
-                source = source.deepCopy(initEnv);
-            }
+        synchronized (source) {
+            source = source.deepCopy(initEnv);
         }
         return source;
+    }
+    
+    /**
+     * Get a source copy from the source pool.
+     *
+     * @return a source
+     */
+    protected SortedKeyValueIterator<Key,Value> takePoolSource() {
+        final SortedKeyValueIterator<Key,Value> source;
+        try {
+            source = ivaratorSourcePool.borrowObject();
+        } catch (Exception e) {
+            throw new IterationInterruptedException("Unable to borrow object from ivarator source pool.  " + e.getMessage());
+        }
+        return source;
+    }
+    
+    /**
+     * Return a source copy to the source pool.
+     */
+    protected void returnPoolSource(SortedKeyValueIterator<Key,Value> source) {
+        try {
+            ivaratorSourcePool.returnObject(source);
+        } catch (Exception e) {
+            throw new IterationInterruptedException("Unable to return object to ivarator source pool.  " + e.getMessage());
+        }
     }
     
     /**
@@ -946,6 +982,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      */
     protected Future<?> fillSet(final Range boundingFiRange) {
         
+        // this will block until an ivarator source becomes available
+        final SortedKeyValueIterator<Key,Value> source = takePoolSource();
+        
         // create runnable
         Runnable runnable = () -> {
             if (log.isDebugEnabled()) {
@@ -954,11 +993,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             int scanned = 0;
             int matched = 0;
             QuerySpan querySpan = null;
-            SortedKeyValueIterator<Key,Value> source = null;
             Key nextSeekKey = null;
             int nextCount = 0;
             try {
-                source = getSourceCopy(false);
                 if (collectTimingDetails && source instanceof SourceTrackingIterator) {
                     querySpan = ((SourceTrackingIterator) source).getQuerySpan();
                 }
@@ -1054,7 +1091,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 log.error("Failed to complete fillSet(" + boundingFiRange + ")", e);
                 throw new RuntimeException(e);
             } finally {
-                releaseSource(source);
+                // return the ivarator source back to the pool.
+                returnPoolSource(source);
                 if (log.isDebugEnabled()) {
                     StringBuilder builder = new StringBuilder();
                     builder.append("Matched ").append(matched).append(" out of ").append(scanned).append(" for ").append(boundingFiRange).append(": ")
@@ -1069,16 +1107,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange);
         
-    }
-    
-    private static void releaseSource(SortedKeyValueIterator source) {
-        try {
-            if (source != null && source instanceof AutoCloseable) {
-                ((AutoCloseable) source).close();
-            }
-        } catch (Exception e) {
-            log.error("Error closing source", e);
-        }
     }
     
     /**
@@ -1195,7 +1223,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         QuerySpan querySpan = null;
         
         try {
-            SortedKeyValueIterator<Key,Value> source = getSource();
+            // this will block until an ivarator source becomes available
+            final SortedKeyValueIterator<Key,Value> source = takePoolSource();
             
             try {
                 
@@ -1225,7 +1254,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 }
                 
             } finally {
-                releaseSource(source);
+                returnPoolSource(source);
             }
             
             if (log.isTraceEnabled()) {
