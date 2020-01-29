@@ -86,6 +86,9 @@ import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.pool.BasePoolableObjectFactory;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.commons.pool2.PooledObject;
 import org.apache.hadoop.io.Text;
 import org.apache.htrace.Trace;
 import org.apache.htrace.TraceScope;
@@ -106,6 +109,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
 /**
  * <p>
@@ -679,8 +683,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @return
      */
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-        SortedKeyValueIterator<Key,Value> sourceDeepCopy = null;
-        sourceDeepCopy = sourceForDeepCopies.deepCopy(this.myEnvironment);
+        SortedKeyValueIterator<Key,Value> sourceDeepCopy;
+        synchronized (sourceForDeepCopies) {
+            sourceDeepCopy = sourceForDeepCopies.deepCopy(this.myEnvironment);
+        }
         return sourceDeepCopy;
     }
     
@@ -1332,7 +1338,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setMaxRangeSplit(this.getMaxIndexRangeSplit())
                 .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles())
                 .setIvaratorNumRetries(this.getIvaratorNumRetries())
-                .setIvaratorSources(this, this.getMaxIvaratorSources())
+                .setUnsortedIvaratorSource(this.sourceForDeepCopies)
+                .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources))
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
                 .setIncludes(indexedFields)
                 .setTermFrequencyFields(this.getTermFrequencyFields())
@@ -1349,6 +1356,28 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setExceededOrEvaluationCache(exceededOrEvaluationCache);
         // @formatter:on
         // TODO: .setStatsPort(this.statsdHostAndPort);
+    }
+    
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> createIvaratorSourcePool(int maxIvaratorSources) {
+        return new GenericObjectPool<>(createIvaratorSourceFactory(this), createIvaratorSourcePoolConfig(maxIvaratorSources));
+    }
+    
+    private BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>> createIvaratorSourceFactory(SourceFactory<Key,Value> sourceFactory) {
+        return new BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>>() {
+            @Override
+            public SortedKeyValueIterator<Key,Value> makeObject() throws Exception {
+                return sourceFactory.getSourceDeepCopy();
+            }
+        };
+    }
+    
+    private GenericObjectPool.Config createIvaratorSourcePoolConfig(int maxIvaratorSources) {
+        GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
+        poolConfig.maxActive = maxIvaratorSources;
+        poolConfig.maxIdle = maxIvaratorSources;
+        poolConfig.minIdle = 0;
+        poolConfig.whenExhaustedAction = WHEN_EXHAUSTED_BLOCK;
+        return poolConfig;
     }
     
     protected String getHdfsCacheSubDirPrefix() {
