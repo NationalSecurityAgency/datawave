@@ -91,6 +91,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withTypeMetadata(typeMetadata)
                         .withSubRanges(subRanges)
                         .withIteratorEnv(env)
+                        .withIvaratorSourcePool(ivaratorSourcePool)
                         .build();
                 // @formatter:on
                 

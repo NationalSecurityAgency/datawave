@@ -6,8 +6,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
-import datawave.core.iterators.SourcePool;
-import datawave.core.iterators.ThreadLocalPooledSource;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -87,6 +85,7 @@ import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -147,9 +146,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorMaxOpenFiles = 100;
     protected long maxIvaratorResults = -1;
     protected int ivaratorNumRetries = 2;
-    protected SourcePool ivaratorSources = null;
-    protected SortedKeyValueIterator<Key,Value> ivaratorSource = null;
+    protected SortedKeyValueIterator<Key,Value> unsortedIvaratorSource = null;
     protected int ivaratorCount = 0;
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
     
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
@@ -442,7 +441,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
             builder.setEnv(env);
-            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(node, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
+            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, node, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
             
             Range fiRange = getFiRangeForTF(range);
             
@@ -1226,23 +1225,35 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         ivarate(builder, source, data);
     }
     
-    protected TermFrequencyAggregator getTermFrequencyAggregator(JexlNode node, EventDataQueryFilter attrFilter, int maxNextCount) {
-        ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(node, attrFilter);
+    protected TermFrequencyAggregator getTermFrequencyAggregator(String identifier, JexlNode node, EventDataQueryFilter attrFilter, int maxNextCount) {
+        ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, node, attrFilter);
         
-        return buildTermFrequencyAggregator(wrapped, maxNextCount);
+        return buildTermFrequencyAggregator(identifier, wrapped, maxNextCount);
     }
     
-    protected TermFrequencyAggregator buildTermFrequencyAggregator(ChainableEventDataQueryFilter filter, int maxNextCount) {
-        return new TermFrequencyAggregator(indexOnlyFields, filter, maxNextCount);
+    protected TermFrequencyAggregator buildTermFrequencyAggregator(String identifier, ChainableEventDataQueryFilter filter, int maxNextCount) {
+        // the only fields the aggregator should keep tokens of should be the TF field IF it is index only. If it is not index only then the value will come
+        // from the event and there is no reason to aggregate all tokens we encounter. Since the TF keys are sorted first by value then by field, the aggregator
+        // will pick up all fields and values in between the beginning and end of the range if it exists, so specifically for the negation case its critical
+        // this list only match the target field
+        Set<String> toAggregate = indexOnlyFields.contains(identifier) ? Collections.singleton(identifier) : Collections.emptySet();
+        
+        return new TermFrequencyAggregator(toAggregate, filter, maxNextCount);
     }
     
-    protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(JexlNode node, EventDataQueryFilter existing) {
+    protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(String identifier, JexlNode node, EventDataQueryFilter existing) {
         // combine index only and term frequency to create non-event fields
         final Set<String> nonEventFields = new HashSet<>(indexOnlyFields.size() + termFrequencyFields.size());
         nonEventFields.addAll(indexOnlyFields);
         nonEventFields.addAll(termFrequencyFields);
         
-        EventDataQueryFilter expressionFilter = new EventDataQueryExpressionFilter(node, typeMetadata, nonEventFields);
+        EventDataQueryFilter expressionFilter = new EventDataQueryExpressionFilter(node, typeMetadata, nonEventFields) {
+            @Override
+            public boolean keep(Key key) {
+                // for things that will otherwise be added need to ensure its actually a value match. This is necessary when dealing with TF ranges.
+                return peek(key);
+            }
+        };
         
         ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
         if (existing != null) {
@@ -1324,7 +1335,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param data
      */
     public void ivarate(IvaratorBuilder builder, JexlNode node, Object data) throws IOException {
-        builder.setSource(ivaratorSource);
+        builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
         builder.setCompositeMetadata(compositeMetadata);
@@ -1345,6 +1356,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
+        builder.setIvaratorSourcePool(ivaratorSourcePool);
         builder.setEnv(env);
         
         // We have no parent already defined
@@ -1575,9 +1587,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public IteratorBuildingVisitor setIvaratorSources(SourceFactory sourceFactory, int maxIvaratorSources) {
-        this.ivaratorSources = new SourcePool(sourceFactory, maxIvaratorSources);
-        this.ivaratorSource = new ThreadLocalPooledSource<>(ivaratorSources);
+    public IteratorBuildingVisitor setUnsortedIvaratorSource(SortedKeyValueIterator<Key,Value> unsortedIvaratorSource) {
+        this.unsortedIvaratorSource = unsortedIvaratorSource;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+        this.ivaratorSourcePool = ivaratorSourcePool;
         return this;
     }
     
