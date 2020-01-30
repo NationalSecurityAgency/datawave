@@ -6,8 +6,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
-import datawave.core.iterators.SourcePool;
-import datawave.core.iterators.ThreadLocalPooledSource;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -87,6 +85,7 @@ import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -147,9 +146,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorMaxOpenFiles = 100;
     protected long maxIvaratorResults = -1;
     protected int ivaratorNumRetries = 2;
-    protected SourcePool ivaratorSources = null;
-    protected SortedKeyValueIterator<Key,Value> ivaratorSource = null;
+    protected SortedKeyValueIterator<Key,Value> unsortedIvaratorSource = null;
     protected int ivaratorCount = 0;
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
     
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
@@ -1336,7 +1335,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param data
      */
     public void ivarate(IvaratorBuilder builder, JexlNode node, Object data) throws IOException {
-        builder.setSource(ivaratorSource);
+        builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
         builder.setCompositeMetadata(compositeMetadata);
@@ -1357,6 +1356,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
+        builder.setIvaratorSourcePool(ivaratorSourcePool);
         builder.setEnv(env);
         
         // We have no parent already defined
@@ -1587,9 +1587,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public IteratorBuildingVisitor setIvaratorSources(SourceFactory sourceFactory, int maxIvaratorSources) {
-        this.ivaratorSources = new SourcePool(sourceFactory, maxIvaratorSources);
-        this.ivaratorSource = new ThreadLocalPooledSource<>(ivaratorSources);
+    public IteratorBuildingVisitor setUnsortedIvaratorSource(SortedKeyValueIterator<Key,Value> unsortedIvaratorSource) {
+        this.unsortedIvaratorSource = unsortedIvaratorSource;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+        this.ivaratorSourcePool = ivaratorSourcePool;
         return this;
     }
     
