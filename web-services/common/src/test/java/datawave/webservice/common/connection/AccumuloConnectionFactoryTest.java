@@ -1,7 +1,10 @@
 package datawave.webservice.common.connection;
 
 import static org.easymock.MockType.STRICT;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -106,7 +109,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection(Priority.HIGH, new HashMap<String,String>());
+        Connector con = bean.getConnection(Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -120,7 +123,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<String,String>());
+        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -134,7 +137,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<String,String>());
+        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -148,7 +151,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("METRICS", Priority.HIGH, new HashMap<String,String>());
+        Connector con = bean.getConnection("METRICS", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(metricsConnection, ((WrappedConnector) con).getReal());

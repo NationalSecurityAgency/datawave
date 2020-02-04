@@ -1,13 +1,32 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Lists;
-import datawave.query.iterator.PowerSet;
+import datawave.util.UniversalSet;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTAssignment;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTMethodNode;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTNotNode;
+import org.apache.commons.jexl2.parser.ASTNullLiteral;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTSizeMethod;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
@@ -25,7 +44,7 @@ public class SatisfactionVisitor extends BaseVisitor {
     protected Set<String> nonEventFields;
     private Collection<String> unindexedFields = Lists.newArrayList();
     protected boolean isQueryFullySatisfied;
-    protected Collection<String> includeReferences = PowerSet.instance();
+    protected Collection<String> includeReferences = UniversalSet.instance();
     protected Collection<String> excludeReferences = Collections.emptyList();
     
     public boolean isQueryFullySatisfied() {

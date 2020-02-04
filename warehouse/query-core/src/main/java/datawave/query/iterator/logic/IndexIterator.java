@@ -1,21 +1,19 @@
 package datawave.query.iterator.logic;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
+import datawave.query.Constants;
+import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.iterator.DocumentIterator;
+import datawave.query.iterator.LimitedSortedKeyValueIterator;
 import datawave.query.iterator.Util;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.Constants;
-import datawave.query.attributes.Document;
-import datawave.query.predicate.TimeFilter;
 import datawave.query.predicate.SeekingFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -27,9 +25,9 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,
@@ -39,9 +37,66 @@ import com.google.common.collect.Lists;
 public class IndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator {
     private static final Logger log = Logger.getLogger(IndexIterator.class);
     
+    public static class Builder<B extends Builder<B>> {
+        protected Text field;
+        protected Text value;
+        protected SortedKeyValueIterator<Key,Value> source;
+        protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
+        protected boolean buildDocument = false;
+        protected TypeMetadata typeMetadata;
+        protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
+        protected FieldIndexAggregator aggregation = new IdentityAggregator(null, null);
+        
+        protected Builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+            this.field = field;
+            this.value = value;
+            this.source = source;
+        }
+        
+        @SuppressWarnings("unchecked")
+        protected B self() {
+            return (B) this;
+        }
+        
+        public B withTimeFilter(TimeFilter timeFilter) {
+            this.timeFilter = timeFilter;
+            return self();
+        }
+        
+        public B shouldBuildDocument(boolean buildDocument) {
+            this.buildDocument = buildDocument;
+            return self();
+        }
+        
+        public B withTypeMetadata(TypeMetadata typeMetadata) {
+            this.typeMetadata = typeMetadata;
+            return self();
+        }
+        
+        public B withDatatypeFilter(Predicate<Key> datatypeFilter) {
+            this.datatypeFilter = datatypeFilter;
+            return self();
+        }
+        
+        public B withAggregation(FieldIndexAggregator aggregation) {
+            this.aggregation = aggregation;
+            return self();
+        }
+        
+        public IndexIterator build() {
+            return new IndexIterator(this);
+        }
+        
+    }
+    
+    public static Builder<?> builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+        return new Builder(field, value, source);
+    }
+    
     public static final String INDEX_FILTERING_CLASSES = "indexfiltering.classes";
     
     protected SortedKeyValueIterator<Key,Value> source;
+    protected LimitedSortedKeyValueIterator limitedSource;
     protected final Text valueMinPrefix;
     protected final Text columnFamily;
     protected final Collection<ByteSequence> seekColumnFamilies;
@@ -65,18 +120,12 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     protected TimeFilter timeFilter;
     protected SeekingFilter timeSeekingFilter;
     
-    /**
-     * A convenience constructor that allows all keys to pass through unmodified from the source.
-     * 
-     * @param field
-     * @param value
-     * @param source
-     */
-    public IndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
-        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new IdentityAggregator(null, null));
+    protected IndexIterator(Builder builder) {
+        this(builder.field, builder.value, builder.source, builder.timeFilter, builder.typeMetadata, builder.buildDocument, builder.datatypeFilter,
+                        builder.aggregation);
     }
     
-    public IndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
+    private IndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
         
         valueMinPrefix = Util.minPrefix(value);
@@ -87,6 +136,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         }
         
         this.source = source;
+        // wrap the source with a limit
+        limitedSource = new LimitedSortedKeyValueIterator(source);
         this.timeFilter = timeFilter;
         if (timeFilter instanceof SeekingFilter) {
             timeSeekingFilter = (SeekingFilter) timeFilter;
@@ -272,8 +323,10 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                 continue;
             }
             
+            // restrict the aggregation to the current target value within the document
+            limitedSource.setLimit(new Key(top.getRow(), columnFamily, new Text(valueMinPrefix + Constants.MAX_UNICODE_STRING)));
             // Aggregate the document. NOTE: This will advance the source iterator
-            tk = buildDocument ? aggregation.apply(source, document, attributeFactory) : aggregation.apply(source, scanRange, seekColumnFamilies,
+            tk = buildDocument ? aggregation.apply(limitedSource, document, attributeFactory) : aggregation.apply(limitedSource, scanRange, seekColumnFamilies,
                             includeColumnFamilies);
             if (log.isTraceEnabled()) {
                 log.trace("Doc size: " + this.document.size());
@@ -307,7 +360,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         this.scanRange = buildIndexRange(range);
         
         if (log.isTraceEnabled()) {
-            log.trace(this.toString() + " seek'ing to: " + this.scanRange + " from " + range);
+            log.trace(this + " seek'ing to: " + this.scanRange + " from " + range);
         }
         
         source.seek(this.scanRange, this.seekColumnFamilies, this.includeColumnFamilies);
@@ -316,6 +369,15 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     
     private final Text newColumnQualifier = new Text(new byte[128]);
     
+    /**
+     * Advance the source to the Key specified by pointer then fetch the next tk/tv from that point
+     * 
+     * @param pointer
+     *            the minimum point to advance source to
+     * @throws IOException
+     * @throws IllegalStateException
+     *             if getTopKey() is greater than or equal to pointer
+     */
     @Override
     public void move(Key pointer) throws IOException {
         if (this.hasTop() && this.getTopKey().compareTo(pointer) >= 0) {
@@ -341,15 +403,15 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         if (newTop != null && newTop.compareTo(nextKey) < 0 && source.hasTop()) {
             Range r = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
             if (log.isTraceEnabled())
-                log.trace(this.toString() + " move'ing to: " + r);
+                log.trace(this + " move'ing to: " + r);
             source.seek(r, seekColumnFamilies, includeColumnFamilies);
         } else {
             if (log.isTraceEnabled())
-                log.trace(this.toString() + " stepping its way to " + newTop);
+                log.trace(this + " stepping its way to " + newTop);
         }
         
         if (log.isTraceEnabled()) {
-            log.trace(this.toString() + " finished move. Now at " + (source.hasTop() ? source.getTopKey() : "null") + ", calling next()");
+            log.trace(this + " finished move. Now at " + (source.hasTop() ? source.getTopKey() : "null") + ", calling next()");
         }
         
         next();

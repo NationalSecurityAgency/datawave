@@ -4,7 +4,15 @@ import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
-import javax.ejb.*;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
+import javax.ejb.Schedule;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 
 import datawave.configuration.spring.SpringBean;
@@ -49,7 +57,7 @@ public class CachedResultsExpirationBean {
         for (Map.Entry<String,CachedRunningQuery> entry : cachedRunningQueryCache.entrySet()) {
             CachedRunningQuery crq = entry.getValue();
             String cacheId = entry.getKey();
-            CachedResultsBean.closeCrqConnection(crq);
+            crq.closeConnection(log);
             cachedRunningQueryCache.remove(cacheId);
             // cancel any concurrent load
             String originalQuery = crq.getOriginalQueryId();
@@ -81,7 +89,7 @@ public class CachedResultsExpirationBean {
                 log.trace("key: " + cacheId + ", now: " + now + ", last used: " + crq.getLastUsed() + " difference: " + difference);
             }
             if ((difference > cachedResultsExpirationConfiguration.getEvictionTimeMs())) {
-                CachedResultsBean.closeCrqConnection(crq);
+                crq.closeConnection(log);
                 closeCount++;
                 evictionCount++;
                 cachedRunningQueryCache.remove(cacheId);
@@ -96,7 +104,7 @@ public class CachedResultsExpirationBean {
                 }
                 log.debug("CachedRunningQuery " + cacheId + " connections returned and removed from cache");
             } else if ((difference > cachedResultsExpirationConfiguration.getCloseConnectionsTimeMs())) {
-                CachedResultsBean.closeCrqConnection(crq);
+                crq.closeConnection(log);
                 closeCount++;
                 log.debug("CachedRunningQuery " + cacheId + " connections returned");
             }

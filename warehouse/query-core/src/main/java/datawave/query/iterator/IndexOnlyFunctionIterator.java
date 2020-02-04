@@ -1,27 +1,22 @@
 package datawave.query.iterator;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
-
+import com.google.common.collect.Iterators;
+import datawave.query.attributes.Document;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.function.Aggregation;
 import datawave.query.function.IndexOnlyContextCreator;
 import datawave.query.function.IndexOnlyKeyToDocumentData;
 import datawave.query.function.JexlContextCreator;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.attributes.Document;
-import datawave.query.function.Aggregation;
 import datawave.query.postprocessing.tf.EmptyTermFrequencyFunction;
 import datawave.query.predicate.TimeFilter;
+import datawave.query.util.EntryToTuple;
 import datawave.query.util.TraceIterators;
-import datawave.query.util.*;
-
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuple3;
+import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -31,8 +26,14 @@ import org.apache.commons.jexl2.MapContext;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterators;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Inserted into the iterator and JEXL evaluation "stacks" to allow functions to operate on index-only fields, such as HEAD, FOOT, BODY, and META.
@@ -43,7 +44,7 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
     /**
      * Column family for term frequency records in the shard table
      */
-    public final static String TF_COLUMN_FAMILY = "tf";
+    public static final String TF_COLUMN_FAMILY = "tf";
     
     private static Logger LOG = Logger.getLogger(IndexOnlyFunctionIterator.class);
     
@@ -244,7 +245,7 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
             final Iterator<Entry<Key,Document>> documents = this.initializeFetch(fieldName, keyToDocumentData);
             
             // Populate the document
-            final Iterator<Tuple2<Key,Document>> tupleItr = Iterators.transform(documents, new EntryToTuple<Key,Document>());
+            final Iterator<Tuple2<Key,Document>> tupleItr = Iterators.transform(documents, new EntryToTuple<>());
             final EmptyTermFrequencyFunction tfFunction = new EmptyTermFrequencyFunction();
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext,

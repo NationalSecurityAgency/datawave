@@ -24,7 +24,7 @@ public interface UidMapper {
      *            sake of an end key in which case the mapped uid should map to the last uid that maps to the same uid if this parameter were false.
      * @return The mapped UID. For efficiency sake, return null is there is no mapping (i.e. the original uid is the same as the mapped uid).
      */
-    public String getUidMapping(String uid);
+    String getUidMapping(String uid);
     
     /**
      * Map the uid to another uid.
@@ -35,7 +35,7 @@ public interface UidMapper {
      *            : if false then we actually want a uid that would be following this one
      * @return The mapped UID. For efficiency sake, return null is there is no mapping (i.e. the original uid is the same as the mapped uid).
      */
-    public String getStartKeyUidMapping(String uid, boolean inclusive);
+    String getStartKeyUidMapping(String uid, boolean inclusive);
     
     /**
      * Map the uid to another uid.
@@ -46,5 +46,5 @@ public interface UidMapper {
      *            : if false then we actually want a uid that would be following this one
      * @return The mapped UID. For efficiency sake, return null is there is no mapping (i.e. the original uid is the same as the mapped uid).
      */
-    public String getEndKeyUidMapping(String uid, boolean inclusive);
+    String getEndKeyUidMapping(String uid, boolean inclusive);
 }

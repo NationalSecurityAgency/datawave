@@ -1,29 +1,22 @@
 package datawave.query.tables.edge;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.StringReader;
-import java.util.*;
-import java.util.Map.Entry;
-
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.data.type.Type;
+import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
-import datawave.query.model.edge.EdgeQueryModel;
-import datawave.query.Constants;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.filter.DateTypeFilter;
 import datawave.query.iterator.filter.EdgeFilterIterator;
 import datawave.query.iterator.filter.LoadDateFilter;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
+import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.query.transformer.EdgeQueryTransformer;
@@ -36,7 +29,6 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -51,10 +43,24 @@ import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
+import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.StringReader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
@@ -116,31 +122,11 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         
         currentIteratorPriority = super.getBaseIteratorPriority() + 30;
-        MetadataHelper metadataHelper = prepareMetadataHelper(connection, modelTableName, auths);
         
         EdgeQueryConfiguration cfg = setUpConfig(settings);
         
         cfg.setConnector(connection);
         cfg.setAuthorizations(auths);
-        
-        // Get the MAX_RESULTS_OVERRIDE parameter if given
-        String maxResultsOverrideStr = settings.findParameter(MAX_RESULTS_OVERRIDE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(maxResultsOverrideStr)) {
-            try {
-                long override = Long.parseLong(maxResultsOverrideStr);
-                
-                if (override < cfg.getMaxQueryResults()) {
-                    cfg.setMaxQueryResults(override);
-                    
-                    // this.maxresults is initially set to the value in the config,
-                    // we are overriding it here for this instance of the query.
-                    this.setMaxResults(override);
-                }
-            } catch (NumberFormatException nfe) {
-                log.error(MAX_RESULTS_OVERRIDE + " query parameter is not a valid number: " + maxResultsOverrideStr + ", using default value");
-                throw new IllegalArgumentException("Error parsing parameter for " + MAX_RESULTS_OVERRIDE + ". Supplied value is not a number.");
-            }
-        }
         
         String queryString = settings.getQuery();
         if (null == queryString) {
@@ -189,19 +175,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
         if (log.isTraceEnabled())
             log.trace("prepareMetadataHelper with " + connection);
-        MetadataHelper metadataHelper = this.metadataHelperFactory.createMetadataHelper();
-        // check to see if i need to initialize a new one
-        if (metadataHelper.getMetadataTableName() != null && metadataTableName != null && !metadataTableName.equals(metadataHelper.getMetadataTableName())) {
-            // initialize it
-            metadataHelper.initialize(connection, metadataTableName, auths);
-        } else if (metadataHelper.getAuths() == null || metadataHelper.getAuths().isEmpty()) {
-            return metadataHelper.initialize(connection, metadataTableName, auths);
-            // assumption is that it is already initialized. we shall see.....
-        } else {
-            if (log.isTraceEnabled())
-                log.trace("the MetadataHelper did not need to be initialized:" + metadataHelper + " and " + metadataTableName + " and " + auths);
-        }
-        return metadataHelper.initialize(connection, metadataTableName, auths);
+        return metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths);
     }
     
     /**
@@ -216,7 +190,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         ASTJexlScript script = null;
         try {
             origScript = JexlASTHelper.parseJexlQuery(queryString);
-            HashSet<String> allFields = new HashSet<String>();
+            HashSet<String> allFields = new HashSet<>();
             allFields.addAll(getEdgeQueryModel().getAllInternalFieldNames());
             script = QueryModelVisitor.applyModel(origScript, getEdgeQueryModel(), allFields);
             return JexlStringBuildingVisitor.buildQuery(script);
@@ -257,7 +231,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         ASTJexlScript script;
         try {
             script = parser.parse(new StringReader(queryString), null);
-        } catch (Exception e) {
+        } catch (TokenMgrError | Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
         
@@ -351,7 +325,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected void addIterators(QueryData qData, List<IteratorSetting> iters) {
         for (IteratorSetting iter : iters) {
-            log.debug("Adding iterator: " + iter.toString());
+            log.debug("Adding iterator: " + iter);
             addIterator(qData, iter);
         }
     }
@@ -406,10 +380,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             Key endDateKey = new Key(DateHelper.format(endDate) + Constants.MAX_UNICODE_STRING);
             if ((dateFilterType == EdgeQueryConfiguration.dateType.EVENT) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY)
                             || (dateFilterType == EdgeQueryConfiguration.dateType.ANY)) {
-                setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getName() + "." + priority, ColumnQualifierRangeIterator.class);
+                setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getSimpleName() + "_" + priority, ColumnQualifierRangeIterator.class);
             } else if ((dateFilterType == EdgeQueryConfiguration.dateType.LOAD) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
                             || (dateFilterType == EdgeQueryConfiguration.dateType.ANY_LOAD)) {
-                setting = new IteratorSetting(priority, LoadDateFilter.class.getName() + "." + priority, LoadDateFilter.class);
+                setting = new IteratorSetting(priority, LoadDateFilter.class.getSimpleName() + "_" + priority, LoadDateFilter.class);
                 // we also want to set the date range type parameter when using the LoadDateFilter
                 setting.addOption(EdgeQueryConfiguration.DATE_RANGE_TYPE, dateFilterType.name());
             } else {
@@ -439,8 +413,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      */
     public static IteratorSetting getDateTypeFilter(int priority, EdgeQueryConfiguration.dateType dateFilterType) {
         IteratorSetting setting = null;
-        log.debug("Creating dateType filter=" + dateFilterType.toString());
-        setting = new IteratorSetting(priority, DateTypeFilter.class.getName() + "." + priority, DateTypeFilter.class);
+        log.debug("Creating dateType filter=" + dateFilterType);
+        setting = new IteratorSetting(priority, DateTypeFilter.class.getSimpleName() + "_" + priority, DateTypeFilter.class);
         setting.addOption(EdgeQueryConfiguration.DATE_RANGE_TYPE, dateFilterType.name());
         
         return setting;
@@ -580,7 +554,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         if (!normalizedQuery.equals("")) {
             log.debug("Query being sent to the filter iterator: " + normalizedQuery);
-            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getName() + "."
+            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getSimpleName() + "_"
                             + currentIteratorPriority, EdgeFilterIterator.class);
             edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
             edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
@@ -699,14 +673,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public Set<String> getOptionalQueryParameters() {
-        Set<String> params = new TreeSet<>();
-        params.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        params.add(datawave.webservice.query.QueryParameters.QUERY_END);
-        params.add(QueryParameters.DATATYPE_FILTER_SET);
-        params.add(MAX_RESULTS_OVERRIDE);
-        params.add(EdgeQueryConfiguration.INCLUDE_STATS);
-        params.add(EdgeQueryConfiguration.DATE_RANGE_TYPE);
-        return params;
+        Set<String> optionalParams = new TreeSet<>();
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        optionalParams.add(EdgeQueryConfiguration.INCLUDE_STATS);
+        optionalParams.add(EdgeQueryConfiguration.DATE_RANGE_TYPE);
+        return optionalParams;
     }
     
     public Set<Type<?>> getBlockedNormalizers() {
@@ -743,13 +716,17 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public Set<String> getRequiredQueryParameters() {
-        // TODO Auto-generated method stub
-        return Collections.emptySet();
+        Set<String> requiredParams = new TreeSet<>();
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_STRING);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_NAME);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME);
+        return requiredParams;
     }
     
     @Override
     public Set<String> getExampleQueries() {
-        // TODO Auto-generated method stub
         return Collections.emptySet();
     }
     

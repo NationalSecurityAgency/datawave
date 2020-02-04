@@ -16,6 +16,7 @@ import datawave.query.planner.QueryPlanner;
 public class AncestorQueryLogic extends ShardQueryLogic {
     public AncestorQueryLogic() {
         super();
+        setIsTldQuery(true);
         setCreateUidsIteratorClass(AncestorCreateUidsIterator.class);
         setUidIntersector(new AncestorUidIntersector());
         QueryPlanner planner = new AncestorQueryPlanner();
@@ -26,6 +27,7 @@ public class AncestorQueryLogic extends ShardQueryLogic {
     
     public AncestorQueryLogic(AncestorQueryLogic other) {
         super(other);
+        setIsTldQuery(true);
         setIter();
     }
     

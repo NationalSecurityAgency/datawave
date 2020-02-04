@@ -13,10 +13,6 @@ public class SplitSelectorExtractor implements SelectorExtractor {
     protected String separatorParameter = null;
     protected List<IntRange> useSplitsList = null;
     
-    public SplitSelectorExtractor() {
-        
-    }
-    
     @Override
     public List<String> extractSelectors(Query query) throws IllegalArgumentException {
         List<String> selectorList = new ArrayList<>();
@@ -48,7 +44,7 @@ public class SplitSelectorExtractor implements SelectorExtractor {
     }
     
     public void setSeparatorCharacter(String separatorCharacter) {
-        if (StringUtils.isNotBlank(separatorCharacter) && separatorCharacter.length() > 0) {
+        if (StringUtils.isNotBlank(separatorCharacter) && !separatorCharacter.isEmpty()) {
             this.separatorCharacter = separatorCharacter;
         } else {
             throw new RuntimeException("Illegal separator: '" + separatorCharacter + "'");

@@ -8,7 +8,7 @@ import java.util.Map;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 
-import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections4.Transformer;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;

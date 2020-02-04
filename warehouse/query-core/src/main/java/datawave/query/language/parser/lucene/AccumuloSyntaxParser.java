@@ -19,8 +19,6 @@ package datawave.query.language.parser.lucene;
  */
 
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Vector;
 
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -30,7 +28,6 @@ import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.messages.QueryParserMessages;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.BooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.BoostQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.FuzzyQueryNode;

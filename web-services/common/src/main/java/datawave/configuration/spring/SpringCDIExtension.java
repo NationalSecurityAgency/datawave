@@ -120,12 +120,12 @@ public class SpringCDIExtension implements Extension {
             
             @Override
             public Set<Type> getTypes() {
-                return Sets.newHashSet((Type) ApplicationContext.class, ConfigurableApplicationContext.class, Object.class);
+                return Sets.newHashSet(ApplicationContext.class, ConfigurableApplicationContext.class, Object.class);
             }
             
             @Override
             public Set<Annotation> getQualifiers() {
-                return Sets.newHashSet((Annotation) new AnnotationLiteral<Default>() {}, new AnnotationLiteral<Any>() {});
+                return Sets.newHashSet(new AnnotationLiteral<Default>() {}, new AnnotationLiteral<Any>() {});
             }
             
             @Override
@@ -212,8 +212,7 @@ public class SpringCDIExtension implements Extension {
         
         @Override
         public Class<?> getBeanClass() {
-            // Work around WFLY-7025. This should really be rawType.
-            return SpringCDIBean.class;
+            return rawType;
         }
         
         @Override

@@ -32,6 +32,31 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
     public abstract boolean isReverseContentIndexField(String field);
     
     /**
+     * Return true if the specified field values should be indexed as a list of values. The names passed to this method should not include the list field name
+     * designator if any is specified.
+     *
+     * @param field
+     * @return
+     */
+    public abstract boolean isIndexListField(String field);
+    
+    /**
+     * Return true if the specified field should be reverse indexed as a list of values. The names passed to this method should not include the list field name
+     * designator if any is specified.
+     *
+     * @param field
+     * @return
+     */
+    public abstract boolean isReverseIndexListField(String field);
+    
+    /**
+     * Return the delimiters to use when splitting a list of values into separate entries.
+     *
+     * @return
+     */
+    public abstract String getListDelimiter();
+    
+    /**
      * Determines if we save the raw event in the document column
      * 
      * @return boolean of whether to save the raw data in the document column.

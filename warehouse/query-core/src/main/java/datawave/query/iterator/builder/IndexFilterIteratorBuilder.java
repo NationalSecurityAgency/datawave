@@ -2,21 +2,17 @@ package datawave.query.iterator.builder;
 
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.iterator.DocumentIterator;
-import datawave.query.iterator.logic.DocumentAggregatingIterator;
-import datawave.query.predicate.Filter;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.predicate.Filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * A convenience class that aggregates a field, filter, range, source iterator, normalizer mappings, index only fields, data type filter and key transformer
@@ -50,36 +46,57 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirURI, hdfsFileSystem)) {
+        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirs)) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + filter + " over " + range);
             }
-            // get the hadoop file system and a temporary directory
-            URI hdfsCacheURI = null;
-            try {
-                hdfsCacheURI = new URI(ivaratorCacheDirURI);
-                hdfsFileSystem.mkdirs(new Path(hdfsCacheURI));
-            } catch (MalformedURLException e) {
-                throw new IllegalStateException("Unable to load hadoop configuration", e);
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to create hadoop file system", e);
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
-            }
+            
+            // we can't build an ivarator if no ivarator directories have been defined
+            if (ivaratorCacheDirs.isEmpty())
+                throw new IllegalStateException("No ivarator cache dirs defined");
+            
+            // ensure that we are able to create the first ivarator cache dir (the control dir)
+            validateIvaratorControlDir(ivaratorCacheDirs.get(0));
             
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexFilterIteratorJexl rangeIterator = new DatawaveFieldIndexFilterIteratorJexl(new Text(range.getFieldName()), filter, new Text(
-                                range.getLower().toString()), range.isLowerInclusive(), new Text(range.getUpper().toString()), range.isUpperInclusive(),
-                                this.timeFilter, this.datatypeFilter, false, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout,
-                                ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
-                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                // @formatter:off
+                DatawaveFieldIndexFilterIteratorJexl rangeIterator = DatawaveFieldIndexFilterIteratorJexl.builder()
+                        .withFieldName(new Text(range.getFieldName()))
+                        .withFilter(filter)
+                        .withLowerBound(range.getLower().toString())
+                        .lowerInclusive(range.isLowerInclusive())
+                        .withUpperBound(range.getUpper().toString())
+                        .upperInclusive(range.isUpperInclusive())
+                        .withTimeFilter(timeFilter)
+                        .withDatatypeFilter(datatypeFilter)
+                        .negated(false)
+                        .withScanThreshold(ivaratorCacheScanPersistThreshold)
+                        .withScanTimeout(ivaratorCacheScanTimeout)
+                        .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
+                        .withMaxRangeSplit(maxRangeSplit)
+                        .withMaxOpenFiles(ivaratorMaxOpenFiles)
+                        .withMaxResults(maxIvaratorResults)
+                        .withIvaratorCacheDirs(ivaratorCacheDirs)
+                        .withNumRetries(ivaratorNumRetries)
+                        .withQueryLock(queryLock)
+                        .allowDirResuse(true)
+                        .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
+                        .withSortedUUIDs(sortedUIDs)
+                        .withCompositeMetadata(compositeMetadata)
+                        .withCompositeSeekThreshold(compositeSeekThreshold)
+                        .withTypeMetadata(typeMetadata)
+                        .withIteratorEnv(env)
+                        .withIvaratorSourcePool(ivaratorSourcePool)
+                        .build();
+                // @formatter:on
+                
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);
                 }
-                rangeIterator.init(source, null, null);
+                rangeIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexFilterIteratorJexl: " + rangeIterator);
                 
                 // Add an interator to aggregate documents. This is needed for index only fields.
@@ -102,8 +119,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             datatypeFilter = null;
             keyTform = null;
             timeFilter = null;
-            hdfsFileSystem = null;
-            ivaratorCacheDirURI = null;
+            ivaratorCacheDirs = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

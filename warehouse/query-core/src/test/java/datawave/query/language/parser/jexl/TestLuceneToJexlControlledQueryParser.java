@@ -1,6 +1,11 @@
 package datawave.query.language.parser.jexl;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.Assert;
 import datawave.query.language.parser.ParseException;
@@ -138,13 +143,13 @@ public class TestLuceneToJexlControlledQueryParser {
         allowedFields.add("$1337_1");
         parser.setAllowedFields(allowedFields);
         
-        Map<String,Set<String>> includedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> includedValMap = new HashMap<>();
         Set<String> includedValSet = new HashSet<>();
         includedValSet.add("John");
         includedValMap.put("$1337_1", includedValSet);
         parser.setIncludedValues(includedValMap);
         
-        Map<String,Set<String>> excludedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> excludedValMap = new HashMap<>();
         Set<String> excludedValSet = new HashSet<>();
         excludedValSet.add("Cena");
         excludedValMap.put("$1337_1", excludedValSet);

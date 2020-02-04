@@ -2,35 +2,31 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>datawave</groupId>
+        <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>2.1.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ingest-csv</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <properties>
-        <assembly.basedir>${project.parent.basedir}</assembly.basedir>
-        <datawave.root>${project.parent.parent.basedir}</datawave.root>
-    </properties>
     <dependencies>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -65,7 +61,7 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
-            <version>3.0.11.Final</version>
+            <version>3.0.12.Final</version>
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
@@ -76,8 +72,18 @@
             <artifactId>powermock-module-junit4</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.woodstox</groupId>
+            <artifactId>woodstox-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-start</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -87,7 +93,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

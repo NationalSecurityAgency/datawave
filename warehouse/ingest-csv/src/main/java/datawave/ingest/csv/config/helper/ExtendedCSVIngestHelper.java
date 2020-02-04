@@ -1,28 +1,25 @@
 package datawave.ingest.csv.config.helper;
 
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-
 import datawave.data.type.Type;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.EventFieldNormalizerHelper;
 import datawave.ingest.data.normalizer.SimpleGroupFieldNameParser;
 import datawave.ingest.metadata.id.MetadataIdParser;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.text.StrMatcher;
 import org.apache.commons.lang.text.StrTokenizer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class ExtendedCSVIngestHelper extends CSVIngestHelper {
     

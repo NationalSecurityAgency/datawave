@@ -1,7 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.base.Function;
-import com.google.common.collect.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import datawave.query.model.QueryModel;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -10,13 +14,37 @@ import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTMethodNode;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTNullLiteral;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTSizeMethod;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.Node;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
@@ -30,7 +58,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
     private HashSet<ASTAndNode> expandedNodes;
     private Set<String> validFields;
     private SimpleQueryModelVisitor simpleQueryModelVisitor;
-    private JexlASTHelper.HasMethodVisitor hasMethodVisitor = new JexlASTHelper.HasMethodVisitor();
     
     public QueryModelVisitor(QueryModel queryModel, Set<String> validFields) {
         this.queryModel = queryModel;
@@ -104,8 +131,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        AtomicBoolean state = (AtomicBoolean) node.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
-        if (state.get()) {
+        if (JexlASTHelper.HasMethodVisitor.hasMethod(node)) {
             // this reference has a child that is a method
             return (ASTReference) node.jjtAccept(this.simpleQueryModelVisitor, null);
         } else {
@@ -137,8 +163,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 log.trace("visiting:" + JexlStringBuildingVisitor.buildQuery(child));
             }
             // if this child has a method attached, be sure to descend into it for model substitutions
-            AtomicBoolean state = (AtomicBoolean) child.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
-            if (state.get()) {
+            if (JexlASTHelper.HasMethodVisitor.hasMethod(child)) {
                 child = (JexlNode) child.jjtAccept(this.simpleQueryModelVisitor, null);
             }
             
@@ -255,13 +280,13 @@ public class QueryModelVisitor extends RebuildingVisitor {
             log.trace("rightNodeQuery:" + JexlStringBuildingVisitor.buildQuery(rightNode));
         }
         // this will expand identifiers that have a method connected to them
-        AtomicBoolean leftState = (AtomicBoolean) leftNode.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
-        if (leftState.get()) {
+        boolean leftState = JexlASTHelper.HasMethodVisitor.hasMethod(leftNode);
+        if (leftState) {
             // there is a method under leftNode
             leftNode = (JexlNode) leftNode.jjtAccept(this.simpleQueryModelVisitor, null);
         }
-        AtomicBoolean rightState = (AtomicBoolean) rightNode.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
-        if (rightState.get() == false) {
+        boolean rightState = JexlASTHelper.HasMethodVisitor.hasMethod(rightNode);
+        if (rightState) {
             // there is a method under rightNode
             rightNode = (JexlNode) rightNode.jjtAccept(this.simpleQueryModelVisitor, null);
         }
@@ -277,7 +302,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         }
         
         // if state == true on either side, then there is a method on one side and we are done applying the model
-        if (leftState.get() || rightState.get()) {
+        if (leftState || rightState) {
             JexlNode toReturn = JexlNodeFactory.buildUntypedBinaryNode(node, leftNode, rightNode);
             if (log.isTraceEnabled()) {
                 log.trace("done early. returning:" + JexlStringBuildingVisitor.buildQuery(toReturn));
@@ -439,7 +464,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         @Override
         public Object visit(ASTIdentifier node, Object data) {
-            JexlNode newNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
+            JexlNode newNode;
             String fieldName = JexlASTHelper.getIdentifier(node);
             
             Collection<String> aliases = Sets.newLinkedHashSet(getAliasesForField(fieldName)); // de-dupe
@@ -454,7 +479,11 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 newKid.image = JexlASTHelper.rebuildIdentifier(alias);
                 nodes.add(newKid);
             }
-            newNode = JexlNodeFactory.createOrNode(nodes);
+            if (nodes.size() == 1) {
+                newNode = JexlNodeFactory.wrap(nodes.iterator().next());
+            } else {
+                newNode = JexlNodeFactory.createOrNode(nodes);
+            }
             newNode.jjtSetParent(node.jjtGetParent());
             
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {

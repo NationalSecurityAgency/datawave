@@ -23,7 +23,7 @@ while [ 1 == 1 ]; do
 
   # now make sure we have a flag started for every pipeline
   for (( pipeline=1; pipeline <= $((PIPELINE_COUNT)); pipeline=$((pipeline+1)) )); do
-    declare -i PIPELINE_JOB_COUNT=`ps -ef | grep live-execute.sh | grep " -pipelineId ${pipeline} " | wc -l`
+    declare -i PIPELINE_JOB_COUNT=`ps -ef | grep live-execute.sh | egrep " -pipelineId ${pipeline}( |\$)" | wc -l`
     declare -i PIPELINE_TOTAL_COUNT=$((PIPELINE_JOB_COUNT))
     echo "Found $PIPELINE_TOTAL_COUNT jobs for pipeline $pipeline"
     if [[ $((PIPELINE_TOTAL_COUNT)) == 0 ]]; then

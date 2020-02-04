@@ -13,6 +13,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.fs.Path;
@@ -37,9 +38,9 @@ import java.util.TreeSet;
  */
 public class ColumnBasedHandlerTestUtil {
     
-    public static final Text shardTableName = new Text("shard");
-    public static final Text shardIndexTableName = new Text("shardIndex");
-    public static final Text shardReverseIndexTableName = new Text("shardReverseIndex");
+    public static final Text shardTableName = new Text(TableName.SHARD);
+    public static final Text shardIndexTableName = new Text(TableName.SHARD_INDEX);
+    public static final Text shardReverseIndexTableName = new Text(TableName.SHARD_RINDEX);
     public static final Text edgeTableName = new Text("edge");
     public static final String NB = "\u0000";
     
@@ -104,8 +105,8 @@ public class ColumnBasedHandlerTestUtil {
             
         }
         
-        Set<Key> keys = new HashSet<Key>();
-        Set<String> errors = new TreeSet<String>();
+        Set<Key> keys = new HashSet<>();
+        Set<String> errors = new TreeSet<>();
         
         /**
          * The following only prints out the missing/extra keys, no test is actually performed until the end. This is done so all errors are known before
@@ -243,7 +244,7 @@ public class ColumnBasedHandlerTestUtil {
             }
         }
         
-        Set<String> keyPrint = new TreeSet<String>();
+        Set<String> keyPrint = new TreeSet<>();
         
         for (Key k : shardKeys) {
             keyPrint.add("shard key: " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "

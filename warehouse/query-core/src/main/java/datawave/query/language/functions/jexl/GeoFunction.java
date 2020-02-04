@@ -12,7 +12,7 @@ public class GeoFunction extends JexlQueryFunction {
     private boolean[] shouldQuote = null;
     
     public GeoFunction() {
-        super("geo", new ArrayList<String>());
+        super("geo", new ArrayList<>());
     }
     
     @Override

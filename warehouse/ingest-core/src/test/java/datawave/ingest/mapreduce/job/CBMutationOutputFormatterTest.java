@@ -24,7 +24,6 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -92,73 +91,53 @@ public class CBMutationOutputFormatterTest {
         Configuration mocked = PowerMock.createMock(Configuration.class);
         
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = (String) EasyMock.getCurrentArguments()[1];
+            
+            if (CBMutationOutputFormatterTest.mockedConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = (String) EasyMock.getCurrentArguments()[1];
-                
-                if (CBMutationOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                    
-                    value = CBMutationOutputFormatterTest.mockedConfiguration.get(key);
-                }
-                
-                return value;
+                value = CBMutationOutputFormatterTest.mockedConfiguration.get(key);
             }
             
+            return value;
         }).anyTimes();
         
         mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = (String) EasyMock.getCurrentArguments()[1];
-                
-                CBMutationOutputFormatterTest.mockedConfiguration.put(key, value);
-                
-                return null;
-            }
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = (String) EasyMock.getCurrentArguments()[1];
             
+            CBMutationOutputFormatterTest.mockedConfiguration.put(key, value);
+            
+            return null;
         }).anyTimes();
         
         mocked.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            boolean value = (Boolean) EasyMock.getCurrentArguments()[1];
+            
+            if (CBMutationOutputFormatterTest.mockedConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                boolean value = (Boolean) EasyMock.getCurrentArguments()[1];
-                
-                if (CBMutationOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                    
-                    value = Boolean.parseBoolean(CBMutationOutputFormatterTest.mockedConfiguration.get(key));
-                }
-                
-                return value;
+                value = Boolean.parseBoolean(CBMutationOutputFormatterTest.mockedConfiguration.get(key));
             }
             
+            return value;
         }).anyTimes();
         
         mocked.setBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = EasyMock.getCurrentArguments()[1].toString();
-                
-                CBMutationOutputFormatterTest.mockedConfiguration.put(key, value);
-                
-                return null;
-            }
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = EasyMock.getCurrentArguments()[1].toString();
             
+            CBMutationOutputFormatterTest.mockedConfiguration.put(key, value);
+            
+            return null;
         }).anyTimes();
         
         PowerMock.replay(mocked);
@@ -171,15 +150,7 @@ public class CBMutationOutputFormatterTest {
         Job mocked = PowerMock.createMock(Job.class);
         
         mocked.getConfiguration();
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
-            
-            @Override
-            public Object answer() throws Throwable {
-                
-                return createMockConfiguration();
-            }
-            
-        }).anyTimes();
+        EasyMock.expectLastCall().andAnswer(this::createMockConfiguration).anyTimes();
         
         PowerMock.replay(mocked);
         

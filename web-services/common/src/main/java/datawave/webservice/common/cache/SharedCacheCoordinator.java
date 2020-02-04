@@ -1,16 +1,5 @@
 package datawave.webservice.common.cache;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.lang.management.ManagementFactory;
-import java.util.*;
-import java.util.Map.Entry;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import com.google.common.base.Preconditions;
 import datawave.common.util.ArgumentChecker;
 import org.apache.curator.framework.CuratorFramework;
@@ -18,12 +7,12 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.framework.recipes.shared.SharedCount;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
+import org.apache.curator.framework.recipes.shared.SharedCountReader;
 import org.apache.curator.framework.recipes.shared.VersionedValue;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
@@ -35,6 +24,20 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
 import org.jboss.logging.Logger;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Coordinates operations on a shared cache. That is, this coordinates operations where an in-memory cache may be running on multiple servers and each in-memory
@@ -330,12 +333,12 @@ public class SharedCacheCoordinator implements Serializable {
      *            a listener that is called when the counter value changes
      */
     public void registerCounter(String counterName, SharedCountListener listener) throws Exception {
+        Preconditions.checkArgument(!sharedCounters.containsKey(counterName), "Counter " + counterName + " has already been registered!");
         reregisterCounter(counterName, listener, 1);
     }
     
     private void reregisterCounter(String counterName, SharedCountListener listener, int seedValue) throws Exception {
         ArgumentChecker.notNull(counterName, listener);
-        Preconditions.checkArgument(!sharedCounters.containsKey(counterName), "Counter " + counterName + " has already been registered!");
         
         SharedCount count = new SharedCount(curatorClient, ZKPaths.makePath("/counters", counterName), seedValue);
         count.start();
@@ -343,6 +346,21 @@ public class SharedCacheCoordinator implements Serializable {
         sharedCountListeners.put(counterName, listener);
         localCounters.put(counterName, count.getCount());
         
+        count.addListener(new SharedCountListener() {
+            @Override
+            public void countHasChanged(SharedCountReader sharedCountReader, int i) throws Exception {}
+            
+            @Override
+            public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
+                if (connectionState == ConnectionState.RECONNECTED) {
+                    try {
+                        reregisterCounter(counterName, sharedCountListeners.get(counterName), localCounters.get(counterName));
+                    } catch (Exception e) {
+                        System.err.println("Unable to re-register counter " + counterName + ": " + e.getMessage());
+                    }
+                }
+            }
+        });
         count.addListener(listener);
     }
     
@@ -406,12 +424,12 @@ public class SharedCacheCoordinator implements Serializable {
      *            a listener that is called when the boolean value changes
      */
     public void registerBoolean(String booleanName, SharedBooleanListener listener) throws Exception {
+        Preconditions.checkArgument(!sharedBooleans.containsKey(booleanName), "Boolean " + booleanName + " has already been registered!");
         reregisterBoolean(booleanName, listener, false);
     }
     
     private void reregisterBoolean(String booleanName, SharedBooleanListener listener, boolean seedValue) throws Exception {
         ArgumentChecker.notNull(booleanName, listener);
-        Preconditions.checkArgument(!sharedBooleans.containsKey(booleanName), "Boolean " + booleanName + " has already been registered!");
         
         SharedBoolean sharedBoolean = new SharedBoolean(curatorClient, ZKPaths.makePath("/booleans", booleanName), seedValue);
         if (log.isTraceEnabled()) {
@@ -427,6 +445,22 @@ public class SharedCacheCoordinator implements Serializable {
             log.trace("table:" + booleanName + " localBooleans has:" + localBooleans);
             log.trace("table:" + booleanName + " registered a boolean that is " + sharedBoolean.getBoolean());
         }
+        
+        sharedBoolean.addListener(new SharedBooleanListener() {
+            @Override
+            public void booleanHasChanged(SharedBooleanReader var1, boolean var2) throws Exception {}
+            
+            @Override
+            public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
+                if (connectionState == ConnectionState.RECONNECTED) {
+                    try {
+                        reregisterBoolean(booleanName, sharedBooleanListeners.get(booleanName), localBooleans.get(booleanName));
+                    } catch (Exception e) {
+                        System.err.println("Unable to re-register boolean " + booleanName + ": " + e.getMessage());
+                    }
+                }
+            }
+        });
         sharedBoolean.addListener(listener);
     }
     
@@ -495,12 +529,12 @@ public class SharedCacheCoordinator implements Serializable {
     // tristate
     
     public void registerTriState(String triStateName, SharedTriStateListener listener) throws Exception {
+        Preconditions.checkArgument(!sharedTriStates.containsKey(triStateName), "STATE " + triStateName + " has already been registered!");
         reregisterTriState(triStateName, listener, SharedTriState.STATE.UPDATED);
     }
     
     private void reregisterTriState(String triStateName, SharedTriStateListener listener, SharedTriState.STATE seedValue) throws Exception {
         ArgumentChecker.notNull(triStateName, listener);
-        Preconditions.checkArgument(!sharedTriStates.containsKey(triStateName), "STATE " + triStateName + " has already been registered!");
         
         SharedTriState sharedTriState = new SharedTriState(curatorClient, ZKPaths.makePath("/triStates", triStateName), seedValue);
         if (log.isTraceEnabled())
@@ -514,6 +548,21 @@ public class SharedCacheCoordinator implements Serializable {
             log.trace("table:" + triStateName + " localTriStates has:" + localTriStates);
             log.trace("table:" + triStateName + " registered a TriState that is " + sharedTriState.getState());
         }
+        sharedTriState.addListener(new SharedTriStateListener() {
+            @Override
+            public void stateHasChanged(SharedTriStateReader var1, SharedTriState.STATE var2) throws Exception {}
+            
+            @Override
+            public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
+                if (connectionState == ConnectionState.RECONNECTED) {
+                    try {
+                        reregisterTriState(triStateName, sharedTriStateListeners.get(triStateName), localTriStates.get(triStateName));
+                    } catch (Exception e) {
+                        System.err.println("Unable to re-register tri-state " + triStateName + ": " + e.getMessage());
+                    }
+                }
+            }
+        });
         sharedTriState.addListener(listener);
     }
     
@@ -553,11 +602,10 @@ public class SharedCacheCoordinator implements Serializable {
             log.trace("table:" + triStateName + " got " + sharedTriState + " from " + sharedTriStates);
         }
         
-        SharedTriState.STATE newTriState = state;
         if (log.isTraceEnabled()) {
             log.trace("table:" + triStateName + " put(" + triStateName + ", " + state + ")" + "into localTriStates:" + localTriStates);
         }
-        sharedTriState.setState(newTriState);
+        sharedTriState.setState(state);
         localTriStates.put(triStateName, state);
         if (log.isTraceEnabled()) {
             log.trace("table:" + triStateName + " sharedTriState now:" + sharedTriState);
@@ -599,30 +647,26 @@ public class SharedCacheCoordinator implements Serializable {
     public void watchForEvictions(final EvictionCallback callback) {
         ArgumentChecker.notNull(callback);
         
-        evictionPathCache.getListenable().addListener(new PathChildrenCacheListener() {
-            
-            @Override
-            public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-                if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
-                    // Call our eviction handler to do local eviction
-                    String path = event.getData().getPath();
-                    String dn = ZKPaths.getNodeFromPath(path);
-                    callback.evict(dn);
-                    
-                    // Now register ourselves under the eviction node that that once
-                    // a child for each running web server appears, the eviction node
-                    // can be cleaned up.
-                    String responsePath = ZKPaths.makePath(path, localName);
-                    try {
-                        if (curatorClient.checkExists().creatingParentContainersIfNeeded().forPath(responsePath) == null) {
-                            curatorClient.create().creatingParentContainersIfNeeded().forPath(responsePath);
+        evictionPathCache.getListenable().addListener((client, event) -> {
+            if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
+                // Call our eviction handler to do local eviction
+                        String path = event.getData().getPath();
+                        String dn = ZKPaths.getNodeFromPath(path);
+                        callback.evict(dn);
+                        
+                        // Now register ourselves under the eviction node that that once
+                        // a child for each running web server appears, the eviction node
+                        // can be cleaned up.
+                        String responsePath = ZKPaths.makePath(path, localName);
+                        try {
+                            if (curatorClient.checkExists().creatingParentContainersIfNeeded().forPath(responsePath) == null) {
+                                curatorClient.create().creatingParentContainersIfNeeded().forPath(responsePath);
+                            }
+                        } catch (KeeperException.NodeExistsException e) {
+                            // ignored on purpose -- someone beat us to creating the node
                         }
-                    } catch (KeeperException.NodeExistsException e) {
-                        // ignored on purpose -- someone beat us to creating the node
                     }
-                }
-            }
-        });
+                });
     }
     
     /**

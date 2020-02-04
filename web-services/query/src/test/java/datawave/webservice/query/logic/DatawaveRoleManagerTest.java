@@ -24,7 +24,7 @@ public class DatawaveRoleManagerTest {
     @Before
     public void beforeEachTest() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         createAndSetWithSingleRole();
     }
     
@@ -80,13 +80,13 @@ public class DatawaveRoleManagerTest {
         drm = new DatawaveRoleManager();
         
         Set<String> gottenRoles = drm.getRequiredRoles();
-        Assert.assertEquals(null, gottenRoles);
+        Assert.assertNull(gottenRoles);
         
         drm.setRequiredRoles(getFirstRole());
         gottenRoles = drm.getRequiredRoles();
         
-        Assert.assertEquals(true, gottenRoles.contains("REQ_ROLE_1"));
-        Assert.assertEquals(false, gottenRoles.contains("REQ_ROLE_2"));
+        Assert.assertTrue(gottenRoles.contains("REQ_ROLE_1"));
+        Assert.assertFalse(gottenRoles.contains("REQ_ROLE_2"));
     }
     
     @Test
@@ -95,8 +95,8 @@ public class DatawaveRoleManagerTest {
         drm = new DatawaveRoleManager(getFirstRole());
         
         Set<String> gottenRoles = drm.getRequiredRoles();
-        Assert.assertEquals(true, gottenRoles.contains("REQ_ROLE_1"));
-        Assert.assertEquals(false, gottenRoles.contains("REQ_ROLE_2"));
+        Assert.assertTrue(gottenRoles.contains("REQ_ROLE_1"));
+        Assert.assertFalse(gottenRoles.contains("REQ_ROLE_2"));
     }
     
     @Test
@@ -106,7 +106,7 @@ public class DatawaveRoleManagerTest {
         
         // Expect false when passing in a null Principal object
         boolean canRun = drm.canRunQuery(null, null);
-        Assert.assertEquals(false, canRun);
+        Assert.assertFalse(canRun);
         
         // Modify the principal and set the required roles to null
         p = datawavePrincipal;
@@ -115,23 +115,23 @@ public class DatawaveRoleManagerTest {
         
         // This test should pass when setting requiredRoles to null
         canRun = drm.canRunQuery(null, p);
-        Assert.assertEquals(true, canRun);
+        Assert.assertTrue(canRun);
         
         // Now set up a test that requires roles to run
         drm.setRequiredRoles(getFirstRole());
         canRun = drm.canRunQuery(null, p);
-        Assert.assertEquals(true, canRun);
+        Assert.assertTrue(canRun);
         
         // Now add a second required role check
         drm.setRequiredRoles(getAllRoles());
         canRun = drm.canRunQuery(null, p);
-        Assert.assertEquals(false, canRun);
+        Assert.assertFalse(canRun);
         
         // Recreate the principal with two roles and check
         createAndSetWithTwoRoles();
         p = datawavePrincipal;
         drm.setRequiredRoles(getFirstRole());
         canRun = drm.canRunQuery(null, p);
-        Assert.assertEquals(true, canRun);
+        Assert.assertTrue(canRun);
     }
 }

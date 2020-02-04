@@ -89,7 +89,7 @@ function downloadTarball() {
    tarball="$( basename ${uri} )"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
-          $( cd "${tarballdir}" && curl -o "./${tarball}" "${uri}" )
+          $( cd "${tarballdir}" && cp  "${uri:7}" ./${tarball} ) || error "File copy failed for ${uri:7}"
       else
           $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
       fi
@@ -105,8 +105,8 @@ function writeSiteXml() {
    # read the "name value" siteconf properties, one line at a time
    printf '%s\n' "$siteconf" | ( while IFS= read -r nameval ; do
        # parse the name and value from the line
-       local name=${nameval% *}
-       local value=${nameval##* }
+       local name=${nameval%% *}
+       local value=${nameval#* }
        # concatenate the xml into a big blob
        local xml=${xml}$(printf "\n   <property>\n      <name>$name</name>\n      <value>$value</value>\n   </property>\n")
    done
@@ -290,7 +290,8 @@ function assertCreateDir() {
 
 function sshIsInstalled() {
    [ -z "$( which ssh )" ] && return 1
-   [ -z "$( which sshd )" ] && return 1
+   # Check "/usr/sbin/sshd" directly since on some systems, /usr/sbin isn't in the user's path so which won't find it.
+   [ -z "$( which sshd )" ] && [ ! -x "/usr/sbin/sshd" ] && return 1
    return 0
 }
 
@@ -304,3 +305,34 @@ function servicesAreRunning() {
    return 1 # Nothing running
 }
 
+function jdkIsConfigured() {
+   local javacBinary="$(which javac)"
+   local requiredVersion="javac 1.8.0"
+   local foundIt=""
+
+   # Check JAVA_HOME
+   if [[ -n "${JAVA_HOME}" ]] ; then
+      foundIt="$( "${JAVA_HOME}"/bin/javac -version 2>&1 | grep "${requiredVersion}" )"
+      if [[ -n "${foundIt}" ]] ; then
+         # Ensure that PATH and JAVA_HOME are in agreement
+         if [[ "$(readlink -f "${JAVA_HOME}"/bin/javac)" != "$(readlink -f "${javacBinary}")" ]] ; then
+            export PATH="${JAVA_HOME}/bin:${PATH}"
+         fi
+         return 0
+      fi
+   fi
+
+   # Check PATH
+   if [ -n "${javacBinary}" ] ; then
+      foundIt="$( "${javacBinary}" -version 2>&1 | grep "${requiredVersion}" )"
+      if [[ -n "${foundIt}" ]] ; then
+         # Ensure that JAVA_HOME is in agreement with javac path
+         export JAVA_HOME="$(dirname $(dirname $(readlink -f "${javacBinary}")))"
+         info "Found '${requiredVersion}', setting JAVA_HOME to '${JAVA_HOME}'"
+         return 0
+      fi
+   fi
+
+   error "'${requiredVersion}' not found. Please install/configure a compatible JDK"
+   return 1
+}

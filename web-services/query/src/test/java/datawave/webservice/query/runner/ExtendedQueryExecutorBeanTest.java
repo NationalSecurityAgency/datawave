@@ -6,9 +6,11 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.notNull;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
@@ -25,25 +27,32 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 
 import javax.ejb.EJBContext;
+import javax.enterprise.concurrent.ManagedExecutorService;
+import javax.jms.JMSRuntimeException;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.Status;
 import javax.transaction.UserTransaction;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
 
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
+import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
-import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.exception.BadRequestException;
@@ -54,6 +63,7 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
+import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
@@ -79,6 +89,8 @@ import datawave.webservice.query.logic.RoleManager;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.util.GetUUIDCriteria;
+import datawave.webservice.query.util.LookupUUIDUtil;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -89,13 +101,13 @@ import datawave.webservice.result.VoidResponse;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.core.trace.Tracer;
 import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Before;
@@ -127,6 +139,9 @@ public class ExtendedQueryExecutorBeanTest {
     QueryCache cache;
     
     @Mock
+    ClosedQueryCache closedCache;
+    
+    @Mock
     AccumuloConnectionFactory connectionFactory;
     
     @Mock
@@ -140,6 +155,9 @@ public class ExtendedQueryExecutorBeanTest {
     
     @Mock
     LookupUUIDConfiguration lookupUUIDConfiguration;
+    
+    @Mock
+    LookupUUIDUtil lookupUUIDUtil;
     
     @Mock
     QueryMetricsBean metrics;
@@ -215,6 +233,9 @@ public class ExtendedQueryExecutorBeanTest {
     @Mock
     AccumuloConnectionRequestBean connectionRequestBean;
     
+    @Mock
+    UriInfo uriInfo;
+    
     QueryExpirationConfiguration queryExpirationConf;
     
     @BeforeClass
@@ -257,7 +278,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -281,6 +302,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
             setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
             setInternalState(subject, QueryCache.class, cache);
+            setInternalState(subject, ClosedQueryCache.class, closedCache);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -325,6 +347,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -333,7 +356,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -378,6 +401,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -390,7 +414,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -420,7 +444,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response performing an admin close", null != result1);
+        assertNotNull("Expected a non-null response performing an admin close", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -442,6 +466,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, EJBContext.class, context);
             setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
             setInternalState(subject, QueryCache.class, cache);
+            setInternalState(subject, ClosedQueryCache.class, closedCache);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -464,6 +489,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).andReturn(this.tuple);
+        this.closedCache.remove(queryId.toString());
         expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
         expect(this.tuple.getSecond()).andReturn(this.connector);
@@ -479,11 +505,12 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         VoidResponse result1 = subject.cancel(queryId.toString());
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -500,6 +527,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
         expect(this.principal.getName()).andReturn(userName);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).andReturn(null);
+        expect(this.closedCache.exists(queryId.toString())).andReturn(false);
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid);
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
@@ -515,6 +543,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -546,6 +575,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
+        this.closedCache.remove(queryId.toString());
         expect(this.runningQuery.getSettings()).andReturn(this.query).times(2);
         expect(this.query.getOwner()).andReturn(userSid);
         this.runningQuery.cancel();
@@ -570,6 +600,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -577,7 +608,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -590,13 +621,14 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         
         // Set expectations
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
+        expect(this.closedCache.exists(queryId.toString())).andReturn(false);
         expect(this.cache.get(queryId.toString())).andReturn(null);
         expect(this.persister.findById(queryId.toString())).andReturn(new ArrayList<>(0));
         
@@ -606,6 +638,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -626,7 +659,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getShortName()).andReturn(userSid);
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
@@ -643,6 +676,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, EJBContext.class, context);
             setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
             setInternalState(subject, QueryCache.class, cache);
+            setInternalState(subject, ClosedQueryCache.class, closedCache);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -685,6 +719,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
@@ -698,18 +733,15 @@ public class ExtendedQueryExecutorBeanTest {
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setUserDn(userDN);
-        auditParameters.setAuditType(AuditType.NONE);
-        auditParameters.setQuery(query);
         
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
+        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -807,6 +839,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -822,7 +855,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -856,6 +889,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
@@ -872,18 +906,15 @@ public class ExtendedQueryExecutorBeanTest {
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setUserDn(userDN);
-        auditParameters.setAuditType(AuditType.NONE);
-        auditParameters.setQuery(query);
         
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
+        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -982,6 +1013,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -997,7 +1029,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1027,6 +1059,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
@@ -1040,21 +1073,15 @@ public class ExtendedQueryExecutorBeanTest {
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setUserDn(userDN);
-        auditParameters.setAuditType(AuditType.ACTIVE);
-        auditParameters.setQuery(query);
-        auditParameters.setQueryDate(new Date());
-        auditParameters.setAuths(queryAuthorizations);
-        auditParameters.setColviz(new ColumnVisibility(queryAuthorizations));
         
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
+        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.ACTIVE.name());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations
         expect(context.getCallerPrincipal()).andReturn(principal);
@@ -1069,10 +1096,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<>());
-        auditor.audit(eq(auditParameters));
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.ACTIVE);
+        expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
+        expect(auditor.audit(eq(queryParameters))).andReturn(null);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
@@ -1104,7 +1131,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, marking);
-        setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -1118,7 +1144,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
-        assertTrue("Exception expected to have been caused by problem adding query logic to cache", ((QueryException) result1).getErrorCode().equals("500-7"));
+        assertEquals("Exception expected to have been caused by problem adding query logic to cache", "500-7", ((QueryException) result1).getErrorCode());
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1152,6 +1178,7 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
@@ -1170,9 +1197,9 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1267,12 +1294,14 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.runningQuery.closeConnection(this.connectionFactory);
         this.cache.remove(queryId.toString());
+        this.closedCache.add(queryId.toString());
+        this.closedCache.remove(queryId.toString());
         expect(this.runningQuery.getTraceInfo()).andReturn(null);
         expect(this.responseObjectFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
         
@@ -1285,6 +1314,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
             setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
             setInternalState(subject, QueryCache.class, cache);
+            setInternalState(subject, ClosedQueryCache.class, closedCache);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
             setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -1292,7 +1322,6 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryMetricsBean.class, metrics);
             setInternalState(subject, Multimap.class, traceInfos);
             setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-            setInternalState(subject, AuditParameters.class, new AuditParameters());
             setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -1318,12 +1347,13 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime - 500);
         int pagesize = 1;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
         
         MultivaluedMap<String,String> p = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         
         // Run the test
         PowerMock.replayAll();
@@ -1342,8 +1372,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
-        assertTrue("Thrown exception expected to have been due to invalid expiration date", ((QueryException) result1.getCause()).getErrorCode()
-                        .equals("400-3"));
+        assertEquals("Thrown exception expected to have been due to invalid expiration date", "400-3", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @Test
@@ -1360,12 +1389,13 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime);
         int pagesize = 0;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
         
         MultivaluedMap<String,String> p = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         
         // Run the test
         PowerMock.replayAll();
@@ -1383,7 +1413,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
-        assertTrue("Thrown exception expected to have been due to invalid page size", ((QueryException) result1.getCause()).getErrorCode().equals("400-2"));
+        assertEquals("Thrown exception expected to have been due to invalid page size", "400-2", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1401,13 +1431,14 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 1000;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
         // Set expectations
         
         MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -1416,8 +1447,8 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryAuthorizations);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         
@@ -1428,7 +1459,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getDNs()).andReturn(new String[] {"userDN"});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.queryLogic1.getMaxPageSize()).andReturn(10).times(3);
+        expect(this.queryLogic1.getMaxPageSize()).andReturn(10).times(4);
         
         // Run the test
         PowerMock.replayAll();
@@ -1437,7 +1468,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, AuditParameters.class, new AuditParameters());
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
@@ -1450,7 +1480,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
-        assertTrue("Thrown exception expected to have been due to undefined query logic", ((QueryException) result1).getErrorCode().equals("400-6"));
+        assertEquals("Thrown exception expected to have been due to undefined query logic", "400-6", ((QueryException) result1).getErrorCode());
     }
     
     @Test
@@ -1467,6 +1497,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 999999);
         int pagesize = 1;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
@@ -1487,7 +1518,7 @@ public class ExtendedQueryExecutorBeanTest {
         Throwable result1 = null;
         try {
             MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
             
             subject.createQueryAndNext(queryLogicName, queryParameters);
             
@@ -1516,6 +1547,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime - 500);
         int pagesize = 1;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
@@ -1528,7 +1560,7 @@ public class ExtendedQueryExecutorBeanTest {
         Throwable result1 = null;
         try {
             MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
             
             subject.defineQuery(queryLogicName, queryParameters);
             
@@ -1539,8 +1571,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
-        assertTrue("Thrown exception expected to have been due to invalid expiration date", ((QueryException) result1.getCause()).getErrorCode()
-                        .equals("400-3"));
+        assertEquals("Thrown exception expected to have been due to invalid expiration date", "400-3", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @Test
@@ -1557,6 +1588,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime);
         int pagesize = 0;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         
@@ -1570,7 +1602,7 @@ public class ExtendedQueryExecutorBeanTest {
         Throwable result1 = null;
         try {
             MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
             
             subject.defineQuery(queryLogicName, queryParameters);
         } catch (DatawaveWebApplicationException e) {
@@ -1580,11 +1612,11 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
-        assertTrue("Thrown exception expected to have been due to invalid page size", ((QueryException) result1.getCause()).getErrorCode().equals("400-2"));
+        assertEquals("Thrown exception expected to have been due to invalid page size", "400-2", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
-    @Test(expected = DatawaveWebApplicationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testDefineQuery_UncheckedException() throws Exception {
         // Set local test input
         String queryLogicName = "queryLogicName";
@@ -1598,6 +1630,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 10000);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String userName = "userName";
         String userSid = "userSid";
@@ -1608,7 +1641,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, null, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace);
         queryParameters.putSingle("valid", "param");
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
@@ -1618,9 +1651,9 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDN);
-        op.putSingle("logicClass", queryLogicName);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations
         queryLogic1.validate(queryParameters);
@@ -1655,7 +1688,6 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
             setInternalState(subject, Multimap.class, traceInfos);
             setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-            setInternalState(subject, AuditParameters.class, new AuditParameters());
             setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             subject.defineQuery(queryLogicName, queryParameters);
@@ -1680,7 +1712,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @Test
@@ -1712,11 +1744,11 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a BadRequestException due to null regex and user values", null != result1);
+        assertNotNull("Expected a BadRequestException due to null regex and user values", result1);
         
-        assertTrue("Expected a non-null response", null != result2);
+        assertNotNull("Expected a non-null response", result2);
         
-        assertTrue("Expected a non-null response", null != result3);
+        assertNotNull("Expected a non-null response", result3);
     }
     
     @Ignore
@@ -1736,6 +1768,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = true;
@@ -1767,9 +1800,9 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogic1.getClass().getSimpleName());
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDN);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogic1.getClass().getSimpleName());
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations of the create logic
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
@@ -1821,6 +1854,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -1829,11 +1863,11 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1851,6 +1885,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = false;
@@ -1872,6 +1907,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -1880,7 +1916,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         try {
             subject.duplicateQuery(queryId.toString(), queryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         } finally {
             PowerMock.verifyAll();
         }
@@ -1902,6 +1938,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = true;
@@ -1946,6 +1983,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -1956,7 +1994,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         try {
             subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         } finally {
             PowerMock.verifyAll();
         }
@@ -1976,6 +2014,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = true;
@@ -1993,7 +2032,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         try {
             subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         } finally {
             PowerMock.verifyAll();
         }
@@ -2013,6 +2052,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = true;
@@ -2025,13 +2065,13 @@ public class ExtendedQueryExecutorBeanTest {
         Exception result1 = null;
         try {
             subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
         PowerMock.verifyAll();
         
-        assertTrue("Expected a DatawaveWebApplicationException.", null != result1);
+        assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a Bad Request status code.", 400, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
     }
     
@@ -2064,8 +2104,8 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a BadRequestException due to null regex and user values", null != result1);
-        assertTrue("Expected a non-null response", null != result2);
+        assertNotNull("Expected a BadRequestException due to null regex and user values", result1);
+        assertNotNull("Expected a non-null response", result2);
         
     }
     
@@ -2091,12 +2131,13 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         QueryImplListResponse result1 = subject.get(queryId.toString());
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected non-null response", null != result1);
+        assertNotNull("Expected non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2122,6 +2163,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
         try {
@@ -2153,6 +2195,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
         try {
@@ -2240,6 +2283,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -2249,7 +2293,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("QueryLogicResponse should not be returned null", null != result1);
+        assertNotNull("QueryLogicResponse should not be returned null", result1);
     }
     
     @Test
@@ -2269,7 +2313,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @Test(expected = NoResultsException.class)
@@ -2320,16 +2364,15 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations
         RoleManager roleManager = new EasyRoleManager();
         expect(this.queryLogicFactory.getQueryLogicList()).andReturn(Arrays.asList(this.queryLogic1, this.queryLogic2));
-        expect(this.queryLogic1.getLogicName()).andReturn("logic1").anyTimes(); // Begin 1st loop
+        expect(this.queryLogic1.getLogicName()).andReturn("logic1").times(1); // Begin 1st loop
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.LOCALONLY);
         expect(this.queryLogic1.getLogicDescription()).andReturn("description1");
         expect(this.queryLogic1.getOptionalQueryParameters()).andReturn(new TreeSet<>());
         expect(this.queryLogic1.getRequiredQueryParameters()).andReturn(new TreeSet<>());
         expect(this.queryLogic1.getExampleQueries()).andReturn(new TreeSet<>());
         expect(this.queryLogic1.getRoleManager()).andReturn(roleManager).anyTimes();
-        expect(this.queryLogic1.getTransformer(isA(Query.class))).andReturn(this.transformer);
-        expect(this.transformer.createResponse(isA(ResultsPage.class))).andThrow(ILLEGAL_STATE_EXCEPTION);
-        expect(this.queryLogic2.getLogicName()).andReturn("logic2").times(2); // Begin 1st loop
+        expect(this.queryLogic1.getResponseClass(EasyMock.anyObject(Query.class))).andThrow(ILLEGAL_STATE_EXCEPTION);
+        expect(this.queryLogic2.getLogicName()).andReturn("logic2").times(1); // Begin 1st loop
         expect(this.queryLogic2.getAuditType(null)).andReturn(AuditType.LOCALONLY);
         expect(this.queryLogic2.getLogicDescription()).andReturn("description2");
         expect(this.queryLogic2.getOptionalQueryParameters()).andReturn(new TreeSet<>());
@@ -2337,8 +2380,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic2.getExampleQueries()).andReturn(new TreeSet<>());
         RoleManager roleManager2 = new DatawaveRoleManager(Arrays.asList("ROLE_1", "ROLE_2"));
         expect(this.queryLogic2.getRoleManager()).andReturn(roleManager2).times(2);
-        expect(this.queryLogic2.getTransformer(isA(Query.class))).andReturn(this.transformer);
-        expect(this.transformer.createResponse(isA(ResultsPage.class))).andReturn(this.baseResponse);
+        expect(this.queryLogic2.getResponseClass(EasyMock.anyObject(Query.class))).andReturn(this.baseResponse.getClass().getCanonicalName());
         Map<String,String> parsers = new HashMap<>();
         parsers.put("PARSER1", null);
         expect(this.queryLogic2.getQuerySyntaxParsers()).andReturn((Map) parsers);
@@ -2354,7 +2396,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("QueryLogicResponse should not be returned null", null != result1);
+        assertNotNull("QueryLogicResponse should not be returned null", result1);
     }
     
     @Test
@@ -2372,7 +2414,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Query response should not be returned null", null != result1);
+        assertNotNull("Query response should not be returned null", result1);
     }
     
     @Test
@@ -2393,7 +2435,7 @@ public class ExtendedQueryExecutorBeanTest {
         }
         PowerMock.verifyAll();
         
-        assertTrue("Expected a DatawaveWebApplicationException.", null != result1);
+        assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a No Results status code.", 204, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
     }
     
@@ -2417,9 +2459,9 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected an exception to be thrown", null != result1);
+        assertNotNull("Expected an exception to be thrown", result1);
         assertTrue("Expected an QueryException to be wrapped by a DatawaveWebApplicationException", result1.getCause() instanceof QueryException);
-        assertTrue("Expected an unchecked exception to be wrapped by a QueryException", result1.getCause().getCause() == uncheckedException);
+        assertSame("Expected an unchecked exception to be wrapped by a QueryException", result1.getCause().getCause(), uncheckedException);
     }
     
     @Test
@@ -2455,6 +2497,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -2467,9 +2510,9 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a DatawaveWebApplicationException to be thrown", null != result1);
-        assertTrue("Expected DatawaveWebApplicationException to have been caused by a locked cache entry", ((QueryException) result1.getCause().getCause())
-                        .getErrorCode().equals("500-9"));
+        assertNotNull("Expected a DatawaveWebApplicationException to be thrown", result1);
+        assertEquals("Expected DatawaveWebApplicationException to have been caused by a locked cache entry", "500-9", ((QueryException) result1.getCause()
+                        .getCause()).getErrorCode());
     }
     
     @Test(expected = DatawaveWebApplicationException.class)
@@ -2506,6 +2549,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
@@ -2555,6 +2599,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Exception result1 = null;
@@ -2563,12 +2608,12 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
             assertTrue(e.getCause() instanceof QueryException);
-            assertTrue(((QueryException) e.getCause().getCause()).getErrorCode().equals("401-1"));
+            assertEquals("401-1", ((QueryException) e.getCause().getCause()).getErrorCode());
         }
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a DatawaveWebApplicationException to be thrown due an unchecked exception", null != result1);
+        assertNotNull("Expected a DatawaveWebApplicationException to be thrown due an unchecked exception", result1);
     }
     
     @Test
@@ -2601,6 +2646,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
@@ -2614,7 +2660,7 @@ public class ExtendedQueryExecutorBeanTest {
         }
         PowerMock.verifyAll();
         
-        assertTrue("Expected a DatawaveWebApplicationException.", null != result1);
+        assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a Not Found status code.", 404, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
     }
     
@@ -2628,6 +2674,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
         try {
@@ -2646,6 +2693,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         VoidResponse result1 = subject.purgeQueryCache();
         QueryMetricsBean result5 = subject.getMetrics();
@@ -2655,11 +2703,11 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
-        assertTrue("Expected a null metrics instance", null == result5);
-        assertTrue("Expected a null query logic factory", null == result6);
-        assertTrue("Expected a null persister", null == result7);
-        assertTrue("Expected a NON-null cache", null != result8);
+        assertNotNull("Expected a non-null response", result1);
+        assertNull("Expected a null metrics instance", result5);
+        assertNull("Expected a null query logic factory", result6);
+        assertNull("Expected a null persister", result7);
+        assertNotNull("Expected a NON-null cache", result8);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2687,12 +2735,11 @@ public class ExtendedQueryExecutorBeanTest {
         qp.setUserDN(userDN);
         qp.setDnList(Collections.singletonList(userDN));
         
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setColviz(new ColumnVisibility(authorization));
-        auditParameters.setAuditType(AuditType.PASSIVE);
-        auditParameters.setUserDn(userDN);
-        
         MultivaluedMap<String,String> map = qp.toMap();
+        map.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
+        map.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        map.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
+        map.putSingle(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -2723,9 +2770,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.toMap()).andReturn(map);
         expect(this.query.getColumnVisibility()).andReturn(authorization);
+        expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
+        expect(this.auditor.audit(map)).andReturn(null);
         this.query.populateMetric(anyObject(QueryMetric.class));
-        expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<>());
-        this.auditor.audit(auditParameters);
         //
         // Advice from a test-driven development perspective...
         //
@@ -2768,13 +2815,13 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
-        setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -2782,7 +2829,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("VoidResponse should not be returned null", null != result1);
+        assertNotNull("VoidResponse should not be returned null", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2821,6 +2868,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -2874,6 +2922,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -2890,7 +2939,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("Query exception expected to have been thrown", result1 instanceof QueryException);
-        assertTrue("Thrown exception expected to have been due to locking problem", ((QueryException) result1.getCause()).getErrorCode().equals("500-9"));
+        assertEquals("Thrown exception expected to have been due to locking problem", "500-9", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2909,11 +2958,13 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        Query duplicateQuery = PowerMock.createMock(Query.class);
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
@@ -2928,22 +2979,34 @@ public class ExtendedQueryExecutorBeanTest {
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
         
-        p.putSingle(AuditParameters.QUERY_AUDIT_TYPE, AuditType.LOCALONLY.name());
-        p.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        p.putSingle(AuditParameters.USER_DN, userDN);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.validate(p);
+        p.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.LOCALONLY.name());
+        p.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        p.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        p.putSingle(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
-        expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(4);
         expect(this.principal.getName()).andReturn(userName).times(2);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations))).times(2);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query).times(3);
         expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
-        expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1).times(2);
+        expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName).times(2);
+        expect(this.query.duplicate(queryName)).andReturn(duplicateQuery);
+        duplicateQuery.setId(queryId);
+        duplicateQuery.setQueryLogicName(queryLogicName);
+        duplicateQuery.setQuery(query);
+        duplicateQuery.setBeginDate(beginDate);
+        duplicateQuery.setEndDate(endDate);
+        duplicateQuery.setQueryAuthorizations(queryAuthorizations);
+        duplicateQuery.setExpirationDate(expirationDate);
+        duplicateQuery.setPagesize(pagesize);
+        duplicateQuery.setPageTimeout(pageTimeout);
+        duplicateQuery.setParameters(isA(Set.class));
+        expect(duplicateQuery.toMap()).andReturn(p);
+        expect(this.auditor.audit(eq(p))).andReturn(null);
         this.query.setQueryLogicName(queryLogicName);
         this.query.setQuery(query);
         this.query.setBeginDate(beginDate);
@@ -2953,33 +3016,31 @@ public class ExtendedQueryExecutorBeanTest {
         this.query.setPagesize(pagesize);
         this.query.setPageTimeout(pageTimeout);
         this.query.setParameters(isA(Set.class));
-        expect(this.query.getQueryName()).andReturn(queryName);
+        expect(this.query.getQueryName()).andReturn(queryName).times(2);
         this.persister.update(this.query);
-        expect(this.query.getId()).andReturn(queryId);
+        expect(this.query.getId()).andReturn(queryId).times(2);
         this.cache.put(queryId.toString(), this.runningQuery);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
-        expect(this.query.toMap()).andReturn(p);
-        this.auditor.audit(eq(auditParameters));
         
         // Run the test
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
-        setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters);
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response performing an admin close", null != result1);
+        assertNotNull("Expected a non-null response performing an admin close", result1);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -2997,6 +3058,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = false;
@@ -3046,6 +3108,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -3074,6 +3137,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
         int pageTimeout = -1;
+        Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = false;
@@ -3101,6 +3165,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
@@ -3111,7 +3176,7 @@ public class ExtendedQueryExecutorBeanTest {
         StreamingOutput result1 = null;
         try {
             MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
+                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
             
             result1 = subject.execute(queryLogicName, queryParameters, httpHeaders);
             
@@ -3124,7 +3189,602 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertEquals("Expected a non-null response", null, result1);
+        assertNull("Expected a non-null response", result1);
+    }
+    
+    @Test
+    public void testLookupUUID_happyPath() {
+        UUIDType uuidType = PowerMock.createMock(UUIDType.class);
+        BaseQueryResponse response = PowerMock.createMock(BaseQueryResponse.class);
+        ManagedExecutorService executor = PowerMock.createMock(ManagedExecutorService.class);
+        
+        expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
+        expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
+        expect(uuidType.getDefinedView()).andReturn("abc");
+        expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
+        expect(response.getQueryId()).andReturn("11111");
+        expect(context.getCallerPrincipal()).andReturn(principal);
+        expect(executor.submit(isA(Runnable.class))).andReturn(null);
+        
+        PowerMock.replayAll();
+        
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
+        setInternalState(subject, ManagedExecutorService.class, executor);
+        
+        subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
+        
+        PowerMock.verifyAll();
+    }
+    
+    @Test
+    public void testLookupUUID_closeFail() {
+        QueryExecutorBean subject = PowerMock.createPartialMock(QueryExecutorBean.class, "close");
+        UUIDType uuidType = PowerMock.createMock(UUIDType.class);
+        BaseQueryResponse response = PowerMock.createMock(BaseQueryResponse.class);
+        ManagedExecutorService executor = PowerMock.createMock(ManagedExecutorService.class);
+        
+        expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
+        expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
+        expect(uuidType.getDefinedView()).andReturn("abc");
+        expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
+        expect(response.getQueryId()).andReturn("11111");
+        expect(context.getCallerPrincipal()).andReturn(principal);
+        expect(executor.submit(isA(Runnable.class))).andThrow(new RejectedExecutionException("INTENTIONALLY THROWN TEST EXCEPTION: Async close rejected"));
+        expect(subject.close("11111")).andReturn(null);
+        
+        PowerMock.replayAll();
+        
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
+        setInternalState(subject, ManagedExecutorService.class, executor);
+        setInternalState(subject, Logger.class, Logger.getLogger(QueryExecutorBean.class));
+        
+        subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
+        
+        PowerMock.verifyAll();
+    }
+    
+    @Test
+    public void testPlanQuery() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 999999);
+        int pagesize = 10;
+        int pageTimeout = -1;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        boolean trace = false;
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userdn";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+        List<String> dnList = Collections.singletonList(userDN);
+        UUID queryId = UUID.randomUUID();
+        
+        HashMap<String,Collection<String>> authsMap = new HashMap<>();
+        authsMap.put("userdn", Arrays.asList(queryAuthorizations));
+        
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.putSingle("valid", "param");
+        
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+        
+        QueryParameters qp = new QueryParametersImpl();
+        qp.validate(queryParameters);
+        
+        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+        
+        // Set expectations of the create logic
+        queryLogic1.validate(queryParameters);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        expect(this.principal.getName()).andReturn(userName);
+        expect(this.principal.getShortName()).andReturn(userSid);
+        expect(this.principal.getUserDN()).andReturn(userDNpair);
+        expect(this.principal.getDNs()).andReturn(new String[] {userDN});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.PASSIVE);
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+        expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
+        expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
+        expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
+        expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
+        expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.connectionRequestBean.requestBegin(queryId.toString());
+        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        this.connectionRequestBean.requestEnd(queryId.toString());
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
+        expect(this.principal.getProxiedUsers()).andReturn(Collections.singleton(dwUser));
+        expect(this.query.getOwner()).andReturn(userSid).anyTimes();
+        expect(this.query.getId()).andReturn(queryId).anyTimes();
+        expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
+        expect(this.query.getBeginDate()).andReturn(null).anyTimes();
+        expect(this.query.getEndDate()).andReturn(null).anyTimes();
+        expect(this.query.getColumnVisibility()).andReturn(null).anyTimes();
+        expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations).anyTimes();
+        expect(this.query.getQueryName()).andReturn(null).anyTimes();
+        expect(this.query.getPagesize()).andReturn(0).anyTimes();
+        expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
+        expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
+        expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
+        
+        // Set expectations of the plan
+        Authorizations queryAuths = new Authorizations(queryAuthorizations);
+        expect(this.queryLogic1.getPlan(this.connector, this.query, Collections.singleton(queryAuths), true, false)).andReturn("a query plan");
+        
+        // Set expectations of the cleanup
+        this.connectionFactory.returnConnection(this.connector);
+        EasyMock.expectLastCall().times(2);
+        queryLogic1.close();
+        EasyMock.expectLastCall();
+        
+        // Run the test
+        PowerMock.replayAll();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
+        setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricsBean.class, metrics);
+        setInternalState(subject, Multimap.class, traceInfos);
+        setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        GenericResponse<String> result1 = subject.planQuery(queryLogicName, queryParameters);
+        PowerMock.verifyAll();
+        
+        // Verify results
+        assertNotNull("Expected a non-null response", result1);
+        assertEquals("a query plan", result1.getResult());
+    }
+    
+    @Test
+    public void testPlanQueryWithValues() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 999999);
+        int pagesize = 10;
+        int pageTimeout = -1;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        boolean trace = false;
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userdn";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+        List<String> dnList = Collections.singletonList(userDN);
+        UUID queryId = UUID.randomUUID();
+        
+        HashMap<String,Collection<String>> authsMap = new HashMap<>();
+        authsMap.put("userdn", Arrays.asList(queryAuthorizations));
+        
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.putSingle("valid", "param");
+        queryParameters.putSingle(QueryExecutorBean.EXPAND_VALUES, "true");
+        
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+        
+        QueryParameters qp = new QueryParametersImpl();
+        qp.validate(queryParameters);
+        
+        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+        
+        // Set expectations of the create logic
+        queryLogic1.validate(queryParameters);
+        // this.query.populateMetric(isA(QueryMetric.class));
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        expect(this.principal.getName()).andReturn(userName);
+        expect(this.principal.getShortName()).andReturn(userSid);
+        expect(this.principal.getUserDN()).andReturn(userDNpair);
+        expect(this.principal.getDNs()).andReturn(new String[] {userDN});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.PASSIVE);
+        expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
+        expect(auditor.audit(eq(queryParameters))).andReturn(null);
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+        expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
+        expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
+        expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
+        expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
+        expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.connectionRequestBean.requestBegin(queryId.toString());
+        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        this.connectionRequestBean.requestEnd(queryId.toString());
+        // expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
+        // expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
+        // expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
+        expect(this.principal.getProxiedUsers()).andReturn(Collections.singleton(dwUser));
+        expect(this.query.getOwner()).andReturn(userSid).anyTimes();
+        expect(this.query.getId()).andReturn(queryId).anyTimes();
+        expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
+        expect(this.query.getBeginDate()).andReturn(null).anyTimes();
+        expect(this.query.getEndDate()).andReturn(null).anyTimes();
+        expect(this.query.getColumnVisibility()).andReturn(null).anyTimes();
+        expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations).anyTimes();
+        expect(this.query.getQueryName()).andReturn(null).anyTimes();
+        expect(this.query.getPagesize()).andReturn(0).anyTimes();
+        expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
+        expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
+        expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
+        // this.metrics.updateMetric(isA(QueryMetric.class));
+        // PowerMock.expectLastCall().times(2);
+        expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
+        // expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
+        // expect(this.qlCache.poll(queryId.toString())).andReturn(null);
+        
+        // Set expectations of the plan
+        Authorizations queryAuths = new Authorizations(queryAuthorizations);
+        expect(this.queryLogic1.getPlan(this.connector, this.query, Collections.singleton(queryAuths), true, true)).andReturn("a query plan");
+        
+        // Set expectations of the cleanup
+        this.connectionFactory.returnConnection(this.connector);
+        EasyMock.expectLastCall().times(2);
+        queryLogic1.close();
+        EasyMock.expectLastCall();
+        
+        // Run the test
+        PowerMock.replayAll();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
+        setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricsBean.class, metrics);
+        setInternalState(subject, Multimap.class, traceInfos);
+        setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        GenericResponse<String> result1 = subject.planQuery(queryLogicName, queryParameters);
+        PowerMock.verifyAll();
+        
+        // Verify results
+        assertNotNull("Expected a non-null response", result1);
+        assertEquals("a query plan", result1.getResult());
+    }
+    
+    @Test(expected = DatawaveWebApplicationException.class)
+    public void testCreateQuery_auditException() throws Exception {
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 999999);
+        int pagesize = 10;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        boolean trace = false;
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userDN";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+        List<String> dnList = Collections.singletonList(userDN);
+        UUID queryId = UUID.randomUUID();
+        long pageNumber = 0L;
+        
+        HashMap<String,Collection<String>> authsMap = new HashMap<>();
+        authsMap.put("USERDN", Arrays.asList(queryAuthorizations));
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.putSingle("valid", "param");
+        
+        expect(context.getCallerPrincipal()).andReturn(principal).anyTimes();
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        queryLogic1.validate(queryParameters);
+        expect(principal.getName()).andReturn(userName);
+        expect(principal.getShortName()).andReturn(userSid);
+        expect(principal.getUserDN()).andReturn(userDNpair);
+        expect(principal.getDNs()).andReturn(new String[] {userDN});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+        expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
+        expect(queryLogic1.getSelectors(null)).andReturn(null);
+        expect(auditor.audit(queryParameters)).andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
+        queryLogic1.close();
+        
+        PowerMock.replayAll();
+        
+        QueryExecutorBean executor = new QueryExecutorBean();
+        setInternalState(executor, EJBContext.class, context);
+        setInternalState(executor, AccumuloConnectionFactory.class, connectionFactory);
+        setInternalState(executor, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(executor, CreatedQueryLogicCacheBean.class, qlCache);
+        setInternalState(executor, QueryCache.class, cache);
+        setInternalState(executor, ClosedQueryCache.class, closedCache);
+        setInternalState(executor, Persister.class, persister);
+        setInternalState(executor, QueryLogicFactoryImpl.class, queryLogicFactory);
+        setInternalState(executor, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(executor, AuditBean.class, auditor);
+        setInternalState(executor, QueryMetricsBean.class, metrics);
+        setInternalState(executor, Multimap.class, traceInfos);
+        setInternalState(executor, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(executor, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(executor, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(executor, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        
+        executor.createQuery(queryLogicName, queryParameters);
+        
+        PowerMock.verifyAll();
+    }
+    
+    @Test(expected = DatawaveWebApplicationException.class)
+    public void testReset_auditException() throws Exception {
+        // Set local test input
+        String authorization = "AUTH_1";
+        String queryName = "queryName";
+        String queryLogicName = "queryLogicName";
+        String userName = "userName";
+        String userDN = "userDN";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+        String sid = "sid";
+        UUID queryId = UUID.randomUUID();
+        
+        HashMap<String,Collection<String>> authsMap = new HashMap<>();
+        authsMap.put("USERDN", Arrays.asList(authorization));
+        
+        QueryImpl qp = new QueryImpl();
+        qp.setQuery("someQuery");
+        qp.setQueryAuthorizations(authorization);
+        qp.setBeginDate(new Date());
+        qp.setEndDate(new Date());
+        qp.setExpirationDate(new Date());
+        qp.setQueryName(queryName);
+        qp.setUserDN(userDN);
+        qp.setDnList(Collections.singletonList(userDN));
+        
+        MultivaluedMap<String,String> map = qp.toMap();
+        map.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
+        map.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        map.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
+        map.putSingle(PrivateAuditConstants.USER_DN, userDN);
+        
+        // Set expectations
+        expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
+        this.transaction.begin();
+        expect(this.transaction.getStatus()).andReturn(Status.STATUS_ACTIVE).anyTimes();
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal);
+        expect(this.principal.getName()).andReturn(userName);
+        expect(this.principal.getShortName()).andReturn(sid);
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(authorization)));
+        expect(this.principal.getUserDN()).andReturn(userDNpair);
+        expect(this.cache.get(queryName)).andReturn(null);
+        expect(this.persister.findById(queryName)).andReturn(Arrays.asList((Query) this.query));
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
+        expect(this.query.getQueryAuthorizations()).andReturn(authorization).anyTimes();
+        expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
+        expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).anyTimes();
+        expect(this.exceptionHandler.getThrowable()).andReturn(null).anyTimes();
+        expect(this.query.getOwner()).andReturn(sid).anyTimes();
+        expect(this.query.getId()).andReturn(queryId).anyTimes();
+        expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
+        expect(this.cache.lock(queryName)).andReturn(true);
+        expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
+        expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
+        expect(this.query.toMap()).andReturn(map);
+        expect(this.query.getColumnVisibility()).andReturn(authorization);
+        this.query.populateMetric(anyObject(QueryMetric.class));
+        expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<>());
+        expect(this.auditor.audit(map)).andReturn(null);
+        expectLastCall().andThrow(new Exception("EXPECTED EXCEPTION IN AUDIT"));
+        cache.unlock(queryName);
+        transaction.commit();
+        expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
+        
+        // Run the test
+        PowerMock.replayAll();
+        
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
+        setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricsBean.class, metrics);
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        
+        subject.reset(queryName);
+        
+        PowerMock.verifyAll();
+    }
+    
+    @Test(expected = DatawaveWebApplicationException.class)
+    public void testUpdateQuery_auditException() throws Exception {
+        // Set local test input
+        UUID queryId = UUID.randomUUID();
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 9999);
+        int pageTimeout = 60;
+        int pagesize = 10;
+        Long maxResultsOverride = null;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String parameters = "invalidparam; valid:param";
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userDN";
+        Query duplicateQuery = PowerMock.createMock(Query.class);
+        
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
+        p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        p.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        p.putSingle(QueryParameters.QUERY_NAME, queryName);
+        p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
+        p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
+        p.putSingle(QueryParameters.QUERY_STRING, query);
+        p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
+        
+        p.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.LOCALONLY.name());
+        p.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        p.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        p.putSingle(PrivateAuditConstants.USER_DN, userDN);
+        
+        // Set expectations
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        expect(this.principal.getName()).andReturn(userName).times(2);
+        expect(this.principal.getShortName()).andReturn(userSid).times(2);
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations))).times(2);
+        expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
+        expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
+        expect(this.query.getOwner()).andReturn(userSid);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1).times(1);
+        expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName).times(1);
+        expect(this.query.duplicate(queryName)).andReturn(duplicateQuery);
+        duplicateQuery.setId(queryId);
+        duplicateQuery.setQueryLogicName(queryLogicName);
+        duplicateQuery.setQuery(query);
+        duplicateQuery.setBeginDate(beginDate);
+        duplicateQuery.setEndDate(endDate);
+        duplicateQuery.setQueryAuthorizations(queryAuthorizations);
+        duplicateQuery.setExpirationDate(expirationDate);
+        duplicateQuery.setPagesize(pagesize);
+        duplicateQuery.setPageTimeout(pageTimeout);
+        duplicateQuery.setParameters(isA(Set.class));
+        expect(duplicateQuery.toMap()).andReturn(p);
+        expect(duplicateQuery.getColumnVisibility()).andReturn(queryVisibility);
+        expect(duplicateQuery.getUserDN()).andReturn(userDN);
+        expect(this.query.getQueryName()).andReturn(queryName).times(2);
+        expect(this.query.getId()).andReturn(queryId);
+        expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
+        expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
+        
+        expect(this.auditor.audit(eq(p))).andThrow(new Exception("INTENTIONALLY THROWN EXCEPTION"));
+        
+        // Run the test
+        PowerMock.replayAll();
+        
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        
+        subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize,
+                        pageTimeout, maxResultsOverride, persistenceMode, parameters);
+        PowerMock.verifyAll();
     }
     
     public class TestQuery extends QueryImpl {
@@ -3162,6 +3822,12 @@ public class ExtendedQueryExecutorBeanTest {
         @Override
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
             // No op
+        }
+        
+        @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
         }
         
         @Override

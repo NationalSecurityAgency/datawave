@@ -1,18 +1,24 @@
 package datawave.security.login;
 
 import java.io.IOException;
+import java.security.Key;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.Principal;
 import java.security.acl.Group;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
+import javax.net.ssl.X509KeyManager;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -22,11 +28,17 @@ import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.auth.DatawaveCredential;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.JWTTokenHandler;
+import datawave.util.StringUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.logging.Logger;
 import org.jboss.security.JSSESecurityDomain;
@@ -48,13 +60,22 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
     private boolean datawaveVerifier;
     
     private boolean trustedHeaderLogin;
+    private boolean jwtHeaderLogin;
     
     private String blacklistUserRole = null;
+    
+    /**
+     * Required roles are a set of roles such that each entity in a proxy chain must have at least one of the required roles. If that is not the case, then the
+     * login module will ensure that none of the required roles are included in the response to getRoleSets.
+     */
+    private Set<String> requiredRoles = new HashSet<>();
     
     @Inject
     private DatawaveUserService datawaveUserService;
     @Inject
     private JSSESecurityDomain domain;
+    
+    private JWTTokenHandler jwtTokenHandler;
     
     private boolean trace;
     
@@ -84,7 +105,6 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     datawaveVerifier = true;
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
                 if (trace)
                     log.trace("Failed to create X509CertificateVerifier", e);
                 throw new IllegalArgumentException("Invalid verifier: " + option, e);
@@ -95,9 +115,39 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         if (option != null)
             trustedHeaderLogin = Boolean.valueOf(option);
         
+        option = (String) options.get("jwtHeaderLogin");
+        if (option != null)
+            jwtHeaderLogin = Boolean.valueOf(option);
+        
         blacklistUserRole = (String) options.get("blacklistUserRole");
         if (blacklistUserRole != null && "".equals(blacklistUserRole.trim()))
             blacklistUserRole = null;
+        
+        option = (String) options.get("requiredRoles");
+        if (option != null) {
+            requiredRoles.clear();
+            requiredRoles.addAll(Arrays.asList(StringUtils.split(option, ':', false)));
+        } else {
+            requiredRoles.add("AuthorizedUser");
+            requiredRoles.add("AuthorizedServer");
+            requiredRoles.add("AuthorizedQueryServer");
+        }
+        
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
+            mapper.registerModule(new GuavaModule());
+            mapper.registerModule(new JaxbAnnotationModule());
+            
+            String alias = domain.getKeyStore().aliases().nextElement();
+            X509KeyManager keyManager = (X509KeyManager) domain.getKeyManagers()[0];
+            X509Certificate[] certs = keyManager.getCertificateChain(alias);
+            Key signingKey = keyManager.getPrivateKey(alias);
+            
+            jwtTokenHandler = new JWTTokenHandler(certs[0], signingKey, 24, TimeUnit.HOURS, JWTTokenHandler.TtlMode.RELATIVE_TO_CURRENT_TIME, mapper);
+        } catch (KeyStoreException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
         
         if (trace)
             log.trace("exit: initialize(Subject, CallbackHandler, Map, Map)");
@@ -132,9 +182,14 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             Collection<String> cpRoleSets = principal.getPrimaryUser().getRoles();
             if (cpRoleSets != null) {
                 roles.addAll(cpRoleSets);
+                // We are requiring that at every entity in the call chain has at least one of the required roles.
+                // If any entity has none of them, then exclude all of the required roles from the computed final set.
+                if (principal.getProxiedUsers().stream().anyMatch(u -> Collections.disjoint(u.getRoles(), requiredRoles))) {
+                    roles.removeAll(requiredRoles);
+                }
             }
             StringBuilder buf = new StringBuilder("[" + roles.size() + "] Groups for " + targetUser + " {");
-            if (roles.size() > 0) {
+            if (!roles.isEmpty()) {
                 Group group = new SimpleGroup("Roles");
                 boolean first = true;
                 for (String r : roles)
@@ -337,18 +392,27 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             log.trace("identity = " + identity);
         if (identity == null) {
             
-            if (!trustedHeaderLogin) {
+            if (credential.getCertificate() != null || (!trustedHeaderLogin && !jwtHeaderLogin)) {
                 if (!validateCertificateCredential(credential)) {
                     log.debug("Bad credential for alias=" + credential.getUserName());
                     throw new FailedLoginException("Supplied Credential did not match existing credential for " + credential.getUserName());
                 }
             }
             
-            try {
-                identity = new DatawavePrincipal(datawaveUserService.lookup(credential.getEntities()));
-            } catch (Exception e) {
-                log.debug("Failing login due to EJB exception " + e.getMessage(), e);
-                throw new FailedLoginException("Unable to authenticate: " + e.getMessage());
+            if (!jwtHeaderLogin || credential.getJwtToken() == null) {
+                try {
+                    identity = new DatawavePrincipal(datawaveUserService.lookup(credential.getEntities()));
+                } catch (Exception e) {
+                    log.debug("Failing login due to datawave user service exception " + e.getMessage(), e);
+                    throw new FailedLoginException("Unable to authenticate: " + e.getMessage());
+                }
+            } else {
+                try {
+                    identity = new DatawavePrincipal(jwtTokenHandler.createUsersFromToken(credential.getJwtToken()));
+                } catch (Exception e) {
+                    log.debug("Failing login due to JWT token exception " + e.getMessage(), e);
+                    throw new FailedLoginException("Unable to authenticate: " + e.getMessage());
+                }
             }
         }
         if (getUseFirstPass()) {

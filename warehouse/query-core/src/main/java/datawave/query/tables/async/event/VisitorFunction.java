@@ -1,30 +1,10 @@
 package datawave.query.tables.async.event;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import com.beust.jcommander.internal.Maps;
-import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.util.StringUtils;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-
+import com.google.common.collect.Maps;
+import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.QueryOptions;
@@ -34,17 +14,34 @@ import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
-import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
+import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.RangeDefinition;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
+import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
@@ -59,6 +56,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     private ShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected Set<String> indexedFields;
+    protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
     
     Map<String,String> previouslyExpanded = Maps.newHashMap();
@@ -82,6 +80,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }
+        }
+        
+        try {
+            indexOnlyFields = this.metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
         }
         
         try {
@@ -125,46 +129,15 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     
                     String newQuery = evaluatedPreviously ? previouslyExpanded.get(query) : query;
                     
-                    if (config.getSerializeQueryIterator()) {
-                        serializeQuery(newIteratorSetting);
-                    } else {
-                        // only expand if we have non doc specific ranges.
-                        if (!RangeDefinition.allDocSpecific(input.getRanges())) {
-                            if (!evaluatedPreviously) {
-                                // if we have an hdfs cached base URI, then we can
-                                // pushdown large fielded lists to an ivarator
-                                if (config.getIvaratorFstHdfsBaseURIs() != null && config.getHdfsSiteConfigURLs() != null
-                                                && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
-                                    if (null == script)
-                                        script = JexlASTHelper.parseJexlQuery(query);
-                                    try {
-                                        script = pushdownLargeFieldedLists(config, script);
-                                        madeChange = true;
-                                    } catch (IOException ioe) {
-                                        log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
-                                    }
-                                }
-                            }
-                            
-                        } else {
-                            if (input.getRanges().size() == 1) {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Ensuring max pipelines is set to 1");
-                                    
-                                }
-                                serializeQuery(newIteratorSetting);
-                            }
-                        }
-                    }
-                    
                     List<String> debug = null;
                     if (log.isTraceEnabled())
                         debug = Lists.newArrayList();
-                    if (!config.bypassExecutabilityCheck() || !evaluatedPreviously) {
+                    if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
                         if (null == script)
                             script = JexlASTHelper.parseJexlQuery(query);
                         
-                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, nonEventFields, debug, this.metadataHelper)) {
+                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, debug,
+                                        this.metadataHelper)) {
                             
                             if (log.isTraceEnabled()) {
                                 log.trace("Need to pull up non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
@@ -173,11 +146,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 }
                                 DefaultQueryPlanner.logQuery(script, "Failing query:");
                             }
-                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, config, indexedFields, nonEventFields,
-                                            metadataHelper);
+                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, config, indexedFields, indexOnlyFields,
+                                            nonEventFields, metadataHelper);
                             madeChange = true;
                             
-                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, nonEventFields, false, debug, metadataHelper);
+                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, false, debug,
+                                            metadataHelper);
                             
                             /**
                              * We could achieve better performance if we live with the small number of queries that error due to the full table scan exception.
@@ -191,11 +165,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                         log.trace(debugStatement);
                                     }
                                 }
-                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, indexedFields, nonEventFields,
-                                                metadataHelper);
+                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, indexedFields, indexOnlyFields,
+                                                nonEventFields, metadataHelper);
                             }
                             
-                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, nonEventFields, false, debug, metadataHelper);
+                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, false, debug,
+                                            metadataHelper);
                             
                             if (state != STATE.EXECUTABLE) {
                                 if (state == STATE.ERROR) {
@@ -226,15 +201,51 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 DefaultQueryPlanner.logQuery(script, "Query pushing down large fielded lists:");
                             }
                         }
-                        // only recompile the script if changes were made to the query
-                        newQuery = madeChange ? JexlStringBuildingVisitor.buildQuery(script) : query;
-                        previouslyExpanded.put(query, newQuery);
-                        
                     }
+                    
+                    if (config.getSerializeQueryIterator()) {
+                        serializeQuery(newIteratorSetting);
+                    } else {
+                        // only expand if we have non doc specific ranges.
+                        if (!RangeDefinition.allDocSpecific(input.getRanges())) {
+                            if (!evaluatedPreviously) {
+                                // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
+                                if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
+                                    if (null == script)
+                                        script = JexlASTHelper.parseJexlQuery(query);
+                                    try {
+                                        script = pushdownLargeFieldedLists(config, script);
+                                        madeChange = true;
+                                    } catch (IOException ioe) {
+                                        log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
+                                    }
+                                }
+                            }
+                            
+                        } else {
+                            if (input.getRanges().size() == 1) {
+                                if (log.isTraceEnabled()) {
+                                    log.trace("Ensuring max pipelines is set to 1");
+                                    
+                                }
+                                serializeQuery(newIteratorSetting);
+                            }
+                        }
+                    }
+                    
+                    // only recompile the script if changes were made to the query
+                    if (madeChange)
+                        newQuery = JexlStringBuildingVisitor.buildQuery(script);
+                    
+                    previouslyExpanded.put(query, newQuery);
+                    
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
                     newOptions.addScanIterator(newIteratorSetting);
                     
+                    if (log.isDebugEnabled()) {
+                        log.debug("VisitorFunction result: " + newSettings.getRanges() + " -> " + newQuery);
+                    }
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
                 }
@@ -267,18 +278,29 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected ASTJexlScript pushdownLargeFieldedLists(ShardQueryConfiguration config, ASTJexlScript queryTree) throws IOException {
         Query settings = config.getQuery();
         
-        URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
-        
-        FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
-        // Find large lists of values against the same field and push down into
-        // an Ivarator
-        return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
+        if (config.canHandleExceededValueThreshold()) {
+            URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
+            
+            if (hdfsQueryCacheUri != null) {
+                FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
+                // Find large lists of values against the same field and push down into
+                // an Ivarator
+                return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
+            } else {
+                return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, null, null);
+            }
+        } else {
+            return queryTree;
+        }
     }
     
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
-        String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
-        int index = new Random().nextInt(choices.length);
-        Path path = new Path(choices[index], settings.getId().toString());
-        return path.toUri();
+        if (config.getIvaratorFstHdfsBaseURIs() != null) {
+            String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
+            int index = new Random().nextInt(choices.length);
+            Path path = new Path(choices[index], settings.getId().toString());
+            return path.toUri();
+        }
+        return null;
     }
 }

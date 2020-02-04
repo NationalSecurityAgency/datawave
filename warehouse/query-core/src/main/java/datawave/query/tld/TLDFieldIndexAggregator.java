@@ -4,7 +4,7 @@ import static datawave.query.tld.TLD.parsePointerFromFI;
 import static datawave.query.tld.TLD.parseRootPointerFromFI;
 
 import java.io.IOException;
-import java.util.Collection;
+
 import java.util.Set;
 
 import datawave.marking.ColumnVisibilityCache;
@@ -20,7 +20,6 @@ import datawave.query.jexl.functions.SeekingAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
@@ -51,7 +50,8 @@ public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldI
             String value = key.getColumnQualifier().toString();
             value = value.substring(0, value.indexOf('\0'));
             Attribute<?> attr = af.create(field, value, key, true);
-            // only keep fields that are index only and pass the attribute filter
+            // in addition to keeping fields that the filter indicates should be kept, also keep fields that the filter applies. This is due to inconsistent
+            // behavior between event/tld queries where an index only field index will be kept except when it is a child of a tld
             attr.setToKeep((fieldsToAggregate == null || fieldsToAggregate.contains(JexlASTHelper.removeGroupingContext(field)))
                             && (attrFilter == null || attrFilter.keep(key)));
             d.put(field, attr);

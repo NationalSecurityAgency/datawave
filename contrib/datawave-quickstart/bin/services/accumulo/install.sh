@@ -7,7 +7,6 @@ BIN_DIR="$( dirname "${SERVICES_DIR}" )"
 
 source "${BIN_DIR}/env.sh"
 source "${THIS_DIR}/bootstrap.sh"
-source "${SERVICES_DIR}/java/bootstrap.sh"
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 
 hadoopIsInstalled || fatal "Accumulo requires that Hadoop be installed"
@@ -82,8 +81,8 @@ if ! zookeeperIsRunning ; then
 fi
 
 # Create VFS classpath directories
-if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ]; then
-   ${HADOOP_HOME}/bin/hdfs dfs -mkdir "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}"
+if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ] && [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
+   ${HADOOP_HOME}/bin/hdfs dfs -mkdir -p "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}"
 fi
 
 # Initialize Accumulo

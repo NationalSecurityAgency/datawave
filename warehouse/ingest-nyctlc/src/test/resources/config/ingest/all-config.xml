@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+<!-- Marker property to indicate that we've supplied configuration for the "ALL" type
+     and the event mapper will pick this up and configure the default type handlers
+     for the "ALL" data type. -->
+<property>
+	<name>all.use.default.type.handlers</name>
+	<value>true</value>
+</property>
+
+<property>
+	<name>all.ingest.helper.class</name>
+	<value></value>
+</property>
+
+<property>
+	<name>all.reader.class</name>
+	<value></value>
+</property>
+
+<property>
+    <name>all.data.category.marking.upstream.error</name>
+    <value>SOMEDOMAIN=SOMEMARKING</value>
+    <description>If any data comes into the system already tagged with this security marking, then consider it an upstream error which is considered fatal in this system</description>
+</property>
+
+<property>
+	<name>all.handler.classes</name>
+	<value></value>
+</property>
+
+<property>
+    <name>all.filter.classes</name>
+    <value></value>
+    <description>This is the chain of context writers that will receive the output of all handlers and higher prioriy content writers</description>
+</property>
+
+<property>
+    <name>all.filter.priority</name>
+    <value>50</value>
+    <description> This is the priority of this context writer chain</description>
+</property>
+
+<property>
+  <name>all.data.combine.separator</name>
+  <value>:</value>
+  <description>Output separator for Virtual Fields</description>
+</property>
+
+<!-- Set up the default policy enforcer class here, this will be used system wide -->
+<!-- This can be overridden on a type by type basis in each individual datatype's config file-->
+<property>
+    <name>all.ingest.policy.enforcer.class</name>
+    <value>datawave.policy.IngestPolicyEnforcer$DefaultIngestPolicyEnforcer</value>
+    <description>Name of the class to use for policy enforcement</description>
+</property>
+
+<property>
+        <name>all.date.index.type.to.field.map</name>
+        <value>LOADED=LOAD_DATE</value>
+</property>
+
+</configuration>

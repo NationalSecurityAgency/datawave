@@ -35,8 +35,8 @@ public class PipelinePool {
     public PipelinePool(int maxPipelines, QuerySpanCollector querySpanCollector, QueryIterator sourceIterator,
                     SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env) {
         this.maxPipelines = maxPipelines;
-        this.checkedOut = new HashSet<Pipeline>(maxPipelines);
-        this.checkedIn = new ArrayList<Pipeline>(maxPipelines);
+        this.checkedOut = new HashSet<>(maxPipelines);
+        this.checkedIn = new ArrayList<>(maxPipelines);
         this.querySpanCollector = querySpanCollector;
         this.sourceIterator = sourceIterator;
         this.sourceForDeepCopy = sourceForDeepCopy;

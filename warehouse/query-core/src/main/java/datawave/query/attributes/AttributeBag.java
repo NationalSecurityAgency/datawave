@@ -10,7 +10,7 @@ import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
 
 public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T> implements Serializable {
     

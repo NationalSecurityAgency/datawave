@@ -2,10 +2,9 @@ package datawave.query.util;
 
 import java.util.ArrayList;
 
-import javax.annotation.PostConstruct;
-
 import datawave.webservice.common.cache.SharedCacheCoordinator;
 
+import org.apache.accumulo.core.client.Connector;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;
@@ -23,26 +22,14 @@ public class MetadataHelperCacheManagementListener {
     
     private static final Logger log = Logger.getLogger(MetadataHelperCacheManagementListener.class);
     
-    private String zookeepers;
-    private MetadataHelper metadataHelper;
-    private String[] metadataTableNames;
-    private ArrayList<SharedCacheCoordinator> cacheCoordinators;
+    private final String zookeepers;
+    private final MetadataCacheManager metadataCacheManager;
+    private final ArrayList<SharedCacheCoordinator> cacheCoordinators;
     
-    public void setZookeepers(String zookeepers) {
+    public MetadataHelperCacheManagementListener(String zookeepers, MetadataCacheManager metadataCacheManager, String[] metadataTableNames) {
         this.zookeepers = zookeepers;
-    }
-    
-    public void setMetadataHelper(MetadataHelper metadataHelper) {
-        this.metadataHelper = metadataHelper;
-    }
-    
-    public void setMetadataTableNames(String[] metadataTableNames) {
+        this.metadataCacheManager = metadataCacheManager;
         
-        this.metadataTableNames = metadataTableNames;
-        registerCacheListeners();
-    }
-    
-    private void registerCacheListeners() {
         cacheCoordinators = new ArrayList<>(metadataTableNames.length);
         for (String metadataTableName : metadataTableNames) {
             SharedCacheCoordinator watcher = registerCacheListener(metadataTableName);
@@ -84,7 +71,7 @@ public class MetadataHelperCacheManagementListener {
                     }
                     if (!watcher.checkCounter(metadataTableName, newCount)) {
                         log.debug("will evictCaches for " + metadataTableName);
-                        metadataHelper.evictCaches();
+                        metadataCacheManager.evictCaches();
                     } else {
                         log.debug("did not evictCaches for " + metadataTableName);
                     }

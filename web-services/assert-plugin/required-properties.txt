@@ -33,6 +33,7 @@ jboss.jmx.password, Admin Console and JMX Console username -- SET IN PRIVATE MAV
 jboss.jmx.username, Admin Console and JMX Console user password
 jboss.jvm.heap.size, jvm heap size to use, will be set in bin/run.conf
 jboss.cms.initiating.occupancy.fraction, start a garbage collection if the tenured generation exceeds this fraction, jvm default is 92, datawave uses 75
+jboss.managed.executor.service.default.max.threads, maximum number of threads to be used for the managed executor service
 jboss.mdb.pool.max.size, maximum number of Message Driven Bean instances in each pool
 jboss.mdb.pool.timeout, Timeout (ms) before throwing an exception when waiting to get a Message Driven Bean instance from the pool
 jboss.partition.name, name of the JBoss cluster
@@ -70,19 +71,15 @@ server.dn,
 server.keystore.password, SET IN PRIVATE MAVEN SETTINGS
 server.truststore.password,
 table.name.edge,
-table.name.knowledge.metadata,
-table.name.knowledge.shard,
-table.name.knowledge.shardIndex,
-table.name.knowledge.shardReverseIndex,
 table.name.metadata,
 table.name.shard,
 table.name.shardIndex,
 table.name.shardReverseIndex,
-table.name.date.index,
-table.name.error.metadata,
-table.name.error.shard,
-table.name.error.shardIndex,
-table.name.error.shardReverseIndex,
+table.name.dateIndex,
+table.name.errors.metadata,
+table.name.errors.shard,
+table.name.errors.shardIndex,
+table.name.errors.shardReverseIndex,
 webapp.transport.guarantee, CONFIDENTIAL for SSL or empty for non-SSL
 trusted.header.login, true or false (true = expect subject and issuer DNs of the user to appear in request headers, false = normal SSL connection)
 zookeeper.hosts, list of ZOOKEEPER hosts for the Accumulo instance
@@ -102,3 +99,5 @@ hdfs.site.config.urls, For Ivarator, should be file:///etc/hadoop/conf/core-site
 id.translation.return.fields, fields returned by IdTranslator endpoint
 querymetrics.policy.enforcer.class, Needed for ingesting querymetrics since the all-config.xml filtered file does not get loaded.  See QueryMetrics.xml
 query.tokenized.fields, Needed for configuring a list of fields which gets tokenizers applied during query.    See QueryLogicFactory.xml
+wildfly.io.worker.default.io-threads, Number of threads to use for selecting I/O
+wildfly.io.worker.default.task-max-threads, Number of threads to use for servicing wildfly connections

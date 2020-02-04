@@ -79,8 +79,8 @@ import datawave.marking.SecurityMarking;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditBean;
-import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
@@ -129,7 +129,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.commons.lang.StringUtils;
@@ -172,7 +172,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class CachedResultsBean {
     
-    static private Logger log = Logger.getLogger(CachedResultsBean.class);
+    private static Logger log = Logger.getLogger(CachedResultsBean.class);
     
     @Resource
     private EJBContext ctx;
@@ -221,9 +221,6 @@ public class CachedResultsBean {
     private CachedResultsQueryCache cachedRunningQueryCache;
     
     @Inject
-    private AuditParameters auditParameters;
-    
-    @Inject
     private SecurityMarking marking;
     
     @Inject
@@ -246,8 +243,8 @@ public class CachedResultsBean {
     
     private static final String IMPORT_FILE = "replication_scripts/import.sh";
     
-    private static Map<String,RunningQuery> loadingQueryMap = Collections.synchronizedMap(new HashMap<String,RunningQuery>());
-    private static Set<String> loadingQueries = Collections.synchronizedSet(new HashSet<String>());
+    private static Map<String,RunningQuery> loadingQueryMap = Collections.synchronizedMap(new HashMap<>());
+    private static Set<String> loadingQueries = Collections.synchronizedSet(new HashSet<>());
     private URL importFileUrl = null;
     private CachedResultsParameters cp = new CachedResultsParameters();
     
@@ -273,8 +270,7 @@ public class CachedResultsBean {
         CachedRunningQuery.setResponseObjectFactory(responseObjectFactory);
         
         String template = null;
-        try (Connection con = ds.getConnection()) {
-            Statement s = con.createStatement();
+        try (Connection con = ds.getConnection(); Statement s = con.createStatement()) {
             template = cachedResultsConfiguration.getParameters().get("TEMPLATE_TABLE");
             s.execute(template);
         } catch (SQLException sqle) {
@@ -405,7 +401,7 @@ public class CachedResultsBean {
                 
                 queryMetric = rq.getMetric().duplicate();
                 // clear page times
-                queryMetric.setPageTimes(new ArrayList<QueryMetric.PageMetric>());
+                queryMetric.setPageTimes(new ArrayList<>());
                 // will throw IllegalArgumentException if not defined
                 logic = rq.getLogic();
                 // need to clone the logic here because the QueryExpirationBean will call close on
@@ -458,18 +454,19 @@ public class CachedResultsBean {
                 try {
                     MultivaluedMap<String,String> queryMap = q.toMap();
                     marking.validate(queryMap);
-                    queryMap.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, marking.toColumnVisibilityString());
-                    queryMap.putSingle(AuditParameters.QUERY_AUDIT_TYPE, auditType.toString());
-                    queryMap.putSingle(AuditParameters.USER_DN, q.getUserDN());
-                    queryMap.putSingle("logicClass", logic.getLogicName());
-                    auditParameters.clear();
-                    auditParameters.validate(queryMap);
+                    queryMap.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                    queryMap.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                    queryMap.putSingle(PrivateAuditConstants.USER_DN, q.getUserDN());
+                    queryMap.putSingle(PrivateAuditConstants.LOGIC_CLASS, logic.getLogicName());
                     try {
-                        auditParameters.setSelectors(logic.getSelectors(q));
+                        List<String> selectors = logic.getSelectors(q);
+                        if (selectors != null && !selectors.isEmpty()) {
+                            queryMap.put(PrivateAuditConstants.SELECTORS, selectors);
+                        }
                     } catch (Exception e) {
                         log.error(e.getMessage());
                     }
-                    auditor.audit(auditParameters);
+                    auditor.audit(queryMap);
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
                     log.error(qe);
@@ -550,7 +547,7 @@ public class CachedResultsBean {
                     if (nextSpan != null)
                         nextSpan.stop();
                 }
-                if (results.getResults().size() == 0) {
+                if (results.getResults().isEmpty()) {
                     go = false;
                     break;
                 }
@@ -562,8 +559,7 @@ public class CachedResultsBean {
                     
                     for (CacheableQueryRow cacheableQueryObject : cacheableQueryRowList) {
                         
-                        CacheableQueryRow cqo = (CacheableQueryRow) cacheableQueryObject;
-                        Collection<String> values = cqo.getColumnValues().values();
+                        Collection<String> values = ((CacheableQueryRow) cacheableQueryObject).getColumnValues().values();
                         int maxValueLength = 0;
                         for (String s : values) {
                             if (s.length() > maxValueLength) {
@@ -583,7 +579,7 @@ public class CachedResultsBean {
                         SQLException loadBatchException = null; // exception;
                         while (dataWritten == false && attempt < 10) {
                             try {
-                                loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, cqo, maxLength);
+                                loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, cacheableQueryObject, maxLength);
                                 dataWritten = true;
                                 rowsWritten++;
                             } catch (SQLException e) {
@@ -601,7 +597,8 @@ public class CachedResultsBean {
                         
                         if (dataWritten == false) {
                             String message = (loadBatchException == null) ? "unknown" : loadBatchException.getMessage();
-                            log.error("Batch write FAILED - last exception = " + message + "record = " + cqo.getColumnValues().entrySet().toString(),
+                            
+                            log.error("Batch write FAILED - last exception = " + message + "record = " + cacheableQueryObject.getColumnValues().entrySet(),
                                             loadBatchException);
                         } else if (rowsWritten >= rowsPerBatch) {
                             persistBatch(ps);
@@ -641,7 +638,7 @@ public class CachedResultsBean {
             crq.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);
             
             response.setResult(viewName);
-            if (fieldMap.size() == 0) {
+            if (fieldMap.isEmpty()) {
                 throw new NoResultsQueryException("Field map is empty.", "204-4");
             } else {
                 return response;
@@ -1038,6 +1035,8 @@ public class CachedResultsBean {
         return response;
     }
     
+    // Do not use the @Asynchronous annotation here. This method runs (calling the other version), setting
+    // status and then executes loadAndCreate asynchronously. It does not itself get run asynchronously.
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public Future<CachedResultsResponse> loadAndCreateAsync(@Required("newQueryId") String newQueryId, String alias, @Required("queryId") String queryId,
                     @Required("fields") String fields, String conditions, String grouping, String order, @Required("columnVisibility") String columnVisibility,
@@ -1058,7 +1057,8 @@ public class CachedResultsBean {
         return loadAndCreateAsync(queryParameters);
     }
     
-    @Asynchronous
+    // Do not use the @Asynchronous annotation here. This method runs, setting status and
+    // then executes loadAndCreate asynchronously. It does not itself get run asynchronously.
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public Future<CachedResultsResponse> loadAndCreateAsync(MultivaluedMap<String,String> queryParameters) {
         
@@ -1307,16 +1307,15 @@ public class CachedResultsBean {
                 auditMessage.append(", secondary query: ").append(sqlQuery);
                 MultivaluedMap<String,String> params = query.toMap();
                 marking.validate(params);
-                params.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, marking.toColumnVisibilityString());
-                params.putSingle(AuditParameters.QUERY_AUDIT_TYPE, auditType.toString());
-                params.putSingle(AuditParameters.USER_DN, query.getUserDN());
-                params.putSingle("logicClass", crq.getQueryLogic().getLogicName());
+                PrivateAuditConstants.stripPrivateParameters(queryParameters);
+                params.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                params.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                params.putSingle(PrivateAuditConstants.USER_DN, query.getUserDN());
+                params.putSingle(PrivateAuditConstants.LOGIC_CLASS, crq.getQueryLogic().getLogicName());
                 params.remove(QueryParameters.QUERY_STRING);
                 params.putSingle(QueryParameters.QUERY_STRING, auditMessage.toString());
                 params.putAll(queryParameters);
-                auditParameters.clear();
-                auditParameters.validate(params);
-                auditor.audit(auditParameters);
+                auditor.audit(params);
             }
             
             response.setOriginalQueryId(originalQueryId);
@@ -1351,7 +1350,7 @@ public class CachedResultsBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
-            closeCrqConnection(crq);
+            crq.closeConnection(log);
             // Push metrics
             if (crq != null && crq.getQueryLogic().getCollectQueryMetrics() == true) {
                 try {
@@ -1467,7 +1466,7 @@ public class CachedResultsBean {
                     } finally {
                         // only close connection if the crq changed, because we expect additional actions
                         if (updated) {
-                            closeCrqConnection(crq);
+                            crq.closeConnection(log);
                         }
                     }
                 }
@@ -1563,7 +1562,7 @@ public class CachedResultsBean {
                         long pageNum = crq.getLastPageNumber();
                         response = crq.getTransformer().createResponse(resultList);
                         Status status = null;
-                        if (resultList.getResults().size() > 0) {
+                        if (!resultList.getResults().isEmpty()) {
                             response.setHasResults(true);
                             status = Status.OK;
                         } else {
@@ -1660,7 +1659,7 @@ public class CachedResultsBean {
                 synchronized (crq) {
                     
                     if (crq.isActivated() == true) {
-                        closeCrqConnection(crq);
+                        crq.closeConnection(log);
                     }
                     
                     Connection connection = ds.getConnection();
@@ -1774,7 +1773,7 @@ public class CachedResultsBean {
                         long pageNum = crq.getLastPageNumber();
                         response = crq.getTransformer().createResponse(resultList);
                         Status status = null;
-                        if (resultList.getResults().size() > 0) {
+                        if (!resultList.getResults().isEmpty()) {
                             response.setHasResults(true);
                             status = Status.OK;
                         } else {
@@ -1913,7 +1912,7 @@ public class CachedResultsBean {
                         ResultsPage resultList = crq.getRows(rowBegin, rowEnd, cachedResultsConfiguration.getPageByteTrigger());
                         response = crq.getTransformer().createResponse(resultList);
                         Status status;
-                        if (resultList.getResults().size() > 0) {
+                        if (!resultList.getResults().isEmpty()) {
                             response.setHasResults(true);
                             status = Status.OK;
                         } else {
@@ -1939,7 +1938,7 @@ public class CachedResultsBean {
                         log.error(e.getMessage(), e);
                         throw e;
                     } finally {
-                        closeCrqConnection(crq);
+                        crq.closeConnection(log);
                     }
                 }
             } finally {
@@ -2132,7 +2131,7 @@ public class CachedResultsBean {
             }
             if (crq.isActivated()) {
                 synchronized (crq) {
-                    closeCrqConnection(crq);
+                    crq.closeConnection(log);
                 }
                 crq.getMetric().setLifecycle(QueryMetric.Lifecycle.CLOSED);
                 if (crq.getQueryLogic().getCollectQueryMetrics() == true) {
@@ -2158,7 +2157,7 @@ public class CachedResultsBean {
         }
         
         if (log.isTraceEnabled()) {
-            log.trace(owner + " has authorizations " + cbAuths.toString());
+            log.trace(owner + " has authorizations " + cbAuths);
         }
         
         RunningQuery query = runningQueryCache.get(id);
@@ -2280,7 +2279,7 @@ public class CachedResultsBean {
     public void persist(CachedRunningQuery crq, String owner) {
         
         synchronized (this) {
-            log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to cache with status " + crq.getStatus().toString());
+            log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to cache with status " + crq.getStatus());
             this.cachedRunningQueryCache.remove(owner + "-" + crq.getQueryId());
             this.cachedRunningQueryCache.remove(owner + "-" + crq.getAlias());
             this.cachedRunningQueryCache.remove(owner + "-" + crq.getView());
@@ -2288,7 +2287,7 @@ public class CachedResultsBean {
             this.cachedRunningQueryCache.put(owner + "-" + crq.getQueryId(), crq);
             this.cachedRunningQueryCache.put(owner + "-" + crq.getAlias(), crq);
             this.cachedRunningQueryCache.put(owner + "-" + crq.getView(), crq);
-            log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to database with status " + crq.getStatus().toString());
+            log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to database with status " + crq.getStatus());
             crq.saveToDatabase(ctx.getCallerPrincipal(), metricFactory);
         }
         
@@ -2303,7 +2302,7 @@ public class CachedResultsBean {
                 log.debug("retrieving cachedRunningQuery " + id + " from cache");
                 crq = this.cachedRunningQueryCache.get(owner + "-" + id);
                 if (crq != null) {
-                    log.debug("retrieved cachedRunningQuery " + id + " from cache with status " + crq.getStatus().toString());
+                    log.debug("retrieved cachedRunningQuery " + id + " from cache with status " + crq.getStatus());
                 }
             } catch (Exception e) {
                 log.error("Caught attempting to retrieve cached results from infinispan cache: " + e.getMessage(), e);
@@ -2317,7 +2316,7 @@ public class CachedResultsBean {
                     log.debug("retrieving cachedRunningQuery " + id + " from database");
                     crq = CachedRunningQuery.retrieveFromDatabase(id, ctx.getCallerPrincipal(), metricFactory);
                     if (crq != null) {
-                        log.debug("retrieved cachedRunningQuery " + id + " from database with status " + crq.getStatus().toString());
+                        log.debug("retrieved cachedRunningQuery " + id + " from database with status " + crq.getStatus());
                         this.cachedRunningQueryCache.put(owner + "-" + id, crq);
                     }
                 } catch (Exception e) {
@@ -2342,12 +2341,12 @@ public class CachedResultsBean {
                     Path crPath = new Path(hdfsDir);
                     Path userPath = new Path(crPath, owner);
                     if (log.isDebugEnabled())
-                        log.debug("Looking for exported cached for " + id + " results in: " + userPath.toString());
+                        log.debug("Looking for exported cached for " + id + " results in: " + userPath);
                     if (fs.exists(userPath)) {
                         // Find any directory that contains the id as a .alias, .view, or .queryId file
                         ArrayList<FileStatus> list = new ArrayList<>();
                         recursiveList(fs, userPath, id, list);
-                        if (null != list && list.size() > 0) {
+                        if (null != list && !list.isEmpty()) {
                             for (FileStatus f : list) {
                                 // Get the parent of the matching file, this will be the directory that contains
                                 // the table dump
@@ -2360,43 +2359,36 @@ public class CachedResultsBean {
                                 InputStream stderr = process.getErrorStream();
                                 final BufferedReader errReader = new BufferedReader(new InputStreamReader(stderr));
                                 try {
-                                    Thread outReadThread = new Thread() {
-                                        @Override
-                                        public void run() {
-                                            try {
-                                                String line = outReader.readLine();
-                                                while (line != null) {
-                                                    log.info(line);
-                                                    line = outReader.readLine();
-                                                }
-                                            } catch (IOException e) {
-                                                log.error("Error in readThread", e);
+                                    Thread outReadThread = new Thread(() -> {
+                                        try {
+                                            String line = outReader.readLine();
+                                            while (line != null) {
+                                                log.info(line);
+                                                line = outReader.readLine();
                                             }
+                                        } catch (IOException e) {
+                                            log.error("Error in readThread", e);
                                         }
-                                    };
-                                    Thread errReadThread = new Thread() {
-                                        @Override
-                                        public void run() {
-                                            try {
-                                                String line = errReader.readLine();
-                                                while (line != null) {
-                                                    log.error(line);
-                                                    line = errReader.readLine();
-                                                }
-                                            } catch (IOException e) {
-                                                log.error("Error in readThread", e);
+                                    });
+                                    Thread errReadThread = new Thread(() -> {
+                                        try {
+                                            String line = errReader.readLine();
+                                            while (line != null) {
+                                                log.error(line);
+                                                line = errReader.readLine();
                                             }
+                                        } catch (IOException e) {
+                                            log.error("Error in readThread", e);
                                         }
-                                    };
+                                    });
                                     outReadThread.setName(id + "-StdOutReadThread");
                                     outReadThread.start();
                                     errReadThread.setName(id + "-StdErrReadThread");
                                     errReadThread.start();
-                                    log.info("Importing cached results from: " + tableDirectory.toString());
+                                    log.info("Importing cached results from: " + tableDirectory);
                                     int exitVal = process.waitFor();
                                     if (0 != exitVal) {
-                                        throw new IOException("Error importing cached results data from: " + tableDirectory.toString() + ". Exit value: "
-                                                        + exitVal);
+                                        throw new IOException("Error importing cached results data from: " + tableDirectory + ". Exit value: " + exitVal);
                                     }
                                     outReadThread.join();
                                     errReadThread.join();
@@ -2461,7 +2453,7 @@ public class CachedResultsBean {
         CachedRunningQuery crq = null;
         
         synchronized (CachedResultsBean.class) {
-            log.debug("persisting cachedRunningQuery " + queryId + " to cache with status " + status.toString());
+            log.debug("persisting cachedRunningQuery " + queryId + " to cache with status " + status);
             if (useCache) {
                 crq = retrieve(queryId, owner);
             }
@@ -2479,22 +2471,9 @@ public class CachedResultsBean {
                 this.cachedRunningQueryCache.put(owner + "-" + crq.getView(), crq);
             }
             
-            log.debug("persisting cachedRunningQuery " + queryId + " to database with status " + status.toString());
+            log.debug("persisting cachedRunningQuery " + queryId + " to database with status " + status);
             CachedRunningQuery.saveToDatabaseByQueryId(queryId, alias, owner, status, statusMessage);
         }
-    }
-    
-    public static void closeCrqConnection(CachedRunningQuery crq) {
-        
-        if (log.isTraceEnabled()) {
-            log.trace("closing connections for query " + crq.getQueryId());
-        }
-        
-        Connection connection = crq.getConnection();
-        Statement statement = crq.getStatement();
-        CachedRowSet crs = crq.getCrs();
-        crq.resetConnection();
-        DbUtils.closeQuietly(connection, statement, crs);
     }
     
     protected boolean createView(String tableName, String viewName, Connection con, boolean viewCreated, Map<String,Integer> fieldMap) throws SQLException {
@@ -2513,18 +2492,18 @@ public class CachedResultsBean {
         StringBuilder view = new StringBuilder();
         try {
             view.append("CREATE VIEW ").append(viewName).append("(");
-            view.append(viewCols.toString());
-            view.append(") AS SELECT ").append(tableCols.toString());
+            view.append(viewCols);
+            view.append(") AS SELECT ").append(tableCols);
             view.append(" FROM ").append(tableName);
             if (log.isTraceEnabled()) {
                 log.trace("Creating view using sql: " + view);
             }
-            Statement viewStmt = con.createStatement();
-            viewStmt.execute(view.toString());
-            viewStmt.close();
+            try (Statement viewStmt = con.createStatement()) {
+                viewStmt.execute(view.toString());
+            }
             viewCreated = true;
         } catch (SQLException e) {
-            log.error("Error creating view with sql: " + view.toString(), e);
+            log.error("Error creating view with sql: " + view, e);
             throw e;
         }
         return viewCreated;

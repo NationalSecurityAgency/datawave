@@ -1,5 +1,26 @@
 package datawave.webservice.results.cached;
 
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.AbstractRunningQuery;
+import datawave.webservice.query.cache.QueryMetricFactory;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.cachedresults.CacheableLogic;
+import datawave.webservice.query.cachedresults.CacheableQueryRow;
+import datawave.webservice.query.cachedresults.CacheableQueryRowReader;
+import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import org.apache.commons.dbutils.DbUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.sql.DataSource;
+import javax.sql.rowset.CachedRowSet;
+import javax.sql.rowset.RowSetProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -22,40 +43,16 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
-import javax.sql.DataSource;
-import javax.sql.rowset.CachedRowSet;
-import javax.sql.rowset.RowSetProvider;
-
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cachedresults.CacheableLogic;
-import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.cachedresults.CacheableQueryRowReader;
-import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-
 @SuppressWarnings("restriction")
 public class CachedRunningQuery extends AbstractRunningQuery {
     
     private static Logger log = Logger.getLogger(CachedRunningQuery.class);
     
-    static private DataSource datasource = null;
+    private static DataSource datasource = null;
     
     private static final long serialVersionUID = 1L;
     
-    static private ResponseObjectFactory responseObjectFactory;
+    private static ResponseObjectFactory responseObjectFactory;
     private transient Connection connection = null;
     private transient CachedRowSet crs = null;
     private transient Statement statement = null;
@@ -73,7 +70,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     };
     
     private transient position currentRow = position.BEFORE_FIRST;
-    static private QueryLogicFactory queryFactory = null;
+    private static QueryLogicFactory queryFactory = null;
     
     // fields below are persisted
     
@@ -103,8 +100,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     
     private boolean shouldAutoActivate = false;
     
-    static private List<String> reserved = new ArrayList<>();
-    static private Set<String> allowedFunctions = new HashSet<>();
+    private static List<String> reserved = new ArrayList<>();
+    private static Set<String> allowedFunctions = new HashSet<>();
     private static final String BACKTICK = "`";
     private static final String SPACE = " ";
     private static final String LPAREN = "(";
@@ -116,7 +113,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     
     private static final String DEFAULT_ORDER_BY = " ORDER BY _eventId_";
     
-    static private String createCrqTable = "CREATE TABLE IF NOT EXISTS cachedResultsQuery (" + "queryId VARCHAR(100) NOT NULL," + "alias VARCHAR(100),"
+    private static String createCrqTable = "CREATE TABLE IF NOT EXISTS cachedResultsQuery (" + "queryId VARCHAR(100) NOT NULL," + "alias VARCHAR(100),"
                     + "lastUpdate TIMESTAMP," + "pagesize LONG," + "user VARCHAR(50) NOT NULL," + "view VARCHAR(200)," + "tableName VARCHAR(200),"
                     + "status VARCHAR(20) NOT NULL," + "statusMessage VARCHAR(1000) NOT NULL," + "fields LONGTEXT," + "conditions LONGTEXT,"
                     + "grouping LONGTEXT," + "orderBy LONGTEXT," + "variableFields LONGTEXT," + "originalQuery LONGTEXT," + "originalQueryBegin TIMESTAMP,"
@@ -124,20 +121,20 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     + "originalQueryName VARCHAR(200)," + "originalQueryUserDn VARCHAR(200)," + "originalQueryId VARCHAR(200)," + "originalQueryPageSize LONG,"
                     + "fixedFieldsInEvent VARCHAR(2000)," + "optionalQueryParameters BLOB," + "UNIQUE (queryId))";
     
-    static private String insertCrqTable = "INSERT INTO cachedResultsQuery ("
+    private static String insertCrqTable = "INSERT INTO cachedResultsQuery ("
                     + "queryId, alias, lastUpdate, pagesize, user, view, tableName, status, statusMessage, fields, "
                     + "conditions, grouping, orderBy, variableFields, originalQuery, " + "originalQueryBegin, originalQueryEnd, originalQueryAuths, "
                     + "originalQueryLogicName, originalQueryName, "
                     + "originalQueryUserDn, originalQueryId, originalQueryPageSize, fixedFieldsInEvent, optionalQueryParameters) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
-    static private String updateCrqTable = "UPDATE cachedResultsQuery SET "
+    private static String updateCrqTable = "UPDATE cachedResultsQuery SET "
                     + "queryId=?, alias=?, lastUpdate=?, pagesize=?, user=?, view=?, tableName=?, status=?, statusMessage=?, fields=?, conditions=?, "
                     + "grouping=?, orderBy=?, variableFields=?, originalQuery=?, originalQueryBegin=?, originalQueryEnd=?, "
                     + "originalQueryAuths=?, originalQueryLogicName=?, originalQueryName=?, "
                     + "originalQueryUserDn=?, originalQueryId=?, originalQueryPageSize=?, fixedFieldsInEvent=?, optionalQueryParameters=? WHERE queryId=?";
     
-    static private String updateSatusCrqTable = "INSERT INTO cachedResultsQuery (queryId, alias, user, status, statusMessage)  " + "VALUES (?, ?, ?, ?, ?) "
+    private static String updateSatusCrqTable = "INSERT INTO cachedResultsQuery (queryId, alias, user, status, statusMessage)  " + "VALUES (?, ?, ?, ?, ?) "
                     + "ON DUPLICATE KEY UPDATE alias=?, lastUpdate=?, status=?, statusMessage=?";
     
     static {
@@ -334,7 +331,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         activate(connection, queryLogic);
     }
     
-    static private boolean isSqlSafe(String sqlQuery) {
+    private static boolean isSqlSafe(String sqlQuery) {
         
         boolean isSqlSafe = true;
         String compareString = sqlQuery.toUpperCase();
@@ -444,7 +441,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     newConditions.append(s).append(SPACE);
                 }
             }
-            if (newConditions.toString().trim().length() == 0) {
+            if (newConditions.toString().trim().isEmpty()) {
                 conditions = null;
             } else {
                 conditions = newConditions.toString().trim();
@@ -462,7 +459,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                 // add quoted field
                 newGroup.add(quoteField(s));
             }
-            if (newGroup.size() == 0) {
+            if (newGroup.isEmpty()) {
                 grouping = null;
             } else {
                 grouping = StringUtils.join(newGroup, ",");
@@ -470,7 +467,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             
         }
         
-        if (conditions == null || conditions.length() == 0) {
+        if (conditions == null || conditions.isEmpty()) {
             // create the condition
             conditions = "_user_ = '" + user + "'";
         } else {
@@ -487,7 +484,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             buf.append(" ORDER BY ").append(order);
         
         if (log.isTraceEnabled()) {
-            log.trace("sqlQuery: " + buf.toString());
+            log.trace("sqlQuery: " + buf);
         }
         
         if (CachedRunningQuery.isSqlSafe(buf.toString()) == false) {
@@ -555,14 +552,14 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private List<String> getViewColumnNames(Connection connection, String view) throws SQLException {
         CachedResultsParameters.validate(view);
         List<String> columns = new ArrayList<>();
-        Statement s = connection.createStatement();
-        ResultSet rs = s.executeQuery("show columns from " + view);
-        Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
-        
-        while (rs.next()) {
-            String column = rs.getString(1);
-            if (fixedColumns.contains(column) == false) {
-                columns.add(column);
+        try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery("show columns from " + view)) {
+            Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
+            
+            while (rs.next()) {
+                String column = rs.getString(1);
+                if (fixedColumns.contains(column) == false) {
+                    columns.add(column);
+                }
             }
         }
         
@@ -586,7 +583,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             
             if (log.isTraceEnabled()) {
                 String host = System.getProperty("jboss.host.name");
-                log.trace("activating CRS on host:" + host + ", " + this.toString());
+                log.trace("activating CRS on host:" + host + ", " + this);
             }
             
             this.statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -663,7 +660,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         int pagesize = (rowEnd - rowBegin) + 1;
         
         try (PreparedStatement ps = connection.prepareStatement(query.toString()); CachedRowSet crs = RowSetProvider.newFactory().createCachedRowSet()) {
-            log.debug("Get Rows query: " + query.toString());
+            log.debug("Get Rows query: " + query);
             
             ps.setFetchSize(pagesize);
             crs.setPageSize(pagesize);
@@ -742,7 +739,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             resultList = convert(this.crs, pageByteTrigger);
         }
         
-        if (resultList.getResults().size() > 0) {
+        if (!resultList.getResults().isEmpty()) {
             currentRow = position.MIDDLE;
             this.lastPageNumber++;
         } else {
@@ -780,7 +777,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             resultList = convert(this.crs, pageByteTrigger);
         }
         
-        if (resultList.getResults().size() > 0) {
+        if (!resultList.getResults().isEmpty()) {
             currentRow = position.MIDDLE;
             this.lastPageNumber--;
         } else {
@@ -963,7 +960,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         this.alias = alias;
     }
     
-    static public void saveToDatabaseByQueryId(String queryId, String alias, String user, Status status, String statusMessage) {
+    public static void saveToDatabaseByQueryId(String queryId, String alias, String user, Status status, String statusMessage) {
         
         verifyCrqTableExists();
         
@@ -997,7 +994,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         }
     }
     
-    static private void verifyCrqTableExists() {
+    private static void verifyCrqTableExists() {
         
         try (Connection localConnection = datasource.getConnection(); Statement s = localConnection.createStatement()) {
             s.execute(createCrqTable);
@@ -1061,7 +1058,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             }
             
             // Set the fixedFields
-            if (this.fixedFieldsInEvent.size() == 0)
+            if (this.fixedFieldsInEvent.isEmpty())
                 ps.setNull(x++, Types.VARCHAR);
             else
                 ps.setString(x++, StringUtils.join(this.fixedFieldsInEvent, ","));
@@ -1084,7 +1081,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         }
     }
     
-    static public void removeFromDatabase(String id) {
+    public static void removeFromDatabase(String id) {
         
         verifyCrqTableExists();
         
@@ -1098,7 +1095,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         }
     }
     
-    static public CachedRunningQuery retrieveFromDatabase(String id, Principal principal, QueryMetricFactory metricFactory) {
+    public static CachedRunningQuery retrieveFromDatabase(String id, Principal principal, QueryMetricFactory metricFactory) {
         
         verifyCrqTableExists();
         
@@ -1297,7 +1294,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                 trimmedSubstr = fields.substring(start, current).trim();
                 start = current + 1;
             }
-            if (trimmedSubstr.length() > 0) {
+            if (!trimmedSubstr.isEmpty()) {
                 result.add(trimmedSubstr);
             }
         }
@@ -1346,4 +1343,18 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     public boolean getShouldAutoActivate() {
         return this.shouldAutoActivate;
     }
+    
+    public void closeConnection(Logger log) {
+        
+        if (log.isTraceEnabled()) {
+            log.trace("closing connections for query " + getQueryId());
+        }
+        
+        Connection connection = getConnection();
+        Statement statement = getStatement();
+        CachedRowSet crs = getCrs();
+        resetConnection();
+        DbUtils.closeQuietly(connection, statement, crs);
+    }
+    
 }

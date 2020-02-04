@@ -1,13 +1,11 @@
 package datawave.ingest.data.config.ingest;
 
-import java.util.Map;
-
+import com.google.common.collect.Multimap;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.hadoop.conf.Configuration;
 
-import com.google.common.collect.Multimap;
+import java.util.Map;
 
 /**
  * This class will add the CompositeFieldNormalizer to the list of normalizers. Note that this can be done directly via the configuration.
@@ -25,47 +23,37 @@ public class CompositeFieldIngestHelper implements CompositeIngest {
     
     @Override
     public void setup(Configuration config) throws IllegalArgumentException {
-        compositeFieldNormalizer.setup(type, null, config);
+        compositeFieldNormalizer.setup(type, config);
     }
     
     /*
      * (non-Javadoc)
      * 
-     * @see datawave.ingest.data.config.ingest.CompositeIngest#getCompositeFieldDefinitions()
+     * @see datawave.ingest.data.config.ingest.CompositeIngest#getCompositeToFieldMap()
      */
     @Override
-    public Map<String,String[]> getCompositeFieldDefinitions() {
-        return compositeFieldNormalizer.getCompositeFieldDefinitions();
+    public Multimap<String,String> getCompositeFieldDefinitions() {
+        return compositeFieldNormalizer.getCompositeToFieldMap();
     }
     
     /*
      * (non-Javadoc)
      * 
-     * @see datawave.ingest.data.config.ingest.CompositeIngest#setCompositeFieldDefinitions(java.util.Map)
+     * @see datawave.ingest.data.config.ingest.CompositeIngest#getCompositeFieldSeparators()
      */
     @Override
-    public void setCompositeFieldDefinitions(Map<String,String[]> compositeFieldDefinitions) {
-        compositeFieldNormalizer.setCompositeFieldDefinitions(compositeFieldDefinitions);
+    public Map<String,String> getCompositeFieldSeparators() {
+        return compositeFieldNormalizer.getCompositeFieldSeparators();
     }
     
     /*
      * (non-Javadoc)
      * 
-     * @see datawave.ingest.data.config.ingest.CompositeIngest#getDefaultSeparator()
+     * @see datawave.ingest.data.config.ingest.CompositeIngest#setCompositeToFieldMap(java.util.Map)
      */
     @Override
-    public String getDefaultCompositeFieldSeparator() {
-        return compositeFieldNormalizer.getDefaultSeparator();
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see datawave.ingest.data.config.ingest.CompositeIngest#setDefaultSeparator(java.lang.String)
-     */
-    @Override
-    public void setDefaultCompositeFieldSeparator(String sep) {
-        compositeFieldNormalizer.setDefaultSeparator(sep);
+    public void setCompositeFieldDefinitions(Multimap<String,String> compositeFieldDefinitions) {
+        compositeFieldNormalizer.setCompositeToFieldMap(compositeFieldDefinitions);
     }
     
     /*
@@ -85,17 +73,16 @@ public class CompositeFieldIngestHelper implements CompositeIngest {
      */
     @Override
     public boolean isCompositeField(String fieldName) {
-        Map<String,String[]> map = this.getCompositeFieldDefinitions();
-        return map.containsKey(fieldName);
+        return this.getCompositeFieldDefinitions().containsKey(fieldName);
     }
     
     /*
      * (non-Javadoc)
      * 
-     * @see datawave.ingest.data.config.ingest.CompositeIngest#getCompositeNameAndIndex(java.lang.String)
+     * @see datawave.ingest.data.config.ingest.CompositeIngest#isOverloadedCompositeField(java.lang.String)
      */
     @Override
-    public Map<String,String[]> getCompositeNameAndIndex(String compositeFieldName) {
-        return this.getCompositeFieldDefinitions();
+    public boolean isOverloadedCompositeField(String fieldName) {
+        return CompositeIngest.isOverloadedCompositeField(getCompositeFieldDefinitions(), fieldName);
     }
 }

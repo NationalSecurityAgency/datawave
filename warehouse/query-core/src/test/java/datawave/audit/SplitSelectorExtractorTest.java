@@ -2,7 +2,7 @@ package datawave.audit;
 
 import com.google.common.collect.Lists;
 import java.util.List;
-import java.util.Set;
+
 import datawave.webservice.query.QueryImpl;
 import org.apache.commons.lang.math.IntRange;
 import org.junit.Assert;

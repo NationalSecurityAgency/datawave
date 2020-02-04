@@ -28,7 +28,7 @@ public abstract class AgeOffFilterBase extends Filter {
         return result > 0;
     }
     
-    abstract protected byte[] getDateBytes(Key k, Value v);
+    protected abstract byte[] getDateBytes(Key k, Value v);
     
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {

@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -23,7 +24,7 @@ import datawave.ingest.json.config.helper.JsonDataTypeHelper;
 import datawave.ingest.json.config.helper.JsonIngestFlattener;
 import datawave.ingest.json.util.JsonObjectFlattener;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -139,7 +140,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         }
         
         jsonHelper = (JsonDataTypeHelper) createHelper(context.getConfiguration());
-        jsonHelper.setProcessExtraFields(!isParseHeaderOnly());
+        this.parseHeaderOnly = !jsonHelper.processExtraFields();
         jsonFlattener = jsonHelper.newFlattener();
         
         if (logger.isInfoEnabled()) {
@@ -288,27 +289,19 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
     
     /**
      * <p>
-     * Here in the record reader, we likely do not need to parse any fields beyond our defined "header", because typically the header fields convey all the
-     * metadata necessary for {@link #getEvent()}, which supplies RawRecordContainer input to the EventMapper. These include fields such as the event date,
-     * event column visibility, etc. "Extra" fields can be parsed later by the IngestHelperInterface implementation within EventMapper, if desired.
+     * Defaults to true, but may be overridden via the configured {@link JsonDataTypeHelper}, i.e., via the negation of
+     * {@link JsonDataTypeHelper#processExtraFields()}. Note that the helper instance in this case is acquired during
+     * {@link #initialize(InputSplit, TaskAttemptContext)} via the {@link #createHelper(Configuration)} factory method.
      *
      * <p>
-     * Defaults to true. Override via {@link #setParseHeaderOnly(boolean)} in the InputFormat class prior to {@link #initialize(InputSplit, TaskAttemptContext)}
-     * , if needed
+     * That is, here in the record reader, we likely do not need to parse any fields beyond our defined "header", because typically the header fields should
+     * convey all the metadata that is required, i.e., metadata fields necessary to create a valid RawRecordContainer instance for the EventMapper, such as
+     * event date, column viz, etc. If required metadata happens to be conveyed through fields outside the header for whatever reason, then the configured
+     * {@link JsonDataTypeHelper} must announce that fact, as described above.
      *
-     * @return true, if only the header fields should be parsed. Otherwise false
+     * @return true, indicating that only the header fields need to be parsed. Otherwise false
      */
     public boolean isParseHeaderOnly() {
         return parseHeaderOnly;
-    }
-    
-    /**
-     * Must be called prior to {@link #initialize(InputSplit, TaskAttemptContext)} in order to have an effect
-     *
-     * @param parseHeaderOnly
-     *            true or false
-     */
-    public void setParseHeaderOnly(boolean parseHeaderOnly) {
-        this.parseHeaderOnly = parseHeaderOnly;
     }
 }

@@ -1,20 +1,8 @@
 package datawave.core.iterators;
 
-import com.google.common.base.Predicate;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
-import datawave.query.predicate.TimeFilter;
+import datawave.query.jexl.DatawaveArithmetic;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -26,12 +14,22 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.lucene.store.DataInput;
 import org.apache.lucene.store.InputStreamDataInput;
 import org.apache.lucene.util.IntsRef;
-import org.apache.lucene.util.fst.Builder;
+import org.apache.lucene.util.IntsRefBuilder;
 import org.apache.lucene.util.fst.FST;
 import org.apache.lucene.util.fst.NoOutputs;
 import org.apache.lucene.util.fst.Outputs;
 import org.apache.lucene.util.fst.Util;
 import org.apache.lucene.util.packed.PackedInts;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
 
 /**
  * 
@@ -43,6 +41,40 @@ import org.apache.lucene.util.packed.PackedInts;
  * 
  */
 public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachingIteratorJexl {
+    
+    public static class Builder<B extends Builder<B>> extends DatawaveFieldIndexCachingIteratorJexl.Builder<B> {
+        private FST<?> fst = null;
+        // we need the values sorted for buildBoundingRanges to return sorted ranges
+        private List<String> values = null;
+        
+        public B withFST(FST<?> fst) {
+            this.fst = fst;
+            return self();
+        }
+        
+        public B withValues(Collection<String> values) {
+            this.values = new ArrayList<>(values);
+            return self();
+        }
+        
+        public DatawaveFieldIndexListIteratorJexl build() {
+            return new DatawaveFieldIndexListIteratorJexl(this);
+        }
+    }
+    
+    public static Builder<?> builder() {
+        return new Builder();
+    }
+    
+    protected DatawaveFieldIndexListIteratorJexl(Builder builder) {
+        super(builder);
+        if (builder.values != null) {
+            this.values = new ArrayList<>(builder.values);
+            Collections.sort(this.values);
+        }
+        this.fst = builder.fst;
+    }
+    
     private FST<?> fst = null;
     // we need the values sorted for buildBoundingRanges to return sorted ranges
     private List<String> values = null;
@@ -51,57 +83,6 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     // ------------- Constructors
     public DatawaveFieldIndexListIteratorJexl() {
         super();
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexListIteratorJexl(Text fieldName, Set<String> values, TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold,
-                    long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock,
-                    boolean allowDirReuse) {
-        this(fieldName, values, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexListIteratorJexl(Text fieldName, Set<String> values, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse) {
-        this(fieldName, values, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexListIteratorJexl(Text fieldName, Set<String> values, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) {
-        super(fieldName, null, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir, queryLock,
-                        allowDirReuse, returnKeyType, sortedUIDs);
-        this.values = new ArrayList<String>(values);
-        Collections.sort(this.values);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexListIteratorJexl(Text fieldName, FST<?> fst, TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold,
-                    long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock,
-                    boolean allowDirReuse) {
-        this(fieldName, fst, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir, queryLock,
-                        allowDirReuse);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexListIteratorJexl(Text fieldName, FST<?> fst, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse) {
-        this(fieldName, fst, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir, queryLock,
-                        allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexListIteratorJexl(Text fieldName, FST<?> fst, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) {
-        super(fieldName, null, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir, queryLock,
-                        allowDirReuse, returnKeyType, sortedUIDs);
-        this.fst = fst;
     }
     
     public DatawaveFieldIndexListIteratorJexl(DatawaveFieldIndexListIteratorJexl other, IteratorEnvironment env) {
@@ -126,14 +107,20 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     
     @Override
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
+        if (ANY_FINAME.equals(fiName)) {
+            Key startKey = new Key(rowId, FI_START);
+            Key endKey = new Key(rowId, FI_END);
+            return new RangeSplitter(new Range(startKey, true, endKey, false), getMaxRangeSplit());
+        }
+        
         if (fst != null || isNegated()) {
             Key startKey = null;
             Key endKey = null;
             startKey = new Key(rowId, fiName);
-            endKey = new Key(rowId, new Text(fiName.toString() + Constants.NULL_BYTE_STRING));
+            endKey = new Key(rowId, new Text(fiName + Constants.NULL_BYTE_STRING));
             return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());
         } else {
-            List<Range> ranges = new ArrayList<Range>();
+            List<Range> ranges = new ArrayList<>();
             for (String value : values) {
                 ranges.add(buildBoundingRange(rowId, fiName, new Text(value)));
             }
@@ -174,7 +161,6 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
      */
     @Override
     protected boolean matches(Key k) throws IOException {
-        boolean matches = false;
         String colq = k.getColumnQualifier().toString();
         
         // search backwards for the null bytes to expose the value in value\0datatype\0UID
@@ -182,24 +168,11 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         index = colq.lastIndexOf('\0', index - 1);
         String value = colq.substring(0, index);
         
-        if (this.fst != null) {
-            IntsRef ints = new IntsRef();
-            Util.toUTF16(value, ints);
-            
-            synchronized (this.fst) {
-                if (Util.get(this.fst, ints) != null) {
-                    matches = true;
-                }
-            }
-        } else {
-            matches = values.contains(value);
-        }
-        
-        return matches;
+        return (this.fst != null) ? DatawaveArithmetic.matchesFst(value, fst) : values.contains(value);
     }
     
     public static FST<?> getFST(SortedSet<String> values) throws IOException {
-        final IntsRef scratchInt = new IntsRef();
+        final IntsRefBuilder irBuilder = new IntsRefBuilder();
         // The builder options with defaults
         FST.INPUT_TYPE inputType = FST.INPUT_TYPE.BYTE1;
         int minSuffixCount1 = 0;
@@ -207,18 +180,18 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         boolean doShareSuffix = true;
         boolean doShareNonSingletonNodes = true;
         int shareMaxTailLength = Integer.MAX_VALUE;
-        boolean doPackFST = false;
-        float acceptableOverheadRatio = PackedInts.COMPACT;
+        
         boolean allowArrayArcs = true;
         int bytesPageBits = 15;
         final Outputs<Object> outputs = NoOutputs.getSingleton();
         
         // create the FST from the values
-        Builder<Object> fstBuilder = new Builder<>(inputType, minSuffixCount1, minSuffixCount2, doShareSuffix, doShareNonSingletonNodes, shareMaxTailLength,
-                        outputs, null, doPackFST, acceptableOverheadRatio, allowArrayArcs, bytesPageBits);
+        org.apache.lucene.util.fst.Builder<Object> fstBuilder = new org.apache.lucene.util.fst.Builder<>(inputType, minSuffixCount1, minSuffixCount2,
+                        doShareSuffix, doShareNonSingletonNodes, shareMaxTailLength, outputs, allowArrayArcs, bytesPageBits);
         
         for (String value : values) {
-            Util.toUTF16(value, scratchInt);
+            Util.toUTF16(value, irBuilder);
+            final IntsRef scratchInt = irBuilder.get();
             fstBuilder.add(scratchInt, outputs.getNoOutput());
         }
         return fstBuilder.finish();

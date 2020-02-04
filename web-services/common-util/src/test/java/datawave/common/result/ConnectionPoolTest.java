@@ -28,7 +28,7 @@ public class ConnectionPoolTest {
     
     @Before
     public void setup() {
-        connectionPools = new LinkedList<ConnectionPool>();
+        connectionPools = new LinkedList<>();
         connectionPools.add(createPool("WAREHOUSE", Priority.NORMAL.toString()));
         connectionPools.add(createPool("WAREHOUSE", Priority.HIGH.toString()));
         connectionPools.add(createPool("WAREHOUSE", Priority.ADMIN.toString()));
@@ -42,7 +42,7 @@ public class ConnectionPoolTest {
     @Test
     public void testOrdering() {
         
-        TreeSet<ConnectionPool> pools = new TreeSet<ConnectionPool>();
+        TreeSet<ConnectionPool> pools = new TreeSet<>();
         pools.addAll(connectionPools);
         Iterator<ConnectionPool> itr = pools.iterator();
         ConnectionPool p = null;

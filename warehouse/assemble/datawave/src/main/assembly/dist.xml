@@ -79,9 +79,9 @@
                   <include>com.esotericsoftware.minlog:minlog</include>
                   <include>com.esotericsoftware.reflectasm:reflectasm</include>
                   <include>org.ow2.asm:asm</include>
-                  <include>joda-time:joda-time</include>
                   <include>io.protostuff:protostuff-api</include>
                   <include>io.protostuff:protostuff-core</include>
+                  <include>io.protostuff:protostuff-collectionschema</include>
             </includes>
         </dependencySet>
         <!-- Stuff that goes in /opt/accumulo-warehouse/current/lib/ext -->
@@ -91,28 +91,38 @@
             <useStrictFiltering>true</useStrictFiltering>
             <fileMode>0444</fileMode>
             <includes>
+                <include>org.apache.commons:commons-collections4</include>
                 <include>org.apache.commons:commons-jexl</include>
                 <include>${groupId}:datawave-balancers</include>
                 <include>${groupId}:datawave-common</include>
                 <include>${groupId}:datawave-core</include>
+                <include>${groupId}:datawave-data-dictionary-core</include>
                 <include>${groupId}:datawave-edge-dictionary-core</include>
+                <include>${groupId}:datawave-edge-model-configuration-core</include>
                 <include>${groupId}:datawave-ingest-csv</include>
                 <include>${groupId}:datawave-ingest-core</include>
                 <include>${groupId}:datawave-ingest-configuration</include>
                 <include>${groupId}:datawave-metrics-core</include>
                 <include>${groupId}:datawave-query-core</include>
-                <include>${groupId}:datawave-edge-dictionary-core</include>
                 <include>${groupId}:datawave-ingest-wikipedia</include>
+                <include>${groupId}:datawave-ingest-nyctlc</include>
                 <include>${groupId}:datawave-ingest-json</include>
-                <include>datawave.webservices:datawave-ws-common</include>
-                <include>datawave.webservices:datawave-ws-common-util</include>
-                <include>datawave.webservices:datawave-ws-client</include>
-                <include>datawave.webservices:datawave-ws-query</include>
+                <include>gov.nsa.datawave.microservice:accumulo-utils</include>
+                <include>gov.nsa.datawave.microservice:metadata-utils</include>
+                <include>gov.nsa.datawave.microservice:type-utils</include>
+                <include>gov.nsa.datawave.microservice:base-rest-responses</include>
+                <include>gov.nsa.datawave.microservice:common-utils</include>
+                <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
+                <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
+                <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
+                <include>gov.nsa.datawave.webservices:datawave-ws-query</include>
+                <include>io.dropwizard.metrics:metrics-core</include>
                 <include>org.javatuples:javatuples</include>
                 <include>com.google.code.gson:gson</include>
                 <include>org.apache.lucene:lucene-core</include>
                 <include>com.clearspring.analytics:stream</include>
                 <include>com.timgroup:java-statsd-client</include>
+                <include>com.github.ben-manes.caffeine:caffeine</include>
                 <!-- for dependency injection -->
                 <include>org.springframework:spring-aop</include>
                 <include>org.springframework:spring-core</include>
@@ -129,6 +139,9 @@
                 <include>mil.nga.giat:geowave-core-ingest</include>
                 <include>com.vividsolutions:jts</include>
                 <include>com.google.uzaygezen:uzaygezen-core</include>
+                <include>com.fasterxml.jackson.core:jackson-databind</include>
+                <include>com.fasterxml.jackson.core:jackson-core</include>
+                <include>com.fasterxml.jackson.core:jackson-annotations</include>
             </includes>
         </dependencySet>
         <!-- Stuff that goes in /opt/accumulo-metrics/current/lib/ext -->
@@ -138,19 +151,23 @@
             <useStrictFiltering>true</useStrictFiltering>
             <fileMode>0444</fileMode>
             <includes>
-                  <include>org.apache.commons:commons-lang3</include>                  
+                  <include>org.apache.commons:commons-lang3</include>
                   <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-core</include>
-                  
                   <include>${groupId}:datawave-ingest-csv</include>
                   <include>${groupId}:datawave-ingest-json</include>
                   <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-ingest-configuration</include>
-                  
                   <include>${groupId}:datawave-query-core</include>
-                  <include>datawave.webservices:datawave-ws-common</include>
-                  <include>datawave.webservices:datawave-ws-common-util</include>
+                  <include>gov.nsa.datawave.microservice:accumulo-utils</include>
+                  <include>gov.nsa.datawave.microservice:metadata-utils</include>
+                  <include>gov.nsa.datawave.microservice:type-utils</include>
+                  <include>gov.nsa.datawave.microservice:base-rest-responses</include>
+                  <include>gov.nsa.datawave.microservice:common-utils</include>
+                  <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
+                  <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                   <include>com.google.code.gson:gson</include>
+                  <include>com.github.ben-manes.caffeine:caffeine</include>
                   <!-- for dependency injection -->
                   <include>org.springframework:spring-aop</include>
                   <include>org.springframework:spring-core</include>

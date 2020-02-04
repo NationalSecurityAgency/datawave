@@ -8,13 +8,7 @@ cache:
   - $HOME/.m2
 
 install:
-  - pushd contrib/read-properties
-  - mvn -q install
-  - popd
-  - pushd contrib/assert-properties
-  - mvn -q install
-  - popd
+  - travis_wait mvn -q -Pdev,dist install -DskipTests
 
 script:
-  - travis_wait mvn -q -Pdev,dist install -DskipTests
   - mvn -Dsurefire.forkCount=4 -Pdev verify

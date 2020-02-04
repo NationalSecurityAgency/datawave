@@ -13,4 +13,5 @@ tags
 **/maven-eclipse.xml
 atlassian-ide-plugin.xml
 **/bin
+!**/examples/http-client/bin/
 properties/git.properties

@@ -31,11 +31,11 @@ public class AtomKeyValueParserTest {
     public void testGettersAndSetters() {
         kv.setValue("valueForTests");
         
-        Assert.assertEquals(null, kv.getCollectionName());
-        Assert.assertEquals(null, kv.getId());
-        Assert.assertEquals(null, kv.getUpdated());
-        Assert.assertEquals(null, kv.getColumnVisibility());
-        Assert.assertEquals(null, kv.getUuid());
+        Assert.assertNull(kv.getCollectionName());
+        Assert.assertNull(kv.getId());
+        Assert.assertNull(kv.getUpdated());
+        Assert.assertNull(kv.getColumnVisibility());
+        Assert.assertNull(kv.getUuid());
         Assert.assertEquals("valueForTests", kv.getValue());
     }
     
@@ -62,7 +62,7 @@ public class AtomKeyValueParserTest {
         Entry entry = kv.toEntry(abdera, host, port);
         Assert.assertEquals(iri, entry.getId());
         Assert.assertEquals("(null) null with null @ null null", entry.getTitle());
-        Assert.assertEquals(null, entry.getUpdated());
+        Assert.assertNull(entry.getUpdated());
     }
     
     @SuppressWarnings("static-access")

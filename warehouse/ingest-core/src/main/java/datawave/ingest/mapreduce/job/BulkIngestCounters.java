@@ -1,16 +1,14 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
-
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Counters for tracking the number of records inserted into bulk ingest tables. This class allows the user to register counters per table and then increment
@@ -76,7 +74,7 @@ public class BulkIngestCounters {
         }
     }
     
-    protected static abstract class BulkIngestCounter {
+    protected abstract static class BulkIngestCounter {
         protected String tableName;
         protected String counterGroup;
         
@@ -85,11 +83,11 @@ public class BulkIngestCounters {
             counterGroup = isDelete ? "CB Delete" : "CB Insert";
         }
         
-        abstract public void incrementCounter(BulkIngestKey key);
+        public abstract void incrementCounter(BulkIngestKey key);
         
-        abstract public void incrementCounter(BulkIngestKey key, int count);
+        public abstract void incrementCounter(BulkIngestKey key, int count);
         
-        abstract public void flush(TaskAttemptContext context);
+        public abstract void flush(TaskAttemptContext context);
     }
     
     protected static class TableNameCounter extends BulkIngestCounter {

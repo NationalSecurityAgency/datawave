@@ -2,6 +2,8 @@ package datawave.query.tld;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.function.TLDEquality;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
@@ -9,19 +11,28 @@ import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
+import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This is a TLD (Top Level Document) QueryIterator implementation.
@@ -68,7 +79,7 @@ public class TLDQueryIterator extends QueryIterator {
         
         super.init(source, options, env);
         
-        super.fiAggregator = new TLDFieldIndexAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), maxKeysBeforeSeek);
+        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), maxKeysBeforeSeek);
         
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
         // If no other predicates are configured via the indexfiltering.classes property, the method
@@ -76,20 +87,100 @@ public class TLDQueryIterator extends QueryIterator {
         // contains an "anded" chain of newly configured predicates following the existing
         // fieldIndexKeyDataTypeFilter value (assuming it is defined with something other than the default
         // "ALWAYS_TRUE" KeyIdentity.Function).
-        fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<String,String>(source, env, options));
+        fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<>(source, env, options));
         
         disableIndexOnlyDocuments = false;
+    }
+    
+    /**
+     * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
+     * 
+     * @return
+     */
+    protected EventDataQueryFilter getFIEvaluationFilter() {
+        ChainableEventDataQueryFilter chainableEventDataQueryFilter = new ChainableEventDataQueryFilter();
+        // primary filter on the current filter
+        chainableEventDataQueryFilter.addFilter(getEvaluationFilter());
+        
+        // prevent anything that is not an index only field from being kept at the tld level, otherwise allow all
+        EventDataQueryFilter tldFiFilter = new EventDataQueryFilter() {
+            @Override
+            public void startNewDocument(Key documentKey) {
+                // no-op
+            }
+            
+            @Override
+            public boolean apply(@Nullable Map.Entry<Key,String> var1) {
+                return true;
+            }
+            
+            @Override
+            public boolean peek(@Nullable Map.Entry<Key,String> var1) {
+                return true;
+            }
+            
+            /**
+             * Keep any FI that is index only and part of the TLD or is not part of the TLD
+             * 
+             * @param k
+             * @return
+             */
+            @Override
+            public boolean keep(Key k) {
+                boolean root = TLDEventDataFilter.isRootPointer(k);
+                DatawaveKey datawaveKey = new DatawaveKey(k);
+                return (root && getIndexOnlyFields().contains(datawaveKey.getFieldName())) || !root;
+            }
+            
+            @Override
+            public Key getStartKey(Key from) {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public Key getStopKey(Key from) {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public Range getKeyRange(Map.Entry<Key,Document> from) {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public EventDataQueryFilter clone() {
+                return this.clone();
+            }
+            
+            @Override
+            public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public int getMaxNextCount() {
+                return -1;
+            }
+            
+            @Override
+            public Key transform(Key toTransform) {
+                return null;
+            }
+        };
+        chainableEventDataQueryFilter.addFilter(tldFiFilter);
+        
+        return chainableEventDataQueryFilter;
     }
     
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled(),
-                            useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek,
-                            maxKeysBeforeSeek);
+            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, useWhiteListedFields ? whiteListedFields : null,
+                            useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek,
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.EMPTY_MAP, limitFieldsField, getNonEventFields());
         }
-        return this.evaluationFilter;
+        return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
     
     @Override
@@ -163,17 +254,11 @@ public class TLDQueryIterator extends QueryIterator {
             if (!startKey.equals(range.getStartKey())) {
                 Key endKey = range.getEndKey();
                 boolean endKeyInclusive = range.isEndKeyInclusive();
-                // if the start key is outside of the range, then reset the end key to the next key
-                if (range.afterEndKey(startKey)) {
-                    endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
-                    endKeyInclusive = false;
-                }
                 range = new Range(startKey, false, endKey, endKeyInclusive);
             }
         }
         
         super.seek(range, columnFamilies, inclusive);
-        
     }
     
     @Override

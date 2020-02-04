@@ -23,7 +23,6 @@ import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.IgnorableErrorHelperInterface;
 import datawave.ingest.protobuf.RawRecordContainer.Data;
 import datawave.marking.MarkingFunctions;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
@@ -36,7 +35,6 @@ import org.apache.hadoop.io.Writable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 
 public class RawRecordContainerImpl implements Writable, Configurable, RawRecordContainer {
@@ -75,6 +73,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     private byte[] rawData = null;
     private boolean requiresMasking = false;
     private Object auxData = null;
+    private Map<String,String> auxMap = null;
     
     // RawRecordContainer support
     Map<String,String> securityMarkings = null;
@@ -97,7 +96,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     @Override
     public void addSecurityMarking(String domain, String marking) {
         if (null == securityMarkings) {
-            securityMarkings = new HashMap<String,String>();
+            securityMarkings = new HashMap<>();
         }
         securityMarkings.put(domain, marking);
         syncSecurityMarkingsToFields();
@@ -110,7 +109,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     protected void syncSecurityMarkingsToFields() {
         if (securityMarkings != null) {
-            setVisibility(securityMarkings.get(MarkingFunctions.NoOp.COLUMN_VISIBILITY));
+            setVisibility(securityMarkings.get(MarkingFunctions.Default.COLUMN_VISIBILITY));
         } else {
             setVisibility((String) null);
         }
@@ -121,10 +120,10 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
             if (securityMarkings == null) {
                 securityMarkings = new HashMap<>();
             }
-            securityMarkings.put(MarkingFunctions.NoOp.COLUMN_VISIBILITY, new String(visibility.getExpression()));
+            securityMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, new String(visibility.getExpression()));
             
         } else if (securityMarkings != null) {
-            securityMarkings.remove(MarkingFunctions.NoOp.COLUMN_VISIBILITY);
+            securityMarkings.remove(MarkingFunctions.Default.COLUMN_VISIBILITY);
         }
         if (securityMarkings != null && securityMarkings.isEmpty()) {
             securityMarkings = null;
@@ -194,9 +193,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     @Override
     public void setErrors(Collection<String> errors) {
-        for (String err : errors) {
-            this.errors.add(err);
-        }
+        this.errors.addAll(errors);
     }
     
     @Override
@@ -380,6 +377,25 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     }
     
     /**
+     * Gets any auxiliary properties stored with this raw record container. Note that aux properties are not serialized with the raw record container.
+     */
+    @Override
+    public String getAuxProperty(String prop) {
+        return (auxMap == null ? null : auxMap.get(prop));
+    }
+    
+    /**
+     * Sets an auxiliary property for this raw record container. Note that aux properties are not serialized with the raw record container.
+     */
+    @Override
+    public void setAuxProperty(String prop, String value) {
+        if (auxMap == null) {
+            auxMap = new HashMap<>();
+        }
+        auxMap.put(prop, value);
+    }
+    
+    /**
      * @return Copy of this RwaRecordContainerImpl object.
      */
     @Override
@@ -416,6 +432,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         equals.append(this.ids, e.ids);
         equals.append(this.rawData, e.rawData);
         equals.append(this.auxData, e.auxData);
+        equals.append(this.auxMap, e.auxMap);
         equals.append(this.securityMarkings, e.securityMarkings);
         return equals.isEquals();
     }
@@ -442,6 +459,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         rrci.rawData = this.rawData;
         rrci.requiresMasking = this.requiresMasking;
         rrci.auxData = auxData;
+        rrci.auxMap = (auxMap == null ? null : new HashMap<>(auxMap));
         return rrci;
     }
     
@@ -459,8 +477,8 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     @Override
     /**
-     * This will report the number of bytes taken by the RawRecordContainer object when written out. Note that write(DataOutput) must have been called previously otherwise
-     * this will return -1.
+     * This will report the number of bytes taken by the RawRecordContainer object when written out. Note that write(DataOutput) must have been called
+     * previously otherwise this will return -1.
      */
     public long getDataOutputSize() {
         return dataOutputSize;
@@ -469,13 +487,9 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     public Set<String> getFatalErrors() {
         Set<String> localErrors = new HashSet<>();
         
-        for (String rde : this.fatalErrors.get(null)) {
-            localErrors.add(rde);
-        }
+        localErrors.addAll(this.fatalErrors.get(null));
         
-        for (String rde : this.fatalErrors.get(getDataType())) {
-            localErrors.add(rde);
-        }
+        localErrors.addAll(this.fatalErrors.get(getDataType()));
         return Collections.unmodifiableSet(localErrors);
     }
     
@@ -659,8 +673,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
             this.uid = UID.parse(data.getUid());
         errors = new ConcurrentSkipListSet<>();
         if (0 != data.getErrorsCount()) {
-            for (String error : data.getErrorsList())
-                errors.add(error);
+            errors.addAll(data.getErrorsList());
         }
         if (data.hasVisibility() && null != data.getVisibility())
             setVisibility(new ColumnVisibility(data.getVisibility().toByteArray()));
@@ -694,6 +707,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         rawData = null;
         requiresMasking = false;
         auxData = null;
+        auxMap = null;
         dataOutputSize = -1;
     }
     

@@ -7,7 +7,7 @@ import datawave.query.search.WildcardFieldedTerm;
 import org.apache.log4j.Logger;
 
 public class SelectorNode extends QueryNode {
-    private final static Logger log = Logger.getLogger(SelectorNode.class.getName());
+    private static final Logger log = Logger.getLogger(SelectorNode.class.getName());
     
     private Term query;
     

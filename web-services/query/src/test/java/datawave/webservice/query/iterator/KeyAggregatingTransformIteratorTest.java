@@ -1,13 +1,15 @@
 package datawave.webservice.query.iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 
-import datawave.webservice.query.iterator.KeyAggregatingTransformIterator;
-
+import org.apache.commons.collections4.functors.NOPTransformer;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,7 +28,7 @@ public class KeyAggregatingTransformIteratorTest {
         KeyValue item1 = new KeyValue(new Key("row1"), "".getBytes());
         List<KeyValue> list = Arrays.asList(item1);
         
-        KeyAggregatingTransformIterator it = new KeyAggregatingTransformIterator(list.iterator(), null);
+        KeyAggregatingTransformIterator it = new KeyAggregatingTransformIterator(list.iterator(), NOPTransformer.nopTransformer());
         assertTrue(it.hasNext());
         @SuppressWarnings("unchecked")
         List<Entry<Key,Value>> entries = (List<Entry<Key,Value>>) it.next();
@@ -42,7 +44,7 @@ public class KeyAggregatingTransformIteratorTest {
         KeyValue item2 = new KeyValue(new Key("row1", "cf2"), "value2".getBytes());
         List<KeyValue> list = Arrays.asList(item1, item2);
         
-        KeyAggregatingTransformIterator it = new KeyAggregatingTransformIterator(list.iterator(), null);
+        KeyAggregatingTransformIterator it = new KeyAggregatingTransformIterator(list.iterator(), NOPTransformer.nopTransformer());
         assertTrue(it.hasNext());
         @SuppressWarnings("unchecked")
         List<Entry<Key,Value>> entries = (List<Entry<Key,Value>>) it.next();
@@ -67,7 +69,7 @@ public class KeyAggregatingTransformIteratorTest {
         KeyValue item9 = new KeyValue(new Key("row5", "cf2"), "value2".getBytes());
         List<KeyValue> list = Arrays.asList(item1, item2, item3, item4, item5, item6, item7, item8, item9);
         
-        KeyAggregatingTransformIterator it = new KeyAggregatingTransformIterator(list.iterator(), null);
+        KeyAggregatingTransformIterator it = new KeyAggregatingTransformIterator(list.iterator(), NOPTransformer.nopTransformer());
         assertTrue(it.hasNext());
         List<Entry<Key,Value>> entries = (List<Entry<Key,Value>>) it.next();
         assertNotNull(entries);
@@ -110,7 +112,7 @@ public class KeyAggregatingTransformIteratorTest {
         KeyValue item4 = new KeyValue(new Key("row2", "cf2", "cq1"), "value1".getBytes());
         List<KeyValue> list = Arrays.asList(item1, item2, item3, item4);
         
-        KeyAggregatingTransformIterator it = new KeyAggregatingTransformIterator(PartialKey.ROW_COLFAM, list.iterator(), null);
+        KeyAggregatingTransformIterator it = new KeyAggregatingTransformIterator(PartialKey.ROW_COLFAM, list.iterator(), NOPTransformer.nopTransformer());
         assertTrue(it.hasNext());
         List<Entry<Key,Value>> entries = (List<Entry<Key,Value>>) it.next();
         assertNotNull(entries);

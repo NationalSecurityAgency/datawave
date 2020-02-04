@@ -1,26 +1,26 @@
 
 # You may override DW_WILDFLY_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-http://download.jboss.org/wildfly/10.1.0.Final/wildfly-10.1.0.Final.tar.gz}"
+DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-http://download.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz}"
 DW_WILDFLY_DIST="$( downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" && echo "${tarball}" )"
 DW_WILDFLY_BASEDIR="wildfly-install"
 DW_WILDFLY_SYMLINK="wildfly"
 
-export WILDFLY_HOME="${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}"
+export WILDFLY_HOME="$(readlink -f ${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK})"
 export JBOSS_HOME="${WILDFLY_HOME}"
 export PATH="${WILDFLY_HOME}/bin:${PATH}"
+export DW_DATAWAVE_WEB_JAVA_OPTS=${DW_DATAWAVE_WEB_JAVA_OPTS:-"-Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true"}
 
-DW_DATAWAVE_WEB_CMD_START="( cd "${WILDFLY_HOME}/bin" && nohup ./standalone.sh -c standalone-full.xml & )"
-DW_DATAWAVE_WEB_CMD_START_DEBUG="( cd "${WILDFLY_HOME}/bin" && nohup ./standalone.sh --debug -c standalone-full.xml & )"
+DW_DATAWAVE_WEB_CMD_START="( cd "${WILDFLY_HOME}/bin" && JAVA_OPTS=\"$DW_DATAWAVE_WEB_JAVA_OPTS\" nohup ./standalone.sh -c standalone-full.xml & )"
+DW_DATAWAVE_WEB_CMD_START_DEBUG="( cd "${WILDFLY_HOME}/bin" && JAVA_OPTS=\"$DW_DATAWAVE_WEB_JAVA_OPTS\" nohup ./standalone.sh --debug -c standalone-full.xml & )"
 DW_DATAWAVE_WEB_CMD_STOP="datawaveWebIsRunning && [[ ! -z \$DW_DATAWAVE_WEB_PID_LIST ]] && kill -15 \$DW_DATAWAVE_WEB_PID_LIST"
 
-DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS="pgrep -f 'jboss.home.dir=${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}'"
+DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS="pgrep -f 'jboss.home.dir=${DW_CLOUD_HOME}/.*wildfly'"
 
 DW_DATAWAVE_WEB_SYMLINK="datawave-webservice"
+DW_DATAWAVE_WEB_BASEDIR="datawave-webservice-install"
 
 getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
 DW_DATAWAVE_WEB_DIST="${tarball}"
-DW_DATAWAVE_WEB_VERSION="$( echo "${DW_DATAWAVE_WEB_DIST}" | sed "s/.*\///" | sed "s/datawave-ws-deploy-application-//" | sed "s/-${DW_DATAWAVE_BUILD_PROFILE}.tar.gz//" )"
-DW_DATAWAVE_WEB_BASEDIR="datawave-web-${DW_DATAWAVE_WEB_VERSION}"
 
 function datawaveWebIsRunning() {
     DW_DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS} -d ' '")"
@@ -43,7 +43,8 @@ function datawaveWebStop() {
 }
 
 function datawaveWebStatus() {
-    datawaveWebIsRunning && echo "DataWave Web is running. PIDs: ${DW_DATAWAVE_WEB_PID_LIST}" || echo "DataWave Web is not running"
+    echo "======  DataWave Web Status  ======"
+    datawaveWebIsRunning && info "Wildfly is running => ${DW_DATAWAVE_WEB_PID_LIST}" || warn "Wildfly is not running"
 }
 
 function datawaveWebIsInstalled() {
@@ -61,14 +62,19 @@ function datawaveWebTest() {
 }
 
 function datawaveWebUninstall() {
-   if datawaveWebIsInstalled ; then
+   # Guard against false negative (bug) by testing to see if a "datawave-webservice-*" dir does actually exist, since
+   # DW_DATAWAVE_WEB_BASEDIR value may have been only partially defined (without the DW version, e.g., if build failed, etc)
+   # This is only for backward compatibility, since now the dir name is no longer defined dynamically
+   local install_dir="$( find "${DW_DATAWAVE_SERVICE_DIR}" -maxdepth 1 -type d -name "${DW_DATAWAVE_WEB_BASEDIR}*" )"
+
+   if datawaveWebIsInstalled || [ -n "${install_dir}" ] ; then
 
       if [ -L "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" ] ; then
           ( cd "${DW_CLOUD_HOME}" && unlink "${DW_DATAWAVE_WEB_SYMLINK}" ) || error "Failed to remove DataWave Web symlink"
       fi
 
-      if [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_BASEDIR}" ] ; then
-          rm -rf "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_BASEDIR}"
+      if [ -n "${install_dir}" ] ; then
+          rm -rf "${install_dir}"
       fi
 
       if [ -L "${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}" ] ; then

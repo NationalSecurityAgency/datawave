@@ -1,14 +1,11 @@
 package datawave.ingest.mapreduce.partition;
 
-import java.util.Map;
-import java.util.HashMap;
-
-import datawave.ingest.mapreduce.job.SplitsFileType;
-
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import datawave.ingest.mapreduce.job.SplitsFileType;
 
 public class MultiTableRRRangePartitioner extends MultiTableRangePartitioner {
     

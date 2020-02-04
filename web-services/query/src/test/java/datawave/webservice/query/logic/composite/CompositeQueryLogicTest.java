@@ -36,7 +36,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -149,14 +149,14 @@ public class CompositeQueryLogicTest {
         
     }
     
-    public static class TestQueryLogicTransformer extends BaseQueryLogicTransformer {
+    public static class TestQueryLogicTransformer extends BaseQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
         
         public TestQueryLogicTransformer(MarkingFunctions markingFunctions) {
             super(markingFunctions);
         }
         
         @Override
-        public Object transform(Object input) {
+        public TestQueryResponse transform(Entry<?,?> input) {
             if (input instanceof Entry<?,?>) {
                 @SuppressWarnings("unchecked")
                 Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
@@ -181,14 +181,14 @@ public class CompositeQueryLogicTest {
         
     }
     
-    public static class DifferentTestQueryLogicTransformer extends BaseQueryLogicTransformer {
+    public static class DifferentTestQueryLogicTransformer extends BaseQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
         
         public DifferentTestQueryLogicTransformer(MarkingFunctions markingFunctions) {
             super(markingFunctions);
         }
         
         @Override
-        public Object transform(Object input) {
+        public TestQueryResponse transform(Entry<?,?> input) {
             if (input instanceof Entry<?,?>) {
                 @SuppressWarnings("unchecked")
                 Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
@@ -221,6 +221,12 @@ public class CompositeQueryLogicTest {
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
         
         @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
+        }
+        
+        @Override
         public Priority getConnectionPriority() {
             return Priority.NORMAL;
         }
@@ -232,7 +238,7 @@ public class CompositeQueryLogicTest {
         
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new TestQueryLogicTransformer(new MarkingFunctions.NoOp());
+            return new TestQueryLogicTransformer(new MarkingFunctions.Default());
         }
         
         @Override
@@ -273,7 +279,7 @@ public class CompositeQueryLogicTest {
     }
     
     public static class TestQueryLogic2 extends TestQueryLogic {
-        private Map<Key,Value> data = new ConcurrentHashMap<Key,Value>();
+        private Map<Key,Value> data = new ConcurrentHashMap<>();
         
         public Map<Key,Value> getData() {
             return data;
@@ -291,7 +297,7 @@ public class CompositeQueryLogicTest {
         
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new TestQueryLogicTransformer(new MarkingFunctions.NoOp());
+            return new TestQueryLogicTransformer(new MarkingFunctions.Default());
         }
         
         @Override
@@ -311,13 +317,19 @@ public class CompositeQueryLogicTest {
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
         
         @Override
+        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
+        }
+        
+        @Override
         public Priority getConnectionPriority() {
             return Priority.NORMAL;
         }
         
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new DifferentTestQueryLogicTransformer(new MarkingFunctions.NoOp());
+            return new DifferentTestQueryLogicTransformer(new MarkingFunctions.Default());
         }
         
         @Override
@@ -346,7 +358,7 @@ public class CompositeQueryLogicTest {
     @Before
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
     }
     
     @Test(expected = RuntimeException.class)
@@ -360,7 +372,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -390,7 +402,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -410,7 +422,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -419,7 +431,7 @@ public class CompositeQueryLogicTest {
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testInitializeWithDifferentResponseTypes() throws Exception {
         
         List<BaseQueryLogic<?>> logics = new ArrayList<>();
@@ -430,7 +442,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -450,7 +462,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -485,7 +497,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -503,7 +515,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -529,7 +541,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     // testQueryLogic with max.results.override is set
-    public void testQueryLogicwithMaxResultsOverride() throws Exception {
+    public void testQueryLogicWithMaxResultsOverride() throws Exception {
         Logger.getLogger(CompositeQueryLogic.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicResults.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicTransformer.class).setLevel(Level.TRACE);
@@ -552,11 +564,11 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
-        // max.results.override is set to -1 when it is not passed in as it is an optional paramter
+        // max.results.override is set to -1 when it is not passed in as it is an optional parameter
         logic1.setMaxResults(0);
         logic2.setMaxResults(4);
         /**
@@ -570,7 +582,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -596,7 +608,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic1() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -615,7 +627,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.serialize());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -633,7 +645,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -659,7 +671,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -678,7 +690,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.serialize());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -696,7 +708,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -722,7 +734,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoData() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -732,7 +744,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.serialize());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -747,7 +759,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -762,7 +774,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
@@ -785,7 +797,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
@@ -810,7 +822,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCannotRunQueryLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
@@ -833,5 +845,4 @@ public class CompositeQueryLogicTest {
         Assert.assertEquals(0, c.getQueryLogics().size());
         
     }
-    
 }

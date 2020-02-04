@@ -10,6 +10,7 @@ import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -17,8 +18,16 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.*;
-import org.junit.*;
+import org.apache.log4j.Appender;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -98,9 +107,9 @@ public class ContentJsonColumnBasedHandlerTest {
         TypeRegistry.reset();
         conf = new Configuration();
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 1);
-        conf.set(ShardedDataTypeHandler.SHARD_TNAME, "shard");
-        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex");
-        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex");
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
+        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
     }
     
     @Test
@@ -119,7 +128,7 @@ public class ContentJsonColumnBasedHandlerTest {
         
         // Set up the ColumnBasedHandler
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
-        ContentJsonColumnBasedHandler<Text> jsonHandler = new ContentJsonColumnBasedHandler<Text>();
+        ContentJsonColumnBasedHandler<Text> jsonHandler = new ContentJsonColumnBasedHandler<>();
         jsonHandler.setup(context);
         
         // Set up the Reader

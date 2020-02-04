@@ -2,6 +2,8 @@ package datawave.webservice.query.configuration;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,13 +53,13 @@ public class QueryDataTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Query should not be null", null != result1);
-        assertTrue("Ranges should not be null", null != result2);
+        assertNotNull("Query should not be null", result1);
+        assertNotNull("Ranges should not be null", result2);
         assertTrue("Ranges should not be empty", !result2.isEmpty());
-        assertTrue("Settings should not be null", null != result3);
+        assertNotNull("Settings should not be null", result3);
         assertTrue("Settings should not be empty", !result3.isEmpty());
-        assertTrue("Settings should have a size of 2", result3.size() == 2);
-        assertTrue("toString should not be null", null != result4);
+        assertEquals("Settings should have a size of 2", 2, result3.size());
+        assertNotNull("toString should not be null", result4);
     }
     
     @Test

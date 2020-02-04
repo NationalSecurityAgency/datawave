@@ -58,7 +58,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
     @Before
     public void setup() throws IllegalArgumentException, IllegalAccessException {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         Logger.getLogger(ClassPathXmlApplicationContext.class).setLevel(Level.OFF);
         Logger.getLogger(XmlBeanDefinitionReader.class).setLevel(Level.OFF);
         Logger.getLogger(DefaultListableBeanFactory.class).setLevel(Level.OFF);
@@ -89,7 +89,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         TestQueryLogic<?> logic = (TestQueryLogic<?>) bean.getQueryLogic("TestQuery", principal);
         assertEquals("MyMetadataTable", logic.getTableName());
         assertEquals(12345, logic.getMaxResults());
-        assertEquals(98765, logic.getMaxRowsToScan());
+        assertEquals(98765, logic.getMaxWork());
     }
     
     @Test

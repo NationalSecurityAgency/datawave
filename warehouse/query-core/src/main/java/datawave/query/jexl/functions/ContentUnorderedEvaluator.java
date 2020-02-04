@@ -1,7 +1,17 @@
 package datawave.query.jexl.functions;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Set;
 
+import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.log4j.Logger;
 
 /**
@@ -14,11 +24,14 @@ import org.apache.log4j.Logger;
  * <ul>
  * <li>content:within(int, map, term1, term2, ...)
  * <ul>
- * <li>Returns true if the terms occur within the specified distance of each other</li>
+ * <li>Returns the first position of the matching set if the terms occur within the specified distance of each other</li>
  * <li>The distance parameter is the maximum acceptable distance (term offset) between the terms provided</li>
  * <li>For example, for the phrase "the quick brown fox" content:within(2, 'quick', 'brown', 'fox') will return true because the difference in word offsets one
  * and three is less than or equal to two {@code (3 - 1 <= 2)}. Searching for {@code content:within(1, 'quick', 'brown', 'fox')} will fail because it is
  * impossible for three terms to have a minimum distance of two.</li>
+ * <li>TermWeightPosition adds the idea of a skip word to the evaluation. So a term with a position of 3 and 2 previous skips will evaluate true for all
+ * positions between 1 and 3{@code (3 - 2 = 1)}. This forces the comparison to be the distance of the lowest position with out skips and the highest position
+ * with skips applied.</li>
  * </ul>
  * </li>
  * </ul>
@@ -30,8 +43,8 @@ import org.apache.log4j.Logger;
 public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
     private static final Logger log = Logger.getLogger(ContentUnorderedEvaluator.class);
     
-    public ContentUnorderedEvaluator(Set<String> fields, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
-        super(fields, distance, termOffsetMap, terms);
+    public ContentUnorderedEvaluator(Set<String> fields, int distance, float maxScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+        super(fields, distance, maxScore, termOffsetMap, terms);
     }
     
     /**
@@ -41,30 +54,49 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
      * @return true if we found an unordered list within the specified distance for the specified set of offsets.
      */
     @Override
-    public boolean evaluate(List<List<Integer>> offsets) {
+    public boolean evaluate(List<List<TermWeightPosition>> offsets) {
+        filterOffsets(offsets);
         MultiOffsetMatcher mlIter = new MultiOffsetMatcher(distance, terms, offsets);
         return mlIter.findMatch();
     }
     
+    private void filterOffsets(List<List<TermWeightPosition>> offsets) {
+        // if max score is maximum possible value short circuit
+        if (maxScore == DEFAULT_MAX_SCORE) {
+            return;
+        }
+        
+        for (List<TermWeightPosition> offset : offsets) {
+            Iterator<TermWeightPosition> twpIter = offset.iterator();
+            while (twpIter.hasNext()) {
+                Integer score = twpIter.next().getScore();
+                if (null == score || score > maxScore) {
+                    twpIter.remove();
+                }
+            }
+        }
+    }
+    
     private static class OffsetList implements Comparable<OffsetList> {
         private final String term;
-        private final List<Integer> offsets;
-        private int minOffset;
-        private int maxOffset = -1;
+        private final List<TermWeightPosition> offsets;
+        private TermWeightPosition minOffset;
+        private TermWeightPosition maxOffset = null;
         
-        public OffsetList(String term, List<Integer> o) {
+        public OffsetList(String term, List<TermWeightPosition> o) {
             this.term = term;
             this.offsets = o;
             
             // as long as there is at least one term, grab the last item for a max
             if (!o.isEmpty()) {
-                maxOffset = offsets.get(offsets.size() - 1);
+                // offsets with skip words will sort based on min so for max we need to loop over all offsets
+                maxOffset = Collections.max(offsets, new TermWeightPosition.MaxOffsetComparator());
             }
             
             nextOffset();
         }
         
-        public int getMinOffset() {
+        public TermWeightPosition getMinOffset() {
             return minOffset;
         }
         
@@ -72,22 +104,22 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
          * 
          * @return the highest value in this list
          */
-        public int getMaxOffset() {
+        public TermWeightPosition getMaxOffset() {
             return maxOffset;
         }
         
-        public int nextOffset() {
+        public Optional<TermWeightPosition> nextOffset() {
             if (offsets.isEmpty()) {
-                this.minOffset = -1;
+                return Optional.empty();
             } else {
                 minOffset = offsets.remove(0);
+                return Optional.of(minOffset);
             }
-            return minOffset;
         }
         
         @Override
         public int compareTo(OffsetList o) {
-            return this.getMinOffset() - o.getMinOffset();
+            return this.getMinOffset().compareTo(o.getMinOffset());
         }
         
         @Override
@@ -97,7 +129,7 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
         
         @Override
         public String toString() {
-            return term + ";" + minOffset + ":" + offsets.toString();
+            return term + ";" + minOffset + ":" + maxOffset;
         }
     }
     
@@ -106,8 +138,8 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
         
         final String[] terms;
         
-        final PriorityQueue<OffsetList> offsetQueue = new PriorityQueue<OffsetList>();
-        int maxOffset = -1;
+        final PriorityQueue<OffsetList> offsetQueue = new PriorityQueue<>();
+        Optional<TermWeightPosition> maxOffset = Optional.empty();
         
         /**
          * At the end of this method, terms will contain the query terms. currentOffsets will contain the minimum offset for each term and offsetLists will
@@ -125,7 +157,7 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
          * @throws IllegalArgumentException
          *             if the number of terms does not match the number of offset lists.
          */
-        public MultiOffsetMatcher(int distance, String[] terms, Collection<List<Integer>> termOffsets) {
+        public MultiOffsetMatcher(int distance, String[] terms, Collection<List<TermWeightPosition>> termOffsets) {
             this.distance = distance;
             this.terms = terms;
             
@@ -139,15 +171,15 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
             int termPos = 0;
             
             // holds the (canonical) offset list for of each term
-            final Map<String,List<Integer>> termsSeen = new HashMap<String,List<Integer>>();
+            final Map<String,List<TermWeightPosition>> termsSeen = new HashMap<>();
             
-            for (List<Integer> offsetList : termOffsets) {
+            for (List<TermWeightPosition> offsetList : termOffsets) {
                 String term = terms[termPos++];
                 
                 if (offsetList != null) {
                     if (!termsSeen.containsKey(term)) {
                         // new term, create a defensive copy that's safe to modify.
-                        offsetList = new LinkedList<Integer>(offsetList);
+                        offsetList = new LinkedList<>(offsetList);
                         termsSeen.put(term, offsetList);
                     } else {
                         // already seen term, all matching terms should reference the same list.
@@ -165,8 +197,8 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
                 }
                 
                 OffsetList entry = new OffsetList(term, offsetList);
-                if (entry.getMinOffset() > maxOffset) {
-                    maxOffset = entry.getMinOffset();
+                if ((!maxOffset.isPresent()) || (entry.getMinOffset().compareTo(maxOffset.get()) > 0)) {
+                    maxOffset = Optional.of(entry.getMinOffset());
                 }
                 offsetQueue.add(entry);
             }
@@ -175,27 +207,28 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
         public boolean findMatch() {
             // Quick short-circuit -- if we have fewer offsets than terms in the phrase/adjacency/within
             // we're evaluating, we know there are no results
-            if (terms.length > offsetQueue.size()) {
+            if (terms.length > offsetQueue.size() || (!maxOffset.isPresent())) {
                 return false;
             }
             
             while (true) {
                 OffsetList o = offsetQueue.remove();
-                if (maxOffset - o.getMinOffset() <= distance) {
+                
+                if (maxOffset.get().getLowOffset() - o.getMinOffset().getOffset() <= distance) {
                     return true;
                 }
                 
                 // if the maxOffset is more than distance from the largest value in this list, there is no way to satisfy
-                if (maxOffset - o.getMaxOffset() > distance) {
+                if (maxOffset.get().getLowOffset() - o.getMaxOffset().getOffset() > distance) {
                     return false;
                 }
                 
-                int nextOffset = o.nextOffset();
-                if (nextOffset < 0) { // no more offsets from this list
+                Optional<TermWeightPosition> nextOffset = o.nextOffset();
+                if (!nextOffset.isPresent()) { // no more offsets from this list
                     return false;
                 }
                 
-                if (nextOffset > maxOffset) {
+                if (nextOffset.get().compareTo(maxOffset.get()) > 0) {
                     maxOffset = nextOffset;
                 }
                 

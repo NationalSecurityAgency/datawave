@@ -1,19 +1,28 @@
 package datawave.security.util;
 
 import java.security.Principal;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.*;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import datawave.accumulo.util.security.UserAuthFunctions;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 public class AuthorizationsUtil {
+    
     public static Authorizations union(Iterable<byte[]> authorizations1, Iterable<byte[]> authorizations2) {
         LinkedList<byte[]> aggregatedAuthorizations = Lists.newLinkedList();
         addTo(aggregatedAuthorizations, authorizations1);
@@ -49,8 +58,8 @@ public class AuthorizationsUtil {
         }
         
         if (!missingAuths.isEmpty()) {
-            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                            + requested + ", User: " + userAuths.toString());
+            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
+                            + ", User: " + userAuths);
         }
         return mergedAuths;
     }
@@ -78,47 +87,10 @@ public class AuthorizationsUtil {
      *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
      */
     public static LinkedHashSet<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal principal) {
-        HashSet<String> requested = null;
-        if (!StringUtils.isEmpty(requestedAuths)) {
-            requested = new HashSet<>(splitAuths(requestedAuths));
-        }
         
-        LinkedHashSet<Authorizations> mergedAuths = new LinkedHashSet<>();
-        
-        if (null == principal) {
-            mergedAuths.add(new Authorizations());
-        } else {
-            HashSet<String> missingAuths = (requested == null) ? new HashSet<>() : new HashSet<>(requested);
-            
-            final DatawaveUser primaryUser = principal.getPrimaryUser();
-            HashSet<String> userAuths = new HashSet<>(primaryUser.getAuths());
-            if (!userAuths.isEmpty()) {
-                if (null != requested) {
-                    missingAuths.removeAll(userAuths);
-                    userAuths.retainAll(requested);
-                }
-                mergedAuths.add(new Authorizations(userAuths.toArray(new String[userAuths.size()])));
-            }
-            
-            // Now simply add the auths from each non-primary user to the merged auths set
-            // @formatter:off
-            principal.getProxiedUsers().stream()
-                    .filter(u -> u != primaryUser)
-                    .map(DatawaveUser::getAuths)
-                    .map(AuthorizationsUtil::toAuthorizations)
-                    .forEach(mergedAuths::add);
-            // @formatter:on
-            
-            if (!missingAuths.isEmpty()) {
-                throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                                + requested + ", User: " + userAuths);
-            }
-        }
-        return mergedAuths;
-    }
-    
-    private static Authorizations toAuthorizations(Collection<String> auths) {
-        return new Authorizations(auths.stream().map(String::trim).map(s -> s.getBytes(UTF_8)).collect(Collectors.toList()));
+        final DatawaveUser primaryUser = principal.getPrimaryUser();
+        UserAuthFunctions uaf = UserAuthFunctions.getInstance();
+        return uaf.mergeAuthorizations(uaf.getRequestedAuthorizations(requestedAuths, primaryUser), principal.getProxiedUsers(), u -> u != primaryUser);
     }
     
     /**
@@ -155,11 +127,10 @@ public class AuthorizationsUtil {
         }
         // All auths requested are auths the user has, return downgraded string for auths
         if (missingAuths.isEmpty()) {
-            String finalAuths = AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
-            return finalAuths;
+            return AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
         } else {// missing auths.size() > 0; user requested auths they don't have
-            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                            + requested + ", User: " + userAuths);
+            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
+                            + ", User: " + userAuths);
         }
     }
     
@@ -206,59 +177,7 @@ public class AuthorizationsUtil {
     }
     
     public static Collection<Authorizations> minimize(Collection<Authorizations> authorizations) {
-        if (authorizations.size() > 1) {
-            // check if all auth sets are subsets of a minimum set, and use just the minimum if so
-            // minimize the sets to put all the common auths in the first one, and just the disjoint auths in the remainder.
-            LinkedHashSet<TreeSet<String>> allAuths = new LinkedHashSet<>();
-            for (Authorizations a : authorizations) {
-                TreeSet<String> s = new TreeSet<>();
-                for (byte[] b : a)
-                    s.add(new String(b));
-                allAuths.add(s);
-            }
-            
-            Collection<? extends Collection<String>> minimized = minimize2(allAuths);
-            authorizations = new LinkedHashSet<>(minimized.size());
-            for (Collection<String> a : minimized)
-                authorizations.add(new Authorizations(a.toArray(new String[a.size()])));
-        }
-        return authorizations;
-    }
-    
-    public static Collection<? extends Collection<String>> minimize2(Collection<? extends Collection<String>> authorizations) {
-        if (authorizations.size() > 1) {
-            // check if all auth sets are subsets of a minimum set, and use just the minimum if so
-            // minimize the sets to put all the common auths in the first one, and just the disjoint auths in the remainder.
-            LinkedHashSet<TreeSet<String>> allAuths = new LinkedHashSet<>();
-            for (Collection<String> a : authorizations)
-                allAuths.add(new TreeSet<>(a));
-            
-            // Intersect all the auths to find the minimum auths of the group.
-            TreeSet<String> minAuths = new TreeSet<>(allAuths.iterator().next());
-            for (TreeSet<String> a : allAuths)
-                minAuths.retainAll(a);
-            
-            boolean set = false;
-            // Now see if any incoming auths equals the minimum set, and if so, just return that
-            // Since a subset of everything will be the only one that can pass multiple visibility
-            // expressions.
-            for (TreeSet<String> a : allAuths) {
-                if (minAuths.equals(a)) {
-                    set = true;
-                    authorizations = Collections.singleton(a);
-                }
-            }
-            
-            // If the hash set is smaller than the incoming auths list size, then we must have deduped and
-            // can return a smaller set of auths.
-            if (!set && authorizations.size() > allAuths.size()) {
-                ArrayList<TreeSet<String>> newAuths = new ArrayList<>(allAuths.size());
-                for (TreeSet<String> a : allAuths)
-                    newAuths.add(a);
-                authorizations = newAuths;
-            }
-        }
-        return authorizations;
+        return AuthorizationsMinimizer.minimize(authorizations);
     }
     
     public static Collection<? extends Collection<String>> prepareAuthsForMerge(Authorizations authorizations) {

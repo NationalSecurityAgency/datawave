@@ -4,7 +4,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.protobuf.EdgeData;
 import datawave.edge.util.EdgeKey.EDGE_FORMAT;
 import datawave.edge.util.EdgeKey.EdgeKeyBuilder;
-import datawave.edge.util.EdgeKey.STATS_TYPE;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -18,7 +17,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class EdgeValueHelperTest {
     
@@ -99,20 +100,20 @@ public class EdgeValueHelperTest {
         List<Long> activityList = EdgeValueHelper.decodeActivityHistogram(activityValue);
         List<Long> durationList = EdgeValueHelper.decodeDurationHistogram(durationValue);
         
-        assertTrue(count == 814l);
+        assertEquals(814l, (long) count);
         
-        assertTrue(edgeKey.getSourceRelationship().equals("SOURCEREL"));
-        assertTrue(edgeKey.getSinkRelationship().equals("SINKREL"));
-        assertTrue(edgeKey.getType().equals("TYPE"));
+        assertEquals("SOURCEREL", edgeKey.getSourceRelationship());
+        assertEquals("SINKREL", edgeKey.getSinkRelationship());
+        assertEquals("TYPE", edgeKey.getType());
         
-        assertTrue(activityList.size() == 24);
+        assertEquals(24, activityList.size());
         for (int ii = 0; ii < activityList.size(); ii++) {
-            assertTrue(activityList.get(ii) == (ii + 1));
+            assertEquals((long) activityList.get(ii), (ii + 1));
         }
         
-        assertTrue(durationList.size() == 7);
+        assertEquals(7, durationList.size());
         for (int ii = 0; ii < durationList.size(); ii++) {
-            assertTrue(durationList.get(ii) == (ii + 1));
+            assertEquals((long) durationList.get(ii), (ii + 1));
         }
     }
     
@@ -236,11 +237,11 @@ public class EdgeValueHelperTest {
     
     private void verifyValuesInIncompleteHistogram(List<Long> histogram, int expectedLength) {
         assertEquals("Doesn't exceed expected size", expectedLength, histogram.size());
-        assertTrue("Hour List doesn't have correct bit set " + histogram.get(0), 0L == histogram.get(0));
-        assertTrue("Hour List doesn't have correct bit set " + histogram.get(1), 1L == histogram.get(1));
-        assertTrue("Hour List doesn't have correct bit set " + histogram.get(2), 2L == histogram.get(2));
+        assertEquals("Hour List doesn't have correct bit set " + histogram.get(0), 0L, (long) histogram.get(0));
+        assertEquals("Hour List doesn't have correct bit set " + histogram.get(1), 1L, (long) histogram.get(1));
+        assertEquals("Hour List doesn't have correct bit set " + histogram.get(2), 2L, (long) histogram.get(2));
         for (int i = 3; i < expectedLength; i++) {
-            assertTrue("Hour List's missing hours weren't correctly filled with zeros " + i + " " + expectedLength, 0 == histogram.get(i));
+            assertEquals("Hour List's missing hours weren't correctly filled with zeros " + i + " " + expectedLength, 0, (long) histogram.get(i));
         }
     }
     

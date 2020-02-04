@@ -3,6 +3,7 @@ package datawave.ingest.util;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -202,13 +203,13 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Strategy should have thrown a timeout exception", null != result1);
+        assertNotNull("Strategy should have thrown a timeout exception", result1);
     }
     
     @Test
     public void testTokenize_WeightedLengthPruningWithUndefinedMaxNGramCount() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 10));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 10));
@@ -246,7 +247,7 @@ public class NGramTokenizationStrategyTest {
         BloomFilter<String> result1 = subject.newFilter(ncis.size()); // Create filter, which forces weighting calculation
         subject.setFilter(this.filter); // Set the new filter
         
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         int result2 = 0;
         for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
             int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
@@ -256,7 +257,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Should have created a non-null filter", null != result1);
+        assertNotNull("Should have created a non-null filter", result1);
         
         assertEquals("Should have applied " + expectedNGramCount + " n-grams to the bloom filter", expectedNGramCount, result2);
         
@@ -270,7 +271,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_WeightedLengthPruningWithAllUnderweightValues() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 5));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 4));
@@ -304,7 +305,7 @@ public class NGramTokenizationStrategyTest {
         BloomFilter<String> result1 = subject.newFilter(ncis.size()); // Create filter, which forces weighting calculation
         subject.setFilter(this.filter); // Set the new filter
         
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         int result2 = 0;
         for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
             int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
@@ -314,7 +315,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Should have created a non-null filter", null != result1);
+        assertNotNull("Should have created a non-null filter", result1);
         
         assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter", (result2 > expectedNGramCount - 3)
                         && (result2 < idealFilterSize));
@@ -329,7 +330,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_WeightedLengthPruningWithMinorityOfOverweightValues() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 5));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 4));
@@ -390,7 +391,7 @@ public class NGramTokenizationStrategyTest {
         BloomFilter<String> result1 = subject.newFilter(ncis.size()); // Create filter, which forces weighting calculation
         subject.setFilter(this.filter); // Set the new filter
         
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         int result2 = 0;
         for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
             int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
@@ -400,7 +401,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Should have created a non-null filter", null != result1);
+        assertNotNull("Should have created a non-null filter", result1);
         
         /*
          * Debugging note: Recent changes to Java package names in this project mysteriously and unfortunately had the side effect of breaking the original
@@ -412,9 +413,8 @@ public class NGramTokenizationStrategyTest {
          * revision here will make debugging this issue easier in the future.
          */
         final int result2LowerBound = expectedNGramCount - 5;
-        final int result2UpperBound = idealFilterSize;
         assertTrue("result2 (" + result2 + ") should have been greater than " + result2LowerBound, result2 > result2LowerBound);
-        assertTrue("result2 (" + result2 + ") should have been less than " + result2UpperBound, result2 < result2UpperBound);
+        assertTrue("result2 (" + result2 + ") should have been less than " + idealFilterSize, result2 < idealFilterSize);
         
         String fieldName = ncis.lastElement().getIndexedFieldName();
         int expectedCount = BloomFilterUtil.predictNGramCount(ncis.lastElement().getIndexedFieldValue());
@@ -425,7 +425,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_WeightedLengthPruningWithMajorityOfOverweightValues() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 3));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 4));
@@ -464,7 +464,7 @@ public class NGramTokenizationStrategyTest {
         BloomFilter<String> result1 = subject.newFilter(ncis.size()); // Create filter, which forces weighting calculation
         subject.setFilter(this.filter); // Set the new filter
         
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         int result2 = 0;
         for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
             int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
@@ -474,7 +474,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Should have created a non-null filter", null != result1);
+        assertNotNull("Should have created a non-null filter", result1);
         
         assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter", (result2 > expectedNGramCount - 20)
                         && (result2 < idealFilterSize));
@@ -489,7 +489,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_StrategyStack() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 5));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 4));
@@ -539,7 +539,7 @@ public class NGramTokenizationStrategyTest {
         subject.setFilter(this.filter); // Set the new filter
         
         int result2 = 0;
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         Exception result4 = null;
         try {
             for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
@@ -557,7 +557,7 @@ public class NGramTokenizationStrategyTest {
         
         assertEquals("Should have applied " + timeoutAfterNGramCount + " n-grams to the bloom filter", timeoutAfterNGramCount, result2);
         
-        assertTrue("Should have caught a timeout exception", null != result4);
+        assertNotNull("Should have caught a timeout exception", result4);
     }
     
     private class SimulatedProcessingDelayStrategy extends AbstractNGramTokenizationStrategy {

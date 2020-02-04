@@ -3,7 +3,7 @@ package datawave.query.language.tree;
 import org.apache.log4j.Logger;
 
 public class OrNode extends QueryNode {
-    private final static Logger log = Logger.getLogger(OrNode.class.getName());
+    private static final Logger log = Logger.getLogger(OrNode.class.getName());
     
     public OrNode(QueryNode... children) {
         super(children);

@@ -15,9 +15,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.MutableDateTime;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -33,7 +30,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -77,9 +76,9 @@ public class DashboardBean {
     @Path("/stats")
     @Interceptors(ResponseInterceptor.class)
     public ExtJsResponse<DashboardSummary> getQuerySummary(@QueryParam("start") long startMs, @QueryParam("end") long endMs) throws Exception {
-        MutableDateTime now = new MutableDateTime(DateTimeZone.UTC);
-        MutableDateTime start = new MutableDateTime(startMs);
-        MutableDateTime end = new MutableDateTime(endMs);
+        Instant now = Instant.now();
+        Instant start = Instant.ofEpochMilli(startMs);
+        Instant end = Instant.ofEpochMilli(endMs);
         String auths;
         DatawavePrincipal principal = getPrincipal();
         if (principal == null) {
@@ -90,7 +89,7 @@ public class DashboardBean {
         
         ExtJsResponse<DashboardSummary> summary = null;
         try {
-            summary = DashboardQuery.createQuery(queryExecutor, auths, start.toDate(), end.toDate(), now.toDate());
+            summary = DashboardQuery.createQuery(queryExecutor, auths, Date.from(start), Date.from(end), Date.from(now));
         } catch (RuntimeException ex) {
             log.error("An error occurred querying for dashboard metrics: " + ex.getMessage(), ex);
             throw ex;
@@ -137,7 +136,7 @@ public class DashboardBean {
      * @throws TableNotFoundException
      */
     private Scanner createScanner(Connector c) throws TableNotFoundException {
-        long start = new DateTime(DateTimeZone.UTC).getMillis() - MS_IN_12_HRS;
+        long start = Instant.now().toEpochMilli() - MS_IN_12_HRS;
         long end = start + (1000 * 60 * 10);// 10 minutes
         Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME_JMC, getAuths());
         Key startKey = new Key(Long.toString(start));

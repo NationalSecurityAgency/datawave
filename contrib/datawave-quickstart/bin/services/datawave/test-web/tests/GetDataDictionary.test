@@ -1,6 +1,0 @@
-TEST_ID="GetDataDictionary"
-TEST_DESCRIPTION="Gets DataWave's data dictionary"
-TEST_URL_OPTS="-X GET ${URI_ROOT}/DataDictionary"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false

@@ -1,40 +1,19 @@
 package datawave.query;
 
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
-import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -51,6 +30,23 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.inject.Inject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import static datawave.query.QueryTestTableHelper.*;
 
 /**
  * Loads some data in a mock accumulo table and then issues queries against the table using the shard query table.
@@ -75,8 +71,7 @@ public abstract class FunctionalSetTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -98,8 +93,7 @@ public abstract class FunctionalSetTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -124,7 +118,8 @@ public abstract class FunctionalSetTest {
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
+                        .deleteClass(DefaultEdgeEventQueryLogic.class)
+                        .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
@@ -147,11 +142,10 @@ public abstract class FunctionalSetTest {
         deserializer = new KryoDocumentDeserializer();
     }
     
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws ParseException, Exception;
+    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
-                    throws ParseException, Exception {
+                    throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -165,14 +159,15 @@ public abstract class FunctionalSetTest {
         
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
+        logic.setMaxEvaluationPipelines(1);
+        logic.setMaxDepthThreshold(6);
         
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
-        
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             
@@ -218,15 +213,18 @@ public abstract class FunctionalSetTest {
         if (log.isDebugEnabled()) {
             log.debug("testMethodAsArgumentToMethod");
         }
-        String[] queryStrings = {//
-        // this makes sure that the JexlStringBuildingVisitor will parse the method as a method argument
-        "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')).isEmpty() == false && "
+        // @formatter:off
+        String[] queryStrings = {
+                // this makes sure that the JexlStringBuildingVisitor will parse the method as a method argument
+                "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')).isEmpty() == false && "
                         + "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')).containsAll(AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE'))) == true"
-        
         };
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {//
-        Arrays.asList("SOPRANO")};
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("SOPRANO")
+        };
+        // @formatter:on
+        
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -241,27 +239,44 @@ public abstract class FunctionalSetTest {
         if (log.isDebugEnabled()) {
             log.debug("testMinMax");
         }
-        String[] queryStrings = {"AG.min() > 10", // model expands to AGE.min() > 10 || ETA.min() > 10
-                "AG.max() == 40", "AG.max() >= 40", "AG.min() < 10",
+        // @formatter:off
+        String[] queryStrings = {
+                "AG.min() > 10", // model expands to AGE.min() > 10 || ETA.min() > 10
+                "AG.max() == 40",
+                "AG.max() >= 40",
+                "AG.min() < 10",
                 
-                "AG.greaterThan(39).size() >= 1", "AG.compareWith(40,'==').size() == 1",
+                "AG.greaterThan(39).size() >= 1",
+                "AG.compareWith(40,'==').size() == 1",
                 
-                "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'", "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24", // one day
+                "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'",
+                "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24", // one day
                 "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24*5 + 1000*60*60*24*7", // 5 plus 7 days for the calculator-deprived
                 "DEATH_DATE.min() < '20160301120000'",
                 
                 "AG.size() > 0", // model expands to AGE.size() > 0 || ETA.size() > 0
-                "ETA.size() > 0", "AGE.size() > 0"};
+                "ETA.size() > 0",
+                "AGE.size() > 0"
+        };
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList(),
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList(),
                 
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
                 
-                Arrays.asList("CAPONE"), Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("CAPONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
                 
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), Arrays.asList("CORLEONE"), Arrays.asList("SOPRANO", "CAPONE"),};
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE"),
+                Arrays.asList("SOPRANO", "CAPONE"),};
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -275,29 +290,31 @@ public abstract class FunctionalSetTest {
         if (log.isDebugEnabled()) {
             log.debug("testFunctionsAsArguments");
         }
+        // @formatter:off
         String[] queryStrings = {
                 
-                "10 <= AG && AG <= 18", //
-                "AG <= 18 && AG >= 10", //
-                "18 >= AG && 10 <= AG", //
+                "10 <= AG && AG <= 18",
+                "AG <= 18 && AG >= 10",
+                "18 >= AG && 10 <= AG",
                 // "AG <= 18",
                 // "18 >= AG",
                 "AG == 18",
                 "18 == AG",
-                "GEN == 'FEMALE'", // this succeeds because the literal 'FEMALE' is normalized to 'female' based on the type (LcNoDiacritics) of the GENDER
+                "GEN == 'FEMALE'", // this succeeds because the literal 'FEMALE' is normalized to 'female' based on the type
+                                   // (LcNoDiacritics) of the GENDER
                                    // field
                 "GEN == 'female'", // this succeeds for the same reason as above. normalization was a no-op.
                 "'female' == GEN", // this succeeds because no normalization is necessary
                 "'FEMALE' == GEN",
-                
+
                 // the next one matches Meadow Soprano, age 18, because the 'MAGIC' value is 18 (we don't know/care what the actual value
                 // of MAGIC is, only that whatever it is, it matches AGE in the same group as the other matches)
                 "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) == MAGIC",
-                
+
                 // the next one matches Meadow Soprano, GENDER female, age 18 but not Constanza Corleone, Gender female, age 18
                 // the < part of this is what is special. Other comparison operators should work the same way
                 "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19",
-                
+
                 // the next 2 queries are equivalent. the reason for the functional query stuff is for when we
                 // want to query with an operator other than '=='
                 "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
@@ -312,9 +329,9 @@ public abstract class FunctionalSetTest {
                                                                                                                                                     // none
         };
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] { //
+        List<String>[] expectedLists = new List[] {
         
-        Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
+                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18",
                 Arrays.asList("SOPRANO", "CORLEONE"), // "18 >= AG && 10 <= AG",
                 Arrays.asList("SOPRANO", "CORLEONE"), // "AGE == 18"
@@ -323,7 +340,7 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("SOPRANO", "CORLEONE"), // "GENDER == 'female'"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "'female' == GENDER"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "'FEMALE' == GENDER"
-                
+
                 Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) == MAGIC",
                 Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) < 19"
                 Arrays.asList("CAPONE"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE')) == 30"
@@ -332,6 +349,7 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("SOPRANO"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
                 Arrays.asList() // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
         };
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -345,20 +363,16 @@ public abstract class FunctionalSetTest {
         if (log.isDebugEnabled()) {
             log.debug("testConcatMethods");
         }
-        String[] queryStrings = {//
-        
-        "UUID == 'SOPRANO' && NAM.min().hashCode() != 0", //
-        
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID == 'SOPRANO' && NAM.min().hashCode() != 0",
         };
-        List<String>[] expectedLists = new List[] { //
-        
-        Arrays.asList("SOPRANO"), //
-        
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("SOPRANO"),
         };
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
-        
     }
-    
 }

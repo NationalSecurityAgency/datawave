@@ -11,7 +11,7 @@ import java.util.Comparator;
  */
 public class GeoWaveQueryPlanComparator implements Comparator<QueryPlan> {
     
-    final private GeoWaveQueryInfoVisitor geoWaveVisitor;
+    private final GeoWaveQueryInfoVisitor geoWaveVisitor;
     
     public GeoWaveQueryPlanComparator(Collection<String> geoFields) {
         geoWaveVisitor = new GeoWaveQueryInfoVisitor(geoFields);

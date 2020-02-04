@@ -10,7 +10,7 @@ public class JexlRangeNode extends JexlNode {
     private Boolean upperInclusive = null;
     
     private JexlRangeNode() {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.field = "";
         this.beginRange = "";
         this.endRange = "";
@@ -19,7 +19,7 @@ public class JexlRangeNode extends JexlNode {
     }
     
     public JexlRangeNode(String field, String beginRange, String endRange, Boolean lowerInclusive, Boolean upperInclusive) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.field = field;
         this.beginRange = jexlEscapeSelector(beginRange);
         this.endRange = jexlEscapeSelector(endRange);
@@ -63,7 +63,7 @@ public class JexlRangeNode extends JexlNode {
         return sb.toString();
     }
     
-    static public String convertToRegex(String s) {
+    public static String convertToRegex(String s) {
         StringBuilder sb = new StringBuilder();
         char[] chars = s.toCharArray();
         

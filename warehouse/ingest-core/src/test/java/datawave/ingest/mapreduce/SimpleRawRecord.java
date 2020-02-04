@@ -7,12 +7,18 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.Writable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A POJO implementation of the {@link datawave.ingest.data.RawRecordContainer}.
@@ -25,14 +31,16 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private UID id = uidBuilder.newId();
     private Type dataType;
     private long date = 0;
-    private Collection<String> errors = Collections.emptyList();
+    private Collection<String> errors = new ArrayList<>();
     private Collection<String> altIds = Collections.emptyList();
     private String rawFileName = "";
     private long rawRecordNumber = 0;
     private long rawRecordTimestamp = 0;
-    private byte[] rawData = new byte[0];
+    private byte[] rawData = null;
     private Object auxData;
+    private Map<String,String> auxMap;
     private ColumnVisibility visibility;
+    private boolean fatalError = false;
     
     @Override
     public Map<String,String> getSecurityMarkings() {
@@ -114,9 +122,13 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         return this.errors.contains(error);
     }
     
+    public void setFatalError(boolean fatalError) {
+        this.fatalError = fatalError;
+    }
+    
     @Override
     public boolean fatalError() {
-        return false;
+        return fatalError;
     }
     
     @Override
@@ -199,6 +211,25 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         this.auxData = auxData;
     }
     
+    /**
+     * Gets any auxiliary properties stored with this raw record container. Note that aux properties are not serialized with the raw record container.
+     */
+    @Override
+    public String getAuxProperty(String prop) {
+        return (auxMap == null ? null : auxMap.get(prop));
+    }
+    
+    /**
+     * Sets an auxiliary property for this raw record container. Note that aux properties are not serialized with the raw record container.
+     */
+    @Override
+    public void setAuxProperty(String prop, String value) {
+        if (auxMap == null) {
+            auxMap = new HashMap<>();
+        }
+        auxMap.put(prop, value);
+    }
+    
     @Override
     public RawRecordContainer copy() {
         throw new UnsupportedOperationException("Copy not yet implemented on " + this.getClass());
@@ -224,8 +255,12 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         dataOutput.writeLong(rawRecordNumber);
         dataOutput.writeLong(rawRecordTimestamp);
         
-        dataOutput.writeInt(rawData.length);
-        dataOutput.write(rawData);
+        if (rawData == null) {
+            dataOutput.writeInt(0);
+        } else {
+            dataOutput.writeInt(rawData.length);
+            dataOutput.write(rawData);
+        }
         
         // skipping auxData and visibility for now
     }
@@ -248,8 +283,12 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         rawRecordTimestamp = dataInput.readLong();
         
         int len = dataInput.readInt();
-        rawData = new byte[len];
-        dataInput.readFully(rawData);
+        if (len > 0) {
+            rawData = new byte[len];
+            dataInput.readFully(rawData);
+        } else {
+            rawData = null;
+        }
     }
     
     @Override

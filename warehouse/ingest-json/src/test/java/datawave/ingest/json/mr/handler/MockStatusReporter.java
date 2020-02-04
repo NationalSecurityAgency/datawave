@@ -13,10 +13,6 @@ public class MockStatusReporter extends StatusReporter {
     private String status = null;
     private int progress = 0;
     
-    public MockStatusReporter() {
-        
-    }
-    
     /*
      * (non-Javadoc)
      * 

@@ -1,22 +1,24 @@
 package datawave.query.iterator;
 
 import com.google.common.collect.Maps;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import datawave.data.type.util.NumericalEncoder;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.io.Text;
+
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 /**
  * Created on 9/6/16.
  */
 public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
-    volatile private long resultCount = 0;
+    private volatile long resultCount = 0;
     private Iterator<Entry<Key,Value>> serializedDocuments = null;
-    private YieldCallbackWrapper<Key> yield;
+    private YieldCallback<Key> yield;
     
-    public ResultCountingIterator(Iterator<Entry<Key,Value>> serializedDocuments, long resultCount, YieldCallbackWrapper<Key> yieldCallback) {
+    public ResultCountingIterator(Iterator<Entry<Key,Value>> serializedDocuments, long resultCount, YieldCallback<Key> yieldCallback) {
         this.serializedDocuments = serializedDocuments;
         this.resultCount = resultCount;
         this.yield = yieldCallback;
@@ -42,8 +44,8 @@ public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
     
     private Key addKeyCount(Key key) {
         resultCount++;
-        return new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount)) + '\0' + key.getColumnFamily().toString()),
-                        key.getColumnQualifier(), key.getColumnVisibility(), key.getTimestamp());
+        return new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount)) + '\0' + key.getColumnFamily()), key.getColumnQualifier(),
+                        key.getColumnVisibility(), key.getTimestamp());
     }
     
     @Override

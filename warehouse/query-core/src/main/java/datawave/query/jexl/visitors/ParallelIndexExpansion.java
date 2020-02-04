@@ -1,12 +1,56 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.query.jexl.JexlASTHelper.isIndexed;
-import static datawave.query.jexl.JexlASTHelper.isLiteralEquality;
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.JexlNodeFactory.ContainerType;
+import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.model.QueryModel;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.planner.pushdown.Cost;
+import datawave.query.planner.pushdown.CostEstimator;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTNotNode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
+import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.Node;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,48 +61,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
-import datawave.data.type.Type;
-import datawave.query.model.QueryModel;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.TreeHashNode;
-import datawave.query.planner.pushdown.Cost;
-import datawave.query.planner.pushdown.CostEstimator;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.Query;
-
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
-import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.Node;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import static datawave.query.jexl.JexlASTHelper.isIndexed;
+import static datawave.query.jexl.JexlASTHelper.isLiteralEquality;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 public class ParallelIndexExpansion extends RebuildingVisitor {
     
@@ -68,28 +74,36 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     protected Collection<IndexLookupCallable> todo;
     protected Set<Type<?>> allTypes;
     protected Collection<String> onlyUseThese;
+    protected boolean expandFields;
+    protected boolean expandValues;
+    protected boolean expandUnfieldedNegations;
     protected Set<String> expansionFields;
     protected MetadataHelper helper;
     protected Set<String> indexOnlyFields;
     protected CostEstimator costAnalysis;
     protected Set<String> allFields;
     protected Node newChild;
-    protected Map<TreeHashNode,IndexLookup> lookupMap = Maps.newConcurrentMap();
+    protected Map<String,IndexLookup> lookupMap = Maps.newConcurrentMap();
     protected String threadName;
     private static final Logger log = Logger.getLogger(ParallelIndexExpansion.class);
     
-    public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields)
-                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        this(config, scannerFactory, helper, expansionFields, "Datawave Fielded Regex");
+    public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
+                    boolean expandFields, boolean expandValues, boolean expandUnfieldedNegations) throws InstantiationException, IllegalAccessException,
+                    TableNotFoundException {
+        this(config, scannerFactory, helper, expansionFields, expandFields, expandValues, expandUnfieldedNegations, "Datawave Fielded Regex");
     }
     
     public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
-                    String threadName) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+                    boolean expandFields, boolean expandValues, boolean expandUnfieldedNegations, String threadName) throws InstantiationException,
+                    IllegalAccessException, TableNotFoundException {
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.threadName = threadName;
         
+        this.expandFields = expandFields;
+        this.expandValues = expandValues;
+        this.expandUnfieldedNegations = expandUnfieldedNegations;
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
         
         todo = Lists.newArrayList();
@@ -195,7 +209,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         if (node.jjtGetNumChildren() == 0) {
             log.warn("Did not find any matches in index for the expansion of unfielded terms.");
-            throw new CannotExpandUnfieldedTermFatalException("Did not find any matches in index for the expansion of unfielded terms.");
+            throw new EmptyUnfieldedTermExpansionException("Did not find any matches in index for the expansion of unfielded terms.");
         }
         
         return node;
@@ -205,19 +219,17 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * Performs a lookup in the global index for an ANYFIELD term and returns the field names where the term is found
      * 
      * @param node
-     * @param positive
      * @return set of field names from the global index for the nodes value
      * @throws TableNotFoundException
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    protected IndexLookupCallable buildIndexLookup(JexlNode node, boolean positive) throws TableNotFoundException, IOException, InstantiationException,
-                    IllegalAccessException {
+    protected IndexLookupCallable buildIndexLookup(JexlNode node) throws TableNotFoundException, IOException, InstantiationException, IllegalAccessException {
         
         String fieldName = JexlASTHelper.getIdentifier(node);
         
-        TreeHashNode nodeHash = TreeHashVisitor.getNodeHash(node);
-        IndexLookup task = lookupMap.get(nodeHash);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(node), true);
+        IndexLookup task = lookupMap.get(nodeString);
         
         if (null == task) {
             
@@ -225,11 +237,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                             config.getDatatypeFilter(), helper);
             
             if (task.supportReference())
-                lookupMap.put(nodeHash, task);
+                lookupMap.put(nodeString, task);
             
         }
         
-        return new IndexLookupCallable(task, node, positive, true);
+        return new IndexLookupCallable(task, node, true, false);
     }
     
     /**
@@ -239,15 +251,21 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * ERNode and an EQNode share an AND parent. There are more complicated variants involving grand parents and OR nodes that are considered.
      * 
      * @param node
+     * @param markedParents
      * @return true - if a regex has to be expanded false - if a regex doesn't have to be expanded
      */
-    public boolean shouldProcessRegexFromStructure(ASTERNode node) {
+    public boolean shouldProcessRegexFromStructure(ASTERNode node, Set<JexlNode> markedParents) {
         // if we have already marked this regex as exceeding the threshold, then no
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
-            return false;
+        if (markedParents != null) {
+            for (JexlNode markedParent : markedParents) {
+                if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent)) {
+                    return false;
+                }
+            }
         }
+        
         // if expanding all terms, then yes
-        else if (config.isExpandAllTerms()) {
+        if (config.isExpandAllTerms()) {
             return true;
         }
         
@@ -262,15 +280,56 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     }
     
     @Override
+    public Object visit(ASTAndNode node, Object data) {
+        Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
+        
+        // check to see if this is a delayed node already
+        if (QueryPropertyMarker.instanceOf(node, null)) {
+            markedParents = new HashSet<>();
+            markedParents.add(node);
+        }
+        
+        return super.visit(node, markedParents);
+    }
+    
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        toggleNegation();
+        try {
+            return super.visit(node, data);
+        } finally {
+            toggleNegation();
+        }
+    }
+    
+    @Override
     public Object visit(ASTERNode node, Object data) {
+        Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
         
         // we've already been delayed.
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node)
-                        || ExceededValueThresholdMarkerJexlNode.instanceOf(node))
-            return node;
+        if (markedParents != null) {
+            for (JexlNode markedParent : markedParents) {
+                if (QueryPropertyMarker.instanceOf(markedParent, null))
+                    return node;
+            }
+        }
+        
+        // determine whether we have the tools to expand this in the first place
+        try {
+            if (!isExpandable(node)) {
+                if (mustExpand(node)) {
+                    throw new DatawaveFatalQueryException("We must expand but yet cannot expand a regex: " + PrintingVisitor.formattedQueryString(node));
+                }
+                return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
+            }
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException(e);
+        } catch (JavaRegexAnalyzer.JavaRegexParseException e) {
+            throw new DatawaveFatalQueryException(e);
+        }
         
         // Given the structure of the tree, we don't *have* to expand this regex node
-        if (config.getMaxIndexScanTimeMillis() == Long.MAX_VALUE && (!config.isExpandAllTerms() && !shouldProcessRegexFromStructure(node))) {
+        if (config.getMaxIndexScanTimeMillis() == Long.MAX_VALUE && (!config.isExpandAllTerms() && !shouldProcessRegexFromStructure(node, markedParents))) {
             // However, given the characteristics of the query terms, we may still want to
             // expand this regex because it would be more efficient to do so
             if (!shouldProcessRegexFromCost(node)) {
@@ -282,12 +341,14 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                     }
                     log.debug("");
                 }
-                if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node)
-                                || ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ASTDelayedPredicate.instanceOf(node)
-                                || IndexHoleMarkerJexlNode.instanceOf(node))
-                    return node;
-                else
-                    return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
+                if (markedParents != null) {
+                    for (JexlNode markedParent : markedParents) {
+                        if (QueryPropertyMarker.instanceOf(markedParent, null))
+                            return node;
+                    }
+                }
+                
+                return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
             }
         } else {
             if (config.getMaxIndexScanTimeMillis() != Long.MAX_VALUE)
@@ -315,7 +376,41 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(e);
         }
         
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node);
+    }
+    
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        toggleNegation();
+        try {
+            return super.visit(node, data);
+        } finally {
+            toggleNegation();
+        }
+    }
+    
+    @Override
+    public Object visit(ASTNotNode node, Object data) {
+        toggleNegation();
+        try {
+            return super.visit(node, data);
+        } finally {
+            toggleNegation();
+        }
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        if (!QueryPropertyMarker.instanceOf(node, null)) {
+            ASTReference ref = (ASTReference) super.visit(node, data);
+            if (JexlNodes.children(ref).length == 0) {
+                return null;
+            } else {
+                return ref;
+            }
+        } else {
+            return node;
+        }
     }
     
     /**
@@ -384,7 +479,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             }
             default: {
                 JexlNode[] children = children(node);
-                if (children.length == 1) {
+                if (children.length == 1 && !QueryPropertyMarker.instanceOf(children[0], null)) {
                     boolean expand = descendIntoSubtree(children[0], visited);
                     visited.put(node, expand);
                     return expand;
@@ -437,25 +532,67 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         return expand;
     }
     
-    protected boolean isIdentifier(JexlNode node) {
-        return node instanceof ASTERNode;
+    /**
+     * Given a JexlNode, get all grandchildren which follow a path from ASTReference to ASTIdentifier, returning true if the image of the ASTIdentifier is equal
+     * to {@link Constants#ANY_FIELD}
+     *
+     * @param node
+     *            The starting node to check
+     * @return
+     */
+    protected boolean hasUnfieldedIdentifier(JexlNode node) {
+        if (null == node || 2 != node.jjtGetNumChildren()) {
+            return false;
+        }
+        
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
+            
+            if (null != child && child instanceof ASTReference) {
+                for (int j = 0; j < child.jjtGetNumChildren(); j++) {
+                    JexlNode grandChild = child.jjtGetChild(j);
+                    
+                    // If the grandchild and its image is non-null and equal to
+                    // the any-field identifier
+                    if (null != grandChild && grandChild instanceof ASTIdentifier && null != grandChild.image && Constants.ANY_FIELD.equals(grandChild.image)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    // This flag should keep track of whether we are in a negated portion of the tree.
+    protected boolean negated = false;
+    
+    protected void toggleNegation() {
+        this.negated = !this.negated;
+    }
+    
+    /**
+     * The default implementation only expands ERnodes
+     * 
+     * @param node
+     * @return True if an ER node
+     */
+    protected boolean shouldExpand(JexlNode node) {
+        return (!negated || expandUnfieldedNegations || !hasUnfieldedIdentifier(node)) && (node instanceof ASTERNode);
     }
     
     /**
      * Now, when nodes are expanded, we shall create a callable object that will be added to the todo list.
      * 
      * @param node
-     * @param data
-     * @param positive
      * @return
      */
-    protected Object expandFieldNames(JexlNode node, Object data, Boolean positive) {
+    protected Object expandFieldNames(JexlNode node) {
         
-        if (isIdentifier(node)) {
+        if (shouldExpand(node)) {
             
             try {
-                
-                IndexLookupCallable runnableLookup = buildIndexLookup(node, positive.booleanValue());
+                IndexLookupCallable runnableLookup = buildIndexLookup(node);
                 
                 JexlNode newNode = new IndexLookupCallback(ParserTreeConstants.JJTREFERENCE, runnableLookup);
                 todo.add(((IndexLookupCallback) newNode).get());
@@ -469,6 +606,16 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         // Return itself if we don't have an expansion to perform
         return node;
         
+    }
+    
+    /**
+     * Return true if this is a NR, NE, or NOT node.
+     * 
+     * @param node
+     * @return true of a negative node
+     */
+    private boolean isNegativeNode(JexlNode node) {
+        return (node instanceof ASTNENode || node instanceof ASTNRNode || node instanceof ASTNotNode);
     }
     
     /**
@@ -521,11 +668,10 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 }
                 
                 if (null != sawException) {
-                    log.error(sawException);
+                    log.error(sawException.getMessage(), sawException);
                     throw new CannotExpandUnfieldedTermFatalException(sawException);
                 }
             }
-            
         } catch (InterruptedException e) {
             throw new CannotExpandUnfieldedTermFatalException(e.getMessage());
         } finally {
@@ -538,22 +684,18 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         protected IndexLookup lookup;
         protected JexlNode node;
-        protected boolean positive;
+        protected boolean ignoreComposites;
         
         protected JexlNode parentNode = null;
         private int id;
         private JexlNode newNode;
         protected boolean enforceTimeout;
         
-        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean positive) {
-            this(lookup, currNode, positive, false);
-        }
-        
-        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean positive, boolean enforceTimeout) {
+        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean enforceTimeout, boolean ignoreComposites) {
             this.lookup = lookup;
             this.node = currNode;
-            this.positive = positive;
             this.enforceTimeout = enforceTimeout;
+            this.ignoreComposites = ignoreComposites;
             parentNode = currNode.jjtGetParent();
         }
         
@@ -582,36 +724,38 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             }
             newNode = null;
             
+            if (ignoreComposites)
+                removeCompositeFields(fieldsToValues);
+            
             // If we have no children, it's impossible to find any records, so this query returns no results
             if (fieldsToValues.isEmpty()) {
                 
-                // When we're not within an Or, we cannot proceed with this query.
-                // We can proceed an in Or because we can trim this term out of the query
-                // The And (or single term) implies that all results must have this term,
-                // but we don't know which field the term actually appears in.
-                if (!JexlASTHelper.isWithinOr(node)) {
-                    log.warn("Could not convert an 'anyfield' node to an 'or' node");
-                    throw new CannotExpandUnfieldedTermFatalException("Did not find any matches in index for the expansion of unfielded terms");
-                }
-                
                 if (log.isDebugEnabled()) {
                     try {
-                        log.debug("Retaining _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(node) + "\"}");
+                        log.debug("Failed to expand _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(node) + "\"}");
                     } catch (Exception ex) {
                         // it's just a debug statement
+                    }
+                }
+                
+                // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
+                // the query against the document
+                for (ASTIdentifier id : JexlASTHelper.getIdentifiers(node)) {
+                    if (Constants.ANY_FIELD.equals(id.image)) {
+                        id.image = Constants.NO_FIELD;
                     }
                 }
                 newNode = node;
             } else {
                 onlyRetainFieldNamesInTheModelForwardMapping(fieldsToValues);
-                if (positive) {
-                    // for a positive node, we want equalities in a OR
-                    newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), node,
-                                    fieldsToValues);
-                } else {
+                if (isNegativeNode(node)) {
                     // for a negative node, we want negative equalities in an AND
                     newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.AND_NODE, new ASTNENode(ParserTreeConstants.JJTNENODE), node,
-                                    fieldsToValues);
+                                    fieldsToValues, expandFields, expandValues);
+                } else {
+                    // for a positive node, we want equalities in a OR
+                    newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), node,
+                                    fieldsToValues, expandFields, expandValues);
                 }
             }
             
@@ -627,6 +771,12 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         private void onlyRetainFieldNamesInTheModelForwardMapping(IndexLookupMap fieldsToValues) {
             if (null != onlyUseThese) {
                 fieldsToValues.retainFields(onlyUseThese);
+            }
+        }
+        
+        private void removeCompositeFields(IndexLookupMap fieldsToValues) throws TableNotFoundException {
+            if (null != helper.getCompositeToFieldMap()) {
+                fieldsToValues.removeFields(helper.getCompositeToFieldMap().keySet());
             }
         }
         
@@ -699,6 +849,54 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         // Compute the cost to determine whether or not to expand this regex
         return shouldProcessRegexByCostWithChildren(subTrees, regexCost);
+    }
+    
+    /**
+     * Determine whether we can actually expand this regex based on whether it is indexed appropriately.
+     * 
+     * @param node
+     * @return
+     */
+    public boolean isExpandable(ASTERNode node) throws TableNotFoundException, JavaRegexAnalyzer.JavaRegexParseException {
+        // if full table scan enabled, then we can expand anything
+        if (config.getFullTableScanEnabled()) {
+            return true;
+        }
+        
+        String regex = JexlASTHelper.getLiteralValue(node).toString();
+        JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(regex);
+        
+        // if the regex is double ended, then we cannot expand it
+        if (analyzer.isNgram()) {
+            return false;
+        }
+        
+        String fieldName = JexlASTHelper.getIdentifier(node);
+        
+        if (analyzer.isLeadingLiteral() && helper.isIndexed(fieldName, config.getDatatypeFilter())) {
+            return true;
+        } else if (analyzer.isTrailingLiteral() && helper.isReverseIndexed(fieldName, config.getDatatypeFilter())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    /**
+     * Determine whether we can actually expand this regex based on whether it is indexed appropriately.
+     * 
+     * @param node
+     * @return
+     */
+    public boolean mustExpand(ASTERNode node) throws TableNotFoundException {
+        String fieldName = JexlASTHelper.getIdentifier(node);
+        
+        // if the identifier is a non-event field, then we must expand it
+        if (helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName)) {
+            return true;
+        }
+        
+        return false;
     }
     
     public void collapseAndSubtrees(ASTAndNode node, List<JexlNode> subTrees) {

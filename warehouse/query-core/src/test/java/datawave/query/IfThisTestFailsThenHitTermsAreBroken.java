@@ -2,8 +2,8 @@ package datawave.query;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.io.Files;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
@@ -38,20 +38,16 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
-import java.io.IOException;
+import java.io.File;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,10 +62,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.*;
 
 /**
  *
@@ -78,18 +71,15 @@ import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
  * different fields in the returned documents will have the correct hit terms.
  *
  * The same tests are made against document ranges and shard ranges
+ *
+ * If this test fails, then hit terms are broken... maybe... probably...
  * 
  */
 public class IfThisTestFailsThenHitTermsAreBroken {
     
-    static enum WhatKindaRange {
-        SHARD, DOCUMENT;
+    enum WhatKindaRange {
+        SHARD, DOCUMENT
     }
-    
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-    
-    private static List<TemporaryFolder> staticTempFolders = Lists.newArrayList();
     
     private static final Logger log = Logger.getLogger(IfThisTestFailsThenHitTermsAreBroken.class);
     
@@ -134,34 +124,22 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
-        for (TemporaryFolder t : staticTempFolders) {
-            if (t.getRoot().exists()) {
-                try {
-                    FileUtils.deleteDirectory(t.getRoot());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            log.debug("after class " + t.getRoot() + " exists? " + t.getRoot().exists());
-        }
     }
     
     @After
     public void after() {
         TypeRegistry.reset();
         System.clearProperty("type.metadata.dir");
-        staticTempFolders.add(tempFolder);
-        for (TemporaryFolder t : staticTempFolders) {
-            log.debug("after test " + t.getRoot() + " exists? " + t.getRoot().exists());
-        }
     }
     
     @Before
     public void setup() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        String val = tempFolder.getRoot().getAbsolutePath();
-        System.setProperty("type.metadata.dir", val);
-        log.info("using tempFolder " + tempFolder.getRoot());
+        File tempDir = Files.createTempDir();
+        tempDir.deleteOnExit();
+        System.setProperty("type.metadata.dir", tempDir.getAbsolutePath());
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
+        log.info("using tempFolder " + tempDir);
         
         logic = new ShardQueryLogic();
         logic.setMetadataTableName(MODEL_TABLE_NAME);
@@ -169,11 +147,11 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setIndexTableName(SHARD_INDEX_TABLE_NAME);
         logic.setReverseIndexTableName(SHARD_RINDEX_TABLE_NAME);
         logic.setMaxResults(5000);
-        logic.setMaxRowsToScan(25000);
+        logic.setMaxWork(25000);
         logic.setModelTableName(MODEL_TABLE_NAME);
         logic.setQueryPlanner(new DefaultQueryPlanner());
         logic.setIncludeGroupingContext(true);
-        logic.setMarkingFunctions(new MarkingFunctions.NoOp());
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);
@@ -186,13 +164,13 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         s.setRange(r);
         for (Entry<Key,Value> entry : s) {
             if (log.isDebugEnabled()) {
-                log.debug(entry.getKey().toString() + " " + entry.getValue().toString());
+                log.debug(entry.getKey() + " " + entry.getValue());
             }
         }
     }
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Multimap<String,String> expectedHitTerms) throws ParseException, Exception {
+                    Multimap<String,String> expectedHitTerms) throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -212,15 +190,14 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setupQuery(config);
         
         TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper();
-        typeMetadataHelper.initialize(connector, MODEL_TABLE_NAME, authSet);
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, MODEL_TABLE_NAME, authSet, false);
         Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
         typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             
             Document d = deserializer.apply(entry).getValue();
@@ -261,9 +238,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                     }
                 }
             } else if (hitTermAttribute instanceof Attribute) {
-                Attribute<?> hitTerm = (Attribute<?>) hitTermAttribute;
-                log.debug("hitTerm:" + hitTerm);
-                String hitString = hitTerm.getData().toString();
+                log.debug("hitTerm:" + (Attribute<?>) hitTermAttribute);
+                String hitString = ((Attribute<?>) hitTermAttribute).getData().toString();
                 log.debug("as string:" + hitString);
                 log.debug("expectedHitTerms:" + expectedHitTerms);
                 boolean result = expectedHitTerms.get(uuid).remove(hitString);
@@ -271,7 +247,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                     log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
                     Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
                 } else {
-                    log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerm:" + hitTerm);
+                    log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerm:"
+                                    + (Attribute<?>) hitTermAttribute);
                 }
             }
             
@@ -313,7 +290,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
-        doIt(WhatKindaRange.SHARD);
+        doIt();
+        doItWithProjection();
     }
     
     @Test
@@ -329,15 +307,16 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
-        doIt(WhatKindaRange.DOCUMENT);
+        doIt();
+        doItWithProjection();
     }
     
-    private void doIt(WhatKindaRange wkrange) throws Exception {
+    private void doIt() throws Exception {
         
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("type.metadata.in.hdfs", "true");
         extraParameters.put("hit.list", "true");
-        
+        // @formatter:off
         String[] queryStrings = {
                 // sanity check. I got the 2 documents
                 "UUID == 'First' || UUID == 'Second'",
@@ -359,15 +338,72 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
                 
                 "UUID == 'First' && filter:isNotNull(NAME)"
-        
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
                 // just the expected uuids. I should always get both documents, the real test is in the hit terms
-                Arrays.asList("First", "Second"), Arrays.asList("First", "Second"), Arrays.asList("First", "Second"), Arrays.asList("First"),
-                Arrays.asList("Second"), Arrays.asList("Second"), Arrays.asList("Second"), Arrays.asList("Second"), Arrays.asList("Second"),
-                Arrays.asList("First")};
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("First")
+        };
+        // @formatter:on
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
+                            ArrayListMultimap.create(expectedHitTerms[i]));
+        }
+    }
+    
+    private void doItWithProjection() throws Exception {
         
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("type.metadata.in.hdfs", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "*");
+        // @formatter:off
+        String[] queryStrings = {
+                // sanity check. I got the 2 documents
+                "UUID == 'First' || UUID == 'Second'",
+                // look for FOO or BAR, expecting the hit_terms to be in the right places
+                "( UUID == 'First' || UUID == 'Second' ) && ( FOO == 'FOO' || BAR == 'BAR' )",
+                // should find NAME0 in different grouping contexts, but the hit terms should be correct
+                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'NAME0'",
+                // this may get initial hits in Second, but will return only First. Makes sure that hits from Second are not included in First
+                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && FOO == 'FOO'",
+                // this may get initial hits in First, but will return only Second. Makes sure that hits from First are not included in Second
+                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && BAR == 'BAR'",
+                // try to pull in hits from Third, should still hit only Second
+                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  NAME == 'Haiqu' && BAR == 'BAR'",
+
+                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  filter:includeRegex(NAME,'Haiqu') && filter:includeRegex(BAR,'BAR')",
+
+                "UUID == 'Second' && BAR == 'BAR'",
+
+                "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
+
+                "UUID == 'First' && filter:isNotNull(NAME)"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                // just the expected uuids. I should always get both documents, the real test is in the hit terms
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("First")
+        };
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
                             ArrayListMultimap.create(expectedHitTerms[i]));

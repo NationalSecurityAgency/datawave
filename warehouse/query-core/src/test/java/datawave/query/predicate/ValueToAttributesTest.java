@@ -1,44 +1,24 @@
 package datawave.query.predicate;
 
-import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
-import static datawave.query.tables.edge.BaseEdgeQueryTest.MODEL_TABLE_NAME;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.marking.MarkingFunctions;
-import datawave.query.language.parser.ParseException;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.composite.CompositeMetadata;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CompositeTestingIngest;
-import datawave.query.util.CompositeMetadata;
 import datawave.query.util.TypeMetadata;
-import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -55,6 +35,24 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.inject.Inject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
+import static datawave.query.tables.edge.BaseEdgeQueryTest.MODEL_TABLE_NAME;
 
 /**
   */
@@ -74,13 +72,11 @@ public abstract class ValueToAttributesTest {
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -99,7 +95,6 @@ public abstract class ValueToAttributesTest {
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
         
@@ -132,7 +127,8 @@ public abstract class ValueToAttributesTest {
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
+                        .deleteClass(DefaultEdgeEventQueryLogic.class)
+                        .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
@@ -153,11 +149,10 @@ public abstract class ValueToAttributesTest {
         deserializer = new KryoDocumentDeserializer();
     }
     
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws ParseException, Exception;
+    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
-                    throws ParseException, Exception {
+                    throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -175,10 +170,13 @@ public abstract class ValueToAttributesTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        String plannedScript = logic.getQueryPlanner().getPlannedScript();
+        Assert.assertTrue("CompositeTerm was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
+        
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Map.Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             
@@ -227,10 +225,16 @@ public abstract class ValueToAttributesTest {
             log.debug("testCompositeFunctions");
         }
         String[] queryStrings = { //
-        "COLOR == 'RED' && MAKE == 'FORD'"};
+        "COLOR == 'RED' && MAKE == 'FORD'", //
+                "COLOR == 'BLUE' && MAKE == 'CHEVY'", //
+                "COLOR == 'BLUE' && MAKE == 'FORD'", //
+        };
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("One"), // family name starts with C or S
+        List<String>[] expectedLists = new List[] { //
+        Arrays.asList("One"), //
+                Arrays.asList("One"), //
+                Arrays.asList("One")//
         };
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
@@ -239,12 +243,15 @@ public abstract class ValueToAttributesTest {
     
     @Test
     public void testComposites() {
-        CompositeMetadata compositeMetadata = new CompositeMetadata(
-                        "test:[MAKE:MAKE_COLOR[0];WHEELS:COLOR_WHEELS[1];COLOR:COLOR_WHEELS[0],MAKE_COLOR[1]];pilot:[MAKE:MAKE_COLOR[0];WHEELS:COLOR_WHEELS[1];COLOR:COLOR_WHEELS[0],MAKE_COLOR[1]];work:[MAKE:MAKE_COLOR[0];WHEELS:COLOR_WHEELS[1];COLOR:COLOR_WHEELS[0],MAKE_COLOR[1]];beep:[MAKE:MAKE_COLOR[0];WHEELS:COLOR_WHEELS[1];COLOR:COLOR_WHEELS[0],MAKE_COLOR[1]];tw:[MAKE:MAKE_COLOR[0];WHEELS:COLOR_WHEELS[1];COLOR:COLOR_WHEELS[0],MAKE_COLOR[1]]");
+        CompositeMetadata compositeMetadata = new CompositeMetadata();
+        for (String ingestType : new String[] {"test", "pilot", "work", "beep", "tw"}) {
+            compositeMetadata.setCompositeFieldMappingByType(ingestType, "MAKE_COLOR", Arrays.asList("MAKE", "COLOR"));
+            compositeMetadata.setCompositeFieldMappingByType(ingestType, "COLOR_WHEELS", Arrays.asList("MAKE", "COLOR"));
+        }
         
         TypeMetadata typeMetadata = new TypeMetadata(
                         "MAKE:[beep:datawave.data.type.LcNoDiacriticsType];MAKE_COLOR:[beep:datawave.data.type.NoOpType];START_DATE:[beep:datawave.data.type.DateType];TYPE_NOEVAL:[beep:datawave.data.type.LcNoDiacriticsType];IP_ADDR:[beep:datawave.data.type.IpAddressType];WHEELS:[beep:datawave.data.type.LcNoDiacriticsType,datawave.data.type.NumberType];COLOR:[beep:datawave.data.type.LcNoDiacriticsType];COLOR_WHEELS:[beep:datawave.data.type.NoOpType];TYPE:[beep:datawave.data.type.LcNoDiacriticsType]");
-        MarkingFunctions markingFunctions = new MarkingFunctions.NoOp();
+        MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         ValueToAttributes valueToAttributes = new ValueToAttributes(compositeMetadata, typeMetadata, null, markingFunctions);
     }
 }

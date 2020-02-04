@@ -2,60 +2,61 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>datawave.webservices</groupId>
+        <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>2.1.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
     <name>${project.artifactId}</name>
-    <properties>
-        <datawave.root>${project.parent.parent.parent.basedir}</datawave.root>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <!-- In mine, but not in upstream...leaving here for now. -->
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-data-dictionary-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-edge-model-configuration-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-metrics-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-type-metadata-hdfs</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-accumulo</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-atom</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
@@ -71,89 +72,83 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-cached-results</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
-            <artifactId>datawave-ws-data-dictionary</artifactId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-dictionary</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
-            <artifactId>datawave-ws-edge-dictionary</artifactId>
-            <version>${project.version}</version>
-            <type>ejb</type>
-        </dependency>
-        <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-map-reduce</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-map-reduce-status</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-model</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-modification</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query-websocket</artifactId>
             <version>${project.version}</version>
             <type>war</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-rest-api</artifactId>
             <version>${project.version}</version>
             <type>war</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-security</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-web-root</artifactId>
             <version>${project.version}</version>
             <type>war</type>
@@ -279,61 +274,57 @@
                     <classifier>${build.env}</classifier>
                     <modules combine.children="append">
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-common</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-security</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-accumulo</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-query</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-cached-results</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
-                            <artifactId>datawave-ws-data-dictionary</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>datawave.webservices</groupId>
-                            <artifactId>datawave-ws-edge-dictionary</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-atom</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-map-reduce</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-map-reduce-status</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-model</artifactId>
                         </ejbModule>
+                        <ejbModule>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
+                            <artifactId>datawave-ws-dictionary</artifactId>
+                        </ejbModule>
                         <webModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-query-websocket</artifactId>
                             <contextRoot>/DataWave/Query/websocket</contextRoot>
                         </webModule>
                         <webModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-rest-api</artifactId>
                             <contextRoot>/DataWave</contextRoot>
                         </webModule>
                         <webModule>
-                            <groupId>datawave.webservices</groupId>
+                            <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-web-root</artifactId>
                             <contextRoot>/</contextRoot>
                         </webModule>
@@ -357,7 +348,7 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>datawave.webservices</groupId>
+                    <groupId>gov.nsa.datawave.webservices</groupId>
                     <artifactId>datawave-ws-deploy-docs</artifactId>
                     <version>${project.version}</version>
                     <type>war</type>
@@ -370,10 +361,36 @@
                         <configuration>
                             <modules>
                                 <webModule>
-                                    <groupId>datawave.webservices</groupId>
+                                    <groupId>gov.nsa.datawave.webservices</groupId>
                                     <artifactId>datawave-ws-deploy-docs</artifactId>
                                     <contextRoot>/DataWave/doc</contextRoot>
                                 </webModule>
+                            </modules>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>client-login-example</id>
+            <dependencies>
+                <dependency>
+                    <groupId>gov.nsa.datawave.webservices</groupId>
+                    <artifactId>datawave-ws-examples-client-login</artifactId>
+                    <version>${project.version}</version>
+                    <type>ejb</type>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-ear-plugin</artifactId>
+                        <configuration>
+                            <modules>
+                                <ejbModule>
+                                    <groupId>gov.nsa.datawave.webservices</groupId>
+                                    <artifactId>datawave-ws-examples-client-login</artifactId>
+                                </ejbModule>
                             </modules>
                         </configuration>
                     </plugin>
@@ -393,7 +410,7 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>datawave.webservices</groupId>
+                    <groupId>gov.nsa.datawave.webservices</groupId>
                     <artifactId>datawave-ws-geoserver-application</artifactId>
                     <version>${project.version}</version>
                     <type>war</type>
@@ -415,7 +432,7 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>datawave.webservices</groupId>
+                                            <groupId>gov.nsa.datawave.webservices</groupId>
                                             <artifactId>datawave-ws-geoserver-application</artifactId>
                                             <version>${project.version}</version>
                                             <type>war</type>
@@ -433,7 +450,7 @@
                         <configuration>
                             <modules>
                                 <webModule>
-                                    <groupId>datawave.webservices</groupId>
+                                    <groupId>gov.nsa.datawave.webservices</groupId>
                                     <artifactId>datawave-ws-geoserver-application</artifactId>
                                     <bundleFileName>datawave-ws-geoserver-application-${project.version}.war</bundleFileName>
                                     <contextRoot>/geoserver</contextRoot>
@@ -459,7 +476,7 @@
                 <plugins>
                     <plugin>
                         <!-- Activate the assert-properties plugin to ensure all configuration we require is set. -->
-                        <groupId>datawave</groupId>
+                        <groupId>gov.nsa.datawave.plugins</groupId>
                         <artifactId>assert-properties</artifactId>
                         <executions>
                             <execution>
@@ -542,12 +559,22 @@
                                             <version>4.0.1-incubating</version>
                                         </artifactItem>
                                         <artifactItem>
+                                            <groupId>com.fasterxml.woodstox</groupId>
+                                            <artifactId>woodstox-core</artifactId>
+                                            <version>${version.woodstox-core}</version>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.codehaus.woodstox</groupId>
+                                            <artifactId>stax2-api</artifactId>
+                                            <version>${version.woodstox-stax2}</version>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>com.google.protobuf</groupId>
                                             <artifactId>protobuf-java</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>commons-configuration</groupId>
-                                            <artifactId>commons-configuration</artifactId>
+                                            <groupId>org.apache.commons</groupId>
+                                            <artifactId>commons-configuration2</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.servlet</groupId>
@@ -588,7 +615,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.annotation</groupId>
-                                            <artifactId>jboss-annotations-api_1.2_spec</artifactId>
+                                            <artifactId>jboss-annotations-api_1.3_spec</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.ejb</groupId>
@@ -612,7 +639,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.servlet</groupId>
-                                            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+                                            <artifactId>jboss-servlet-api_4.0_spec</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.transaction</groupId>
@@ -623,7 +650,7 @@
                                             <artifactId>xercesImpl</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>datawave.webservices</groupId>
+                                            <groupId>gov.nsa.datawave.webservices</groupId>
                                             <artifactId>datawave-ws-map-reduce-embedded</artifactId>
                                             <version>${project.version}</version>
                                         </artifactItem>
@@ -642,7 +669,7 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>datawave.webservices</groupId>
+                                            <groupId>gov.nsa.datawave.webservices</groupId>
                                             <artifactId>datawave-ws-deploy-configuration</artifactId>
                                             <version>${project.version}</version>
                                             <classifier>${build.env}</classifier>
@@ -664,7 +691,7 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>datawave.webservices</groupId>
+                                            <groupId>gov.nsa.datawave.webservices</groupId>
                                             <artifactId>datawave-ws-cached-results</artifactId>
                                             <version>${project.version}</version>
                                         </artifactItem>

@@ -10,11 +10,12 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.data.type.Type;
-import datawave.query.attributes.Numeric;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.Numeric;
+import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
@@ -23,16 +24,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Document>> {
     
     private static final Logger log = Logger.getLogger(LimitFields.class);
     
-    public final static String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
-    
-    public final static Pattern PREFIX_SUFFIX_PATTERN = Pattern.compile("([A-Za-z0-9]+[\\._])[A-Za-z0-9\\.]*\\.([A-Za-z0-9]+)");
+    public static final String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
     
     private Map<String,Integer> limitFieldsMap;
     
@@ -91,7 +88,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 if (log.isTraceEnabled())
                     log.trace("limitFieldsMap contains " + keyNoGrouping);
                 Attribute<?> attr = de.getValue();
-                int limit = this.limitFieldsMap.get(keyNoGrouping);
+                int limit = this.limitFieldsMap.get(keyNoGrouping); // used below if you un-comment to get all hits
                 if (attr instanceof Attributes) {
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
@@ -129,7 +126,10 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 log.trace("mapOfMisses:" + misses.asMap());
             }
             
-            limitedFieldCounts.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, countForFieldMap.get(keyNoGrouping));
+            // only generate an original count if a field was reduced
+            if (countForFieldMap.get(keyNoGrouping) > this.limitFieldsMap.get(keyNoGrouping)) {
+                limitedFieldCounts.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, countForFieldMap.get(keyNoGrouping));
+            }
             
         }
         
@@ -164,21 +164,27 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 } else {
                     mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
                 }
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
+            } catch (InstantiationException | IllegalAccessException e) {
+                log.error(e);
             }
         } else if (!hitTermMap.isEmpty() && limitFieldsMap.containsKey(keyNoGrouping)) {
             
             try {
-                Matcher matcher = PREFIX_SUFFIX_PATTERN.matcher(keyWithGrouping);
-                if (matcher.matches()) {
-                    String keyWithGroupingPrefix = matcher.group(1);
-                    String keyWithGroupingSuffix = matcher.group(2);
+                String[] keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
+                if (keyTokens != null) {
+                    String keyWithGroupingCommonality = keyTokens[0];
+                    String keyWithGroupingSuffix = keyTokens[1];
+                    
                     for (String key : hitTermMap.keySet()) {
-                        if (key.startsWith(keyWithGroupingPrefix) && key.endsWith(keyWithGroupingSuffix)) {
-                            mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                        // get the commonality from the hit term key
+                        String[] commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
+                        if (commonalityAndGroupingContext != null) {
+                            String hitTermKeyCommonality = commonalityAndGroupingContext[0];
+                            if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && key.endsWith(keyWithGroupingSuffix)) {
+                                mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                            } else {
+                                mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                            }
                         } else {
                             mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
                         }
@@ -186,6 +192,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 } else {
                     mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
                 }
+                
             } catch (Throwable ex) {
                 // if ANYTHING went wrong here, just put it into the misses
                 mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
@@ -201,6 +208,14 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         if (log.isTraceEnabled())
             log.trace("out - manageHitsAndMisses(" + keyWithGrouping + "," + keyNoGrouping + "," + attr + "," + hitTermMap + "," + mapOfHits.asMap() + ","
                             + mapOfMisses.asMap() + "," + countForFieldMap);
+    }
+    
+    static String[] getCommonalityAndGroupingContext(String in) {
+        String[] splits = StringUtils.split(in, '.');
+        if (splits.length >= 3) {
+            return new String[] {splits[1], splits[splits.length - 1]};
+        }
+        return null;
     }
     
     private Map<String,String> getHitTermMap(Document document) {
@@ -235,7 +250,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * @param limitedFieldCounts
      */
     private void applyCounts(Document doc, Map<String,Integer> limitedFieldCounts) {
-        if (limitedFieldCounts.entrySet().size() > 0) {
+        if (!limitedFieldCounts.entrySet().isEmpty()) {
             ColumnVisibility docVisibility = doc.getColumnVisibility();
             for (Entry<String,Integer> limitedFieldCountEntry : limitedFieldCounts.entrySet()) {
                 doc.put(limitedFieldCountEntry.getKey(), new Numeric(limitedFieldCountEntry.getValue(), doc.getMetadata(), doc.isToKeep()), true, false);

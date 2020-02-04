@@ -1,31 +1,29 @@
 package datawave.query.ancestor;
 
-import com.google.common.base.Predicate;
-
-import java.io.IOException;
-import java.util.*;
-
 import com.google.common.collect.Maps;
-import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.function.Equality;
-import datawave.query.iterator.SourceFactory;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.TimeFilter;
 import datawave.query.tld.TLD;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
-import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.*;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Custom IndexBuildingVisitor that will expand (simulate) fi indexes into the entire branch of the document
@@ -74,7 +72,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             Key startKey = getKey(node);
             Key endKey = getEndKey(node);
             
-            kvIter.seek(new Range(startKey, true, endKey, true), Collections.<ByteSequence> emptyList(), false);
+            kvIter.seek(new Range(startKey, true, endKey, true), Collections.emptyList(), false);
         }
     }
     
@@ -170,7 +168,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         // inclusive to catch the first uid
         Range range = new Range(startKey, true, endKey, false);
         try {
-            iterator.seek(range, Collections.<ByteSequence> emptyList(), false);
+            iterator.seek(range, Collections.emptyList(), false);
             
             while (iterator.hasTop()) {
                 Key nextKey = iterator.getTopKey();
@@ -184,8 +182,8 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
                 }
                 
                 // seek to the next child by shifting the startKey
-                startKey = new Key(row, nextKey.getColumnFamily().toString() + Constants.NULL_BYTE_STRING);
-                iterator.seek(new Range(startKey, true, endKey, true), Collections.<ByteSequence> emptyList(), false);
+                startKey = new Key(row, nextKey.getColumnFamily() + Constants.NULL_BYTE_STRING);
+                iterator.seek(new Range(startKey, true, endKey, true), Collections.emptyList(), false);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -225,9 +223,8 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             String cf = startColfam.toString();
             int index = cf.indexOf('\0');
             if (index >= 0) {
-                String uid = cf.substring(index + 1);
                 
-                return uid;
+                return cf.substring(index + 1);
             }
         }
         
@@ -266,7 +263,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         String startCf = (start == null || start.getColumnFamily() == null ? "" : start.getColumnFamily().toString());
         
         // if the end key inclusively includes a datatype\0UID or has datatype\0UID\0, then move the key past the children
-        if (endCf.length() > 0 && (r.isEndKeyInclusive() || endCf.charAt(endCf.length() - 1) == '\0')) {
+        if (!endCf.isEmpty() && (r.isEndKeyInclusive() || endCf.charAt(endCf.length() - 1) == '\0')) {
             String row = end.getRow().toString().intern();
             if (endCf.charAt(endCf.length() - 1) == '\0') {
                 endCf = endCf.substring(0, endCf.length() - 1);
@@ -276,7 +273,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         // if the start key is not inclusive, and we have a datatype\0UID, then move the start past the children thereof
-        if (!r.isStartKeyInclusive() && startCf.length() > 0) {
+        if (!r.isStartKeyInclusive() && !startCf.isEmpty()) {
             // we need to bump append 0xff to that byte array because we want to skip the children
             String row = start.getRow().toString().intern();
             

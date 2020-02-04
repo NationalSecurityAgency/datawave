@@ -15,7 +15,7 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the TypeMetadata map will be
@@ -28,56 +28,26 @@ public class MetadataHelperUpdateHdfsListener {
     
     private static final Logger log = Logger.getLogger(MetadataHelperUpdateHdfsListener.class);
     
-    private String zookeepers;
-    private MetadataHelper metadataHelper;
-    private String[] metadataTableNames;
-    private Set<Authorizations> allMetadataAuths;
+    private final String zookeepers;
+    private final TypeMetadataHelper.Factory typeMetadataHelperFactory;
+    private final Set<Authorizations> allMetadataAuths;
     private TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
     
-    private String instance;
-    private String username;
-    private String password;
-    private long lockWaitTime = 1000L; // configurable in MetadataHelperCacheListenerContext.xml
+    private final String instance;
+    private final String username;
+    private final String password;
+    private final long lockWaitTime;
     
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    
-    public void setInstance(String instance) {
-        this.instance = instance;
-    }
-    
-    public void setZookeepers(String zookeepers) {
+    public MetadataHelperUpdateHdfsListener(String zookeepers, TypeMetadataHelper.Factory typeMetadataHelperFactory, String[] metadataTableNames,
+                    Set<Authorizations> allMetadataAuths, String instance, String username, String password, long lockWaitTime) {
         this.zookeepers = zookeepers;
-    }
-    
-    public void setMetadataHelper(MetadataHelper metadataHelper) {
-        this.metadataHelper = metadataHelper;
-    }
-    
-    public void setAllMetadataAuths(Set<Authorizations> allMetadataAuths) {
+        this.typeMetadataHelperFactory = typeMetadataHelperFactory;
         this.allMetadataAuths = allMetadataAuths;
-    }
-    
-    public void setMetadataTableNames(String[] metadataTableNames) {
-        
-        this.metadataTableNames = metadataTableNames;
-        registerCacheListeners();
-    }
-    
-    public long getLockWaitTime() {
-        return lockWaitTime;
-    }
-    
-    public void setLockWaitTime(long lockWaitTime) {
+        this.instance = instance;
+        this.username = username;
+        this.password = password;
         this.lockWaitTime = lockWaitTime;
-    }
-    
-    private void registerCacheListeners() {
+        
         for (String metadataTableName : metadataTableNames) {
             registerCacheListener(metadataTableName);
         }
@@ -119,7 +89,7 @@ public class MetadataHelperUpdateHdfsListener {
             }
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e);
         }
     }
     
@@ -154,8 +124,9 @@ public class MetadataHelperUpdateHdfsListener {
                         ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
                                         .withZkHosts(this.zookeepers));
                         Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
-                        metadataHelper.initialize(connector, metadataTableName, allMetadataAuths);
-                        this.typeMetadataWriter.writeTypeMetadataMap(this.metadataHelper.getTypeMetadataMap(), metadataTableName);
+                        TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(connector, metadataTableName,
+                                        allMetadataAuths, false);
+                        typeMetadataWriter.writeTypeMetadataMap(typeMetadataHelper.getTypeMetadataMap(this.allMetadataAuths), metadataTableName);
                         if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
                         }

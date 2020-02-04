@@ -7,7 +7,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Runs all configured VisibilityConstraints for all tables.

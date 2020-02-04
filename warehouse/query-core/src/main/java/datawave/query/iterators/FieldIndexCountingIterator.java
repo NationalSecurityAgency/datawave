@@ -577,7 +577,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         
         // Combine the column visibilities into a single one
         // NOTE: key.getColumnVisibility actually returns a Text object so we need to convert them
-        Set<ColumnVisibility> columnVisibilities = new HashSet<ColumnVisibility>();
+        Set<ColumnVisibility> columnVisibilities = new HashSet<>();
         for (Text t : this.visibilitySet) {
             columnVisibilities.add(new ColumnVisibility(t));
         }
@@ -882,7 +882,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                     b.append(f).append(" ");
                 }
                 
-                log.debug("Iter configured with FieldNames: " + b.toString());
+                log.debug("Iter configured with FieldNames: " + b);
             }
         }
         

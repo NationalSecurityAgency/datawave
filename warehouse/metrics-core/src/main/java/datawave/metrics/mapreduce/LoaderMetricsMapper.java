@@ -33,8 +33,8 @@ import org.apache.accumulo.core.data.Value;
  */
 public class LoaderMetricsMapper extends Mapper<NullWritable,Counters,Text,Mutation> {
     
-    final static byte[] EMPTY_BYTES = new byte[0];
-    final static Value EMPTY_VALUE = new Value(EMPTY_BYTES);
+    static final byte[] EMPTY_BYTES = new byte[0];
+    static final Value EMPTY_VALUE = new Value(EMPTY_BYTES);
     
     private enum counters {
         DIRECTORIES_STARTED, DIRECTORIES_ENDED

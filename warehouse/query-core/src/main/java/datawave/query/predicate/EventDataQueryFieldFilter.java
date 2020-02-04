@@ -2,6 +2,7 @@ package datawave.query.predicate;
 
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Document;
+import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -16,10 +17,19 @@ import java.util.Set;
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
 public class EventDataQueryFieldFilter extends KeyProjection implements EventDataQueryFilter {
+    private Set<String> nonEventFields;
     
     public EventDataQueryFieldFilter() {
         super();
         // empty white list and black list
+    }
+    
+    public EventDataQueryFieldFilter(EventDataQueryFieldFilter other) {
+        super(other);
+        this.nonEventFields = other.nonEventFields;
+        if (other.document != null) {
+            document = new Key(other.document);
+        }
     }
     
     /**
@@ -27,7 +37,9 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
      * 
      * @param script
      */
-    public EventDataQueryFieldFilter(ASTJexlScript script) {
+    public EventDataQueryFieldFilter(ASTJexlScript script, Set<String> nonEventFields) {
+        this.nonEventFields = nonEventFields;
+        
         Set<String> queryFields = Sets.newHashSet();
         for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(script)) {
             queryFields.add(JexlASTHelper.deconstructIdentifier(identifier));
@@ -39,14 +51,14 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     protected Key document = null;
     
     @Override
-    public void setDocumentKey(Key document) {
+    public void startNewDocument(Key document) {
         this.document = document;
     }
     
     /*
      * (non-Javadoc)
      * 
-     * @see nsa.datawave.query.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
+     * @see datawave.query.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
      */
     @Override
     public boolean keep(Key k) {
@@ -55,8 +67,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     
     @Override
     public Key getStartKey(Key from) {
-        Key startKey = new Key(from.getRow(), from.getColumnFamily());
-        return startKey;
+        return new Key(from.getRow(), from.getColumnFamily());
     }
     
     @Override
@@ -90,5 +101,16 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     public int getMaxNextCount() {
         // not yet implemented
         return -1;
+    }
+    
+    @Override
+    public Key transform(Key toLimit) {
+        // not yet implemented
+        return null;
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new EventDataQueryFieldFilter(this);
     }
 }

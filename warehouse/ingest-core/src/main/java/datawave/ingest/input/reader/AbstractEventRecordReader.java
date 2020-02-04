@@ -117,7 +117,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
             }
             
             if (eventDateFieldFormats != null) { // getStrings will change 0 length strings to nulls
-                formatters = new ArrayList<SimpleDateFormat>(eventDateFieldFormats.length);
+                formatters = new ArrayList<>(eventDateFieldFormats.length);
                 for (String fmt : eventDateFieldFormats) {
                     formatters.add(new SimpleDateFormat(fmt));
                 }
@@ -197,7 +197,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
      * @return the UID for the event
      */
     protected UID uidOverride(final RawRecordContainer event) {
-        if (this.uidOverrideFields.size() == 0) {
+        if (this.uidOverrideFields.isEmpty()) {
             return null;
         }
         
@@ -245,7 +245,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
                 }
             }
             if (event.getDate() == 0L) {
-                List<String> patterns = new ArrayList<String>(formatters.size());
+                List<String> patterns = new ArrayList<>(formatters.size());
                 for (SimpleDateFormat formatter : formatters) {
                     patterns.add(formatter.toPattern());
                 }

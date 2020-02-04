@@ -7,8 +7,6 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 public class HasMethodVisitorTest {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(HasMethodVisitorTest.class);
@@ -28,8 +26,7 @@ public class HasMethodVisitorTest {
             String query = originalQueries[i];
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             
-            Assert.assertEquals("query:" + query, expectedResults[i],
-                            ((AtomicBoolean) new JexlASTHelper.HasMethodVisitor().visit(script, new AtomicBoolean(false))).get());
+            Assert.assertEquals("query:" + query, expectedResults[i], JexlASTHelper.HasMethodVisitor.hasMethod(script));
         }
     }
 }

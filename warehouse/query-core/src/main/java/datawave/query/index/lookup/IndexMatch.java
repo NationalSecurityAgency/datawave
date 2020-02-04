@@ -3,25 +3,22 @@ package datawave.query.index.lookup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Set;
 
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
+import datawave.query.language.parser.jexl.JexlNodeSet;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.WritableComparable;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 
 public class IndexMatch implements WritableComparable<IndexMatch> {
     
     protected String shard;
     protected String uid;
-    protected Collection<String> nodeStrings;
-    protected Collection<JexlNode> myNodes;
+    protected JexlNodeSet nodeSet;
     protected IndexMatchType type;
     
     public IndexMatch(final String uid) {
@@ -43,30 +40,23 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     
     public IndexMatch(final String uid, final JexlNode myNode, final IndexMatchType type) {
         this.uid = uid;
-        this.myNodes = Sets.newHashSet();
-        nodeStrings = Sets.newHashSet();
+        this.nodeSet = new JexlNodeSet();
         if (null != myNode)
             add(myNode);
         this.type = type;
-        shard = "";
+        this.shard = "";
     }
     
     public IndexMatch(Set<JexlNode> nodes, String uid, final IndexMatchType type) {
         this.uid = uid;
-        this.myNodes = Sets.newHashSet();
-        this.nodeStrings = Sets.newHashSet();
+        this.nodeSet = new JexlNodeSet();
         if (null != nodes) {
             for (JexlNode node : nodes) {
                 add(node);
             }
         }
         this.type = type;
-        shard = "";
-    }
-    
-    private boolean contains(JexlNode node) {
-        return nodeStrings.contains(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
-        
+        this.shard = "";
     }
     
     public String getUid() {
@@ -74,20 +64,19 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     }
     
     public JexlNode getNode() {
-        if (myNodes.size() == 1) {
-            return myNodes.iterator().next();
-        } else if (myNodes.size() == 0)
+        if (nodeSet.size() == 1) {
+            return nodeSet.getNodes().iterator().next();
+        } else if (nodeSet.isEmpty())
             return null;
         
         switch (type) {
         
             case AND:
-                return JexlNodeFactory.createAndNode(myNodes);
+                return JexlNodeFactory.createAndNode(nodeSet.getNodes());
             case OR:
             default:
-                return JexlNodeFactory.createUnwrappedOrNode(myNodes);
+                return JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
         }
-        
     }
     
     @Override
@@ -136,8 +125,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
      * @param node
      */
     public void set(JexlNode node) {
-        myNodes.clear();
-        nodeStrings.clear();
+        this.nodeSet.clear();
         add(node);
     }
     
@@ -145,19 +133,15 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
      * @param node
      */
     public void add(JexlNode node) {
-        if (!contains(node)) {
-            nodeStrings.add(JexlStringBuildingVisitor.buildQueryWithoutParse(node));
-            myNodes.add(node);
-        }
-        
+        nodeSet.add(node);
     }
     
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(uid + " - {");
-        for (JexlNode node : myNodes) {
-            builder.append(JexlStringBuildingVisitor.buildQuery(node)).append(" ");
+        for (String nodeKey : nodeSet.getNodeKeys()) {
+            builder.append(nodeKey).append(" ");
         }
         builder.append("}");
         

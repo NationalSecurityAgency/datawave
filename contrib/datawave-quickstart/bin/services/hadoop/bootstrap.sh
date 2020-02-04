@@ -3,7 +3,7 @@
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive-primary.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.9.1.tar.gz}"
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive.apache.org/dist/hadoop/common/hadoop-3.1.2/hadoop-3.1.2.tar.gz}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
@@ -12,6 +12,8 @@ DW_HADOOP_DFS_URI="hdfs://localhost:9000"
 DW_HADOOP_MR_INTER_DIR="${DW_CLOUD_DATA}/hadoop/jobhist/inter"
 DW_HADOOP_MR_DONE_DIR="${DW_CLOUD_DATA}/hadoop/jobhist/done"
 DW_HADOOP_RESOURCE_MANAGER_ADDRESS="localhost:8050"
+
+HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
 
 # core-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_CORE_SITE_CONF="fs.defaultFS ${DW_HADOOP_DFS_URI}
@@ -26,18 +28,20 @@ dfs.datanode.handler.count 10
 dfs.datanode.synconclose true
 dfs.replication 1"
 
+DW_HADOOP_MR_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 # mapred-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address http://localhost:8020
 mapreduce.jobhistory.webapp.address http://localhost:8021
 mapreduce.jobhistory.intermediate-done-dir ${DW_HADOOP_MR_INTER_DIR}
 mapreduce.jobhistory.done-dir ${DW_HADOOP_MR_DONE_DIR}
-mapreduce.admin.map.child.java.opts -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true
 mapreduce.map.memory.mb 2048
-mapreduce.reduce.memory.mb 3072
-mapreduce.map.java.opts: -Xmx1024m
-mapreduce.reduce.java.opts: -Xmx2048m
-mapreduce.admin.reduce.child.java.opts -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true
-mapreduce.framework.name yarn"
+mapreduce.reduce.memory.mb 2048
+mapreduce.map.java.opts -Xmx1024m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
+mapreduce.reduce.java.opts -Xmx1792m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
+mapreduce.framework.name yarn
+yarn.app.mapreduce.am.env HADOOP_MAPRED_HOME=${HADOOP_HOME}
+mapreduce.map.env HADOOP_MAPRED_HOME=${HADOOP_HOME}
+mapreduce.reduce.env HADOOP_MAPRED_HOME=${HADOOP_HOME}"
 
 # yarn-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_YARN_SITE_CONF="yarn.resourcemanager.scheduler.address localhost:8030
@@ -77,21 +81,19 @@ yarn.scheduler.capacity.root.default.acl_administer_queue *
 yarn.scheduler.capacity.node-locality-delay 40"
 
 # Hadoop standard exports...
-export HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
+export HADOOP_HOME
 export HADOOP_CONF_DIR="${HADOOP_HOME}/etc/hadoop"
 export HADOOP_LOG_DIR="${HADOOP_HOME}/logs"
-export HADOOP_PREFIX="${HADOOP_HOME}"
 export HADOOP_YARN_HOME="${HADOOP_HOME}"
 export HADOOP_MAPRED_HOME="${HADOOP_HOME}"
 export HADOOP_PID_DIR="${DW_CLOUD_DATA}/hadoop/pids"
-export HADOOP_MAPRED_PID_DIR="${HADOOP_PID_DIR}"
 
 export PATH=${HADOOP_HOME}/bin:$PATH
 
 # Service helpers...
 
-DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-all.sh && ./mr-jobhistory-daemon.sh start historyserver )"
-DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && ./mr-jobhistory-daemon.sh stop historyserver &&./stop-all.sh )"
+DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && mapred --daemon start historyserver )"
+DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
 DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -f 'datanode.DataNode|namenode.NameNode|namenode.SecondaryNameNode|nodemanager.NodeManager|resourcemanager.ResourceManager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {
@@ -112,7 +114,55 @@ function hadoopStop() {
 }
 
 function hadoopStatus() {
-    hadoopIsRunning && echo "Hadoop is running. PIDs: ${DW_HADOOP_PID_LIST}" || echo "Hadoop is not running"
+    # define local variables for hadoop processes
+    local _jobHist
+    local _dataNode
+    local _nameNode
+    local _secNameNode
+    local _resourceMgr
+    local _nodeMgr
+
+    # use a state to parse jps entries
+    echo "======  Hadoop Status  ======"
+    hadoopIsRunning && {
+        local _pid
+        local _opt=pid
+
+        local -r _pids=${DW_HADOOP_PID_LIST// /|}
+        echo "pids: ${DW_HADOOP_PID_LIST}"
+        for _arg in $(jps -l | egrep "${_pids}"); do
+            case ${_opt} in
+                pid)
+                    _pid=${_arg}
+                    _opt=class
+                    ;;
+                class)
+                    local _none
+                    local _name=${_arg##*.}
+                    case "${_name}" in
+                        DataNode) _dataNode=${_pid};;
+                        JobHistoryServer) _jobHist=${_pid};;
+                        NameNode) _nameNode=${_pid};;
+                        NodeManager) _nodeMgr=${_pid};;
+                        ResourceManager) _resourceMgr=${_pid};;
+                        SecondaryNameNode) _secNameNode=${_pid};;
+                        *) _none=true;;
+                    esac
+                    test -z "${_none}" && info "${_name} => ${_pid}"
+                    _pid=
+                    _opt=pid
+                    unset _none
+                    ;;
+            esac
+        done
+    }
+
+    test -z "${_jobHist}" && warn "JobHistoryServer is not running"
+    test -z "${_dataNode}" && warn "DataNode is not running"
+    test -z "${_nameNode}" && warn "NameNode is not running"
+    test -z "${_secNameNode}" && warn "SecondaryName is not running"
+    test -z "${_nodeMgr}" && warn "NodeManager is not running"
+    test -z "${_resourceMgr}" && warn "ResourceManager is not running"
 }
 
 function hadoopIsInstalled() {

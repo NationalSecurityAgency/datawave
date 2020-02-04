@@ -150,7 +150,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             return Collections.EMPTY_SET;
         } else {
             String[] tables = StringUtils.split(tableListString, ',');
-            return new HashSet<String>(Arrays.asList(tables));
+            return new HashSet<>(Arrays.asList(tables));
         }
     }
     
@@ -236,7 +236,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         unusedWriterPaths.put(key, filename);
         writerTableNames.put(key, table);
         if (shardedTableNames.contains(table)) {
-            shardMapFileRowKeys.put(key, new HashSet<Text>());
+            shardMapFileRowKeys.put(key, new HashSet<>());
             shardMapFiles.put(key, filename);
         }
     }
@@ -398,7 +398,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Map<Text,String> cftlg = Maps.newHashMap();
                     Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
                     for (Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
-                        lgtcf.put(locs.getKey(), new HashSet<ByteSequence>());
+                        lgtcf.put(locs.getKey(), new HashSet<>());
                         for (Text loc : locs.getValue()) {
                             cftlg.put(loc, locs.getKey());
                             lgtcf.get(locs.getKey()).add(new ArrayByteSequence(loc.getBytes()));
@@ -575,15 +575,15 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 if (generateMapFileRowKeys && !shardMapFileRowKeys.isEmpty()) {
                     log.info("Writing mapFileRowKeys");
                     Path shardMapFilePath = new Path(workDir, getUniqueFile(context, "mapFileRowKeys", ".lst"));
-                    SequenceFile.Writer output = SequenceFile.createWriter(fs, conf, shardMapFilePath, Text.class, Text.class);
-                    for (Map.Entry<String,Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
-                        Path path = shardMapFiles.get(entry.getKey());
-                        Text pathText = new Text(path.getParent().getName() + "/" + path.getName());
-                        for (Text rowKey : entry.getValue()) {
-                            output.append(pathText, rowKey);
+                    try (SequenceFile.Writer output = SequenceFile.createWriter(fs, conf, shardMapFilePath, Text.class, Text.class)) {
+                        for (Map.Entry<String,Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
+                            Path path = shardMapFiles.get(entry.getKey());
+                            Text pathText = new Text(path.getParent().getName() + "/" + path.getName());
+                            for (Text rowKey : entry.getValue()) {
+                                output.append(pathText, rowKey);
+                            }
                         }
                     }
-                    output.close();
                 }
             }
             

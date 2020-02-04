@@ -1,15 +1,5 @@
 package datawave.core.iterators;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -21,12 +11,20 @@ import org.apache.accumulo.core.iterators.system.InterruptibleIterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.io.Text;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * This class and its sub classes implement Range queries against Column Families
  * 
  */
 public abstract class ColumnRangeIterator extends SkippingIterator implements InterruptibleIterator {
-    private static final Collection<ByteSequence> EMPTY_SET = Collections.emptySet();
     
     public static final String RANGE_NAME = "RANGE_NAME";
     public static final String SKIP_LIMIT_NAME = "SKIP_LIMIT";

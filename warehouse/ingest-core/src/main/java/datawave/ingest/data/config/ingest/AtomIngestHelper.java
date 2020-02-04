@@ -6,7 +6,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * * Class is here because the tests need it.
- * */
+ */
 public class AtomIngestHelper extends BaseIngestHelper {
     
     @Override

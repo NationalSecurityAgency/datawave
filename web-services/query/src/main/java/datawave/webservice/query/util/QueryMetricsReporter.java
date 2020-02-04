@@ -11,9 +11,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import datawave.util.cli.PasswordConverter;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.MetricsMessages.QueryMetric;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -128,7 +128,7 @@ public class QueryMetricsReporter {
         String instanceName = cli.getOptionValue(instanceOpt.getOpt());
         String zookeepers = cli.getOptionValue(zookeepersOpt.getOpt());
         String username = cli.getOptionValue(userOpt.getOpt());
-        byte[] password = cli.getOptionValue(passwordOpt.getOpt()).getBytes();
+        byte[] password = PasswordConverter.parseArg(cli.getOptionValue(passwordOpt.getOpt())).getBytes();
         String tableName = cli.getOptionValue(tableOpt.getOpt());
         
         String begin = cli.getOptionValue(beginOpt.getOpt());
@@ -173,33 +173,29 @@ public class QueryMetricsReporter {
         }
         
         // Open up a BatchScanner to the QueryMetrics table
-        BatchScanner bs = null;
-        try {
-            bs = connector.createBatchScanner(tableName, Authorizations.EMPTY, 8);
+        try (BatchScanner bs = connector.createBatchScanner(tableName, Authorizations.EMPTY, 8)) {
+            // Set a range for the entire table
+            Range r = null;
+            if (null == queryUser)
+                r = new Range();
+            else
+                r = new Range(queryUser);
+            
+            bs.setRanges(Collections.singleton(r));
+            IteratorSetting cfRegex = new IteratorSetting(20, RegExFilter.class);
+            cfRegex.addOption(RegExFilter.COLF_REGEX, "RunningQuery.*");
+            bs.addScanIterator(cfRegex);
+            
+            // Collect the data
+            processResults(beginDate, endDate, bs.iterator());
+            
+            printResults(beginDate, endDate);
+            
         } catch (TableNotFoundException e) {
             log.error("The requested table '" + tableName + "' does not exist!", e);
             
             return 2;
         }
-        
-        // Set a range for the entire table
-        Range r = null;
-        if (null == queryUser)
-            r = new Range();
-        else
-            r = new Range(queryUser);
-        
-        bs.setRanges(Collections.singleton(r));
-        IteratorSetting cfRegex = new IteratorSetting(20, RegExFilter.class);
-        cfRegex.addOption(RegExFilter.COLF_REGEX, "RunningQuery.*");
-        bs.addScanIterator(cfRegex);
-        
-        // Collect the data
-        processResults(beginDate, endDate, bs.iterator());
-        
-        printResults(beginDate, endDate);
-        
-        bs.close();
         
         return 0;
     }

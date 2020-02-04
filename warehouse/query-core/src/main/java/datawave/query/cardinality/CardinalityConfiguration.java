@@ -102,7 +102,7 @@ public class CardinalityConfiguration {
     
     public Set<String> getRevisedBlacklistFields(QueryModel queryModel, Set<String> originalBlacklistedFields) {
         Set<String> revisedBlacklistFields = new HashSet<>(originalBlacklistedFields);
-        if (originalBlacklistedFields.size() > 0) {
+        if (!originalBlacklistedFields.isEmpty()) {
             Collection<String> storedBlacklistedFieldsToRemove = getStoredBlacklistedFieldsToRemove(queryModel, originalBlacklistedFields);
             if (queryModel != null) {
                 // the blacklisted fields will be mapped to their stored values in the DefaultQueryPlanner, so we will remove
@@ -128,7 +128,7 @@ public class CardinalityConfiguration {
     
     public Set<String> getStoredBlacklistedFieldsToRemove(QueryModel queryModel, Set<String> originalBlacklistedFields) {
         
-        if (originalBlacklistedFields.size() > 0) {
+        if (!originalBlacklistedFields.isEmpty()) {
             Set<String> blacklistedFieldsToRemove = getStoredProjectionFields();
             if (queryModel != null) {
                 // using the stored version of the cardinality fields, find out what they would be called in the model that's being used
@@ -147,7 +147,7 @@ public class CardinalityConfiguration {
     
     public Set<String> getRevisedProjectFields(QueryModel queryModel, Set<String> originalProjectFields) {
         Set<String> revisedProjectFields = new HashSet<>(originalProjectFields);
-        if (originalProjectFields.size() > 0) {
+        if (!originalProjectFields.isEmpty()) {
             Set<String> storedProjectFieldsToAdd = getStoredProjectFieldsToAdd(queryModel, originalProjectFields);
             if (queryModel != null) {
                 
@@ -172,7 +172,7 @@ public class CardinalityConfiguration {
     
     public Set<String> getStoredProjectFieldsToAdd(QueryModel queryModel, Set<String> originalProjectFields) {
         
-        if (originalProjectFields.size() > 0) {
+        if (!originalProjectFields.isEmpty()) {
             Set<String> projectFieldsToAdd = getStoredProjectionFields();
             if (queryModel != null) {
                 // using the stored version of the cardinality fields, find out what they would be called in the model that's being used

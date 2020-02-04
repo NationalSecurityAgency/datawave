@@ -1,8 +1,12 @@
 package datawave.query.util;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.MockAccumuloRecordWriter;
-import org.apache.accumulo.core.client.*;
+import datawave.util.TableName;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -15,19 +19,46 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.*;
+import org.junit.runner.RunWith;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.*;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-public class DateIndexHelperTest {
-    private static final String DATE_INDEX_TABLE_NAME = "dateIndex";
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = {"classpath:/MetadataHelperContext.xml", "classpath:/CacheContext.xml"})
+public class DateIndexHelperTest implements ApplicationContextAware {
     private static Connector connector = null;
     private static final Logger log = Logger.getLogger(DateIndexHelperTest.class);
     private static MockAccumuloRecordWriter recordWriter;
     private static Authorizations auths = new Authorizations("A", "BB", "CCCC", "DDD", "E");
+    // added to look at the cache
+    protected ApplicationContext applicationContext;
+    
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+        log.warn("applicationcontextaware setting of applicationContext:" + applicationContext);
+    }
+    
+    @Autowired
+    private DateIndexHelperFactory dateIndexHelperFactory;
     
     @Before
     public void setup() throws Exception {}
@@ -45,9 +76,12 @@ public class DateIndexHelperTest {
         connector = i.getConnector("root", new PasswordToken(""));
         recordWriter = new MockAccumuloRecordWriter();
         TableOperations tops = connector.tableOperations();
-        tops.create(DATE_INDEX_TABLE_NAME);
+        tops.create(TableName.DATE_INDEX);
+        tops = connector.tableOperations();
+        tops.create("FOO_TABLE"); // unused except for testing the cache key
+        
         BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
-        recordWriter.addWriter(new Text(DATE_INDEX_TABLE_NAME), connector.createBatchWriter(DATE_INDEX_TABLE_NAME, bwCfg));
+        recordWriter.addWriter(new Text(TableName.DATE_INDEX), connector.createBatchWriter(TableName.DATE_INDEX, bwCfg));
         
         // intialize some mappings
         write("20100101", new int[] {1}, "test", "LOADED", "LOAD_DATE", "20100102", "A");
@@ -59,9 +93,9 @@ public class DateIndexHelperTest {
     
     public static void dumpTable(Authorizations auths) throws TableNotFoundException {
         TableOperations tops = connector.tableOperations();
-        org.apache.accumulo.core.client.Scanner scanner = connector.createScanner(DATE_INDEX_TABLE_NAME, auths);
+        org.apache.accumulo.core.client.Scanner scanner = connector.createScanner(TableName.DATE_INDEX, auths);
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
-        System.out.println("*************** " + DATE_INDEX_TABLE_NAME + " ********************");
+        System.out.println("*************** " + TableName.DATE_INDEX + " ********************");
         while (iterator.hasNext()) {
             Map.Entry<Key,Value> entry = iterator.next();
             System.out.println(entry);
@@ -76,16 +110,14 @@ public class DateIndexHelperTest {
         KeyValue kv = getDateIndexEntry(shardDate, shardIndicies, dataType, type, dateField, dateValue, vis);
         Mutation m = new Mutation(kv.getKey().getRow());
         m.put(kv.getKey().getColumnFamily(), kv.getKey().getColumnQualifier(), vis, kv.getKey().getTimestamp(), kv.getValue());
-        recordWriter.write(new Text(DATE_INDEX_TABLE_NAME), m);
+        recordWriter.write(new Text(TableName.DATE_INDEX), m);
     }
     
     public static KeyValue getDateIndexEntry(String shardDate, int[] shardIndicies, String dataType, String type, String dateField, String dateValue,
                     ColumnVisibility visibility) throws ParseException {
         // The row is the date to index yyyyMMdd
-        String row = dateValue;
         
         // the colf is the type (e.g. LOAD or ACTIVITY)
-        String colf = type;
         
         // the colq is the event date yyyyMMdd \0 the datatype \0 the field name
         String colq = shardDate + '\0' + dataType + '\0' + dateField;
@@ -98,15 +130,15 @@ public class DateIndexHelperTest {
         Value shardList = new Value(bits.toByteArray());
         
         // create the key
-        Key key = new Key(row, colf, colq, visibility, DateIndexUtil.getBeginDate(dateValue).getTime());
+        Key key = new Key(dateValue, type, colq, visibility, DateIndexUtil.getBeginDate(dateValue).getTime());
         
         return new KeyValue(key, shardList);
     }
     
     @Test
     public void testDateIndexHelperDescription() throws Exception {
-        DateIndexHelper helper = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
-                        Collections.singleton(auths), 2, 0.9f);
+        DateIndexHelper helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(connector, TableName.DATE_INDEX, Collections.singleton(auths),
+                        2, 0.9f);
         
         DateIndexHelper.DateTypeDescription dtd = helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"),
                         DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
@@ -124,12 +156,48 @@ public class DateIndexHelperTest {
         // the alg will default to the specified date range if no dates found
         Assert.assertEquals(DateIndexUtil.getBeginDate("20100103"), dtd.getBeginDate());
         Assert.assertEquals(DateIndexUtil.getEndDate("20100103"), dtd.getEndDate());
+        
+        // there should be 3 entries in the cache
+        Assert.assertEquals(3, countCacheEntries());
+        
+        // create a new DateIndexHelper for each of 3 new calls. There should still be only 3 entries in the cache
+        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(connector, TableName.DATE_INDEX, Collections.singleton(auths), 2, 0.9f);
+        
+        helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+        
+        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(connector, TableName.DATE_INDEX, Collections.singleton(auths), 2, 0.9f);
+        helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100104"), DateIndexUtil.getEndDate("20100104"), Collections.singleton("test"));
+        
+        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(connector, TableName.DATE_INDEX, Collections.singleton(auths), 2, 0.9f);
+        helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100103"), DateIndexUtil.getEndDate("20100103"), Collections.singleton("test"));
+        
+        Assert.assertEquals(3, countCacheEntries());
+        
+        // call with different auths, there should be one more map entry in the cache
+        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
+                        Collections.singleton(new Authorizations("Z")), 2, 0.9f);
+        helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+        Assert.assertEquals(4, countCacheEntries());
+        
+        // call with different table name, there should be one more map entry in the cache
+        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(connector, "FOO_TABLE", Collections.singleton(auths), 2, 0.9f);
+        helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+        Assert.assertEquals(5, countCacheEntries());
+    }
+    
+    private int countCacheEntries() {
+        CacheManager cacheManager = this.applicationContext.getBean("dateIndexHelperCacheManager", CacheManager.class);
+        String cacheName = "getTypeDescription";
+        Object nativeCache = cacheManager.getCache(cacheName).getNativeCache();
+        Cache cache = (Cache) nativeCache;
+        Map map = cache.asMap();
+        return map.size();
     }
     
     @Test
     public void testDateIndexHelperHint() throws Exception {
-        DateIndexHelper helper = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
-                        Collections.singleton(auths), 2, 0.9f);
+        DateIndexHelper helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(connector, TableName.DATE_INDEX, Collections.singleton(auths),
+                        2, 0.9f);
         
         String hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
                         DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));

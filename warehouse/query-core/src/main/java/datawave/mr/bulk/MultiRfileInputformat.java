@@ -2,13 +2,10 @@ package datawave.mr.bulk;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 import java.util.concurrent.TimeUnit;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
@@ -22,21 +19,13 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.RowIterator;
-import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.InstanceOperations;
-import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.impl.KeyExtent;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.metadata.MetadataTable;
-import org.apache.accumulo.core.metadata.schema.MetadataSchema;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -77,8 +66,8 @@ public class MultiRfileInputformat extends RFileInputFormat {
     
     private static LoadingCache<Range,Set<Tuple2<String,Set<String>>>> locationMap = null;
     
-    protected static Map<String,String> dfsUriMap = new ConcurrentHashMap<String,String>();
-    protected static Map<String,String> dfsDirMap = new ConcurrentHashMap<String,String>();
+    protected static Map<String,String> dfsUriMap = new ConcurrentHashMap<>();
+    protected static Map<String,String> dfsDirMap = new ConcurrentHashMap<>();
     
     @Override
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -154,7 +143,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
         final Instance instance = conn.getInstance();
         final PasswordToken token = new PasswordToken(BulkInputFormat.getPassword(conf));
         
-        final String tableId = Tables.getTableId(instance, tableName);
+        final String tableId = conn.tableOperations().tableIdMap().get(tableName);
         
         final List<InputSplit> inputSplitList = Lists.newArrayList();
         
@@ -226,7 +215,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
             }
             
             if (metadataEntries == null || metadataEntries.isEmpty()) {
-                throw new IOException("Unable to find location or files associated with " + range.toString());
+                throw new IOException("Unable to find location or files associated with " + range);
             }
             
             for (Tuple2<String,Set<String>> entry : metadataEntries) {
@@ -235,7 +224,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
                 if (fileLocations != null && !fileLocations.isEmpty()) {
                     
                     if (location == null || location.isEmpty()) {
-                        log.warn("Unable to find a location associated with " + range.toString() + " : ? -> " + fileLocations);
+                        log.warn("Unable to find a location associated with " + range + " : ? -> " + fileLocations);
                     }
                     
                     for (String fileLocation : fileLocations) {
@@ -255,7 +244,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
                         rowMap.put(range.getStartKey().getRow(), range);
                     }
                 } else {
-                    log.warn("Unable to find a some files associated with " + range.toString() + " : " + location);
+                    log.warn("Unable to find a some files associated with " + range + " : " + location);
                 }
             }
         }
@@ -266,7 +255,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
             for (Range range : binnedRanges.keySet()) {
                 Collection<RfileSplit> rangeSplits = binnedRanges.get(range);
                 
-                if (0 == rangeSplits.size())
+                if (rangeSplits.isEmpty())
                     continue;
                 TabletSplitSplit compositeInputSplit = new TabletSplitSplit(rangeSplits.size());
                 compositeInputSplit.setTable(tableName);

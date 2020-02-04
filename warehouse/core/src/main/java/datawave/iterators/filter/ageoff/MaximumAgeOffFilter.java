@@ -3,6 +3,7 @@ package datawave.iterators.filter.ageoff;
 import datawave.iterators.filter.AgeOffConfigParams;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
 
 /**
@@ -38,13 +39,6 @@ public class MaximumAgeOffFilter extends AppliedRule {
     protected boolean ruleApplied = true;
     
     /**
-     * Default Constructor.
-     */
-    public MaximumAgeOffFilter() {
-        super();
-    }
-    
-    /**
      * Required by the {@code FilterRule} interface. This method returns a {@code boolean} value indicating whether or not to allow the {@code (Key, Value)}
      * pair through the rule. A value of {@code true} indicates that he pair should be passed onward through the {@code Iterator} stack, and {@code false}
      * indicates that the {@code (Key, Value)} pair should not be passed on.
@@ -78,15 +72,26 @@ public class MaximumAgeOffFilter extends AppliedRule {
      *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
      * @see datawave.iterators.filter.AgeOffConfigParams
      */
-    
     public void init(FilterOptions options) {
-        String scanStartStr = options.getOption(AgeOffConfigParams.SCAN_START_TIMESTAMP);
-        long scanStart = scanStartStr == null ? System.currentTimeMillis() : Long.parseLong(scanStartStr);
-        this.init(options, scanStart);
+        init(options, null);
     }
     
-    protected void init(FilterOptions options, final long scanStart) {
-        super.init(options);
+    /**
+     * Required by the {@code FilterRule} interface. Used to initialize the the {@code FilterRule} implementation
+     *
+     * @param options
+     *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
+     * @param iterEnv
+     * @see datawave.iterators.filter.AgeOffConfigParams
+     */
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
+        String scanStartStr = options.getOption(AgeOffConfigParams.SCAN_START_TIMESTAMP);
+        long scanStart = scanStartStr == null ? System.currentTimeMillis() : Long.parseLong(scanStartStr);
+        this.init(options, scanStart, iterEnv);
+    }
+    
+    protected void init(FilterOptions options, final long scanStart, IteratorEnvironment iterEnv) {
+        super.init(options, iterEnv);
         if (options == null) {
             throw new IllegalArgumentException("ttl must be set for a FilterRule implementation");
         }

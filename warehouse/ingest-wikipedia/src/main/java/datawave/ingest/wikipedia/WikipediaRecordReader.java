@@ -7,7 +7,12 @@ import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.input.reader.*;
+import datawave.ingest.input.reader.AggregatingRecordReader;
+import datawave.ingest.input.reader.EventInitializer;
+import datawave.ingest.input.reader.KeyReader;
+import datawave.ingest.input.reader.LineReader;
+import datawave.ingest.input.reader.ReaderInitializer;
+import datawave.ingest.input.reader.ValueReader;
 import datawave.ingest.input.reader.event.EventFixer;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -31,9 +36,12 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+
+import static datawave.ingest.input.reader.LineReader.Properties.LONGLINE_NEWLINE_INCLUDED;
 
 public class WikipediaRecordReader extends AggregatingRecordReader {
     
@@ -46,30 +54,10 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
     public WikipediaRecordReader() {
         delegate = new ReaderDelegate();
         delegate.setEvent(INGEST_CONFIG.createRawRecordContainer());
-        delegate.setEventInitializer(new EventInitializer() {
-            @Override
-            public void initializeEvent(Configuration conf) throws IOException {
-                initializeEventSuperClass(conf);
-            }
-        });
-        delegate.setReaderInitializer(new ReaderInitializer() {
-            @Override
-            public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
-                initializeSuperClass(split, context);
-            }
-        });
-        delegate.setCurrentKeyReader(new KeyReader() {
-            @Override
-            public LongWritable readKey() {
-                return currentKey();
-            }
-        });
-        delegate.setCurrentValueReader(new ValueReader() {
-            @Override
-            public Text readValue() {
-                return currentVal();
-            }
-        });
+        delegate.setEventInitializer(this::initializeEventSuperClass);
+        delegate.setReaderInitializer(this::initializeSuperClass);
+        delegate.setCurrentKeyReader(this::currentKey);
+        delegate.setCurrentValueReader(this::currentVal);
         
     }
     
@@ -209,6 +197,8 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
             context.getConfiguration().set(AggregatingRecordReader.START_TOKEN, BEGIN);
             context.getConfiguration().set(AggregatingRecordReader.END_TOKEN, END);
             context.getConfiguration().set(AggregatingRecordReader.RETURN_PARTIAL_MATCHES, Boolean.toString(true));
+            // Guard against improper concatenation of newline-separated terms
+            context.getConfiguration().set(LONGLINE_NEWLINE_INCLUDED, Boolean.toString(true));
             
             readerInitializer.initialize(split, context);
             
@@ -345,7 +335,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
             try {
                 Date eventDate = DateHelper.parse(date);
                 event.setDate(eventDate.getTime());
-            } catch (IllegalArgumentException e) {
+            } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Could not parse date from filename " + date);
             }
         }

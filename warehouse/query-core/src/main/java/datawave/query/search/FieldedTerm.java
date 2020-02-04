@@ -80,7 +80,7 @@ public class FieldedTerm extends Term implements Comparable<FieldedTerm> {
         return query;
     }
     
-    static public String parseField(String termString) {
+    public static String parseField(String termString) {
         // check to see if the user specified a section of the data
         int firstQuote = termString.indexOf("\"");
         String termNoQuotes;
@@ -97,7 +97,7 @@ public class FieldedTerm extends Term implements Comparable<FieldedTerm> {
         return "";
     }
     
-    static public String parseSelector(String termString) {
+    public static String parseSelector(String termString) {
         // check to see if the user specified a section of the data
         int firstQuote = termString.indexOf("\"");
         String termNoQuotes;

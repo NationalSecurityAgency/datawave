@@ -15,13 +15,13 @@ public interface MarkingsHelper {
     /**
      * Parameter to specify a default marking to be used when no marking is found in the data.
      */
-    public static final String DEFAULT_MARKING = ".data.category.marking.default";
+    String DEFAULT_MARKING = ".data.category.marking.default";
     
     /**
      * Parameter to specify field marking. This parameter supports multiple datatypes and fields, so a valid value would be something like
      * {@code <type>.<field>.data.field.marking}
      */
-    public static final String FIELD_MARKING = ".data.field.marking";
+    String FIELD_MARKING = ".data.field.marking";
     
     /**
      * Returns the default markings for this datatype
@@ -49,7 +49,7 @@ public interface MarkingsHelper {
     /**
      * No-op helper for default ColumnVisibility implementation. Should only be used for testing purposes.
      */
-    static class NoOp implements MarkingsHelper {
+    class NoOp implements MarkingsHelper {
         
         private Map<String,Map<String,String>> fieldMarkingMap = new HashMap<>();
         private Map<String,String> defaultMarkings = null;
@@ -67,14 +67,14 @@ public interface MarkingsHelper {
             String marking = conf.get(dataType.typeName() + DEFAULT_MARKING);
             if (null != marking) {
                 defaultMarkings = new HashMap<>();
-                defaultMarkings.put(MarkingFunctions.NoOp.COLUMN_VISIBILITY, marking);
+                defaultMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, marking);
             }
             for (Entry<String,String> property : conf) {
                 if (property.getKey().endsWith(FIELD_MARKING)) {
                     String fieldName = null;
                     if (null != (fieldName = BaseIngestHelper.getFieldName(dataType, property.getKey(), FIELD_MARKING))) {
                         Map<String,String> fieldMarking = new HashMap<>();
-                        fieldMarking.put(MarkingFunctions.NoOp.COLUMN_VISIBILITY, property.getValue());
+                        fieldMarking.put(MarkingFunctions.Default.COLUMN_VISIBILITY, property.getValue());
                         fieldMarkingMap.put(fieldName, fieldMarking);
                     }
                 }

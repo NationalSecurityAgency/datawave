@@ -1,7 +1,11 @@
 package datawave.query.function;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Cardinality;
@@ -52,10 +56,9 @@ public class FacetedGrouping implements Function<Entry<Key,Document>,Entry<Key,D
         TreeMultimap<String,Attribute<?>> newDocumentAttributes = TreeMultimap.create();
         Key topKey = null;
         
-        Entry<Key,Document> doc = input;
         if (topKey == null)
-            topKey = doc.getKey();
-        currentDoc = doc.getValue();
+            topKey = input.getKey();
+        currentDoc = input.getValue();
         
         Map<?,?> currentAttr = currentDoc.getDictionary();
         

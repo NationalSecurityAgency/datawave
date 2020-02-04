@@ -1,7 +1,5 @@
 package datawave.query.tables.edge;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -58,14 +56,14 @@ public abstract class BaseEdgeQueryTest {
     protected static final String UNEXPECTED_RECORD = "Found an unexpected record.";
     
     private String serializeAuths(Set<Authorizations> sentAuths) {
-        assertEquals(1, sentAuths.size());
+        Assert.assertEquals(1, sentAuths.size());
         return sentAuths.iterator().next().serialize();
     }
     
     public QueryImpl configQuery(String query, Set<Authorizations> auths) throws ParseException {
         Date startDate = simpleFormat.parse("20140701");
         Date endDate = simpleFormat.parse("20150730");
-        Map<String,String> extraParams = new HashMap<String,String>();
+        Map<String,String> extraParams = new HashMap<>();
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);
@@ -95,7 +93,7 @@ public abstract class BaseEdgeQueryTest {
     public static List<TestEdge> createEdges() {
         Date date = new Date();
         long timestamp = date.getTime();
-        ArrayList<TestEdge> retVal = new ArrayList<TestEdge>();
+        ArrayList<TestEdge> retVal = new ArrayList<>();
         retVal.add(createEdge("SUN", "MERCURY", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
         retVal.add(createEdge("EARTH", "MOON", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
         retVal.add(createEdge("CERES", "JUPITER", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
@@ -138,7 +136,7 @@ public abstract class BaseEdgeQueryTest {
     
     public void compareResults(BaseQueryLogic<Map.Entry<Key,Value>> logic, List<String> expected) {
         int recordsFound = 0;
-        List<Key> foundKeys = new ArrayList<Key>();
+        List<Key> foundKeys = new ArrayList<>();
         for (Map.Entry<Key,Value> entry : logic) {
             foundKeys.add(entry.getKey());
             Key k = entry.getKey();

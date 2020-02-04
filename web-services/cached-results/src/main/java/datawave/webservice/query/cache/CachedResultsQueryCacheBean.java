@@ -39,7 +39,7 @@ public class CachedResultsQueryCacheBean {
         StringBuilder buf = new StringBuilder();
         // Iterate over the cache contents
         for (CachedRunningQuery crq : cachedRunningQueryCache) {
-            buf.append("Identifier: ").append(crq.getQueryId()).append(" Query: ").append(crq.toString()).append("\n");
+            buf.append("Identifier: ").append(crq.getQueryId()).append(" Query: ").append(crq).append("\n");
         }
         return buf.toString();
     }

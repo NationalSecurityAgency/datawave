@@ -40,10 +40,6 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
     private static final String WHITE_SPACE_ESCAPE_STRING = "~~";
     public static final String SPACE = " ";
     
-    public FieldQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         datawave.query.language.tree.QueryNode returnNode = null;
         

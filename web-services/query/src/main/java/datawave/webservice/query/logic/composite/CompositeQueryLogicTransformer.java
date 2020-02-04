@@ -12,21 +12,21 @@ import datawave.webservice.result.BaseQueryResponse;
 
 import org.apache.log4j.Logger;
 
-public class CompositeQueryLogicTransformer extends AbstractQueryLogicTransformer implements CacheableLogic {
+public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements CacheableLogic {
     
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicTransformer.class);
     
-    private List<QueryLogicTransformer> delegates = null;
+    private List<QueryLogicTransformer<I,O>> delegates = null;
     
-    public CompositeQueryLogicTransformer(List<QueryLogicTransformer> delegates) {
+    public CompositeQueryLogicTransformer(List<QueryLogicTransformer<I,O>> delegates) {
         this.delegates = delegates;
     }
     
     @Override
-    public Object transform(Object input) {
-        Object result = null;
+    public O transform(I input) {
+        O result = null;
         Exception ex = null;
-        for (QueryLogicTransformer t : delegates) {
+        for (QueryLogicTransformer<I,O> t : delegates) {
             try {
                 log.trace("transform");
                 result = t.transform(input);

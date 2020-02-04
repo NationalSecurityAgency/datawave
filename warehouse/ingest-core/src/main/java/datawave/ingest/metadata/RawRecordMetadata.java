@@ -11,21 +11,21 @@ import com.google.common.collect.Multimap;
 
 public interface RawRecordMetadata {
     
-    public static final String NO_TOKEN_DESIGNATOR = "";
-    public static final String DELIMITER = "\0";
-    public static final boolean INCLUDE_LOAD_DATES = true;
-    public static final boolean EXCLUDE_LOAD_DATES = false;
+    String NO_TOKEN_DESIGNATOR = "";
+    String DELIMITER = "\0";
+    boolean INCLUDE_LOAD_DATES = true;
+    boolean EXCLUDE_LOAD_DATES = false;
     
-    public void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, long loadTimeInMillis);
+    void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, long loadTimeInMillis);
     
-    public void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields);
+    void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields);
     
-    public void addEventWithoutLoadDates(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields);
+    void addEventWithoutLoadDates(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields);
     
-    public void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, boolean frequency);
+    void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, boolean frequency);
     
-    public Multimap<BulkIngestKey,Value> getBulkMetadata();
+    Multimap<BulkIngestKey,Value> getBulkMetadata();
     
-    public void clear();
+    void clear();
     
 }

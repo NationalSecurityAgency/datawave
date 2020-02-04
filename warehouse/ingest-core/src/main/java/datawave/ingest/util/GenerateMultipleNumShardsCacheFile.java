@@ -12,7 +12,6 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.handler.shard.NumShards;
@@ -24,6 +23,7 @@ public class GenerateMultipleNumShardsCacheFile {
     public static final String CONFIG_DIRECTORY_LOCATION_OVERRIDE = "cd";
     public static final String CONFIG_SUFFIEX_OVERRIDE = "cs";
     
+    @SuppressWarnings("static-access")
     public static void main(String[] args) throws ParseException, AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
         AccumuloCliOptions accumuloOptions = new AccumuloCliOptions();
         Options options = accumuloOptions.getOptions();
@@ -54,7 +54,7 @@ public class GenerateMultipleNumShardsCacheFile {
             }
             ConfigurationFileHelper.setConfigurationFromFiles(conf, configDirectory, configSuffix);
             NumShards numShards = new NumShards(conf);
-            numShards.updateCache(FileSystem.get(conf));
+            numShards.updateCache();
         } catch (ParseException ex) {
             log.error(GenerateMultipleNumShardsCacheFile.class.getName(), ex);
         }

@@ -15,7 +15,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public class IsNotNull extends LuceneQueryFunction {
     public IsNotNull() {
-        super("isnotnull", new ArrayList<String>());
+        super("isnotnull", new ArrayList<>());
     }
     
     @Override

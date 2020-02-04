@@ -1,23 +1,20 @@
 package datawave.core.iterators;
 
-import com.google.common.base.Predicate;
-import java.io.IOException;
-import java.util.List;
-import java.util.regex.Pattern;
-import datawave.core.iterators.querylock.QueryLock;
+import datawave.data.ColumnFamilyConstants;
+import datawave.query.Constants;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.Constants;
-import datawave.query.predicate.TimeFilter;
+import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 
@@ -31,47 +28,43 @@ import org.apache.hadoop.io.Text;
  * 
  */
 public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachingIteratorJexl {
-    private String regex = null;
-    private ThreadLocal<Pattern> pattern = new ThreadLocal<Pattern>() {
-        @Override
-        protected Pattern initialValue() {
-            return Pattern.compile(regex);
+    
+    public static class Builder<B extends Builder<B>> extends DatawaveFieldIndexCachingIteratorJexl.Builder<B> {
+        
+        public DatawaveFieldIndexRegexIteratorJexl build() {
+            return new DatawaveFieldIndexRegexIteratorJexl(this);
         }
-    };
+        
+    }
+    
+    public static Builder<?> builder() {
+        return new Builder();
+    }
+    
+    protected DatawaveFieldIndexRegexIteratorJexl(Builder builder) {
+        super(builder);
+        this.regex = builder.fieldValue.toString();
+        try {
+            // now fix the fValue to be the part we use for ranges
+            JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(this.regex);
+            if (analyzer.isLeadingLiteral()) {
+                setFieldValue(new Text(analyzer.getLeadingLiteral()));
+            } else {
+                setFieldValue(new Text(""));
+            }
+        } catch (JavaRegexParseException ex) {
+            throw new IllegalStateException("Unable to parse regex " + regex, ex);
+        }
+        
+    }
+    
+    private String regex = null;
+    private ThreadLocal<Pattern> pattern = ThreadLocal.withInitial(() -> Pattern.compile(regex));
     
     // -------------------------------------------------------------------------
     // ------------- Constructors
     public DatawaveFieldIndexRegexIteratorJexl() {
         super();
-    }
-    
-    public DatawaveFieldIndexRegexIteratorJexl(Text fieldName, Text fieldRegex, TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold,
-                    long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock,
-                    boolean allowDirReuse) throws JavaRegexParseException {
-        this(fieldName, fieldRegex, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse);
-    }
-    
-    public DatawaveFieldIndexRegexIteratorJexl(Text fieldName, Text fieldRegex, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse) throws JavaRegexParseException {
-        this(fieldName, fieldRegex, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
-    }
-    
-    public DatawaveFieldIndexRegexIteratorJexl(Text fieldName, Text fieldRegex, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) throws JavaRegexParseException {
-        super(fieldName, fieldRegex, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, returnKeyType, sortedUIDs);
-        this.regex = fieldRegex.toString();
-        // now fix the fValue to be the part we use for ranges
-        JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(this.regex);
-        if (analyzer.isLeadingLiteral()) {
-            setFieldValue(new Text(analyzer.getLeadingLiteral()));
-        } else {
-            setFieldValue(new Text(""));
-        }
     }
     
     public DatawaveFieldIndexRegexIteratorJexl(DatawaveFieldIndexRegexIteratorJexl other, IteratorEnvironment env) {
@@ -98,7 +91,11 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
         Key startKey = null;
         Key endKey = null;
-        if (isNegated()) {
+        if (ANY_FINAME.equals(fiName)) {
+            startKey = new Key(rowId, FI_START);
+            endKey = new Key(rowId, FI_END);
+            return new RangeSplitter(new Range(startKey, true, endKey, false), getMaxRangeSplit());
+        } else if (isNegated()) {
             startKey = new Key(rowId, fiName);
             endKey = new Key(rowId, new Text(fiName.toString() + '\0'));
             return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());

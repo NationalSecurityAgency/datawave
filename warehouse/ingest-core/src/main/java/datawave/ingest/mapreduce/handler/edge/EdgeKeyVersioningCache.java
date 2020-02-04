@@ -18,7 +18,14 @@ import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.StringUtils;
 
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -121,13 +128,13 @@ public class EdgeKeyVersioningCache {
         scanner.close();
         
         // If Datawave Metadatatable does not have any key versions automatically populate it with one
-        if (versionDates.size() == 0) {
+        if (versionDates.isEmpty()) {
             /*
              * If no key versions were found, then we're most likely initializing a new system. Therefore seeding with epoch date, which should prevent the
              * "old" edge key from being created...that is, with EdgeKey.DATE_TYPE.OLD_EVENT (See ProtobufEdgeDataTypeHandler.writeEdges)
              */
             Date then = new Date(0);
-            log.warn("Could not find any edge key version entries in the " + metadataTableName + " table. Automatically seeding with date: " + then.toString());
+            log.warn("Could not find any edge key version entries in the " + metadataTableName + " table. Automatically seeding with date: " + then);
             String dateString = seedMetadataTable(conn, then.getTime(), 1);
             versionDates.put(1, dateString);
         }
@@ -142,12 +149,11 @@ public class EdgeKeyVersioningCache {
         
         // now attempt to write them out
         try {
-            PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpVersionFile)));
-            
-            for (Map.Entry<Integer,String> pair : versionDates.entrySet()) {
-                out.println(pair.getKey() + "\t" + pair.getValue());
+            try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpVersionFile)))) {
+                for (Map.Entry<Integer,String> pair : versionDates.entrySet()) {
+                    out.println(pair.getKey() + "\t" + pair.getValue());
+                }
             }
-            out.close();
             
             // now move the temporary file to the file cache
             try {
@@ -244,27 +250,20 @@ public class EdgeKeyVersioningCache {
     
     private String seedMetadataTable(Connector connector, long time, int keyVersionNum) throws TableNotFoundException, MutationsRejectedException {
         Value emptyVal = new Value();
-        BatchWriter recordWriter = connector.createBatchWriter(metadataTableName, new BatchWriterConfig());
-        
         SimpleDateFormat dateFormat = new SimpleDateFormat(DateNormalizer.ISO_8601_FORMAT_STRING);
-        
-        String normalizedVersionNum = NumericalEncoder.encode(Integer.toString(keyVersionNum));
-        
         String dateString = dateFormat.format(new Date(time));
-        String rowID = "edge_key";
-        String columnFamily = "version";
-        String columnQualifier = normalizedVersionNum + "/" + dateString;
-        
-        Mutation m = new Mutation(rowID);
-        
-        m.put(new Text(columnFamily), new Text(columnQualifier), emptyVal);
-        
-        recordWriter.addMutation(m);
-        
-        recordWriter.flush();
-        
-        recordWriter.close();
-        
+        try (BatchWriter recordWriter = connector.createBatchWriter(metadataTableName, new BatchWriterConfig())) {
+            String normalizedVersionNum = NumericalEncoder.encode(Integer.toString(keyVersionNum));
+            String rowID = "edge_key";
+            String columnFamily = "version";
+            String columnQualifier = normalizedVersionNum + "/" + dateString;
+            
+            Mutation m = new Mutation(rowID);
+            
+            m.put(new Text(columnFamily), new Text(columnQualifier), emptyVal);
+            
+            recordWriter.addMutation(m);
+        }
         return dateString;
     }
     

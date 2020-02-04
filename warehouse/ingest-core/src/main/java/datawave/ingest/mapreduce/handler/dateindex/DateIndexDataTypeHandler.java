@@ -129,7 +129,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
     public Set<String> getFields(Type dataType, String type) {
         Multimap<String,String> typeToFields = dataTypeToTypeToFields.get(dataType.typeName());
         if (typeToFields != null) {
-            return Collections.unmodifiableSet(new HashSet<String>(typeToFields.get(type)));
+            return Collections.unmodifiableSet(new HashSet<>(typeToFields.get(type)));
         } else {
             return Collections.emptySet();
         }
@@ -138,7 +138,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
     public Set<String> getFields(Type dataType) {
         Multimap<String,String> typeToFields = dataTypeToTypeToFields.get(dataType.typeName());
         if (typeToFields != null) {
-            return Collections.unmodifiableSet(new HashSet<String>(typeToFields.values()));
+            return Collections.unmodifiableSet(new HashSet<>(typeToFields.values()));
         } else {
             return Collections.emptySet();
         }
@@ -165,7 +165,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         // now get the dates to be index for this datatype
         dataTypeToTypeToFields = new HashMap<>();
         for (Type dataType : registry.getTypes()) {
-            Set<String> typeToFieldsSet = new HashSet<String>();
+            Set<String> typeToFieldsSet = new HashSet<>();
             typeToFieldsSet.addAll(conf.getTrimmedStringCollection("all" + DATEINDEX_TYPE_TO_FIELDS));
             typeToFieldsSet.addAll(conf.getTrimmedStringCollection(dataType.typeName() + DATEINDEX_TYPE_TO_FIELDS));
             Multimap<String,String> typeToFields = HashMultimap.create();
@@ -224,7 +224,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * @param index
      */
     private void getBulkIngestKeys(RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields, Multimap<BulkIngestKey,Value> index) {
-        if (dataTypeToTypeToFields.containsKey(event.getDataType().typeName()) && null != eventFields && eventFields.size() != 0) {
+        if (dataTypeToTypeToFields.containsKey(event.getDataType().typeName()) && null != eventFields && !eventFields.isEmpty()) {
             // date index Table Structure
             // Row: date
             // Colf: type
@@ -293,7 +293,6 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         String row = rowDate + '_' + getDateIndexShardPartition(rowDate, type, shardDate, dataType, dateField, new String(biased.getExpression()));
         
         // the colf is the type (e.g. LOAD or ACTIVITY)
-        String colf = type;
         
         // the colq is the event date yyyyMMdd \0 the datatype \0 the field name
         String colq = shardDate + '\0' + dataType + '\0' + dateField;
@@ -302,7 +301,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         Value shardList = createDateIndexValue(ShardIdFactory.getShard(shardId));
         
         // create the key
-        Key key = new Key(row, colf, colq, biased, date.getTime());
+        Key key = new Key(row, type, colq, biased, date.getTime());
         
         if (log.isTraceEnabled()) {
             log.trace("Dateate index key: " + key + " for shardId " + shardId);
@@ -332,8 +331,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         for (String value : values) {
             hashCode += value.hashCode();
         }
-        int partition = (int) ((Integer.MAX_VALUE & hashCode) % this.dateIndexNumShards);
-        return partition;
+        return (int) ((Integer.MAX_VALUE & hashCode) % this.dateIndexNumShards);
     }
     
     /**

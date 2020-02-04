@@ -16,8 +16,6 @@ public class DatawaveCertVerifier implements X509CertificateVerifier {
     protected boolean trace;
     protected OcspLevel ocspLevel = OcspLevel.OFF;
     
-    public DatawaveCertVerifier() {}
-    
     @Override
     public boolean verify(X509Certificate cert, String alias, KeyStore keystore, KeyStore truststore) {
         boolean validity = false;
@@ -25,7 +23,6 @@ public class DatawaveCertVerifier implements X509CertificateVerifier {
             cert.checkValidity();
             validity = checkOCSP(cert, alias, truststore);
         } catch (Exception e) {
-            e.printStackTrace();
             if (trace)
                 log.trace("Validity exception", e);
         }

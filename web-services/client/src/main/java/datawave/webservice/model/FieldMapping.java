@@ -6,7 +6,6 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -32,25 +31,18 @@ public class FieldMapping implements Serializable, Comparable<FieldMapping> {
     @XmlAttribute(name = "columnVisibility", required = true)
     private String columnVisibility = null;
     
-    @XmlAttribute(name = "indexOnly", required = false)
-    private Boolean indexOnly = false;
-    
     public FieldMapping() {
         super();
     }
     
     public FieldMapping(String datatype, String fieldName, String modelFieldName, Direction direction, String columnVisibility) {
-        this(datatype, fieldName, modelFieldName, direction, columnVisibility, false);
-    }
-    
-    public FieldMapping(String datatype, String fieldName, String modelFieldName, Direction direction, String columnVisibility, Boolean indexOnly) {
         super();
         this.datatype = datatype;
         this.fieldName = fieldName;
         this.modelFieldName = modelFieldName;
         this.direction = direction;
         this.columnVisibility = columnVisibility;
-        this.indexOnly = indexOnly;
+        
     }
     
     public String getDatatype() {
@@ -93,18 +85,9 @@ public class FieldMapping implements Serializable, Comparable<FieldMapping> {
         this.columnVisibility = columnVisibility;
     }
     
-    public Boolean getIndexOnly() {
-        return indexOnly;
-    }
-    
-    public void setIndexOnly(Boolean indexOnly) {
-        this.indexOnly = indexOnly;
-    }
-    
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(columnVisibility).append(datatype).append(direction).append(fieldName).append(modelFieldName)
-                        .append(indexOnly).toHashCode();
+        return new HashCodeBuilder(17, 37).append(columnVisibility).append(datatype).append(direction).append(fieldName).append(modelFieldName).toHashCode();
     }
     
     @Override
@@ -117,13 +100,13 @@ public class FieldMapping implements Serializable, Comparable<FieldMapping> {
             return false;
         FieldMapping other = (FieldMapping) obj;
         return new EqualsBuilder().append(columnVisibility, other.columnVisibility).append(datatype, other.datatype).append(direction, other.direction)
-                        .append(fieldName, other.fieldName).append(modelFieldName, other.modelFieldName).append(indexOnly, other.indexOnly).isEquals();
+                        .append(fieldName, other.fieldName).append(modelFieldName, other.modelFieldName).isEquals();
     }
     
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("columnVisibility", columnVisibility).append("datatype", datatype).append("direction", direction)
-                        .append("fieldName", fieldName).append("modelFieldName", modelFieldName).append("index_only", indexOnly).toString();
+                        .append("fieldName", fieldName).append("modelFieldName", modelFieldName).toString();
     }
     
     @Override
@@ -136,9 +119,9 @@ public class FieldMapping implements Serializable, Comparable<FieldMapping> {
         if (obj == this)
             return 0;
         
-        FieldMapping other = (FieldMapping) obj;
-        return new CompareToBuilder().append(datatype, other.datatype).append(fieldName, other.fieldName).append(modelFieldName, other.modelFieldName)
-                        .append(direction, other.direction).append(indexOnly, other.indexOnly).append(columnVisibility, other.columnVisibility).toComparison();
+        return new CompareToBuilder().append(datatype, ((FieldMapping) obj).datatype).append(fieldName, ((FieldMapping) obj).fieldName)
+                        .append(modelFieldName, ((FieldMapping) obj).modelFieldName).append(direction, ((FieldMapping) obj).direction)
+                        .append(columnVisibility, ((FieldMapping) obj).columnVisibility).toComparison();
     }
     
 }

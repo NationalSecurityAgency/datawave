@@ -1,30 +1,32 @@
 package datawave.query.ancestor;
 
 import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.predicate.TimeFilter;
 import datawave.query.tld.TLD;
-import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-
 public class AncestorIndexIterator extends IndexIterator {
     
-    public AncestorIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
-        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new IdentityAggregator(null, null));
+    public static class Builder<B extends Builder<B>> extends IndexIterator.Builder<B> {
+        
+        Builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+            super(field, value, source);
+        }
+        
+        public AncestorIndexIterator build() {
+            return new AncestorIndexIterator(this);
+        }
     }
     
-    public AncestorIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        super(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator);
+    public static Builder<?> builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+        return new Builder(field, value, source);
+    }
+    
+    protected AncestorIndexIterator(Builder builder) {
+        super(builder);
     }
     
     @Override
@@ -35,7 +37,7 @@ public class AncestorIndexIterator extends IndexIterator {
         String startCf = (start == null || start.getColumnFamily() == null ? "" : start.getColumnFamily().toString());
         
         // if the start key is inclusive, and contains a datatype/0UID, then move back to the top level ancestor
-        if (r.isStartKeyInclusive() && startCf.length() > 0) {
+        if (r.isStartKeyInclusive() && !startCf.isEmpty()) {
             // parse out the uid and replace with the root parent uid
             int index = startCf.indexOf('\0');
             if (index > 0) {

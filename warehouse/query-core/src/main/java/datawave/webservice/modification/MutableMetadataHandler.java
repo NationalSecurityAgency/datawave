@@ -305,7 +305,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         
         DefaultModificationRequest mr = DefaultModificationRequest.class.cast(request);
         
-        if (null == mr.getEvents() || mr.getEvents().size() == 0) {
+        if (null == mr.getEvents() || mr.getEvents().isEmpty()) {
             throw new IllegalArgumentException("No events specified for modification");
         }
         
@@ -339,7 +339,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 boolean isContent = (contentFields != null && contentFields.contains(fieldName));
                 Set<Type<?>> dataTypes = helper.getDatatypesForField(fieldName, Collections.singleton(datatype));
                 
-                if ((isIndexed || isReverseIndexed || isIndexOnly) && (null == dataTypes || dataTypes.size() == 0))
+                if ((isIndexed || isReverseIndexed || isIndexOnly) && (null == dataTypes || dataTypes.isEmpty()))
                     throw new IllegalStateException("Field " + fieldName + " is marked index only but has no dataTypes");
                 
                 long origTimestamp = getOriginalEventTimestamp(con, userAuths, shardId, datatype, eventUid);
@@ -347,7 +347,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 // Count the history entries if history is going to be inserted.
                 if (insertHistory && (MODE.INSERT.equals(mode) || MODE.UPDATE.equals(mode))) {
                     List<Pair<Key,Value>> fieldHistoryList = getField(con, userAuths, shardId, datatype, eventUid, "HISTORY_" + fieldName, null,
-                                    new HashMap<String,String>(), null);
+                                    new HashMap<>(), null);
                     
                     for (Pair<Key,Value> p : fieldHistoryList) {
                         if (p.getFirst().getColumnQualifier().find(mr.getFieldValue()) > -1) {
@@ -377,7 +377,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     
                     // find the current values
                     currentEntryList = getField(con, userAuths, shardId, datatype, eventUid, fieldName, oldFieldValue, oldFieldMarkings, oldViz);
-                    if (oldFieldValue != null && currentEntryList.size() == 0) {
+                    if (oldFieldValue != null && currentEntryList.isEmpty()) {
                         throw new IllegalArgumentException("Modification request rejected. Current value of " + fieldName + " does not match submitted value.");
                     }
                 } else {
@@ -413,7 +413,6 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 }
             }
         } finally {
-            writer.flush();
             writer.close();
         }
     }
@@ -756,13 +755,13 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     String oldColViz = new String(oldColumnVisibility.flatten(), "UTF-8");
                     String thisVis = new String(thisViz.flatten(), "UTF-8");
                     if (!oldColViz.equals(thisVis)) {
-                        log.trace("Skipping key that does not match with column visibility: " + e.getKey().toString());
+                        log.trace("Skipping key that does not match with column visibility: " + e.getKey());
                         continue;
                     }
                 } else {
                     Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(e.getKey().getColumnVisibilityParsed(), userAuths);
                     if (null != oldFieldMarkings && !oldFieldMarkings.equals(markings)) {
-                        log.trace("Skipping key that does not match with markings: " + e.getKey().toString());
+                        log.trace("Skipping key that does not match with markings: " + e.getKey());
                         continue;
                     }
                 }
@@ -813,7 +812,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             }
             
             // Determine the most common timestamp
-            if (timestampCounts.size() == 0) {
+            if (timestampCounts.isEmpty()) {
                 // if no fields exist, then use the shard date at 00:00:00
                 highestOccurrenceTimestamp = DateHelper.parse(shardId.substring(0, 8)).getTime();
             } else {
@@ -845,7 +844,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      */
     protected MetadataHelper getMetadataHelper(Connector con) throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         Authorizations auths = con.securityOperations().getUserAuthorizations(con.whoami());
-        return metadataHelperFactory.createMetadataHelper().initialize(con, this.getMetadataTableName(), Collections.singleton(auths));
+        return metadataHelperFactory.createMetadataHelper(con, this.getMetadataTableName(), Collections.singleton(auths));
     }
     
     /**
@@ -913,7 +912,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         try {
             GenericResponse<String> createResponse = queryService.createQuery(logicName, QueryParametersImpl.paramsToMap(logicName, query.toString(),
                             "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
-                            StringUtils.join(auths, ','), expiration, 2, -1, QueryPersistence.TRANSIENT, queryOptions.toString(), false));
+                            StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, queryOptions.toString(), false));
             
             id = createResponse.getResult();
             BaseQueryResponse response = queryService.next(id);
@@ -922,14 +921,14 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 if (eResponse.getEvents().size() > 1) {
                     throw new IllegalStateException("More than one event matched " + uuid + " (" + eResponse.getEvents().size() + " matched)");
                 }
-                if (eResponse.getEvents().size() == 0) {
+                if (eResponse.getEvents().isEmpty()) {
                     throw new IllegalStateException("No event matched " + uuid);
                 }
                 
                 e = (DefaultEvent) eResponse.getEvents().get(0);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex);
         } finally {
             if (id != null) {
                 queryService.close(id);

@@ -1,5 +1,22 @@
 package datawave.query.iterator.pipeline;
 
+import datawave.core.iterators.IteratorThreadPoolManager;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.NestedQuery;
+import datawave.query.iterator.NestedQueryIterator;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.util.Tuple2;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IterationInterruptedException;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.log4j.Logger;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
@@ -9,47 +26,29 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import datawave.query.iterator.profile.QuerySpan;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IterationInterruptedException;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
-
-import datawave.core.iterators.IteratorThreadPoolManager;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.NestedQuery;
-import datawave.query.iterator.NestedQueryIterator;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.YieldCallbackWrapper;
-import datawave.query.iterator.profile.QuerySpanCollector;
-import datawave.query.util.Tuple2;
-
 /**
  * This is the iterator that handles the evaluation pipelines. Essentially it will queue up N evaluations. On each hasNext and next call, it will pull the
  * results ready from the top and cache the non-null results in a results queue.
  */
-public class PipelineIterator implements Iterator<Entry<Key,Value>> {
+public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     
     private static final Logger log = Logger.getLogger(PipelineIterator.class);
-    final protected YieldCallbackWrapper<Key> yield;
-    final protected long yieldThresholdMs;
-    final protected NestedIterator<Key> docSource;
-    final protected PipelinePool pipelines;
-    final protected Queue<Tuple2<Future<?>,Pipeline>> evaluationQueue;
+    protected final YieldCallback<Key> yield;
+    protected final long yieldThresholdMs;
+    protected final NestedIterator<Key> docSource;
+    protected final PipelinePool pipelines;
+    protected final Queue<Tuple2<Future<?>,Pipeline>> evaluationQueue;
     protected Key lastKeyEvaluated = null;
-    final protected Queue<Entry<Key,Value>> results;
-    final protected int maxResults;
-    final protected QuerySpanCollector querySpanCollector;
-    final protected QuerySpan querySpan;
+    protected final Queue<Entry<Key,Document>> results;
+    protected final int maxResults;
+    protected final QuerySpanCollector querySpanCollector;
+    protected final QuerySpan querySpan;
     protected boolean collectTimingDetails = false;
     protected IteratorEnvironment env;
     
     public PipelineIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, QuerySpanCollector querySpanCollector, QuerySpan querySpan,
                     QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env,
-                    YieldCallbackWrapper<Key> yieldCallback, long yieldThresholdMs) {
+                    YieldCallback<Key> yieldCallback, long yieldThresholdMs) {
         this.docSource = documents;
         this.pipelines = new PipelinePool(maxPipelines, querySpanCollector, sourceIterator, sourceForDeepCopy, env);
         this.evaluationQueue = new LinkedList<>();
@@ -73,7 +72,12 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      */
     @Override
     public boolean hasNext() {
-        Entry<Key,Value> next = getNext(false);
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return false;
+        }
+        
+        Entry<Key,Document> next = getNext(false);
         if (log.isTraceEnabled()) {
             log.trace("QueryIterator.hasNext() -> " + (next == null ? null : next.getKey()));
         }
@@ -86,8 +90,13 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @see java.util.Iterator#next()
      */
     @Override
-    public Entry<Key,Value> next() {
-        Entry<Key,Value> next = getNext(true);
+    public Entry<Key,Document> next() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return null;
+        }
+        
+        Entry<Key,Document> next = getNext(true);
         if (log.isTraceEnabled()) {
             log.trace("QueryIterator.next() -> " + (next == null ? null : next.getKey()));
         }
@@ -100,7 +109,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @param remove
      * @return the next non-null entry. null if there are no more entries to get.
      */
-    private Entry<Key,Value> getNext(boolean remove) {
+    private Entry<Key,Document> getNext(boolean remove) {
         try {
             if (log.isTraceEnabled()) {
                 log.trace("getNext(" + remove + ") start: " + evaluationQueue.size() + " cached: " + results.size());
@@ -123,7 +132,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
             }
             
             // get/remove and return the next result, null if we are done
-            Entry<Key,Value> next = null;
+            Entry<Key,Document> next = null;
             if (!results.isEmpty()) {
                 if (remove) {
                     next = results.poll();
@@ -131,21 +140,18 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
                     next = results.peek();
                 }
             }
+            
             return next;
-        } catch (InterruptedException | IterationInterruptedException e) {
-            // cancel out existing executions, and exit gracefully
+        } catch (Exception e) {
+            // cancel out existing executions
             cancel();
-            return null;
-        } catch (ExecutionException e) {
-            // cancel out existing executions and throw the exception up
-            // unless interrupted
-            cancel();
-            // if a interrupted exception, then exit gracefully
-            Throwable t = e.getCause();
-            if (t instanceof InterruptedException || t instanceof IterationInterruptedException) {
+            
+            // if we yielded, then leave gracefully
+            if (yield != null && yield.hasYielded()) {
                 return null;
             }
-            // otherwise pass the exception up
+            
+            log.error("Failed to retrieve evaluation pipeline result", e);
             throw new RuntimeException("Failed to retrieve evaluation pipeline result", e);
         }
     }
@@ -157,7 +163,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @throws InterruptedException
      */
     private void cacheNextResult() throws InterruptedException, ExecutionException {
-        Entry<Key,Value> result = null;
+        Entry<Key,Document> result = null;
         
         long startMs = System.currentTimeMillis();
         while (!evaluationQueue.isEmpty() && result == null) {
@@ -166,12 +172,16 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
                 long delta = System.currentTimeMillis() - startMs;
                 if (delta > yieldThresholdMs) {
                     yield.yield(lastKeyEvaluated);
+                    if (log.isDebugEnabled())
+                        log.debug("Yielding at " + lastKeyEvaluated);
                     throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
                 }
                 try {
                     result = poll(yieldThresholdMs - delta);
                 } catch (TimeoutException e) {
                     yield.yield(lastKeyEvaluated);
+                    if (log.isDebugEnabled())
+                        log.debug("Yielding at " + lastKeyEvaluated);
                     throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
                 }
             } else {
@@ -209,30 +219,51 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @throws InterruptedException
      * @throws ExecutionException
      */
-    private Entry<Key,Value> poll(long waitMs) throws InterruptedException, ExecutionException, TimeoutException {
+    private Entry<Key,Document> poll(long waitMs) throws InterruptedException, ExecutionException, TimeoutException {
         // get the next evaluated result
         Tuple2<Future<?>,Pipeline> nextFuture = evaluationQueue.poll();
         
-        // wait for it to complete if not already done
-        if (!nextFuture.first().isDone()) {
-            long start = System.currentTimeMillis();
-            
-            nextFuture.first().get(waitMs, TimeUnit.MILLISECONDS);
-            
-            if (log.isDebugEnabled()) {
-                long wait = System.currentTimeMillis() - start;
-                log.debug("Waited " + wait + "ms for the top evaluation in a queue of " + evaluationQueue.size() + " pipelines");
+        Entry<Key,Document> result = null;
+        try {
+            if (log.isTraceEnabled()) {
+                Key docKey = nextFuture.second().getSource().getKey();
+                log.trace("Polling for result from " + docKey);
             }
+            
+            // wait for it to complete if not already done
+            if (!nextFuture.first().isDone()) {
+                long start = System.currentTimeMillis();
+                
+                nextFuture.first().get(waitMs, TimeUnit.MILLISECONDS);
+                
+                if (log.isDebugEnabled()) {
+                    long wait = System.currentTimeMillis() - start;
+                    log.debug("Waited " + wait + "ms for the top evaluation in a queue of " + evaluationQueue.size() + " pipelines");
+                }
+            }
+            
+            // call get to ensure that we throw any exception that occurred
+            nextFuture.first().get();
+            
+            // pull the result
+            result = nextFuture.second().getResult();
+            
+            if (log.isTraceEnabled()) {
+                Key docKey = nextFuture.second().getSource().getKey();
+                log.trace("Polling for result from " + docKey + " was " + (result == null ? "empty" : "successful"));
+            }
+            
+            // record the last evaluated key
+            lastKeyEvaluated = nextFuture.second().getSource().getKey();
+        } catch (Exception e) {
+            Key docKey = nextFuture.second().getSource().getKey();
+            log.error("Failed polling for result from " + docKey + "; cancelling remaining evaluations and flushing results", e);
+            cancel();
+            throw e;
+        } finally {
+            // return the pipeline for reuse
+            pipelines.checkIn(nextFuture.second());
         }
-        
-        // pull the result
-        Entry<Key,Value> result = nextFuture.second().getResult();
-        
-        // record the last evaluated key
-        lastKeyEvaluated = nextFuture.second().getSource().getKey();
-        
-        // return the pipeline for reuse
-        pipelines.checkIn(nextFuture.second());
         
         // start a new evaluation if we can
         if (docSource.hasNext()) {
@@ -265,6 +296,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
             nextFuture.first().cancel(true);
             pipelines.checkIn(nextFuture.second());
         }
+        results.clear();
     }
     
     public void startPipeline() {
@@ -293,9 +325,12 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
     }
     
     private void evaluate(Key key, Document document, NestedQuery<Key> nestedQuery) {
+        if (log.isTraceEnabled()) {
+            log.trace("Adding evaluation of " + key + " to pipeline");
+        }
         Pipeline pipeline = pipelines.checkOut(key, document, nestedQuery);
         
-        evaluationQueue.add(new Tuple2<Future<?>,Pipeline>(IteratorThreadPoolManager.executeEvaluation(pipeline, pipeline.toString()), pipeline));
+        evaluationQueue.add(new Tuple2<>(IteratorThreadPoolManager.executeEvaluation(pipeline, pipeline.toString(), env), pipeline));
     }
     
     /*

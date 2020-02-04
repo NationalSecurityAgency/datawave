@@ -17,14 +17,17 @@ import java.util.Map;
 
 public class QueryParametersImpl implements QueryParameters {
     
-    private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT,
-                    QUERY_AUTHORIZATIONS, QUERY_EXPIRATION, QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME);
+    private static final List<String> KNOWN_PARAMS = Arrays
+                    .asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT, QUERY_AUTHORIZATIONS, QUERY_EXPIRATION,
+                                    QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME, QUERY_MAX_RESULTS_OVERRIDE);
     
     protected String query;
     protected String queryName;
     protected QueryPersistence persistenceMode;
     protected int pagesize;
     protected int pageTimeout;
+    protected boolean isMaxResultsOverridden;
+    protected long maxResultsOverride;
     protected String auths;
     protected Date expirationDate;
     protected boolean trace;
@@ -38,6 +41,31 @@ public class QueryParametersImpl implements QueryParameters {
         clear();
     }
     
+    /**
+     * Configure internal variables via the incoming parameter map, performing validation of values.
+     *
+     * QueryParameters are considered valid if the following required parameters are present.
+     * <ol>
+     * <li>'query'</li>
+     * <li>'queryName'</li>
+     * <li>'persistence'</li>
+     * <li>'auths'</li>
+     * <li>'expiration'</li>
+     * <li>'queryLogicName'</li>
+     * </ol>
+     *
+     * QueryParameters may also include the following optional parameters.
+     * <ol>
+     * <li>'pagesize'</li>
+     * <li>'pageTimeout'</li>
+     * <li>'begin'</li>
+     * <li>'end'</li>
+     * </ol>
+     *
+     * @param parameters
+     *            - a Map of QueryParameters
+     * @throws IllegalArgumentException
+     */
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         for (String param : KNOWN_PARAMS) {
             List<String> values = parameters.get(param);
@@ -45,7 +73,7 @@ public class QueryParametersImpl implements QueryParameters {
                 continue;
             }
             if (values.isEmpty() || values.size() > 1) {
-                throw new IllegalArgumentException("Known parameter " + param + " only accepts one value");
+                throw new IllegalArgumentException("Known parameter [" + param + "] only accepts one value");
             }
             if (QUERY_STRING.equals(param)) {
                 this.query = values.get(0);
@@ -57,6 +85,9 @@ public class QueryParametersImpl implements QueryParameters {
                 this.pagesize = Integer.parseInt(values.get(0));
             } else if (QUERY_PAGETIMEOUT.equals(param)) {
                 this.pageTimeout = Integer.parseInt(values.get(0));
+            } else if (QUERY_MAX_RESULTS_OVERRIDE.equals(param)) {
+                this.maxResultsOverride = Long.parseLong(values.get(0));
+                this.isMaxResultsOverridden = true;
             } else if (QUERY_AUTHORIZATIONS.equals(param)) {
                 // ensure that auths are comma separated with no empty values or spaces
                 Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
@@ -71,13 +102,13 @@ public class QueryParametersImpl implements QueryParameters {
                 this.trace = Boolean.parseBoolean(values.get(0));
             } else if (QUERY_BEGIN.equals(param)) {
                 try {
-                    this.beginDate = parseStartDate(values.get(0));
+                    this.beginDate = values.get(0) == null ? null : parseStartDate(values.get(0));
                 } catch (ParseException e) {
                     throw new IllegalArgumentException("Error parsing begin date", e);
                 }
             } else if (QUERY_END.equals(param)) {
                 try {
-                    this.endDate = parseEndDate(values.get(0));
+                    this.endDate = values.get(0) == null ? null : parseEndDate(values.get(0));
                 } catch (ParseException e) {
                     throw new IllegalArgumentException("Error parsing end date", e);
                 }
@@ -89,11 +120,17 @@ public class QueryParametersImpl implements QueryParameters {
                 throw new IllegalArgumentException("Unknown condition.");
             }
         }
-        Preconditions.checkNotNull(this.query, "Query string cannot be null");
-        Preconditions.checkNotNull(this.queryName, "Query name cannot be null");
-        Preconditions.checkNotNull(this.persistenceMode, "Persistence mode cannot be null");
-        Preconditions.checkNotNull(this.auths, "Query auths cannot be null");
-        Preconditions.checkNotNull(this.expirationDate, "Expiration date cannot be null");
+        
+        try {
+            Preconditions.checkNotNull(this.query, "QueryParameter 'query' cannot be null");
+            Preconditions.checkNotNull(this.queryName, "QueryParameter 'queryName' cannot be null");
+            Preconditions.checkNotNull(this.persistenceMode, "QueryParameter 'persistence' mode cannot be null");
+            Preconditions.checkNotNull(this.auths, "QueryParameter 'auths' cannot be null");
+            Preconditions.checkNotNull(this.expirationDate, "QueryParameter 'expirationDate' cannot be null");
+            Preconditions.checkNotNull(this.logicName, "QueryParameter 'logicName' cannot be null");
+        } catch (NullPointerException e) {
+            throw new IllegalArgumentException("Missing one or more required QueryParameters", e);
+        }
     }
     
     @Override
@@ -109,6 +146,12 @@ public class QueryParametersImpl implements QueryParameters {
             return false;
         if (pageTimeout != that.pageTimeout)
             return false;
+        if (isMaxResultsOverridden != that.isMaxResultsOverridden)
+            return false;
+        if (isMaxResultsOverridden) {
+            if (maxResultsOverride != that.maxResultsOverride)
+                return false;
+        }
         if (trace != that.trace)
             return false;
         if (!auths.equals(that.auths))
@@ -141,6 +184,9 @@ public class QueryParametersImpl implements QueryParameters {
         result = 31 * result + persistenceMode.hashCode();
         result = 31 * result + pagesize;
         result = 31 * result + pageTimeout;
+        if (isMaxResultsOverridden) {
+            result = 31 * result + (int) (maxResultsOverride);
+        }
         result = 31 * result + auths.hashCode();
         result = 31 * result + expirationDate.hashCode();
         result = 31 * result + (trace ? 1 : 0);
@@ -218,27 +264,40 @@ public class QueryParametersImpl implements QueryParameters {
      * mapped directly to the QUERY_PARAMS key.
      * 
      * No attempt is made to determine whether or not the given arguments constitute a valid query. If validation is desired, see the {@link validate} method
-     * 
+     *
      * @param queryLogicName
+     *            - name of QueryLogic to use
      * @param query
+     *            - the raw query string
      * @param queryName
+     *            - client-supplied name of query
      * @param queryVisibility
+     *            -
      * @param beginDate
+     *            - start date
      * @param endDate
+     *            - end date
      * @param queryAuthorizations
+     *            - what auths the query should run with
      * @param expirationDate
+     *            -
      * @param pagesize
+     *            -
      * @param pageTimeout
+     * @param maxResultsOverride
      * @param persistenceMode
+     *            -
      * @param parameters
+     *            - additional parameters passed in as map
      * @param trace
+     *            -
      * @return
      * @throws ParseException
      *             on date parse/format error
      */
     public static MultivaluedMap<String,String> paramsToMap(String queryLogicName, String query, String queryName, String queryVisibility, Date beginDate,
-                    Date endDate, String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, QueryPersistence persistenceMode,
-                    String parameters, Boolean trace) throws ParseException {
+                    Date endDate, String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, Long maxResultsOverride,
+                    QueryPersistence persistenceMode, String parameters, Boolean trace) throws ParseException {
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
         if (queryLogicName != null) {
@@ -272,6 +331,9 @@ public class QueryParametersImpl implements QueryParameters {
         }
         if (pageTimeout != null) {
             p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, pageTimeout.toString());
+        }
+        if (maxResultsOverride != null) {
+            p.putSingle(QueryParameters.QUERY_MAX_RESULTS_OVERRIDE, maxResultsOverride.toString());
         }
         if (persistenceMode != null) {
             p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
@@ -334,6 +396,21 @@ public class QueryParametersImpl implements QueryParameters {
     @Override
     public void setPageTimeout(int pageTimeout) {
         this.pageTimeout = pageTimeout;
+    }
+    
+    @Override
+    public long getMaxResultsOverride() {
+        return maxResultsOverride;
+    }
+    
+    @Override
+    public void setMaxResultsOverride(long maxResultsOverride) {
+        this.maxResultsOverride = maxResultsOverride;
+    }
+    
+    @Override
+    public boolean isMaxResultsOverridden() {
+        return this.isMaxResultsOverridden;
     }
     
     @Override
@@ -436,6 +513,7 @@ public class QueryParametersImpl implements QueryParameters {
         this.persistenceMode = QueryPersistence.TRANSIENT;
         this.pagesize = 10;
         this.pageTimeout = -1;
+        this.isMaxResultsOverridden = false;
         this.auths = null;
         this.expirationDate = DateUtils.addDays(new Date(), 1);
         this.trace = false;

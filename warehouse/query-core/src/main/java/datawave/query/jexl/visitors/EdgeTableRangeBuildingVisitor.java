@@ -10,10 +10,24 @@ import datawave.query.tables.edge.contexts.QueryContext;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -124,7 +138,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             return computeVisitaionContext((List<QueryContext>) context);
             // return context;
         } else {
-            log.error("JexlScript node recieved unexpected return type: " + context.toString());
+            log.error("JexlScript node recieved unexpected return type: " + context);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR);
             throw new RuntimeException(qe);
         }
@@ -422,7 +436,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                         continue;
                     }
                 }
-                if (contexts.size() == 0) {
+                if (contexts.isEmpty()) {
                     log.error("Couldn't normalize users regex: " + literal);
                     throw new RuntimeException("Can't build query invalid regex: " + literal);
                 }
@@ -450,9 +464,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             log.error("Reference node (identity) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
             throw new IllegalArgumentException("Problem parsing query");
         }
-        String identity = referenceNode.jjtGetChild(0).image.toUpperCase();
         
-        return identity;
+        return referenceNode.jjtGetChild(0).image.toUpperCase();
     }
     
     /**
@@ -481,7 +494,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         int numChildren = node.jjtGetNumChildren();
         StringBuilder sb = new StringBuilder();
         String fieldName = null;
-        Set<String> edgeTypes = new HashSet<String>();
+        Set<String> edgeTypes = new HashSet<>();
         
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             if (0 == i) {

@@ -1,19 +1,19 @@
 package datawave.query.search;
 
-abstract public class Term {
+public abstract class Term {
     private boolean filterOnly = false;
     
     public enum EscapedCharacterTreatment {
         ESCAPED, UNESCAPED
     }
     
-    abstract public String getRangeBegin(EscapedCharacterTreatment escapedCharacterTreatment);
+    public abstract String getRangeBegin(EscapedCharacterTreatment escapedCharacterTreatment);
     
-    abstract public String getRangeEnd(EscapedCharacterTreatment escapedCharacterTreatment);
+    public abstract String getRangeEnd(EscapedCharacterTreatment escapedCharacterTreatment);
     
-    abstract public boolean isMatch(String selector);
+    public abstract boolean isMatch(String selector);
     
-    static public String unescapeSelector(String s) {
+    public static String unescapeSelector(String s) {
         String escapedSelector = s;
         escapedSelector = escapedSelector.replace("\\\\", "\\");
         escapedSelector = escapedSelector.replace("\\*", "*");
@@ -21,7 +21,7 @@ abstract public class Term {
         return escapedSelector;
     }
     
-    static public String incrementOneCodepoint(String term) {
+    public static String incrementOneCodepoint(String term) {
         int codepoint = term.codePointBefore(term.length());
         int cpc = term.codePointCount(0, term.length());
         int offset = term.offsetByCodePoints(0, cpc - 1);
@@ -30,7 +30,7 @@ abstract public class Term {
         return term.substring(0, offset) + new String(cparray, 0, 1);
     }
     
-    static public String decrementOneCodepoint(String term) {
+    public static String decrementOneCodepoint(String term) {
         int codepoint = term.codePointBefore(term.length());
         int cpc = term.codePointCount(0, term.length());
         int offset = term.offsetByCodePoints(0, cpc - 1);

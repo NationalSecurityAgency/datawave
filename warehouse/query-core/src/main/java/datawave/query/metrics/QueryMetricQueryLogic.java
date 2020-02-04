@@ -2,8 +2,6 @@ package datawave.query.metrics;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -92,7 +90,7 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
         }
         
         StringBuilder jexl = new StringBuilder();
-        if (query.length() > 0) {
+        if (!query.isEmpty()) {
             jexl.append("(").append(query).append(")");
             jexl.append(" AND (USER == '").append(settings.getOwner()).append("')");
         } else {

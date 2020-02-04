@@ -5,5 +5,5 @@ import datawave.webservice.query.Query;
 
 public interface SelectorExtractor {
     
-    public List<String> extractSelectors(Query query);
+    List<String> extractSelectors(Query query);
 }

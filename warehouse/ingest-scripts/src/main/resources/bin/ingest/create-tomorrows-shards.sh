@@ -24,18 +24,21 @@ else
 fi
 numshards=$((numshards * numerator / divisor))
 
+shardsPerSplit=1
+if [[ -n "$3" ]]; then
+    shardsPerSplit=$3
+fi
+
 DATE=`date -d tomorrow +%Y%m%d`
 
 echo "Generating ${numerator}/${divisor} of ${NUM_SHARDS} = $numshards shards for $DATE"
 
 TYPES=${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_DATA_TYPES}
 
-ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR,$THIS_DIR/$COMMON_UTIL_JAR,$THIS_DIR/$JODA_TIME_JAR,$THIS_DIR/$DATAWAVE_CORE_JAR
+ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR,$THIS_DIR/$COMMON_UTIL_JAR,$THIS_DIR/$DATAWAVE_CORE_JAR,$THIS_DIR/$DATAWAVE_COMMON_UTILS_JAR
 
-$WAREHOUSE_ACCUMULO_HOME/bin/accumulo -add $ADDJARS datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+$WAREHOUSE_ACCUMULO_HOME/bin/accumulo -add $ADDJARS datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} ${shardsPerSplit} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
 
-$WAREHOUSE_ACCUMULO_HOME/bin/accumulo -add $ADDJARS datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${KNOWLEDGE_SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+$WAREHOUSE_ACCUMULO_HOME/bin/accumulo -add $ADDJARS datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} ${shardsPerSplit} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${ERROR_SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
 
-$WAREHOUSE_ACCUMULO_HOME/bin/accumulo -add $ADDJARS datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} -addShardMarkers -addDataTypeMarkers $TYPES $USERNAME $PASSWORD ${ERROR_SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
-
-$WAREHOUSE_ACCUMULO_HOME/bin/accumulo -add $ADDJARS datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} -addShardMarkers $USERNAME $PASSWORD ${QUERY_METRICS_BASE_NAME}_e $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+$WAREHOUSE_ACCUMULO_HOME/bin/accumulo -add $ADDJARS datawave.ingest.util.GenerateShardSplits $DATE 1 ${numshards} ${shardsPerSplit} -addShardMarkers $USERNAME $PASSWORD ${QUERYMETRICS_SHARD_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS

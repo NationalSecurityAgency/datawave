@@ -54,7 +54,7 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
         
         // Create a weak hashmap to allow garbage collection in case of abnormally large sets of index-only records, yet prevent duplicate
         // fetching if the values can be held in memory.
-        this.lazyFetchingIndexOnlySets = Collections.synchronizedMap(new WeakHashMap<String,WeakReference<Collection<?>>>());
+        this.lazyFetchingIndexOnlySets = Collections.synchronizedMap(new WeakHashMap<>());
     }
     
     @Override
@@ -139,7 +139,7 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
                 lazyFetchingSet = values;
             } else {
                 lazyFetchingSet = Collections.synchronizedSet(new IndexOnlyLazyFetchingSet<>(name, this.iterator));
-                this.lazyFetchingIndexOnlySets.put(name, new WeakReference<Collection<?>>(lazyFetchingSet));
+                this.lazyFetchingIndexOnlySets.put(name, new WeakReference<>(lazyFetchingSet));
             }
         } else {
             lazyFetchingSet = null;

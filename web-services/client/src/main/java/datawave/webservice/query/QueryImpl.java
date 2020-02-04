@@ -14,6 +14,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -22,7 +25,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import datawave.security.util.DnUtils;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
@@ -216,6 +218,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @XmlElement
     protected int pageTimeout;
     @XmlElement
+    protected boolean isMaxResultsOverridden;
+    @XmlElement
+    protected long maxResultsOverride;
+    @XmlElement
     protected HashSet<Parameter> parameters = new HashSet<Parameter>();
     @XmlElement
     protected List<String> dnList;
@@ -268,6 +274,14 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         return pageTimeout;
     }
     
+    public long getMaxResultsOverride() {
+        return maxResultsOverride;
+    }
+    
+    public boolean isMaxResultsOverridden() {
+        return isMaxResultsOverridden;
+    }
+    
     public Set<Parameter> getParameters() {
         return parameters == null ? null : Collections.unmodifiableSet(parameters);
     }
@@ -298,6 +312,11 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     public void setExpirationDate(Date expirationDate) {
         this.expirationDate = expirationDate;
+    }
+    
+    public void setMaxResultsOverride(long maxResults) {
+        this.maxResultsOverride = maxResults;
+        this.isMaxResultsOverridden = true;
     }
     
     public void setPagesize(int pagesize) {
@@ -386,6 +405,9 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setId(UUID.randomUUID());
         query.setPagesize(this.getPagesize());
         query.setPageTimeout(this.getPageTimeout());
+        if (query.isMaxResultsOverridden()) {
+            query.setMaxResultsOverride(this.getMaxResultsOverride());
+        }
         query.setQuery(this.getQuery());
         query.setQueryAuthorizations(this.getQueryAuthorizations());
         query.setUserDN(this.getUserDN());
@@ -393,7 +415,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setColumnVisibility(this.getColumnVisibility());
         query.setBeginDate(this.getBeginDate());
         query.setEndDate(this.getEndDate());
-        if (null != this.parameters && this.parameters.size() > 0)
+        if (null != this.parameters && !this.parameters.isEmpty())
             query.setParameters(new HashSet<Parameter>(this.parameters));
         query.setDnList(this.dnList);
         return query;
@@ -402,9 +424,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(this.getQueryLogicName()).append(this.getQueryName()).append(this.getExpirationDate())
-                        .append(UUID.randomUUID()).append(this.getPagesize()).append(this.getPageTimeout()).append(this.getQuery())
-                        .append(this.getQueryAuthorizations()).append(this.getUserDN()).append(this.getOwner()).append(this.getParameters())
-                        .append(this.getDnList()).append(this.getColumnVisibility()).append(this.getBeginDate()).append(this.getEndDate()).toHashCode();
+                        .append(UUID.randomUUID()).append(this.getPagesize()).append(this.getPageTimeout())
+                        .append(this.isMaxResultsOverridden() ? this.getMaxResultsOverride() : 0).append(this.getQuery()).append(this.getQueryAuthorizations())
+                        .append(this.getUserDN()).append(this.getOwner()).append(this.getParameters()).append(this.getDnList())
+                        .append(this.getColumnVisibility()).append(this.getBeginDate()).append(this.getEndDate()).toHashCode();
     }
     
     @Override
@@ -416,6 +439,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         tsb.append("uuid", this.getId());
         tsb.append("pagesize", this.getPagesize());
         tsb.append("pageTimeout", this.getPageTimeout());
+        tsb.append("maxResultsOverride", (this.isMaxResultsOverridden() ? this.getMaxResultsOverride() : "NA"));
         tsb.append("query", this.getQuery());
         tsb.append("queryAuthorizations", this.getQueryAuthorizations());
         tsb.append("userDN", this.getUserDN());
@@ -448,6 +472,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         eb.append(this.getExpirationDate(), other.getExpirationDate());
         eb.append(this.getPagesize(), other.getPagesize());
         eb.append(this.getPageTimeout(), other.getPageTimeout());
+        eb.append(this.isMaxResultsOverridden(), other.isMaxResultsOverridden());
+        if (this.isMaxResultsOverridden()) {
+            eb.append(this.getMaxResultsOverride(), other.getMaxResultsOverride());
+        }
         eb.append(this.getColumnVisibility(), other.getColumnVisibility());
         eb.append(this.getBeginDate(), other.getBeginDate());
         eb.append(this.getEndDate(), other.getEndDate());
@@ -705,8 +733,24 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     }
     
     private static String getCommonName(String dn) {
-        String[] comps = DnUtils.getComponents(dn, "CN");
+        String[] comps = getComponents(dn, "CN");
         return comps.length >= 1 ? comps[0] : null;
+    }
+    
+    private static String[] getComponents(String dn, String componentName) {
+        componentName = componentName.toUpperCase();
+        ArrayList<String> components = new ArrayList<String>();
+        try {
+            LdapName name = new LdapName(dn);
+            for (Rdn rdn : name.getRdns()) {
+                if (componentName.equals(rdn.getType().toUpperCase())) {
+                    components.add(String.valueOf(rdn.getValue()));
+                }
+            }
+        } catch (InvalidNameException e) {
+            // ignore -- invalid name, so can't find components
+        }
+        return components.toArray(new String[0]);
     }
     
     public static String getOwner(String dn) {
@@ -799,6 +843,14 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         qm.setQueryAuthorizations(this.getQueryAuthorizations());
         qm.setQueryName(this.getQueryName());
         qm.setParameters(this.getParameters());
+    }
+    
+    @Override
+    public Map<String,String> getCardinalityFields() {
+        Map<String,String> cardinalityFields = new HashMap<String,String>();
+        cardinalityFields.put("QUERY_USER", getOwner());
+        cardinalityFields.put("QUERY_LOGIC_NAME", getQueryLogicName());
+        return cardinalityFields;
     }
     
     @Override

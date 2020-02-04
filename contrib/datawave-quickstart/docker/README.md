@@ -4,44 +4,57 @@
 
 * Provide a containerized, standalone DataWave environment to jumpstart the learning process for new users
 
-* Provide a fully-configured dev environment for developers to use for experimentation, debugging, etc. 
-  The Docker container retains all the functionality of the [non-containerized quickstart environment](../README.md)
-
-* For convenience, the container includes Maven for rebuilding DataWave, Git for source code management, etc
+* Provide a fully-configured dev environment for developers to use for experimentation, debugging, etc. That is,
+  the Docker image retains the same layout and functionality of the [non-Docker quickstart environment](../README.md).
+  For convenience, the image will also include Maven for rebuilding DataWave and Git for source code management
 
 * Enable streamlined testing and integration workflows for various CI/CD needs 
 
 ---
 
-### Docker Configuration
+### Recommended Docker Configuration (Optional)
 
-* Testing was performed on **CentOS 7.2.1511** and **Docker 17.06.0-ce, build 02c1d87**, with Docker 
+* Testing was performed on Linux with **Docker 18.09.3-ce, build 774a1f4**, with Docker
   configured as follows: 
   ```
   $ cat /etc/docker/daemon.json
   {
     "storage-driver": "devicemapper",
-    "experimental":true
+    "experimental": true
   }
   ```
-* The 'devicemapper' storage driver was used as a workaround for this Wildfly issue: 
-  https://issues.jboss.org/browse/WFCORE-2301
+* The *devicemapper* storage driver can be used as a workaround for certain issues that may arise during the Wildfly
+  deployment (i.e., during the docker image build). See https://issues.jboss.org/browse/WFCORE-2301
   
-* Experimental mode was turned on to enable the ` docker build --squash ` feature, to help 
-  minimize the size of the resulting image
+* Experimental mode can be used to enable features such as ` docker build --squash ` to help minimize the size of
+  the resulting image
 
 ---
 
 ### Scripts
 
+Note that the scripts below for building/running the datawave-quickstart container assume that the user executing them is in
+the local *docker* group and may thus execute docker commands without requiring *sudo*. For example, to ensure that this is the case:
+```bash
+$ cat /etc/group | grep -qE '^docker:' || sudo groupadd docker
+$ sudo usermod -aG docker yourusername
+```
+*Warning*: Executing `sudo ./docker-build.sh` will likely result in file permission issues in both your DataWave source tree and your
+local Maven artifact repository, and will ultimately cause Docker image creation to fail
+
 #### [docker-build.sh](docker-build.sh) 
 
-* Uses [Dockerfile](Dockerfile) to create a Docker image that mirrors the current DataWave source tree under an /opt/datawave root 
-  directory, including a fully-initialized deployment of DataWave under /opt/datawave/contrib/datawave-quickstart
+* Uses [Dockerfile](Dockerfile) to create a Docker image that mirrors the current DataWave source tree under the image's
+  /opt/datawave root directory, including a fully-initialized deployment of DataWave under /opt/datawave/contrib/datawave-quickstart.
+  In other words, the image has the exact same layout as the non-Docker quickstart environment
+  
+* Use the script's `--docker-opts` param to pass additional options thru to ` docker build ...` as needed
 
-#### [docker-run-example.sh](docker-run-example.sh)
+* Get usage info with ` ./docker-build.sh --help `
 
-* Example ` docker run ... ` wrapper script, including set up for volumes, port mapping, etc
+#### [docker-run.sh](docker-run.sh)
+
+* Wrapper script for running the quickstart container via ` docker run ... `. Includes set up for volumes, port mappings, etc
 
 #### [docker-entrypoint.sh](docker-entrypoint.sh)
 

@@ -1,47 +1,33 @@
 package datawave.query.tables;
 
-import static com.google.common.collect.Iterators.concat;
-import static com.google.common.collect.Iterators.transform;
-import static datawave.query.config.ShardQueryConfiguration.PARAM_VALUE_SEP_STR;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Function;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import datawave.data.type.Type;
 import datawave.query.QueryParameters;
+import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.discovery.DiscoveredThing;
 import datawave.query.discovery.DiscoveryIterator;
 import datawave.query.discovery.DiscoveryTransformer;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
-import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.model.QueryModel;
-import datawave.query.config.ShardIndexQueryConfiguration;
-import datawave.query.discovery.VisibilityPruningIterator;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.LiteralNodeVisitor;
 import datawave.query.jexl.visitors.PatternNodeVisitor;
+import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.MetadataHelperFactory;
+import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -49,7 +35,6 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -70,15 +55,26 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.collect.Iterators.concat;
+import static com.google.common.collect.Iterators.transform;
+import static datawave.query.config.ShardQueryConfiguration.PARAM_VALUE_SEP_STR;
 
 /**
  * Query Table implementation that accepts a single term and returns information from the global index for that term. The response includes the number of
@@ -94,7 +90,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     private List<String> realmSuffixExclusionPatterns = null;
     protected String modelName = "DATAWAVE";
     protected String modelTableName = "DatawaveMetadata";
-    protected MetadataHelper metadataHelper;
+    protected MetadataHelperFactory metadataHelperFactory;
     protected ScannerFactory scannerFactory;
     protected QueryModel queryModel;
     
@@ -109,7 +105,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         this.queryModel = other.getQueryModel();
         this.modelName = other.getModelName();
         this.modelTableName = other.getModelTableName();
-        this.metadataHelper = other.getMetadataHelper();
+        this.metadataHelperFactory = other.getMetadataHelperFactory();
         this.setRealmSuffixExclusionPatterns(other.getRealmSuffixExclusionPatterns());
     }
     
@@ -140,28 +136,23 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     }
     
     /**
-     * Initialize a metadata helper if we haven't already
+     * Create and initialize a metadata helper
      * 
      * @param connector
      * @param metadataTableName
      * @param auths
-     * @throws ExecutionException
-     * @throws TableNotFoundException
+     * @return a new initialized MetadataHelper
      */
-    protected void initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) throws TableNotFoundException,
-                    ExecutionException {
-        if (this.metadataHelper == null) {
-            throw new RuntimeException("MetadataHelper was not set. Fix this");
-        }
-        this.metadataHelper.initialize(connector, metadataTableName, auths);
+    protected MetadataHelper initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
+        return this.metadataHelperFactory.createMetadataHelper(connector, metadataTableName, auths);
     }
     
-    public MetadataHelper getMetadataHelper() {
-        return metadataHelper;
+    public MetadataHelperFactory getMetadataHelperFactory() {
+        return metadataHelperFactory;
     }
     
-    public void setMetadataHelper(MetadataHelper metadataHelper) {
-        this.metadataHelper = metadataHelper;
+    public void setMetadataHelperFactory(MetadataHelperFactory metadataHelperFactory) {
+        this.metadataHelperFactory = metadataHelperFactory;
     }
     
     public String getIndexTableName() {
@@ -184,7 +175,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         ShardIndexQueryConfiguration config = new ShardIndexQueryConfiguration(this, settings);
         this.scannerFactory = new ScannerFactory(connection);
-        initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        MetadataHelper metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -259,9 +250,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ASTJexlScript script;
         try {
             Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
-            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, this.metadataHelper, origScript, expansionFields);
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.<String,String> create());
+            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields,
+                            config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
+        } catch (EmptyUnfieldedTermExpansionException e) {
+            Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             config.setNormalizedTerms(emptyMap);
             config.setNormalizedPatterns(emptyMap);
             return config;
@@ -282,6 +274,9 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         final Set<String> indexedFields = metadataHelper.getIndexedFields(dataTypes);
         config.setIndexedFields(indexedFields);
         
+        final Set<String> reverseIndexedFields = metadataHelper.getReverseIndexedFields(dataTypes);
+        config.setReverseIndexedFields(reverseIndexedFields);
+        
         final Multimap<String,Type<?>> normalizedFields = metadataHelper.getFieldsToDatatypes(dataTypes);
         config.setNormalizedFieldsDatatypes(normalizedFields);
         
@@ -292,7 +287,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             }
         }
         
-        script = ExpandMultiNormalizedTerms.expandTerms(config, this.metadataHelper, script);
+        script = ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script);
         
         Multimap<String,String> literals = LiteralNodeVisitor.getLiterals(script);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
@@ -320,8 +315,6 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         
         config.setRangesForTerms(rangesForTerms);
         config.setRangesForPatterns(rangesForPatterns);
-        
-        config.setUndisplayedVisibilities(super.getUndisplayedVisibilities());
         
         return config;
     }
@@ -351,24 +344,22 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         
         for (Entry<String,String> termEntry : config.getNormalizedTerms().entries()) {
             // scan the table
-            BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, "shardIndex",
+            BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, TableName.SHARD_INDEX,
                             Collections.singleton(config.getRangesForTerms().get(termEntry)), Collections.singleton(termEntry.getValue()),
-                            Collections.<String> emptySet(), config.getTableName().equals(config.getReverseIndexTableName()), false);
-            
-            bs.fetchColumnFamily(new Text(termEntry.getKey()));
+                            Collections.emptySet(), config.getTableName().equals(config.getReverseIndexTableName()), false,
+                            Collections.singleton(termEntry.getKey()));
             
             batchscanners.add(Maps.immutableEntry(bs, false));
         }
         
         for (Entry<String,String> patternEntry : config.getNormalizedPatterns().entries()) {
             Entry<Range,Boolean> rangeEntry = config.getRangesForPatterns().get(patternEntry);
-            String tName = rangeEntry.getValue() ? "shardReverseIndex" : "shardIndex";
+            String tName = rangeEntry.getValue() ? TableName.SHARD_RINDEX : TableName.SHARD_INDEX;
             
             // scan the table
             BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, tName, Collections.singleton(rangeEntry.getKey()),
-                            Collections.<String> emptySet(), Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false);
-            
-            bs.fetchColumnFamily(new Text(patternEntry.getKey()));
+                            Collections.emptySet(), Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false,
+                            Collections.singleton(patternEntry.getKey()));
             
             batchscanners.add(Maps.immutableEntry(bs, rangeEntry.getValue()));
         }
@@ -491,20 +482,21 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     /**
      * scan a global index (shardIndex or shardReverseIndex) for the specified ranges and create a set of fieldname/TermInformation values. The Key/Values
      * scanned are trimmed based on a set of terms to match, and a set of data types (found in the config)
-     * 
+     *
      * @param config
-     * 
      * @param scannerFactory
      * @param tableName
      * @param ranges
      * @param literals
      * @param patterns
      * @param reverseIndex
-     * @return The scanner used
+     * @param expansionFields
+     * @return the batch scanner
      * @throws TableNotFoundException
      */
     public static BatchScanner configureBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName, Collection<Range> ranges,
-                    Collection<String> literals, Collection<String> patterns, boolean reverseIndex) throws TableNotFoundException {
+                    Collection<String> literals, Collection<String> patterns, boolean reverseIndex, Collection<String> expansionFields)
+                    throws TableNotFoundException {
         
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
@@ -530,14 +522,14 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, true);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, true, expansionFields);
         
         return bs;
     }
     
     public static BatchScanner configureBatchScannerForDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
-                    Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly)
-                    throws TableNotFoundException {
+                    Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly,
+                    Collection<String> expansionFields) throws TableNotFoundException {
         
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
@@ -559,25 +551,12 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly,
+                        expansionFields);
         
-        bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, config.getAuthorizations(), config.getUndisplayedVisibilities()));
         bs.addScanIterator(new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class));
         
         return bs;
-    }
-    
-    public static IteratorSetting configureVisibilityPruning(int stackPosition, Set<Authorizations> auths, Set<String> unDisplayed) {
-        
-        Set<String> myUnDisplayedVisibilities = Sets.newTreeSet(unDisplayed == null ? new TreeSet<String>() : unDisplayed);
-        
-        IteratorSetting is = new IteratorSetting(stackPosition, VisibilityPruningIterator.class);
-        String stringifiedBlacklist = StringUtils.join(myUnDisplayedVisibilities.iterator(), ',');
-        is.addOption(VisibilityPruningIterator.BLACKLIST, stringifiedBlacklist);
-        Iterator<String> authSets = Iterators.transform(auths.iterator(), Functions.toStringFunction());
-        String stringifiedAuths = StringUtils.join(authSets, ',');
-        is.addOption(VisibilityPruningIterator.AUTHORIZATIONS, stringifiedAuths);
-        return is;
     }
     
     public boolean isFullTableScanEnabled() {
@@ -735,13 +714,13 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     
     @Override
     public Set<String> getOptionalQueryParameters() {
-        Set<String> params = new TreeSet<>();
-        params.add(QueryParameters.PARAMETER_MODEL_NAME);
-        params.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
-        params.add(QueryParameters.DATATYPE_FILTER_SET);
-        params.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        params.add(datawave.webservice.query.QueryParameters.QUERY_END);
-        return params;
+        Set<String> optionalParams = new TreeSet<>();
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
+        optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
+        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        return optionalParams;
     }
     
     @Override

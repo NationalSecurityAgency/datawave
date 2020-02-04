@@ -267,8 +267,7 @@ public class IndexOnlyLazyFetchingSet<E,T> extends HashSet<E> {
         public boolean hasNext() {
             synchronized (this.inMemoryIterator) {
                 if (null == this.fetchingIterator) {
-                    final String field = IndexOnlyLazyFetchingSet.this.fieldName;
-                    this.fetchingIterator = IndexOnlyLazyFetchingSet.this.iterator.newLazyFetchingIterator(field);
+                    this.fetchingIterator = IndexOnlyLazyFetchingSet.this.iterator.newLazyFetchingIterator(IndexOnlyLazyFetchingSet.this.fieldName);
                 }
             }
             
@@ -279,8 +278,7 @@ public class IndexOnlyLazyFetchingSet<E,T> extends HashSet<E> {
         public U next() {
             synchronized (this.inMemoryIterator) {
                 if (null == this.fetchingIterator) {
-                    final String field = IndexOnlyLazyFetchingSet.this.fieldName;
-                    this.fetchingIterator = IndexOnlyLazyFetchingSet.this.iterator.newLazyFetchingIterator(field);
+                    this.fetchingIterator = IndexOnlyLazyFetchingSet.this.iterator.newLazyFetchingIterator(IndexOnlyLazyFetchingSet.this.fieldName);
                 }
             }
             

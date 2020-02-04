@@ -24,12 +24,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import datawave.query.language.functions.lucene.EvaluationOnly;
 import datawave.query.language.functions.lucene.Exclude;
 import datawave.query.language.functions.lucene.Include;
 import datawave.query.language.functions.lucene.IsNotNull;
 import datawave.query.language.functions.lucene.IsNull;
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
 import datawave.query.language.functions.lucene.Occurrence;
+import datawave.query.language.functions.lucene.Text;
 import datawave.query.language.tree.FunctionNode;
 
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -46,14 +48,16 @@ import org.apache.lucene.search.TermQuery;
  */
 public class FunctionQueryNodeBuilder implements QueryBuilder {
     
-    private Map<String,LuceneQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<String,LuceneQueryFunction>());
+    private Map<String,LuceneQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<>());
     
     public FunctionQueryNodeBuilder() {
         addFunction(new IsNull());
         addFunction(new IsNotNull());
         addFunction(new Include());
         addFunction(new Exclude());
+        addFunction(new Text());
         addFunction(new Occurrence());
+        addFunction(new EvaluationOnly());
     }
     
     public FunctionQueryNodeBuilder(List<LuceneQueryFunction> allowedFunctions) {

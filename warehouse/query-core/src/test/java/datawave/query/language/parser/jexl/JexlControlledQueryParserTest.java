@@ -1,9 +1,13 @@
 package datawave.query.language.parser.jexl;
 
 import datawave.query.language.parser.ParseException;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class JexlControlledQueryParserTest {
     
@@ -82,7 +86,7 @@ public class JexlControlledQueryParserTest {
         allowedFields.add("9001_1");
         parser.setAllowedFields(allowedFields);
         
-        Map<String,Set<String>> includedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> includedValMap = new HashMap<>();
         Set<String> includedValSet1 = new HashSet<>();
         includedValSet1.add("John");
         includedValSet1.add("Doe");
@@ -103,7 +107,7 @@ public class JexlControlledQueryParserTest {
         allowedFields.add("9001_1");
         parser.setAllowedFields(allowedFields);
         
-        Map<String,Set<String>> excludedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> excludedValMap = new HashMap<>();
         Set<String> excludedValSet = new HashSet<>();
         excludedValSet.add("John");
         excludedValSet.add("Doe");
@@ -127,13 +131,13 @@ public class JexlControlledQueryParserTest {
         allowedFields.add("9001_1");
         parser.setAllowedFields(allowedFields);
         
-        Map<String,Set<String>> includedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> includedValMap = new HashMap<>();
         Set<String> includedValSet = new HashSet<>();
         includedValSet.add("John");
         includedValMap.put("$1337_1", includedValSet);
         parser.setIncludedValues(includedValMap);
         
-        Map<String,Set<String>> excludedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> excludedValMap = new HashMap<>();
         Set<String> excludedValSet = new HashSet<>();
         excludedValSet.add("Doe");
         excludedValMap.put("$1337_1", excludedValSet);

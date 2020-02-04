@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.net.URI;
-
 import datawave.ingest.data.TypeRegistry;
 
 import org.apache.hadoop.conf.Configuration;
@@ -26,8 +24,8 @@ public class ExtendedCSVHelperTest {
         ExtendedCSVHelper helper = new ExtendedCSVHelper();
         helper.setup(conf);
         
-        assertTrue(helper.getType().typeName().equals("mycsv"));
-        assertTrue(helper.getType().outputName().equals("csv"));
+        assertEquals("mycsv", helper.getType().typeName());
+        assertEquals("csv", helper.getType().outputName());
         
         assertEquals("EVENT_ID", helper.getEventIdFieldName());
         
@@ -36,12 +34,13 @@ public class ExtendedCSVHelperTest {
         assertEquals(",", helper.getSeparator());
         
         assertEquals(";", helper.getMultiValueSeparator());
+        assertEquals("(?<!\\\\);", helper.getEscapeSafeMultiValueSeparatorPattern());
         
-        assertTrue(helper.getSecurityMarkingFieldDomainMap().size() == 1);
+        assertEquals(1, helper.getSecurityMarkingFieldDomainMap().size());
         
         assertTrue((helper.getMultiValuedFields().size() + helper.getMultiValuedFieldsBlacklist().size()) > 0);
         
         assertFalse(helper.getParsers().isEmpty());
-        assertTrue(helper.getParsers().size() == 1);
+        assertEquals(1, helper.getParsers().size());
     }
 }

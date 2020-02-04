@@ -13,6 +13,8 @@
         <bean class="datawave.query.language.functions.jexl.IsNotNull"/>
         <bean class="datawave.query.language.functions.jexl.Include"/>
         <bean class="datawave.query.language.functions.jexl.Exclude"/>
+        <bean class="datawave.query.language.functions.jexl.Text"/>
+        <bean class="datawave.query.language.functions.jexl.GeoFunction"/>
         <bean class="datawave.query.language.functions.jexl.Loaded"/>
         <bean class="datawave.query.language.functions.jexl.DateFunction"/>
         <bean class="datawave.query.language.functions.jexl.OccurrenceFunction"/>
@@ -21,6 +23,9 @@
         <bean class="datawave.query.language.functions.jexl.GetAllMatches"/>
         <bean class="datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
         <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
+        <bean class="datawave.query.language.functions.jexl.Jexl"/>
+        <bean class="datawave.query.language.functions.jexl.Options"/>
+        <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>
@@ -44,11 +49,7 @@
 <!--         <property name="tableName" value="${edge.table.name}" /> -->
 		<property name="tableName" value="edge" />
         <property name="maxResults" value="25000" />
-        <property name="maxRowsToScan" value="-1" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
+        <property name="maxWork" value="-1" />
         <property name="dataTypes">
             <list value-type="datawave.data.type.Type">
                 <bean class="datawave.data.type.NumberType" />
@@ -103,6 +104,7 @@
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
         <property name="tableName" value="shard" />
         <property name="dateIndexTableName" value="dateIndex" />
+        <property name="defaultDateTypeName" value="EVENT"/>
         <property name="metadataTableName" value="DatawaveMetadata" />
         <property name="indexTableName" value="shardIndex" />
         <property name="reverseIndexTableName" value="shardReverseIndex" />
@@ -156,7 +158,7 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
-        <property name="ivaratorCacheBaseURIs" value="file:///tmp/IvaratorCache" />	<!-- was ${ivarator.cache.base.uris} -->
+        <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${ivarator.cache.dir.config} -->
         <property name="ivaratorCacheBufferSize" value="10000" />
         <property name="ivaratorCacheScanPersistThreshold" value="100000" />
         <!-- property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />	 -->
@@ -182,7 +184,13 @@
         <property name="rangeBufferPollMillis" value="100" />
     </bean>
 
-     <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
+    <util:list id="IvaratorCacheDirConfigs">
+        <bean class="datawave.query.iterator.ivarator.IvaratorCacheDirConfig">
+            <constructor-arg value="file:///tmp/IvaratorCache" />
+        </bean>
+    </util:list>
+
+    <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
          <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
     
@@ -200,9 +208,20 @@
         <!--<property name="tokenizedFields" ref="tokenizeFields"/>-->
         <!--<property name="allowedFunctions" ref="allowedQueryFunctions"/>-->
     <!--</bean>-->
-    
-    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
 
+    <util:list id="pushdownRegexPatterns" value-type="java.lang.String">
+        <value>[.?*]+[0-9a-zA-Z]{0,2}</value>
+        <value>[0-9a-zA-Z]{0,2}[.?*]+</value>
+    </util:list>
+
+    <util:list id="transformRuleList" value-type="datawave.query.planner.NodeTransformRule">
+        <bean scope="prototype" class="datawave.query.planner.rules.RegexPushdownTransformRule">
+            <property name="regexPatterns" ref="pushdownRegexPatterns"/>
+        </bean>
+    </util:list>
+
+    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
+        <property name="transformRules" ref="transformRuleList" />
     </bean>
     
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />

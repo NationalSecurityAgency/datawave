@@ -48,8 +48,6 @@ public class ConnectionPool implements Serializable, Comparable<ConnectionPool> 
     @XmlElement(name = "Connection")
     private List<Connection> connectionRequests = null;
     
-    public ConnectionPool() {}
-    
     public Integer getNumIdle() {
         return numIdle;
     }

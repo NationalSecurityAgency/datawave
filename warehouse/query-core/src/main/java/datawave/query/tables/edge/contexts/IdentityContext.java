@@ -25,10 +25,9 @@ public class IdentityContext implements EdgeModelAware, EdgeContext {
         if (literal == null || literal.equals("")) {
             throw new IllegalArgumentException("Null/empty values are not allowed.");
         }
-        String escapedString = StringUtils.replace(literal, "'", "\\'");
         // don't need to escape double quotes because the query string we send down to edge filter iterator will always be wrapped in single quotes
         
-        return escapedString;
+        return StringUtils.replace(literal, "'", "\\'");
     }
     
     @Override

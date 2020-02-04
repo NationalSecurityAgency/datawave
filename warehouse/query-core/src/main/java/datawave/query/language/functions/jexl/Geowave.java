@@ -31,7 +31,7 @@ public abstract class Geowave extends JexlQueryFunction {
         StringBuilder sb = new StringBuilder();
         sb.append("geowave:" + name + "(");
         List<String> params = getParameterList();
-        if (params.size() > 0) {
+        if (!params.isEmpty()) {
             sb.append(params.get(0)); // the field name
         }
         for (int i = 1; i < params.size(); i++) {

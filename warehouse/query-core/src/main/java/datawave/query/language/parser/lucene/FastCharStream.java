@@ -19,14 +19,15 @@ package datawave.query.language.parser.lucene;
  *  
  */
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
 
 /**
  * An efficient implementation of JavaCC's CharStream interface.
  * <p>
  * Note that this does not do line-number counting, but instead keeps track of the character position of the token in the input, as required by Lucene's
- * {@link org.apache.lucene.analysis.Token} API.
- * */
+ * {@link org.apache.lucene.analysis.tokenattributes.OffsetAttribute} API.
+ */
 public final class FastCharStream implements CharStream {
     char[] buffer = null;
     

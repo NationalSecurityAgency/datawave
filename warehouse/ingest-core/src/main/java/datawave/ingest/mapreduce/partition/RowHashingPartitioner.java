@@ -10,7 +10,8 @@ import datawave.util.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import org.apache.accumulo.core.data.Key;

@@ -92,29 +92,30 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
         if (log.isDebugEnabled())
             log.debug("Building cache from accumulo");
         synchronized (entryCache) {
-            Scanner scanner = ScannerHelper.createScanner(connector, myTableName, auths);
-            Range range = null;
-            if (key == null) {
-                if (log.isDebugEnabled())
-                    log.debug("Key is null, infinite range");
-                range = new Range();
-            } else
-                range = buildRange(key);
-            
-            scanner.setRange(range);
-            
-            for (Text cf : getColumnFamilies(key)) {
-                if (log.isDebugEnabled())
-                    log.debug("== Fetching CF " + cf);
-                scanner.fetchColumnFamily(cf);
-            }
-            
-            for (Entry<Key,Value> entry : scanner) {
+            try (Scanner scanner = ScannerHelper.createScanner(connector, myTableName, auths)) {
+                Range range = null;
+                if (key == null) {
+                    if (log.isDebugEnabled())
+                        log.debug("Key is null, infinite range");
+                    range = new Range();
+                } else
+                    range = buildRange(key);
                 
-                if (!store(key, entry.getKey(), entry.getValue())) {
-                    log.warn("Did not accept " + entry.getKey().toString());
+                scanner.setRange(range);
+                
+                for (Text cf : getColumnFamilies(key)) {
+                    if (log.isDebugEnabled())
+                        log.debug("== Fetching CF " + cf);
+                    scanner.fetchColumnFamily(cf);
                 }
                 
+                for (Entry<Key,Value> entry : scanner) {
+                    
+                    if (!store(key, entry.getKey(), entry.getValue())) {
+                        log.warn("Did not accept " + entry.getKey());
+                    }
+                    
+                }
             }
         }
     }

@@ -19,6 +19,7 @@ import datawave.query.tables.stats.StatsListener;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import datawave.webservice.query.Query;
 
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -35,7 +36,9 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.MoreExecutors;
 
 /**
- * 
+ * This will handles running a scan against a set of ranges. The actual scan is performed in a separate thread which places the results in a result queue. The
+ * result queue is polled in the actual next() and hasNext() calls. Note that the uncaughtExceptionHandler from the Query is used to pass exceptions up which
+ * will also fail the overall query if something happens. If this is not desired then a local handler should be set.
  */
 public class ScannerSession extends AbstractExecutionThreadService implements Iterator<Entry<Key,Value>> {
     
@@ -120,6 +123,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     
     protected boolean isFair = true;
     
+    protected QueryUncaughtExceptionHandler uncaughtExceptionHandler = null;
+    
     /**
      * Constructor
      * 
@@ -149,7 +154,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         this.tableName = tableName;
         this.auths = auths;
         
-        if (null != ranges && ranges.size() > 0) {
+        if (null != ranges && !ranges.isEmpty()) {
             List<Range> rangeList = Lists.newArrayList(ranges);
             Collections.sort(rangeList);
             
@@ -168,6 +173,15 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         
         this.settings = settings;
         
+        if (this.settings != null) {
+            this.uncaughtExceptionHandler = this.settings.getUncaughtExceptionHandler();
+        }
+        
+        // ensure we have an exception handler
+        if (this.uncaughtExceptionHandler == null) {
+            this.uncaughtExceptionHandler = new QueryUncaughtExceptionHandler();
+        }
+        
         delegatedResourceInitializer = RunningResource.class;
         
     }
@@ -177,22 +191,18 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      */
     @Override
     protected Executor executor() {
-        return new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                String name = serviceName();
-                Preconditions.checkNotNull(name);
-                Preconditions.checkNotNull(command);
-                Thread result = MoreExecutors.platformThreadFactory().newThread(command);
-                try {
-                    result.setName(name);
-                    if (null != settings && null != settings.getUncaughtExceptionHandler())
-                        result.setUncaughtExceptionHandler(settings.getUncaughtExceptionHandler());
-                } catch (SecurityException e) {
-                    // OK if we can't set the name in this environment.
-                }
-                result.start();
+        return command -> {
+            String name = serviceName();
+            Preconditions.checkNotNull(name);
+            Preconditions.checkNotNull(command);
+            Thread result = MoreExecutors.platformThreadFactory().newThread(command);
+            try {
+                result.setName(name);
+                result.setUncaughtExceptionHandler(uncaughtExceptionHandler);
+            } catch (SecurityException e) {
+                // OK if we can't set the name in this environment.
             }
+            result.start();
         };
     }
     
@@ -253,6 +263,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * (non-Javadoc)
      * 
      * @see java.util.Iterator#hasNext()
+     * 
+     * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
      */
     @Override
     public boolean hasNext() {
@@ -292,7 +304,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     
                 } catch (InterruptedException e) {
                     log.trace("hasNext" + isRunning() + " interrupted");
-                    log.error(e);
+                    log.error("Interrupted before finding next", e);
                     throw new RuntimeException(e);
                 }
                 // if we pulled no data and we are not running, and there is no data in the queue
@@ -307,8 +319,12 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 try {
                     stats.getTimer(TIMERS.HASNEXT).suspend();
                 } catch (Exception e) {
-                    log.error(e);
+                    log.error("Failed to suspend timer", e);
                 }
+            }
+            if (uncaughtExceptionHandler.getThrowable() != null) {
+                log.error("Exception discovered on hasNext call", uncaughtExceptionHandler.getThrowable());
+                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
             }
         }
         
@@ -338,12 +354,21 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * (non-Javadoc)
      * 
      * @see java.util.Iterator#next()
+     * 
+     * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
      */
     @Override
     public Entry<Key,Value> next() {
-        Entry<Key,Value> retVal = currentEntry;
-        currentEntry = null;
-        return retVal;
+        try {
+            Entry<Key,Value> retVal = currentEntry;
+            currentEntry = null;
+            return retVal;
+        } finally {
+            if (uncaughtExceptionHandler.getThrowable() != null) {
+                log.error("Exception discovered on next call", uncaughtExceptionHandler.getThrowable());
+                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
+            }
+        }
     }
     
     /**
@@ -467,7 +492,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     log.trace("Ignoring exception because we have been closed", e);
                 }
             } else {
-                log.error(e);
+                log.error("Failed to find top", e);
                 throw e;
             }
             
@@ -530,15 +555,22 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * (non-Javadoc)
      * 
      * @see com.google.common.util.concurrent.AbstractExecutionThreadService#run()
+     * 
+     * Note that this method must set exceptions on the uncaughtExceptionHandler, otherwise any failures will be completed ignored/dropped.
      */
     @Override
     protected void run() throws Exception {
-        while (isRunning()) {
+        try {
+            while (isRunning()) {
+                
+                findTop();
+            }
             
-            findTop();
+            flush();
+        } catch (Exception e) {
+            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
+            throw new RuntimeException(e);
         }
-        
-        flush();
     }
     
     /**
@@ -640,7 +672,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     sessionDelegator.close(delegatedResource);
                     delegatedResource = null;
                 } catch (Exception e) {
-                    log.error(e);
+                    log.error("Failed to close session", e);
                 }
             }
         }

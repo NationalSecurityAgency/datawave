@@ -12,7 +12,7 @@ public class StringTuple implements WritableComparable<StringTuple> {
     final List<String> values;
     
     public StringTuple(int size) {
-        values = new ArrayList<String>(size);
+        values = new ArrayList<>(size);
     }
     
     public StringTuple add(String s) {

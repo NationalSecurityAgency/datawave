@@ -1,9 +1,15 @@
 package datawave.query.jexl.functions;
 
 import java.text.MessageFormat;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -11,6 +17,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -20,12 +27,20 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.*;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTNumberLiteral;
+import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.lang.mutable.MutableBoolean;
 
 public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
@@ -81,6 +96,11 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             } else {
                 return JexlNodeFactory.createAndNode(nodes);
             }
+        }
+        
+        @Override
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+            // noop, covered by getIndexQuery (see comments on interface)
         }
         
         @Override
@@ -231,9 +251,19 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 } else if (ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
+                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
+                        // firstArg is max score value, skip
+                        firstArg = args.next();
+                    }
+                    
                     // we override the zones if the first argument is a string
                     if (firstArg instanceof ASTStringLiteral) {
                         fields = Collections.singleton(firstArg.image);
+                        
+                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode) {
+                            args.next(); // max score not needed for fields and terms
+                        }
+                        
                         termOffsetMap = args.next();
                     } else {
                         JexlNode nextArg = args.peek();
@@ -323,6 +353,11 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         @Override
         public boolean regexArguments() {
             return false;
+        }
+        
+        @Override
+        public boolean allowIvaratorFiltering() {
+            return true;
         }
     }
     

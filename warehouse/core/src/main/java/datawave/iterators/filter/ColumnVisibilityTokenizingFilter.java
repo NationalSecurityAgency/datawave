@@ -5,7 +5,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 public class ColumnVisibilityTokenizingFilter extends TokenizingFilterBase {
-    private final static byte[] CV_DELIMITERS = "&|()".getBytes();
+    private static final byte[] CV_DELIMITERS = "&|()".getBytes();
     
     @Override
     public byte[] getKeyField(Key k, Value V) {

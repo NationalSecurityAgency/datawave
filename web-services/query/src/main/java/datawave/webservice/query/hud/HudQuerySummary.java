@@ -280,10 +280,8 @@ public class HudQuerySummary {
      *            the pageMetrics to set
      */
     public void setPageMetrics(List<PageMetric> otherPageMetrics) {
-        this.pageMetrics = new ArrayList<PageMetric>(otherPageMetrics.size());
-        for (PageMetric metric : otherPageMetrics) {
-            this.pageMetrics.add(metric);
-        }
+        this.pageMetrics = new ArrayList<>(otherPageMetrics.size());
+        this.pageMetrics.addAll(otherPageMetrics);
         
     }
     

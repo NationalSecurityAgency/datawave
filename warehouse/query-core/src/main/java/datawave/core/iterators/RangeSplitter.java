@@ -41,7 +41,7 @@ public class RangeSplitter implements List<Range> {
      * @return A list of N ranges. 1 range is returned if no splitting is possible.
      */
     protected List<Range> splitRange(Range range, int numRanges) {
-        List<Range> splitRanges = new ArrayList<Range>();
+        List<Range> splitRanges = new ArrayList<>();
         
         List<ByteSequence> start = getStartKeyElements(range.getStartKey());
         List<ByteSequence> end = getEndKeyElements(start, range.getEndKey());
@@ -201,7 +201,7 @@ public class RangeSplitter implements List<Range> {
      * @return the byte sequences
      */
     protected List<ByteSequence> getKeyElements(Key key) {
-        List<ByteSequence> bytes = new ArrayList<ByteSequence>();
+        List<ByteSequence> bytes = new ArrayList<>();
         bytes.add(key.getRowData());
         bytes.add(key.getColumnFamilyData());
         bytes.add(key.getColumnQualifierData());
@@ -218,7 +218,7 @@ public class RangeSplitter implements List<Range> {
         if (key != null) {
             return getKeyElements(key);
         } else {
-            List<ByteSequence> bytes = new ArrayList<ByteSequence>();
+            List<ByteSequence> bytes = new ArrayList<>();
             bytes.add(new ArrayByteSequence(new byte[1]));
             bytes.add(new ArrayByteSequence(new byte[1]));
             bytes.add(new ArrayByteSequence(new byte[1]));
@@ -235,7 +235,7 @@ public class RangeSplitter implements List<Range> {
      * @return the byte sequences
      */
     protected List<ByteSequence> getEndKeyElements(List<ByteSequence> startElements, Key key) {
-        List<ByteSequence> bytes = new ArrayList<ByteSequence>(startElements.size());
+        List<ByteSequence> bytes = new ArrayList<>(startElements.size());
         if (key != null) {
             List<ByteSequence> endElements = getKeyElements(key);
             for (int i = 0; i < endElements.size(); i++) {

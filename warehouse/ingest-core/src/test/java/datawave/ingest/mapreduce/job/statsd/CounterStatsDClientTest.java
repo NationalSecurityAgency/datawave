@@ -34,7 +34,7 @@ public class CounterStatsDClientTest {
         Assert.assertEquals("queue1.dwingest", client.prefix);
         Assert.assertEquals("localhost", client.host);
         Assert.assertEquals(8125, client.port);
-        Assert.assertEquals(false, client.stopped);
+        Assert.assertFalse(client.stopped);
         
         client.sendLiveStat("CounterGroup1", new CounterToStatsDConfigurationTest.TestCounter("Counter1"), 1);
         client.sendLiveStat("CounterGroup2", new CounterToStatsDConfigurationTest.TestCounter("Counter1"), 1);
@@ -42,7 +42,7 @@ public class CounterStatsDClientTest {
         client.sendLiveStat("CounterGroup3", new CounterToStatsDConfigurationTest.TestCounter("Counter2"), 1);
         client.sendLiveStat("CounterGroup3", new CounterToStatsDConfigurationTest.TestCounter("Counter3"), 1);
         
-        Assert.assertEquals(new ArrayList(Arrays.asList(new String[] {"time(MyGroup3_MyCounter2,1)"})), client.messages);
+        Assert.assertEquals(new ArrayList(Arrays.asList("time(MyGroup3_MyCounter2,1)")), client.messages);
         client.messages.clear();
         
         Counters counters = new Counters();
@@ -54,14 +54,13 @@ public class CounterStatsDClientTest {
         counters.findCounter("CounterGroup3", "Counter2").setValue(13);
         client.sendFinalStats(counters);
         
-        Assert.assertEquals(
-                        new ArrayList(Arrays.asList(new String[] {"gauge(MyGroup1_Counter1,10)", "gauge(MyGroup1_Counter2,10)", "count(MyGroup2_Counter1,11)"})),
+        Assert.assertEquals(new ArrayList(Arrays.asList("gauge(MyGroup1_Counter1,10)", "gauge(MyGroup1_Counter2,10)", "count(MyGroup2_Counter1,11)")),
                         client.messages);
         client.messages.clear();
         
-        Assert.assertEquals(false, client.stopped);
+        Assert.assertFalse(client.stopped);
         client.close();
-        Assert.assertEquals(true, client.stopped);
+        Assert.assertTrue(client.stopped);
     }
     
     public static class TestCounterStatsDClient extends CounterStatsDClient {
@@ -70,7 +69,7 @@ public class CounterStatsDClientTest {
         public String host;
         public int port;
         public boolean stopped = false;
-        public List<String> messages = new ArrayList<String>();
+        public List<String> messages = new ArrayList<>();
         
         public TestCounterStatsDClient(CounterToStatsDConfiguration config) {
             super(config);

@@ -1,22 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
-
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import datawave.data.normalizer.IpAddressNormalizer;
-import datawave.data.normalizer.NormalizationException;
-import datawave.data.type.IpAddressType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import datawave.data.type.NoOpType;
+import datawave.data.normalizer.IpAddressNormalizer;
+import datawave.data.type.IpAddressType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -36,6 +25,7 @@ import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -50,6 +40,15 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
+
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
@@ -158,7 +157,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     protected boolean isDelayedPredicate(JexlNode currNode) {
         if (ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
                         || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode))
+                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode))
             return true;
         else
             return false;
@@ -173,24 +172,45 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         ASTAndNode smashed = TreeFlatteningRebuildingVisitor.flatten(node);
         HashMap<String,JexlNode> lowerBounds = Maps.newHashMap(), upperBounds = Maps.newHashMap();
         List<JexlNode> others = Lists.newArrayList();
-        for (JexlNode child : JexlNodes.children(node)) {
-            switch (id(child)) {
-                case ParserTreeConstants.JJTGENODE:
-                case ParserTreeConstants.JJTGTNODE:
-                    lowerBounds.put(JexlASTHelper.getIdentifier(child), child);
-                    break;
-                case ParserTreeConstants.JJTLENODE:
-                case ParserTreeConstants.JJTLTNODE:
-                    upperBounds.put(JexlASTHelper.getIdentifier(child), child);
-                    break;
-                default:
-                    others.add(child);
+        for (JexlNode child : JexlNodes.children(smashed)) {
+            // if the child has a method attached, it is not eligible for ranges
+            if (JexlASTHelper.HasMethodVisitor.hasMethod(child)) {
+                others.add(child);
+            } else {
+                switch (id(child)) {
+                    case ParserTreeConstants.JJTGENODE:
+                    case ParserTreeConstants.JJTGTNODE:
+                        String key = JexlASTHelper.getIdentifier(child);
+                        // if the key is null, this is not eligible for ranges
+                        // it may have model-expanded identifier (FOO|BAR) or it
+                        // may have a method attached
+                        if (key == null) {
+                            others.add(child);
+                        } else {
+                            lowerBounds.put(key, child);
+                        }
+                        break;
+                    case ParserTreeConstants.JJTLENODE:
+                    case ParserTreeConstants.JJTLTNODE:
+                        key = JexlASTHelper.getIdentifier(child);
+                        // if the key is null, this is not eligible for ranges
+                        // it may have model-expanded identifier (FOO|BAR) or it
+                        // may have a method attached
+                        if (key == null) {
+                            others.add(child);
+                        } else {
+                            upperBounds.put(key, child);
+                        }
+                        break;
+                    default:
+                        others.add(child);
+                }
             }
         }
         
         if (!lowerBounds.isEmpty() && !upperBounds.isEmpty()) {
             // this is the set of fields that have an upper and a lower bound operand
-            Set<String> tightBounds = Sets.intersection(lowerBounds.keySet(), upperBounds.keySet());
+            Set<String> tightBounds = Sets.intersection(lowerBounds.keySet(), upperBounds.keySet()).immutableCopy();
             
             if (log.isDebugEnabled()) {
                 log.debug("Found bounds to match: " + tightBounds);
@@ -215,7 +235,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     JexlNode right = null;
                     try {
                         right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
-                    } catch (NormalizationException ne) {
+                    } catch (Exception ne) {
                         if (log.isTraceEnabled()) {
                             log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(upperBound) + " using " + normalizer.getClass() + ". "
                                             + ne.getMessage());
@@ -300,8 +320,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, lowHi[1]);
                                 
                                 // now link em up
-                                JexlNode andNode = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geNode, leNode}));
-                                return andNode;
+                                return JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
                             } catch (Exception ex) {
                                 if (log.isTraceEnabled()) {
                                     log.trace("Could not normalize " + term + " as cidr notation with: " + normalizer.getClass());

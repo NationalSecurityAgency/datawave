@@ -1,5 +1,6 @@
 package datawave.query.language.parser.jexl;
 
+import com.google.common.collect.Sets;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
@@ -7,7 +8,6 @@ import datawave.query.Constants;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestLuceneToJexlQueryParser {
@@ -17,6 +17,8 @@ public class TestLuceneToJexlQueryParser {
     @Before
     public void setUp() {
         parser = new LuceneToJexlQueryParser();
+        parser.setSkipTokenizeUnfieldedFields(Sets.newHashSet("noToken"));
+        parser.setTokenizedFields(Sets.newHashSet("tokField"));
     }
     
     private static final String anyField = Constants.ANY_FIELD;
@@ -158,9 +160,9 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("A == '1' && B == '2' && C == '3' && !(D == '4')", parseQuery("A:1 B:2 C:3 NOT D:4"));
         Assert.assertEquals("(A == '1' && B == '2' && C == '3') && !(D == '4')", parseQuery("(A:1 B:2 C:3) NOT D:4"));
         
-        Assert.assertEquals("A =~ '11\\u005c.22.*?'", parseQuery("A:11.22*"));
-        Assert.assertEquals("A =~ '11\\u005c\\u005c22.*?'", parseQuery("A:11\\\\22*"));
-        Assert.assertEquals("A =~ 'TESTING.1\\u005c\\u005c22.*?'", parseQuery("A:TESTING?1\\\\22*"));
+        Assert.assertEquals("A =~ '11\\.22.*?'", parseQuery("A:11.22*"));
+        Assert.assertEquals("A =~ '11\\\\22.*?'", parseQuery("A:11\\\\22*"));
+        Assert.assertEquals("A =~ 'TESTING.1\\\\22.*?'", parseQuery("A:TESTING?1\\\\22*"));
     }
     
     @Test
@@ -192,6 +194,42 @@ public class TestLuceneToJexlQueryParser {
     }
     
     @Test
+    public void testTokenizedUnfieldedTerm() throws ParseException {
+        parser.setTokenizeUnfieldedQueries(true);
+        // verify that new slop is calculated properly.
+        parser.setUseSlopForTokenizedTerms(false);
+        Assert.assertEquals("(_ANYFIELD_ == 'wi-fi' || content:phrase(termOffsetMap, 'wi', 'fi'))", parseQuery("wi-fi"));
+        parser.setUseSlopForTokenizedTerms(true);
+        Assert.assertEquals("(_ANYFIELD_ == 'wi-fi' || content:within(2, termOffsetMap, 'wi', 'fi'))", parseQuery("wi-fi"));
+    }
+    
+    @Test
+    public void testTokenizedUnfieldedSlopPhrase() throws ParseException {
+        parser.setTokenizeUnfieldedQueries(true);
+        // verify that new slop is calculated properly.
+        Assert.assertEquals("content:within(3, termOffsetMap, 'portable', 'document')", parseQuery("\"portable document\"~3"));
+        Assert.assertEquals(
+                        "(content:within(5, termOffsetMap, 'portable', 'wi-fi', 'access-point') || content:within(7, termOffsetMap, 'portable', 'wi', 'fi', 'access', 'point'))",
+                        parseQuery("\"portable wi-fi access-point\"~5"));
+    }
+    
+    @Test
+    public void testTokenizedUnfieldedPhrase() throws ParseException {
+        parser.setTokenizeUnfieldedQueries(true);
+        // verifies that the slop setting has no impact on things that come in as phrases without slop.
+        parser.setUseSlopForTokenizedTerms(false);
+        Assert.assertEquals("content:phrase(termOffsetMap, 'portable', 'document')", parseQuery("\"portable document\""));
+        Assert.assertEquals(
+                        "(content:phrase(termOffsetMap, 'portable', 'wi-fi', 'access-point') || content:phrase(termOffsetMap, 'portable', 'wi', 'fi', 'access', 'point'))",
+                        parseQuery("\"portable wi-fi access-point\""));
+        parser.setUseSlopForTokenizedTerms(true);
+        Assert.assertEquals("content:phrase(termOffsetMap, 'portable', 'document')", parseQuery("\"portable document\""));
+        Assert.assertEquals(
+                        "(content:phrase(termOffsetMap, 'portable', 'wi-fi', 'access-point') || content:phrase(termOffsetMap, 'portable', 'wi', 'fi', 'access', 'point'))",
+                        parseQuery("\"portable wi-fi access-point\""));
+    }
+    
+    @Test
     public void testTokenizedFieldUnfieldedEnabledNoAnalyzer() throws ParseException {
         parser.setTokenizeUnfieldedQueries(true);
         parser.setAnalyzer(null);
@@ -210,6 +248,8 @@ public class TestLuceneToJexlQueryParser {
     public void testSkipTokenizedFields() throws ParseException {
         parser.setTokenizeUnfieldedQueries(false);
         Assert.assertEquals(Constants.ANY_FIELD + " == '5678 1234 to bird'", parseQuery("NOTOKEN:5678\\ 1234\\ to\\ bird"));
+        // test for case independence of field name
+        Assert.assertEquals(Constants.ANY_FIELD + " == '5678 1234 to bird'", parseQuery("notoken:5678\\ 1234\\ to\\ bird"));
     }
     
     @Test
@@ -220,17 +260,18 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testTokenizedPhraseFail() throws ParseException {
-        Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
+        Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chicken'))",
                         parseQuery("TOKFIELD:\"joh.nny\\ chicken\""));
     }
     
     @Test
     public void testWildcards() throws ParseException {
         Assert.assertEquals("F1 == '*1234'", parseQuery("F1:\\*1234"));
-        Assert.assertEquals("F1 =~ '\\u005c*12.34'", parseQuery("F1:\\*12?34"));
-        
-        Assert.assertEquals("F1 == '.1234'", parseQuery("F1:\\.1234"));
-        Assert.assertEquals("F1 =~ '\\u005c.12.34'", parseQuery("F1:\\.12?34"));
+        Assert.assertEquals("F1 =~ '\\*12.34'", parseQuery("F1:\\*12?34"));
+        Assert.assertEquals("F1 == '*'", parseQuery("F1:\\*"));
+        Assert.assertEquals("F1 =~ '\\\\.*?'", parseQuery("F1:\\\\*"));
+        Assert.assertEquals("F1 == '\\\\*'", parseQuery("F1:\\\\\\*"));
+        Assert.assertEquals("F1 =~ '\\\\.*?x.*?'", parseQuery("F1:\\\\*x*"));
     }
     
     @Test
@@ -240,7 +281,7 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("fieldName1 == 'value1' && (fieldName2 >= 'aaa' && fieldName2 <= 'bbb') && fieldName3 == 'value3'",
                         parseQuery("fieldName1:value1 AND fieldName2:[aaa TO bbb] AND fieldName3:value3"));
         Assert.assertEquals("(F >= 'A' && F <= 'B')", parseQuery("F:[A TO B]"));
-        Assert.assertEquals("(F >= 'A\\u005c*' && F <= 'B')", parseQuery("F:[A\\\\\\* TO B]"));
+        Assert.assertEquals("(F >= 'A\\\\*' && F <= 'B')", parseQuery("F:[A\\\\\\* TO B]"));
         Assert.assertEquals("(F > 'lower' && F <= 'upper')", parseQuery("F:{lower TO upper]"));
         Assert.assertEquals("(F >= 'lower' && F < 'upper')", parseQuery("F:[lower TO upper}"));
     }
@@ -248,8 +289,13 @@ public class TestLuceneToJexlQueryParser {
     @Test
     public void testPhrases() throws ParseException {
         Assert.assertEquals("content:phrase(termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("\"quick brown fox\""));
-        Assert.assertEquals("content:phrase(FIELD, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("FIELD:\"quick brown fox\""));
-        Assert.assertEquals("FIELD == 'value' && content:phrase(termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("FIELD:value AND \"quick brown fox\""));
+        Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("TOKFIELD:\"quick brown fox\""));
+        
+        // testing case independence of "TOKFIELD" This would return content:phrase if it were not case independent
+        Assert.assertEquals("content:phrase(tokfield, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("tokfield:\"quick brown fox\""));
+        
+        Assert.assertEquals("TOKFIELD == 'value' && content:phrase(termOffsetMap, 'quick', 'brown', 'fox')",
+                        parseQuery("TOKFIELD:value AND \"quick brown fox\""));
         Assert.assertEquals(anyField + " == 'quick'", parseQuery("\"quick\""));
         Assert.assertEquals("content:phrase(termOffsetMap, 'qui.ck', 'brown', 'fox')", parseQuery("\"qui\\.ck brown fox\""));
         
@@ -276,11 +322,11 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("A =~ '11\\'22.*?'", parseQuery("A:11'22*"));
         //
         // // F:[A'\\\* TO B'], searching from A'\\* ("A" followed by a single quote, a backslash, and an asterisk to "B" followed by a single quote
-        Assert.assertEquals("(F >= 'A\\'\\u005c*' && F <= 'B\\'')", parseQuery("F:[A'\\\\\\* TO B']"));
+        Assert.assertEquals("(F >= 'A\\'\\\\*' && F <= 'B\\'')", parseQuery("F:[A'\\\\\\* TO B']"));
         //
         // // space escapes
         Assert.assertEquals(anyField + " == 'joh.nny chicken'", parseQuery("joh.nny\\ chicken"));
-        Assert.assertEquals(anyField + " =~ 'joh\\u005c.nny chick.*?'", parseQuery("joh.nny\\ chick*"));
+        Assert.assertEquals(anyField + " =~ 'joh\\.nny chick.*?'", parseQuery("joh.nny\\ chick*"));
         Assert.assertEquals(anyField + " == 'joh.nny chicken'", parseQuery("\"joh.nny\\ chicken\""));
         Assert.assertEquals("content:phrase(termOffsetMap, 'joh.nny', 'chic ken')", parseQuery("\"joh.nny chic\\ ken\""));
         Assert.assertEquals("content:phrase(termOffsetMap, 'joh.nny', 'chic k*')", parseQuery("\"joh.nny chic\\ k*\""));
@@ -289,58 +335,58 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("content:phrase(termOffsetMap, 'joh.nny', '\"chicken\"')", parseQuery("\"joh.nny \\\"chicken\\\"\""));
         
         // unicode escapes.
-        Assert.assertEquals("FIELD =~ 'joh\\u005c.nny.*?\\u005c\\u005c''", parseQuery("FIELD:joh.nny*\\\\'"));
-        Assert.assertEquals("FIELD =~ 'joh\\u005c.nny\\u005c\\u005cu005cfive.*?\\''", parseQuery("FIELD:joh.nny\\\\u005cfive*'"));
+        Assert.assertEquals("FIELD =~ 'joh\\.nny.*?\\\\''", parseQuery("FIELD:joh.nny*\\\\'"));
+        Assert.assertEquals("FIELD =~ 'joh\\.nny\\\\five.*?\\''", parseQuery("FIELD:joh.nny\\\\five*'"));
         
         // literal blackslashes
-        Assert.assertEquals(anyField + " == 'yep\\u005cyep'", parseQuery("yep\\\\yep"));
-        Assert.assertEquals("content:phrase(termOffsetMap, 'yep\\u005cyep', 'otherterm')", parseQuery("\"yep\\\\yep otherterm\""));
+        Assert.assertEquals(anyField + " == 'yep\\\\yep'", parseQuery("yep\\\\yep"));
+        Assert.assertEquals("content:phrase(termOffsetMap, 'yep\\\\yep', 'otherterm')", parseQuery("\"yep\\\\yep otherterm\""));
     }
     
     @Test
-    @Ignore
     public void testMiscEscapeTokenization() throws ParseException {
         // apostrophe escapes
         Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:johnny's"));
         Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:johnny\\'s")); // lucene drops single slash
         Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:\"johnny's\""));
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'johnny\\'s', 'chicken') || content:within(TOKFIELD, 2, termOffsetMap, 'johnny', 'chicken'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'johnny\\'s', 'chicken') || content:phrase(TOKFIELD, termOffsetMap, 'johnny', 'chicken'))",
                         parseQuery("TOKFIELD:\"johnny's chicken\""));
         Assert.assertEquals("TOKFIELD =~ '11\\'22.*?'", parseQuery("TOKFIELD:11'22*"));
-        Assert.assertEquals("(TOKFIELD >= 'A\\'\\u005c*' && TOKFIELD <= 'B\\'')", parseQuery("TOKFIELD:[A'\\\\\\* TO B']"));
+        Assert.assertEquals("(TOKFIELD >= 'A\\'\\\\*' && TOKFIELD <= 'B\\'')", parseQuery("TOKFIELD:[A'\\\\\\* TO B']"));
         
         // space escapes
         Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
                         parseQuery("TOKFIELD:joh.nny\\ chicken"));
-        Assert.assertEquals("TOKFIELD =~ 'joh\\u005c.nny chick.*?'", parseQuery("TOKFIELD:joh.nny\\ chick*"));
-        Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
+        Assert.assertEquals("TOKFIELD =~ 'joh\\.nny chick.*?'", parseQuery("TOKFIELD:joh.nny\\ chick*"));
+        Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chicken'))",
                         parseQuery("TOKFIELD:\"joh.nny\\ chicken\""));
         
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic ken') || content:within(TOKFIELD, 3, termOffsetMap, 'joh.nny', 'chic', 'ken'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic ken') || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic', 'ken'))",
                         parseQuery("TOKFIELD:\"joh.nny chic\\ ken\""));
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic k*') || content:within(TOKFIELD, 3, termOffsetMap, 'joh.nny', 'chic', 'k'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic k*') || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic', 'k'))",
                         parseQuery("TOKFIELD:\"joh.nny chic\\ k*\""));
         
         // quote escapes
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', '\"chicken\"') || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', '\"chicken\"') || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chicken'))",
                         parseQuery("TOKFIELD:\"joh.nny \\\"chicken\\\"\""));
         
         // unicode escapes.
-        Assert.assertEquals("TOKFIELD =~ 'joh\\u005c.nny.*?\\u005c\\u005c''", parseQuery("TOKFIELD:joh.nny*\\\\'"));
-        Assert.assertEquals("TOKFIELD =~ 'joh\\u005c.nny\\u005c\\u005cu005cfive.*?\\''", parseQuery("TOKFIELD:joh.nny\\\\u005cfive*'"));
+        Assert.assertEquals("TOKFIELD =~ 'joh\\.nny.*?\\\\''", parseQuery("TOKFIELD:joh.nny*\\\\'"));
+        Assert.assertEquals("TOKFIELD =~ 'joh\\.nny\\\\five.*?\\''", parseQuery("TOKFIELD:joh.nny\\\\five*'"));
         
         // literal blackslashes
-        Assert.assertEquals("(TOKFIELD == 'someone\\u005c234someplace.com' || content:within(TOKFIELD, 2, termOffsetMap, 'someone', '234someplace.com'))",
+        Assert.assertEquals("(TOKFIELD == 'someone\\\\234someplace.com' || content:within(TOKFIELD, 2, termOffsetMap, 'someone', '234someplace.com'))",
                         parseQuery("TOKFIELD:someone\\\\234someplace.com"));
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'someone\\u005c234someplace.com', 'otherterm') || content:within(TOKFIELD, 3, termOffsetMap, 'someone', '234someplace.com', 'otherterm'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'someone\\\\234someplace.com', 'otherterm') || content:phrase(TOKFIELD, termOffsetMap, 'someone', '234someplace.com', 'otherterm'))",
                         parseQuery("TOKFIELD:\"someone\\\\234someplace.com otherterm\""));
         // FIX THIS, trailing slashes in queries should be acceptable.
-        // Assert.assertEquals("(TOKFIELD == 'someone\\u005c234someplace.com\\u005c' || content:within(TOKFIELD, 2, termOffsetMap, 'someone', '234someplace.com'))",
+        // Assert.assertEquals("(TOKFIELD == 'someone\\234someplace.com\\' || content:within(TOKFIELD, 2, termOffsetMap, 'someone',
+        // '234someplace.com'))",
         // parseQuery("TOKFIELD:someone\\\\234someplace.com\\\\"));
     }
     
@@ -380,9 +426,20 @@ public class TestLuceneToJexlQueryParser {
     public void testFunctions() throws ParseException {
         testFunction("filter:isNull(nullfield)", "#isnull(nullfield)");
         testFunction("not(filter:isNull(field))", "#isnotnull(field)");
+        testFunction("filter:includeRegex(_ANYFIELD_, 'r1')", "#include(r1)");
+        testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(f1, r1, f2, r2)");
         testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(AND, f1, r1, f2, r2)");
+        testFunction("(filter:includeRegex(f1, 'r1') || filter:includeRegex(f2, 'r2'))", "#include(OR, f1, r1, f2, r2)");
+        testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) || not(filter:includeRegex(f2, 'test,escaping')))",
+                        "#exclude(f1, see.*jane.*run, f2, test\\,escaping)");
         testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) && not(filter:includeRegex(f2, 'test,escaping')))",
                         "#exclude(OR, f1, see.*jane.*run, f2, test\\,escaping)");
+        testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) || not(filter:includeRegex(f2, 'test,escaping')))",
+                        "#exclude(AND, f1, see.*jane.*run, f2, test\\,escaping)");
+        testFunction("filter:includeText(_ANYFIELD_, 'r1')", "#text(r1)");
+        testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(f1, r1, f2, r2)");
+        testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(AND, f1, r1, f2, r2)");
+        testFunction("(filter:includeText(f1, 'r1') || filter:includeText(f2, 'r2'))", "#text(OR, f1, r1, f2, r2)");
         
         testFunction("filter:afterLoadDate(LOAD_DATE, '20140101')", "#loaded(after, 20140101)");
         testFunction("filter:afterLoadDate(LOAD_DATE, '20140101', 'yyyyMMdd')", "#loaded(after, 20140101, yyyyMMdd)");
@@ -427,7 +484,6 @@ public class TestLuceneToJexlQueryParser {
         try {
             parseQuery(func);
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.fail("Queries that are just post filters should now be allowed: " + func);
         }
         String query = null;
@@ -502,8 +558,7 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testParseRegexsWithEscapes() throws ParseException {
-        Assert.assertEquals("F == '6515' && FOOBAR =~ 'Foo/5\\u005c.0 \\u005c(ibar.*?'", parser.parse("F:6515 and FOOBAR:Foo\\/5.0\\ \\(ibar*")
-                        .getOriginalQuery());
+        Assert.assertEquals("F == '6515' && FOOBAR =~ 'Foo/5\\.0 \\(ibar.*?'", parser.parse("F:6515 and FOOBAR:Foo\\/5.0\\ \\(ibar*").getOriginalQuery());
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo Foo Foo.*?'", parser.parse("FOO:bar BAZ:Foo\\ Foo\\ Foo*").getOriginalQuery());
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo Foo Foo.*'", parser.parse("FOO:bar BAZ:/Foo Foo Foo.*/").getOriginalQuery());
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo Foo Foo.*?'", parser.parse("FOO:bar BAZ:/Foo Foo Foo.*?/").getOriginalQuery());
@@ -512,4 +567,5 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo/Foo\\ Foo.*'", parser.parse("FOO:bar BAZ:/Foo\\/Foo\\ Foo.*/").getOriginalQuery());
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo/Foo Foo.*?'", parser.parse("FOO:bar BAZ:/Foo\\/Foo Foo.*?/").getOriginalQuery());
     }
+    
 }

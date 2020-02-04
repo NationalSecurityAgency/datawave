@@ -1,11 +1,13 @@
 package datawave.query.jexl.functions;
 
 import com.vividsolutions.jts.geom.Envelope;
-import datawave.data.normalizer.GeometryNormalizer;
+import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -54,10 +56,10 @@ public class GeoWaveFunctionsDescriptorTest {
         Assert.assertEquals(expandedWkt.get(2), twoEnvelopesExpandedQuery);
         
         // Test the the default number of envelopes produces a different expanded query than the single envelope expansion
-        Assert.assertFalse(defaultExpandedQuery.equals(oneEnvelopeExpandedQuery));
+        Assert.assertNotEquals(defaultExpandedQuery, oneEnvelopeExpandedQuery);
         
         // Test that the default number of envelopes produces the same expanded query as the two envelope expansion
-        Assert.assertTrue(defaultExpandedQuery.equals(twoEnvelopesExpandedQuery));
+        Assert.assertEquals(defaultExpandedQuery, twoEnvelopesExpandedQuery);
     }
     
     @Test
@@ -74,7 +76,7 @@ public class GeoWaveFunctionsDescriptorTest {
         // @formatter:on
         
         List<Envelope> envelopes = (List<Envelope>) Whitebox.invokeMethod(GeoWaveFunctionsDescriptor.class, "getSeparateEnvelopes",
-                        GeometryNormalizer.parseGeometry(wkt), 4);
+                        AbstractGeometryNormalizer.parseGeometry(wkt), 4);
         
         Assert.assertEquals(3, envelopes.size());
         
@@ -100,10 +102,10 @@ public class GeoWaveFunctionsDescriptorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryStr);
         ASTFunctionNode func = find(script);
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
+        MetadataHelper helper = new MockMetadataHelper();
         
-        JexlNode indexQuery = desc.getIndexQuery(config, null, null, null);
-        String retVal = JexlStringBuildingVisitor.buildQuery(indexQuery);
-        return retVal;
+        JexlNode indexQuery = desc.getIndexQuery(config, helper, null, null);
+        return JexlStringBuildingVisitor.buildQuery(indexQuery);
     }
     
     /**

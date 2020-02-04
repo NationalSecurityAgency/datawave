@@ -2,18 +2,14 @@ FROM centos:centos7
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
+ARG DATAWAVE_JAVA_HOME
 
 USER root
 
-# ENV params for hadoop here are a hack/fix for the "chown: missing operand after '**/hadoop/logs'"
-# errors thrown by hadoop startup scripts for both the resourcemanager and historyserver. Those
-# errors occur due to $USER being mysteriously null/undefined at the point that log file names are
-# established and subsequently chowned in those scripts. But aside from the chown errors and a few
-# irregularly-named log files, the null $USER issue doesn't seem to have any other negative impact.
-# Mostly an annoyance and odd that it only seems to occur in Docker, which is why I'm documenting
-# it here (issue has been observed w/ both centos6 and centos7 base images)
-
 ENV YARN_IDENT_STRING=root HADOOP_MAPRED_IDENT_STRING=root
+ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
+ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
+ENV YARN_NODEMANAGER_USER=root
 
 # Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore
 
@@ -21,7 +17,7 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs which bc wget git && \
+RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-1.8.0-openjdk-devel  && \
     yum clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
@@ -36,14 +32,22 @@ RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs w
 
 WORKDIR /opt/datawave
 
-# Create new Git repo for convenience...
+# Create new Git repo and configure environment...
 
 RUN rm -f .dockerignore && \
     git init && \
     git add . && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
-    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
+    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
+    echo "export DW_ACCUMULO_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_ZOOKEEPER_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'zookeeper*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_MAVEN_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_HADOOP_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/hadoop -name 'hadoop*.tar.gz')" >> ~/.bashrc && \
+    echo "export DW_WILDFLY_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/datawave -name 'wildfly*.tar.gz')" >> ~/.bashrc && \
+    echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
+    echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc && \
+    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
 
 # This works exactly like the setup for a non-containerized instance of the datawave-quickstart
 # environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
@@ -51,11 +55,8 @@ RUN rm -f .dockerignore && \
 # used to initialize services and their log dirs. Finally, web services are tested, services are
 # stopped gracefully, and any cruft is purged.
 
-# By design, if 'datawaveWebTest' exits with non-zero status, the docker build will fail
-
 RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
-    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --verbose && allStop" && \
+    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop" && \
     echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \

@@ -4,6 +4,6 @@ import datawave.webservice.query.logic.QueryLogicFactory;
 
 public interface NeedQueryLogicFactory {
     
-    public void setQueryLogicFactory(QueryLogicFactory factory);
+    void setQueryLogicFactory(QueryLogicFactory factory);
     
 }

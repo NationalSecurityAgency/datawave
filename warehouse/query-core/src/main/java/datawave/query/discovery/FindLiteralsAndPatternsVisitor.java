@@ -51,7 +51,7 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
         if (op instanceof ASTEQNode) {
             JexlNode field = JexlNodes.otherChild(op, node.jjtGetParent()).jjtGetChild(0);
             if (log.isTraceEnabled()) {
-                log.trace("Found field " + JexlASTHelper.deconstructIdentifier(field.image) + "==" + node.getLiteral().toString());
+                log.trace("Found field " + JexlASTHelper.deconstructIdentifier(field.image) + "==" + node.getLiteral());
             }
             values.addLiteral(node.getLiteral().toString(), JexlASTHelper.deconstructIdentifier(field.image));
         } else if (op instanceof ASTERNode) {
@@ -73,7 +73,7 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        List<JexlNode> otherNodes = new ArrayList<JexlNode>();
+        List<JexlNode> otherNodes = new ArrayList<>();
         Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, true);
         if (ranges.size() == 1 && otherNodes.isEmpty()) {
             LiteralRange<?> range = ranges.keySet().iterator().next();

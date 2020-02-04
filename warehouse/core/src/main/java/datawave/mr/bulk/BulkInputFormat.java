@@ -3,6 +3,7 @@ package datawave.mr.bulk;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -220,14 +221,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             Path work = new Path(workingDirectory);
             Path file = new Path(work, conf.get("mapreduce.job.name") + System.currentTimeMillis() + ".pw");
             conf.set(PASSWORD_PATH, file.toString());
-            FSDataOutputStream fos = fs.create(file, false);
-            fs.setPermission(file, new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
-            fs.deleteOnExit(file);
-            
+            fs = FileSystem.get(file.toUri(), conf);
             byte[] encodedPw = Base64.encodeBase64(passwd);
-            fos.writeInt(encodedPw.length);
-            fos.write(encodedPw);
-            fos.close();
+            try (FSDataOutputStream fos = fs.create(file, false)) {
+                fs.setPermission(file, new FsPermission(FsAction.ALL, FsAction.NONE, FsAction.NONE));
+                fs.deleteOnExit(file);
+                fos.writeInt(encodedPw.length);
+                fos.write(encodedPw);
+            }
             
             conf.set("accumulo.password", new String(encodedPw));
             
@@ -293,10 +294,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             fs = FileSystem.get(conf);
             String workingDirectory = conf.get(WORKING_DIRECTORY, fs.getWorkingDirectory().toString());
             Path work = new Path(workingDirectory);
-            Path tempPath = new Path(work, UUID.randomUUID().toString() + ".cache");
-            FSDataOutputStream outStream = fs.create(tempPath);
-            try {
-                
+            Path tempPath = new Path(work, UUID.randomUUID() + ".cache");
+            fs = FileSystem.get(tempPath.toUri(), conf);
+            try (FSDataOutputStream outStream = fs.create(tempPath)) {
                 outStream.writeInt(ranges.size());
                 for (Range r : ranges) {
                     r.write(outStream);
@@ -436,7 +436,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             iterators = new AccumuloIterator(cfg.getPriority(), cfg.getIteratorClass(), cfg.getName()).toString();
         } else {
             // append the next iterator & reset
-            iterators = iterators.concat(ITERATORS_DELIM + new AccumuloIterator(cfg.getPriority(), cfg.getIteratorClass(), cfg.getName()).toString());
+            iterators = iterators.concat(ITERATORS_DELIM + new AccumuloIterator(cfg.getPriority(), cfg.getIteratorClass(), cfg.getName()));
         }
         // Store the iterators w/ the job
         conf.set(ITERATORS, iterators);
@@ -534,18 +534,18 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * @see #setRanges(Job, Collection)
      */
     protected static List<Range> getRanges(Configuration conf) throws IOException {
-        String rangesPath = conf.get(RANGES);
-        FileSystem fs = FileSystem.get(conf);
+        Path rangesPath = new Path(conf.get(RANGES));
+        FileSystem fs = FileSystem.get(rangesPath.toUri(), conf);
         
-        FSDataInputStream inputStream = fs.open(new Path(rangesPath));
-        int size = inputStream.readInt();
         ArrayList<Range> ranges = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            Range range = new Range();
-            range.readFields(inputStream);
-            ranges.add(range);
+        try (FSDataInputStream inputStream = fs.open(rangesPath)) {
+            int size = inputStream.readInt();
+            for (int i = 0; i < size; i++) {
+                Range range = new Range();
+                range.readFields(inputStream);
+                ranges.add(range);
+            }
         }
-        inputStream.close();
         
         return ranges;
     }
@@ -655,16 +655,16 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      */
     protected static byte[] getPassword(Configuration conf) throws IOException {
         if (null != conf.get(PASSWORD_PATH)) {
-            FileSystem fs = FileSystem.get(conf);
             Path file = new Path(conf.get(PASSWORD_PATH));
+            FileSystem fs = FileSystem.get(file.toUri(), conf);
             
-            FSDataInputStream fdis = fs.open(file);
-            int length = fdis.readInt();
-            byte[] encodedPassword = new byte[length];
-            fdis.read(encodedPassword);
-            fdis.close();
-            
-            return Base64.decodeBase64(encodedPassword);
+            try (FSDataInputStream fdis = fs.open(file)) {
+                int length = fdis.readInt();
+                byte[] encodedPassword = new byte[length];
+                fdis.read(encodedPassword);
+                
+                return Base64.decodeBase64(encodedPassword);
+            }
         } else {
             String passwd = conf.get(PASSWORD);
             if (null != passwd)
@@ -1191,13 +1191,13 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     private void clipRanges(Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
         // truncate the ranges to within the tablets... this makes it easier to know what work
         // needs to be redone when failures occurs and tablets have merged or split
-        Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<String,Map<KeyExtent,List<Range>>>();
+        Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<>();
         for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
-            Map<KeyExtent,List<Range>> tabletMap = new HashMap<KeyExtent,List<Range>>();
+            Map<KeyExtent,List<Range>> tabletMap = new HashMap<>();
             binnedRanges2.put(entry.getKey(), tabletMap);
             for (Entry<KeyExtent,List<Range>> tabletRanges : entry.getValue().entrySet()) {
                 Range tabletRange = tabletRanges.getKey().toDataRange();
-                List<Range> clippedRanges = new ArrayList<Range>();
+                List<Range> clippedRanges = new ArrayList<>();
                 tabletMap.put(tabletRanges.getKey(), clippedRanges);
                 for (Range range : tabletRanges.getValue())
                     clippedRanges.add(tabletRange.clip(range));
@@ -1306,7 +1306,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
     
     @Override
-    public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+    public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) {
         
         return new RecordReaderBase<Key,Value>() {
             @Override

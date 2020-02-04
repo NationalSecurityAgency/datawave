@@ -1,26 +1,24 @@
 package datawave.query.tables.facets;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Set;
-
+import com.google.common.collect.Multimap;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.util.MetadataHelper;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 
-import com.beust.jcommander.internal.Lists;
-import com.beust.jcommander.internal.Sets;
-import com.google.common.collect.Multimap;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableIterable<QueryPlan> {
     
@@ -32,8 +30,8 @@ public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableItera
     public FacetQueryPlanVisitor(ShardQueryConfiguration config, MetadataHelper helper, Set<String> facetedFields) {
         
         this.config = config;
-        queryPlans = Sets.newHashSet();
-        this.facetedFields = Sets.newHashSet();
+        queryPlans = new HashSet<>();
+        this.facetedFields = new HashSet<>();
         this.facetedFields.addAll(facetedFields);
         try {
             facetMultimap = helper.getFacets("FacetsNatingMetadata");
@@ -63,7 +61,7 @@ public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableItera
         Key startKey = new Key(literal + "\u0000");
         Key endKey = new Key(literal + "\uFFFF");
         
-        Collection<String> fieldPairs = Lists.newArrayList();
+        Collection<String> fieldPairs = new ArrayList<>();
         for (String facet : facetedFields) {
             StringBuilder facetBuilder = new StringBuilder(fieldName);
             facetBuilder.append("\u0000").append(facet);

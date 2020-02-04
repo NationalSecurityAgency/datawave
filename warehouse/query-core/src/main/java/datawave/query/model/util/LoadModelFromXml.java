@@ -46,9 +46,6 @@ public class LoadModelFromXml {
             switch (mapping.getDirection()) {
                 case FORWARD:
                     model.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
-                    if (mapping.getIndexOnly()) {
-                        model.addUnevaluatedField(mapping.getFieldName());
-                    }
                     break;
                 case REVERSE:
                     model.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());

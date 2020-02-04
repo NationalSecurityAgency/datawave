@@ -1,12 +1,8 @@
 package datawave.iterators;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.accumulo.core.conf.Property;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+import datawave.ingest.table.aggregator.PropogatingCombiner;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -20,13 +16,13 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
-import org.apache.accumulo.start.classloader.vfs.AccumuloVFSClassLoader;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-
-import datawave.ingest.table.aggregator.PropogatingCombiner;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Purpose: Handle arbitrary propogating aggregations.
@@ -136,23 +132,9 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         
         final Key keyToAggregate = workKey;
         
-        PropogatingCombiner aggr = aggMap.get(workKey.getColumnFamilyData());
-        
-        if (null == aggr) {
-            if (log.isTraceEnabled()) {
-                log.trace("using the default aggregator");
-            }
-            aggr = defaultAgg;
-        }
+        PropogatingCombiner aggr = getAggregator(workKey);
         
         Value aggregatedValue = new Value(iterator.getTopValue());
-        
-        if (log.isTraceEnabled())
-            log.trace("Key is " + workKey);
-        
-        if (log.isTraceEnabled()) {
-            log.trace(workKey + "agg == " + (aggr == null) + " " + workKey.isDeleted());
-        }
         
         // always propogate deletes
         if (aggr != null) {
@@ -175,10 +157,6 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
                     log.trace("Not propogating " + workKey);
                 return false;
             }
-        } else {
-            
-            iterator.next();
-            
         }
         
         aggrKey = new Key(workKey);
@@ -187,6 +165,26 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         
         return true;
         
+    }
+    
+    private PropogatingCombiner getAggregator(Key key) {
+        PropogatingCombiner aggr = aggMap.get(key.getColumnFamilyData());
+        
+        if (null == aggr) {
+            if (log.isTraceEnabled()) {
+                log.trace("using the default aggregator");
+            }
+            aggr = defaultAgg;
+        }
+        
+        if (log.isTraceEnabled()) {
+            log.trace("Key is " + key);
+        }
+        
+        if (log.isTraceEnabled()) {
+            log.trace(key + "agg == " + (aggr == null) + " " + key.isDeleted());
+        }
+        return aggr;
     }
     
     /**
@@ -237,6 +235,10 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     @Override
     public void next() throws IOException {
         if (aggrKey != null) {
+            // if aggrKey isn't configured for aggregation, then we previously didn't call next and need to now
+            if (iterator.hasTop() && getAggregator(aggrKey) == null) {
+                iterator.next();
+            }
             aggrKey = null;
             aggrValue = null;
         }
@@ -250,15 +252,20 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
             aggrValue = null;
         }
         
-        // do not want to seek to the middle of a value that should be
-        // aggregated...
-        Range seekRange = IteratorUtil.maximizeStartKeyTimeStamp(range);
+        Range seekRange = range;
+        // if there isn't an aggregator configured for the start key, timestamp modification isn't necessary
+        if (range.getStartKey() != null && getAggregator(range.getStartKey()) != null) {
+            // do not want to seek to the middle of a value that should be
+            // aggregated...
+            seekRange = IteratorUtil.maximizeStartKeyTimeStamp(range);
+        }
         
         iterator.seek(seekRange, columnFamilies, inclusive);
         
         findTop();
         
-        if (range.getStartKey() != null) {
+        // (only if the range was modified) it's necessary to skip keys until the start key is found
+        if (seekRange != range) {
             while (hasTop() && getTopKey().equals(range.getStartKey(), PartialKey.ROW_COLFAM_COLQUAL_COLVIS)
                             && getTopKey().getTimestamp() > range.getStartKey().getTimestamp()) {
                 next();
@@ -327,7 +334,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         try {
             return this.getClass().getClassLoader().loadClass(className).newInstance();
         } catch (Exception e) {
-            throw new IllegalArgumentException("Exception while attempting to create : " + className);
+            throw new IllegalArgumentException("Exception while attempting to create : " + className, e);
         }
     }
 }

@@ -35,7 +35,7 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
     public static final String FLUSHED_BUFFER_TOTAL = "TABLE_CACHE_FLUSHED_ENTRIES";
     
     // This is the cache configuration
-    private static final Map<Text,Integer> tableCacheConf = new HashMap<Text,Integer>();
+    private static final Map<Text,Integer> tableCacheConf = new HashMap<>();
     
     // the tables to cache will be configured by setting a <tablename>.table.context.writer.cache property where the value is the max size of the cache in
     // entries

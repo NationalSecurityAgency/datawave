@@ -6,11 +6,8 @@ import datawave.interceptor.ResponseInterceptor;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.configuration.ModificationConfiguration;
-import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
 import datawave.webservice.result.VoidResponse;
-import datawave.webservice.results.modification.ModificationConfigurationResponse;
 import datawave.webservice.results.modification.MutableFieldListResponse;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
@@ -37,7 +34,6 @@ import javax.interceptor.Interceptors;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -126,7 +122,7 @@ public class ModificationCacheBean {
                 String fieldName = e.getKey().getRow().toString();
                 log.trace("fieldname = " + fieldName);
                 if (null == cache.get(datatype))
-                    cache.put(datatype, new HashSet<String>());
+                    cache.put(datatype, new HashSet<>());
                 cache.get(datatype).add(fieldName);
             }
             log.trace("cache size = " + cache.size());
@@ -184,7 +180,7 @@ public class ModificationCacheBean {
     }
     
     public Map<String,Set<String>> getCachedMutableFieldList() {
-        log.trace("cache = " + cache.toString());
+        log.trace("cache = " + cache);
         return Collections.unmodifiableMap(cache);
     }
     

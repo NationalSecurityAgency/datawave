@@ -2,16 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>datawave.webservices</groupId>
+        <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>2.1.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-common</artifactId>
     <packaging>ejb</packaging>
     <name>${project.artifactId}</name>
-    <properties>
-        <datawave.root>${project.parent.parent.basedir}</datawave.root>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>aopalliance</groupId>
@@ -39,20 +36,27 @@
             <artifactId>dns</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.timgroup</groupId>
-            <artifactId>java-statsd-client</artifactId>
-        </dependency>
-        <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave.contrib</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>audit-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>authorization-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>metrics-reporter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -114,14 +118,6 @@
             <artifactId>easymock</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-commons</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-core-client</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-easymock</artifactId>
         </dependency>
@@ -152,6 +148,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.woodstox</groupId>
+            <artifactId>woodstox-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
             <scope>provided</scope>
@@ -167,13 +168,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-jms-client</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-server</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -213,13 +209,18 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.weld</groupId>
-            <artifactId>weld-core</artifactId>
+            <artifactId>weld-core-impl</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-tserver</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.deltaspike.core</groupId>
@@ -234,24 +235,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-jms-server</artifactId>
-            <version>${version.hornetq}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.spec.javax.transaction</groupId>
-                    <artifactId>jboss-transaction-api_1.1_spec</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-journal</artifactId>
-            <version>${version.hornetq}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -299,7 +282,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>stream,accumulo-trace,accumulo-tracer,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,accumulo-fate,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
+                            <includeArtifactIds>stream,accumulo-trace,accumulo-tracer,accumulo-tserver,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,accumulo-fate,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
                             <excludeTransitive>true</excludeTransitive>
                         </configuration>
                     </execution>

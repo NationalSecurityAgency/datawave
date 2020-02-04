@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
-public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer implements CacheableLogic {
+public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> implements CacheableLogic {
     
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(ShardIndexQueryTransformer.class);
@@ -51,72 +51,67 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer implem
     }
     
     @Override
-    public Object transform(Object input) {
+    public EventBase transform(Entry<Key,Value> input) {
         
         log.debug("Transform got " + input);
-        if (input instanceof Entry<?,?>) {
-            @SuppressWarnings("unchecked")
-            Entry<Key,Value> entry = (Entry<Key,Value>) input;
-            
-            if (entry.getKey() == null && entry.getValue() == null) {
-                return null;
-            }
-            
-            if (null == entry.getKey() || null == entry.getValue()) {
-                throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
-            }
-            
-            EventBase event = responseObjectFactory.getEvent();
-            ColumnVisibility columnVisibility = new ColumnVisibility(entry.getKey().getColumnVisibility());
-            Map<String,String> markings;
-            try {
-                markings = this.markingFunctions.translateFromColumnVisibilityForAuths(columnVisibility, this.auths);
-            } catch (Exception e1) {
-                throw new RuntimeException("could not make markings from: " + columnVisibility);
-            }
-            event.setMarkings(markings);
-            
-            List<FieldBase> fields = new ArrayList<>();
-            
-            Key key = entry.getKey();
-            String row = key.getRow().toString();
-            String cf = key.getColumnFamily().toString();
-            String cq = key.getColumnQualifier().toString();
-            String cv = key.getColumnVisibility().toString();
-            
-            fields.add(makeField("VALUE", markings, cv, 0L, row));
-            /**
-             * Added query model to alias FIELD
-             */
-            fields.add(makeField("FIELD", markings, cv, 0L, myQueryModel.aliasFieldNameReverseModel(cf)));
-            fields.add(makeField("DATE", markings, cv, 0L, cq.substring(0, 8)));
-            fields.add(makeField("DATA TYPE", markings, cv, 0L, cq.substring(9)));
-            // Parse the UID.List object from the value
-            Uid.List uidList = null;
-            long count = 0;
-            try {
-                uidList = Uid.List.parseFrom(entry.getValue().get());
-                if (null != uidList) {
-                    count = uidList.getCOUNT();
-                }
-            } catch (InvalidProtocolBufferException e) {
-                log.error("Failed to parse Uid List", e);
-            }
-            fields.add(makeField("RECORD COUNT", markings, cv, 0L, Long.toString(count)));
-            event.setFields(fields);
-            
-            Metadata metadata = new Metadata();
-            String id = logic.getTableName() + ":" + row + ":" + cf + ":" + cq;
-            metadata.setInternalId(UUID.nameUUIDFromBytes(id.getBytes()).toString());
-            metadata.setDataType(entry.getKey().getColumnFamily().toString());
-            metadata.setRow(entry.getKey().getRow().toString());
-            metadata.setTable(logic.getTableName());
-            event.setMetadata(metadata);
-            return event;
-        } else {
-            throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+        @SuppressWarnings("unchecked")
+        Entry<Key,Value> entry = (Entry<Key,Value>) input;
+        
+        if (entry.getKey() == null && entry.getValue() == null) {
+            return null;
         }
         
+        if (null == entry.getKey() || null == entry.getValue()) {
+            throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
+        }
+        
+        EventBase event = responseObjectFactory.getEvent();
+        ColumnVisibility columnVisibility = new ColumnVisibility(entry.getKey().getColumnVisibility());
+        Map<String,String> markings;
+        try {
+            markings = this.markingFunctions.translateFromColumnVisibilityForAuths(columnVisibility, this.auths);
+        } catch (Exception e1) {
+            throw new RuntimeException("could not make markings from: " + columnVisibility);
+        }
+        event.setMarkings(markings);
+        
+        List<FieldBase> fields = new ArrayList<>();
+        
+        Key key = entry.getKey();
+        String row = key.getRow().toString();
+        String cf = key.getColumnFamily().toString();
+        String cq = key.getColumnQualifier().toString();
+        String cv = key.getColumnVisibility().toString();
+        
+        fields.add(makeField("VALUE", markings, cv, 0L, row));
+        /**
+         * Added query model to alias FIELD
+         */
+        fields.add(makeField("FIELD", markings, cv, 0L, myQueryModel.aliasFieldNameReverseModel(cf)));
+        fields.add(makeField("DATE", markings, cv, 0L, cq.substring(0, 8)));
+        fields.add(makeField("DATA TYPE", markings, cv, 0L, cq.substring(9)));
+        // Parse the UID.List object from the value
+        Uid.List uidList = null;
+        long count = 0;
+        try {
+            uidList = Uid.List.parseFrom(entry.getValue().get());
+            if (null != uidList) {
+                count = uidList.getCOUNT();
+            }
+        } catch (InvalidProtocolBufferException e) {
+            log.error("Failed to parse Uid List", e);
+        }
+        fields.add(makeField("RECORD COUNT", markings, cv, 0L, Long.toString(count)));
+        event.setFields(fields);
+        
+        Metadata metadata = new Metadata();
+        String id = logic.getTableName() + ":" + row + ":" + cf + ":" + cq;
+        metadata.setInternalId(UUID.nameUUIDFromBytes(id.getBytes()).toString());
+        metadata.setDataType(entry.getKey().getColumnFamily().toString());
+        metadata.setRow(entry.getKey().getRow().toString());
+        metadata.setTable(logic.getTableName());
+        event.setMetadata(metadata);
+        return event;
     }
     
     private FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {

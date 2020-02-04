@@ -1,9 +1,11 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import org.apache.accumulo.core.data.*;
-import org.apache.hadoop.conf.*;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 /**

@@ -1,7 +1,5 @@
 package datawave.ingest.table.bloomfilter;
 
-import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -104,25 +102,25 @@ public class ShardKeyFunctorTest {
         // key should only be in bloom filter if it is a field index column (cf = 'fi\x00'...) and
         // contains both the field name (cf) and field value (cq)
         org.apache.accumulo.core.data.Key cbKey = new org.apache.accumulo.core.data.Key();
-        Assert.assertEquals("empty key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("empty key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row only", "fi\0");
-        Assert.assertEquals("row only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("row only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("", "fi\0cf only");
-        Assert.assertEquals("cf only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("cf only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("", "fi\0", "cq only");
-        Assert.assertEquals("cq only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("cq only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row", "fi\0", "and cq");
-        Assert.assertEquals("row and cq only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("row and cq only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row", "fi\0and a cf");
-        Assert.assertEquals("row and cf only key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("row and cf only key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row", "and cf", "and a cq");
-        Assert.assertEquals("row and cf (non-fi) and cq key should not be in bloom filter", null, functor.transform(new Range(cbKey, cbKey)));
+        Assert.assertNull("row and cf (non-fi) and cq key should not be in bloom filter", functor.transform(new Range(cbKey, cbKey)));
         
         cbKey = new org.apache.accumulo.core.data.Key("row", "fi\0and cf", "and a cq");
         org.apache.hadoop.util.bloom.Key bfKey = new org.apache.hadoop.util.bloom.Key(new byte[] {'a', 'n', 'd', ' ', 'c', 'f', 'a', 'n', 'd', ' ', 'a', ' ',
@@ -134,11 +132,11 @@ public class ShardKeyFunctorTest {
         
         org.apache.accumulo.core.data.Key cbKey1 = new org.apache.accumulo.core.data.Key("row", "fi\0and a cf", "and a cq");
         org.apache.accumulo.core.data.Key cbKey2 = new org.apache.accumulo.core.data.Key("row", "fi\0and another cf", "and a cq");
-        Assert.assertEquals("different keys should not be in bloom filter", null, functor.transform(new Range(cbKey1, cbKey2)));
+        Assert.assertNull("different keys should not be in bloom filter", functor.transform(new Range(cbKey1, cbKey2)));
         
         cbKey1 = new org.apache.accumulo.core.data.Key("row", "fi\0and cf", "and a cq");
         cbKey2 = cbKey1.followingKey(PartialKey.ROW_COLFAM_COLQUAL);
-        Assert.assertEquals("consecutive keys should not be in bloom filter with end inclusive", null, functor.transform(new Range(cbKey1, cbKey2)));
+        Assert.assertNull("consecutive keys should not be in bloom filter with end inclusive", functor.transform(new Range(cbKey1, cbKey2)));
         Assert.assertEquals("consecutive keys should be in bloom filter with end exclusive", bfKey, functor.transform(new Range(cbKey1, true, cbKey2, false)));
     }
     

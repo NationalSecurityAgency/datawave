@@ -27,7 +27,7 @@ import org.apache.hadoop.io.Writable;
 
 import com.google.common.base.Preconditions;
 
-public class DiscoveryTransformer extends BaseQueryLogicTransformer implements CacheableLogic {
+public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredThing,EventBase> implements CacheableLogic {
     private List<String> variableFieldList = null;
     private BaseQueryLogic<DiscoveredThing> logic = null;
     private QueryModel myQueryModel = null;
@@ -35,7 +35,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer implements C
     private ResponseObjectFactory responseObjectFactory;
     
     public DiscoveryTransformer(BaseQueryLogic<DiscoveredThing> logic, Query settings, QueryModel qm) {
-        super(new MarkingFunctions.NoOp());
+        super(new MarkingFunctions.Default());
         this.markingFunctions = logic.getMarkingFunctions();
         this.responseObjectFactory = logic.getResponseObjectFactory();
         this.logic = logic;
@@ -43,57 +43,52 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer implements C
     }
     
     @Override
-    public Object transform(Object input) {
-        Preconditions.checkNotNull(input, "Received a null object to transform!");
-        if (input instanceof DiscoveredThing) {
-            DiscoveredThing thing = (DiscoveredThing) input;
-            
-            EventBase event = this.responseObjectFactory.getEvent();
-            Map<String,String> markings;
-            try {
-                markings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(thing.getColumnVisibility()));
-            } catch (Exception e) {
-                throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
-            }
-            event.setMarkings(markings);
-            
-            List<FieldBase> fields = new ArrayList<>();
-            
-            fields.add(this.makeField("VALUE", markings, "", 0L, thing.getTerm()));
-            /**
-             * Added query model to alias FIELD
-             */
-            fields.add(this.makeField("FIELD", markings, "", 0L, myQueryModel.aliasFieldNameReverseModel(thing.getField())));
-            fields.add(this.makeField("DATE", markings, "", 0L, thing.getDate()));
-            fields.add(this.makeField("DATA TYPE", markings, "", 0L, thing.getType()));
-            
-            // If requested return counts separated by colvis, all counts by colvis could be > total record count
-            if (thing.getCountsByColumnVisibility() != null && thing.getCountsByColumnVisibility().size() > 0) {
-                for (Map.Entry<Writable,Writable> entry : thing.getCountsByColumnVisibility().entrySet()) {
-                    try {
-                        Map<String,String> eMarkings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
-                        fields.add(this.makeField("RECORD COUNT", new HashMap<String,String>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
-                    } catch (Exception e) {
-                        throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
-                    }
-                    
-                }
-            } else {
-                fields.add(this.makeField("RECORD COUNT", markings, "", 0L, Long.toString(thing.getCount())));
-            }
-            
-            event.setFields(fields);
-            
-            Metadata metadata = new Metadata();
-            metadata.setInternalId(""); // there is no UUID for a single index pointer
-            metadata.setDataType(thing.getType()); // duplicate
-            metadata.setRow(thing.getTerm()); // duplicate
-            metadata.setTable(logic.getTableName());
-            event.setMetadata(metadata);
-            return event;
-        } else {
-            throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+    public EventBase transform(DiscoveredThing thing) {
+        Preconditions.checkNotNull(thing, "Received a null object to transform!");
+        
+        EventBase event = this.responseObjectFactory.getEvent();
+        Map<String,String> markings;
+        try {
+            markings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(thing.getColumnVisibility()));
+        } catch (Exception e) {
+            throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
         }
+        event.setMarkings(markings);
+        
+        List<FieldBase> fields = new ArrayList<>();
+        
+        fields.add(this.makeField("VALUE", markings, "", 0L, thing.getTerm()));
+        /**
+         * Added query model to alias FIELD
+         */
+        fields.add(this.makeField("FIELD", markings, "", 0L, myQueryModel.aliasFieldNameReverseModel(thing.getField())));
+        fields.add(this.makeField("DATE", markings, "", 0L, thing.getDate()));
+        fields.add(this.makeField("DATA TYPE", markings, "", 0L, thing.getType()));
+        
+        // If requested return counts separated by colvis, all counts by colvis could be > total record count
+        if (thing.getCountsByColumnVisibility() != null && !thing.getCountsByColumnVisibility().isEmpty()) {
+            for (Map.Entry<Writable,Writable> entry : thing.getCountsByColumnVisibility().entrySet()) {
+                try {
+                    Map<String,String> eMarkings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
+                    fields.add(this.makeField("RECORD COUNT", new HashMap<>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
+                } catch (Exception e) {
+                    throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
+                }
+                
+            }
+        } else {
+            fields.add(this.makeField("RECORD COUNT", markings, "", 0L, Long.toString(thing.getCount())));
+        }
+        
+        event.setFields(fields);
+        
+        Metadata metadata = new Metadata();
+        metadata.setInternalId(""); // there is no UUID for a single index pointer
+        metadata.setDataType(thing.getType()); // duplicate
+        metadata.setRow(thing.getTerm()); // duplicate
+        metadata.setTable(logic.getTableName());
+        event.setMetadata(metadata);
+        return event;
     }
     
     protected FieldBase<?> makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {

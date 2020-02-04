@@ -60,50 +60,49 @@ public class UpgradeCounterValues {
         Connector connector = instance.getConnector(username, new PasswordToken(password));
         Authorizations auths = connector.securityOperations().getUserAuthorizations(connector.whoami());
         
-        BatchWriter writer = connector.createBatchWriter(tableName,
-                        new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory).setMaxLatency(60, TimeUnit.SECONDS));
-        BatchScanner scanner = connector.createBatchScanner(tableName, auths, bsThreads);
-        scanner.setRanges(ranges);
-        
-        for (Entry<Key,Value> entry : scanner) {
-            Key key = entry.getKey();
+        try (BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory)
+                        .setMaxLatency(60, TimeUnit.SECONDS));
+                        BatchScanner scanner = connector.createBatchScanner(tableName, auths, bsThreads)) {
+            scanner.setRanges(ranges);
             
-            ByteArrayDataInput in = ByteStreams.newDataInput(entry.getValue().get());
-            Counters counters = new Counters();
-            try {
-                counters.readFields(in);
-            } catch (IOException e) {
-                // The IO exception means the counters are in the wrong format. We *assume* that they are in
-                // the old (CDH3) format, and de-serialize according to that, and re-write the key with the new value.
-                in = ByteStreams.newDataInput(entry.getValue().get());
-                int numGroups = in.readInt();
-                while (numGroups-- > 0) {
-                    String groupName = Text.readString(in);
-                    String groupDisplayName = Text.readString(in);
-                    CounterGroup group = counters.addGroup(groupName, groupDisplayName);
-                    
-                    int groupSize = WritableUtils.readVInt(in);
-                    for (int i = 0; i < groupSize; i++) {
-                        String counterName = Text.readString(in);
-                        String counterDisplayName = counterName;
-                        if (in.readBoolean())
-                            counterDisplayName = Text.readString(in);
-                        long value = WritableUtils.readVLong(in);
-                        group.addCounter(counterName, counterDisplayName, value);
-                    }
-                }
+            for (Entry<Key,Value> entry : scanner) {
+                Key key = entry.getKey();
                 
-                ByteArrayDataOutput out = ByteStreams.newDataOutput();
-                counters.write(out);
-                Mutation m = new Mutation(key.getRow());
-                m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1, new Value(out.toByteArray()));
-                writer.addMutation(m);
+                ByteArrayDataInput in = ByteStreams.newDataInput(entry.getValue().get());
+                Counters counters = new Counters();
+                try {
+                    counters.readFields(in);
+                } catch (IOException e) {
+                    // The IO exception means the counters are in the wrong format. We *assume* that they are in
+                    // the old (CDH3) format, and de-serialize according to that, and re-write the key with the new value.
+                    in = ByteStreams.newDataInput(entry.getValue().get());
+                    int numGroups = in.readInt();
+                    while (numGroups-- > 0) {
+                        String groupName = Text.readString(in);
+                        String groupDisplayName = Text.readString(in);
+                        CounterGroup group = counters.addGroup(groupName, groupDisplayName);
+                        
+                        int groupSize = WritableUtils.readVInt(in);
+                        for (int i = 0; i < groupSize; i++) {
+                            String counterName = Text.readString(in);
+                            String counterDisplayName = counterName;
+                            if (in.readBoolean())
+                                counterDisplayName = Text.readString(in);
+                            long value = WritableUtils.readVLong(in);
+                            group.addCounter(counterName, counterDisplayName, value);
+                        }
+                    }
+                    
+                    ByteArrayDataOutput out = ByteStreams.newDataOutput();
+                    counters.write(out);
+                    Mutation m = new Mutation(key.getRow());
+                    m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1,
+                                    new Value(out.toByteArray()));
+                    writer.addMutation(m);
+                }
             }
+            
         }
-        
-        writer.flush();
-        writer.close();
-        scanner.close();
     }
     
     private void parseConfig(String[] args) throws ParseException {

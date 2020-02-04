@@ -1,14 +1,16 @@
 package datawave.ingest.mapreduce.job;
 
-import java.util.Arrays;
-import datawave.ingest.mapreduce.partition.*;
+import datawave.ingest.mapreduce.partition.DelegatePartitioner;
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.hadoop.conf.*;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
-import org.junit.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 public class PartitionerCacheTest {
     
@@ -63,7 +65,7 @@ public class PartitionerCacheTest {
         conf.set(PartitionerCache.DEFAULT_DELEGATE_PARTITIONER, DelegatingPartitionerTest.AlwaysReturnOne.class.getName());
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table1", DelegatingPartitionerTest.AlwaysReturnTwo.class.getName());
         PartitionerCache partitionerCache = new PartitionerCache(conf);
-        partitionerCache.createAndCachePartitioners(Arrays.asList(new Text[] {new Text("table1")}));
+        partitionerCache.createAndCachePartitioners(Arrays.asList(new Text("table1")));
         Assert.assertTrue("table1 was configured to use a different partitioner",
                         partitionerCache.getPartitioner(new Text("table1")) instanceof DelegatingPartitionerTest.AlwaysReturnTwo);
         Assert.assertTrue("table2 was not configured with a partitioner so it should use the default but didn't",
@@ -84,13 +86,13 @@ public class PartitionerCacheTest {
     @Test
     public void testGetCategoryForNonMember() throws Exception {
         PartitionerCache partitionerCache = new PartitionerCache(conf);
-        Assert.assertEquals(null, PartitionerCache.getCategory(conf, new Text("table1")));
+        Assert.assertNull(PartitionerCache.getCategory(conf, new Text("table1")));
     }
     
     @Test
     public void testGetCategoryForMember() throws Exception {
         PartitionerCache partitionerCache = new PartitionerCache(conf);
-        Assert.assertEquals(null, PartitionerCache.getCategory(conf, new Text("table1")));
+        Assert.assertNull(PartitionerCache.getCategory(conf, new Text("table1")));
     }
     
     @Test
@@ -104,7 +106,7 @@ public class PartitionerCacheTest {
         Assert.assertEquals(new Text("myCategory"), PartitionerCache.getCategory(conf, new Text("table1")));
         Assert.assertEquals(new Text("anotherCategory"), PartitionerCache.getCategory(conf, new Text("table2")));
         Assert.assertEquals(new Text("anotherCategory"), PartitionerCache.getCategory(conf, new Text("table3")));
-        Assert.assertEquals(null, PartitionerCache.getCategory(conf, new Text("table4")));
+        Assert.assertNull(PartitionerCache.getCategory(conf, new Text("table4")));
     }
     
     public class PartitionerThatMustNotBeCreated implements DelegatePartitioner {

@@ -13,8 +13,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 
 /**
- * This interface can be implemented by a class supplying JEXL functions to provide additionally information about the arguments. The initial purpose of this is
- * to allow the DatawaveQueryAnalyzer and RangeCalculator to determine ranges from the global index for a given function.
+ * This interface can be implemented by a class supplying JEXL functions to provide additional information about the arguments. The initial purpose of this is
+ * to determine ranges from the global index for a given function.
  */
 public interface JexlFunctionArgumentDescriptorFactory {
     /**
@@ -24,12 +24,12 @@ public interface JexlFunctionArgumentDescriptorFactory {
      *            A node that must be for a JEXL function in the implementing class.
      * @return The argument descriptor.
      */
-    public JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node);
+    JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node);
     
-    public static final JexlNode TRUE_NODE = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
+    JexlNode TRUE_NODE = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
     
     /** An encapsulation of methods that can be used with this interface */
-    public static class F {
+    class F {
         /**
          * A convenience method to get the argument descriptor from a node
          */

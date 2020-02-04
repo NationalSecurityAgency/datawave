@@ -1,21 +1,19 @@
 package datawave.query.function;
 
-import java.util.Map.Entry;
-
-import datawave.query.iterator.aggregation.DocumentData;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.attributes.Document;
-import datawave.query.predicate.TimeFilter;
-import datawave.query.util.CompositeMetadata;
-import datawave.query.util.TypeMetadata;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+import datawave.query.attributes.Document;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.TimeFilter;
+import datawave.query.util.TypeMetadata;
+import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
+
+import java.util.Map.Entry;
 
 public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<Key,Document>> {
     private static final Logger log = Logger.getLogger(Aggregation.class);
@@ -30,12 +28,22 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
     
     protected boolean disableIndexOnlyDocuments = false;
     
+    /**
+     * should documents track sizes
+     */
+    private boolean trackSizes = true;
+    
     // Need to provide the mapping
     @SuppressWarnings("unused")
     private Aggregation() {}
     
     public Aggregation(TimeFilter timeFilter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata, boolean includeGroupingContext,
                     boolean includeRecordId, boolean disableIndexOnlyDocuments, EventDataQueryFilter attrFilter) {
+        this(timeFilter, typeMetadata, compositeMetadata, includeGroupingContext, includeRecordId, disableIndexOnlyDocuments, attrFilter, true);
+    }
+    
+    public Aggregation(TimeFilter timeFilter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata, boolean includeGroupingContext,
+                    boolean includeRecordId, boolean disableIndexOnlyDocuments, EventDataQueryFilter attrFilter, boolean trackSizes) {
         Preconditions.checkNotNull(timeFilter);
         
         this.timeFilter = timeFilter;
@@ -45,6 +53,7 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
         this.includeRecordId = includeRecordId;
         this.attrFilter = attrFilter;
         this.disableIndexOnlyDocuments = disableIndexOnlyDocuments;
+        this.trackSizes = trackSizes;
     }
     
     @Override
@@ -53,12 +62,12 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
         
         // set the document context on the attribute filter
         if (attrFilter != null) {
-            attrFilter.setDocumentKey(docData.getKey());
+            attrFilter.startNewDocument(docData.getKey());
         }
         
         // Only load attributes for this document that fall within the expected date range
         Document d = new Document(docData.getKey(), docData.getDocKeys(), Iterators.filter(docData.getData().iterator(), timeFilter.getKeyValueTimeFilter()),
-                        this.typeMetadata, this.compositeMetadata, this.includeGroupingContext, this.includeRecordId, this.attrFilter);
+                        this.typeMetadata, this.compositeMetadata, this.includeGroupingContext, this.includeRecordId, this.attrFilter, true, trackSizes);
         
         if (log.isTraceEnabled()) {
             log.trace("disable index only docs? " + disableIndexOnlyDocuments + " , size is " + d.size());

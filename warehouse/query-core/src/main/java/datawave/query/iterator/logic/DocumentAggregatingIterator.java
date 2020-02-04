@@ -1,15 +1,10 @@
 package datawave.query.iterator.logic;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-
-import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -17,6 +12,10 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * This iterator is a regex ivarator that enables datatype filtering, time filtering, and field index document aggregation
@@ -89,6 +88,7 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
         } else {
             nextKey = null;
             nextValue = null;
+            document = null;
         }
     }
     
@@ -122,14 +122,23 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
         return document;
     }
     
-    /*
-     * (non-Javadoc)
-     * 
-     * @see datawave.query.iterator.IndexDocumentIterator#move(org.apache.accumulo.core.data.Key)
-     */
-    @Override
     public void move(Key pointer) throws IOException {
-        seek(new Range(pointer, true, seekRange.getEndKey(), seekRange.isEndKeyInclusive()), seekColumnFamilies, seekInclusive);
+        // check the current position
+        if (nextKey != null && nextKey.compareTo(pointer) >= 0) {
+            throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + nextKey + ", movekey=" + pointer);
+        }
+        
+        if (!getSource().hasTop()) {
+            // there is nothing beyond the current key
+            nextKey = null;
+            nextValue = null;
+            document = null;
+        } else if (getSource().getTopKey().compareTo(pointer) >= 0) {
+            // load that into next
+            next();
+        } else {
+            // we have to seek
+            seek(new Range(pointer, true, seekRange.getEndKey(), seekRange.isEndKeyInclusive()), seekColumnFamilies, seekInclusive);
+        }
     }
-    
 }

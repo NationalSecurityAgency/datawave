@@ -2,14 +2,24 @@ package datawave.webservice.common.remote;
 
 import com.codahale.metrics.Counter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
+import com.spotify.dns.LookupResult;
+import datawave.security.authorization.JWTTokenHandler;
+import datawave.security.authorization.JWTTokenHandler.TtlMode;
 import datawave.security.util.DnUtils;
-import datawave.webservice.security.JWTTokenHandler;
-import org.apache.http.*;
+import datawave.webservice.common.json.ObjectMapperDecorator;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -22,8 +32,12 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.security.JSSESecurityDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xbill.DNS.DClass;
 import org.xbill.DNS.ExtendedResolver;
 import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.TextParseException;
+import org.xbill.DNS.Type;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -35,6 +49,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyManagementException;
@@ -46,12 +61,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
  * A base class for services that need to use HTTPClient to make remote calls to a microservice.
  */
-abstract public class RemoteHttpService {
+public abstract class RemoteHttpService {
     protected final Logger log = LoggerFactory.getLogger(getClass());
     
     protected JWTTokenHandler jwtTokenHandler;
@@ -65,6 +81,9 @@ abstract public class RemoteHttpService {
     
     @Resource
     private ManagedExecutorService executorService;
+    
+    @Inject
+    protected ObjectMapperDecorator objectMapperDecorator;
     
     protected <T> T execute(HttpRequestBase request, IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws IOException {
         try {
@@ -86,8 +105,7 @@ abstract public class RemoteHttpService {
     
     @PostConstruct
     protected void init() {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new GuavaModule());
+        objectMapper = objectMapperDecorator.decorate(new ObjectMapper());
         
         if (useSrvDns()) {
             if (srvDnsServers() != null && !srvDnsServers().isEmpty()) {
@@ -112,7 +130,7 @@ abstract public class RemoteHttpService {
             X509Certificate[] certs = keyManager.getCertificateChain(alias);
             Key signingKey = keyManager.getPrivateKey(alias);
             
-            jwtTokenHandler = new JWTTokenHandler(certs[0], signingKey, 24, TimeUnit.HOURS, objectMapper);
+            jwtTokenHandler = new JWTTokenHandler(certs[0], signingKey, 24, TimeUnit.HOURS, TtlMode.RELATIVE_TO_CURRENT_TIME, objectMapper);
             
             ArrayList<Header> defaultHeaders = new ArrayList<>();
             defaultHeaders.add(new BasicHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType()));
@@ -128,6 +146,7 @@ abstract public class RemoteHttpService {
                     .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                     .setDefaultHeaders(defaultHeaders)
                     .setMaxConnTotal(maxConnections())
+                    .setMaxConnPerRoute(maxConnections())
                     .setRetryHandler(new DatawaveRetryHandler(retryCount(), unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .build();
@@ -163,23 +182,106 @@ abstract public class RemoteHttpService {
         });
     }
     
-    abstract protected boolean useSrvDns();
+    protected URIBuilder buildURI() throws TextParseException {
+        final String host = serviceHost();
+        final int port = servicePort();
+        URIBuilder builder = new URIBuilder();
+        builder.setScheme(serviceScheme());
+        if (useSrvDns()) {
+            List<LookupResult> results = dnsSrvResolver.resolve(host);
+            if (results != null && !results.isEmpty()) {
+                LookupResult result = results.get(0);
+                builder.setHost(result.host());
+                builder.setPort(result.port());
+                // Consul sends the hostname back in its own namespace. Although the A record is included in the
+                // "ADDITIONAL SECTION", Spotify SRV lookup doesn't translate, so we need to do the lookup manually.
+                if (result.host().endsWith(".consul.")) {
+                    Record[] newResults = new Lookup(result.host(), Type.A, DClass.IN).run();
+                    if (newResults != null && newResults.length > 0) {
+                        builder.setHost(newResults[0].rdataToString());
+                    } else {
+                        throw new IllegalArgumentException("Unable to resolve service host " + host + " -> " + result.host() + " -> ???");
+                    }
+                }
+            } else {
+                throw new IllegalArgumentException("Unable to resolve service host: " + host);
+            }
+        } else {
+            builder.setHost(host);
+            builder.setPort(port);
+        }
+        return builder;
+    }
     
-    abstract protected List<String> srvDnsServers();
+    public URIBuilder buildURI(String suffix) throws TextParseException {
+        if (suffix == null)
+            suffix = "";
+        return buildURI().setPath(serviceURI() + suffix);
+    }
     
-    abstract protected int srvDnsPort();
+    protected <T> T executeGetMethod(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        return executeGetMethod("", uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
+    }
     
-    abstract protected String serviceScheme();
+    protected <T> T executeGetMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        URIBuilder builder = buildURI();
+        builder.setPath(serviceURI() + uriSuffix);
+        uriCustomizer.accept(builder);
+        HttpGet getRequest = new HttpGet(builder.build());
+        requestCustomizer.accept(getRequest);
+        return execute(getRequest, resultConverter, errorSupplier);
+    }
     
-    abstract protected int maxConnections();
+    protected <T> T executePostMethod(Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        return executePostMethod("", uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
+    }
     
-    abstract protected int retryCount();
+    protected <T> T executePostMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
+                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        URIBuilder builder = buildURI();
+        builder.setPath(serviceURI() + uriSuffix);
+        uriCustomizer.accept(builder);
+        HttpPost postRequest = new HttpPost(builder.build());
+        requestCustomizer.accept(postRequest);
+        return execute(postRequest, resultConverter, errorSupplier);
+    }
     
-    abstract protected int unavailableRetryCount();
+    protected <T> T executePutMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPut> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+        URIBuilder builder = buildURI();
+        builder.setPath(serviceURI() + uriSuffix);
+        uriCustomizer.accept(builder);
+        HttpPut putRequest = new HttpPut(builder.build());
+        requestCustomizer.accept(putRequest);
+        return execute(putRequest, resultConverter, errorSupplier);
+    }
     
-    abstract protected int unavailableRetryDelay();
+    protected abstract String serviceHost();
     
-    abstract protected Counter retryCounter();
+    protected abstract int servicePort();
+    
+    protected abstract String serviceURI();
+    
+    protected abstract boolean useSrvDns();
+    
+    protected abstract List<String> srvDnsServers();
+    
+    protected abstract int srvDnsPort();
+    
+    protected abstract String serviceScheme();
+    
+    protected abstract int maxConnections();
+    
+    protected abstract int retryCount();
+    
+    protected abstract int unavailableRetryCount();
+    
+    protected abstract int unavailableRetryDelay();
+    
+    protected abstract Counter retryCounter();
     
     private static class DatawaveRetryHandler extends DefaultHttpRequestRetryHandler {
         private final int unavailableRetryCount;

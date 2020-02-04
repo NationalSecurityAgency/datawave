@@ -22,11 +22,11 @@ public class JexlSelectorNode extends JexlNode {
     private String selector = null;
     
     private JexlSelectorNode() {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
     }
     
     public JexlSelectorNode(Type type, String field, String selector) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.type = type;
         this.field = field;
         this.selector = selector;
@@ -36,7 +36,7 @@ public class JexlSelectorNode extends JexlNode {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         
-        if (field != null && field.length() > 0) {
+        if (field != null && !field.isEmpty()) {
             sb.append(field);
         } else {
             // Apply a special field name for "unfielded" queries
@@ -81,7 +81,7 @@ public class JexlSelectorNode extends JexlNode {
         return sb.toString();
     }
     
-    static public String convertToRegex(String s) {
+    public static String convertToRegex(String s) {
         StringBuilder sb = new StringBuilder();
         char[] chars = s.toCharArray();
         
@@ -95,21 +95,17 @@ public class JexlSelectorNode extends JexlNode {
                     
                     // For these chars, we need to escape them to do what the user wants
                     if (ESCAPE_CHARS.contains(chars[x])) {
-                        sb.append(UNICODE_BACKSLASH);
+                        sb.append(BACKSLASH);
                     }
                     
-                    if (chars[x] == BACKSLASH) {
-                        sb.append(UNICODE_BACKSLASH);
-                    } else {
-                        sb.append(chars[x]);
-                    }
+                    sb.append(chars[x]);
                 }
             } else if (currChar == '*') {
                 sb.append(".*?");
             } else if (currChar == '?') {
                 sb.append(".");
             } else if (currChar == '.') {
-                sb.append(UNICODE_BACKSLASH).append(currChar);
+                sb.append(BACKSLASH).append(currChar);
             } else if (currChar == '\'' && (x == 0 || (x > 0 && chars[x - 1] != BACKSLASH))) {
                 sb.append(BACKSLASH).append(currChar);
             } else {
@@ -122,11 +118,11 @@ public class JexlSelectorNode extends JexlNode {
             if (sb.length() > 1) {
                 // If we have more than two chars, we need to make sure we don't inadvertently undo the correct escape
                 if (!BACKSLASH.equals(sb.charAt(sb.length() - 2))) {
-                    sb.append(UNICODE_BACKSLASH);
+                    sb.append(BACKSLASH);
                 }
             } else {
                 // Is only a backslash, and as such we need to escape it
-                sb.append(UNICODE_BACKSLASH);
+                sb.append(BACKSLASH);
             }
         }
         

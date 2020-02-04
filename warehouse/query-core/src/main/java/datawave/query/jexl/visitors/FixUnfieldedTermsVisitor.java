@@ -1,22 +1,17 @@
 package datawave.query.jexl.visitors;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
+import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.lookups.FieldNameLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.Constants;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -39,6 +34,11 @@ import org.apache.commons.jexl2.parser.Node;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
 /**
  * Replace any node in the query which has an Identifier of {@link Constants#ANY_FIELD} with a conjunction (or) of discrete names for the given term from the
  * global index.
@@ -50,9 +50,15 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     protected JexlNode currentNode;
     
-    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields)
-                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        super(config, scannerFactory, helper, expansionFields, "Datawave Unfielded Lookup");
+    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, boolean expandFields,
+                    boolean expandValues, boolean expandNegations) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        super(config, scannerFactory, helper, null, expandFields, expandValues, expandNegations, "Datawave Unfielded Lookup");
+    }
+    
+    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
+                    boolean expandFields, boolean expandValues, boolean expandNegations) throws InstantiationException, IllegalAccessException,
+                    TableNotFoundException {
+        super(config, scannerFactory, helper, expansionFields, expandFields, expandValues, expandNegations, "Datawave Unfielded Lookup");
     }
     
     protected class FixUnfieldedTermsVisitorThreadFactory implements ThreadFactory {
@@ -79,16 +85,24 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         
     }
     
-    public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script)
-                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        return fixUnfieldedTree(config, scannerFactory, helper, script, null);
+    public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
+                    boolean expandFields, boolean expandValues, boolean expandNegations) throws InstantiationException, IllegalAccessException,
+                    TableNotFoundException {
+        return fixUnfieldedTree(config, scannerFactory, helper, script, null, expandFields, expandValues, expandNegations);
     }
     
     public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
-                    Set<String> expansionFields) throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        FixUnfieldedTermsVisitor visitor = new FixUnfieldedTermsVisitor(config, scannerFactory, helper, expansionFields);
-        
-        return (ASTJexlScript) script.jjtAccept(visitor, null);
+                    Set<String> expansionFields, boolean expandFields, boolean expandValues, boolean expandNegations) throws InstantiationException,
+                    IllegalAccessException, TableNotFoundException {
+        // if not expanding fields or values, then this is a noop
+        if (expandFields || expandValues) {
+            FixUnfieldedTermsVisitor visitor = new FixUnfieldedTermsVisitor(config, scannerFactory, helper, expansionFields, expandFields, expandValues,
+                            expandNegations);
+            
+            return (ASTJexlScript) script.jjtAccept(visitor, null);
+        } else {
+            return script;
+        }
     }
     
     @Override
@@ -144,7 +158,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         if (node.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
             log.warn(qe);
-            throw new CannotExpandUnfieldedTermFatalException(qe);
+            throw new EmptyUnfieldedTermExpansionException(qe);
         }
         
         return node;
@@ -212,6 +226,11 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         
+        // ignore already marked expressions
+        if (QueryPropertyMarker.instanceOf(node, null)) {
+            return node;
+        }
+        
         ASTAndNode newNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
         newNode.image = node.image;
         
@@ -231,90 +250,58 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node);
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        
-        concurrentExecution();
+        toggleNegation();
         try {
-            Object obj = expandFieldNames(node, data, false);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            log.error(e);
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
+            return expandFieldNames(node);
+        } finally {
+            toggleNegation();
         }
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node);
     }
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        
-        concurrentExecution();
+        toggleNegation();
         try {
-            Object obj = expandFieldNames(node, data, false);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
+            return expandFieldNames(node);
+        } finally {
+            toggleNegation();
         }
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node);
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node);
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node);
     }
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node);
     }
     
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        
-        concurrentExecution();
-        try {
-            Object obj = super.visit(node, data);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            log.error(e);
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
-        }
-    }
-    
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        
-        ASTReference ref = (ASTReference) super.visit(node, data);
-        if (JexlNodes.children(ref).length == 0) {
-            return null;
-        } else {
-            return ref;
-        }
+        // negation set in parent
+        return super.visit(node, data);
     }
     
     @Override
@@ -328,64 +315,37 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     }
     
     /**
-     * Given a JexlNode, get all grandchildren which follow a path from ASTReference to ASTIdentifier, returning true if the image of the ASTIdentifier is equal
-     * to {@link Constants#ANY_FIELD}
-     * 
-     * @param node
-     *            The starting node to check
-     * @return
-     */
-    protected boolean hasUnfieldedIdentifier(JexlNode node) {
-        if (null == node || 2 != node.jjtGetNumChildren()) {
-            return false;
-        }
-        
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            JexlNode child = node.jjtGetChild(i);
-            
-            if (null != child && child instanceof ASTReference) {
-                for (int j = 0; j < child.jjtGetNumChildren(); j++) {
-                    JexlNode grandChild = child.jjtGetChild(j);
-                    
-                    // If the grandchild and its image is non-null and equal to
-                    // the any-field identifier
-                    if (null != grandChild && grandChild instanceof ASTIdentifier && null != grandChild.image && Constants.ANY_FIELD.equals(grandChild.image)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        return false;
-    }
-    
-    /**
      * Performs a lookup in the global index for an ANYFIELD term and returns the field names where the term is found
-     * 
+     *
      * @param node
-     * @param positive
      * @return set of field names from the global index for the nodes value
      * @throws TableNotFoundException
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
     @Override
-    protected IndexLookupCallable buildIndexLookup(JexlNode node, boolean positive) throws TableNotFoundException, IOException, InstantiationException,
-                    IllegalAccessException {
+    protected IndexLookupCallable buildIndexLookup(JexlNode node) throws TableNotFoundException, IOException, InstantiationException, IllegalAccessException {
         // Using the datatype filter when expanding this term isn't really
         // necessary
-        IndexLookup lookup = ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, this.expansionFields, this.allTypes, helper);
+        IndexLookup lookup = ShardIndexQueryTableStaticMethods
+                        .normalizeQueryTerm(node, this.expansionFields, this.allTypes, config.getDatatypeFilter(), helper);
         
         if (lookup instanceof FieldNameLookup && config.getLimitAnyFieldLookups()) {
             lookup.setLimitToTerms(true);
             ((FieldNameLookup) lookup).setTypeFilterSet(config.getDatatypeFilter());
         }
-        return new IndexLookupCallable(lookup, node, positive);
+        return new IndexLookupCallable(lookup, node, false, true);
     }
     
+    /**
+     * Expand if we have an unfielded identifier
+     *
+     * @param node
+     * @return true if contains an unfielded identifier
+     */
     @Override
-    protected boolean isIdentifier(JexlNode node) {
-        return hasUnfieldedIdentifier(node);
+    protected boolean shouldExpand(JexlNode node) {
+        return (!negated || expandUnfieldedNegations) && hasUnfieldedIdentifier(node);
     }
     
 }

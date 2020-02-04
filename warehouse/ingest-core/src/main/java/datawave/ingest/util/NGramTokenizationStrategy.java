@@ -12,9 +12,8 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
-import org.apache.lucene.analysis.standard.StandardFilter;
+import org.apache.lucene.analysis.standard.ClassicFilter;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.util.Version;
 
 import com.google.common.hash.BloomFilter;
 
@@ -131,10 +130,11 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                     }
                     
                     // Create the tokenizer and tokenizing stream
-                    tokenizer = new NGramTokenizer(Version.LUCENE_46, reader, 2, maxNGramLength);
+                    tokenizer = new NGramTokenizer(2, maxNGramLength);
+                    tokenizer.setReader(reader);
                     tokenizer.reset();
-                    tokenStream = new StandardFilter(Version.LUCENE_46, tokenizer);
-                    tokenStream = new LowerCaseFilter(Version.LUCENE_46, tokenStream);
+                    tokenStream = new ClassicFilter(tokenizer);
+                    tokenStream = new LowerCaseFilter(tokenStream);
                     tokenStream.addAttribute(CharTermAttribute.class);
                     
                     // Reset the n-gram count

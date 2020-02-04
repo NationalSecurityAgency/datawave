@@ -1,29 +1,37 @@
 package datawave.query.predicate;
 
-import java.nio.charset.CharacterCodingException;
-import java.util.*;
-import java.util.Map.Entry;
-
-import com.google.common.collect.*;
+import com.google.common.base.Function;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
+import datawave.data.type.OneToManyNormalizerType;
+import datawave.data.type.Type;
+import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
-import datawave.query.attributes.Attribute;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.TypeAttribute;
-import datawave.query.util.Composite;
-import datawave.query.util.CompositeMetadata;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
+import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * 
@@ -39,8 +47,9 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     private AttributeFactory attrFactory;
     
     private Map<String,Multimap<String,String>> compositeToFieldMap;
+    private Map<String,Map<String,String>> compositeFieldSeparatorsByType;
     private MarkingFunctions markingFunctions;
-    private Multimap<String,Attribute<?>> compositeAttributes = ArrayListMultimap.create();
+    private Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
     
     private EventDataQueryFilter attrFilter;
     
@@ -49,62 +58,100 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions) {
         this.attrFactory = new AttributeFactory(typeMetadata);
         this.markingFunctions = markingFunctions;
-        this.compositeToFieldMap = compositeMetadata.getCompositeToFieldMap();
         this.attrFilter = attrFilter;
+        if (compositeMetadata != null) {
+            this.compositeToFieldMap = compositeMetadata.getCompositeFieldMapByType();
+            this.compositeFieldSeparatorsByType = compositeMetadata.getCompositeFieldSeparatorsByType();
+        }
     }
     
     @Override
     public Iterable<Entry<String,Attribute<? extends Comparable<?>>>> apply(Entry<Key,String> from) {
         String origFieldName = from.getValue();
         String modifiedFieldName = JexlASTHelper.deconstructIdentifier(origFieldName, false);
-        String groupingContext = JexlASTHelper.getGroupingContext(origFieldName);
-        
         Key key = from.getKey();
-        String ingestDatatype = this.getDatatypeFromKey(key);
-        Multimap<String,String> mm = this.compositeToFieldMap.get(ingestDatatype);
-        // mm looks something like this: {MAKE_COLOR=[MAKE,COLOR], COLOR_WHEELS=[COLOR,WHEELS]}
-        if (mm != null) {
-            Multimap<String,String> inverted = Multimaps.invertFrom(mm, ArrayListMultimap.<String,String> create());
-            // inverted, it looks like this: {MAKE=[MAKE_COLOR],WHEELS=[COLOR_WHEELS],COLOR=[MAKE_COLOR,COLOR_WHEELS]}
-            if (inverted.containsKey(modifiedFieldName)) {
-                for (String composite : inverted.get(modifiedFieldName)) {
-                    List<Attribute<?>> list = (List<Attribute<?>>) this.compositeAttributes.get(getCompositeAttributeKey(composite, groupingContext));
-                    List<String> components = (List<String>) this.compositeToFieldMap.get(ingestDatatype).get(composite);
-                    int idx = components.indexOf(modifiedFieldName);
-                    if (idx > list.size()) {
-                        idx = list.size();
-                    }
-                    list.add(idx, getFieldValue(modifiedFieldName, key));
-                    if (log.isDebugEnabled()) {
-                        log.debug("added to " + list + " in " + this.compositeAttributes);
-                    }
-                }
-            }
-        }
-        List<Entry<String,Attribute<? extends Comparable<?>>>> list = new ArrayList<>();
-        list.add(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(origFieldName, getFieldValue(modifiedFieldName, from.getKey())));
-        Set<String> goners = Sets.newHashSet();
         
-        for (String composite : this.compositeAttributes.keySet()) {
-            String compositeFieldMapKey = JexlASTHelper.deconstructIdentifier(composite, false);
-            if (this.compositeToFieldMap.get(ingestDatatype).get(compositeFieldMapKey).size() == this.compositeAttributes.get(composite).size()) {
-                try {
-                    Attribute<? extends Comparable<?>> combined = this.joinAttributes(composite, this.compositeAttributes.get(composite));
-                    list.add(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(composite, combined));
-                    log.debug("will be removing " + composite + " from compositeAttributes:" + this.compositeAttributes);
-                    goners.add(composite);
-                } catch (Exception e) {
-                    log.debug("could not join attributes:", e);
+        Attribute curAttr = getFieldValue(modifiedFieldName, key);
+        
+        // by default, we will return the attribute for the given entry
+        List<Entry<String,Attribute<? extends Comparable<?>>>> list = new ArrayList<>();
+        list.add(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(origFieldName, curAttr));
+        
+        // check to see if we can create any composite attributes using this entry
+        String ingestDatatype = this.getDatatypeFromKey(key);
+        Multimap<String,String> compToFieldMap = (this.compositeToFieldMap != null) ? this.compositeToFieldMap.get(ingestDatatype) : null;
+        if (compToFieldMap != null && !compToFieldMap.isEmpty()) {
+            Multimap<String,String> inverted = Multimaps.invertFrom(compToFieldMap, ArrayListMultimap.create());
+            // check to see if this entry can be used to create a composite
+            if (inverted.containsKey(modifiedFieldName)) {
+                // save a list of composites that could be built from this component
+                List<String> compsToBuild = new ArrayList<>(inverted.get(modifiedFieldName));
+                
+                // add this component to the list of composite components
+                componentFieldToValues.put(modifiedFieldName, curAttr);
+                
+                // try to build each of the composites with this component
+                for (String composite : compsToBuild) {
+                    List<Collection<Attribute<?>>> componentAttributes = new ArrayList<>();
+                    Collection<String> components = compToFieldMap.get(composite);
+                    for (String component : components) {
+                        if (component.equals(modifiedFieldName)) {
+                            // add the attribute from this entry
+                            componentAttributes.add(Arrays.asList(curAttr));
+                        } else if (componentFieldToValues.containsKey(component)) {
+                            // add the attributes for this component
+                            componentAttributes.add(componentFieldToValues.get(component));
+                        } else {
+                            // stop, we can't build this composite, as we're missing a component
+                            break;
+                        }
+                    }
+                    
+                    // if we have attributes for each component, we'll build composites
+                    if (componentAttributes.size() == components.size()) {
+                        list.addAll(buildCompositesFromComponents(
+                                        CompositeIngest.isOverloadedCompositeField(this.compositeToFieldMap.get(ingestDatatype), composite), composite,
+                                        componentAttributes, this.compositeFieldSeparatorsByType.get(ingestDatatype).get(composite)));
+                    }
                 }
             }
-        }
-        for (String goner : goners) {
-            this.compositeAttributes.removeAll(goner);
         }
         return list;
     }
     
+    private List<Entry<String,Attribute<? extends Comparable<?>>>> buildCompositesFromComponents(boolean isOverloadedComposite, String compositeField,
+                    List<Collection<Attribute<?>>> componentAttributes, String separator) {
+        return buildCompositesFromComponents(isOverloadedComposite, compositeField, null, componentAttributes, separator);
+    }
+    
+    private List<Entry<String,Attribute<? extends Comparable<?>>>> buildCompositesFromComponents(boolean isOverloadedComposite, String compositeField,
+                    Collection<Attribute<?>> currentAttributes, List<Collection<Attribute<?>>> componentAttributes, String separator) {
+        if (componentAttributes == null) {
+            // finally create the composite from what we have
+            try {
+                return Arrays.asList(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(compositeField,
+                                joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
+            } catch (Exception e) {
+                log.debug("could not join attributes:", e);
+            }
+        } else {
+            List<Entry<String,Attribute<? extends Comparable<?>>>> compositeAttributes = new ArrayList<>();
+            Collection<Attribute<?>> compAttrs = componentAttributes.get(0);
+            for (Attribute<?> compAttr : compAttrs) {
+                List<Attribute<?>> attrs = (currentAttributes != null) ? new ArrayList<>(currentAttributes) : new ArrayList<>();
+                attrs.add(compAttr);
+                compositeAttributes.addAll(buildCompositesFromComponents(isOverloadedComposite, compositeField, attrs,
+                                (componentAttributes.size() > 1) ? componentAttributes.subList(1, componentAttributes.size()) : null, separator));
+            }
+            return compositeAttributes;
+        }
+        return new ArrayList<>();
+    }
+    
     public String getCompositeAttributeKey(String composite, String grouping) {
+        if (grouping == null || grouping.isEmpty()) {
+            return composite;
+        }
         return composite + JexlASTHelper.GROUPING_CHARACTER_SEPARATOR + grouping;
     }
     
@@ -136,9 +183,9 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         }
     }
     
-    public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in) throws Exception {
+    public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite, String separator) throws Exception {
         Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-        String[] dataList = new String[0];
+        List<String> dataList = new ArrayList<>();
         long timestamp = 0;
         boolean toKeep = false;
         // use the metadata from the first attribute being merged
@@ -149,92 +196,88 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             metadata = attribute.getMetadata();
         }
         for (Attribute<?> attr : in) {
-            if (attr.isToKeep()) {
+            if (attr.isToKeep() && !isOverloadedComposite) {
                 toKeep = true;
             }
             if (attr instanceof Attributes) {
                 Attributes attrs = (Attributes) attr;
                 int newAttributeCount = attrs.size();
-                int originalDataListSize = dataList.length;
+                int originalDataListSize = dataList.size();
                 if (newAttributeCount > 0) {
-                    if (dataList.length == 0) {
-                        dataList = new String[newAttributeCount];
-                        int i = 0;
-                        for (Attribute<?> a : attrs.getAttributes()) {
-                            dataList[i++] = attributeValue(a) + Composite.END_SEPARATOR;
-                        }
+                    if (dataList.isEmpty()) {
+                        dataList.addAll(attributeValues(attrs));
                     } else {
-                        // resize the dataList array - dataList.length and newAttributeCount are each > 0
-                        String[] resizedDataList = new String[dataList.length * newAttributeCount];
-                        int count = resizedDataList.length / dataList.length;
-                        for (int i = 0; i < count; i++) {
-                            System.arraycopy(dataList, 0, resizedDataList, i * dataList.length, dataList.length);
-                        }
-                        dataList = resizedDataList;
-                        
-                        int attributeIndex = 0;
-                        List<Attribute<?>> attributeList = Lists.newArrayList(attrs.getAttributes());
-                        for (int i = 0; i < dataList.length; i++) {
-                            attributeIndex = i / originalDataListSize;
-                            
-                            Attribute<?> a = attributeList.get(attributeIndex);
-                            if (dataList[i] == null) {
-                                dataList[i] = attributeValue(a) + Composite.END_SEPARATOR;
-                            } else if (dataList[i].length() > 0) {
-                                dataList[i] += Composite.START_SEPARATOR + attributeValue(a) + Composite.END_SEPARATOR;
+                        for (int i = 0; i < originalDataListSize; i++) {
+                            String base = dataList.remove(0);
+                            if (base == null) {
+                                dataList.addAll(attributeValues(attrs));
+                            } else if (!base.isEmpty()) {
+                                for (String value : attributeValues(attrs))
+                                    dataList.add(base + separator + value);
                             } else {
-                                dataList[i] += attributeValue(a) + Composite.END_SEPARATOR;
+                                for (String value : attributeValues(attrs))
+                                    dataList.add(base + value);
                             }
-                            timestamp = Math.max(timestamp, attr.getTimestamp());
-                            columnVisibilities.add(attr.getColumnVisibility());
-                            
+                            timestamp = Math.max(timestamp, attrs.getTimestamp());
+                            columnVisibilities.add(attrs.getColumnVisibility());
                         }
                     }
                 }
             } else {
-                
                 if (log.isTraceEnabled()) {
-                    log.trace("Join for data list size: " + dataList.length);
+                    log.trace("Join for data list size: " + dataList.size());
                 }
-                if (dataList.length == 0) {
-                    dataList = new String[] {""};
-                }
-                if (dataList.length == 0) {
-                    dataList = new String[] {""};
-                }
-                
-                for (int i = 0; i < dataList.length; i++) { // append to everything in the list
-                    if (dataList[i].length() > 0) {
-                        dataList[i] += Composite.START_SEPARATOR + attributeValue(attr) + Composite.END_SEPARATOR;
-                    } else {
-                        dataList[i] += attributeValue(attr);
+                if (dataList.isEmpty()) {
+                    dataList.addAll(attributeValues(attr));
+                } else {
+                    int originalDataListSize = dataList.size();
+                    for (int i = 0; i < originalDataListSize; i++) { // append to everything in the list
+                        String base = dataList.remove(0);
+                        if (!base.isEmpty()) {
+                            for (String value : attributeValues(attr))
+                                dataList.add(base + separator + value);
+                        } else {
+                            for (String value : attributeValues(attr))
+                                dataList.add(base + value);
+                        }
                     }
-                    
                 }
                 timestamp = Math.max(timestamp, attr.getTimestamp());
                 columnVisibilities.add(attr.getColumnVisibility());
             }
         }
-        log.debug("dataList is " + Arrays.toString(dataList));
+        log.debug("dataList is " + dataList);
         ColumnVisibility combinedColumnVisibility = this.markingFunctions.combine(columnVisibilities);
         metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), new Text(), combinedColumnVisibility, timestamp);
-        if (dataList.length == 1) {
-            return this.attrFactory.create(compositeName, dataList[0], metadata, toKeep);
+        if (dataList.size() == 1) {
+            return this.attrFactory.create(compositeName, dataList.get(0), metadata, toKeep, true);
         } else {
             Attributes attributes = new Attributes(toKeep);
             for (String d : dataList) {
-                attributes.add(this.attrFactory.create(compositeName, d, metadata, toKeep));
+                attributes.add(this.attrFactory.create(compositeName, d, metadata, toKeep, true));
             }
             return attributes;
         }
     }
     
-    private String attributeValue(Attribute attr) {
+    private List<String> attributeValues(Attributes attrs) {
+        List<String> attributeValues = new ArrayList<>();
+        for (Attribute attr : attrs.getAttributes()) {
+            List<String> attrValues = attributeValues(attr);
+            if (attrValues != null && !attrValues.isEmpty())
+                attributeValues.addAll(attrValues);
+        }
+        return attributeValues;
+    }
+    
+    private List<String> attributeValues(Attribute attr) {
         if (attr instanceof TypeAttribute) {
-            return ((TypeAttribute) attr).getType().getNormalizedValue();
+            Type type = ((TypeAttribute) attr).getType();
+            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType) type).getNormalizedValues() : Arrays
+                            .asList(type.getNormalizedValue());
         } else {
             new Exception().printStackTrace(System.err);
-            return String.valueOf(attr.getData());
+            return Arrays.asList(String.valueOf(attr.getData()));
         }
     }
     

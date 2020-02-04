@@ -23,12 +23,12 @@ import com.google.common.collect.Multimap;
  */
 public interface ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends DataTypeHandler<KEYIN> {
     
-    public static final Value NULL_VALUE = new Value(new byte[0]);
-    public static final String FULL_CONTENT_LOCALITY_NAME = "fullcontent";
-    public static final String FULL_CONTENT_COLUMN_FAMILY = "d";
+    Value NULL_VALUE = new Value(new byte[0]);
+    String FULL_CONTENT_LOCALITY_NAME = "fullcontent";
+    String FULL_CONTENT_COLUMN_FAMILY = "d";
     /* TODO Make a clearer definition of full content indexers */
-    public static final String TERM_FREQUENCY_LOCALITY_NAME = "termfrequency";
-    public static final Text TERM_FREQUENCY_COLUMN_FAMILY = new Text("tf");
+    String TERM_FREQUENCY_LOCALITY_NAME = "termfrequency";
+    Text TERM_FREQUENCY_COLUMN_FAMILY = new Text("tf");
     
     long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)

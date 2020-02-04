@@ -205,7 +205,7 @@ public class EventFields implements SetMultimap<String,FieldValue>, KryoSerializ
     public String toString() {
         StringBuilder buf = new StringBuilder();
         for (Entry<String,FieldValue> entry : map.entries()) {
-            buf.append("\tkey: ").append(entry.getKey()).append(" -> ").append(entry.getValue().toString()).append("\n");
+            buf.append("\tkey: ").append(entry.getKey()).append(" -> ").append(entry.getValue()).append("\n");
         }
         return buf.toString();
     }

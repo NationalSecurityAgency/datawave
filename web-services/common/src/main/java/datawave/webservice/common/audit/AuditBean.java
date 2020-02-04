@@ -32,10 +32,10 @@ public class AuditBean {
     private static final Logger log = Logger.getLogger(AuditBean.class);
     
     @Inject
-    private AuditParameters auditParameters;
+    private AuditService auditService;
     
     @Inject
-    private Auditor auditor;
+    private AuditParameterBuilder auditParameterBuilder;
     
     @POST
     @Path("/audit")
@@ -43,12 +43,10 @@ public class AuditBean {
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
     @GZIP
-    public VoidResponse audit(MultivaluedMap<String,String> parameters) {
+    public VoidResponse auditRest(MultivaluedMap<String,String> parameters) {
         VoidResponse response = new VoidResponse();
         try {
-            auditParameters.clear();
-            auditParameters.validate(parameters);
-            audit(auditParameters);
+            auditService.audit(auditParameterBuilder.validate(parameters));
             return response;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.AUDITING_ERROR, e);
@@ -59,7 +57,7 @@ public class AuditBean {
         }
     }
     
-    public void audit(AuditParameters msg) throws Exception {
-        auditor.audit(msg);
+    public String audit(MultivaluedMap<String,String> parameters) throws Exception {
+        return auditService.audit(auditParameterBuilder.convertAndValidate(parameters));
     }
 }

@@ -12,7 +12,7 @@ import org.apache.log4j.Logger;
  * A constructed trie which can scan a string for tokens and return a ttl value. A TtlTrie is an immutable object, and as such is inherently threadsafe.
  */
 public final class TokenTtlTrie {
-    private final static Logger log = Logger.getLogger(TokenTtlTrie.class);
+    private static final Logger log = Logger.getLogger(TokenTtlTrie.class);
     protected static final short DELIMITER_CHAR_CLASS = -1;
     protected static final short UNRECOGNIZED_CHAR_CLASS = -2;
     protected static final int REJECT_TOKEN = -1;
@@ -87,11 +87,21 @@ public final class TokenTtlTrie {
         private final List<Long> stateTtlList = new ArrayList<>();
         private final List<Integer> statePriorityList = new ArrayList<>();
         private final Set<Byte> delimiters = new HashSet<>();
+        private boolean isMerge;
+        
+        public enum MERGE_MODE {
+            ON, OFF
+        };
         
         Builder() {
-            transitionMaps.add(new HashMap<Byte,Integer>());
+            this(MERGE_MODE.OFF);
+        }
+        
+        Builder(MERGE_MODE mergeMode) {
+            transitionMaps.add(new HashMap<>());
             stateTtlList.add(null);
             statePriorityList.add(null);
+            this.isMerge = mergeMode.equals(MERGE_MODE.ON);
         }
         
         public int size() {
@@ -121,16 +131,20 @@ public final class TokenTtlTrie {
                     curState = transMap.get(b);
                 } else {
                     curState = transitionMaps.size();
-                    transitionMaps.add(new HashMap<Byte,Integer>());
+                    transitionMaps.add(new HashMap<>());
                     stateTtlList.add(null);
                     statePriorityList.add(null);
                     transMap.put(b, curState);
                 }
             }
             int myPriority = ++entryCount;
+            // if this is a merge of two configs, override ttl with latest seen
             if (stateTtlList.get(curState) == null) {
                 stateTtlList.set(curState, ttl);
                 statePriorityList.set(curState, myPriority);
+            } else if (isMerge) {
+                // maintain original priority just update the ttl
+                stateTtlList.set(curState, ttl);
             } else {
                 throw new IllegalArgumentException(String.format("Token '%s'(#%d) already specified at index %d", new String(token),
                                 statePriorityList.get(curState), myPriority));

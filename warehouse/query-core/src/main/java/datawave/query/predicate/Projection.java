@@ -24,15 +24,14 @@ public class Projection implements Predicate<String> {
     private boolean useWhitelist = false, useBlacklist = false;
     private boolean initialized = false;
     
-    public Projection() {}
-    
     public void setWhitelist(Set<String> whiteListFields) {
         if (this.initialized) {
             throw new RuntimeException("This Projection instance was already initialized");
         }
         
         this.useWhitelist = true;
-        this.whitelist = Sets.newHashSet(whiteListFields);
+        // do not make a copy of the incoming whiteListFields. It could be a UniversalSet
+        this.whitelist = whiteListFields;
         this.initialized = true;
     }
     

@@ -26,7 +26,6 @@ import datawave.query.language.tree.NotNode;
 import datawave.query.language.tree.OrNode;
 import datawave.query.language.tree.SoftAndNode;
 
-import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
@@ -48,10 +47,6 @@ import org.apache.lucene.search.Query;
  * It takes in consideration if the children is a {@link ModifierQueryNode} to define the {@link BooleanClause}.
  */
 public class BooleanQueryNodeBuilder implements QueryBuilder {
-    
-    public BooleanQueryNodeBuilder() {
-        // empty constructor
-    }
     
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         BooleanQueryNode booleanNode = (BooleanQueryNode) queryNode;

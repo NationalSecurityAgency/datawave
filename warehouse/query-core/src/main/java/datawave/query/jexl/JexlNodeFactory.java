@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -18,10 +19,43 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
-import org.apache.commons.jexl2.parser.*;
-
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.apache.commons.jexl2.parser.ASTAdditiveNode;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTAssignment;
+import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
+import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
+import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
+import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
+import org.apache.commons.jexl2.parser.ASTDivNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEmptyFunction;
+import org.apache.commons.jexl2.parser.ASTFalseNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTMethodNode;
+import org.apache.commons.jexl2.parser.ASTModNode;
+import org.apache.commons.jexl2.parser.ASTMulNode;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTNotNode;
+import org.apache.commons.jexl2.parser.ASTNullLiteral;
+import org.apache.commons.jexl2.parser.ASTNumberLiteral;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.ASTTrueNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 /**
  * Factory methods that can create JexlNodes
@@ -33,7 +67,7 @@ public class JexlNodeFactory {
     public static final Set<Class<?>> REAL_NUMBERS = Sets.<Class<?>> newHashSet(BigDecimal.class, Double.class, Float.class);
     public static final Set<Class<?>> NATURAL_NUMBERS = Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class, Short.class, Byte.class);
     
-    public static enum ContainerType {
+    public enum ContainerType {
         OR_NODE, AND_NODE
     }
     
@@ -47,10 +81,28 @@ public class JexlNodeFactory {
      *            A mapping of fields to values. If the values for a field is empty, then the original regex should be used.
      * @return A new sub query
      */
-    public static JexlNode createNodeTreeFromFieldsToValues(ContainerType containerType, JexlNode node, JexlNode orgNode, IndexLookupMap fieldsToValues) {
+    public static JexlNode createNodeTreeFromFieldsToValues(ContainerType containerType, JexlNode node, JexlNode orgNode, IndexLookupMap fieldsToValues,
+                    boolean expandFields, boolean expandValues) {
+        // do nothing if not expanding fields or values
+        if (!expandFields && !expandValues) {
+            return orgNode;
+        }
+        
         // no expansions needed if the fieldname threshold is exceeded
         if (fieldsToValues.isKeyThresholdExceeded()) {
             return new ExceededTermThresholdMarkerJexlNode(orgNode);
+        }
+        
+        // collapse the value sets if not expanding fields
+        if (!expandFields) {
+            ValueSet allValues = new ValueSet(-1);
+            for (ValueSet values : fieldsToValues.values()) {
+                allValues.addAll(values);
+            }
+            fieldsToValues.clear();
+            for (String identifier : JexlASTHelper.getIdentifierNames(orgNode)) {
+                fieldsToValues.put(identifier, allValues);
+            }
         }
         
         Set<String> fields = fieldsToValues.keySet();
@@ -63,11 +115,23 @@ public class JexlNodeFactory {
         for (String field : fields) {
             ValueSet valuesForField = fieldsToValues.get(field);
             
+            // if not expanding values, then reuse the original node with simply a new field name
+            if (!expandValues) {
+                JexlNode child = RebuildingVisitor.copy(orgNode);
+                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
+                    identifier.image = field;
+                }
+                parentNode.jjtAddChild(child, parentNodeChildCount);
+                child.jjtSetParent(parentNode);
+                
+                parentNodeChildCount++;
+            }
+            
             // a threshold exceeded set of values requires using the original
             // node with a new fieldname, wrapped with a marker node
-            if (valuesForField.isThresholdExceeded()) {
+            else if (valuesForField.isThresholdExceeded()) {
                 // create a set of nodes wrapping each pattern
-                List<String> patterns = new ArrayList<String>(fieldsToValues.getPatterns() == null ? new ArrayList<String>() : fieldsToValues.getPatterns());
+                List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
                 if (patterns.isEmpty()) {
                     JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(orgNode, field));
                     
@@ -1179,7 +1243,7 @@ public class JexlNodeFactory {
     }
     
     /**
-     * Create a new ASTGENode from the given node (possible an OR Node) and value
+     * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
      * @param node
@@ -1191,13 +1255,13 @@ public class JexlNodeFactory {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode kid = node.jjtGetChild(i);
             Set<String> identifiers = JexlASTHelper.getIdentifierNames(kid);
-            if (identifiers.size() > 0) {
+            if (!identifiers.isEmpty()) {
                 JexlNode newNode = JexlNodeFactory.shallowCopy(original);
                 JexlNode n = buildUntypedNewNode(newNode, buildIdentifier(identifiers.iterator().next()), fieldValue);
                 list.add(n);
             }
         }
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             return createOrNode(list);
         } else {
             JexlNode newNode = JexlNodeFactory.shallowCopy(original);
@@ -1206,7 +1270,7 @@ public class JexlNodeFactory {
     }
     
     /**
-     * Create a new ASTGENode from the given node (possible an OR Node) and value
+     * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
      * @param node
@@ -1223,14 +1287,14 @@ public class JexlNodeFactory {
             JexlNode kid = node.jjtGetChild(i);
             list.add(buildUntypedNewNode(newNode, (ASTIdentifier) JexlNodeFactory.shallowCopy(kid), fieldValue));
         }
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             return createOrNode(list);
         }
         return null;
     }
     
     /**
-     * Create a new ASTGENode from the given node (possible an OR Node) and value
+     * Create a new JexlNode from the given node (possible an OR Node) and value
      *
      * @param original
      * @param node
@@ -1247,7 +1311,7 @@ public class JexlNodeFactory {
             JexlNode kid = node.jjtGetChild(i);
             list.add(buildUntypedNewNode(newNode, (ASTIdentifier) JexlNodeFactory.shallowCopy(kid), fieldValue));
         }
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             return createOrNode(list);
         } else {
             return buildUntypedNewNode(newNode, buildIdentifier(node.image), fieldValue);
@@ -1270,16 +1334,20 @@ public class JexlNodeFactory {
         ASTIdentifier nsNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
         nsNode.image = namespace;
         newNode.jjtAddChild(nsNode, childIndex++);
+        nsNode.jjtSetParent(newNode);
         ASTIdentifier functionNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
         functionNode.image = function;
         newNode.jjtAddChild(functionNode, childIndex++);
+        functionNode.jjtSetParent(newNode);
         ASTIdentifier fieldNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
         fieldNode.image = field;
         newNode.jjtAddChild(fieldNode, childIndex++);
+        fieldNode.jjtSetParent(newNode);
         for (int i = 0; i < args.length; i++) {
             ASTStringLiteral literal = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
             literal.image = args[i].toString();
-            newNode.jjtAddChild(JexlNodeFactory.wrap(literal), childIndex++);
+            newNode.jjtAddChild(JexlNodeFactory.wrap(literal), childIndex);
+            newNode.jjtGetChild(childIndex++).jjtSetParent(newNode);
         }
         return JexlNodeFactory.wrap(newNode);
     }

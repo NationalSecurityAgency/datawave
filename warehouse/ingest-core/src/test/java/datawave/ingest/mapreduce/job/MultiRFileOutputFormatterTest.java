@@ -12,10 +12,10 @@ import java.util.Set;
 
 import datawave.common.test.logging.CommonTestAppender;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -35,7 +35,6 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,7 +44,7 @@ import org.powermock.api.easymock.PowerMock;
 public class MultiRFileOutputFormatterTest {
     
     private static final String JOB_ID = "job_201109071404_1";
-    private List<String> filenames = new ArrayList<String>();
+    private List<String> filenames = new ArrayList<>();
     protected static final Logger logger = Logger.getLogger(MultiRFileOutputFormatterTest.class);
     protected static Map<String,String> mockedConfiguration = new HashMap<>();
     
@@ -86,60 +85,46 @@ public class MultiRFileOutputFormatterTest {
         MultiRFileOutputFormatterTest.logger.info(String.format("createMockConfiguration: %d", mocked.hashCode()));
         
         mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = (String) EasyMock.getCurrentArguments()[1];
-                
-                MultiRFileOutputFormatterTest.mockedConfiguration.put(key, value);
-                
-                return null;
-            }
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = (String) EasyMock.getCurrentArguments()[1];
             
+            MultiRFileOutputFormatterTest.mockedConfiguration.put(key, value);
+            
+            return null;
         }).anyTimes();
         
         mocked.setStrings(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            if (2 <= EasyMock.getCurrentArguments().length) {
                 
-                if (2 <= EasyMock.getCurrentArguments().length) {
+                String key = (String) EasyMock.getCurrentArguments()[0];
+                String[] values = new String[EasyMock.getCurrentArguments().length - 1];
+                
+                for (int index = 1; index <= values.length; index++) {
                     
-                    String key = (String) EasyMock.getCurrentArguments()[0];
-                    String[] values = new String[EasyMock.getCurrentArguments().length - 1];
-                    
-                    for (int index = 1; index <= values.length; index++) {
-                        
-                        values[index - 1] = (String) EasyMock.getCurrentArguments()[index];
-                    }
-                    
-                    MultiRFileOutputFormatterTest.mockedConfiguration.put(key, StringUtils.arrayToString(values));
+                    values[index - 1] = (String) EasyMock.getCurrentArguments()[index];
                 }
-                return null;
+                
+                MultiRFileOutputFormatterTest.mockedConfiguration.put(key, StringUtils.arrayToString(values));
             }
-            
+            return null;
         }).anyTimes();
         
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = (String) EasyMock.getCurrentArguments()[1];
+            
+            if (MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = (String) EasyMock.getCurrentArguments()[1];
-                
-                if (MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                    
-                    value = MultiRFileOutputFormatterTest.mockedConfiguration.get(key);
-                }
-                
-                return value;
+                value = MultiRFileOutputFormatterTest.mockedConfiguration.get(key);
             }
+            
+            return value;
         }).anyTimes();
         
         PowerMock.replay(mocked);
@@ -390,20 +375,20 @@ public class MultiRFileOutputFormatterTest {
         return new MultiRFileOutputFormatter() {
             @Override
             protected Set<String> getTableList() {
-                Set<String> tables = new HashSet<String>();
-                tables.add("shard");
-                tables.add("shardIndex");
+                Set<String> tables = new HashSet<>();
+                tables.add(TableName.SHARD);
+                tables.add(TableName.SHARD_INDEX);
                 return tables;
             }
             
             @Override
             protected void setTableIdsAndConfigs() {
-                tableConfigs = new HashMap<String,ConfigurationCopy>();
-                tableConfigs.put("shard", null);
-                tableConfigs.put("shardIndex", null);
-                tableIds = new HashMap<String,String>();
-                tableIds.put("shard", "1");
-                tableIds.put("shardIndex", "2");
+                tableConfigs = new HashMap<>();
+                tableConfigs.put(TableName.SHARD, null);
+                tableConfigs.put(TableName.SHARD_INDEX, null);
+                tableIds = new HashMap<>();
+                tableIds.put(TableName.SHARD, "1");
+                tableIds.put(TableName.SHARD_INDEX, "2");
             }
             
             @Override
@@ -413,7 +398,7 @@ public class MultiRFileOutputFormatterTest {
             
             @Override
             protected Map<Text,String> getShardLocations(String tableName) throws IOException {
-                Map<Text,String> locations = new HashMap<Text,String>();
+                Map<Text,String> locations = new HashMap<>();
                 locations.put(new Text("20100101_1"), "server1");
                 locations.put(new Text("20100101_2"), "server2");
                 return locations;
@@ -462,8 +447,8 @@ public class MultiRFileOutputFormatterTest {
         formatter = createFormatter();
         conf = new Configuration();
         conf.set("mapred.output.dir", "/tmp");
-        conf.set(MultiRFileOutputFormatter.CONFIGURED_TABLE_NAMES, "shard,shardIndex");
-        Map<String,Path> shardedTableMapFiles = new HashMap<String,Path>();
+        conf.set(MultiRFileOutputFormatter.CONFIGURED_TABLE_NAMES, TableName.SHARD + ',' + TableName.SHARD_INDEX);
+        Map<String,Path> shardedTableMapFiles = new HashMap<>();
         shardedTableMapFiles.put("shard", new Path("/tmp/shard"));
         ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
     }
@@ -564,7 +549,7 @@ public class MultiRFileOutputFormatterTest {
     }
     
     private void writeShardEntry(RecordWriter<BulkIngestKey,Value> writer, int shardId) throws IOException, InterruptedException {
-        writer.write(new BulkIngestKey(new Text("shard"), new Key("20100101_" + shardId, "bla", "bla")), new Value(new byte[0]));
+        writer.write(new BulkIngestKey(new Text(TableName.SHARD), new Key("20100101_" + shardId, "bla", "bla")), new Value(new byte[0]));
     }
     
     private void assertNumFileNames(int expectedNumFiles) {

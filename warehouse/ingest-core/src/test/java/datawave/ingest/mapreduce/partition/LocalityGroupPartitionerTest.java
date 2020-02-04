@@ -4,7 +4,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class LocalityGroupPartitionerTest {
     

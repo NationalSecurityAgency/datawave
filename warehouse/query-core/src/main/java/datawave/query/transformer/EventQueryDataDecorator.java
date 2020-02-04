@@ -31,7 +31,7 @@ public class EventQueryDataDecorator {
         for (Map.Entry<String,String> entry : this.patternMap.entrySet()) {
             // Find fieldNames which match the current pattern
             Collection<FieldBase> collectionSourceOfData = data.get(entry.getKey());
-            if (collectionSourceOfData != null && collectionSourceOfData.size() > 0) {
+            if (collectionSourceOfData != null && !collectionSourceOfData.isEmpty()) {
                 
                 // multiple value source fields for the substitution value not supported -- use the first one
                 Iterator<FieldBase> collectionSourceItr = collectionSourceOfData.iterator();

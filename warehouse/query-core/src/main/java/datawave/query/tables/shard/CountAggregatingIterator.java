@@ -7,13 +7,12 @@ import java.util.Set;
 
 import datawave.core.iterators.ResultCountingIterator;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections.Transformer;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
 import com.esotericsoftware.kryo.Kryo;

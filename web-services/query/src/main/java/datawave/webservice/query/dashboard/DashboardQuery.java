@@ -4,7 +4,6 @@ import java.text.ParseException;
 import java.util.Date;
 
 import datawave.webservice.common.extjs.ExtJsResponse;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.runner.QueryExecutor;
@@ -22,6 +21,7 @@ public class DashboardQuery {
     private static final boolean trace = false;
     private static final int pageSize = 10000;
     private static final int pageTimeout = -1;
+    private static final Long maxResultsOverride = null;
     
     private DashboardQuery() {}
     
@@ -32,6 +32,6 @@ public class DashboardQuery {
         return (ExtJsResponse) queryExecutor.createQueryAndNext(
                         logicName,
                         QueryParametersImpl.paramsToMap(logicName, queryString, queryName, columnVisibility, beginDate, endDate, auths,
-                                        DateUtils.addDays(now, 1), pageSize, pageTimeout, persistence, parameters, trace));
+                                        DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride, persistence, parameters, trace));
     }
 }

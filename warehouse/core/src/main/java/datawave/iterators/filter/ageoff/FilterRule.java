@@ -2,6 +2,7 @@ package datawave.iterators.filter.ageoff;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 /**
@@ -14,23 +15,32 @@ public interface FilterRule {
      * @param options
      *            {@code Map} object
      */
-    public void init(FilterOptions options);
+    void init(FilterOptions options);
+    
+    /**
+     * Used to initialize the the {@code FilterRule} implementation
+     *
+     * @param options
+     *            {@code Map} object
+     * @param iterEnv
+     */
+    void init(FilterOptions options, IteratorEnvironment iterEnv);
     
     /**
      * Used to test a {@code Key/Value} pair, and returns {@code true} if it is accepted
      * 
      * @return {@code boolean} value.
      */
-    public boolean accept(SortedKeyValueIterator<Key,Value> iter);
+    boolean accept(SortedKeyValueIterator<Key,Value> iter);
     
-    public FilterRule decorate(Object decoratedObject);
+    FilterRule decorate(Object decoratedObject);
     
-    public FilterRule deepCopy(AgeOffPeriod period);
+    FilterRule deepCopy(AgeOffPeriod period);
     
     /**
      * @param scanStart
      * @return
      */
-    public FilterRule deepCopy(long scanStart);
+    FilterRule deepCopy(long scanStart);
     
 }

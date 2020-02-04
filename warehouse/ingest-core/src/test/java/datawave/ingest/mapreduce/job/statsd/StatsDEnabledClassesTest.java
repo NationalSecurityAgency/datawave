@@ -10,7 +10,19 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.RawComparator;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.InputFormat;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobID;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.OutputCommitter;
+import org.apache.hadoop.mapreduce.OutputFormat;
+import org.apache.hadoop.mapreduce.Partitioner;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.StatusReporter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.security.Credentials;
 import org.junit.Assert;
@@ -21,14 +33,12 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.apache.hadoop.mapreduce.Mapper.*;
-
 /**
  * Created on 4/27/16.
  */
 public class StatsDEnabledClassesTest {
     
-    public static enum TestCounters {
+    public enum TestCounters {
         COUNTER1, COUNTER2
     }
     
@@ -72,7 +82,7 @@ public class StatsDEnabledClassesTest {
         helper.getCounter(context, "CounterGroup2", "Counter2").increment(11);
         helper.getCounter(context, "CounterGroup3", "Counter2").increment(12);
         
-        Assert.assertEquals(new ArrayList(Arrays.asList(new String[] {"count(TestGroup_COUNTER1,10)", "time(MyGroup3_MyCounter2,12)"})), client.messages);
+        Assert.assertEquals(new ArrayList(Arrays.asList("count(TestGroup_COUNTER1,10)", "time(MyGroup3_MyCounter2,12)")), client.messages);
         client.messages.clear();
         
         helper.close();
@@ -285,11 +295,6 @@ public class StatsDEnabledClassesTest {
             @Override
             public String getJobName() {
                 return null;
-            }
-            
-            @Override
-            public boolean userClassesTakesPrecedence() {
-                return false;
             }
             
             @Override

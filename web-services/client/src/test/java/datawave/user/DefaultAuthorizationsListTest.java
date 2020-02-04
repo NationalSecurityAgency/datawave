@@ -10,7 +10,7 @@ import java.util.TreeSet;
 import com.google.common.collect.Sets;
 import datawave.user.AuthorizationsListBase.SubjectIssuerDNPair;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,7 +80,8 @@ public class DefaultAuthorizationsListTest {
         // toString() matching is not a good test when the underlying data structure does not use ordered collections.
         // tested individual pieces above should suffice
         // String toStringExpected =
-        // "userAuths=[dnAuths1, dnAuths2], entityAuths=[DN<issuerDN>=[dnAuths1, dnAuths2]DN2<issuerDN2>=[dnAuths1, dnAuths2]], authMapping=[authMapKey->(dnAuths1,dnAuths2,), authMapKey2->(dnAuths1,dnAuths2,), ]";
+        // "userAuths=[dnAuths1, dnAuths2], entityAuths=[DN<issuerDN>=[dnAuths1, dnAuths2]DN2<issuerDN2>=[dnAuths1, dnAuths2]],
+        // authMapping=[authMapKey->(dnAuths1,dnAuths2,), authMapKey2->(dnAuths1,dnAuths2,), ]";
         // Assert.assertEquals(toStringExpected, dal.toString());
         
         String mcExpected = "<h2>Auths for user Subject: DN (Issuer issuerDN)</h2><table><tr><td>dnAuths1</td><td>dnAuths2</td></tr></table><h2>Auths for Subject: DN2 (Issuer: issuerDN2)</h2><table><tr><td>dnAuths1</td><td>dnAuths2</td></tr></table><h2>Roles to Accumulo Auths</h2><table><tr><th>Role</th><th>Accumulo Authorizations</th></tr><tr><td>authMapKey</td><td>dnAuths1,dnAuths2</td></tr><tr class=\"highlight\"><td>authMapKey2</td><td>dnAuths1,dnAuths2</td></tr></table>";
@@ -90,24 +91,24 @@ public class DefaultAuthorizationsListTest {
         Assert.assertEquals("<h2>Auths for user Subject: DN (Issuer issuerDN)</h2><table><tr>", mainContent.substring(0, 64));
         Assert.assertTrue("<td>dnAuths1</td><td>dnAuths2</td>".equals(mainContent.substring(64, 98))
                         || "<td>dnAuths2</td><td>dnAuths1</td>".equals(mainContent.substring(64, 98)));
-        Assert.assertTrue(mainContent.substring(98, 173).equals("</tr></table><h2>Auths for Subject: DN2 (Issuer: issuerDN2)</h2><table><tr>"));
+        Assert.assertEquals("</tr></table><h2>Auths for Subject: DN2 (Issuer: issuerDN2)</h2><table><tr>", mainContent.substring(98, 173));
         Assert.assertTrue("<td>dnAuths1</td><td>dnAuths2</td>".equals(mainContent.substring(173, 207))
                         || "<td>dnAuths2</td><td>dnAuths1</td>".equals(mainContent.substring(173, 207)));
-        Assert.assertTrue("</tr></table><h2>Roles to Accumulo Auths</h2><table><tr><th>Role</th><th>Accumulo Authorizations</th></tr><tr>".equals(mainContent
-                        .substring(207, 317)));
+        Assert.assertEquals("</tr></table><h2>Roles to Accumulo Auths</h2><table><tr><th>Role</th><th>Accumulo Authorizations</th></tr><tr>",
+                        mainContent.substring(207, 317));
         Assert.assertTrue("<td>authMapKey</td><td>dnAuths1,dnAuths2</td>".equals(mainContent.substring(317, 362))
                         || "<td>authMapKey</td><td>dnAuths2,dnAuths1</td>".equals(mainContent.substring(317, 362))
                         || "<td>authMapKey2</td><td>dnAuths1,dnAuths2</td>".equals(mainContent.substring(317, 362))
                         || "<td>authMapKey2</td><td>dnAuths2,dnAuths1</td>".equals(mainContent.substring(317, 362)));
-        Assert.assertTrue("</tr><tr class=\"highlight\">".equals(mainContent.substring(362, 389)));
+        Assert.assertEquals("</tr><tr class=\"highlight\">", mainContent.substring(362, 389));
         Assert.assertTrue("<td>authMapKey</td><td>dnAuths1,dnAuths2</td>".equals(mainContent.substring(389, 435))
                         || "<td>authMapKey</td><td>dnAuths2,dnAuths1</td>".equals(mainContent.substring(389, 435))
                         || "<td>authMapKey2</td><td>dnAuths1,dnAuths2</td>".equals(mainContent.substring(389, 435))
                         || "<td>authMapKey2</td><td>dnAuths2,dnAuths1</td>".equals(mainContent.substring(389, 435)));
-        Assert.assertTrue("</tr></table>".equals(mainContent.substring(435)));
+        Assert.assertEquals("</tr></table>", mainContent.substring(435));
         
         // Tests for the SCHEMA nested class
-        Assert.assertEquals(null, dal.getSchema().getFieldName(0));
+        Assert.assertNull(dal.getSchema().getFieldName(0));
         Assert.assertEquals("auths", dal.getSchema().getFieldName(1));
         Assert.assertEquals("authMapping", dal.getSchema().getFieldName(2));
         
@@ -118,8 +119,8 @@ public class DefaultAuthorizationsListTest {
         Assert.assertEquals(DefaultAuthorizationsList.class, dal.getSchema().typeClass());
         Assert.assertEquals(DefaultAuthorizationsList.class.getSimpleName(), dal.getSchema().messageName());
         Assert.assertEquals(DefaultAuthorizationsList.class.getName(), dal.getSchema().messageFullName());
-        Assert.assertEquals(true, dal.getSchema().isInitialized(null));
-        Assert.assertEquals(true, dal.cachedSchema().isInitialized(null));
+        Assert.assertTrue(dal.getSchema().isInitialized(null));
+        Assert.assertTrue(dal.cachedSchema().isInitialized(null));
         
     }
     

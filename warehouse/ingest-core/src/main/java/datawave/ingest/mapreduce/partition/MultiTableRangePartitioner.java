@@ -1,16 +1,22 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.*;
-import org.apache.accumulo.core.client.*;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.NonShardedSplitsFile;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Map;
@@ -29,7 +35,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     
     protected volatile boolean cacheFilesRead = false;
     private Text holder = new Text();
-    protected ThreadLocal<Map<String,Text[]>> splitsByTable = new ThreadLocal<Map<String,Text[]>>();
+    private ThreadLocal<Map<String,Text[]>> splitsByTable = new ThreadLocal<>();
     protected ThreadLocal<Map<String,Map<Text,String>>> splitToLocationMap = new ThreadLocal<>();
     private DecimalFormat formatter = new DecimalFormat("000");
     private Configuration conf;
@@ -119,7 +125,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
                 job.addCacheFile(splitsFileUri);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e);
             throw new RuntimeException("Failed to initialize partitioner for job", e);
         }
     }

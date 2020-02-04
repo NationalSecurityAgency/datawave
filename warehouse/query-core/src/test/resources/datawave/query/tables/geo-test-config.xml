@@ -44,7 +44,7 @@
 
     <property>
         <name>sharded.table.names</name>
-        <value>${SHARD_TABLE_NAME},${KNOWLEDGE_SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME}</value>
+        <value>${SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME}</value>
         <description>Comma-separated list of tables that need to pull splits from accumulo</description>
     </property>
 

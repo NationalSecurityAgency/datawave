@@ -54,7 +54,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.bloom.BloomFilter;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.util.CharArraySet;
+import org.apache.lucene.analysis.CharArraySet;
 import org.infinispan.commons.util.Base64;
 
 import com.google.common.collect.Multimap;
@@ -125,10 +125,9 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     protected static final String SPACE = " ";
     
     protected ExtendedContentIngestHelper ingestHelper = null;
-    protected ExtendedContentDataTypeHelper dataTypeHelper = null;
     
     protected ContentIndexCounters counters = null;
-    protected OffsetQueue tokenOffsetCache = null;
+    protected OffsetQueue<Integer> tokenOffsetCache = null;
     protected Set<String> zones = new HashSet<>();
     
     protected boolean eventReplaceMalformedUTF8 = false;
@@ -158,6 +157,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         super.setup(context);
         
         conf = context.getConfiguration();
+        ingestHelper = (ExtendedContentIngestHelper) getHelper(null);
         tokenHelper = new TokenizationHelper(helper, conf);
         termTypeBlacklist = new HashSet<>(Arrays.asList(tokenHelper.getTermTypeBlacklist()));
         
@@ -203,7 +203,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         }
         // The tokens offsets queue is a bounded priority queue that will allow us to cache the
         // highest cardinality offsets up to a predetermined max size
-        tokenOffsetCache = new BoundedOffsetQueue(tokenHelper.getTokenOffsetCacheMaxSize());
+        tokenOffsetCache = new BoundedOffsetQueue<>(tokenHelper.getTokenOffsetCacheMaxSize());
         
         stopWords = tokenHelper.getStopWords();
         
@@ -352,7 +352,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             
             // Now add the offset to the token offset queue, and if we overflow then output the overflow
             if (tokenOffsetCache != null) {
-                OffsetList overflow = tokenOffsetCache.addOffset(indexedTermAndZone, position);
+                OffsetList<Integer> overflow = tokenOffsetCache.addOffset(indexedTermAndZone, position);
                 if (overflow != null) {
                     // no need to normalize as that was already done upon insertion into the token offset cache
                     NormalizedFieldAndValue overflowNfv = new NormalizedFieldAndValue(overflow.termAndZone.zone, overflow.termAndZone.term);
@@ -362,10 +362,10 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     createTermFrequencyIndex(event, contextWriter, context, this.shardId, overflowNfv, overflow.offsets, overflowFieldVisibility,
                                     this.ingestHelper.getDeleteMode());
                     counters.increment(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_OVERFLOWS, reporter);
-                    counters.incrementValue(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_POSITIONS_OVERFLOWED, overflow.offsets.length, reporter);
+                    counters.incrementValue(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_POSITIONS_OVERFLOWED, overflow.offsets.size(), reporter);
                 }
             } else {
-                createTermFrequencyIndex(event, contextWriter, context, this.shardId, nfv, new int[] {position}, fieldVisibility,
+                createTermFrequencyIndex(event, contextWriter, context, this.shardId, nfv, Arrays.asList(position), fieldVisibility,
                                 this.ingestHelper.getDeleteMode());
             }
         }
@@ -436,7 +436,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      * @return true if term is zero or more spaces
      */
     protected static boolean isEmptyTerm(String term) {
-        return ((term.length() == 0) || EMPTY_PATTERN.matcher(term).matches());
+        return ((term.isEmpty()) || EMPTY_PATTERN.matcher(term).matches());
     }
     
     /**
@@ -459,7 +459,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         String fieldName = nFV.getEventFieldName();
         String fieldValue = nFV.getEventFieldValue();
         
-        if (this.ingestHelper.isIndexOnlyField(fieldName) || this.ingestHelper.isCompositeField(fieldName))
+        if (this.ingestHelper.isIndexOnlyField(fieldName) || (this.ingestHelper.isCompositeField(fieldName) && !helper.isOverloadedCompositeField(fieldName)))
             return;
         
         if (StringUtils.isEmpty(fieldValue))
@@ -574,7 +574,6 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                 dw.k = k;
                 dw.shardId = shardId;
                 dw.visibility = visibility;
-                dw.event = event;
                 dw.value = value;
                 this.docWriterService.execute(dw);
             }
@@ -645,14 +644,13 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         Key k;
         byte[] shardId;
         byte[] visibility;
-        RawRecordContainer event;
         Value value;
         
         @Override
         public void run() {
             log.debug("Writing out a document of size " + value.get().length + " bytes.");
             Mutation m = new Mutation(new Text(shardId));
-            m.put(k.getColumnFamily(), k.getColumnQualifier(), new ColumnVisibility(visibility), event.getDate(), value);
+            m.put(k.getColumnFamily(), k.getColumnQualifier(), new ColumnVisibility(visibility), k.getTimestamp(), value);
             try {
                 docWriter.addMutation(m);
             } catch (MutationsRejectedException e) {
@@ -721,10 +719,10 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      */
     protected void createTermFrequencyIndex(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, byte[] shardId, NormalizedFieldAndValue nfv,
-                    int[] offsets, byte[] visibility, boolean deleteMode) throws IOException, InterruptedException {
+                    List<Integer> offsets, byte[] visibility, boolean deleteMode) throws IOException, InterruptedException {
         
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
-        for (int offset : offsets) {
+        for (Integer offset : offsets) {
             builder.addTermOffset(offset);
         }
         Value value = new Value(builder.build().toByteArray());

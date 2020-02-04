@@ -315,23 +315,4 @@
         <value>V1,V2</value>
         <description>Event type value (compare to position in mycsv.event.data.type.keys)</description>
     </property>
-    
-    <property>
-        <name>mycsv.data.category.index.tokenize.whitelist.subtype.map</name>
-        <description>
-            Format:
-              datatype=field_1,field_2,field3,field4;
-
-            ONLY USE IN CONJUNCTION WITH A TOKENIZATION BLACKLIST
-
-            If we are using a tokenization blacklist but want to include-only certain fields from specific subtypes we
-            can declare that here.  For example, if  we only want one field tokenized from a subtype, we'd need to
-            enumerate all of the fields we don't want in the blacklist... this could be a lot of fields.  Instead we can
-            do a whitelist on a per subtype basis.
-
-            If the datatype=; is empty, then no fields will be tokenized
-        </description>
-        <value></value>
-    </property>
-    
 </configuration>

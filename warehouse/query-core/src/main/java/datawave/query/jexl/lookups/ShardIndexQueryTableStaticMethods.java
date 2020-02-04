@@ -1,28 +1,20 @@
 package datawave.query.jexl.lookups;
 
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.GlobalIndexTermMatchingIterator;
 import datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
 import datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
 import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 import datawave.data.type.Type;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.tables.AnyFieldScanner;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
@@ -31,13 +23,13 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -54,7 +46,15 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Temporary location for static methods in ShardIndexQueryTable
@@ -70,18 +70,23 @@ public class ShardIndexQueryTableStaticMethods {
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
-    public static IndexLookup normalizeQueryTerm(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef) {
+    public static IndexLookup normalizeQueryTerm(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
+                    MetadataHelper helperRef) throws TableNotFoundException {
         if (node instanceof ASTEQNode) {
-            return normalizeQueryTerm((ASTEQNode) node, expansionFields, dataTypes);
+            return normalizeQueryTerm((ASTEQNode) node, expansionFields, dataTypes, ingestDataTypes, helperRef);
         } else if (node instanceof ASTNENode) {
-            return normalizeQueryTerm((ASTNENode) node, expansionFields, dataTypes);
+            return normalizeQueryTerm((ASTNENode) node, expansionFields, dataTypes, ingestDataTypes, helperRef);
         } else if (node instanceof ASTERNode) {
-            return expandRegexFieldName((ASTERNode) node, expansionFields, dataTypes, helperRef);
+            return expandRegexFieldName((ASTERNode) node, expansionFields, dataTypes, ingestDataTypes, helperRef);
         } else if (node instanceof ASTNRNode) {
-            return expandRegexFieldName((ASTNRNode) node, expansionFields, dataTypes, helperRef);
+            return expandRegexFieldName((ASTNRNode) node, expansionFields, dataTypes, ingestDataTypes, helperRef);
         } else if (node instanceof ASTLENode) {
             throw new UnsupportedOperationException("Cannot expand an unbounded range");
         } else if (node instanceof ASTLTNode) {
@@ -95,7 +100,8 @@ public class ShardIndexQueryTableStaticMethods {
         }
     }
     
-    public static IndexLookup normalizeQueryTerm(String literal, Set<String> expansionFields, Set<Type<?>> dataTypes) {
+    public static IndexLookup normalizeQueryTerm(String literal, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
+                    MetadataHelper helperRef) throws TableNotFoundException {
         Set<String> terms = Sets.newHashSet(literal);
         
         for (Type<?> normalizer : dataTypes) {
@@ -111,38 +117,71 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return new FieldNameLookup(expansionFields, terms);
+        return new FieldNameLookup(getIndexedExpansionFields(expansionFields, false, ingestDataTypes, helperRef), terms);
+    }
+    
+    /**
+     * Get the expansion fields that are valid for the forward or reverse index for the given datatypes. If the expansion field list is empty, then the entire
+     * set of forward or reverse indexed fields is returned.
+     * 
+     * @param expansionFields
+     * @param reverseIndex
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The actual set of expansion fields
+     * @throws TableNotFoundException
+     */
+    public static Set<String> getIndexedExpansionFields(Set<String> expansionFields, boolean reverseIndex, Set<String> ingestDataTypes, MetadataHelper helperRef)
+                    throws TableNotFoundException {
+        if (expansionFields == null || expansionFields.isEmpty()) {
+            return (reverseIndex ? helperRef.getReverseIndexedFields(ingestDataTypes) : helperRef.getIndexedFields(ingestDataTypes));
+        } else {
+            expansionFields = Sets.newHashSet(expansionFields);
+            expansionFields.retainAll(reverseIndex ? helperRef.getReverseIndexedFields(ingestDataTypes) : helperRef.getIndexedFields(ingestDataTypes));
+            return expansionFields;
+        }
     }
     
     /**
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
-    public static IndexLookup normalizeQueryTerm(ASTEQNode node, Set<String> expansionFields, Set<Type<?>> dataTypes) {
-        return _normalizeQueryTerm(node, expansionFields, dataTypes);
+    public static IndexLookup normalizeQueryTerm(ASTEQNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
+                    MetadataHelper helperRef) throws TableNotFoundException {
+        return _normalizeQueryTerm(node, expansionFields, dataTypes, ingestDataTypes, helperRef);
     }
     
     /**
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
-    public static IndexLookup normalizeQueryTerm(ASTNENode node, Set<String> expansionFields, Set<Type<?>> dataTypes) {
-        return _normalizeQueryTerm(node, expansionFields, dataTypes);
+    public static IndexLookup normalizeQueryTerm(ASTNENode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
+                    MetadataHelper helperRef) throws TableNotFoundException {
+        return _normalizeQueryTerm(node, expansionFields, dataTypes, ingestDataTypes, helperRef);
     }
     
-    protected static IndexLookup _normalizeQueryTerm(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes) {
+    protected static IndexLookup _normalizeQueryTerm(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
+                    MetadataHelper helperRef) throws TableNotFoundException {
         Object literal = JexlASTHelper.getLiteralValue(node);
         
         if (literal instanceof String) {
-            return normalizeQueryTerm((String) literal, expansionFields, dataTypes);
+            return normalizeQueryTerm((String) literal, expansionFields, dataTypes, ingestDataTypes, helperRef);
         } else if (literal instanceof Number) {
-            return normalizeQueryTerm(((Number) literal).toString(), expansionFields, dataTypes);
+            return normalizeQueryTerm(((Number) literal).toString(), expansionFields, dataTypes, ingestDataTypes, helperRef);
         } else {
             log.error("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
             throw new IllegalArgumentException("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
@@ -153,32 +192,47 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
-    public static IndexLookup expandRegexFieldName(ASTERNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef) {
-        return _expandRegexFieldName(node, expansionFields, dataTypes, helperRef);
+    public static IndexLookup expandRegexFieldName(ASTERNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
+                    MetadataHelper helperRef) throws TableNotFoundException {
+        return _expandRegexFieldName(node, expansionFields, dataTypes, ingestDataTypes, helperRef);
     }
     
     /**
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
-    public static IndexLookup expandRegexFieldName(ASTNRNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef) {
-        return _expandRegexFieldName(node, expansionFields, dataTypes, helperRef);
+    public static IndexLookup expandRegexFieldName(ASTNRNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
+                    MetadataHelper helperRef) throws TableNotFoundException {
+        return _expandRegexFieldName(node, expansionFields, dataTypes, ingestDataTypes, helperRef);
     }
     
     /**
      * A non-public method that implements the expandRegexFieldName to force clients to actually provide an ASTERNode or ASTNRNode
      *
      * @param node
+     * @param expansionFields
      * @param dataTypes
-     * @return
+     * @param ingestDataTypes
+     * @param helperRef
+     * @return The index lookup instance
+     * @throws TableNotFoundException
      */
-    protected static IndexLookup _expandRegexFieldName(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef) {
+    protected static IndexLookup _expandRegexFieldName(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
+                    MetadataHelper helperRef) throws TableNotFoundException {
         Set<String> patterns = Sets.newHashSet();
         
         Object literal = JexlASTHelper.getLiteralValue(node);
@@ -189,6 +243,7 @@ public class ShardIndexQueryTableStaticMethods {
             patterns.add(literal.toString());
         }
         
+        // TODO: Add proper support for regex against overloaded composite fields
         for (Type<?> normalizer : dataTypes) {
             if (literal instanceof String) {
                 try {
@@ -211,7 +266,9 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return (IndexLookup) new LookupTermsFromRegex(expansionFields, patterns, helperRef);
+        Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, ingestDataTypes, helperRef);
+        Set<String> reverseFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, true, ingestDataTypes, helperRef);
+        return (IndexLookup) new LookupTermsFromRegex(fields, reverseFields, patterns, helperRef, true);
     }
     
     public static IndexLookup expandRegexTerms(ASTERNode node, String fieldName, Set<Type<?>> dataTypes, MetadataHelper helperRef) {
@@ -225,7 +282,8 @@ public class ShardIndexQueryTableStaticMethods {
      * @param fieldName
      * @param dataTypes
      * @param datatypeFilter
-     * @return
+     * @param helperRef
+     * @return The index lookup instance
      */
     public static IndexLookup expandRegexTerms(ASTERNode node, String fieldName, Collection<Type<?>> dataTypes, Set<String> datatypeFilter,
                     MetadataHelper helperRef) {
@@ -255,7 +313,7 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return (IndexLookup) new LookupTermsFromRegex(fieldName, patterns, datatypeFilter, helperRef);
+        return (IndexLookup) new LookupTermsFromRegex(fieldName, patterns, helperRef);
     }
     
     public static IndexLookup expandRange(LiteralRange<?> range) {
@@ -431,8 +489,8 @@ public class ShardIndexQueryTableStaticMethods {
     }
     
     public static final void configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, ScannerBase bs, Collection<String> literals,
-                    Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms) {
-        if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty())) {
+                    Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms, Collection<String> expansionFields) {
+        if (CollectionUtils.isEmpty(literals) && CollectionUtils.isEmpty(patterns)) {
             return;
         }
         if (log.isTraceEnabled()) {
@@ -443,11 +501,31 @@ public class ShardIndexQueryTableStaticMethods {
         
         bs.addScanIterator(cfg);
         
+        setExpansionFields(config, bs, reverseIndex, expansionFields);
     }
     
-    public static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
+    public static final void setExpansionFields(ShardQueryConfiguration config, ScannerBase bs, boolean reverseIndex, Collection<String> expansionFields) {
+        
+        // Now restrict the fields returned to those that are specified and then only those that are indexed or reverse indexed
+        if (expansionFields == null || expansionFields.isEmpty()) {
+            expansionFields = (reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
+        } else {
+            expansionFields = Sets.newHashSet(expansionFields);
+            expansionFields.retainAll(reverseIndex ? config.getReverseIndexedFields() : config.getIndexedFields());
+        }
+        if (expansionFields.isEmpty()) {
+            bs.fetchColumnFamily(new Text(Constants.NO_FIELD));
+        } else {
+            for (String field : expansionFields) {
+                bs.fetchColumnFamily(new Text(field));
+            }
+        }
+        
+    }
+    
+    private static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms) {
-        if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty())) {
+        if (CollectionUtils.isEmpty(literals) && CollectionUtils.isEmpty(patterns)) {
             return null;
         }
         if (log.isTraceEnabled()) {
@@ -472,7 +550,7 @@ public class ShardIndexQueryTableStaticMethods {
         
         cfg.addOption(GlobalIndexTermMatchingFilter.REVERSE_INDEX, Boolean.toString(reverseIndex));
         if (limitToUniqueTerms) {
-            cfg.addOption(GlobalIndexTermMatchingIterator.UNIQE_TERMS_IN_FIELD, Boolean.toString(limitToUniqueTerms));
+            cfg.addOption(GlobalIndexTermMatchingIterator.UNIQUE_TERMS_IN_FIELD, Boolean.toString(limitToUniqueTerms));
         }
         
         return cfg;
@@ -502,69 +580,80 @@ public class ShardIndexQueryTableStaticMethods {
         
         JavaRegexAnalyzer regex = new JavaRegexAnalyzer(normalizedQueryTerm);
         
-        if (regex.isNgram()) {
-            // If we have wildcards on both sides, then do a full table scan if allowed
-            
-            // if we require a full table scan but it is disabled, then bail
-            if (!fullTableScanEnabled) {
-                PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES, MessageFormat.format(
-                                "Term: {0}", normalizedQueryTerm));
-                log.error(qe);
-                throw new DoNotPerformOptimizedQueryException(qe);
-            }
-            
-            rangeDesc.range = new Range();
-            
-        } else if (shouldUseReverseIndex(regex, fieldName, metadataHelper, config)) {
-            // If we have a leading wildcard, reverse the term and use the global reverse index.
-            
-            StringBuilder buf = new StringBuilder(regex.getTrailingLiteral());
-            String reversedQueryTerm = buf.reverse().toString();
-            
-            if (log.isTraceEnabled()) {
-                StringBuilder sb = new StringBuilder(256);
-                
-                sb.append("For '").append(normalizedQueryTerm).append("'");
-                
-                if (null != fieldName) {
-                    sb.append(" in the field ").append(fieldName);
-                }
-                
-                sb.append(", using the reverse index with the literal: '").append(reversedQueryTerm).append("'");
-                
-                log.trace(sb.toString());
-            }
-            
-            Key startKey = new Key(reversedQueryTerm);
-            Key endKey = new Key(reversedQueryTerm + Constants.MAX_UNICODE_STRING);
-            
-            // set the upper and lower bounds
-            rangeDesc.range = new Range(startKey, false, endKey, false);
+        // If we have a leading wildcard, reverse the term and use the global reverse index.
+        if (shouldUseReverseIndex(regex, fieldName, metadataHelper, config)) {
             rangeDesc.isForReverseIndex = true;
             
-        } else {
-            String queryTerm = regex.getLeadingLiteral();
-            
-            if (log.isTraceEnabled()) {
-                StringBuilder sb = new StringBuilder(256);
+            if (!regex.isTrailingLiteral()) {
+                // if we require a full table scan but it is disabled, then bail
+                if (!fullTableScanEnabled) {
+                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES, MessageFormat.format(
+                                    "Term: {0}", normalizedQueryTerm));
+                    log.error(qe);
+                    throw new DoNotPerformOptimizedQueryException(qe);
+                }
+                rangeDesc.range = new Range();
+            } else {
+                StringBuilder buf = new StringBuilder(regex.getTrailingLiteral());
+                String reversedQueryTerm = buf.reverse().toString();
                 
-                sb.append("For '").append(normalizedQueryTerm).append("'");
-                
-                if (null != fieldName) {
-                    sb.append(" in the field ").append(fieldName);
+                if (log.isTraceEnabled()) {
+                    StringBuilder sb = new StringBuilder(256);
+                    
+                    sb.append("For '").append(normalizedQueryTerm).append("'");
+                    
+                    if (null != fieldName) {
+                        sb.append(" in the field ").append(fieldName);
+                    }
+                    
+                    sb.append(", using the reverse index with the literal: '").append(reversedQueryTerm).append("'");
+                    
+                    log.trace(sb.toString());
                 }
                 
-                sb.append(", using the forward index with the literal: '").append(queryTerm).append("'");
+                Key startKey = new Key(reversedQueryTerm);
+                Key endKey = new Key(reversedQueryTerm + Constants.MAX_UNICODE_STRING);
                 
-                log.trace(sb.toString());
+                // set the upper and lower bounds
+                rangeDesc.range = new Range(startKey, false, endKey, false);
             }
             
-            Key startKey = new Key(queryTerm);
-            Key endKey = new Key(queryTerm + Constants.MAX_UNICODE_STRING);
+        } else {
+            rangeDesc.isForReverseIndex = false;
             
-            // either middle or trailing wildcard, truncate the field value at the wildcard location
-            // for upper bound, tack on the upper bound UTF character
-            rangeDesc.range = new Range(startKey, false, endKey, false);
+            if (!regex.isLeadingLiteral()) {
+                // if we require a full table scan but it is disabled, then bail
+                if (!fullTableScanEnabled) {
+                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES, MessageFormat.format(
+                                    "Term: {0}", normalizedQueryTerm));
+                    log.error(qe);
+                    throw new DoNotPerformOptimizedQueryException(qe);
+                }
+                rangeDesc.range = new Range();
+            } else {
+                String queryTerm = regex.getLeadingLiteral();
+                
+                if (log.isTraceEnabled()) {
+                    StringBuilder sb = new StringBuilder(256);
+                    
+                    sb.append("For '").append(normalizedQueryTerm).append("'");
+                    
+                    if (null != fieldName) {
+                        sb.append(" in the field ").append(fieldName);
+                    }
+                    
+                    sb.append(", using the forward index with the literal: '").append(queryTerm).append("'");
+                    
+                    log.trace(sb.toString());
+                }
+                
+                Key startKey = new Key(queryTerm);
+                Key endKey = new Key(queryTerm + Constants.MAX_UNICODE_STRING);
+                
+                // either middle or trailing wildcard, truncate the field value at the wildcard location
+                // for upper bound, tack on the upper bound UTF character
+                rangeDesc.range = new Range(startKey, false, endKey, false);
+            }
         }
         
         return rangeDesc;
@@ -588,43 +677,59 @@ public class ShardIndexQueryTableStaticMethods {
         return getRegexRange(entry.getKey(), entry.getValue(), fullTableScanEnabled, metadataHelper, config);
     }
     
+    /**
+     * Determine whether a field =~ regex should be run against the reverse index or not.
+     * 
+     * @param analyzer
+     * @param fieldName
+     * @param metadataHelper
+     * @param config
+     * @return
+     * @throws TableNotFoundException
+     * @throws ExecutionException
+     */
     public static boolean shouldUseReverseIndex(JavaRegexAnalyzer analyzer, String fieldName, MetadataHelper metadataHelper, ShardQueryConfiguration config)
                     throws TableNotFoundException, ExecutionException {
         
-        String leadingLiteral = analyzer.getLeadingLiteral(), trailingLiteral = analyzer.getTrailingLiteral();
+        String leadingLiteral = analyzer.getLeadingLiteral();
+        String trailingLiteral = analyzer.getTrailingLiteral();
         
         Set<String> datatypeFilter = config.getDatatypeFilter();
         
-        // Normal case, we have a prefix, use the forward index
+        // TODO Magical handling of a "null" fieldName
+        boolean isForwardIndexed = (null != fieldName) ? indexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
+        boolean isReverseIndexed = (null != fieldName) ? reverseIndexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
+        
+        // if not indexed at all, then error
+        if (!isForwardIndexed && !isReverseIndexed) {
+            throw new DatawaveFatalQueryException("Cannot lookup a non-indexed term");
+        }
+        
+        // if only indexed one way, then choose that one
+        if (isForwardIndexed != isReverseIndexed) {
+            return isReverseIndexed;
+        }
+        
+        // At this point we know isForwardIndexed == isReverseIndex == true
+        
+        // we only have a prefix, use the forward index
         if (null == trailingLiteral && null != leadingLiteral) {
             return false;
-        } else if (null == leadingLiteral && null != trailingLiteral) {
-            // If we have no prefix, we have no option but to use the reverse index (regardless of indexed or not)
+        }
+        // we only have a suffix, use the reverse index
+        else if (null == leadingLiteral && null != trailingLiteral) {
             return true;
-        } else {
-            // TODO Magical handling of a "null" fieldName
-            boolean isReverseIndexed = (null != fieldName) ? reverseIndexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
-            
-            // We have no leading literal, only the trailing, we have to use the reverse index
-            if (null != trailingLiteral && null == leadingLiteral && isReverseIndexed) {
+        }
+        // we have neither leading or trailing, use foward index
+        if (trailingLiteral == null && leadingLiteral == null) {
+            return false;
+        }
+        // we have both leading and trailing. use the biggest one (sans the realm)
+        else {
+            String p = trimRealmFromLiteral(trailingLiteral, config);
+            // Use the reverse if we have a longer 'piece' to search over
+            if (leadingLiteral.length() < p.length()) {
                 return true;
-            }
-            
-            // TODO Magical handling of a "null" fieldName
-            boolean isForwardIndexed = (null != fieldName) ? indexedInDatatype(fieldName, datatypeFilter, metadataHelper) : true;
-            
-            // If we're only reverse indexed, gotta use the reverse
-            if (!isForwardIndexed && isReverseIndexed) {
-                return true;
-            }
-            
-            // In the case where we have the option
-            if (leadingLiteral != null && isForwardIndexed && isReverseIndexed) {
-                String p = trimRealmFromLiteral(trailingLiteral, config);
-                // Use the reverse if we have a longer 'piece' to search over
-                if (leadingLiteral.length() < p.length()) {
-                    return true;
-                }
             }
         }
         

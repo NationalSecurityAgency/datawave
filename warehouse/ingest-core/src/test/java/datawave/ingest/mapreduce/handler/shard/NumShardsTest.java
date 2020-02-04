@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -9,6 +10,7 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -19,7 +21,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
@@ -192,7 +193,7 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
         conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
-        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, "DatawaveMetadata");
+        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         
         connector.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
         BatchWriter recordWriter = connector.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
@@ -210,11 +211,10 @@ public class NumShardsTest {
         
         // invalid entry and should be ignored
         m = new Mutation(NumShards.NUM_SHARDS);
-        m.put(NumShards.NUM_SHARDS_CF.toString() + "blah", "20171102_19", "");
+        m.put(NumShards.NUM_SHARDS_CF + "blah", "20171102_19", "");
         
         recordWriter.addMutation(m);
         
-        recordWriter.flush();
         recordWriter.close();
         
         File multipleNumShardCache = File.createTempFile("numshards", ".txt");
@@ -234,7 +234,7 @@ public class NumShardsTest {
         
         // these should create numshards.txt file based on multiple numshards entries in mock accumulo
         numShards.setaHelper(mockedAccumuloHelper);
-        numShards.updateCache(FileSystem.get(conf));
+        numShards.updateCache();
         
         assertEquals(11, numShards.getNumShards(0));
         
@@ -267,18 +267,17 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock2");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
         conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
-        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, "DatawaveMetadata");
+        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         
         connector.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
         BatchWriter recordWriter = connector.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
         
         // write a couiple of entries for multiple numshards
         Mutation m = new Mutation(NumShards.NUM_SHARDS);
-        m.put(NumShards.NUM_SHARDS_CF.toString() + "blah", "20171102_19", "");
+        m.put(NumShards.NUM_SHARDS_CF + "blah", "20171102_19", "");
         
         recordWriter.addMutation(m);
         
-        recordWriter.flush();
         recordWriter.close();
         
         File multipleNumShardCache = File.createTempFile("numshards", ".txt");
@@ -298,7 +297,7 @@ public class NumShardsTest {
         
         // these should create numshards.txt file based on multiple numshards entries in mock accumulo
         numShards.setaHelper(mockedAccumuloHelper);
-        numShards.updateCache(FileSystem.get(conf));
+        numShards.updateCache();
         
         assertEquals(11, numShards.getNumShards(0));
         assertEquals(11, numShards.getNumShards(Long.MAX_VALUE));

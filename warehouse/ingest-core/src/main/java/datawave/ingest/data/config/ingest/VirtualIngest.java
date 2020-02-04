@@ -19,7 +19,6 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -251,7 +250,7 @@ public interface VirtualIngest {
                 String[] value = config.getStrings(prefix + key, (String[]) null);
                 if (value != null) {
                     String concatValue = "";
-                    ArrayList<String> escapedValue = new ArrayList<String>();
+                    ArrayList<String> escapedValue = new ArrayList<>();
                     for (int i = 0; i < value.length; i++) {
                         concatValue += value[i];
                         if (i != value.length - 1)

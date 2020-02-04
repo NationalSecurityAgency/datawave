@@ -73,9 +73,8 @@ public class FullTableScan extends PushDownRule {
          * a trailing and leading wildcard
          */
         if (isParent(node, ASTAndNode.class) && getCost(node) == Cost.INFINITE) {
-            ASTDelayedPredicate expr = ASTDelayedPredicate.create(node);
             
-            return expr;
+            return ASTDelayedPredicate.create(node);
             
         }
         
@@ -84,8 +83,7 @@ public class FullTableScan extends PushDownRule {
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        ASTJexlScript newScript = (ASTJexlScript) super.visit(node, data);
-        return newScript;
+        return (ASTJexlScript) super.visit(node, data);
     }
     
     /*

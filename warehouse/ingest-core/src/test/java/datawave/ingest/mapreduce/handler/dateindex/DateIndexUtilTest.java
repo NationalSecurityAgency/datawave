@@ -27,7 +27,7 @@ public class DateIndexUtilTest {
     @Test
     public void testMerge() {
         
-        Set<Integer> bits = new HashSet<Integer>();
+        Set<Integer> bits = new HashSet<>();
         for (int i = 0; i < 40; i++) {
             bits.add(i);
             bits.add(i * 2);

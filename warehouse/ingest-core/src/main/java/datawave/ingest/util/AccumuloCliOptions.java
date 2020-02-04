@@ -1,6 +1,8 @@
 package datawave.ingest.util;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.util.cli.PasswordConverter;
+
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
@@ -17,6 +19,7 @@ public class AccumuloCliOptions {
     private final Options options = new Options();
     private CommandLine cl = null;
     
+    @SuppressWarnings("static-access")
     public AccumuloCliOptions() {
         options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo username").create("u"));
         options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo password").create("p"));
@@ -75,7 +78,7 @@ public class AccumuloCliOptions {
     
     public void setAccumuloConfiguration(Configuration conf) {
         AccumuloHelper.setUsername(conf, cl.getOptionValue("u"));
-        AccumuloHelper.setPassword(conf, cl.getOptionValue("p").getBytes());
+        AccumuloHelper.setPassword(conf, PasswordConverter.parseArg(cl.getOptionValue("p")).getBytes());
         AccumuloHelper.setInstanceName(conf, cl.getOptionValue("i"));
         AccumuloHelper.setZooKeepers(conf, cl.getOptionValue("zk"));
         

@@ -11,27 +11,18 @@ setCurlData query=MISSING_DATA_ERROR \
         columnVisibility=PRIVATE \
         query.syntax=LUCENE
 
-TEST_ID="ErrorEventQueryMissingDataError"
-TEST_DESCRIPTION="Uses ErrorEventQuery to find events written to DW's error* tables at ingest time due to $( printYellow "MISSING_DATA_ERROR" )"
-TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/ErrorEventQuery/createAndNext"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+        QueryMissingDataError \
+        "Uses ErrorEventQuery to find events written to DW's error* tables at ingest time due to MISSING_DATA_ERROR" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/ErrorEventQuery/createAndNext" \
+        "application/xml;charset=UTF-8" \
+        200
 
-runTest
+runTest --set-query-id
 
 ################################################################
 # Close the query
 
-setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
-
-[ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
-
-TEST_ID="ErrorEventQueryMissingDataErrorClose"
-TEST_DESCRIPTION="Closes the query as necessary"
-TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${DW_QUERY_ID}/close"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureCloseQueryTest ${DW_QUERY_ID} 200
 
 # Last test is executed by run.sh, as usual

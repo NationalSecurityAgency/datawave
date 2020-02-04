@@ -10,11 +10,11 @@ import org.apache.log4j.Logger;
  * Keeps track of the query term, location to be searched, and also deals with wildcards.
  */
 public class WildcardFieldedFilter extends FieldedTerm {
-    static public enum BooleanType {
+    public static enum BooleanType {
         AND, OR
     }
     
-    static private Logger log = Logger.getLogger(WildcardFieldedFilter.class.getName());
+    private static Logger log = Logger.getLogger(WildcardFieldedFilter.class.getName());
     private List<Pattern> selectorRegexList = new ArrayList<>();
     private List<String> fieldList = new ArrayList<>();
     private Boolean includeIfMatch = null;
@@ -27,7 +27,7 @@ public class WildcardFieldedFilter extends FieldedTerm {
         setFilterOnly(true);
     }
     
-    static public Pattern convertToRegex(String s) {
+    public static Pattern convertToRegex(String s) {
         int flags = Pattern.DOTALL;
         return Pattern.compile(s, flags);
     }
@@ -38,7 +38,7 @@ public class WildcardFieldedFilter extends FieldedTerm {
         sb.append("filter(");
         sb.append(includeIfMatch);
         sb.append(", ");
-        sb.append(type.toString());
+        sb.append(type);
         sb.append(", ");
         for (int x = 0; x < fieldList.size(); x++) {
             if (x > 0) {

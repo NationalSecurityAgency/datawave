@@ -2,16 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>datawave</groupId>
+        <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>2.1.0-SNAPSHOT</version>
+        <version>3.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-    <properties>
-        <datawave.root>${project.parent.parent.parent.basedir}</datawave.root>
-    </properties>
     <dependencies>
         <!-- To ensure a consistent version is loaded -->
         <dependency>
@@ -31,78 +28,96 @@
             <artifactId>commons-logging</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-balancers</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-data-dictionary-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-edge-model-configuration-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-index-stats</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-csv</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-json</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-nyctlc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-scripts</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-wikipedia</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-metrics-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -125,23 +140,9 @@
             <artifactId>jgroups</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-commons</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-core-client</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-jms-client</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hornetq</groupId>
-            <artifactId>hornetq-server</artifactId>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${version.caffeine}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -216,7 +217,7 @@
                 <plugins>
                     <plugin>
                         <!-- Activate the assert-properties plugin -->
-                        <groupId>datawave</groupId>
+                        <groupId>gov.nsa.datawave.plugins</groupId>
                         <artifactId>assert-properties</artifactId>
                         <executions>
                             <execution>
@@ -262,7 +263,7 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>datawave</groupId>
+                                            <groupId>gov.nsa.datawave</groupId>
                                             <artifactId>datawave-ingest-scripts</artifactId>
                                         </artifactItem>
                                     </artifactItems>
@@ -279,7 +280,7 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>datawave</groupId>
+                                            <groupId>gov.nsa.datawave</groupId>
                                             <artifactId>datawave-regression-testing</artifactId>
                                         </artifactItem>
                                     </artifactItems>
@@ -296,11 +297,11 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>datawave</groupId>
+                                            <groupId>gov.nsa.datawave</groupId>
                                             <artifactId>datawave-ingest-scripts</artifactId>
                                         </artifactItem>
                                     </artifactItems>
-                                    <includes>bin/ingest/ingest-versions.sh,bin/ingest/ingest-env.sh,bin/system/install.sh</includes>
+                                    <includes>bin/ingest/ingest-versions.sh,bin/ingest/ingest-env.sh,bin/ingest/tables-env.sh,bin/system/install.sh</includes>
                                     <outputDirectory>${project.build.directory}/archive-tmp</outputDirectory>
                                 </configuration>
                             </execution>
@@ -313,7 +314,7 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>datawave</groupId>
+                                            <groupId>gov.nsa.datawave</groupId>
                                             <artifactId>datawave-ingest-configuration</artifactId>
                                         </artifactItem>
                                     </artifactItems>
@@ -407,9 +408,9 @@
             </build>
         </profile>
         <profile>
-            <!-- 
+            <!--
 				WARNING WARNING WARNING
-				
+
 				If you change anything in this profile regarding which files are included, then you need to make the
 				corresponding change in src/main/assembly/dist.xml.  Unfortunately, there is no way for the RPM and
 				assembly plugins to share the same configuration, so this information must be duplicated.
@@ -418,7 +419,7 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>datawave</groupId>
+                        <groupId>gov.nsa.datawave.plugins</groupId>
                         <artifactId>assert-properties</artifactId>
                         <executions>
                             <execution>
@@ -491,7 +492,7 @@
                                         <source>
                                             <location>${project.build.directory}/archive</location>
                                             <excludes>
-                                                <!-- Leave out the bin dir since we add that below with different 
+                                                <!-- Leave out the bin dir since we add that below with different
 													permissions -->
                                                 <exclude>bin/**</exclude>
                                             </excludes>
@@ -535,7 +536,6 @@
                                         <includes>
                                             <include>commons-pool:commons-pool</include>
                                             <include>org.apache.commons:commons-lang3</include>
-                                            <include>joda-time:joda-time</include>
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.esotericsoftware.kryo:kryo</include>
                                             <include>org.objenesis:objenesis</include>
@@ -544,6 +544,7 @@
                                             <include>org.ow2.asm:asm</include>
                                             <include>io.protostuff:protostuff-api</include>
                                             <include>io.protostuff:protostuff-core</include>
+                                            <include>io.protostuff:protostuff-collectionschema</include>
                                         </includes>
                                     </dependency>
                                 </mapping>
@@ -554,6 +555,7 @@
                                     <directoryIncluded>false</directoryIncluded>
                                     <dependency>
                                         <includes>
+                                            <include>org.apache.commons:commons-collections4</include>
                                             <include>org.apache.commons:commons-jexl</include>
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-balancers</include>
@@ -563,12 +565,20 @@
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>
                                             <include>${project.groupId}:datawave-common</include>
+                                            <include>${project.groupId}:datawave-data-dictionary-core</include>
                                             <include>${project.groupId}:datawave-edge-dictionary-core</include>
+                                            <include>${project.groupId}:datawave-edge-model-configuration-core</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
-                                            <include>datawave.webservices:datawave-ws-common</include>
-                                            <include>datawave.webservices:datawave-ws-common-util</include>
-                                            <include>datawave.webservices:datawave-ws-client</include>
-                                            <include>datawave.webservices:datawave-ws-query</include>
+                                            <include>${project.groupId}:datawave-ingest-nyctlc</include>
+                                            <include>gov.nsa.datawave.microservice:accumulo-utils</include>
+                                            <include>gov.nsa.datawave.microservice:metadata-utils</include>
+                                            <include>gov.nsa.datawave.microservice:type-utils</include>
+                                            <include>gov.nsa.datawave.microservice:base-rest-responses</include>
+                                            <include>gov.nsa.datawave.microservice:common-utils</include>
+                                            <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
+                                            <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
+                                            <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
+                                            <include>gov.nsa.datawave.webservices:datawave-ws-query</include>
                                             <include>org.javatuples:javatuples</include>
                                             <include>com.google.code.gson:gson</include>
                                             <include>com.clearspring.analytics:stream</include>
@@ -590,6 +600,9 @@
                                             <include>org.springframework:spring-context-support</include>
                                             <include>org.springframework:spring-expression</include>
                                             <include>aopalliance:aopalliance</include>
+                                            <include>com.fasterxml.jackson.core:jackson-databind</include>
+                                            <include>com.fasterxml.jackson.core:jackson-core</include>
+                                            <include>com.fasterxml.jackson.core:jackson-annotations</include>
                                         </includes>
                                     </dependency>
                                 </mapping>
@@ -604,8 +617,13 @@
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>
-                                            <include>datawave.webservices:datawave-ws-common</include>
-                                            <include>datawave.webservices:datawave-ws-common-util</include>
+                                            <include>gov.nsa.datawave.microservice:accumulo-utils</include>
+                                            <include>gov.nsa.datawave.microservice:metadata-utils</include>
+                                            <include>gov.nsa.datawave.microservice:type-utils</include>
+                                            <include>gov.nsa.datawave.microservice:base-rest-responses</include>
+                                            <include>gov.nsa.datawave.microservice:common-utils</include>
+                                            <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
+                                            <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>com.google.code.gson:gson</include>
                                             <!-- for dependency injection -->
                                             <include>org.springframework:spring-aop</include>
@@ -653,7 +671,7 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>datawave</groupId>
+                                            <groupId>gov.nsa.datawave</groupId>
                                             <artifactId>assemble-geowave</artifactId>
                                             <classifier>dist</classifier>
                                             <type>tar.gz</type>

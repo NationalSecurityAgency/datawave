@@ -1,14 +1,11 @@
 client-login example
 
-This project contains two examples, both dealing with an unsecured client 
-calling a secured EJB.
+This project contains an example timer bean, which is an unsecured client,
+that once a minute calls the secured EJB UserOperationsBean to get the
+effective user auths for either the server, or a proxied user if the
+environment variables USER_DN and ISSUER_DN are defined.
 
-1. datawave.webservice.examples.ClientLoginExampleBean is a timer bean that 
-   calls a secured EJB once a minute and prints the effective authorizations
-   of the user running JBoss (assuming it is a valid sid).  To run this
-   example, simply drop client-login.jar into your jboss deploy directory.
-
-2. datawave.webservice.examples.RemoteClientLoginExample is a standalone EJB
-   client that calls a secured EJB and prints effective authorizations.  To
-   run this example, execute the run.sh script in the same directory as this
-   README.
+In order to run this example, you must re-build and deploy the datawave ear
+with this example included. This can be done by building at the top level
+with both the examples profile and the client-login-example profile enabled
+(e.g., -Pdev,examples,client-login-example).

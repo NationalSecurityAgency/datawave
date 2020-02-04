@@ -1,22 +1,19 @@
 package datawave.query.iterator.builder;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import datawave.core.iterators.DatawaveFieldIndexRangeIteratorJexl;
 import datawave.query.iterator.DocumentIterator;
-import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.jexl.LiteralRange;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.hadoop.fs.Path;
+import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.SortedSet;
 
 /**
  * A convenience class that aggregates a field, range, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
@@ -27,6 +24,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
     private static Logger log = Logger.getLogger(IndexRangeIteratorBuilder.class);
     
     protected LiteralRange range;
+    protected SortedSet<Range> subRanges;
     
     public LiteralRange getRange() {
         return range;
@@ -40,39 +38,68 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
         setValue(builder.toString());
     }
     
+    public SortedSet<Range> getSubRanges() {
+        return subRanges;
+    }
+    
+    public void setSubRanges(SortedSet<Range> subRanges) {
+        this.subRanges = subRanges;
+    }
+    
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(range, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirURI, hdfsFileSystem)) {
+        if (notNull(range, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirs)) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + range);
             }
-            // get the hadoop file system and a temporary directory
-            URI hdfsCacheURI = null;
-            try {
-                hdfsCacheURI = new URI(ivaratorCacheDirURI);
-                hdfsFileSystem.mkdirs(new Path(hdfsCacheURI));
-            } catch (MalformedURLException e) {
-                throw new IllegalStateException("Unable to load hadoop configuration", e);
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to create hadoop file system", e);
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
-            }
+            
+            // we can't build an ivarator if no ivarator directories have been defined
+            if (ivaratorCacheDirs.isEmpty())
+                throw new IllegalStateException("No ivarator cache dirs defined");
+            
+            // ensure that we are able to create the first ivarator cache dir (the control dir)
+            validateIvaratorControlDir(ivaratorCacheDirs.get(0));
             
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexRangeIteratorJexl rangeIterator = new DatawaveFieldIndexRangeIteratorJexl(new Text(range.getFieldName()), new Text(range
-                                .getLower().toString()), range.isLowerInclusive(), new Text(range.getUpper().toString()), range.isUpperInclusive(),
-                                this.timeFilter, this.datatypeFilter, false, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout,
-                                ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
-                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                // @formatter:off
+                DatawaveFieldIndexRangeIteratorJexl rangeIterator = DatawaveFieldIndexRangeIteratorJexl.builder()
+                        .withFieldName(new Text(range.getFieldName()))
+                        .withLowerBound(range.getLower().toString())
+                        .lowerInclusive(range.isLowerInclusive())
+                        .withUpperBound(range.getUpper().toString())
+                        .upperInclusive(range.isUpperInclusive())
+                        .withTimeFilter(this.timeFilter)
+                        .withDatatypeFilter(this.datatypeFilter)
+                        .negated(false)
+                        .withScanThreshold(ivaratorCacheScanPersistThreshold)
+                        .withScanTimeout(ivaratorCacheScanTimeout)
+                        .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
+                        .withMaxRangeSplit(maxRangeSplit)
+                        .withMaxOpenFiles(ivaratorMaxOpenFiles)
+                        .withIvaratorCacheDirs(ivaratorCacheDirs)
+                        .withNumRetries(ivaratorNumRetries)
+                        .withMaxResults(maxIvaratorResults)
+                        .withQueryLock(queryLock)
+                        .allowDirResuse(true)
+                        .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
+                        .withSortedUUIDs(sortedUIDs)
+                        .withCompositeMetadata(compositeMetadata)
+                        .withCompositeSeekThreshold(compositeSeekThreshold)
+                        .withTypeMetadata(typeMetadata)
+                        .withSubRanges(subRanges)
+                        .withIteratorEnv(env)
+                        .withIvaratorSourcePool(ivaratorSourcePool)
+                        .build();
+                // @formatter:on
+                
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);
                 }
-                rangeIterator.init(source, null, null);
+                rangeIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexRangeIteratorJexl: " + rangeIterator);
                 
                 boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
@@ -80,7 +107,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                     canBuildDocument = true;
                 }
                 
-                // Add an interator to aggregate documents. This is needed for index only fields.
+                // Add an iterator to aggregate documents. This is needed for index only fields.
                 DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(rangeIterator, null, null);
                 
@@ -97,8 +124,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
             datatypeFilter = null;
             keyTform = null;
             timeFilter = null;
-            hdfsFileSystem = null;
-            ivaratorCacheDirURI = null;
+            ivaratorCacheDirs = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

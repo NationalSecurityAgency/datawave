@@ -46,7 +46,6 @@ public class QueriesTableAgeOffIteratorTest {
         m2.put("colf2", "colq2", (now + 100000), "");
         writer.addMutation(m2);
         
-        writer.flush();
         writer.close();
         
         // Scan the entire table, we should only see keys whose timestamps are greater than or equal to now.

@@ -26,7 +26,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      * Using a set instead of a list so that duplicate UIDs are filtered out of the list. This might happen in the case of rows with masked fields that share a
      * UID.
      */
-    private HashSet<String> uids = new HashSet<String>();
+    private HashSet<String> uids = new HashSet<>();
     
     public GlobalIndexUidAggregator(int max) {
         this.maxUids = max;
@@ -39,17 +39,17 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     /**
      * List of UIDs to remove.
      */
-    private HashSet<String> uidsToRemove = new HashSet<String>();
+    private HashSet<String> uidsToRemove = new HashSet<>();
     
     /**
      * List of UIDs to remove.
      */
-    private HashSet<String> quarantinedIds = new HashSet<String>();
+    private HashSet<String> quarantinedIds = new HashSet<>();
     
     /**
      * List of UIDs to remove.
      */
-    private HashSet<String> releasedUids = new HashSet<String>();
+    private HashSet<String> releasedUids = new HashSet<>();
     
     /**
      * flag for whether or not we have seen ignore
@@ -98,7 +98,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             uids.removeAll(uidsToRemove);
             uids.removeAll(quarantinedIds);
             
-            if (releasedUids.size() > 0) {
+            if (!releasedUids.isEmpty()) {
                 if (log.isDebugEnabled())
                     log.debug("Adding released UIDS");
                 uids.addAll(releasedUids);
@@ -201,9 +201,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                         
                     }
                     
-                    for (String uid : v.getQUARANTINEUIDList()) {
-                        quarantinedIds.add(uid);
-                    }
+                    quarantinedIds.addAll(v.getQUARANTINEUIDList());
                     
                     /**
                      * This is added for backwards compatability. The removal list was added to ensure that removals are propogated across compactions. In the
@@ -253,18 +251,18 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         /**
          * Changed logic so that if seenIgnore is true and count > MAX, we keep propogate the key
          */
-        if ((seenIgnore && count > maxUids) || quarantinedIds.size() > 0)
+        if ((seenIgnore && count > maxUids) || !quarantinedIds.isEmpty())
             return true;
         
-        HashSet<String> uidsCopy = new HashSet<String>(uids);
+        HashSet<String> uidsCopy = new HashSet<>(uids);
         uidsCopy.removeAll(uidsToRemove);
         
         if (log.isDebugEnabled()) {
-            log.debug(count + " " + uids.size() + " " + uidsToRemove.size() + " " + uidsCopy.size() + " removing " + (count == 0 && uidsCopy.size() == 0));
+            log.debug(count + " " + uids.size() + " " + uidsToRemove.size() + " " + uidsCopy.size() + " removing " + (count == 0 && uidsCopy.isEmpty()));
         }
         
         // if <= 0 and uids is empty, we can safely remove
-        if (count <= 0 && uidsCopy.size() == 0)
+        if (count <= 0 && uidsCopy.isEmpty())
             return false;
         else
             return true;

@@ -128,6 +128,9 @@ public class MergeSortIterator<T> implements Iterator<T> {
                 if (!finished[i] && equals(next, lastList.get(i))) {
                     nextIterators.set(i, iterators.get(i));
                 } else {
+                    // if the iterator is finished, or did not contribute to the value being returned
+                    // then null it out since the value returned is already in the set to compare
+                    // on the next round
                     nextIterators.set(i, null);
                 }
             }

@@ -1,17 +1,18 @@
 package datawave.ingest.mapreduce.partition;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import datawave.ingest.mapreduce.handler.shard.*;
-import datawave.ingest.mapreduce.job.*;
-
-import org.apache.accumulo.core.data.*;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
 
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 /**
@@ -71,7 +72,7 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
         }
         
         if (null == this.shardHashes.get(tableName)) {
-            Map<Text,Integer> hashedForTable = new HashMap<Text,Integer>();
+            Map<Text,Integer> hashedForTable = new HashMap<>();
             
             for (Map.Entry<Text,String> entry : ShardedTableMapFile.getShardIdToLocations(conf, tableName).entrySet()) {
                 hashedForTable.put(entry.getKey(), entry.getValue().toString().hashCode());

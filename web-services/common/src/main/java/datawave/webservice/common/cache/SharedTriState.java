@@ -13,7 +13,6 @@ import org.apache.log4j.Logger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -26,7 +25,7 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
     
     private static Logger log = Logger.getLogger(SharedTriState.class);
     
-    public static enum STATE {
+    public enum STATE {
         NEEDS_UPDATE(0), UPDATING(1), UPDATED(2);
         private final int value;
         private static final Map<Integer,STATE> typesByValue = new HashMap<>();

@@ -1,13 +1,14 @@
 package datawave.query.index.lookup;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import datawave.ingest.protobuf.Uid;
 import datawave.query.Constants;
+import datawave.query.tld.TLD;
+import datawave.query.util.Tuple3;
+import datawave.query.util.Tuples;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -16,22 +17,19 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-
-import datawave.ingest.protobuf.Uid;
-import datawave.query.tld.TLD;
-import datawave.query.util.Tuple3;
-import datawave.query.util.Tuples;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
     
@@ -115,7 +113,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
             DescriptiveStatistics stats = new DescriptiveStatistics();
             final String day = getDay(src.getTopKey());
             Key reference = makeRootKey(src.getTopKey(), day + "_");
-            Set<String> uids = Sets.newHashSet();
+            Set<String> uids;
             long count = 0L;
             boolean ignore = false;
             boolean ignoreDay = false;
@@ -151,8 +149,8 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
                             uids = Sets.newHashSet();
                             for (String uid : uidInfo.third()) {
                                 if (log.isTraceEnabled())
-                                    log.trace("Adding uid " + uid.split("\u0000")[1] + " " + uid.toString() + " " + TLD.parseRootPointerFromId(uid) + " "
-                                                    + TLD.parseRootPointerFromId(uid.toString()));
+                                    log.trace("Adding uid " + StringUtils.split(uid, '\u0000')[1] + " " + uid + " " + TLD.parseRootPointerFromId(uid) + " "
+                                                    + TLD.parseRootPointerFromId(uid));
                                 if (isTld) {
                                     uids.add(TLD.parseRootPointerFromId(uid));
                                 } else {
@@ -303,12 +301,8 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
         final String dataType = parseDataType(k);
         Uid.List docIds = Uid.List.parseFrom(v.get());
         final boolean ignore = docIds.getIGNORE();
-        List<String> uids = ignore || docIds.getUIDList() == null ? Collections.<String> emptyList() : Lists.transform(docIds.getUIDList(),
-                        new Function<String,String>() {
-                            public String apply(String s) {
-                                return dataType + "\u0000" + s.trim();
-                            }
-                        });
+        List<String> uids = ignore || docIds.getUIDList() == null ? Collections.emptyList() : Lists.transform(docIds.getUIDList(),
+                        s -> dataType + "\u0000" + s.trim());
         return Tuples.tuple(docIds.getCOUNT(), ignore, uids);
     }
     
@@ -334,8 +328,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
      * @return
      */
     public static Key makeRootKey(Key k, String day) {
-        ByteSequence cq = k.getColumnQualifierData();
-        ByteSequence strippedCq = cq;
+        ByteSequence strippedCq = k.getColumnQualifierData();
         strippedCq = new ArrayByteSequence(day);
         final ByteSequence row = k.getRowData(), cf = k.getColumnFamilyData(), cv = k.getColumnVisibilityData();
         return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), strippedCq.getBackingArray(),
@@ -347,7 +340,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
      */
     @Override
     public IteratorOptions describeOptions() {
-        return new IteratorOptions("", "", Collections.<String,String> emptyMap(), Collections.<String> emptyList());
+        return new IteratorOptions("", "", Collections.emptyMap(), Collections.emptyList());
     }
     
     /**

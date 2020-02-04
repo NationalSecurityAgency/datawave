@@ -1,10 +1,6 @@
 package datawave.query.tld;
 
 import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.predicate.TimeFilter;
-import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -12,18 +8,25 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-
 public class TLDIndexIterator extends IndexIterator {
     
-    public TLDIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
-        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new TLDFieldIndexAggregator(null, null));
+    public static class Builder<B extends Builder<B>> extends IndexIterator.Builder<B> {
+        
+        Builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+            super(field, value, source);
+        }
+        
+        public TLDIndexIterator build() {
+            return new TLDIndexIterator(this);
+        }
     }
     
-    public TLDIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        super(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator);
+    public static Builder<?> builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+        return new Builder(field, value, source);
+    }
+    
+    protected TLDIndexIterator(Builder builder) {
+        super(builder);
     }
     
     @Override
@@ -34,7 +37,7 @@ public class TLDIndexIterator extends IndexIterator {
         String startCf = (start == null || start.getColumnFamily() == null ? "" : start.getColumnFamily().toString());
         
         // if the end key inclusively includes a datatype/0UID or has datatype/0UID/0, then move the end key past the children
-        if (endCf.length() > 0 && (r.isEndKeyInclusive() || endCf.charAt(endCf.length() - 1) == '\0')) {
+        if (!endCf.isEmpty() && (r.isEndKeyInclusive() || endCf.charAt(endCf.length() - 1) == '\0')) {
             String row = end.getRow().toString().intern();
             if (endCf.charAt(endCf.length() - 1) == '\0') {
                 endCf = endCf.substring(0, endCf.length() - 1);
@@ -44,7 +47,7 @@ public class TLDIndexIterator extends IndexIterator {
         }
         
         // if the start key is not inclusive, and we have a datatype/0UID, then move the start past the children thereof
-        if (!r.isStartKeyInclusive() && startCf.length() > 0) {
+        if (!r.isStartKeyInclusive() && !startCf.isEmpty()) {
             // we need to bump append 0xff to that byte array because we want to skip the children
             String row = start.getRow().toString();
             

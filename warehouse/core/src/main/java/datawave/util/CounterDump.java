@@ -8,8 +8,6 @@ import java.util.Map.Entry;
 
 import datawave.util.CounterDump.CounterSource;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
@@ -47,7 +45,7 @@ public class CounterDump {
         return builder.toString();
     }
     
-    public static abstract class CounterSource implements Iterator<Entry<String,Counters>> {
+    public abstract static class CounterSource implements Iterator<Entry<String,Counters>> {
         public abstract String getNextIdentifier();
         
         public abstract byte[] getNextCounterData();

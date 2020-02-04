@@ -16,6 +16,7 @@ import datawave.core.iterators.TermFrequencyIterator.FieldValue;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.Constants;
@@ -34,7 +35,6 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -112,7 +112,7 @@ public class TermOffsetPopulator {
     protected Range getRange(Set<Key> keys) {
         // building a range from the begining of the term frequencies for the first datatype\0uid
         // to the end of the term frequencies for the last datatype\0uid
-        List<String> dataTypeUids = new ArrayList<String>();
+        List<String> dataTypeUids = new ArrayList<>();
         Text row = null;
         for (Key key : keys) {
             row = key.getRow();
@@ -144,7 +144,7 @@ public class TermOffsetPopulator {
         
         // set the document context on the filter
         if (evaluationFilter != null) {
-            evaluationFilter.setDocumentKey(docKey);
+            evaluationFilter.startNewDocument(docKey);
         }
         
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
@@ -164,14 +164,22 @@ public class TermOffsetPopulator {
             
             this.document.put(fv.getField(), attr);
             
-            TreeMultimap<TermFrequencyList.Zone,Integer> offsets = TreeMultimap.create();
+            TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> offsets = TreeMultimap.create();
             try {
                 TermWeight.Info twInfo = TermWeight.Info.parseFrom(tfSource.getTopValue().get());
                 
                 // if no content expansion fields then assume every field is permitted for unfielded content functions
-                offsets.putAll(new TermFrequencyList.Zone(fv.getField(),
+                TermFrequencyList.Zone twZone = new TermFrequencyList.Zone(fv.getField(),
                                 (contentExpansionFields == null || contentExpansionFields.isEmpty() || contentExpansionFields.contains(fv.getField())),
-                                TermFrequencyList.getEventId(key)), twInfo.getTermOffsetList());
+                                TermFrequencyList.getEventId(key));
+                
+                TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+                for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
+                    position.setTermWeightOffsetInfo(twInfo, i);
+                    offsets.put(twZone, position.build());
+                    position.reset();
+                }
+                
             } catch (InvalidProtocolBufferException e) {
                 log.error("Could not deserialize TermWeight protocol buffer for: " + source.getTopKey());
                 
@@ -197,7 +205,7 @@ public class TermOffsetPopulator {
         }
         
         // Load the actual map into map that will be put into the JexlContext
-        Map<String,Object> map = new HashMap<String,Object>();
+        Map<String,Object> map = new HashMap<>();
         map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
         
         return map;
@@ -214,18 +222,9 @@ public class TermOffsetPopulator {
         FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
         query.jjtAccept(visitor, null);
         
-        Multimap<String,Function> functionsInNamespace = Multimaps.index(visitor.functions().get(ContentFunctions.CONTENT_FUNCTION_NAMESPACE),
-                        new com.google.common.base.Function<Function,String>() {
-                            public String apply(Function from) {
-                                return from.name();
-                            }
-                        });
+        Multimap<String,Function> functionsInNamespace = Multimaps.index(visitor.functions().get(ContentFunctions.CONTENT_FUNCTION_NAMESPACE), Function::name);
         
-        return Multimaps.filterKeys(functionsInNamespace, new Predicate<String>() {
-            public boolean apply(String input) {
-                return isContentFunctionTerm(input);
-            }
-        });
+        return Multimaps.filterKeys(functionsInNamespace, TermOffsetPopulator::isContentFunctionTerm);
     }
     
     /**
@@ -255,8 +254,8 @@ public class TermOffsetPopulator {
                 return null;
             }
             
-            Set<String> zones = new HashSet<String>();
-            if (args.zone() != null) {
+            Set<String> zones = new HashSet<>();
+            if (args.zone() != null && !args.zone().isEmpty()) {
                 zones.addAll(args.zone());
             } else {
                 zones.addAll(contentExpansionFields);
@@ -276,11 +275,11 @@ public class TermOffsetPopulator {
     private static Set<String> getNormalizedTerms(String originalTerm, String zone, Multimap<String,Class<? extends Type<?>>> dataTypes,
                     Map<Class<? extends Type<?>>,Type<?>> dataTypeCacheMap) {
         
-        Set<String> normalizedTerms = new HashSet<String>();
+        Set<String> normalizedTerms = new HashSet<>();
         
         Collection<Class<? extends Type<?>>> dataTypesForZone = dataTypes.get(zone);
         if (dataTypesForZone.isEmpty()) {
-            dataTypesForZone = Collections.<Class<? extends Type<?>>> singleton(NoOpType.class);
+            dataTypesForZone = Collections.singleton(NoOpType.class);
         }
         
         // Get the dataType version of the term for each dataType set up on
@@ -355,7 +354,7 @@ public class TermOffsetPopulator {
         for (String key : contentFieldValues.keySet()) {
             Collection<String> contentValues = contentFieldValues.get(key);
             Collection<String> queryValues = queryFieldValues.get(key);
-            Set<String> intersection = new HashSet<String>(contentValues);
+            Set<String> intersection = new HashSet<>(contentValues);
             intersection.retainAll(queryValues);
             if (!intersection.isEmpty()) {
                 termFrequencyFieldValues.putAll(key, intersection);

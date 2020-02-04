@@ -11,11 +11,18 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
+/**
+ * <pre>
+ * Function is like the Include function, except where the Include function returns only
+ * the first match that makes the result 'true' (non-empty return set), the GetAllMatches
+ * function returns all of the matches for the supplied field and value.
+ * </pre>
+ */
 public class GetAllMatches extends JexlQueryFunction {
     WildcardFieldedFilter.BooleanType type = null;
     
     public GetAllMatches() {
-        super("get_all_matches", new ArrayList<String>());
+        super("get_all_matches", new ArrayList<>());
     }
     
     @Override

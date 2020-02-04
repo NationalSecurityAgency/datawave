@@ -21,8 +21,8 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
     
     public static final String TIMING_METADATA = "TIMING_METADATA";
     protected QuerySpan spanRunner;
-    static private String host = null;
-    static private Logger log = Logger.getLogger(QuerySpan.class);
+    private static String host = null;
+    private static Logger log = Logger.getLogger(QuerySpan.class);
     
     static {
         try {
@@ -52,6 +52,12 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
                 timingMetadata.setSourceCount(querySpan.getSourceCount());
                 timingMetadata.setSeekCount(querySpan.getSeekCount());
                 timingMetadata.setNextCount(querySpan.getNextCount());
+                if (querySpan.getYield()) {
+                    timingMetadata.setYieldCount(1L);
+                } else {
+                    timingMetadata.setYieldCount(0L);
+                }
+                
                 long totalStageTimers = querySpan.getStageTimerTotal();
                 // do not report timers that are less than 5% of the total
                 double threshold = totalStageTimers * 0.05;

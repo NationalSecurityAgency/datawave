@@ -12,5 +12,5 @@ import org.apache.hadoop.conf.Configuration;
  * 
  */
 public interface ChainedContextWriter<OK,OV> extends ContextWriter<OK,OV> {
-    public void configureChainedContextWriter(Configuration conf, Class<? extends ContextWriter<OK,OV>> contextWriterClass);
+    void configureChainedContextWriter(Configuration conf, Class<? extends ContextWriter<OK,OV>> contextWriterClass);
 }

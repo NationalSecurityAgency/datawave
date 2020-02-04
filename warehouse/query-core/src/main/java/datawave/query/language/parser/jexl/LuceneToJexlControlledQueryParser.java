@@ -50,7 +50,7 @@ public class LuceneToJexlControlledQueryParser extends LuceneToJexlQueryParser i
         }
         
         if (sb.length() > 0) {
-            query = "(" + query + ")" + " AND (" + sb.toString() + ")";
+            query = "(" + query + ")" + " AND (" + sb + ")";
         }
         
         return super.parse(query);

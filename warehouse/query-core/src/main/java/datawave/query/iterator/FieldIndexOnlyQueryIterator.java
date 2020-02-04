@@ -23,13 +23,7 @@ import datawave.query.function.LogTiming;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
-import datawave.query.function.MaskedValueFilterFactory;
-import datawave.query.function.MaskedValueFilterInterface;
-import datawave.query.iterator.profile.EvaluationTrackingFunction;
-import datawave.query.iterator.profile.SourceTrackingIterator;
-import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
-import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.Document;
@@ -57,6 +51,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
@@ -173,10 +168,14 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
         
         if (options.containsKey(INDEX_ONLY_FIELDS)) {
-            this.indexOnlyFields = buildIndexOnlyFieldsSet(options.get(INDEX_ONLY_FIELDS));
+            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
         } else if (!this.fullTableScanOnly) {
             log.error("A list of index only fields must be provided when running an optimized query");
             return false;
+        }
+        
+        if (options.containsKey(INDEXED_FIELDS)) {
+            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
@@ -218,7 +217,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
         
         if (!validateOptions(options)) {
-            throw new IllegalArgumentException("Could not initialize QueryIterator with " + options.toString());
+            throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
         
         // Parse the query
@@ -258,8 +257,19 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
         Collection<String> unindexedTypes = Lists.newArrayList();
         
-        Set<String> keys = fetchDatatypeKeys(this.documentOptions.get(NON_INDEXED_DATATYPES));
-        unindexedTypes.addAll(keys);
+        Set<String> keys = fetchDataTypeKeys(this.documentOptions.get(NON_INDEXED_DATATYPES));
+        
+        String compressedOptionString = this.documentOptions.get(QUERY_MAPPING_COMPRESS);
+        if (!org.apache.commons.lang3.StringUtils.isBlank(compressedOptionString)) {
+            boolean compressedOption = Boolean.parseBoolean(compressedOptionString);
+            if (compressedOption) {
+                for (String key : keys) {
+                    unindexedTypes.add(decompressOption(key, QueryOptions.UTF8));
+                }
+            }
+        } else {
+            unindexedTypes.addAll(keys);
+        }
         
         if (isQueryFullySatisfiedInitialState) {
             SatisfactionVisitor satisfactionVisitor = this.createSatisfiabilityVisitor(true); // we'll charge in with optimism

@@ -9,7 +9,7 @@ import datawave.webservice.query.dashboard.DashboardSummary;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 
 import java.util.ArrayList;
 import java.util.Arrays;

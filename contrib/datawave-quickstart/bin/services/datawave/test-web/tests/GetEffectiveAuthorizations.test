@@ -1,6 +1,7 @@
-TEST_ID="GetEffectiveAuthorizations"
-TEST_DESCRIPTION="Gets all roles & effective Accumulo auths for the current user (PKI) identity"
-TEST_URL_OPTS="-X GET ${URI_ROOT}/Security/User/listEffectiveAuthorizations"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=true
+
+configureTest \
+    ListEffectiveAuthsGET \
+    "Gets all roles & effective Accumulo auths for the current user (PKI) identity" \
+    "-X GET ${URI_ROOT}/Security/User/listEffectiveAuthorizations" \
+    "application/xml;charset=UTF-8" \
+    200

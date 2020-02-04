@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  */
 public class DateUtils {
     
-    static final HashSet<String> GROUPS = new HashSet<>(Arrays.asList(new String[] {"none", "year", "month", "day"}));
+    static final HashSet<String> GROUPS = new HashSet<>(Arrays.asList("none", "year", "month", "day"));
     // Pattern: /YYYY/MM/DD followed by a / or the end of the string, (?: ) is a non-capturing group....
     public static final Pattern pattern = Pattern.compile("/([0-9]{4})((/[0-9]{2}){2})(?:/|$)");
     public static final long A_MINUTE = 1000L * 60L;
@@ -32,7 +32,7 @@ public class DateUtils {
      * @param group
      * @param path
      */
-    public long getBucket(String group, String path) throws UnusableFileException {
+    public static long getBucket(String group, String path) throws UnusableFileException {
         if (group == null || "none".equals(group)) {
             return 0L;
         }
@@ -71,7 +71,7 @@ public class DateUtils {
      * 
      * @param path
      */
-    public long getFolderTimestamp(String path) throws UnusableFileException {
+    public static long getFolderTimestamp(String path) throws UnusableFileException {
         return getBucket("day", path);
     }
 }

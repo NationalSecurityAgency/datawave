@@ -1,9 +1,10 @@
 package datawave.query.jexl;
 
 import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,7 +53,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testClear_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         
         // Set expectations, looping twice to simulate the 2 fetch sequences occurring before and after the
         // clear() invocation. Although size() is called 3 times, only the first and last should result in a
@@ -79,7 +80,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertTrue("The field name should have been returned from the accessor", fieldName.equals(result1));
+        assertEquals("The field name should have been returned from the accessor", fieldName, result1);
         
         assertEquals("Incorrect number of values fetched before the clear", values.size(), result2);
         
@@ -92,7 +93,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testContains_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -121,7 +122,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testContainsAll_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -147,7 +148,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testIterator_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         
         // Set expectations
         for (int i = 0; i < 2; i++) {
@@ -193,20 +194,19 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertTrue("The subject should have returned a non-null iterator", null != result1);
+        assertNotNull("The subject should have returned a non-null iterator", result1);
         
         assertEquals("Incorrect number of values fetched via the iterator", values.size(), result2);
         
         assertTrue("The subject, by default, should NOT have retained fetched values", result3.contains("unfetched"));
         
-        assertTrue("The subject should have returned a non-null iterator", null != result4);
+        assertNotNull("The subject should have returned a non-null iterator", result4);
         
         assertEquals("Incorrect number of values fetched via the iterator", values.size(), result5);
         
         assertFalse("The subject, by setting the flag, should have retained fetched values", result6.contains("unfetched"));
         
-        assertTrue("The subject should have returned a non-null iterator, but all fetching should have occurred using only the previous instance",
-                        null != result7);
+        assertNotNull("The subject should have returned a non-null iterator, but all fetching should have occurred using only the previous instance", result7);
         
         assertEquals("Incorrect number of in-memory values obtained from the iterator", values.size(), result8);
     }
@@ -215,7 +215,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testRemove_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -241,7 +241,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testRemoveAll_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -267,7 +267,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testRetainAll_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -326,7 +326,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testToArray_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -346,8 +346,8 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         verifyAll();
         
         // Verify results
-        assertTrue("The subject should have returned a non-null array of fetched values", null != result1);
+        assertNotNull("The subject should have returned a non-null array of fetched values", result1);
         
-        assertTrue("The subject should have returned a non-null array of fetched values", null != result2);
+        assertNotNull("The subject should have returned a non-null array of fetched values", result2);
     }
 }

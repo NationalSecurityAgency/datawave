@@ -9,13 +9,12 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
- * function to test whether two key/value pairs match within datafields of the same (grouping context) group For example FROM_ADDRESS.1 == 1.2.3.4 and
- * DIRECTION.1 == 1
+ * Tests that for the field name arguments that are supplied, there are values that match that are also within the same grouping context
  */
 public class AtomValuesMatchFunction extends JexlQueryFunction {
     
     public AtomValuesMatchFunction() {
-        super("atom_values_match", new ArrayList<String>());
+        super("atom_values_match", new ArrayList<>());
     }
     
     @Override

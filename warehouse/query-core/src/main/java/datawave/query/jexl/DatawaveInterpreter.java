@@ -1,23 +1,43 @@
 package datawave.query.jexl;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.Maps;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.nodes.TreeHashNode;
-import datawave.query.jexl.visitors.TreeHashVisitor;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.Interpreter;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
 import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTMethodNode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTSizeMethod;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
+import org.apache.lucene.util.fst.FST;
 
-import com.google.common.collect.Maps;
-
-import datawave.query.collections.FunctionalSet;
-import datawave.query.jexl.functions.QueryFunctions;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 
 /**
  * Extended so that calls to a function node, which can return a collection of 'hits' instead of a Boolean, can be evaluated as true/false based on the size of
@@ -28,7 +48,7 @@ import datawave.query.jexl.functions.QueryFunctions;
  */
 public class DatawaveInterpreter extends Interpreter {
     
-    protected Map<TreeHashNode,Object> resultMap;
+    protected Map<String,Object> resultMap;
     
     private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
     
@@ -46,13 +66,12 @@ public class DatawaveInterpreter extends Interpreter {
     public static boolean isMatched(Object scriptExecuteResult) {
         boolean matched = false;
         if (scriptExecuteResult != null && Boolean.class.isAssignableFrom(scriptExecuteResult.getClass())) {
-            Boolean result = (Boolean) scriptExecuteResult;
-            matched = result;
+            matched = (Boolean) scriptExecuteResult;
         } else if (scriptExecuteResult != null && Collection.class.isAssignableFrom(scriptExecuteResult.getClass())) {
             // if the function returns a collection of matches, return true/false
             // based on the number of matches
             Collection<?> matches = (Collection<?>) scriptExecuteResult;
-            matched = (matches.size() > 0);
+            matched = (!matches.isEmpty());
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Unable to process non-Boolean result from JEXL evaluation '" + scriptExecuteResult);
@@ -63,9 +82,9 @@ public class DatawaveInterpreter extends Interpreter {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        TreeHashNode hash = TreeHashVisitor.getNodeHash(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
-        Object result = resultMap.get(hash);
+        Object result = resultMap.get(nodeString);
         if (null != result) {
             return result;
         }
@@ -86,11 +105,11 @@ public class DatawaveInterpreter extends Interpreter {
         // if the function is paired with a method that is called on its results (like 'size') then the
         // actual results must be returned.
         if (hasSiblings(node)) {
-            resultMap.put(hash, result);
+            resultMap.put(nodeString, result);
             return result;
         }
-        resultMap.put(hash, result instanceof Collection ? ((Collection) result).size() > 0 : result);
-        return result instanceof Collection ? ((Collection) result).size() > 0 : result;
+        resultMap.put(nodeString, result instanceof Collection ? !((Collection) result).isEmpty() : result);
+        return result instanceof Collection ? !((Collection) result).isEmpty() : result;
     }
     
     /**
@@ -111,25 +130,25 @@ public class DatawaveInterpreter extends Interpreter {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        TreeHashNode hash = TreeHashVisitor.getNodeHash(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
-        Object result = resultMap.get(hash);
+        Object result = resultMap.get(nodeString);
         if (null != result)
             return result;
         result = super.visit(node, data);
-        resultMap.put(hash, result);
+        resultMap.put(nodeString, result);
         return result;
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        TreeHashNode hash = TreeHashVisitor.getNodeHash(node);
+        String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         
-        Object result = resultMap.get(hash);
+        Object result = resultMap.get(nodeString);
         if (null != result)
             return result;
         result = super.visit(node, data);
-        resultMap.put(hash, result);
+        resultMap.put(nodeString, result);
         return result;
     }
     
@@ -158,40 +177,62 @@ public class DatawaveInterpreter extends Interpreter {
     }
     
     public Object visit(ASTOrNode node, Object data) {
+        Deque<JexlNode> children = new ArrayDeque<>();
+        Deque<JexlNode> stack = new ArrayDeque<>();
+        stack.push(node);
+        
+        // iterative depth-first traversal of tree to avoid stack
+        // overflow when traversing large or'd lists
+        while (!stack.isEmpty()) {
+            JexlNode currNode = stack.pop();
+            
+            if (currNode instanceof ASTOrNode) {
+                for (int i = currNode.jjtGetNumChildren() - 1; i >= 0; i--) {
+                    stack.push(JexlASTHelper.dereference(currNode.jjtGetChild(i)));
+                }
+            } else {
+                children.push(currNode);
+            }
+        }
+        
+        Object result = null;
+        while (!arithmetic.toBoolean(result) && !children.isEmpty())
+            result = interpretOr(children.pop().jjtAccept(this, data), result);
+        
+        return result;
+    }
+    
+    public Object interpretOr(Object left, Object right) {
         FunctionalSet leftFunctionalSet = null;
         FunctionalSet rightFunctionalSet = null;
-        Object left = node.jjtGetChild(0).jjtAccept(this, data);
         if (left == null)
             left = FunctionalSet.empty();
-        if (left instanceof Collection == false) {
+        if (!(left instanceof Collection)) {
             try {
                 boolean leftValue = arithmetic.toBoolean(left);
                 if (leftValue) {
                     return Boolean.TRUE;
                 }
             } catch (ArithmeticException xrt) {
-                throw new JexlException(node.jjtGetChild(0), "boolean coercion error", xrt);
+                throw new RuntimeException(left.toString() + " boolean coercion error", xrt);
             }
         } else {
-            if (leftFunctionalSet == null)
-                leftFunctionalSet = new FunctionalSet();
+            leftFunctionalSet = new FunctionalSet();
             leftFunctionalSet.addAll((Collection) left);
         }
-        Object right = node.jjtGetChild(1).jjtAccept(this, data);
         if (right == null)
             right = FunctionalSet.empty();
-        if (right instanceof Collection == false) {
+        if (!(right instanceof Collection)) {
             try {
                 boolean rightValue = arithmetic.toBoolean(right);
                 if (rightValue) {
                     return Boolean.TRUE;
                 }
             } catch (ArithmeticException xrt) {
-                throw new JexlException(node.jjtGetChild(1), "boolean coercion error", xrt);
+                throw new RuntimeException(right.toString() + " boolean coercion error", xrt);
             }
         } else {
-            if (rightFunctionalSet == null)
-                rightFunctionalSet = new FunctionalSet();
+            rightFunctionalSet = new FunctionalSet();
             rightFunctionalSet.addAll((Collection) right);
         }
         // when an identifier is expanded by the data model within a Function node, the results of the matches
@@ -220,7 +261,7 @@ public class DatawaveInterpreter extends Interpreter {
      * * This will determine if this ANDNode contains a range, and will invoke the appropriate range function instead of evaluating the LT/LE and GT/GE nodes *
      * independently as that does not work when there are sets of values in the context. * * @param node * @return a collection of hits (or empty set) if we
      * evaluated a range. null otherwise.
-     * */
+     */
     private Collection<?> evaluateRange(ASTAndNode node) {
         Collection<?> evaluation = null;
         JexlNode left = node.jjtGetChild(0);
@@ -379,5 +420,91 @@ public class DatawaveInterpreter extends Interpreter {
             return true;
         }
         return false;
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+            return visitExceededOrThresholdMarker(node);
+        } else {
+            return super.visit(node, data);
+        }
+    }
+    
+    private Object visitExceededOrThresholdMarker(ASTReference node) {
+        String id = ExceededOrThresholdMarkerJexlNode.getId(node);
+        String field = ExceededOrThresholdMarkerJexlNode.getField(node);
+        
+        Set<String> evalValues = null;
+        FST evalFst = null;
+        SortedSet<Range> evalRanges = null;
+        
+        // determine what we're dealing with
+        Object contextObj = getContext().get(id);
+        if (contextObj instanceof FST) {
+            evalFst = (FST) contextObj;
+        } else if (contextObj instanceof Set) {
+            Iterator iter = ((Set) contextObj).iterator();
+            if (iter.hasNext()) {
+                Object element = iter.next();
+                if (element instanceof Range)
+                    evalRanges = (SortedSet<Range>) contextObj;
+                else if (element instanceof String)
+                    evalValues = (Set<String>) contextObj;
+            }
+        }
+        
+        // get all of the values for this field from the context
+        Collection<?> contextValues;
+        Object fieldValue = getContext().get(field);
+        if (!(fieldValue instanceof Collection)) {
+            contextValues = Collections.singletonList(fieldValue);
+        } else {
+            contextValues = (Collection<?>) fieldValue;
+        }
+        
+        Set evaluation = new HashSet<>();
+        
+        // check for value matches
+        if (evalValues != null && !evalValues.isEmpty()) {
+            for (Object contextValue : contextValues) {
+                for (String evalValue : evalValues) {
+                    if (arithmetic.equals(contextValue, evalValue)) {
+                        evaluation.add(contextValue);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // check for FST matches
+        else if (evalFst != null && arithmetic instanceof DatawaveArithmetic) {
+            for (Object contextValue : contextValues) {
+                if (((DatawaveArithmetic) arithmetic).fstMatch(evalFst, contextValue)) {
+                    evaluation.add(contextValue);
+                    break;
+                }
+            }
+        }
+        
+        // check for range matches
+        else if (evalRanges != null && !evalRanges.isEmpty()) {
+            for (Object contextValue : contextValues) {
+                for (Range evalRange : evalRanges) {
+                    if ((evalRange.isStartKeyInclusive() ? arithmetic.greaterThanOrEqual(contextValue, evalRange.getStartKey().getRow().toString())
+                                    : arithmetic.greaterThan(contextValue, evalRange.getStartKey().getRow().toString()))
+                                    && (evalRange.isEndKeyInclusive() ? arithmetic.lessThanOrEqual(contextValue, evalRange.getEndKey().getRow().toString())
+                                                    : arithmetic.lessThan(contextValue, evalRange.getEndKey().getRow().toString()))) {
+                        evaluation.add(contextValue);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (evaluation.isEmpty())
+            return Boolean.FALSE;
+        
+        return evaluation;
     }
 }

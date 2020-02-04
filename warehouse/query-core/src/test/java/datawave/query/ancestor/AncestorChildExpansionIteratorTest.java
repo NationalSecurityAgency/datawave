@@ -12,11 +12,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 public class AncestorChildExpansionIteratorTest {
-    private List<String> children = Arrays.asList(new String[] {"a", "a.1", "a.1.1", "a.1.2", "a.1.2.1", "a.10", "a.2", "a.3", "a.4", "a.4.1", "a.4.1.1",
-            "a.4.1.2", "a.4.2", "a.5", "a.6", "a.7", "a.8", "a.9"});
+    private List<String> children = Arrays.asList("a", "a.1", "a.1.1", "a.1.2", "a.1.2.1", "a.10", "a.2", "a.3", "a.4", "a.4.1", "a.4.1.1", "a.4.1.2", "a.4.2",
+                    "a.5", "a.6", "a.7", "a.8", "a.9");
     
     private List<Map.Entry<Key,Value>> baseValues;
     private AncestorChildExpansionIterator iterator;
@@ -93,12 +99,12 @@ public class AncestorChildExpansionIteratorTest {
     }
     
     private void assertKey(Key key, String uid) {
-        Assert.assertTrue(key != null);
-        Assert.assertTrue(key.getRow().toString().equals(FI_ROW));
-        Assert.assertTrue(key.getColumnFamily().toString().equals(FI_COLUMN_FAMILY));
-        Assert.assertTrue(key.getColumnQualifier().toString().equals(FI_COLUMN_QUALIFIER_PREFIX + uid));
-        Assert.assertTrue(new String(key.getColumnVisibilityParsed().getExpression()).equals(FI_VIS));
-        Assert.assertTrue(key.getTimestamp() == FI_TIMESTAMP);
+        Assert.assertNotNull(key);
+        Assert.assertEquals(key.getRow().toString(), FI_ROW);
+        Assert.assertEquals(key.getColumnFamily().toString(), FI_COLUMN_FAMILY);
+        Assert.assertEquals(key.getColumnQualifier().toString(), FI_COLUMN_QUALIFIER_PREFIX + uid);
+        Assert.assertEquals(new String(key.getColumnVisibilityParsed().getExpression()), FI_VIS);
+        Assert.assertEquals(key.getTimestamp(), FI_TIMESTAMP);
     }
     
     @Test
@@ -113,7 +119,7 @@ public class AncestorChildExpansionIteratorTest {
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.3");
         Value topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertFalse(iterator.hasTop());
@@ -131,28 +137,28 @@ public class AncestorChildExpansionIteratorTest {
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.1");
         Value topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertFalse(iterator.hasTop());
@@ -172,28 +178,28 @@ public class AncestorChildExpansionIteratorTest {
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.1");
         Value topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertFalse(iterator.hasTop());
@@ -212,28 +218,28 @@ public class AncestorChildExpansionIteratorTest {
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.3");
         Value topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.4.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.4.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.4.1.2");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertFalse(iterator.hasTop());
@@ -254,49 +260,49 @@ public class AncestorChildExpansionIteratorTest {
         Key topKey = iterator.getTopKey();
         assertKey(topKey, "a.1");
         Value topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.1.2.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.3");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.4.1.1");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertTrue(iterator.hasTop());
         topKey = iterator.getTopKey();
         assertKey(topKey, "a.9");
         topValue = iterator.getTopValue();
-        Assert.assertTrue(topValue != null);
+        Assert.assertNotNull(topValue);
         
         iterator.next();
         Assert.assertFalse(iterator.hasTop());

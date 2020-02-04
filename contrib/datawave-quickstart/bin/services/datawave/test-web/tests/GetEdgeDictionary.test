@@ -1,6 +1,0 @@
-TEST_ID="GetEdgeDictionary"
-TEST_DESCRIPTION="Gets DataWave's graph edge dictionary"
-TEST_URL_OPTS="-X GET ${URI_ROOT}/EdgeDictionary"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false

@@ -2,7 +2,8 @@ package datawave.webservice.query.logic;
 
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 
 import org.junit.Test;
@@ -38,7 +40,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         }
         
         // Verify results
-        assertTrue("Expected an exception to be thrown due to null param", null != result1);
+        assertNotNull("Expected an exception to be thrown due to null param", result1);
     }
     
     @Test
@@ -51,12 +53,12 @@ public class TestLegacyBaseQueryLogicTransformer {
         
         // Run the test
         PowerMock.replayAll();
-        TestTransformer subject = new TestTransformer(new MarkingFunctions.NoOp(), this.response);
+        TestTransformer subject = new TestTransformer(new MarkingFunctions.Default(), this.response);
         BaseQueryResponse result1 = subject.createResponse(this.resultsPage);
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("BaseQueryResponse should not be null", result1 == this.response);
+        assertSame("BaseQueryResponse should not be null", result1, this.response);
     }
     
     @Test
@@ -67,15 +69,15 @@ public class TestLegacyBaseQueryLogicTransformer {
         
         // Run the test
         PowerMock.replayAll();
-        TestTransformer subject = new TestTransformer(new MarkingFunctions.NoOp(), this.response);
+        TestTransformer subject = new TestTransformer(new MarkingFunctions.Default(), this.response);
         BaseQueryResponse result1 = subject.createResponse(this.resultsPage);
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("BaseQueryResponse should not be null", result1 == this.response);
+        assertSame("BaseQueryResponse should not be null", result1, this.response);
     }
     
-    private class TestTransformer extends BaseQueryLogicTransformer {
+    private class TestTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,EventBase> {
         BaseQueryResponse response;
         
         public TestTransformer(MarkingFunctions markingFunctions, BaseQueryResponse response) {
@@ -84,7 +86,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         }
         
         @Override
-        public Object transform(Object arg0) {
+        public EventBase transform(Map.Entry<?,?> arg0) {
             return null;
         }
         

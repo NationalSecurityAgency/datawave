@@ -1,58 +1,77 @@
 package datawave.query.util;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
 import org.apache.commons.vfs2.FileChangeEvent;
 import org.apache.commons.vfs2.FileListener;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.impl.DefaultFileMonitor;
 import org.apache.log4j.Logger;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * This is created on the tservers. It provides a singleton map of auths to the appropriate TypeMetadata loaded by the TypeMetadataHelper and written to vfs.
- * This Monitors the file in vfs so that when the file is updated, the singleton {@code Map<Set<String>>,TypeMetadata>} is refreshed.
+ * This singleton is created on the tservers. It provides a map of metadataTableName to maps of auths to the appropriate TypeMetadata loaded by the
+ * TypeMetadataHelper and written to vfs. This Monitors the file in vfs so that when the file is updated, the {@code Map<Set<String>>,TypeMetadata>} is
+ * refreshed.
  *
  */
 public class TypeMetadataProvider implements FileListener {
     
     private static final Logger log = Logger.getLogger(TypeMetadataProvider.class);
     
-    protected TypeMetadataBridge bridge;
+    private TypeMetadataBridge bridge;
     
-    private static final Object lock = new Object();
+    private String[] metadataTableNames;
     
-    protected String[] metadataTableNames;
+    private final Pattern metadataTableNamePattern = Pattern.compile(".*/(\\w+)/typeMetadata");
     
-    /**
-     * our singleton for the map of auths to TypeMetadata
-     */
-    public static Map<Set<String>,TypeMetadata> typeMetadataMap = Collections.emptyMap(); // just in case it is never set to anything useful
+    private LoadingCache<String,Map<Set<String>,TypeMetadata>> typeMetadataMap = CacheBuilder.newBuilder().build(
+                    new CacheLoader<String,Map<Set<String>,TypeMetadata>>() {
+                        @Override
+                        public Map<Set<String>,TypeMetadata> load(String metadataTableName) {
+                            log.debug("loading the cache for " + metadataTableName);
+                            return reloadTypeMetadata(metadataTableName);
+                        }
+                    });
     
-    protected final AtomicBoolean needUpdate = new AtomicBoolean(true);
-    protected final AtomicBoolean typeMetadataLoaded = new AtomicBoolean(false);
+    private long delay;
     
-    protected long delay;
+    private Map<String,DefaultFileMonitor> monitors = Maps.newHashMap();
     
-    protected Map<String,DefaultFileMonitor> monitors = Maps.newHashMap();
+    private TypeMetadataProvider() {}
     
     public synchronized TypeMetadata getTypeMetadata(String metadataTableName, Set<String> authKey) {
-        synchronized (lock) {
-            this.reloadTypeMetadata(metadataTableName);
-            TypeMetadata typeMetadata = TypeMetadataProvider.typeMetadataMap.get(authKey);
-            if (typeMetadata != null) {
-                log.debug("getTypeMetadata(" + authKey + ") returning " + typeMetadata);
-                return typeMetadata;
-            } else {
-                log.debug("getTypeMetadata(" + authKey + ") returning empty TypeMetadata");
-                return new TypeMetadata();
-            }
+        try {
+            return typeMetadataMap.get(metadataTableName).get(authKey);
+        } catch (Exception ex) {
+            log.warn("could not get TypeMetadata for " + metadataTableName + " and " + authKey, ex);
+            return new TypeMetadata();
         }
+    }
+    
+    private Map<Set<String>,TypeMetadata> reloadTypeMetadata(String metadataTableName) {
+        Map<Set<String>,TypeMetadata> typeMetadataMap = Maps.newHashMap();
+        try {
+            log.debug("reloading TypeMetadata");
+            ObjectInputStream ois = new ObjectInputStream(this.bridge.getFileObject(metadataTableName).getContent().getInputStream());
+            typeMetadataMap = (Map<Set<String>,TypeMetadata>) ois.readObject();
+            
+            if (log.isTraceEnabled()) {
+                log.trace("reloaded TypeMetadataProvider.typeMetadataMap =" + typeMetadataMap);
+            }
+            ois.close();
+        } catch (Exception ex) {
+            log.warn("Unable to reload typeMetadata. Current value is " + typeMetadataMap);
+        }
+        return typeMetadataMap;
     }
     
     public long getDelay() {
@@ -101,59 +120,45 @@ public class TypeMetadataProvider implements FileListener {
     }
     
     public void forceUpdate() {
-        this.needUpdate.set(true);
-        this.update();
+        this.typeMetadataMap.invalidateAll();
     }
     
     @Override
-    public void fileCreated(FileChangeEvent event) throws Exception {
-        
-        this.needUpdate.set(true);
-        this.typeMetadataLoaded.set(false);
-        long modTime = event.getFile().getContent().getLastModifiedTime();
-        log.debug("TypeMetadata file created, modified at: " + modTime);
-        
-    }
-    
-    @Override
-    public void fileDeleted(FileChangeEvent event) throws Exception {
-        this.needUpdate.set(true);
-        this.typeMetadataLoaded.set(false);
-        log.debug("TypeMetadata file deleted");
-        synchronized (lock) {
-            TypeMetadataProvider.typeMetadataMap.clear();
+    public void fileCreated(FileChangeEvent event) throws FileSystemException {
+        String metadataFileName = event.getFile().getName().toString();
+        Matcher matcher = this.metadataTableNamePattern.matcher(metadataFileName);
+        if (matcher.matches()) {
+            String metadataTableName = matcher.group(1);
+            typeMetadataMap.refresh(metadataTableName);
+            if (log.isDebugEnabled()) {
+                long modTime = event.getFile().getContent().getLastModifiedTime();
+                log.debug("TypeMetadata file created, modified at: " + modTime);
+            }
         }
     }
     
     @Override
-    public void fileChanged(FileChangeEvent event) throws Exception {
-        
-        this.needUpdate.set(true);
-        this.typeMetadataLoaded.set(false);
-        long modTime = event.getFile().getContent().getLastModifiedTime();
-        log.debug("TypeMetadata file changed, modified at: " + modTime);
+    public void fileDeleted(FileChangeEvent event) {
+        String metadataFileName = event.getFile().getName().toString();
+        Matcher matcher = this.metadataTableNamePattern.matcher(metadataFileName);
+        if (matcher.matches()) {
+            String metadataTableName = matcher.group(1);
+            typeMetadataMap.refresh(metadataTableName);
+            log.debug("TypeMetadata file deleted");
+        }
     }
     
-    private void reloadTypeMetadata(String metadataTableName) {
-        if (this.needUpdate.get() == true && this.typeMetadataLoaded.get() == false) {
-            try {
-                synchronized (lock) {
-                    log.debug("reloading TypeMetadata");
-                    ObjectInputStream ois = new ObjectInputStream(this.bridge.getFileObject(metadataTableName).getContent().getInputStream());
-                    TypeMetadataProvider.typeMetadataMap = (Map<Set<String>,TypeMetadata>) ois.readObject();
-                    
-                    this.needUpdate.set(false);
-                    this.typeMetadataLoaded.set(true);
-                    if (log.isTraceEnabled()) {
-                        log.trace("reloaded TypeMetadataProvider.typeMetadataMap =" + TypeMetadataProvider.typeMetadataMap);
-                    }
-                    ois.close();
-                }
-            } catch (IOException | ClassNotFoundException ex) {
-                log.warn("Unable to reload typeMetadata. Current value is " + TypeMetadataProvider.typeMetadataMap);
+    @Override
+    public void fileChanged(FileChangeEvent event) throws FileSystemException {
+        String metadataFileName = event.getFile().getName().toString();
+        Matcher matcher = this.metadataTableNamePattern.matcher(metadataFileName);
+        if (matcher.matches()) {
+            String metadataTableName = matcher.group(1);
+            typeMetadataMap.refresh(metadataTableName);
+            if (log.isDebugEnabled()) {
+                long modTime = event.getFile().getContent().getLastModifiedTime();
+                log.debug("TypeMetadata file changed, modified at: " + modTime);
             }
-        } else {
-            log.debug("reload of TypeMetadata was unneeded");
         }
     }
     
@@ -171,8 +176,7 @@ public class TypeMetadataProvider implements FileListener {
     
     @Override
     public String toString() {
-        return "TypeMetadataProvider{" + "bridge=" + bridge + ", needUpdate=" + needUpdate + ", typeMetadataLoaded=" + typeMetadataLoaded + ", delay=" + delay
-                        + ", monitors=" + monitors + '}';
+        return "TypeMetadataProvider{" + "bridge=" + bridge + ", delay=" + delay + ", monitors=" + monitors + '}';
     }
     
     /**

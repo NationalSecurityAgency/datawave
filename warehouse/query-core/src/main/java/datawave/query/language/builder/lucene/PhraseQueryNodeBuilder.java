@@ -36,10 +36,6 @@ import org.apache.lucene.search.PhraseQuery;
  */
 public class PhraseQueryNodeBuilder implements QueryBuilder {
     
-    public PhraseQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         TokenizedPhraseQueryNode phraseNode = (TokenizedPhraseQueryNode) queryNode;
         datawave.query.language.tree.QueryNode bNode = null;

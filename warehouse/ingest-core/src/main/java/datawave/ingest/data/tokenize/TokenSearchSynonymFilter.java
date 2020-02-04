@@ -29,7 +29,7 @@ public class TokenSearchSynonymFilter extends TokenFilter {
     boolean synonymPositionsEnabled = false;
     
     /** tokenizer state: output buffer for terms and synonyms */
-    private final Queue<OutputTuple> output = new PriorityQueue<OutputTuple>(24);
+    private final Queue<OutputTuple> output = new PriorityQueue<>(24);
     private final String[] zw = {"", ""};
     
     public TokenSearchSynonymFilter(TokenStream input, TokenSearch searchUtil) {

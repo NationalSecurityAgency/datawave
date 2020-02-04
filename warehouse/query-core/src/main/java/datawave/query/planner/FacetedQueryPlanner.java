@@ -1,19 +1,20 @@
 package datawave.query.planner;
 
+import com.google.common.base.Joiner;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.iterator.facets.DynamicFacetIterator;
 import datawave.query.iterator.facets.FacetedTableIterator;
 import datawave.query.jexl.visitors.AllTermsIndexedVisitor;
+import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.facets.FacetCheck;
 import datawave.query.tables.facets.FacetQueryPlanVisitor;
 import datawave.query.tables.facets.FacetedConfiguration;
 import datawave.query.tables.facets.FacetedSearchType;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.Tuple2;
@@ -21,13 +22,10 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
-
-import com.google.common.base.Joiner;
 
 /**
  *
@@ -89,10 +87,10 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
             config.setBypassExecutabilityCheck();
             FacetQueryPlanVisitor visitor = new FacetQueryPlanVisitor(config, metadataHelper, facetedConfig.getFacetedFields());
             queryTree.jjtAccept(visitor, null);
-            return new Tuple2<CloseableIterable<QueryPlan>,Boolean>(visitor, false);
+            return new Tuple2<>(visitor, false);
             
         } else {
-            return new Tuple2<CloseableIterable<QueryPlan>,Boolean>(this.getFullScanRange(config, queryTree), false);
+            return new Tuple2<>(this.getFullScanRange(config, queryTree), false);
         }
         
     }
@@ -104,15 +102,13 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
         config.setExpandAllTerms(true);
         
         // update the query tree
-        ASTJexlScript script = super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
         
-        return script;
+        return super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
     }
     
     @Override
     protected ASTJexlScript limitQueryTree(ASTJexlScript script, ShardQueryConfiguration config) throws NoResultsException {
         // Assert that all of the terms in the query are indexed (so we can completely use the field index)
-        // Also removes any spurious _ANYFIELD_ nodes left in from upstream
         try {
             switch (facetedConfig.getType()) {
                 case DAY_COUNT:
@@ -126,7 +122,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
                         return script;
                     }
             }
-        } catch (CannotExpandUnfieldedTermFatalException e) {
+        } catch (EmptyUnfieldedTermExpansionException e) {
             throw new NoResultsException(e);
         }
     }

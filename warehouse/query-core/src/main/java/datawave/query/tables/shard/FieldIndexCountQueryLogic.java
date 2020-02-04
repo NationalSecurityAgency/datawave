@@ -21,7 +21,6 @@ import datawave.query.QueryParameters;
 import datawave.query.iterators.FieldIndexCountingIterator;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
@@ -41,8 +40,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections.Transformer;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -94,7 +93,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         }
         
         // I'm using this config object in a pinch, we should probably create a custom one.
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(this, settings);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(this, settings);
         config.setConnector(connection);
         config.setAuthorizations(auths);
         
@@ -113,7 +112,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 if (null != this.fieldValues && !this.fieldValues.isEmpty()) {
                     for (Type<?> norm : normalizerSet) {
                         if (null == normalizedFieldValues) {
-                            normalizedFieldValues = new HashSet<String>();
+                            normalizedFieldValues = new HashSet<>();
                         }
                         for (String val : this.fieldValues) {
                             try {
@@ -310,13 +309,13 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
             throw new IllegalArgumentException("Query was empty or not parseable");
         }
         if (this.queryModel != null) {
-            this.fieldNames = new ArrayList<String>(queryModel.getMappingsForAlias(fieldName));
+            this.fieldNames = new ArrayList<>(queryModel.getMappingsForAlias(fieldName));
             if (this.fieldNames.isEmpty()) {
                 // try using original fieldname
                 this.fieldNames.add(fieldName);
             }
         } else {
-            this.fieldNames = new ArrayList<String>(Collections.singletonList(fieldName));
+            this.fieldNames = new ArrayList<>(Collections.singletonList(fieldName));
         }
         if (null == this.fieldNames || this.fieldNames.isEmpty()) {
             throw new IllegalArgumentException("Do not have valid field name to query on.");
@@ -352,21 +351,21 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
     private void configTypeFilter(ShardQueryConfiguration config, Query settings) {
         // Get the datatype set if specified
         if (null == settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)) {
-            config.setDatatypeFilter(new HashSet<String>());
+            config.setDatatypeFilter(new HashSet<>());
             return;
         }
         
         String typeList = settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
         HashSet<String> typeFilter;
-        if (null != typeList && 0 != typeList.length()) {
-            typeFilter = new HashSet<String>();
+        if (null != typeList && !typeList.isEmpty()) {
+            typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
             
             if (!typeFilter.isEmpty()) {
                 config.setDatatypeFilter(typeFilter);
                 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Type Filter: " + typeFilter.toString());
+                    logger.debug("Type Filter: " + typeFilter);
                 }
             }
         }
@@ -411,7 +410,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         if (logger.isTraceEnabled()) {
             logger.trace("buildSummary");
         }
-        Map<String,Tuple> summary = new HashMap<String,Tuple>();
+        Map<String,Tuple> summary = new HashMap<>();
         String cf;
         StringBuilder mapKeyBuilder = new StringBuilder();
         String mapKey;
@@ -448,7 +447,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 }
                 
                 mapKeyBuilder.append(Constants.NULL_BYTE_STRING);
-                mapKeyBuilder.append(key.getColumnQualifier().toString());
+                mapKeyBuilder.append(key.getColumnQualifier());
                 mapKey = mapKeyBuilder.toString();
                 
                 // if we are over our threshold for unique values skip it.
@@ -477,7 +476,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         private final MarkingFunctions tupleMarkingFunctions;
         private long count = 0L;
         private long maxTimestamp = 0L;
-        Set<Text> uniqueVisibilities = new HashSet<Text>();
+        Set<Text> uniqueVisibilities = new HashSet<>();
         
         public Tuple(MarkingFunctions mf) {
             tupleMarkingFunctions = mf;
@@ -501,7 +500,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         
         public ColumnVisibility getColumnVisibility() {
             try {
-                Set<ColumnVisibility> columnVisibilities = new HashSet<ColumnVisibility>();
+                Set<ColumnVisibility> columnVisibilities = new HashSet<>();
                 for (Text t : this.uniqueVisibilities) {
                     columnVisibilities.add(new ColumnVisibility(t));
                 }
@@ -545,11 +544,11 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
     
     @Override
     public Set<String> getOptionalQueryParameters() {
-        Set<String> params = new TreeSet<String>();
-        params.add(QueryParameters.PARAMETER_MODEL_NAME);
-        params.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
-        params.add(QueryParameters.DATATYPE_FILTER_SET);
-        return params;
+        Set<String> optionalParams = new TreeSet<>(super.getOptionalQueryParameters());
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
+        optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        return optionalParams;
     }
     
 }

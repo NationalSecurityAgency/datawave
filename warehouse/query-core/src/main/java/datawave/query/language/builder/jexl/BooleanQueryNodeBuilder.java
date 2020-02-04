@@ -24,7 +24,6 @@ import java.util.List;
 import datawave.query.language.parser.jexl.JexlBooleanNode;
 import datawave.query.language.parser.jexl.JexlNode;
 
-import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
@@ -46,10 +45,6 @@ import org.apache.lucene.search.Query;
  * It takes in consideration if the children is a {@link ModifierQueryNode} to define the {@link BooleanClause}.
  */
 public class BooleanQueryNodeBuilder implements QueryBuilder {
-    
-    public BooleanQueryNodeBuilder() {
-        // empty constructor
-    }
     
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         BooleanQueryNode booleanNode = (BooleanQueryNode) queryNode;

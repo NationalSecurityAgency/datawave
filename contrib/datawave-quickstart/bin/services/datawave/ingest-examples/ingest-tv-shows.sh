@@ -60,12 +60,10 @@ function configure() {
       case "${1}" in
          --shows | -s)
             TV_SHOW_LIST="${2}"
-            #echo "${TV_SHOW_LIST}"
             shift
             ;;
          --outfile | -o)
             OUTPUT_STAGING_FILE="${2}"
-            #echo "${OUTPUT_STAGING_FILE}"
             shift
             ;;
          --download-only | -d)

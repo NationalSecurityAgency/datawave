@@ -1,6 +1,7 @@
 package datawave.webservice.common.cache;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import datawave.common.test.integration.IntegrationTest;
 import org.apache.curator.framework.CuratorFramework;
@@ -10,7 +11,6 @@ import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;
 import org.apache.curator.framework.recipes.shared.VersionedValue;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.curator.test.QuorumConfigBuilder;
@@ -57,12 +57,7 @@ public class SharedCacheCoordinatorTest {
         assertTrue("Ephemeral server node " + ephemeralNodePath + " doesn't exist before a zookeeper restart", exists);
         
         final ConnectionState[] state = new ConnectionState[] {ConnectionState.CONNECTED};
-        curatorClient.getConnectionStateListenable().addListener(new ConnectionStateListener() {
-            @Override
-            public void stateChanged(CuratorFramework client, ConnectionState newState) {
-                state[0] = newState;
-            }
-        });
+        curatorClient.getConnectionStateListenable().addListener((client, newState) -> state[0] = newState);
         
         testingZooKeeperServer.restart();
         
@@ -151,12 +146,7 @@ public class SharedCacheCoordinatorTest {
         final int[] count = new int[] {1};
         
         CuratorFramework curatorFramework = Whitebox.getInternalState(cacheCoordinator, CuratorFramework.class);
-        curatorFramework.getConnectionStateListenable().addListener(new ConnectionStateListener() {
-            @Override
-            public void stateChanged(CuratorFramework client, ConnectionState newState) {
-                state[0] = newState;
-            }
-        });
+        curatorFramework.getConnectionStateListenable().addListener((client, newState) -> state[0] = newState);
         cacheCoordinator.registerCounter(COUNTER, new SharedCountListener() {
             @Override
             public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception {

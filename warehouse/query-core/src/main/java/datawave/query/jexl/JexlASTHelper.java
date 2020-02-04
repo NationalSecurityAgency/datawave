@@ -1,40 +1,5 @@
 package datawave.query.jexl;
 
-import java.io.StringReader;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.text.MessageFormat;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import datawave.data.normalizer.NormalizationException;
-import datawave.data.type.Type;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.index.lookup.RangeStream;
-import datawave.query.index.stats.IndexStatsClient;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.visitors.RebuildingVisitor;
-import datawave.query.postprocessing.tf.Function;
-import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
-import datawave.query.Constants;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.QueryException;
-
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.*;
-import org.apache.commons.jexl2.parser.JexlNode.Literal;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -42,6 +7,85 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.data.normalizer.NormalizationException;
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.index.lookup.RangeStream;
+import datawave.query.index.stats.IndexStatsClient;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.postprocessing.tf.Function;
+import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTAssignment;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTFalseNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTMethodNode;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTNotNode;
+import org.apache.commons.jexl2.parser.ASTNullLiteral;
+import org.apache.commons.jexl2.parser.ASTNumberLiteral;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTSizeMethod;
+import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.ASTTrueNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNode.Literal;
+import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.Parser;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 /**
  *
@@ -52,6 +96,9 @@ public class JexlASTHelper {
     
     public static final Character GROUPING_CHARACTER_SEPARATOR = '.';
     public static final Character IDENTIFIER_PREFIX = '$';
+    
+    public static final String SINGLE_BACKSLASH = "\\";
+    public static final String DOUBLE_BACKSLASH = "\\\\";
     
     public static final Set<Class<?>> RANGE_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTGTNode.class, ASTGENode.class, ASTLTNode.class, ASTLENode.class);
     
@@ -70,7 +117,7 @@ public class JexlASTHelper {
     /**
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
-     * 
+     *
      * @param query
      *            The query string in JEXL syntax to parse
      * @return Root node of the query parse tree.
@@ -84,8 +131,96 @@ public class JexlASTHelper {
         caseFixQuery = caseFixQuery.replaceAll("\\s+[Oo][Rr]\\s+", " or ");
         caseFixQuery = caseFixQuery.replaceAll("\\s+[Nn][Oo][Tt]\\s+", " not ");
         
-        // Parse the query
-        return parser.parse(new StringReader(caseFixQuery), null);
+        if (caseFixQuery.contains(DOUBLE_BACKSLASH)) {
+            try {
+                return parseQueryWithBackslashes(query, parser);
+            } catch (Exception e) {
+                throw new ParseException("Unable to perform backslash substitution while parsing the query: " + e.getMessage());
+            }
+        } else {
+            // Parse the original query
+            try {
+                return parser.parse(new StringReader(caseFixQuery), null);
+            } catch (TokenMgrError e) {
+                throw new ParseException(e.getMessage());
+            }
+        }
+    }
+    
+    // generate a random alphanumeric placeholder value which will replace instances
+    // of double backslashes in the query before parsing. This algorithm ensures that
+    // the placeholder string does not exist in the original query.
+    private static String generatePlaceholder(String query) {
+        String placeholder;
+        do {
+            placeholder = RandomStringUtils.randomAlphanumeric(4);
+        } while (query.contains(placeholder));
+        
+        return "_" + placeholder + "_";
+    }
+    
+    // we need to replace double backslashes in the query with a placeholder value
+    // before parsing in order to prevent the parser from interpreting doubles as singles
+    private static ASTJexlScript parseQueryWithBackslashes(String query, Parser parser) throws Exception {
+        // determine how many doubles need to be replaced
+        int numFound = StringUtils.countMatches(query, DOUBLE_BACKSLASH);
+        
+        // replace the doubles with a unique placeholder
+        String placeholder = generatePlaceholder(query);
+        query = query.replace(DOUBLE_BACKSLASH, placeholder);
+        
+        // Parse the query with the placeholders
+        ASTJexlScript jexlScript;
+        try {
+            jexlScript = parser.parse(new StringReader(query), null);
+        } catch (TokenMgrError e) {
+            throw new ParseException(e.getMessage());
+        }
+        
+        Deque<JexlNode> workingStack = new LinkedList<>();
+        workingStack.push(jexlScript);
+        int numReplaced = 0;
+        
+        // iteratively traverse the tree, and replace the placeholder with single or double backslashes
+        while (!workingStack.isEmpty()) {
+            JexlNode node = workingStack.pop();
+            
+            if (node.image != null) {
+                int numToReplace = StringUtils.countMatches(node.image, placeholder);
+                if (numToReplace > 0) {
+                    // get the parent node (skipping references)
+                    JexlNode parent = node;
+                    do {
+                        parent = parent.jjtGetParent();
+                    } while (parent instanceof ASTReference);
+                    
+                    // if not a regex, use single backslash. otherwise, use double.
+                    // this is necessary to ensure that non-regex nodes use the escaped
+                    // value when determining equality, and to ensure that regex nodes
+                    // use the pre-compiled form of the string literal.
+                    if (!(parent instanceof ASTERNode || parent instanceof ASTNRNode))
+                        node.image = node.image.replace(placeholder, SINGLE_BACKSLASH);
+                    else
+                        node.image = node.image.replace(placeholder, DOUBLE_BACKSLASH);
+                    
+                    numReplaced += numToReplace;
+                }
+            }
+            
+            if (node.jjtGetNumChildren() > 0) {
+                for (JexlNode child : children(node)) {
+                    if (child != null) {
+                        workingStack.push(child);
+                    }
+                }
+            }
+        }
+        
+        if (numFound != numReplaced)
+            throw new ParseException("Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: "
+                            + numReplaced);
+        
+        return jexlScript;
     }
     
     /**
@@ -298,6 +433,20 @@ public class JexlASTHelper {
     public static JexlNode dereference(JexlNode node) {
         while (node.jjtGetNumChildren() == 1 && (node instanceof ASTReference || node instanceof ASTReferenceExpression)) {
             node = node.jjtGetChild(0);
+        }
+        return node;
+    }
+    
+    /**
+     * This is the opposite of dereference in that this will climb back up reference and reference expression nodes that only contain one child.
+     * 
+     * @param node
+     * @return the parent reference/referenceexpression or this node
+     */
+    public static JexlNode rereference(JexlNode node) {
+        while (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() == 1
+                        && (node.jjtGetParent() instanceof ASTReference || node.jjtGetParent() instanceof ASTReferenceExpression)) {
+            node = node.jjtGetParent();
         }
         return node;
     }
@@ -601,6 +750,27 @@ public class JexlASTHelper {
     
     /**
      * Get the bounded ranges (index only terms).
+     *
+     * @param root
+     *            The root and node
+     * @param helper
+     *            The metadata helper
+     * @param otherNodes
+     *            If not null, then this is filled with all nodes not used to make the ranges (minimal node list, minimal tree depth)
+     * @param maxDepth
+     *            The maximum depth to traverse the tree. -1 represents unlimited depth.
+     * @return The ranges, all bounded.
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRanges(JexlNode root, Set<String> datatypeFilterSet, MetadataHelper helper,
+                    List<JexlNode> otherNodes, boolean includeDelayed, int maxDepth) {
+        List<JexlNode> nonIndexedRangeNodes = new ArrayList<>();
+        List<JexlNode> rangeNodes = getIndexRangeOperatorNodes(root, datatypeFilterSet, helper, nonIndexedRangeNodes, otherNodes, includeDelayed, maxDepth);
+        return getBoundedRanges(rangeNodes, nonIndexedRangeNodes, otherNodes);
+    }
+    
+    /**
+     * Get the bounded ranges (index only terms).
      * 
      * @param root
      *            The root and node
@@ -614,23 +784,40 @@ public class JexlASTHelper {
     public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRanges(JexlNode root, Set<String> datatypeFilterSet, MetadataHelper helper,
                     List<JexlNode> otherNodes, boolean includeDelayed) {
         List<JexlNode> nonIndexedRangeNodes = new ArrayList<>();
-        List<JexlNode> rangeNodes = getIndexRangeOperatorNodes(root, datatypeFilterSet, helper, nonIndexedRangeNodes, otherNodes, includeDelayed);
+        List<JexlNode> rangeNodes = getIndexRangeOperatorNodes(root, datatypeFilterSet, helper, nonIndexedRangeNodes, otherNodes, includeDelayed, -1);
         return getBoundedRanges(rangeNodes, nonIndexedRangeNodes, otherNodes);
+    }
+    
+    /**
+     * Get the bounded ranges.
+     *
+     * @param root
+     *            The root node
+     * @param otherNodes
+     *            If not null, then this is filled with all nodes not used to make the ranges (minimal node list, minimal tree depth)
+     * @param maxDepth
+     *            The maximum depth to traverse the tree. -1 represents unlimited depth.
+     * @return The ranges, all bounded.
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRangesIndexAgnostic(JexlNode root, List<JexlNode> otherNodes, boolean includeDelayed,
+                    int maxDepth) {
+        List<JexlNode> rangeNodes = getRangeOperatorNodes(root, otherNodes, includeDelayed, maxDepth);
+        return JexlASTHelper.getBoundedRanges(rangeNodes, null, otherNodes);
     }
     
     /**
      * Get the bounded ranges.
      * 
      * @param root
-     *            The root and node
+     *            The root node
      * @param otherNodes
      *            If not null, then this is filled with all nodes not used to make the ranges (minimal node list, minimal tree depth)
      * @return The ranges, all bounded.
      */
     @SuppressWarnings("rawtypes")
-    public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRangesIndexAgnostic(ASTAndNode root, List<JexlNode> otherNodes, boolean includeDelayed) {
-        List<JexlNode> rangeNodes = getRangeOperatorNodes(root, otherNodes, includeDelayed);
-        return JexlASTHelper.getBoundedRanges(rangeNodes, null, otherNodes);
+    public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRangesIndexAgnostic(JexlNode root, List<JexlNode> otherNodes, boolean includeDelayed) {
+        return getBoundedRangesIndexAgnostic(root, otherNodes, includeDelayed, -1);
     }
     
     protected static Map<LiteralRange<?>,List<JexlNode>> getBoundedRanges(List<JexlNode> rangeNodes, List<JexlNode> nonIndexedRangeNodes,
@@ -663,19 +850,19 @@ public class JexlASTHelper {
             LiteralRange<?> range = null;
             List<JexlNode> thisRangesNodes = new ArrayList<>();
             if (literal instanceof String) {
-                range = getStringBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<String>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getStringBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof Integer) {
-                range = getIntegerBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<Integer>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getIntegerBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof Long) {
-                range = getLongBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<Long>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getLongBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof BigInteger) {
-                range = getBigIntegerBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<BigInteger>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getBigIntegerBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof Float) {
-                range = getFloatBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<Float>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getFloatBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof Double) {
-                range = getDoubleBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<Double>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getDoubleBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof BigDecimal) {
-                range = getBigDecimalBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<BigDecimal>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getBigDecimalBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else {
                 QueryException qe = new QueryException(DatawaveErrorCode.NODE_LITERAL_TYPE_ASCERTAIN_ERROR, MessageFormat.format("{0}", literal));
                 throw new DatawaveFatalQueryException(qe);
@@ -959,25 +1146,25 @@ public class JexlASTHelper {
     }
     
     protected static List<JexlNode> getIndexRangeOperatorNodes(JexlNode root, Set<String> datatypeFilterSet, MetadataHelper helper,
-                    List<JexlNode> nonIndexedRangeNodes, List<JexlNode> otherNodes, boolean includeDelayed) {
+                    List<JexlNode> nonIndexedRangeNodes, List<JexlNode> otherNodes, boolean includeDelayed, int maxDepth) {
         List<JexlNode> nodes = Lists.newArrayList();
         
         Class<?> clz = root.getClass();
         
         if (root.jjtGetNumChildren() > 0) {
-            getRangeOperatorNodes(root, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed);
+            getRangeOperatorNodes(root, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed, maxDepth);
         }
         
         return nodes;
     }
     
-    protected static List<JexlNode> getRangeOperatorNodes(JexlNode root, List<JexlNode> otherNodes, boolean includeDelayed) {
+    protected static List<JexlNode> getRangeOperatorNodes(JexlNode root, List<JexlNode> otherNodes, boolean includeDelayed, int maxDepth) {
         List<JexlNode> nodes = Lists.newArrayList();
         
         Class<?> clz = root.getClass();
         
         if (root.jjtGetNumChildren() > 0) {
-            getRangeOperatorNodes(root, clz, nodes, otherNodes, null, null, null, includeDelayed);
+            getRangeOperatorNodes(root, clz, nodes, otherNodes, null, null, null, includeDelayed, maxDepth);
         }
         
         return nodes;
@@ -986,7 +1173,7 @@ public class JexlASTHelper {
     protected static boolean isDelayedPredicate(JexlNode currNode) {
         if (ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
                         || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode))
+                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode))
             return true;
         else
             return false;
@@ -1004,10 +1191,13 @@ public class JexlASTHelper {
      * @param helper
      *            Required if mustBeIndexed
      * @param nonIndexedRangeNodes
+     * @param maxDepth
+     *            The maximum depth to traverse the tree. -1 represents unlimited depth.
+     *
      */
     protected static void getRangeOperatorNodes(JexlNode root, Class<?> clz, List<JexlNode> nodes, List<JexlNode> otherNodes, Set<String> datatypeFilterSet,
-                    MetadataHelper helper, List<JexlNode> nonIndexedRangeNodes, boolean includeDelayed) {
-        if (!includeDelayed && isDelayedPredicate(root)) {
+                    MetadataHelper helper, List<JexlNode> nonIndexedRangeNodes, boolean includeDelayed, int maxDepth) {
+        if ((!includeDelayed && isDelayedPredicate(root)) || maxDepth == 0) {
             return;
         }
         for (int i = 0; i < root.jjtGetNumChildren(); i++) {
@@ -1017,9 +1207,9 @@ public class JexlASTHelper {
             if (child.getClass().equals(clz) || child.getClass().equals(ASTReferenceExpression.class) || child.getClass().equals(ASTReference.class)) {
                 // ignore getting range nodes out of delayed expressions as they have already been processed
                 if (includeDelayed || !isDelayedPredicate(child)) {
-                    getRangeOperatorNodes(child, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed);
+                    getRangeOperatorNodes(child, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed, maxDepth - 1);
                 } else if (otherNodes != null) {
-                    otherNodes.add(child);
+                    otherNodes.add(JexlASTHelper.rereference(child));
                 }
             } else if (RANGE_NODE_CLASSES.contains(child.getClass())) {
                 
@@ -1028,7 +1218,7 @@ public class JexlASTHelper {
                 String fieldName = JexlASTHelper.getIdentifier(child);
                 
                 if (hasMethod && otherNodes != null) {
-                    otherNodes.add(child);
+                    otherNodes.add(JexlASTHelper.rereference(child));
                     
                 } else if (nonIndexedRangeNodes != null) {
                     try {
@@ -1048,7 +1238,7 @@ public class JexlASTHelper {
             } else {
                 // else, one of the other nodes or subtrees
                 if (otherNodes != null) {
-                    otherNodes.add(child);
+                    otherNodes.add(JexlASTHelper.rereference(child));
                 }
             }
         }
@@ -1150,6 +1340,23 @@ public class JexlASTHelper {
     }
     
     /**
+     * Generate a key for the given JexlNode. This may be used to determine node equality.
+     * <p>
+     * Original Comment: <code>
+     * // Note: This method assumes that the node passed in is already flattened.
+     * // If not, and our tree contains functionally equivalent subtrees, we would
+     * // be duplicating some of our efforts which is bad, m'kay?
+     * </code>
+     *
+     * @param node
+     *            - a JexlNode.
+     * @return - a key for the node.
+     */
+    public static String nodeToKey(JexlNode node) {
+        return JexlStringBuildingVisitor.buildQueryWithoutParse(node, true);
+    }
+    
+    /**
      * When at an operand, this method will find the first Identifier and replace its {image} value with the supplied {String}. This is intended to be used when
      * the query model is being supplied and we want to replace the field name in some expression.
      * 
@@ -1223,12 +1430,7 @@ public class JexlASTHelper {
     }
     
     public static List<ASTReferenceExpression> wrapInParens(List<? extends JexlNode> intersections) {
-        return Lists.transform(intersections, new com.google.common.base.Function<JexlNode,ASTReferenceExpression>() {
-            @Override
-            public ASTReferenceExpression apply(JexlNode a) {
-                return JexlNodes.wrap(a);
-            }
-        });
+        return Lists.transform(intersections, (com.google.common.base.Function<JexlNode,ASTReferenceExpression>) JexlNodes::wrap);
     }
     
     /**
@@ -1352,17 +1554,73 @@ public class JexlASTHelper {
         return maxSelectivity;
     }
     
+    /**
+     * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage.
+     *
+     * @param rootNode
+     *            the tree to validate
+     * @param failHard
+     *            whether or not to throw an exception if validation fails
+     * @return true if valid, false otherwise
+     */
+    // checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage
+    public static boolean validateLineage(JexlNode rootNode, boolean failHard) {
+        boolean result = true;
+        
+        // add all the nodes to the stack and iterate...
+        Deque<JexlNode> workingStack = new LinkedList<>();
+        workingStack.push(rootNode);
+        
+        // go through all of the nodes from parent to children, and ensure that parent and child relationships are correct
+        while (!workingStack.isEmpty()) {
+            JexlNode node = workingStack.pop();
+            
+            if (node.jjtGetNumChildren() > 0) {
+                for (JexlNode child : children(node)) {
+                    if (child != null) {
+                        if (child.jjtGetParent() == null) {
+                            if (failHard)
+                                throw new RuntimeException("Failed to validate lineage: Tree included a child with a null parent.");
+                            else
+                                log.error("Failed to validate lineage: Tree included a child with a null parent.");
+                            
+                            result = false;
+                        } else if (child.jjtGetParent() != node) {
+                            if (failHard)
+                                throw new RuntimeException("Failed to validate lineage:  Included a child with a conflicting parent.");
+                            else
+                                log.error("Failed to validate lineage:  Included a child with a conflicting parent.");
+                            
+                            result = false;
+                        }
+                        workingStack.push(child);
+                    } else {
+                        if (failHard)
+                            throw new RuntimeException("Failed to validate lineage: Included a null child.");
+                        else
+                            log.error("Failed to validate lineage: Included a null child.");
+                        
+                        result = false;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+    
     private JexlASTHelper() {}
     
     public static JexlNode addEqualityToOr(ASTOrNode lhsSource, ASTEQNode rhsSource) {
-        ASTOrNode orNode = lhsSource;
-        ASTEQNode copyNode = rhsSource;
-        orNode.jjtAddChild(copyNode, orNode.jjtGetNumChildren());
-        copyNode.jjtSetParent(orNode);
-        return orNode;
+        lhsSource.jjtAddChild(rhsSource, lhsSource.jjtGetNumChildren());
+        rhsSource.jjtSetParent(lhsSource);
+        return lhsSource;
     }
     
     public static class HasMethodVisitor extends BaseVisitor {
+        
+        public static <T extends JexlNode> boolean hasMethod(T script) {
+            return ((AtomicBoolean) script.jjtAccept(new HasMethodVisitor(), new AtomicBoolean(false))).get();
+        }
         
         @Override
         public Object visit(ASTMethodNode node, Object data) {

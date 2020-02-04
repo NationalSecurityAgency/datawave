@@ -7,7 +7,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
@@ -44,7 +44,8 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
+                        .deleteClass(DefaultEdgeEventQueryLogic.class)
+                        .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
@@ -63,7 +64,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE == 'PLUTO')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("pluto%00;charon AdjacentCelestialBodies/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto%00;neptune AdjacentDwarfPlanets/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto%00;neptune AdjacentPlanets/TO-FROM:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
@@ -77,7 +78,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE == 'pLUTO')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("pluto%00;charon AdjacentCelestialBodies/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto%00;neptune AdjacentDwarfPlanets/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto%00;neptune AdjacentPlanets/TO-FROM:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
@@ -91,7 +92,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE == 'pluto')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("pluto%00;charon AdjacentCelestialBodies/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto%00;neptune AdjacentDwarfPlanets/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto%00;neptune AdjacentPlanets/TO-FROM:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
@@ -105,7 +106,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth%00;venus AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("eris%00;dysnomia AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [B]");
@@ -121,7 +122,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE == 'EARTH') && (SINK == 'MOON')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         compareResults(logic, expected);
@@ -132,7 +133,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*') && (SINK =~ '.*S' )", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth%00;venus AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
@@ -145,7 +146,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE == 'EARTH' || SOURCE == 'PLUTO')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth%00;venus AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -164,7 +165,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*' || SOURCE == 'PLUTO')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth%00;venus AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -184,7 +185,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE == 'EARTH' || SOURCE == 'ASTEROID_BELT') && (SINK == 'MARS')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("asteroid_belt%00;mars AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -197,7 +198,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*' || SOURCE == 'ASTEROID_BELT') && (SINK == 'MARS')", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("asteroid_belt%00;mars AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -213,7 +214,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
                         auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("pluto%00;charon AdjacentCelestialBodies/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         
@@ -234,7 +235,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
                         auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("eris%00;dysnomia AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [B]");
@@ -285,7 +286,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*') && TYPE == 'AdjacentPlanets' ", auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -340,7 +341,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
                         auths);
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("ceres%00;jupiter AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("ceres%00;jupiter AdjacentDwarfPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [B]");
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -388,7 +389,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         q.addParameter("stats", "true");
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
@@ -408,7 +409,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         q.addParameter("stats", "false");
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;asteroid_belt AdjacentCelestialBodies/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -426,7 +427,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         q.addParameter("stats", "true");
         EdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");

@@ -160,6 +160,17 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
         index = replacementIndex;
     }
     
+    public void removeFields(Collection<String> fieldNamesToRemove) {
+        Map<String,ValueSet> replacementIndex = new HashMap<>();
+        for (Entry<String,ValueSet> fieldNameToTerms : index.entrySet()) {
+            String key = fieldNameToTerms.getKey();
+            if (!fieldNamesToRemove.contains(key)) {
+                replacementIndex.put(key, fieldNameToTerms.getValue());
+            }
+        }
+        index = replacementIndex;
+    }
+    
     /**
      * 
      */

@@ -39,7 +39,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         q.addParameter("stats", "true");
         DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
@@ -54,7 +54,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         q.addParameter("stats", "true");
         DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
@@ -82,7 +82,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         q.addParameter("query.syntax", "LIST");
         DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths);
         
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");

@@ -1,7 +1,5 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDirection;
-
 /**
  * Edge Direction enumeration
  * 

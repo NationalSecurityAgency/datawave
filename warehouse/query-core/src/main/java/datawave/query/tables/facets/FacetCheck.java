@@ -50,7 +50,7 @@ public class FacetCheck extends AllTermsIndexedVisitor {
             throw new InvalidFieldIndexQueryFatalQueryException(qe);
         }
         
-        if (Constants.ANY_FIELD.equals(fieldName)) {
+        if (Constants.ANY_FIELD.equals(fieldName) || Constants.NO_FIELD.equals(fieldName)) {
             return null;
         }
         
