@@ -197,8 +197,6 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
             context.getConfiguration().set(AggregatingRecordReader.START_TOKEN, BEGIN);
             context.getConfiguration().set(AggregatingRecordReader.END_TOKEN, END);
             context.getConfiguration().set(AggregatingRecordReader.RETURN_PARTIAL_MATCHES, Boolean.toString(true));
-            // Guard against improper concatenation of newline-separated terms
-            context.getConfiguration().set(LONGLINE_NEWLINE_INCLUDED, Boolean.toString(true));
             
             readerInitializer.initialize(split, context);
             

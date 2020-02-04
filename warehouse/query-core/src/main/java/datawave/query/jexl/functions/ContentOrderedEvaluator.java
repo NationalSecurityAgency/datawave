@@ -269,7 +269,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                     // The term was to large for the currant found terms
                     // We will grab the last skipped value, set it as the new root
                     // and roll back to the last found term and try again.
-                    return traverseFailure(sub, skipped, termPosition, direction);
+                    return traverseFailure(sub, skipped, termPosition, direction, found);
                 }
             }
             
@@ -299,7 +299,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 }
                 
                 // Failure for current root node find next
-                return traverseFailure(sub, skipped, termPosition, direction);
+                return traverseFailure(sub, skipped, termPosition, direction, found);
             }
             
             if (log.isTraceEnabled()) {
@@ -322,10 +322,12 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      *            current term that failed against the current found terms
      * @param direction
      *            1 == FORWARD, -1 == REVERSE
+     * @param found
+     *            updated as required, if subsequent traversal yields a match for all terms
      * @return number of found terms for the given criteria
      */
     protected List<EvaluateTermPosition> traverseFailure(NavigableSet<EvaluateTermPosition> sub, List<EvaluateTermPosition> skipped, EvaluateTermPosition term,
-                    int direction) {
+                    int direction, List<EvaluateTermPosition> found) {
         
         // Failure for current root node find next
         NavigableSet<EvaluateTermPosition> subB;
@@ -336,7 +338,12 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
         }
         
         if (!subB.isEmpty()) { // Nothing after a, so it will fall out of the loop
-            return traverse(subB, direction);
+            List<EvaluateTermPosition> results = traverse(subB, direction);
+            if (null != results && results.size() == terms.length) {
+                found.clear();
+                found.addAll(results);
+            }
+            return results;
         }
         
         return null;
