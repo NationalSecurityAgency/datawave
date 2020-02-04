@@ -6,10 +6,15 @@ import com.google.common.base.Preconditions;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.util.TextUtil;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+import static datawave.ingest.input.reader.EventRecordReader.Properties.DATA_NAME;
+import static datawave.ingest.input.reader.EventRecordReader.Properties.DATA_NAME_OVERRIDE;
+import static datawave.ingest.input.reader.LineReader.Properties.LONGLINE_NEWLINE_INCLUDED;
 
 /**
  * This class aggregates Text values based on a start and end filter. An example use case for this would be XML data. This will not work with data that has
@@ -21,6 +26,8 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
     public static final String START_TOKEN = "aggregating.token.start";
     public static final String END_TOKEN = "aggregating.token.end";
     public static final String RETURN_PARTIAL_MATCHES = "aggregating.allow.partial";
+    
+    public static final String KEEP_NEWLINES = ".aggregating.keep.newlines";
     
     private ReaderDelegate delegate = null;
     
@@ -52,8 +59,8 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
     
     @Override
     public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
-        super.initialize(genericSplit, context);
         delegate.initialize(context);
+        super.initialize(genericSplit, context);
     }
     
     @Override
@@ -75,6 +82,7 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
         private boolean startFound = false;
         private StringBuilder remainder = new StringBuilder(0);
         private boolean returnPartialMatches = false;
+        private boolean keepNewlines = true;
         
         private PositionAwareLineReader positionAwareLineReader;
         private KeyValueReader nextKeyValueReader;
@@ -168,10 +176,31 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
             this.returnPartialMatches = returnPartialMatches;
         }
         
+        /**
+         * Indicates whether or not newline characters are to be retained by the underlying LineReader. True by default, but may be overridden via
+         * {@link #KEEP_NEWLINES} property for a given data type, if newline removal is preferred for whatever reason
+         * <p>
+         * Overriding to false will have the following side effects: newlines are removed from the raw records, and there is the potential for adjacent terms to
+         * be improperly concatenated, if the only delimiter separating them was the newline itself
+         *
+         * @return True if newlines are to be retained
+         */
+        public boolean isKeepNewlines() {
+            return keepNewlines;
+        }
+        
+        public void setKeepNewlines(boolean keepNewlines) {
+            this.keepNewlines = keepNewlines;
+        }
+        
         public void initialize(TaskAttemptContext context) {
-            this.startToken = ConfigurationHelper.isNull(context.getConfiguration(), START_TOKEN, String.class);
-            this.endToken = ConfigurationHelper.isNull(context.getConfiguration(), END_TOKEN, String.class);
-            this.returnPartialMatches = context.getConfiguration().getBoolean(RETURN_PARTIAL_MATCHES, false);
+            
+            Configuration conf = context.getConfiguration();
+            this.startToken = ConfigurationHelper.isNull(conf, START_TOKEN, String.class);
+            this.endToken = ConfigurationHelper.isNull(conf, END_TOKEN, String.class);
+            this.returnPartialMatches = conf.getBoolean(RETURN_PARTIAL_MATCHES, returnPartialMatches);
+            this.keepNewlines = conf.getBoolean(getDataName(conf) + KEEP_NEWLINES, keepNewlines);
+            conf.setBoolean(LONGLINE_NEWLINE_INCLUDED, this.keepNewlines);
             /*
              * Text-appending works almost exactly like the + operator on Strings- it creates a byte array exactly the size of [prefix + suffix] and dumps the
              * bytes into the new array. This module works by doing lots of little additions, one line at a time. With most XML, the documents are partitioned
@@ -346,6 +375,22 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
             }
             
             return hasNext;
+        }
+        
+        /**
+         * Ensures that {@link datawave.ingest.data.config.DataTypeHelper.Properties#DATA_NAME} is read correctly, in case this happens to be called prior to
+         * {@link AbstractEventRecordReader#initializeEvent(Configuration)}
+         * 
+         * @param conf
+         *            Configuration instance
+         * @return {@link datawave.ingest.data.config.DataTypeHelper.Properties#DATA_NAME} config value
+         */
+        private String getDataName(Configuration conf) {
+            final String dataName = conf.get(DATA_NAME_OVERRIDE);
+            if (dataName != null) {
+                conf.set(DATA_NAME, dataName);
+            }
+            return conf.get(DATA_NAME);
         }
     }
 }
