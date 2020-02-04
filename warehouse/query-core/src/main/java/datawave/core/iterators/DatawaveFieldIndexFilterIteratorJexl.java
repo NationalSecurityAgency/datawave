@@ -115,7 +115,7 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
         } else {
             String upperString = upperBound.toString();
             this.boundingFiRangeStringBuilder.append(upperString.substring(0, upperString.length() - 1));
-            this.boundingFiRangeStringBuilder.append(upperString.charAt(upperString.length() - 1) - 1);
+            this.boundingFiRangeStringBuilder.append((char) (upperString.charAt(upperString.length() - 1) - 1));
             this.boundingFiRangeStringBuilder.append(Constants.MAX_UNICODE_STRING);
         }
         endKey = new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
