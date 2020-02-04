@@ -31,6 +31,7 @@ import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
@@ -190,7 +191,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
      * @return
      */
     @Override
-    protected TermFrequencyAggregator buildTermFrequencyAggregator(ChainableEventDataQueryFilter filter, int maxNextCount) {
+    protected TermFrequencyAggregator buildTermFrequencyAggregator(String identifier, ChainableEventDataQueryFilter filter, int maxNextCount) {
         EventDataQueryFilter rootFilter = new EventDataQueryFilter() {
             @Override
             public void startNewDocument(Key documentKey) {
@@ -258,7 +259,10 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             }
         };
         filter.addFilter(rootFilter);
-        return new TLDTermFrequencyAggregator(fieldsToAggregate, filter, filter.getMaxNextCount());
+        
+        Set<String> toAggregate = fieldsToAggregate.contains(identifier) ? Collections.singleton(identifier) : Collections.emptySet();
+        
+        return new TLDTermFrequencyAggregator(toAggregate, filter, filter.getMaxNextCount());
     }
     
     /**
