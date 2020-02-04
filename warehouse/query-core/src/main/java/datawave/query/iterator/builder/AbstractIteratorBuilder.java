@@ -6,6 +6,7 @@ import java.util.List;
 import datawave.query.iterator.NestedIterator;
 
 import com.google.common.collect.HashMultimap;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
  * Provides semantics for adding sources to a nested iterator but deferring the creation of iterator. This is meant to be used in a visitor.
@@ -106,6 +107,16 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
             observedFieldValues.put(field, value);
             return false;
         }
+    }
+    
+    IteratorEnvironment env;
+    
+    public void setEnv(IteratorEnvironment env) {
+        this.env = env;
+    }
+    
+    public IteratorEnvironment getEnv() {
+        return this.env;
     }
     
     public abstract <T> NestedIterator<T> build();
