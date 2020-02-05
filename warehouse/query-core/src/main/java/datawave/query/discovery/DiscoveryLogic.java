@@ -23,6 +23,7 @@ import datawave.query.QueryParameters;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.language.tree.QueryNode;
@@ -74,25 +75,41 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
     
-    private Boolean separateCountsByColVis = false;
-    private Boolean showReferenceCount = false;
     private MetadataHelper metadataHelper;
+    private DiscoveryQueryConfiguration config;
+    
+    @Override
+    public DiscoveryQueryConfiguration getConfig() {
+        if (config == null) {
+            setConfig(new DiscoveryQueryConfiguration());
+        }
+        return config;
+    }
+    
+    public void setConfig(DiscoveryQueryConfiguration config) {
+        this.config = config;
+    }
     
     public DiscoveryLogic() {
         super();
     }
     
-    public DiscoveryLogic(ShardIndexQueryTable other) {
+    public DiscoveryLogic(DiscoveryLogic other) {
         super(other);
+        setConfig(new DiscoveryQueryConfiguration(other.getConfig()));
     }
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
-        DiscoveryQueryConfiguration config = new DiscoveryQueryConfiguration(this, settings);
+        setConfig(new DiscoveryQueryConfiguration(this, settings));
         
-        this.scannerFactory = new ScannerFactory(connection);
+        // Set the connector and auths
+        getConfig().setConnector(connection);
+        getConfig().setAuthorizations(auths);
         
-        this.metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        this.scannerFactory = new ScannerFactory(getConfig());
+        
+        this.metadataHelper = initializeMetadataHelper(connection, getConfig().getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -105,60 +122,52 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         // Check if the default modelName and modelTableNames have been overriden by custom parameters.
         if (null != settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME)
                         && !settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim().isEmpty()) {
-            modelName = settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim();
+            setModelName(settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim());
         }
         if (null != settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME)
                         && !settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim().isEmpty()) {
-            modelTableName = settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim();
+            setModelTableName(settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim());
         }
         
         // Check if user would like counts separated by column visibility
         if (null != settings.findParameter(SEPARATE_COUNTS_BY_COLVIS)
                         && !settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim().isEmpty()) {
-            separateCountsByColVis = Boolean.valueOf(settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim());
-            config.setSeparateCountsByColVis(separateCountsByColVis);
+            setSeparateCountsByColVis(Boolean.valueOf(settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim()));
         }
         
         // Check if user would like to show reference counts instead of term counts
         if (null != settings.findParameter(SHOW_REFERENCE_COUNT) && !settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim().isEmpty()) {
-            showReferenceCount = Boolean.valueOf(settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim());
-            config.setShowReferenceCount(showReferenceCount);
+            setShowReferenceCount(Boolean.valueOf(settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim()));
         }
         
-        this.queryModel = metadataHelper.getQueryModel(modelTableName, modelName, null);
+        setQueryModel(metadataHelper.getQueryModel(getModelTableName(), getModelName(), null));
         
         // get the data type filter set if any
         if (null != settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
                         && !settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim().isEmpty()) {
             Set<String> dataTypeFilter = new HashSet<>(Arrays.asList(StringUtils.split(settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
                             .getParameterValue().trim(), Constants.PARAM_VALUE_SEP)));
-            config.setDatatypeFilter(dataTypeFilter);
+            getConfig().setDatatypeFilter(dataTypeFilter);
             if (log.isDebugEnabled()) {
                 log.debug("Data type filter set to " + dataTypeFilter);
             }
         }
         
-        // Set the connector
-        config.setConnector(connection);
-        
-        // Set the auths
-        config.setAuthorizations(auths);
-        
         // set the table names
         if (getIndexTableName() != null) {
-            config.setIndexTableName(getIndexTableName());
+            getConfig().setIndexTableName(getIndexTableName());
         }
         if (getReverseIndexTableName() != null) {
-            config.setReverseIndexTableName(getReverseIndexTableName());
+            getConfig().setReverseIndexTableName(getReverseIndexTableName());
         }
         
         // Get the ranges
-        config.setBeginDate(settings.getBeginDate());
-        config.setEndDate(settings.getEndDate());
+        getConfig().setBeginDate(settings.getBeginDate());
+        getConfig().setEndDate(settings.getEndDate());
         
-        if (null == config.getBeginDate() || null == config.getEndDate()) {
-            config.setBeginDate(new Date(0));
-            config.setEndDate(new Date(Long.MAX_VALUE));
+        if (null == getConfig().getBeginDate() || null == getConfig().getEndDate()) {
+            getConfig().setBeginDate(new Date(0));
+            getConfig().setEndDate(new Date(Long.MAX_VALUE));
             log.warn("Dates not specified, using entire date range");
         }
         
@@ -167,16 +176,19 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         parser.setAllowLeadingWildCard(this.isAllowLeadingWildcard());
         QueryNode node = parser.parse(settings.getQuery().trim());
         // TODO: Validate that this is a simple list of terms type of query
-        config.setQueryString(node.getOriginalQuery());
+        getConfig().setQueryString(node.getOriginalQuery());
         if (log.isDebugEnabled()) {
             log.debug("Original Query = " + settings.getQuery().trim());
             log.debug("JEXL Query = " + node.getOriginalQuery());
         }
         
         // Parse the query
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(config.getQueryString());
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(getConfig().getQueryString());
+
+        // upcase the identifiers
+        script = CaseSensitivityVisitor.upperCaseIdentifiers(getConfig(), metadataHelper, script);
         
-        Set<String> dataTypes = config.getDatatypeFilter();
+        Set<String> dataTypes = getConfig().getDatatypeFilter();
         Set<String> allFields;
         allFields = metadataHelper.getAllFields(dataTypes);
         script = QueryModelVisitor.applyModel(script, getQueryModel(), allFields);
@@ -185,23 +197,23 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         Stopwatch timer = new Stopwatch();
         timer.start();
         // no caching for getAllNormalizers, so try some magic with getFields...
-        Multimap<String,Type<?>> dataTypeMap = ArrayListMultimap.create(metadataHelper.getFieldsToDatatypes(config.getDatatypeFilter()));
+        Multimap<String,Type<?>> dataTypeMap = ArrayListMultimap.create(metadataHelper.getFieldsToDatatypes(getConfig().getDatatypeFilter()));
         /*
          * we have a mapping of FIELD->DataType, but not a mapping of ANYFIELD->DataType which should be all dataTypes
          */
         dataTypeMap.putAll(Constants.ANY_FIELD, uniqueByType(dataTypeMap.values()));
         timer.stop();
         log.debug("Took " + timer.elapsed(TimeUnit.MILLISECONDS) + "ms to get all the dataTypes.");
-        config.setLiterals(normalize(new LiteralNormalization(), literalsAndPatterns.getLiterals(), dataTypeMap));
-        config.setPatterns(normalize(new PatternNormalization(), literalsAndPatterns.getPatterns(), dataTypeMap));
-        config.setRanges(normalizeRanges(new LiteralNormalization(), literalsAndPatterns.getRanges(), dataTypeMap));
+        getConfig().setLiterals(normalize(new LiteralNormalization(), literalsAndPatterns.getLiterals(), dataTypeMap));
+        getConfig().setPatterns(normalize(new PatternNormalization(), literalsAndPatterns.getPatterns(), dataTypeMap));
+        getConfig().setRanges(normalizeRanges(new LiteralNormalization(), literalsAndPatterns.getRanges(), dataTypeMap));
         
         if (log.isDebugEnabled()) {
-            log.debug("Normalized Literals = " + config.getLiterals());
-            log.debug("Normalized Patterns = " + config.getPatterns());
+            log.debug("Normalized Literals = " + getConfig().getLiterals());
+            log.debug("Normalized Patterns = " + getConfig().getPatterns());
         }
         
-        return config;
+        return getConfig();
     }
     
     @Override
@@ -212,24 +224,21 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         Pair<Set<Range>,Set<Range>> seekRanges = makeRanges(config, familiesToSeek, metadataHelper);
         Collection<Range> forward = seekRanges.getValue0();
         if (!forward.isEmpty()) {
-            BatchScanner bs = configureBatchScannerForDiscovery(config, scannerFactory, config.getIndexTableName(), forward, familiesToSeek,
-                            config.getLiterals(), config.getPatterns(), config.getRanges(), false);
+            BatchScanner bs = configureBatchScannerForDiscovery(config, scannerFactory, getConfig().getIndexTableName(), forward, familiesToSeek, getConfig()
+                            .getLiterals(), getConfig().getPatterns(), getConfig().getRanges(), false);
             iterators.add(transformScanner(bs));
         }
         Collection<Range> reverse = seekRanges.getValue1();
         if (!reverse.isEmpty()) {
-            BatchScanner bs = configureBatchScannerForDiscovery(config, scannerFactory, config.getReverseIndexTableName(), reverse, familiesToSeek,
-                            config.getLiterals(), config.getPatterns(), config.getRanges(), true);
+            BatchScanner bs = configureBatchScannerForDiscovery(config, scannerFactory, getConfig().getReverseIndexTableName(), reverse, familiesToSeek,
+                            getConfig().getLiterals(), getConfig().getPatterns(), getConfig().getRanges(), true);
             iterators.add(transformScanner(bs));
         }
-        
-        config.setSeparateCountsByColVis(separateCountsByColVis);
-        config.setShowReferenceCount(showReferenceCount);
         
         this.iterator = concat(iterators.iterator());
     }
     
-    public static BatchScanner configureBatchScannerForDiscovery(DiscoveryQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
+    public BatchScanner configureBatchScannerForDiscovery(DiscoveryQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> seekRanges, Set<Text> columnFamilies, Multimap<String,String> literals, Multimap<String,String> patterns,
                     Multimap<String,LiteralRange<String>> ranges, boolean reverseIndex) throws TableNotFoundException {
         
@@ -238,7 +247,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             return null;
         }
         
-        BatchScanner bs = scannerFactory.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+        BatchScanner bs = scannerFactory.newScanner(tableName, getConfig().getAuthorizations(), getConfig().getNumQueryThreads(), getConfig().getQuery());
         bs.setRanges(seekRanges);
         if (!columnFamilies.isEmpty()) {
             for (Text family : columnFamilies) {
@@ -248,36 +257,36 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
         // the times in the index table have been truncated to the day.
-        Date begin = DateUtils.truncate(config.getBeginDate(), Calendar.DAY_OF_MONTH);
+        Date begin = DateUtils.truncate(getConfig().getBeginDate(), Calendar.DAY_OF_MONTH);
         // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
-        Date end = config.getEndDate();
+        Date end = getConfig().getEndDate();
         
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, getConfig().getDatatypeFilter());
         
         configureIndexMatchingIterator(config, bs, literals, patterns, ranges, reverseIndex);
         
-        IteratorSetting discoveryIteratorSetting = new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class);
+        IteratorSetting discoveryIteratorSetting = new IteratorSetting(getConfig().getBaseIteratorPriority() + 50, DiscoveryIterator.class);
         discoveryIteratorSetting.addOption(REVERSE_INDEX, Boolean.toString(reverseIndex));
-        discoveryIteratorSetting.addOption(SEPARATE_COUNTS_BY_COLVIS, config.getSeparateCountsByColVis().toString());
-        if (config.getShowReferenceCount()) {
-            discoveryIteratorSetting.addOption(SHOW_REFERENCE_COUNT, config.getShowReferenceCount().toString());
+        discoveryIteratorSetting.addOption(SEPARATE_COUNTS_BY_COLVIS, getConfig().getSeparateCountsByColVis().toString());
+        if (getConfig().getShowReferenceCount()) {
+            discoveryIteratorSetting.addOption(SHOW_REFERENCE_COUNT, getConfig().getShowReferenceCount().toString());
         }
         bs.addScanIterator(discoveryIteratorSetting);
         
         return bs;
     }
     
-    public static final void configureIndexMatchingIterator(DiscoveryQueryConfiguration config, ScannerBase bs, Multimap<String,String> literals,
+    public final void configureIndexMatchingIterator(DiscoveryQueryConfiguration config, ScannerBase bs, Multimap<String,String> literals,
                     Multimap<String,String> patterns, Multimap<String,LiteralRange<String>> ranges, boolean reverseIndex) {
         if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty()) && (ranges == null || ranges.isEmpty())) {
             return;
         }
         log.debug("Configuring IndexMatchingIterator with " + literals + " and " + patterns);
         
-        IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 23, "termMatcher", IndexMatchingIterator.class);
+        IteratorSetting cfg = new IteratorSetting(getConfig().getBaseIteratorPriority() + 23, "termMatcher", IndexMatchingIterator.class);
         
         IndexMatchingIterator.Configuration conf = new IndexMatchingIterator.Configuration();
         if (literals != null) {
@@ -362,16 +371,16 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      * @throws ExecutionException
      */
     @SuppressWarnings("unchecked")
-    public static Pair<Set<Range>,Set<Range>> makeRanges(DiscoveryQueryConfiguration config, Set<Text> familiesToSeek, MetadataHelper metadataHelper)
+    public Pair<Set<Range>,Set<Range>> makeRanges(DiscoveryQueryConfiguration config, Set<Text> familiesToSeek, MetadataHelper metadataHelper)
                     throws TableNotFoundException, ExecutionException {
         Set<Range> forwardRanges = new HashSet<>();
-        for (Entry<String,String> literalAndField : config.getLiterals().entries()) {
+        for (Entry<String,String> literalAndField : getConfig().getLiterals().entries()) {
             String literal = literalAndField.getKey(), field = literalAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
             field = Constants.ANY_FIELD.equals(field) ? null : field;
             forwardRanges.add(ShardIndexQueryTableStaticMethods.getLiteralRange(field, literal));
         }
-        for (Entry<String,LiteralRange<String>> rangeEntry : config.getRanges().entries()) {
+        for (Entry<String,LiteralRange<String>> rangeEntry : getConfig().getRanges().entries()) {
             LiteralRange<String> range = rangeEntry.getValue();
             String field = rangeEntry.getKey();
             // if we're _ANYFIELD_, then use null when making the literal range
@@ -387,7 +396,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             }
         }
         Set<Range> reverseRanges = new HashSet<>();
-        for (Entry<String,String> patternAndField : config.getPatterns().entries()) {
+        for (Entry<String,String> patternAndField : getConfig().getPatterns().entries()) {
             String pattern = patternAndField.getKey(), field = patternAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
             field = Constants.ANY_FIELD.equals(field) ? null : field;
@@ -495,19 +504,19 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     }
     
     public Boolean getSeparateCountsByColVis() {
-        return separateCountsByColVis;
+        return getConfig().getSeparateCountsByColVis();
     }
     
     public void setSeparateCountsByColVis(Boolean separateCountsByColVis) {
-        this.separateCountsByColVis = separateCountsByColVis;
+        getConfig().setSeparateCountsByColVis(separateCountsByColVis);
     }
     
     public Boolean getShowReferenceCount() {
-        return showReferenceCount;
+        return getConfig().getShowReferenceCount();
     }
     
     public void setShowReferenceCount(Boolean showReferenceCount) {
-        this.showReferenceCount = showReferenceCount;
+        getConfig().setShowReferenceCount(showReferenceCount);
     }
     
 }

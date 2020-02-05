@@ -386,7 +386,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFilteringClassNames(null == other.getIndexFilteringClassNames() ? null : Lists.newArrayList(other.getIndexFilteringClassNames()));
         this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : Sets.newHashSet(other.getNonEventKeyPrefixes()));
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
-        this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : Sets.newHashSet(other.getDatatypeFilter()));
+        this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : (other.getDatatypeFilter() instanceof UniversalSet ? other.getDatatypeFilter() : Sets
+                        .newHashSet(other.getDatatypeFilter())));
         this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
         this.setBlacklistedFields(null == other.getBlacklistedFields() ? null : Sets.newHashSet(other.getBlacklistedFields()));

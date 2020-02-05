@@ -21,13 +21,26 @@ public class ShardIndexQueryConfiguration extends ShardQueryConfiguration {
     private Map<Entry<String,String>,Range> rangesForTerms = Maps.newHashMap();
     private Map<Entry<String,String>,Entry<Range,Boolean>> rangesForPatterns = Maps.newHashMap();
     
+    private boolean allowLeadingWildcard = true;
+    
+    public ShardIndexQueryConfiguration() {
+        super();
+        // default model for this logic is DATAWAVE
+        setModelName("DATAWAVE");
+    }
+    
+    public ShardIndexQueryConfiguration(ShardIndexQueryConfiguration other) {
+        super(other);
+        this.setNormalizedTerms(other.getNormalizedTerms());
+        this.setNormalizedPatterns(other.getNormalizedPatterns());
+        this.setRangesForPatterns(other.getRangesForPatterns());
+        this.setRangesForTerms(other.getRangesForTerms());
+        this.setAllowLeadingWildcard(other.isAllowLeadingWildcard());
+    }
+    
     public ShardIndexQueryConfiguration(ShardIndexQueryTable logic, Query query) {
-        this.setIndexTableName(logic.getIndexTableName());
-        this.setFullTableScanEnabled(logic.isFullTableScanEnabled());
-        this.setQuery(query);
-        this.setMetadataTableName(logic.getModelTableName());
-        this.setRealmSuffixExclusionPatterns(logic.getRealmSuffixExclusionPatterns());
-        this.setModelName(logic.getModelName());
+        this(logic.getConfig());
+        setQuery(query);
     }
     
     public void setNormalizedTerms(Multimap<String,String> normalizedTerms) {
@@ -60,5 +73,13 @@ public class ShardIndexQueryConfiguration extends ShardQueryConfiguration {
     
     public Map<Entry<String,String>,Entry<Range,Boolean>> getRangesForPatterns() {
         return this.rangesForPatterns;
+    }
+    
+    public boolean isAllowLeadingWildcard() {
+        return allowLeadingWildcard;
+    }
+    
+    public void setAllowLeadingWildcard(boolean allowLeadingWildcard) {
+        this.allowLeadingWildcard = allowLeadingWildcard;
     }
 }
