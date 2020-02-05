@@ -90,6 +90,7 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
         StringBuilder builder = new StringBuilder();
         
         builder.append("<br/><br/>");
+        builder.append("<H2>Query ID : " + queryId + "</H2><br/><br/>");
         if (response == null || !response.getHasResults()) {
             builder.append("<H2>There aren't anymore results</H2>");
             return builder.toString();
