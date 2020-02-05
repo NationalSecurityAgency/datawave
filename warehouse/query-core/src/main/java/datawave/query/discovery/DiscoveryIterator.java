@@ -36,7 +36,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private boolean separateCountsByColVis = false;
     private boolean showReferenceCount = false;
     private boolean reverseIndex = false;
-
+    
     @Override
     public DiscoveryIterator deepCopy(IteratorEnvironment env) {
         DiscoveryIterator i = new DiscoveryIterator();
@@ -111,7 +111,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         aw.set(returnedThings);
         
         DiscoveredThing thing = things.get(0);
-        // we want the key to be the last possible key for this date.  Return the key as it is in the index (reversed if necessary) to
+        // we want the key to be the last possible key for this date. Return the key as it is in the index (reversed if necessary) to
         // ensure the keys are consistent with the initial seek range.
         String row = (reverseIndex ? new StringBuilder().append(thing.getTerm()).reverse().toString() : thing.getTerm());
         return new Pair<>(new Key(row, thing.getField(), thing.getDate() + '\uffff'), new Value(WritableUtils.toByteArray(aw)));
@@ -132,7 +132,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         separateCountsByColVis = Boolean.parseBoolean(options.get(DiscoveryLogic.SEPARATE_COUNTS_BY_COLVIS));
         showReferenceCount = Boolean.parseBoolean(options.get(DiscoveryLogic.SHOW_REFERENCE_COUNT));
         reverseIndex = Boolean.parseBoolean(options.get(DiscoveryLogic.REVERSE_INDEX));
-
+        
         if (log.isTraceEnabled()) {
             log.trace("My source is a " + source.getClass().getName());
             log.trace("Separate counts by column visibility = " + separateCountsByColVis);
