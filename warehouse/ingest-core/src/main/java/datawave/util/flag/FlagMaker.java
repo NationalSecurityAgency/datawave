@@ -240,7 +240,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
             String dataName = fc.getDataName();
-            final FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
             fd.setup(fc);
             log.trace("Checking for files for {}", dataName);
             
@@ -252,7 +251,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                     throw new IllegalStateException(fd.getClass().getName()
                                     + " has input files but returned zero candidates for flagging. Please validate configuration");
                 }
-                writeFlagFile(fc, inFiles, metrics);
+                writeFlagFile(fc, inFiles);
             }
             
         }
@@ -398,15 +397,14 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * 
      * @param fc flag configuration
      * @param inFiles input files to write to flag file
-     * @param metrics FlagMetrics object for this source type
      * @throws IOException
      */
     //@formatter:on
-    void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inFiles, FlagMetrics metrics) throws IOException {
+    void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
         File flagFile = null;
         final FileSystem fs = getHadoopFS();
         long now = System.currentTimeMillis();
-        
+        final FlagMetrics metrics = new FlagMetrics(fs, fc.isCollectMetrics());
         List<Future<InputFile>> futures = Lists.newArrayList();
         
         try {

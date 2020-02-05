@@ -327,7 +327,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         final List<Collection<InputFile>> flagFileLists = new ArrayList<>();
         FlagMaker instance = new TestWrappedFlagMaker(fmc) {
             @Override
-            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles, FlagMetrics metrics) throws IOException {
+            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
                 flagFileLists.add(inFiles);
             }
         };
@@ -358,7 +358,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         fmc.getFlagConfigs().get(0).setLifo(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc) {
             @Override
-            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles, FlagMetrics metrics) throws IOException {
+            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
                 flagFileLists.add(inFiles);
             }
         };
