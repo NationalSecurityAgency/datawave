@@ -78,7 +78,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static int SHUTDOWN_PORT = 24111;
     private static boolean FIFO = true;
     private static boolean INGEST_METRICS = true;
-    
+
+    public static final String CLEANUP_FILE_MARKER = "job.cleanup";
     public static final String COMPLETE_FILE_MARKER = "job.complete";
     public static final String LOADING_FILE_MARKER = "job.loading";
     public static final String FAILED_FILE_MARKER = "job.failed";
@@ -388,9 +389,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
         int fsAccessFailures = 0;
         Path[] jobDirectories = new Path[0];
         int nextJobIndex = 0;
+        boolean firstRun = true;
+
         try {
             while (true) {
                 try {
+                    if (firstRun){
+                        cleanJobDirectoriesOnStartup();
+                        firstRun = false;
+                    }
                     if (!running)
                         break;
                     sleep();
@@ -409,7 +416,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     }
                     List<Path> processedDirectories = new ArrayList<>();
                     if (nextJobIndex >= jobDirectories.length) {
-                        jobDirectories = getJobDirectories();
+                        jobDirectories = getJobDirectories(new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
                         nextJobIndex = 0;
                     }
                     if (jobDirectories.length > 0) {
@@ -468,7 +475,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                 }
                             }
                             if (nextJobIndex >= jobDirectories.length) {
-                                jobDirectories = getJobDirectories();
+                                jobDirectories = getJobDirectories(new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
                                 nextJobIndex = 0;
                             }
                             
@@ -488,7 +495,25 @@ public final class BulkIngestMapFileLoader implements Runnable {
         }
         log.info("Bulk map file loader shutting down.");
     }
-    
+
+    private void cleanJobDirectoriesOnStartup() throws IOException {
+        Path[] cleanupDirectories = getJobDirectories(new Path(workDir, jobDirPattern + '/' + CLEANUP_FILE_MARKER));
+        for(int i = 0; i < cleanupDirectories.length;i++){
+            getFileSystem(srcHdfs).delete(cleanupDirectories[i], true);
+        }
+
+        Path[] failedDirectories = getJobDirectories(new Path(workDir, jobDirPattern + '/' + LOADING_FILE_MARKER));
+        // create the job.failed file (renamed from job.loading if possible)
+        for(int j = 0; j < failedDirectories.length; j++) {
+            boolean success = getFileSystem(srcHdfs).rename(new Path(failedDirectories[j], LOADING_FILE_MARKER), new Path(failedDirectories[j], FAILED_FILE_MARKER));
+            if (!success) {
+                success = getFileSystem(srcHdfs).createNewFile(new Path(failedDirectories[j], FAILED_FILE_MARKER));
+                if (!success)
+                    log.error("Unable to create " + FAILED_FILE_MARKER + " file in " + failedDirectories[j]);
+            }
+        }
+    }
+
     protected void shutdown() {
         running = false;
     }
@@ -638,11 +663,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
     /**
      * Gets a list of job directories that are marked as completed. That is, these are job directories for which the MapReduce jobs have completed and there are
      * map files ready to be loaded.
+     * @param pathPattern
      */
-    private Path[] getJobDirectories() throws IOException {
+    private Path[] getJobDirectories(Path pathPattern) throws IOException {
         log.debug("Checking for completed job directories.");
         FileSystem fs = getFileSystem(srcHdfs);
-        FileStatus[] files = fs.globStatus(new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
+        FileStatus[] files = fs.globStatus(pathPattern);
         Path[] jobDirectories;
         if (files != null && files.length > 0) {
             final int order = (FIFO ? 1 : -1);
@@ -952,7 +978,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // rename the map files directory
             boolean success = destFs.rename(mapFilesDir, new Path(mapFilesDir.getParent(), "failed." + mapFilesDir.getName()));
             if (!success)
-                log.error("Unable to rename map files directory " + destFs.getUri() + " " + mapFilesDir + " to failed." + mapFilesDir.getName());
+                 log.error("Unable to rename map files directory " + destFs.getUri() + " " + mapFilesDir + " to failed." + mapFilesDir.getName());
             
             // create the job.failed file (renamed from job.loading if possible)
             success = destFs.rename(new Path(jobDirectory, LOADING_FILE_MARKER), new Path(jobDirectory, FAILED_FILE_MARKER));
@@ -1125,8 +1151,24 @@ public final class BulkIngestMapFileLoader implements Runnable {
             else
                 throw new IOException(e);
         }
+
+
+        markDirectoryForCleanup(jobDirectory, destHdfs);
     }
-    
+
+    public boolean markDirectoryForCleanup(Path jobDirectory, URI destFs) {
+        boolean success = false;
+        try {
+            success = getFileSystem(destFs).rename(new Path(jobDirectory, LOADING_FILE_MARKER), new Path(jobDirectory, CLEANUP_FILE_MARKER));
+            System.out.println("renamed successful");
+            log.info("Renamed " + jobDirectory + '/' + LOADING_FILE_MARKER + " to " + CLEANUP_FILE_MARKER);
+        } catch (IOException e2) {
+            log.error("Exception while marking " + jobDirectory + " for loading: " + e2.getMessage(), e2);
+        }
+
+        return success;
+    }
+
     private void writeStats(Path[] jobDirectories) throws IOException {
         if (!INGEST_METRICS) {
             log.info("ingest metrics disabled");
