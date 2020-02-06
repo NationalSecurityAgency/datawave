@@ -111,8 +111,10 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         aw.set(returnedThings);
         
         DiscoveredThing thing = things.get(0);
-        // we want the key to be the last possible key for this date
-        return new Pair<>(new Key(thing.getTerm(), thing.getField(), thing.getDate() + '\uffff'), new Value(WritableUtils.toByteArray(aw)));
+        // we want the key to be the last possible key for this date. Return the key as it is in the index (reversed if necessary) to
+        // ensure the keys are consistent with the initial seek range.
+        String row = (reverseIndex ? new StringBuilder().append(thing.getTerm()).reverse().toString() : thing.getTerm());
+        return new Pair<>(new Key(row, thing.getField(), thing.getDate() + '\uffff'), new Value(WritableUtils.toByteArray(aw)));
     }
     
     @Override
