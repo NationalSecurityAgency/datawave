@@ -41,12 +41,13 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             String cityPhrase = " != " + "'" + city.name() + "'";
             String query = Constants.ANY_FIELD + cityPhrase;
             // Test list of cities for each plan
+            
             try {
                 GenericQueryConfiguration config = setupConfig(query);
                 fail("Expected FullTableScanDisallowedException.");
             } catch (FullTableScansDisallowedException e) {
-                // assure that Query Plan is not default value
-                assertNotEquals("There is no plan.", "No Query Plan was set.", this.logic.getQueryPlan());
+                // assure that Query Plan is not null
+                assertNotEquals(null, "No Query Plan was set.", this.logic.getQueryPlan());
             }
         }
     }
@@ -61,8 +62,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             GenericQueryConfiguration config = setupConfig(query);
             fail("Expected DatawaveFatalQueryException.");
         } catch (DatawaveFatalQueryException e) {
-            // assure that Query Plan is not default value
-            assertNotEquals("There is no plan.", "No Query Plan was set.", this.logic.getQueryPlan());
+            // assure that Query Plan is not null
+            assertNotEquals(null, "No Query Plan was set.", this.logic.getQueryPlan());
         }
     }
     

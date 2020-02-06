@@ -7,8 +7,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import datawave.query.exceptions.DatawaveQueryException;
-import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -365,7 +363,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
             config.setQueryString(jexlQueryString);
-            this.setQueryPlan(jexlQueryString);
         }
         
         final Date beginDate = settings.getBeginDate();
@@ -418,39 +415,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         validateConfiguration(config);
         
-        try {
-            if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
-                // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
-                // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
-                // Not advisable to create a copy of the config object due to the embedded timers.
-                Set<String> originalBlacklistedFields = new HashSet<>(config.getBlacklistedFields());
-                Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
-                
-                // either projectFields or blacklistedFields can be used, but not both
-                // this will be caught when loadQueryParameters is called
-                if (!config.getBlacklistedFields().isEmpty()) {
-                    config.setBlacklistedFields(getCardinalityConfiguration().getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
-                }
-                if (!config.getProjectFields().isEmpty()) {
-                    config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
-                }
-                
-                this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
-                
-                config.setBlacklistedFields(originalBlacklistedFields);
-                config.setProjectFields(originalProjectFields);
-            } else {
-                this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
+        if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
+            // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
+            // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
+            // Not advisable to create a copy of the config object due to the embedded timers.
+            Set<String> originalBlacklistedFields = new HashSet<>(config.getBlacklistedFields());
+            Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
+            
+            // either projectFields or blacklistedFields can be used, but not both
+            // this will be caught when loadQueryParameters is called
+            if (!config.getBlacklistedFields().isEmpty()) {
+                config.setBlacklistedFields(getCardinalityConfiguration().getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
             }
-            // catch exceptions just to get the plan up to this point
-        } catch (FullTableScansDisallowedException e) {
-            if (getQueryPlanner().getPlannedScript() != null)
-                this.setQueryPlan(getQueryPlanner().getPlannedScript());
-            throw new FullTableScansDisallowedException(e);
-        } catch (DatawaveQueryException e) {
-            if (getQueryPlanner().getPlannedScript() != null)
-                this.setQueryPlan(getQueryPlanner().getPlannedScript());
-            throw new DatawaveQueryException(e);
+            if (!config.getProjectFields().isEmpty()) {
+                config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
+            }
+            
+            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
+            
+            config.setBlacklistedFields(originalBlacklistedFields);
+            config.setProjectFields(originalProjectFields);
+        } else {
+            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
         }
         
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
@@ -458,8 +444,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         config.setQueries(this.queries.iterator());
         
         config.setQueryString(getQueryPlanner().getPlannedScript());
-        
-        this.setQueryPlan(getQueryPlanner().getPlannedScript());
         
         stopwatch.stop();
     }

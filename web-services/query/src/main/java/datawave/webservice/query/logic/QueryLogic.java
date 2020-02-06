@@ -299,6 +299,4 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     String getQueryPlan();
     
-    void setQueryPlan(String queryPlan);
-    
 }
