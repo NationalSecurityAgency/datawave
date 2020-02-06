@@ -71,6 +71,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withCompositeSeekThreshold(compositeSeekThreshold)
                         .withTypeMetadata(typeMetadata)
                         .withIteratorEnv(env)
+                        .withIvaratorSourcePool(ivaratorSourcePool)
                         .build();
                 // @formatter:on
                 if (collectTimingDetails) {
