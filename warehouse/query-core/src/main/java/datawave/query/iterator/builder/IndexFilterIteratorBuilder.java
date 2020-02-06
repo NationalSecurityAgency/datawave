@@ -79,13 +79,13 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                                 .withFileSystem(hdfsFileSystem).withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
                                 .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
                                 .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                .build();
+                                .withIvaratorSourcePool(ivaratorSourcePool).build();
                 
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);
                 }
-                rangeIterator.init(source, null, null);
+                rangeIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexFilterIteratorJexl: " + rangeIterator);
                 
                 // Add an interator to aggregate documents. This is needed for index only fields.
