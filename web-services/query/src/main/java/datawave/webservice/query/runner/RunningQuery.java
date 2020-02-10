@@ -170,12 +170,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.getMetric().setError(e);
             throw e;
         } finally {
-            // if configuration didn't fail, get plan. otherwise pull what the plan was supposed to be from logic
-            if (configuration != null) {
-                this.getMetric().setPlan(configuration.getQueryString());
-            } else {
-                this.getMetric().setPlan(this.logic.getQueryPlan());
-            }
+            // get the query plan from logic config object
+            this.getMetric().setPlan(this.logic.getQueryPlan());
+            
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
             touch();
             removeNDC();
