@@ -1130,7 +1130,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>geowave</id>
-            <url>http://geowave-maven.s3-website-us-east-1.amazonaws.com/release</url>
+            <url>https://geowave-maven.s3-website-us-east-1.amazonaws.com/release</url>
         </repository>
         <repository>
             <snapshots>
