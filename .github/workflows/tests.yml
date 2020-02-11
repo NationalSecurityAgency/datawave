@@ -22,6 +22,13 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
+    - uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-format-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-format-
+          ${{ runner.os }}-maven-
     - name: Format code
       run: |
         mvn -V -B -e clean formatter:format sortpom:sort -Pautoformat
@@ -40,13 +47,14 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    # This is a hack to pre-populate the maven repo and reduce downloads. This can
-    # go away whenever GitHub actions support caching (supposedly in November 2019).
-    - name: Set up maven repo
-      run: |
-        echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
-        mkdir ~/.m2 || true
-        docker run --rm -u $(id -u):$(id -g) -v ~/.m2:/m2 docker.pkg.github.com/brianloss/maven_repo/repo:v1
+    - uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-build-
+          ${{ runner.os }}-maven-format-
+          ${{ runner.os }}-maven-
     - name: Build and Run Unit Tests
       run: mvn -V -B -e -Dsurefire.rerunFailingTestsCount=3 -Pdev,examples,assemble -Ddist -T1C clean verify
       env:
@@ -66,13 +74,14 @@ jobs:
       run: |
         sudo sed -ri 's/\s*}\s*$/, "experimental": true }/' /etc/docker/daemon.json
         sudo systemctl restart docker
-    # This is a hack to pre-populate the maven repo and reduce downloads. This can
-    # go away whenever GitHub actions support caching (supposedly in November 2019).
-    - name: Set up maven repo
-      run: |
-        echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
-        mkdir ~/.m2 || true
-        docker run --rm -u $(id -u):$(id -g) -v ~/.m2:/m2 docker.pkg.github.com/brianloss/maven_repo/repo:v1
+    - uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-build-
+          ${{ runner.os }}-maven-format-
+          ${{ runner.os }}-maven-
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
