@@ -274,18 +274,18 @@ public abstract class UniqueTest {
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
-
+    
     @Test(expected = InvalidQueryException.class)
     public void testUniquenessWithBadField() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("query.syntax", "LUCENE");
-
+        
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
-
+        
         String queryString = "UUID:/^[CS].*/ AND #UNIQUE(FOO_BAR,$MAGIC)";
         runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
     }
-
+    
 }
