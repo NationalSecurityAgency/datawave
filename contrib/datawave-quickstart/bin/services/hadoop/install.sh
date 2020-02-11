@@ -89,7 +89,7 @@ else
 fi
 
 # Ensure that $JAVA_HOME is observed by all hadoop scripts
-sed -i'.bak' "s|.*\(export JAVA_HOME=\).*|\1${JAVA_HOME}|g" ${HADOOP_CONF_DIR}/hadoop-env.sh && rm ${HADOOP_CONF_DIR}/hadoop-env.sh.bak
+sed -i'' -e "s|.*\(export JAVA_HOME=\).*|\1${JAVA_HOME}|g" ${HADOOP_CONF_DIR}/hadoop-env.sh
 
 verifySSHConfig
 
