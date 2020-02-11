@@ -59,9 +59,9 @@ fi
 assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}"
 
 # Update tserver and other options in accumulo-env.sh
-sed -i'.bak' "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh && rm ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh.bak
-sed -i'.bak' "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh && rm ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh.bak
-sed -i'.bak' "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh && rm ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh.bak
+sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh
+sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh
+sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh
 
 # Write zoo.cfg file using our settings in DW_ZOOKEEPER_CONF
 if [ ! -z "${DW_ZOOKEEPER_CONF}" ] ; then 
