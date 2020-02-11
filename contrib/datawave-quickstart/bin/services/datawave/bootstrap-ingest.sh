@@ -83,10 +83,10 @@ DW_DATAWAVE_INGEST_DIST="${tarball}"
 
 DW_DATAWAVE_INGEST_CMD_START="( cd ${DW_DATAWAVE_INGEST_HOME}/bin/system && ./start-all.sh -allforce )"
 DW_DATAWAVE_INGEST_CMD_STOP="( cd ${DW_DATAWAVE_INGEST_HOME}/bin/system && ./stop-all.sh )"
-DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS="pgrep -f 'ingest-server.sh|Dapp=FlagMaker|mapreduce.job.BulkIngestMapFileLoader|datawave.ingest.mapreduce.job.IngestJob|ingest/cleanup-server.py'"
+DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'ingest-server.sh|Dapp=FlagMaker|mapreduce.job.BulkIngestMapFileLoader|datawave.ingest.mapreduce.job.IngestJob|ingest/cleanup-server.py'"
 
 function datawaveIngestIsRunning() {
-    DW_DATAWAVE_INGEST_PID_LIST="$(eval "${DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_DATAWAVE_INGEST_PID_LIST="$(eval "${DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS}")"
     [[ -z "${DW_DATAWAVE_INGEST_PID_LIST}" ]] && return 1 || return 0
 }
 
