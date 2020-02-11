@@ -3,6 +3,10 @@ package datawave.query.iterator.builder;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileSystem;
 
 /**
@@ -23,6 +27,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected QuerySpanCollector querySpanCollector = null;
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold;
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
     
     public FileSystem getHdfsFileSystem() {
         return hdfsFileSystem;
@@ -118,5 +123,13 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     
     public void setCompositeSeekThreshold(int compositeSeekThreshold) {
         this.compositeSeekThreshold = compositeSeekThreshold;
+    }
+    
+    public GenericObjectPool<SortedKeyValueIterator<Key,Value>> getIvaratorSourcePool() {
+        return ivaratorSourcePool;
+    }
+    
+    public void setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+        this.ivaratorSourcePool = ivaratorSourcePool;
     }
 }
