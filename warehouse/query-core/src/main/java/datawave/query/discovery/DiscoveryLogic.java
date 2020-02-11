@@ -23,6 +23,7 @@ import datawave.query.QueryParameters;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.language.tree.QueryNode;
@@ -175,6 +176,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         // Parse & flatten the query
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(config.getQueryString());
+        
+        script = CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script);
         
         Set<String> dataTypes = config.getDatatypeFilter();
         Set<String> allFields;
@@ -369,6 +372,9 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             String literal = literalAndField.getKey(), field = literalAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
             field = Constants.ANY_FIELD.equals(field) ? null : field;
+            if (field != null) {
+                familiesToSeek.add(new Text(field));
+            }
             forwardRanges.add(ShardIndexQueryTableStaticMethods.getLiteralRange(field, literal));
         }
         for (Entry<String,LiteralRange<String>> rangeEntry : config.getRanges().entries()) {
