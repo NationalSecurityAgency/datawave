@@ -88,6 +88,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                         .withCompositeSeekThreshold(compositeSeekThreshold)
                         .withTypeMetadata(typeMetadata)
                         .withIteratorEnv(env)
+                        .withIvaratorSourcePool(ivaratorSourcePool)
                         .build();
                 // @formatter:on
                 
