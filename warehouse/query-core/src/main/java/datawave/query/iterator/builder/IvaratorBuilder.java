@@ -4,6 +4,10 @@ import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -32,6 +36,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected QuerySpanCollector querySpanCollector = null;
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold;
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
     
     protected void validateIvaratorControlDir(IvaratorCacheDir ivaratorCacheDir) {
         String ivaratorCacheDirURI = ivaratorCacheDir.getPathURI();
@@ -152,5 +157,13 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     
     public void setCompositeSeekThreshold(int compositeSeekThreshold) {
         this.compositeSeekThreshold = compositeSeekThreshold;
+    }
+    
+    public GenericObjectPool<SortedKeyValueIterator<Key,Value>> getIvaratorSourcePool() {
+        return ivaratorSourcePool;
+    }
+    
+    public void setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
+        this.ivaratorSourcePool = ivaratorSourcePool;
     }
 }

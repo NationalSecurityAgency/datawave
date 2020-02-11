@@ -131,9 +131,8 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                 return;
             }
             
-            String term = stringify(key.getRowData());
-            if (reverseIndex)
-                term = new StringBuilder().append(term).reverse().toString();
+            String row = stringify(key.getRowData());
+            String term = (reverseIndex ? new StringBuilder().append(row).reverse().toString() : row);
             
             Pair<Boolean,Optional<ImmutableSortedSet<String>>> matches = fieldsFor(term);
             
@@ -153,7 +152,7 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                         propagateTop();
                         return;
                     } else {
-                        Key next = possibleMatch == null ? key.followingKey(PartialKey.ROW) : new Key(term, possibleMatch);
+                        Key next = possibleMatch == null ? key.followingKey(PartialKey.ROW) : new Key(row, possibleMatch);
                         
                         UniqueColumnFamilyIterator.moveTo(next, src, scanRange, scanCFs, scanInclusive);
                         continue;
