@@ -336,7 +336,7 @@ public class JexlNodeSetTest {
         prime.add(JexlNodeFactory.buildEQNode("FOO", "bar"));
         assertTrue(prime.equals(other));
     }
-  
+    
     // Test exercises the directAddAll() codepath found within the addAll() method.
     @Test
     public void testDirectAddAll() {
