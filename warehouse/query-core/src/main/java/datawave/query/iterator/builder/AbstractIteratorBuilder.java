@@ -8,6 +8,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import datawave.query.iterator.NestedIterator;
 
 import com.google.common.collect.HashMultimap;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
  * Provides semantics for adding sources to a nested iterator but deferring the creation of iterator. This is meant to be used in a visitor.
