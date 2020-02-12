@@ -1,12 +1,12 @@
 package datawave.query.util.sortedset;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import org.apache.log4j.Logger;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -18,9 +18,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.log4j.Logger;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
@@ -30,7 +27,7 @@ import org.apache.log4j.Logger;
  *
  * @param <E>
  */
-public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
+public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     private static Logger log = Logger.getLogger(FileSortedSet.class);
     protected boolean persisted = false;
     protected SortedSet<E> set = null;
@@ -161,7 +158,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
             try {
                 int actualSize = 0;
                 List<E> firstOneHundred = new ArrayList<>();
-                ObjectOutputStream stream = getOutputStream();
+                OutputStream stream = getOutputStream();
                 try {
                     for (E t : set) {
                         writeObject(stream, t);
@@ -170,7 +167,10 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
                         }
                         actualSize++;
                     }
-                    stream.writeInt(actualSize);
+                    stream.write((actualSize >>> 24) & 0xFF);
+                    stream.write((actualSize >>> 16) & 0xFF);
+                    stream.write((actualSize >>> 8) & 0xFF);
+                    stream.write((actualSize >>> 0) & 0xFF);
                 } finally {
                     stream.close();
                 }
@@ -179,7 +179,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
                     throw new IOException("Failed to verify file existence");
                 }
                 // now verify the first 100 objects were written correctly
-                ObjectInputStream inStream = getInputStream();
+                InputStream inStream = getInputStream();
                 try {
                     int count = 0;
                     for (E t : firstOneHundred) {
@@ -252,7 +252,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
         if (persisted) {
             try {
                 int size = readSize();
-                ObjectInputStream stream = getInputStream();
+                InputStream stream = getInputStream();
                 try {
                     for (int i = 0; i < size; i++) {
                         E obj = readObject(stream);
@@ -270,58 +270,40 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
     }
     
     /**
-     * Get an input stream
+     * Get an input stream. This should wrap handler.getInputStream with appropriate streams to handle reading the objects.
      * 
      * @return the input stream
      * @throws FileNotFoundException
      * @throws IOException
      */
-    protected ObjectInputStream getInputStream() throws IOException {
-        return new ObjectInputStream(new BufferedInputStream(handler.getInputStream()));
-    }
+    protected abstract InputStream getInputStream() throws IOException;
     
     /**
-     * Get an output stream
+     * Get an output stream. This should wrap handler.getOutputStream with appropriate streams to handle writing the objects.
      * 
      * @return the output stream
      * @throws IOException
      */
-    protected ObjectOutputStream getOutputStream() throws IOException {
-        return new ObjectOutputStream(new BufferedOutputStream(handler.getOutputStream()));
-    }
+    protected abstract OutputStream getOutputStream() throws IOException;
     
     /**
-     * Write T to an object output stream
+     * Write T to an output stream as returned by getOutputStream()
      * 
      * @param stream
      * @param t
      * @throws IOException
      */
-    protected void writeObject(ObjectOutputStream stream, E t) throws IOException {
-        if (t == null) {
-            stream.writeObject(NULL_OBJECT);
-        } else {
-            stream.writeObject(t);
-        }
-    }
+    protected abstract void writeObject(OutputStream stream, E t) throws IOException;
     
     /**
-     * Read T from an object input stream
+     * Read T from an object input stream as returned by getInputStream()
      *
      * @param stream
      * @return
      * @throws IOException
-     * @throws ClassNotFoundException
      */
     @SuppressWarnings("unchecked")
-    protected E readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-        Object o = stream.readObject();
-        if (o instanceof NullObject) {
-            return null;
-        } else {
-            return (E) o;
-        }
-    }
+    protected abstract E readObject(InputStream stream) throws IOException;
     
     /**
      * Is this set persisted?
@@ -392,7 +374,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
         if (persisted) {
             try {
                 int size = readSize();
-                ObjectInputStream stream = getInputStream();
+                InputStream stream = getInputStream();
                 try {
                     Object[] data = new Object[size];
                     for (int i = 0; i < size; i++) {
@@ -416,7 +398,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
         if (persisted) {
             try {
                 int size = readSize();
-                ObjectInputStream stream = getInputStream();
+                InputStream stream = getInputStream();
                 try {
                     T[] dest = a;
                     int i = 0;
@@ -479,7 +461,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
                     all.add((E) o);
                 }
                 int size = readSize();
-                ObjectInputStream stream = getInputStream();
+                InputStream stream = getInputStream();
                 try {
                     for (int i = 0; i < size; i++) {
                         E obj = readObject(stream);
@@ -577,7 +559,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
         if (persisted) {
             try {
                 int size = readSize();
-                ObjectInputStream stream = getInputStream();
+                InputStream stream = getInputStream();
                 try {
                     if (size != 0) {
                         first = readObject(stream);
@@ -612,7 +594,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
         if (persisted) {
             try {
                 int size = readSize();
-                ObjectInputStream stream = getInputStream();
+                InputStream stream = getInputStream();
                 try {
                     for (int i = 0; i < size; i++) {
                         last = readObject(stream);
@@ -647,7 +629,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
     protected class FileIterator implements Iterator<E> {
         private int size = 0;
         private int index = 0;
-        private ObjectInputStream stream = null;
+        private InputStream stream = null;
         
         public FileIterator() {
             try {
@@ -738,6 +720,59 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
         } else {
             return set.toString();
         }
+    }
+    
+    /**
+     * Extending classes must implement cloneable
+     * 
+     * @return A clone
+     */
+    public abstract FileSortedSet<E> clone();
+    
+    /**
+     * An interface for a sorted set factory
+     * 
+     * @param <E>
+     */
+    public interface FileSortedSetFactory<E> {
+        /**
+         * factory method
+         *
+         * @param handler
+         * @param persisted
+         * @return a new instance
+         */
+        FileSortedSet<E> newInstance(SortedSetFileHandler handler, boolean persisted);
+        
+        /**
+         * Factory method
+         *
+         * @param comparator
+         * @param handler
+         * @param persisted
+         * @return a new instance
+         */
+        FileSortedSet<E> newInstance(Comparator<? super E> comparator, SortedSetFileHandler handler, boolean persisted);
+        
+        /**
+         * Create an unpersisted sorted set (still in memory)
+         *
+         * @param set
+         * @param handler
+         * @return a new instance
+         */
+        FileSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler);
+        
+        /**
+         * factory method
+         *
+         * @param set
+         * @param handler
+         * @param persist
+         * @return a new instance
+         * @throws IOException
+         */
+        FileSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException;
     }
     
 }

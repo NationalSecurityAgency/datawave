@@ -3,7 +3,6 @@ package datawave.query.util.sortedset;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
@@ -15,7 +14,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBackedSortedSet<E> implements SortedSet<E> {
+public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     private static final Logger log = Logger.getLogger(HdfsBackedSortedSet.class);
     private static final String FILENAME_PREFIX = "SortedSetFile.";
     
@@ -23,17 +22,18 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         super(other);
     }
     
-    public HdfsBackedSortedSet(FileSystem fs, Path uniqueDir, int maxOpenFiles) throws IOException {
-        this(null, fs, uniqueDir, maxOpenFiles);
+    public HdfsBackedSortedSet(FileSystem fs, Path uniqueDir, int maxOpenFiles, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
+        this(null, fs, uniqueDir, maxOpenFiles, setFactory);
     }
     
-    public HdfsBackedSortedSet(Comparator<? super E> comparator, FileSystem fs, Path uniqueDir, int maxOpenFiles) throws IOException {
-        this(comparator, 10000, fs, uniqueDir, maxOpenFiles);
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, FileSystem fs, Path uniqueDir, int maxOpenFiles,
+                    FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
+        this(comparator, 10000, fs, uniqueDir, maxOpenFiles, setFactory);
     }
     
-    public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, FileSystem fs, Path uniqueDir, int maxOpenFiles)
-                    throws IOException {
-        super(comparator, bufferPersistThreshold, maxOpenFiles, new SortedSetHdfsFileHandlerFactory(fs, uniqueDir));
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, FileSystem fs, Path uniqueDir, int maxOpenFiles,
+                    FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
+        super(comparator, bufferPersistThreshold, maxOpenFiles, new SortedSetHdfsFileHandlerFactory(fs, uniqueDir), setFactory);
         
         // now load up this sorted set with any existing files
         FileStatus[] files = fs.listStatus(uniqueDir);
@@ -42,7 +42,7 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
             for (FileStatus file : files) {
                 if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
                     count++;
-                    addSet(new FileSortedSet<>(comparator, new SortedSetHdfsFileHandler(fs, file.getPath()), true));
+                    addSet(setFactory.newInstance(comparator, new SortedSetHdfsFileHandler(fs, file.getPath()), true));
                 }
             }
         }

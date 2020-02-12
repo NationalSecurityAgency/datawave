@@ -1,51 +1,53 @@
 package datawave.query.util.sortedset;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
+import org.apache.accumulo.core.data.Key;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class BufferedFileBackedSortedSetTest {
+public class BufferedFileBackedKeySortedSetTest {
     
-    private byte[][] data = null;
+    private Key[] data = null;
     private int[] sortedOrder = null;
-    private BufferedFileBackedSortedSet<byte[]> set = null;
+    private BufferedFileBackedSortedSet<Key> set = null;
     
     @Before
     public void setUp() throws Exception {
         byte[] template = new byte[] {5, 2, 78, 4, 8, 3, 54, 23, 6, 21, 7, 16};
         int[] sortedTemplate = new int[] {1, 5, 3, 0, 8, 10, 4, 11, 9, 7, 6, 2};
-        data = new byte[template.length * 2][];
+        data = new Key[template.length * 2];
         for (int i = 0; i < template.length; i++) {
-            data[i] = new byte[i + 11];
-            Arrays.fill(data[i], template[i]);
+            byte[] buffer = new byte[i + 11];
+            Arrays.fill(buffer, template[i]);
+            data[i] = new Key(buffer);
         }
         for (int i = 0; i < template.length; i++) {
-            data[i + template.length] = new byte[10];
-            Arrays.fill(data[i + template.length], template[i]);
+            byte[] buffer = new byte[10];
+            Arrays.fill(buffer, template[i]);
+            data[i + template.length] = new Key(buffer);
         }
         sortedOrder = new int[data.length];
         for (int i = 0; i < template.length; i++) {
             sortedOrder[i * 2] = sortedTemplate[i] + sortedTemplate.length;
             sortedOrder[i * 2 + 1] = sortedTemplate[i];
         }
-        set = new BufferedFileBackedSortedSet(new ByteArrayComparator(), 5, 7, new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
+        set = new BufferedFileBackedSortedSet(null, 5, 7, new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
             @Override
             public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
                 return new SortedSetTempFileHandler();
             }
-        }, new FileSerializableSortedSet.Factory());
+        }, new FileKeySortedSet.Factory());
         
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
@@ -125,13 +127,13 @@ public class BufferedFileBackedSortedSetTest {
     @Test
     public void testIterator() {
         int index = 0;
-        for (Iterator<byte[]> it = set.iterator(); it.hasNext();) {
-            byte[] value = it.next();
-            byte[] expected = data[sortedOrder[index++]];
-            assertTrue(Arrays.equals(expected, value));
+        for (Iterator<Key> it = set.iterator(); it.hasNext();) {
+            Key value = it.next();
+            Key expected = data[sortedOrder[index++]];
+            assertEquals(expected, value);
         }
         set.clear();
-        for (byte[] value : set) {
+        for (Key value : set) {
             fail();
         }
     }
@@ -142,9 +144,9 @@ public class BufferedFileBackedSortedSetTest {
         int failCount = 0;
         assertFalse(set.isPersisted());
         // calling iterator() will force persistence
-        for (Iterator<byte[]> it = set.iterator(); it.hasNext();) {
+        for (Iterator<Key> it = set.iterator(); it.hasNext();) {
             assertTrue(set.isPersisted());
-            byte[] value = it.next();
+            Key value = it.next();
             assertTrue(set.contains(value));
             try {
                 it.remove();
@@ -161,23 +163,11 @@ public class BufferedFileBackedSortedSetTest {
     }
     
     @Test
-    public void testComparator() {
-        Comparator<? super byte[]> comparator = set.comparator();
-        byte[][] testData = Arrays.copyOf(data, data.length);
-        Arrays.sort(testData, comparator);
-        int index = 0;
-        for (byte[] value : set) {
-            byte[] expected = data[sortedOrder[index++]];
-            assertTrue(Arrays.equals(expected, value));
-        }
-    }
-    
-    @Test
     public void testSubSet() {
         int start = sortedOrder.length / 3;
         int end = start * 2;
         try {
-            SortedSet<byte[]> subSet = set.subSet(data[sortedOrder[start]], data[sortedOrder[end]]);
+            SortedSet<Key> subSet = set.subSet(data[sortedOrder[start]], data[sortedOrder[end]]);
             fail("Expected the subSet operation to fail with underlying persisted FileSortedSets");
         } catch (Exception e) {
             // expected
@@ -188,7 +178,7 @@ public class BufferedFileBackedSortedSetTest {
     public void testHeadSet() {
         int end = sortedOrder.length / 3;
         try {
-            SortedSet<byte[]> subSet = set.headSet(data[sortedOrder[end]]);
+            SortedSet<Key> subSet = set.headSet(data[sortedOrder[end]]);
             fail("Expected the headSet operation to fail with underlying persisted FileSortedSets");
         } catch (Exception e) {
             // expected
@@ -199,7 +189,7 @@ public class BufferedFileBackedSortedSetTest {
     public void testTailSet() {
         int start = sortedOrder.length / 3;
         try {
-            SortedSet<byte[]> subSet = set.tailSet(data[sortedOrder[start]]);
+            SortedSet<Key> subSet = set.tailSet(data[sortedOrder[start]]);
             fail("Expected the tailSet operation to fail with underlying persisted FileSortedSets");
         } catch (Exception e) {
             // expected
@@ -208,16 +198,16 @@ public class BufferedFileBackedSortedSetTest {
     
     @Test
     public void testLast() {
-        byte[] expected = data[sortedOrder[data.length - 1]];
-        byte[] value = set.last();
-        assertTrue(Arrays.equals(expected, value));
+        Key expected = data[sortedOrder[data.length - 1]];
+        Key value = set.last();
+        assertEquals(expected, value);
     }
     
     @Test
     public void testFirst() {
-        byte[] expected = data[sortedOrder[0]];
-        byte[] value = set.first();
-        assertTrue(Arrays.equals(expected, value));
+        Key expected = data[sortedOrder[0]];
+        Key value = set.first();
+        assertEquals(expected, value);
     }
     
     @Test
