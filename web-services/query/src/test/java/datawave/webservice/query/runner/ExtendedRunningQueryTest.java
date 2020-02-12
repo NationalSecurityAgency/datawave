@@ -171,7 +171,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
-        expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+        expect(this.queryLogic.getQueryPlan()).andReturn(query).once();
         
         // Run the test
         PowerMock.replayAll();
@@ -256,7 +256,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
-        expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+        expect(this.queryLogic.getQueryPlan()).andReturn(query).once();
         
         // Run the test
         PowerMock.replayAll();
@@ -301,7 +301,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.expectLastCall().times(3);
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.transformIterator.hasNext()).andReturn(true);
-        expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
+        expect(this.queryLogic.getQueryPlan()).andReturn("query").once();
         
         // Run the test
         PowerMock.replayAll();
@@ -340,7 +340,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getId()).andReturn(queryId).times(2);
         expect(this.query.getUserDN()).andReturn(userDN).times(2);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
-        expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
+        expect(this.queryLogic.getQueryPlan()).andReturn("query").once();
         this.queryLogic.setupQuery(this.genericConfiguration);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(3);

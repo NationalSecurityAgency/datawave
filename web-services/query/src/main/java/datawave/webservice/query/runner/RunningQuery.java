@@ -151,13 +151,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             return;
         }
         
-        GenericQueryConfiguration configuration = null;
         try {
             addNDC();
             applyPrediction(null);
             this.connection = connection;
             long start = System.currentTimeMillis();
-            configuration = this.logic.initialize(this.connection, this.settings, this.calculatedAuths);
+            GenericQueryConfiguration configuration = this.logic.initialize(this.connection, this.settings, this.calculatedAuths);
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
