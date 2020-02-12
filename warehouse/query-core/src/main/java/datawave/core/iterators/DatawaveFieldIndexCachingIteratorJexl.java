@@ -14,8 +14,8 @@ import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.sortedset.FileKeySortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
-import datawave.query.util.sortedset.KeyValueSerializable;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -264,7 +264,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // the current top key
     private Key topKey = null;
     // the current top value
-    private Value topValue = null;
+    private final Value topValue = new Value(new byte[0]);
     
     // must the returned UIDs be in sorted order? This is to allow for am optimization where the UIDs are not sorted which avoids the entire
     // caching and merge sorting that is done in the the initial seek. Note that the keys returned from this iterator will not be in sorted
@@ -275,11 +275,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private SortedKeyValueIterator<Key,Value> fiSource = null;
     
     // the hdfs backed sorted set
-    private HdfsBackedSortedSet<KeyValueSerializable> set = null;
+    private HdfsBackedSortedSet<Key> set = null;
     // a thread safe wrapper around the sorted set used by the scan threads
-    private SortedSet<KeyValueSerializable> threadSafeSet = null;
+    private SortedSet<Key> threadSafeSet = null;
     // the iterator (merge sort) of key values once the sorted set has been filled
-    private PeekingIterator<KeyValueSerializable> keyValues = null;
+    private PeekingIterator<Key> keys = null;
     // the current row covered by the hdfs set
     private String currentRow = null;
     // did we created the row directory
@@ -419,7 +419,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.maxOpenFiles = other.maxOpenFiles;
         
         this.set = other.set;
-        this.keyValues = other.keyValues;
+        this.keys = other.keys;
         this.currentRow = other.currentRow;
         this.createdRowDir = other.createdRowDir;
         this.maxRangeSplit = other.maxRangeSplit;
@@ -484,11 +484,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             clearRowBasedHdfsBackedSet();
         } else {
             // inside the original range, so potentially need to reposition keyValues
-            if (keyValues != null) {
+            if (keys != null) {
                 Key startKey = r.getStartKey();
                 // decide if keyValues needs to be rebuilt or can be reused
-                if (!keyValues.hasNext() || (keyValues.peek().getKey().compareTo(startKey) > 0)) {
-                    keyValues = new CachingIterator<>(threadSafeSet.iterator());
+                if (!keys.hasNext() || (keys.peek().compareTo(startKey) > 0)) {
+                    keys = new CachingIterator<>(threadSafeSet.iterator());
                 }
             }
         }
@@ -571,7 +571,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     }
                 } else {
                     this.topKey = null;
-                    this.topValue = null;
                 }
             } finally {
                 returnPoolSource(source);
@@ -682,7 +681,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected void findTop() throws IOException {
         
         this.topKey = null;
-        this.topValue = null;
         
         // we are done if cancelled
         if (this.setControl.isCancelledQuery()) {
@@ -692,18 +690,17 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         while (this.topKey == null) {
             
             // if we have key values, then exhaust them first
-            if (this.keyValues != null) {
+            if (this.keys != null) {
                 // only pass through keys that fall within the range
                 // this is required to handle cases where we start at a specific UID
-                while (this.keyValues.hasNext()) {
-                    KeyValueSerializable kv = this.keyValues.next();
+                while (this.keys.hasNext()) {
+                    Key key = this.keys.next();
                     if (sortedUIDs && log.isTraceEnabled()) {
-                        log.trace("Is " + kv.getKey() + " contained in " + this.lastRangeSeeked);
+                        log.trace("Is " + key + " contained in " + this.lastRangeSeeked);
                     }
                     // no need to check containership if not returning sorted uids
-                    if (!sortedUIDs || this.lastRangeSeeked.contains(kv.getKey())) {
-                        this.topKey = kv.getKey();
-                        this.topValue = kv.getValue();
+                    if (!sortedUIDs || this.lastRangeSeeked.contains(key)) {
+                        this.topKey = key;
                         if (log.isDebugEnabled()) {
                             log.debug("setting as topKey " + topKey);
                         }
@@ -733,7 +730,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 
                 if (this.setControl.isCancelledQuery()) {
                     this.topKey = null;
-                    this.topValue = null;
                 }
                 
                 if (isTimedOut()) {
@@ -751,8 +747,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     forcePersistence();
                 }
                 
-                if (this.keyValues == null) {
-                    this.keyValues = new CachingIterator<>(this.threadSafeSet.iterator());
+                if (this.keys == null) {
+                    this.keys = new CachingIterator<>(this.threadSafeSet.iterator());
                 }
             }
             
@@ -823,7 +819,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     }
     
     private void getNextUnsortedKey() throws IOException {
-        this.keyValues = null;
+        this.keys = null;
         
         // if we are in a row but bounding ranges is empty, then something has gone awry
         if (fiRow != null && boundingFiRanges.isEmpty()) {
@@ -966,7 +962,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     if (log.isTraceEnabled()) {
                         log.trace("Adding result: " + topEventKey);
                     }
-                    DatawaveFieldIndexCachingIteratorJexl.this.threadSafeSet.add(new KeyValueSerializable(topEventKey, new Value(value).get()));
+                    DatawaveFieldIndexCachingIteratorJexl.this.threadSafeSet.add(topEventKey);
                     return true;
                 }
             }
@@ -1125,7 +1121,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * @throws IOException
      */
     protected void clearRowBasedHdfsBackedSet() throws IOException {
-        this.keyValues = null;
+        this.keys = null;
         this.currentRow = null;
         this.set = null;
     }
@@ -1159,7 +1155,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.createdRowDir = false;
             }
             
-            this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, fs, rowDir, maxOpenFiles);
+            this.set = new HdfsBackedSortedSet<Key>(null, hdfsBackedSetBufferSize, fs, rowDir, maxOpenFiles, new FileKeySortedSet.Factory());
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
             this.currentRow = row;
             this.setControl.takeOwnership(row, this);
@@ -1167,9 +1163,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             // if this set is not marked as complete (meaning completely filled AND persisted), then we cannot trust the contents and we need to recompute.
             if (!this.setControl.isCompleteAndPersisted(row)) {
                 this.set.clear();
-                this.keyValues = null;
+                this.keys = null;
             } else {
-                this.keyValues = new CachingIterator<>(this.set.iterator());
+                this.keys = new CachingIterator<>(this.set.iterator());
             }
             
             // reset the keyValues counter as we have a new set here
