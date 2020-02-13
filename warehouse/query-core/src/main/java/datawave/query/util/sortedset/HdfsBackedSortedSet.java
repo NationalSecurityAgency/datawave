@@ -31,6 +31,7 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         this(comparator, 10000, fs, uniqueDir, maxOpenFiles, setFactory);
     }
     
+    @Deprecated
     public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, FileSystem fs, Path uniqueDir, int maxOpenFiles)
                     throws IOException {
         this(comparator, bufferPersistThreshold, fs, uniqueDir, maxOpenFiles, new FileSerializableSortedSet.Factory());
