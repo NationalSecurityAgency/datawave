@@ -19,6 +19,7 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.Tuple2;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -28,14 +29,17 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -1064,5 +1068,16 @@ public class RangeStreamTest {
             }
         }
         assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+    }
+    
+    @Test
+    public void whatDayIsItAnywayTest() throws ParseException {
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HHmmss");
+        config.setBeginDate(sdf.parse("20200201 060000"));
+        config.setEndDate(sdf.parse("20200202 040000"));
+        List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = RangeStream.createFullFieldIndexScanList(config, null);
+        
+        Assert.assertEquals(2, fullFieldIndexScanList.size());
     }
 }
