@@ -4,13 +4,10 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 
@@ -33,18 +30,8 @@ public class SortedSetTempFileHandler implements SortedSetFileHandler {
     }
     
     @Override
-    public SortedSetInputStream getSortedSetInputStream() throws IOException {
-        return new SortedSetInputStream(getInputStream(), true);
-    }
-    
-    @Override
     public InputStream getInputStream() throws IOException {
         return new BufferedInputStream(new FileInputStream(file));
-    }
-    
-    @Override
-    public SortedSetOutputStream getSortedSetOutputStream() throws IOException {
-        return new SortedSetOutputStream(getOutputStream(), true);
     }
     
     public OutputStream getOutputStream() throws IOException {

@@ -45,15 +45,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      */
     public interface SortedSetFileHandler {
         /**
-         * Return the sorted set input stream, compressed if needed
-         * 
-         * @return the sorted set input stream
-         * @throws IOException
-         */
-        SortedSetInputStream getSortedSetInputStream() throws IOException;
-        
-        /**
-         * Return the base input stream, uncompressed
+         * Return the input stream
          * 
          * @return the input stream
          * @throws IOException
@@ -61,12 +53,12 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         InputStream getInputStream() throws IOException;
         
         /**
-         * Return the sorted set output stream, compressed if needed
+         * Return the output stream
          * 
          * @return the sorted set output stream
          * @throws IOException
          */
-        SortedSetOutputStream getSortedSetOutputStream() throws IOException;
+        OutputStream getOutputStream() throws IOException;
         
         long getSize();
         
@@ -233,13 +225,13 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             this.handler = null;
             throw e;
         }
-
+        
         if (log.isDebugEnabled()) {
             long delta = System.currentTimeMillis() - start;
             log.debug("Persisting " + handler + " took " + delta + "ms");
         }
     }
-
+    
     /**
      * Read the size from the file which is in the last 4 bytes.
      * 
@@ -310,7 +302,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      * @throws IOException
      */
     protected abstract OutputStream getOutputStream() throws IOException;
-
+    
     /**
      * Write T to an output stream as returned by getOutputStream()
      * 
@@ -319,7 +311,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      * @throws IOException
      */
     protected abstract void writeObject(OutputStream stream, E t) throws IOException;
-
+    
     /**
      * Read T from an object input stream as returned by getInputStream()
      *
@@ -329,7 +321,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      */
     @SuppressWarnings("unchecked")
     protected abstract E readObject(InputStream stream) throws IOException;
-
+    
     /**
      * Is this set persisted?
      */
@@ -655,7 +647,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         private int size = 0;
         private int index = 0;
         private InputStream stream = null;
-
+        
         public FileIterator() {
             try {
                 this.size = readSize();

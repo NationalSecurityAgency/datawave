@@ -30,8 +30,9 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
     public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries) throws IOException {
         this(ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
     }
-
-    public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
+    
+    public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries,
+                    FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
         this(null, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries);
     }
     
@@ -39,12 +40,12 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
                     int numRetries) throws IOException {
         this(comparator, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
     }
-
+    
     public HdfsBackedSortedSet(Comparator<? super E> comparator, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles,
-                               int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
+                    int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
         this(comparator, 10000, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries);
     }
-
+    
     private static List<SortedSetFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath) {
         List<SortedSetFileHandlerFactory> fileHandlerFactories = new ArrayList<>();
         for (IvaratorCacheDir ivaratorCacheDir : ivaratorCacheDirs) {
@@ -52,15 +53,15 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         }
         return fileHandlerFactories;
     }
-
+    
     public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
-                               int maxOpenFiles, int numRetries) throws IOException {
+                    int maxOpenFiles, int numRetries) throws IOException {
         this(comparator, bufferPersistThreshold, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
     }
-
+    
     public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
                     int maxOpenFiles, int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
-        super(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, createFileHandlerFactories(ivaratorCacheDirs, uniqueSubPath));
+        super(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, createFileHandlerFactories(ivaratorCacheDirs, uniqueSubPath), setFactory);
         
         // for each of the handler factories, check to see if there are any existing files we should load
         for (SortedSetFileHandlerFactory handlerFactory : handlerFactories) {
@@ -194,12 +195,6 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         }
         
         @Override
-        public SortedSetInputStream getSortedSetInputStream() throws IOException {
-            // only need to compress if we are using a local file system
-            return new SortedSetInputStream(getInputStream(), "file".equals(getScheme()));
-        }
-        
-        @Override
         public InputStream getInputStream() throws IOException {
             if (log.isDebugEnabled()) {
                 log.debug("Reading " + file);
@@ -208,12 +203,7 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         }
         
         @Override
-        public SortedSetOutputStream getSortedSetOutputStream() throws IOException {
-            // only need to compress if we are using a local file system
-            return new SortedSetOutputStream(getOutputStream(), "file".equals(getScheme()));
-        }
-        
-        private OutputStream getOutputStream() throws IOException {
+        public OutputStream getOutputStream() throws IOException {
             if (log.isDebugEnabled()) {
                 log.debug("Creating " + file);
             }

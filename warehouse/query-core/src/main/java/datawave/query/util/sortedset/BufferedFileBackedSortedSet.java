@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
-import org.apache.hadoop.fs.FsStatus;
 import org.apache.log4j.Logger;
 
 /**
@@ -67,24 +65,25 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     public BufferedFileBackedSortedSet(List<SortedSetFileHandlerFactory> handlerFactories) {
         this(handlerFactories, new FileSerializableSortedSet.Factory());
     }
-
+    
     public BufferedFileBackedSortedSet(List<SortedSetFileHandlerFactory> handlerFactories, FileSortedSet.FileSortedSetFactory<E> setFactory) {
         this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories);
     }
-
+    
     public BufferedFileBackedSortedSet(Comparator<? super E> comparator, List<SortedSetFileHandlerFactory> handlerFactories) {
         this(comparator, handlerFactories, new FileSerializableSortedSet.Factory());
     }
-
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, List<SortedSetFileHandlerFactory> handlerFactories, FileSortedSet.FileSortedSetFactory<E> setFactory) {
+    
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, List<SortedSetFileHandlerFactory> handlerFactories,
+                    FileSortedSet.FileSortedSetFactory<E> setFactory) {
         this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories);
     }
-
+    
     public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles, int numRetries,
-                                       List<SortedSetFileHandlerFactory> handlerFactories) {
+                    List<SortedSetFileHandlerFactory> handlerFactories) {
         this(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, handlerFactories, new FileSerializableSortedSet.Factory());
     }
-
+    
     public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles, int numRetries,
                     List<SortedSetFileHandlerFactory> handlerFactories, FileSortedSet.FileSortedSetFactory<E> setFactory) {
         this.comparator = comparator;
