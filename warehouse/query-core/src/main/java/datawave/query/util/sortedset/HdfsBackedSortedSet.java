@@ -22,13 +22,26 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         super(other);
     }
     
+    public HdfsBackedSortedSet(FileSystem fs, Path uniqueDir, int maxOpenFiles) throws IOException {
+        this(fs, uniqueDir, maxOpenFiles, new FileSerializableSortedSet.Factory());
+    }
+    
     public HdfsBackedSortedSet(FileSystem fs, Path uniqueDir, int maxOpenFiles, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
         this(null, fs, uniqueDir, maxOpenFiles, setFactory);
+    }
+    
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, FileSystem fs, Path uniqueDir, int maxOpenFiles) throws IOException {
+        this(comparator, fs, uniqueDir, maxOpenFiles, new FileSerializableSortedSet.Factory());
     }
     
     public HdfsBackedSortedSet(Comparator<? super E> comparator, FileSystem fs, Path uniqueDir, int maxOpenFiles,
                     FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
         this(comparator, 10000, fs, uniqueDir, maxOpenFiles, setFactory);
+    }
+    
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, FileSystem fs, Path uniqueDir, int maxOpenFiles)
+                    throws IOException {
+        this(comparator, bufferPersistThreshold, fs, uniqueDir, maxOpenFiles, new FileSerializableSortedSet.Factory());
     }
     
     public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, FileSystem fs, Path uniqueDir, int maxOpenFiles,
