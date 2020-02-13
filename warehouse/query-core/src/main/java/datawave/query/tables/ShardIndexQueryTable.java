@@ -245,7 +245,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             log.debug("JEXL Query = " + node.getOriginalQuery());
         }
         
-        ASTJexlScript origScript = JexlASTHelper.parseJexlQuery(config.getQueryString());
+        // Parse & flatten the query.
+        ASTJexlScript origScript = JexlASTHelper.parseAndFlattenJexlQuery(config.getQueryString());
         
         ASTJexlScript script;
         try {

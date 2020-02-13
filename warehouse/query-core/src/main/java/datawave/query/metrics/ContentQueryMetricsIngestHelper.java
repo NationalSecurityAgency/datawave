@@ -119,14 +119,15 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 
                 ASTJexlScript jexlScript = null;
                 try {
-                    jexlScript = JexlASTHelper.parseJexlQuery(query);
+                    // Parse and flatten here before visitors visit.
+                    jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(query);
                 } catch (Throwable t1) {
                     // not JEXL, try LUCENE
                     try {
                         LuceneToJexlQueryParser luceneToJexlParser = new LuceneToJexlQueryParser();
                         QueryNode node = luceneToJexlParser.parse(query);
                         String jexlQuery = node.getOriginalQuery();
-                        jexlScript = JexlASTHelper.parseJexlQuery(jexlQuery);
+                        jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
                     } catch (Throwable t2) {
                         
                     }
