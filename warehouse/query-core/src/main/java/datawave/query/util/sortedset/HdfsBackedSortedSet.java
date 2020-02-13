@@ -5,13 +5,10 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
@@ -22,7 +19,7 @@ import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBackedSortedSet<E> implements SortedSet<E> {
+public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     private static final Logger log = Logger.getLogger(HdfsBackedSortedSet.class);
     private static final String FILENAME_PREFIX = "SortedSetFile.";
     
@@ -31,14 +28,23 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
     }
     
     public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries) throws IOException {
+        this(ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
+    }
+
+    public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
         this(null, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries);
     }
     
     public HdfsBackedSortedSet(Comparator<? super E> comparator, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles,
                     int numRetries) throws IOException {
+        this(comparator, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
+    }
+
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles,
+                               int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
         this(comparator, 10000, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries);
     }
-    
+
     private static List<SortedSetFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath) {
         List<SortedSetFileHandlerFactory> fileHandlerFactories = new ArrayList<>();
         for (IvaratorCacheDir ivaratorCacheDir : ivaratorCacheDirs) {
@@ -46,9 +52,14 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         }
         return fileHandlerFactories;
     }
-    
+
     public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
-                    int maxOpenFiles, int numRetries) throws IOException {
+                               int maxOpenFiles, int numRetries) throws IOException {
+        this(comparator, bufferPersistThreshold, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
+    }
+
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
+                    int maxOpenFiles, int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
         super(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, createFileHandlerFactories(ivaratorCacheDirs, uniqueSubPath));
         
         // for each of the handler factories, check to see if there are any existing files we should load
@@ -66,7 +77,7 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
                         for (FileStatus file : files) {
                             if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
                                 count++;
-                                addSet(new FileSortedSet<>(comparator, new SortedSetHdfsFileHandler(fs, file.getPath()), true));
+                                addSet(setFactory.newInstance(comparator, new SortedSetHdfsFileHandler(fs, file.getPath()), true));
                             }
                         }
                     }
