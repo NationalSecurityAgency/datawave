@@ -57,13 +57,26 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         this.size = other.size;
     }
     
+    public BufferedFileBackedSortedSet(SortedSetFileHandlerFactory handlerFactory) {
+        this(handlerFactory, new FileSerializableSortedSet.Factory());
+    }
+    
     public BufferedFileBackedSortedSet(SortedSetFileHandlerFactory handlerFactory, FileSortedSet.FileSortedSetFactory<E> setFactory) {
         this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, handlerFactory, setFactory);
+    }
+    
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, SortedSetFileHandlerFactory handlerFactory) {
+        this(comparator, handlerFactory, new FileSerializableSortedSet.Factory());
     }
     
     public BufferedFileBackedSortedSet(Comparator<? super E> comparator, SortedSetFileHandlerFactory handlerFactory,
                     FileSortedSet.FileSortedSetFactory<E> setFactory) {
         this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, handlerFactory, setFactory);
+    }
+    
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles,
+                    SortedSetFileHandlerFactory handlerFactory) {
+        this(comparator, bufferPersistThreshold, maxOpenFiles, handlerFactory, new FileSerializableSortedSet.Factory());
     }
     
     public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles,
