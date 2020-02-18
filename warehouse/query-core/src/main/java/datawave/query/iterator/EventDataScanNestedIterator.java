@@ -186,4 +186,14 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
                         && !((cf.charAt(0) == 'f' && cf.charAt(1) == 'i' && cf.charAt(2) == 0) || (cf.getLength() == 1 && cf.charAt(0) == 'd') || (cf
                                         .getLength() == 2 && cf.charAt(0) == 't' && cf.charAt(1) == 'f'));
     }
+    
+    @Override
+    public boolean isDeferred() {
+        return false;
+    }
+    
+    @Override
+    public void setDeferredContext(Key context) {
+        // no-op
+    }
 }

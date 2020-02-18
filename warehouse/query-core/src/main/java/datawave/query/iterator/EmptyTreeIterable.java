@@ -50,4 +50,14 @@ public class EmptyTreeIterable implements NestedIterator<Key> {
     public void remove() {
         
     }
+    
+    @Override
+    public boolean isDeferred() {
+        return false;
+    }
+    
+    @Override
+    public void setDeferredContext(Key context) {
+        // no-op
+    }
 }

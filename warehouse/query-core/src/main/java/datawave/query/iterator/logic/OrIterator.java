@@ -15,53 +15,53 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Performs a deduping merge of iterators.
  *
- * NOTE***** if however sortedUIDs is false, then deduping is not performed and filters cannot be applied *****NOTE
  * 
  * @param <T>
  */
 public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     // temporary stores of uninitialized streams of iterators
-    private List<NestedIterator<T>> includes, excludes;
+    private List<NestedIterator<T>> includes, deferredIncludes, deferredExcludes;
     
     private Map<T,T> transforms;
     private Util.Transformer<T> transformer;
     
-    private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads;
-    
-    // sortedUIDs is normally true, however in some circumstances it may not in which case we cannot assume the underlying iterators are returning sorted
-    // UIDs. When this is true, we cannot advance iterators based on returned keys.
-    private final boolean sortedUIDs;
+    private TreeMultimap<T,NestedIterator<T>> includeHeads, deferredIncludeHeads, deferredIncludeNullHeads, deferredExcludeHeads, deferredExcludeNullHeads;
     
     private T prev;
     private T next;
     
     private Document prevDocument, document;
     
-    public OrIterator(Iterable<NestedIterator<T>> sources, boolean sortedUIDs) {
-        this(sources, null, sortedUIDs);
+    private T deferredContext;
+    
+    public OrIterator(Iterable<NestedIterator<T>> sources) {
+        this(sources, null);
     }
     
-    public OrIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters, boolean sortedUIDs) {
-        this.sortedUIDs = sortedUIDs;
+    public OrIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters) {
         includes = new LinkedList<>();
+        deferredIncludes = new LinkedList<>();
         for (NestedIterator<T> src : sources) {
-            includes.add(src);
+            if (src.isDeferred()) {
+                deferredIncludes.add(src);
+            } else {
+                includes.add(src);
+            }
         }
         
         if (filters == null) {
-            excludes = Collections.emptyList();
+            deferredExcludes = Collections.emptyList();
         } else {
-            excludes = new LinkedList<>();
+            deferredExcludes = new LinkedList<>();
             for (NestedIterator<T> filter : filters) {
-                excludes.add(filter);
+                deferredExcludes.add(filter);
             }
-        }
-        if (!excludes.isEmpty() && !sortedUIDs) {
-            throw new UnsupportedOperationException("Cannot apply filters if sortedUIDs is false");
         }
     }
     
@@ -80,12 +80,14 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         includeHeads = TreeMultimap.create(keyComp, itrComp);
         initSubtree(includeHeads, includes, transformer, transforms, false);
         
-        if (excludes.isEmpty()) {
-            excludeHeads = Util.getEmpty();
-        } else {
-            excludeHeads = TreeMultimap.create(keyComp, itrComp);
-            // pass null in for transforms as excludes are not returned
-            initSubtree(excludeHeads, excludes, transformer, null, false);
+        if (deferredIncludes.size() > 0) {
+            deferredIncludeHeads = TreeMultimap.create(keyComp, itrComp);
+            deferredIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+        }
+        
+        if (deferredExcludes.size() > 0) {
+            deferredExcludeHeads = TreeMultimap.create(keyComp, itrComp);
+            deferredExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
         
         next();
@@ -100,23 +102,52 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     }
     
     /**
-     * return the previously found next and set its document. If there are more head references, get the lowest that is not filtered, advancing all iterators
-     * tied to lowest and set next/document for the next call
+     * return the previously found next and set its document. If there are more head references, get the lowest, advancing all iterators tied to lowest and set
+     * next/document for the next call
      * 
      * @return the previously found next
      */
     public T next() {
+        if (isDeferred() && deferredContext == null) {
+            throw new IllegalStateException("deferredContext must be set prior to each next");
+        }
+        
         prev = next;
         prevDocument = document;
         
-        while (!includeHeads.isEmpty()) {
-            T lowest = includeHeads.keySet().first();
-            if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
+        SortedSet<T> candidateSet = new TreeSet<>(Util.keyComparator());
+        T lowest;
+        if (includeHeads.keySet().size() > 0) {
+            lowest = includeHeads.keySet().first();
+            candidateSet.add(lowest);
+        }
+        T lowestDeferred = DeferredIterator.evalOr(deferredContext, deferredIncludes, deferredIncludeHeads, deferredIncludeNullHeads, transformer);
+        if (lowestDeferred != null) {
+            candidateSet.add(lowestDeferred);
+        }
+        T lowestNegatedDeferred = DeferredIterator
+                        .evalOrNegated(deferredContext, deferredExcludes, deferredExcludeHeads, deferredExcludeNullHeads, transformer);
+        if (deferredContext != null && deferredContext.equals(lowestNegatedDeferred)) {
+            candidateSet.add(deferredContext);
+        }
+        
+        // take the lowest of the candidates
+        if (candidateSet.size() > 0) {
+            lowest = candidateSet.first();
+            
+            if (lowest.equals(lowestDeferred)) {
+                next = lowestDeferred;
+                document = Util.buildNewDocument(deferredIncludeHeads.get(next));
+            } else if (lowest.equals(deferredContext)) {
+                next = deferredContext;
+                document = Util.buildNewDocument(Collections.emptyList());
+            } else {
                 next = transforms.get(lowest);
                 document = Util.buildNewDocument(includeHeads.get(lowest));
-                includeHeads = advanceIterators(lowest);
-                break;
-            } else {
+            }
+            
+            // regardless of where we hit make sure to advance includeHeads if it matches there
+            if (includeHeads.get(lowest) != null) {
                 includeHeads = advanceIterators(lowest);
             }
         }
@@ -221,9 +252,16 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         for (NestedIterator<T> itr : includes) {
             leaves.addAll(itr.leaves());
         }
-        for (NestedIterator<T> itr : excludes) {
+        
+        for (NestedIterator<T> itr : deferredIncludes) {
             leaves.addAll(itr.leaves());
         }
+        
+        for (NestedIterator<T> itr : deferredExcludes) {
+            leaves.addAll(itr.leaves());
+        }
+        
+        // TODO add deferred?
         return leaves;
     }
     
@@ -237,10 +275,11 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     @Override
     public Collection<NestedIterator<T>> children() {
-        ArrayList<NestedIterator<T>> children = new ArrayList<>(includes.size() + excludes.size());
+        ArrayList<NestedIterator<T>> children = new ArrayList<>(includes.size());
         
         children.addAll(includes);
-        children.addAll(excludes);
+        
+        // TODO add deferred?
         
         return children;
     }
@@ -271,9 +310,21 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         
         sb.append("Includes: ");
         sb.append(includes);
-        sb.append(", Excludes: ");
-        sb.append(excludes);
+        sb.append(", Deferred Includes: ");
+        sb.append(deferredIncludes);
+        sb.append(", Deferred Excludes: ");
+        sb.append(deferredExcludes);
         
         return sb.toString();
+    }
+    
+    @Override
+    public boolean isDeferred() {
+        return !deferredExcludes.isEmpty() || !deferredIncludes.isEmpty();
+    }
+    
+    @Override
+    public void setDeferredContext(T context) {
+        this.deferredContext = context;
     }
 }

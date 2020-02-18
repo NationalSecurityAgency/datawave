@@ -72,4 +72,14 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
     public Document document() {
         return doc;
     }
+    
+    @Override
+    public boolean isDeferred() {
+        return false;
+    }
+    
+    @Override
+    public void setDeferredContext(T context) {
+        // no-op
+    }
 }

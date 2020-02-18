@@ -181,4 +181,14 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
     public String getField() {
         return field;
     }
+    
+    @Override
+    public boolean isDeferred() {
+        return false;
+    }
+    
+    @Override
+    public void setDeferredContext(Key context) {
+        // no-op
+    }
 }

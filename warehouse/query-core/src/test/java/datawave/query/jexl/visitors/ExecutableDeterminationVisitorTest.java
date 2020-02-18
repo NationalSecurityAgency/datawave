@@ -203,13 +203,13 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         Assert.assertFalse(executable);
         
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true);
-        Assert.assertTrue(fiExecutable);
+        Assert.assertFalse(fiExecutable);
         
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, state);
         
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, fiState);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, fiState);
         
         verifyAll();
     }
@@ -351,13 +351,13 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         Assert.assertFalse(executable);
         
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true);
-        Assert.assertTrue(fiExecutable);
+        Assert.assertFalse(fiExecutable);
         
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.PARTIAL, state);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, state);
         
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true);
-        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.EXECUTABLE, fiState);
+        Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, fiState);
         
         verifyAll();
     }

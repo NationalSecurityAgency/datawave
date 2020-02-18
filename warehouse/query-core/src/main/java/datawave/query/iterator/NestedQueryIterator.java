@@ -147,4 +147,13 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
             return currentQuery.getQuery();
     }
     
+    @Override
+    public boolean isDeferred() {
+        return false;
+    }
+    
+    @Override
+    public void setDeferredContext(T context) {
+        // no-op
+    }
 }

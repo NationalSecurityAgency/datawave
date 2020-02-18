@@ -38,9 +38,9 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
             {
                 "AndNegatedAndPartial",
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && filter:includeRegex(INDEXED_FIELD, '.*'))",
+                ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))))",
+                "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))))))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*'))))))"
@@ -50,9 +50,9 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
             {
                 "AndNegatedAndPartialExtended",
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && filter:includeRegex(INDEXED_FIELD, '.*')) && EVENT_FIELD == 'd'",
+                ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))) && EVENT_FIELD == 'd'",
+                "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))))) && EVENT_FIELD == 'd'",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(filter:includeRegex(INDEXED_FIELD, '.*')))))) && EVENT_FIELD == 'd'",
@@ -62,12 +62,23 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
             {
                 "AndNegatedAndPartialEventField",
                 "INDEXED_FIELD == 'a' && !(INDEX_ONLY_FIELD == 'b' && EVENT_FIELD == 'c')",
+                ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c')))",
+                "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c')))))",
                 ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && (((!(INDEX_ONLY_FIELD == 'b') || !(EVENT_FIELD == 'c')))))"
+            },
+            // no action necessary, should be straight up executable
+            {
+                "AndIndexedEvent",
+                "INDEXED_FIELD == 'a' && EVENT_FIELD == 'b'",
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                "INDEXED_FIELD == 'a' && EVENT_FIELD == 'b'",
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                "INDEXED_FIELD == 'a' && EVENT_FIELD == 'b'",
             },
             // executable against the global index, and executable against the field index since the OR is negated its sufficient for a single term to exclude, the other term
             // would be found and excluded at document evaluation
@@ -86,11 +97,11 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
             {
                 "OrAndNegatedLeaf",
                 "INDEXED_FIELD == 'a' || (!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c'))",
-                ExecutableDeterminationVisitor.STATE.PARTIAL,
-                ExecutableDeterminationVisitor.STATE.PARTIAL,
+                ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
+                ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
                 "INDEXED_FIELD == 'a' || (!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c'))",
-                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
+                ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
                 "INDEXED_FIELD == 'a' || (!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c'))"
             },
             // top level or against the global index is non-executable due to the negation
@@ -110,11 +121,11 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
             {
                 "OrNegatedOr",
                 "INDEXED_FIELD == 'a' || !(INDEX_ONLY_FIELD == 'b' || EVENT_FIELD == 'c')",
-                ExecutableDeterminationVisitor.STATE.PARTIAL,
-                ExecutableDeterminationVisitor.STATE.PARTIAL,
+                ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
+                ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
                 "INDEXED_FIELD == 'a' || ((!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c')))",
-                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
+                ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE,
                 "INDEXED_FIELD == 'a' || ((!(INDEX_ONLY_FIELD == 'b') && !(EVENT_FIELD == 'c')))",
             },
             // Both global and field can be run
@@ -178,9 +189,9 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
             {
                 "AndOrNestedOrDelayed",
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || !(INDEXED_FIELD == 'd' || EVENT_FIELD == 'c'))",
-                ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && ((INDEXED_FIELD == 'b' || ((!(INDEXED_FIELD == 'd') && !(EVENT_FIELD == 'c'))))))",
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || ((!(INDEXED_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || ((!(INDEXED_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",
@@ -190,9 +201,9 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
             {
                 "AndOrNestedOrDelayedError",
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || !(INDEX_ONLY_FIELD == 'd' || EVENT_FIELD == 'c'))",
-                ExecutableDeterminationVisitor.STATE.PARTIAL,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
-                "INDEXED_FIELD == 'a' && ((ASTDelayedPredicate = true) && ((INDEXED_FIELD == 'b' || ((!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c'))))))",
+                ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || ((!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || ((!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c'))))",

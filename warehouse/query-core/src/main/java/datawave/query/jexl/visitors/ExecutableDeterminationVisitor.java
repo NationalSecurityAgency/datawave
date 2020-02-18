@@ -92,9 +92,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
      * EXECUTABLE means that the expression is executable against the index PARTIAL means that we have an OR that cannot be completely satisfied by the index
      * NON_EXECUTABLE means that the expression cannot be executed against the index IGNORABLE means that it does not matter the executable state of the
      * underlying expression ERROR means that we have an expression that is index only but yet cannot be run against the index (negation, delayed prefix)
+     * NEGATED_EXECUTABLE means that the subtree must be run as a filter against EXECUTABLE components
      */
     public enum STATE {
-        EXECUTABLE, PARTIAL, NON_EXECUTABLE, IGNORABLE, ERROR
+        EXECUTABLE, PARTIAL, NON_EXECUTABLE, IGNORABLE, ERROR, NEGATED_EXECUTABLE
     }
     
     private static final Logger log = Logger.getLogger(ExecutableDeterminationVisitor.class);
@@ -292,9 +293,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             // if we contain an error state, the error
             else if (states.contains(STATE.ERROR)) {
                 state = STATE.ERROR;
-            } else {
+            } else if (states.contains(STATE.PARTIAL) || states.contains(STATE.NON_EXECUTABLE)) {
                 // otherwise we have a PARTIAL state
                 state = STATE.PARTIAL;
+            } else {
+                // last possible combination is EXECUTABLE + NEGATED_EXECUTABLE
+                state = STATE.NEGATED_EXECUTABLE;
             }
         }
         if (output != null) {
@@ -352,8 +356,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                 state = STATE.PARTIAL;
             }
             // otherwise we have an executable state
-            else {
-                return STATE.EXECUTABLE;
+            else if (states.contains(STATE.EXECUTABLE)) {
+                state = STATE.EXECUTABLE;
+            } else if (states.contains(STATE.NEGATED_EXECUTABLE)) {
+                state = STATE.NEGATED_EXECUTABLE;
+            } else {
+                state = STATE.NON_EXECUTABLE;
             }
         }
         if (output != null) {
@@ -683,8 +691,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // grab the recursive state because its either necessary directly or the error state of the branch needs to be checked
         STATE state = allOrNone(node, negateData(data + PREFIX));
         // if there is no error and executability is being checked against the global index just return non-executable
-        if (!forFieldIndex && state != STATE.ERROR) {
-            state = STATE.NON_EXECUTABLE;
+        if (state == STATE.EXECUTABLE) {
+            state = STATE.NEGATED_EXECUTABLE;
         }
         return state;
     }

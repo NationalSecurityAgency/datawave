@@ -26,16 +26,18 @@ import com.google.common.collect.TreeMultimap;
  */
 public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     // temporary stores of uninitialized streams of iterators
-    private List<NestedIterator<T>> includes, excludes;
+    private List<NestedIterator<T>> includes, excludes, deferredIncludes, deferredExcludes;
     
     private Map<T,T> transforms;
     private Transformer<T> transformer;
     
-    private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads;
+    private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads, deferredIncludeHeads, deferredExcludeHeads, deferredIncludeNullHeads,
+                    deferredExcludeNullHeads;
     private T prev;
     private T next;
     
     private Document prevDocument, document;
+    private T deferredContext;
     
     private static final Logger log = Logger.getLogger(AndIterator.class);
     
@@ -45,16 +47,27 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     public AndIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters) {
         includes = new LinkedList<>();
+        deferredIncludes = new LinkedList<>();
         for (NestedIterator<T> src : sources) {
-            includes.add(src);
+            if (src.isDeferred()) {
+                deferredIncludes.add(src);
+            } else {
+                includes.add(src);
+            }
         }
         
         if (filters == null) {
             excludes = Collections.emptyList();
+            deferredExcludes = Collections.emptyList();
         } else {
             excludes = new LinkedList<>();
+            deferredExcludes = new LinkedList<>();
             for (NestedIterator<T> filter : filters) {
-                excludes.add(filter);
+                if (filter.isDeferred()) {
+                    deferredExcludes.add(filter);
+                } else {
+                    excludes.add(filter);
+                }
             }
         }
     }
@@ -78,6 +91,16 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
         }
         
+        if (deferredIncludes.size() > 0) {
+            deferredIncludeHeads = TreeMultimap.create(keyComp, itrComp);
+            deferredIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+        }
+        
+        if (deferredExcludes.size() > 0) {
+            deferredExcludeHeads = TreeMultimap.create(keyComp, itrComp);
+            deferredExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+        }
+        
         next();
     }
     
@@ -88,6 +111,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @return the previously found next
      */
     public T next() {
+        if (isDeferred() && deferredContext == null) {
+            throw new IllegalStateException("deferredContext must be set prior to each next");
+        }
+        
         prev = next;
         prevDocument = document;
         
@@ -98,10 +125,28 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             
             if (lowest.equals(highest)) {
                 if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
-                    next = transforms.get(lowest);
-                    document = Util.buildNewDocument(includeHeads.values());
-                    includeHeads = advanceIterators(lowest);
-                    break;
+                    // test for deferred includes
+                    T deferredInclude = DeferredIterator.evalAnd(lowest, deferredIncludes, deferredIncludeHeads, deferredIncludeNullHeads, transformer);
+                    if (lowest.equals(deferredInclude)) {
+                        // test for deferred excludes
+                        T deferredExclude = DeferredIterator.evalAndNegated(lowest, deferredExcludes, deferredExcludeHeads, deferredExcludeNullHeads,
+                                        transformer);
+                        if (deferredExclude == null || !lowest.equals(deferredExclude)) {
+                            next = transforms.get(lowest);
+                            document = Util.buildNewDocument(includeHeads.values());
+                            includeHeads = advanceIterators(lowest);
+                            break;
+                        } else {
+                            // the deferred evaluation did not match, so advance and try again
+                            includeHeads = advanceIterators(lowest);
+                        }
+                    } else if (deferredInclude == null) {
+                        // the deferred evaluation did not match, so advance and try again
+                        includeHeads = advanceIterators(lowest);
+                    } else {
+                        // the deferred evaluation did not match and had a minimum next key, advance to that
+                        includeHeads = moveIterators(lowest, deferredInclude);
+                    }
                 } else {
                     includeHeads = advanceIterators(lowest);
                 }
@@ -133,7 +178,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     /**
      * Test all layers of cache for the minimum, then if necessary advance heads
-     * 
+     *
      * @param minimum
      *            the minimum to return
      * @return the first greater than or equal to minimum or null if none exists
@@ -143,6 +188,24 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     public T move(T minimum) {
         if (null == includeHeads) {
             throw new IllegalStateException("initialize() was never called");
+        }
+        
+        // special evaluation if deferred since this means there are no sources at all and next is useless
+        if (isDeferred()) {
+            // reset internal tracking
+            prev = null;
+            next = null;
+            
+            // includeHeads won't be used, so just force minimum in
+            Comparator<T> keyComp = Util.keyComparator();
+            Comparator<NestedIterator<T>> itrComp = Util.nestedIteratorComparator();
+            includeHeads = TreeMultimap.create(keyComp, itrComp);
+            transforms = new HashMap<>();
+            
+            T[] array = (T[]) new Comparable[1];
+            array[0] = minimum;
+            includeHeads.put(minimum, new ArrayIterator(array));
+            transforms.put(transformer.transform(minimum), minimum);
         }
         
         if (prev != null && prev.compareTo(minimum) >= 0) {
@@ -184,6 +247,15 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         for (NestedIterator<T> itr : excludes) {
             leaves.addAll(itr.leaves());
         }
+        
+        for (NestedIterator<T> itr : deferredIncludes) {
+            leaves.addAll(itr.leaves());
+        }
+        
+        for (NestedIterator<T> itr : deferredExcludes) {
+            leaves.addAll(itr.leaves());
+        }
+        
         return leaves;
     }
     
@@ -194,13 +266,15 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         children.addAll(includes);
         children.addAll(excludes);
         
+        // TODO add deferred?
+        
         return children;
     }
     
     /**
      * Advances all iterators associated with the supplied key and adds them back into the sorted multimap. If any of the sub-trees returns false, this method
      * immediately returns false to indicate that a sub-tree has been exhausted.
-     * 
+     *
      * @param key
      * @return
      */
@@ -222,7 +296,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     /**
      * Similar to <code>advanceIterators</code>, but instead of calling <code>next</code> on each sub-tree, this calls <code>move</code> with the supplied
      * <code>to</code> parameter.
-     * 
+     *
      * @param key
      * @param to
      * @return
@@ -244,7 +318,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     /**
      * Creates a sorted mapping of values to iterators.
-     * 
+     *
      * @param subtree
      * @param sources
      * @return
@@ -275,13 +349,32 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         
         sb.append("Includes: ");
         sb.append(includes);
+        sb.append(", Deferred Includes: ");
+        sb.append(deferredIncludes);
         sb.append(", Excludes: ");
         sb.append(excludes);
+        sb.append(", Deferred Excludes: ");
+        sb.append(deferredExcludes);
         
         return sb.toString();
     }
     
     public Document document() {
         return prevDocument;
+    }
+    
+    /**
+     * As long as there is at least one sourced include the entire and has a source
+     * 
+     * @return
+     */
+    @Override
+    public boolean isDeferred() {
+        return includes.stream().allMatch(i -> i.isDeferred() || includes.size() == 0);
+    }
+    
+    @Override
+    public void setDeferredContext(T context) {
+        this.deferredContext = context;
     }
 }

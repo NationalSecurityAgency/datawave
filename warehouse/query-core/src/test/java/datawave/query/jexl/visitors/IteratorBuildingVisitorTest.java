@@ -6,6 +6,7 @@ import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
+import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
@@ -24,6 +25,7 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -160,6 +162,55 @@ public class IteratorBuildingVisitorTest {
         Assert.assertTrue(range.isLowerInclusive());
         Assert.assertTrue(range.getUpper().equals("barbaz"));
         Assert.assertTrue(range.isUpperInclusive());
+    }
+    
+    @Test
+    @Ignore
+    public void NeTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 != 'v1'");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F1", "v0" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+                        Collections.singleton("F2"));
+        
+    }
+    
+    @Test
+    @Ignore
+    public void excludedOrTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' || !(F2 == 'v2')");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F2", "v2" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+                        Collections.singleton("F2"));
+    }
+    
+    @Test
+    @Ignore
+    public void nestedExcludeOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' && (!(F2 == 'v2') || !(F3 == 'v3'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F2", "v3" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+                        Collections.singleton("F2"));
     }
     
     @Test
@@ -907,7 +958,7 @@ public class IteratorBuildingVisitorTest {
         
         @Override
         public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-            return new IteratorToSortedKeyValueIterator(iterator);
+            return new SortedListKeyValueIterator(iterator);
         }
     }
 }

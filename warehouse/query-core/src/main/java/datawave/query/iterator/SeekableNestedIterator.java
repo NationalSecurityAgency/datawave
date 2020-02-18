@@ -78,4 +78,14 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
     public void remove() {
         source.remove();
     }
+    
+    @Override
+    public boolean isDeferred() {
+        return source.isDeferred();
+    }
+    
+    @Override
+    public void setDeferredContext(T context) {
+        source.setDeferredContext(context);
+    }
 }

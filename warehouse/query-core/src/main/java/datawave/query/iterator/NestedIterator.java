@@ -44,4 +44,19 @@ public interface NestedIterator<T> extends Iterator<T> {
      * Returns a <code>Document</code> object that is composed of attributes read in by the leaf nodes of this sub-tree.
      */
     Document document();
+    
+    /**
+     * Returns true if the NestedIterator requires context for evaluation or false if it can be evaluated bottom up
+     * 
+     * @return
+     */
+    boolean isDeferred();
+    
+    /**
+     * Sets the deferredContext for evaluation
+     * 
+     * @param context
+     *            non-null context for deferred evaluation
+     */
+    void setDeferredContext(T context);
 }
