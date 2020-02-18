@@ -499,6 +499,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private void cleanJobDirectoriesOnStartup() throws IOException {
         Path[] cleanupDirectories = getJobDirectories(new Path(workDir, jobDirPattern + '/' + CLEANUP_FILE_MARKER));
         for (int i = 0; i < cleanupDirectories.length; i++) {
+            markSourceFilesLoaded(cleanupDirectories[i]);
             getFileSystem(srcHdfs).delete(cleanupDirectories[i], true);
             runCleanUpScript(cleanupDirectories[i], true);
         }
