@@ -131,7 +131,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -200,16 +199,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
      *
      */
     protected int docsToCombineForEvaluation = -1;
-    
-    /**
-     * Boolean it identify if we wish to condense
-     */
-    protected boolean condenseUidsInRangeStream = true;
-    
-    /**
-     * Boolean it identify if we wish to condense
-     */
-    protected boolean compressUidsInRangeStream = true;
     
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
@@ -322,7 +311,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         rangeStreamClass = other.rangeStreamClass;
         setSourceLimit(other.sourceLimit);
         setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
-        setCondenseUidsInRangeStream(other.getCondenseUidsInRangeStream());
         setPushdownThreshold(other.getPushdownThreshold());
     }
     
@@ -2026,10 +2014,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             RangeStream stream = initializeRangeStream(config, scannerFactory, metadataHelper);
             
-            stream.setCondenseUids(condenseUidsInRangeStream);
-            
-            stream.setCompressUids(compressUidsInRangeStream);
-            
             ranges = stream.streamPlans(queryTree);
             
             if (log.isTraceEnabled()) {
@@ -2371,22 +2355,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setDocsToCombineForEvaluation(final int docsToCombineForEvaluation) {
         this.docsToCombineForEvaluation = docsToCombineForEvaluation;
-    }
-    
-    public boolean getCondenseUidsInRangeStream() {
-        return condenseUidsInRangeStream;
-    }
-    
-    public void setCondenseUidsInRangeStream(boolean condenseUidsInRangeStream) {
-        this.condenseUidsInRangeStream = condenseUidsInRangeStream;
-    }
-    
-    public boolean getCompressUids() {
-        return compressUidsInRangeStream;
-    }
-    
-    public void setCompressUids(boolean compressUidsInRangeStream) {
-        this.compressUidsInRangeStream = compressUidsInRangeStream;
     }
     
     public boolean getExecutableExpansion() {
