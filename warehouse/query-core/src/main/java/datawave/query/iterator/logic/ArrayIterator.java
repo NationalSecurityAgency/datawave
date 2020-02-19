@@ -41,7 +41,7 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
         if (offset == -1) {
             offset = 0;
         }
-        if (values[offset].compareTo(minimum) < 0) {
+        if (values != null && values.length > offset && values[offset].compareTo(minimum) < 0) {
             while (offset < values.length && values[offset].compareTo(minimum) < 0) {
                 ++offset;
             }
@@ -50,7 +50,7 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
             } else {
                 return values[offset];
             }
-        } else if (offset < values.length) {
+        } else if (values != null && offset < values.length) {
             return values[offset];
         } else {
             return null;

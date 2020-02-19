@@ -91,12 +91,12 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
         }
         
-        if (deferredIncludes.size() > 0) {
+        if (deferredIncludes != null && deferredIncludes.size() > 0) {
             deferredIncludeHeads = TreeMultimap.create(keyComp, itrComp);
             deferredIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
         
-        if (deferredExcludes.size() > 0) {
+        if (deferredExcludes != null && deferredExcludes.size() > 0) {
             deferredExcludeHeads = TreeMultimap.create(keyComp, itrComp);
             deferredExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
