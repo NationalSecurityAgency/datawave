@@ -11,6 +11,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -326,7 +327,8 @@ public class BasicQueryBean {
         CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
         queryWizardStep3Response.setQueryId(queryId);
         
-        if (!logicName.equals("ContentQuery")) {
+        BaseQueryLogic logic = getQueryLogic(logicName);
+        if (logic != null && !(logic.getClass().getName().equals("datawave.query.tables.content.ContentQueryTable"))) {
             GenericResponse<String> planResponse;
             try {
                 planResponse = queryExecutor.plan(queryId);
@@ -383,6 +385,24 @@ public class BasicQueryBean {
         }
         theResponse.setResponse(theNextResults);
         return theResponse;
+    }
+    
+    private BaseQueryLogic getQueryLogic(String logicName) {
+        BaseQueryLogic theLogic = null;
+        
+        List<QueryLogic<?>> logicList = queryLogicFactory.getQueryLogicList();
+        
+        for (QueryLogic<?> l : logicList) {
+            try {
+                if (l.getLogicName().equals(logicName)) {
+                    return (BaseQueryLogic) l;
+                }
+            } catch (Exception e) {
+                log.error("Error getting query logic name", e);
+            }
+        }
+        
+        return theLogic;
     }
     
 }
