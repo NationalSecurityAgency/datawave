@@ -849,12 +849,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
         
-        Calendar start = Calendar.getInstance();
-        start.setTime(config.getBeginDate());
-        Calendar end = Calendar.getInstance();
-        end.setTime(config.getEndDate());
+        Calendar start = getCalendarStartOfDay(config.getBeginDate());
+        Calendar end = getCalendarStartOfDay(config.getEndDate());
         
-        while (!start.after(end)) {
+        while (start.compareTo(end) <= 0) {
             String day = DateHelper.format(start.getTime());
             IndexInfo info = new IndexInfo(-1);
             info.setNode(node);
@@ -862,6 +860,16 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             start.add(Calendar.DAY_OF_YEAR, 1);
         }
         return list;
+    }
+    
+    private static Calendar getCalendarStartOfDay(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar;
     }
     
     /**
