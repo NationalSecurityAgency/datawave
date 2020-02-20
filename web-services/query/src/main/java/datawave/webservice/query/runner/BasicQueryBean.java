@@ -339,14 +339,14 @@ public class BasicQueryBean {
             
             queryWizardStep3Response.setQueryPlan(planResponse.getResult());
         } else
-            queryWizardStep3Response.setQueryPlan(" No query plan for is required for this query");
+            queryWizardStep3Response.setQueryPlan("No plan required for this query");
         
         return queryWizardStep3Response;
     }
     
     /**
      * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this fail. The
-     * response object type is dynamic, see the listQueryLogic operation to determi"ne what the response type object will be.
+     * response object type is dynamic, see the listQueryLogic operation to determine what the response type object will be.
      *
      * @param id
      *            - (@Required)
