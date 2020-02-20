@@ -81,14 +81,14 @@ export PATH=${ACCUMULO_HOME}/bin:${ZOOKEEPER_HOME}/bin:$PATH
 
 DW_ZOOKEEPER_CMD_START="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh start )"
 DW_ZOOKEEPER_CMD_STOP="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh stop )"
-DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -f 'zookeeper.server.quorum.QuorumPeerMain'"
+DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'zookeeper.server.quorum.QuorumPeerMain'"
 
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./start-all.sh )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./stop-all.sh )"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
 
 function accumuloIsRunning() {
-    DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
 
     zookeeperIsRunning
 
@@ -225,7 +225,7 @@ function accumuloIsInstalled() {
 }
 
 function zookeeperIsRunning() {
-    DW_ZOOKEEPER_PID_LIST="$(eval "${DW_ZOOKEEPER_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_ZOOKEEPER_PID_LIST="$(eval "${DW_ZOOKEEPER_CMD_FIND_ALL_PIDS}")"
     [ -z "${DW_ZOOKEEPER_PID_LIST}" ] && return 1 || return 0
 }
 

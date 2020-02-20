@@ -220,9 +220,9 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
         
-        // Parse the query
+        // Parse & flatten the query
         try {
-            script = JexlASTHelper.parseJexlQuery(this.getQuery());
+            script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
         } catch (ParseException e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
         }
