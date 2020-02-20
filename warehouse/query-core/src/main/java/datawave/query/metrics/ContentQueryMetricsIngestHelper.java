@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
@@ -131,6 +132,8 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                         
                     }
                 }
+                
+                jexlScript = TreeFlatteningRebuildingVisitor.flatten(jexlScript);
                 
                 if (jexlScript != null) {
                     List<ASTEQNode> positiveEQNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);

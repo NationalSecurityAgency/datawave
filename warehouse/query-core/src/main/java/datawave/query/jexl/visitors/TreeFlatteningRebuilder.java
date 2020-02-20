@@ -6,6 +6,10 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -15,6 +19,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -163,7 +168,10 @@ public class TreeFlatteningRebuilder {
             // if this node has children, create copies of them
             if (poppedNode.jjtGetNumChildren() > 0) {
                 List<JexlNode> copiedChildren = new ArrayList<>();
-                for (JexlNode child : children(poppedNode)) {
+                List<JexlNode> children = (poppedNode instanceof ASTAndNode || poppedNode instanceof ASTOrNode) ? getAndOrLeaves(poppedNode) : Arrays
+                                .asList(children(poppedNode));
+                
+                for (JexlNode child : children) {
                     if (child != null) {
                         
                         // create a copy of this node which shares the same children as the original node
@@ -180,6 +188,32 @@ public class TreeFlatteningRebuilder {
         }
         
         return copiedNode;
+    }
+    
+    private List<JexlNode> getAndOrLeaves(JexlNode node) {
+        LinkedList<JexlNode> children = new LinkedList<>();
+        LinkedList<JexlNode> stack = new LinkedList<>();
+        stack.push(node);
+        
+        while (!stack.isEmpty()) {
+            JexlNode currNode = stack.pop();
+            
+            // only add children if
+            // 1) this is the original node, or
+            // 2) this node is the same type as the root node and
+            // -- a) this is an OR node, or
+            // -- b) this is an AND node (but not a bounded range)
+            if (currNode == node || node.getClass().isInstance(currNode)
+                            && (currNode instanceof ASTOrNode || (currNode instanceof ASTAndNode && !isBoundedRange((ASTAndNode) currNode)))) {
+                for (JexlNode child : children(currNode)) {
+                    stack.push(child);
+                }
+            } else {
+                children.push(currNode);
+            }
+        }
+        
+        return children;
     }
     
     /**
@@ -212,16 +246,42 @@ public class TreeFlatteningRebuilder {
     }
     
     /**
-     * Determins whether the and node represents a bounded range.
+     * Determine whether the and node represents a bounded range.
      *
      * @param node
      *            the and node to check
      * @return true if the and node contains a bounded range, false otherwise
      */
     private boolean isBoundedRange(ASTAndNode node) {
-        List<JexlNode> otherNodes = new ArrayList<>();
-        Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, false);
-        return ranges.size() == 1 && otherNodes.isEmpty();
+        if (node.jjtGetNumChildren() == 2) {
+            JexlNode firstChild = node.jjtGetChild(0);
+            JexlNode secondChild = node.jjtGetChild(1);
+            if (isLowerBound(firstChild) && isUpperBound(secondChild)) {
+                return isIdentifierEqual(firstChild, secondChild);
+            } else if (isUpperBound(firstChild) && isLowerBound(secondChild)) {
+                return isIdentifierEqual(secondChild, firstChild);
+            }
+        }
+        return false;
+    }
+    
+    private boolean isIdentifierEqual(JexlNode lower, JexlNode upper) {
+        try {
+            String leftField = JexlASTHelper.getIdentifier(lower);
+            String rightField = JexlASTHelper.getIdentifier(upper);
+            return leftField.equals(rightField);
+        } catch (Exception e) {
+            log.info("Unable to compare idenfitiers.");
+        }
+        return false;
+    }
+    
+    private boolean isLowerBound(JexlNode node) {
+        return node instanceof ASTGTNode || node instanceof ASTGENode;
+    }
+    
+    private boolean isUpperBound(JexlNode node) {
+        return node instanceof ASTLTNode || node instanceof ASTLENode;
     }
     
     /**
