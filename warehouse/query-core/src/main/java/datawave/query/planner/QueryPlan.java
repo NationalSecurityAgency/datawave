@@ -100,12 +100,11 @@ public class QueryPlan {
     
     /**
      * @param currentQueryData
-     * @throws ParseException
      */
     public QueryPlan(QueryData currentQueryData) throws ParseException {
         this.queryTreeString = currentQueryData.getQuery();
         this.ranges = Lists.newArrayList(currentQueryData.getRanges());
-        settings.addAll(currentQueryData.getSettings());
+        this.settings.addAll(currentQueryData.getSettings());
         this.columnFamilies.addAll(currentQueryData.getColumnFamilies());
         buildHashCode();
     }
@@ -148,7 +147,7 @@ public class QueryPlan {
             Preconditions.checkNotNull(queryTreeString);
             
             try {
-                queryTree = JexlASTHelper.parseJexlQuery(queryTreeString);
+                queryTree = JexlASTHelper.parseAndFlattenJexlQuery(queryTreeString);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }
