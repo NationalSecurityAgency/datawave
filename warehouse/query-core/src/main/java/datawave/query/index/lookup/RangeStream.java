@@ -454,7 +454,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                                 config.getShardsPerDayThreshold());
                 scanSession.setMaxResults(config.getMaxIndexBatchSize());
                 scanSession.setExecutor(streamExecutor);
-                
+
                 if (log.isTraceEnabled()) {
                     log.trace("Provided new object " + scanSession.hashCode());
                 }
