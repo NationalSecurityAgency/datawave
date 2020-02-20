@@ -54,13 +54,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
 import datawave.security.util.AuthorizationsUtil;
 
 @Path("/BasicQuery")
@@ -80,6 +75,8 @@ public class BasicQueryBean {
      */
     public static final String EXPAND_VALUES = "expand.values";
     public static final String EXPAND_FIELDS = "expand.fields";
+    
+    static final List<String> NO_PLAN_REQUIRED = Arrays.asList("datawave.query.tables.content.ContentQueryTable");
     
     private final Logger log = Logger.getLogger(BasicQueryBean.class);
     
@@ -328,7 +325,7 @@ public class BasicQueryBean {
         queryWizardStep3Response.setQueryId(queryId);
         
         BaseQueryLogic logic = getQueryLogic(logicName);
-        if (logic != null && !(logic.getClass().getName().equals("datawave.query.tables.content.ContentQueryTable"))) {
+        if (logic != null && !(NO_PLAN_REQUIRED.contains(logic.getClass().getName()))) {
             GenericResponse<String> planResponse;
             try {
                 planResponse = queryExecutor.plan(queryId);
