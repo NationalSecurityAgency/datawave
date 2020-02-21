@@ -91,7 +91,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.model.defaultTableName:add(value=${table.name.metadata})
 
 # Keystore and Truststore settings for export into MapReduce jobs run via the MapReduce API
-/system-property=dw.mapreduce.securitydomain.useJobCache:add(value=${dw.mapreduce.securitydomain.useJobCache})
+/system-property=dw.mapreduce.securitydomain.useJobCache:add(value=${mapreduce.securitydomain.useJobCache})
 /system-property=dw.mapreduce.securitydomain.keyStoreURL:add(value=file:/${jboss.server.config.dir}/certificates/testServer.p12)
 /system-property=dw.mapreduce.securitydomain.keyStoreType:add(value="PKCS12")
 /system-property=dw.mapreduce.securitydomain.keyStorePassword:add(value=ChangeIt)
