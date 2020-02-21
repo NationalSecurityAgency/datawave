@@ -450,29 +450,29 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             if (limitScanners) {
                 // Setup the CreateUidsIterator
                 RangeStreamScanner scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                        config.getShardsPerDayThreshold());
+                                config.getShardsPerDayThreshold());
                 scanSession.setMaxResults(config.getMaxIndexBatchSize());
                 scanSession.setExecutor(streamExecutor);
-
+                
                 if (log.isTraceEnabled()) {
                     log.trace("Provided new object " + scanSession.hashCode());
                 }
                 SessionOptions options = new SessionOptions();
                 options.fetchColumnFamily(new Text(fieldName));
                 options.addScanIterator(makeDataTypeFilter(config, stackStart++));
-
+                
                 final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
                 uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                 options.addScanIterator(uidSetting);
-
+                
                 String queryString = fieldName + "=='" + literal + "'";
                 options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
-
+                
                 scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
-
+                
                 itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
-
+                
             } else {
                 
                 BatchScanner scanner = scanners.newScanner(config.getIndexTableName(), config.getAuthorizations(), 1, config.getQuery());
