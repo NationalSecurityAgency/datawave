@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.query.Constants;
+import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.SeekingQueryPlanner;
@@ -39,6 +40,7 @@ public class LookupUUIDTune implements Profile {
     protected boolean reduceFields = false;
     protected int reduceFieldCount = -1;
     protected boolean reduceFieldsPreQueryEvaluation = false;
+    protected Map<String,QueryParser> querySyntaxParsers = null;
     protected String limitFieldsField = null;
     protected boolean reduceQuery = false;
     
@@ -46,6 +48,9 @@ public class LookupUUIDTune implements Profile {
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
         if (logic instanceof ShardQueryLogic) {
             ShardQueryLogic rsq = ShardQueryLogic.class.cast(logic);
+            if (querySyntaxParsers != null) {
+                rsq.setQuerySyntaxParsers(querySyntaxParsers);
+            }
             rsq.setBypassAccumulo(bypassAccumulo);
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
@@ -261,6 +266,14 @@ public class LookupUUIDTune implements Profile {
     
     public void setReduceFieldsPreQueryEvaluation(boolean reduceFieldsPreQueryEvaluation) {
         this.reduceFieldsPreQueryEvaluation = reduceFieldsPreQueryEvaluation;
+    }
+    
+    public void setQuerySyntaxParsers(Map<String,QueryParser> querySyntaxParsers) {
+        this.querySyntaxParsers = querySyntaxParsers;
+    }
+    
+    public Map<String,QueryParser> getQuerySyntaxParsers() {
+        return querySyntaxParsers;
     }
     
     public void setLimitFieldsField(String limitFieldsField) {

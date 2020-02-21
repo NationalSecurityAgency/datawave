@@ -356,6 +356,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         setScannerFactory(new ScannerFactory(config));
         
+        // load configured profile's parser prior to computing the jexl query string
+        loadQueryParameters(config, settings);
+        
         String jexlQueryString = getJexlQueryString(settings);
         
         if (null == jexlQueryString) {
@@ -377,8 +380,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } else {
             config.setEndDate(endDate);
         }
-        
-        loadQueryParameters(config, settings);
         
         MetadataHelper metadataHelper = prepareMetadataHelper(connection, this.getMetadataTableName(), auths, config.isRawTypes());
         

@@ -140,4 +140,8 @@ public class JexlSelectorNode extends JexlNode {
     public String getSelector() {
         return selector;
     }
+    
+    public void setSelector(String selector) {
+        this.selector = selector;
+    }
 }

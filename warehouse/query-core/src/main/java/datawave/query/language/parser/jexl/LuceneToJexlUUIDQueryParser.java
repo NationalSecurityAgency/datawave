@@ -2,7 +2,11 @@ package datawave.query.language.parser.jexl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.sun.org.apache.bcel.internal.generic.Select;
+import datawave.query.data.UUIDTransform;
 import datawave.query.data.UUIDType;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.lucene.LuceneQueryParser;
@@ -36,6 +40,32 @@ public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
     
     public void setUuidTypes(List<UUIDType> uuidTypes) {
         this.uuidTypes = uuidTypes;
+    }
+    
+    @Override
+    public JexlNode convertToJexlNode(String query) throws ParseException {
+        JexlNode parsedQuery = super.convertToJexlNode(query);
+        
+        transform(parsedQuery);
+        
+        return parsedQuery;
+    }
+    
+    private void transform(JexlNode node) {
+        if (node != null) {
+            if (node instanceof JexlSelectorNode) {
+                JexlSelectorNode selectorNode = (JexlSelectorNode) node;
+                for (UUIDType type : uuidTypes) {
+                    if (type.getFieldName().equals(selectorNode.getField()) && type.getTransforms() != null) {
+                        // apply transforms
+                        for (UUIDTransform transform : type.getTransforms()) {
+                            Matcher m = transform.getPattern().matcher(selectorNode.getSelector());
+                            selectorNode.setSelector(m.replaceAll(transform.getReplacement()));
+                        }
+                    }
+                }
+            }
+        }
     }
     
     private boolean validUUIDSelectorNode(QueryNode node) {
