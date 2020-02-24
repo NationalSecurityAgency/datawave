@@ -10,6 +10,7 @@ import javax.xml.bind.JAXBException;
 
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;
@@ -60,25 +61,29 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
         entries.clear();
         entries.put(key, value);
         for (Entry<Key,Value> entry : entries.entrySet()) {
-            Object o = t.transform(entry);
-            BaseQueryResponse response = t.createResponse(new ResultsPage(Collections.singletonList(o)));
-            Class<? extends BaseQueryResponse> responseClass = null;
             try {
-                responseClass = getResponseClass(response.getClass().getName());
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Unable to find response class: " + response.getClass().getName(), e);
+                Object o = t.transform(entry);
+                BaseQueryResponse response = t.createResponse(new ResultsPage(Collections.singletonList(o)));
+                Class<? extends BaseQueryResponse> responseClass = null;
+                try {
+                    responseClass = getResponseClass(response.getClass().getName());
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException("Unable to find response class: " + response.getClass().getName(), e);
+                }
+                
+                try {
+                    Value val = BulkResultsFileOutputMapper.serializeResponse(responseClass, response, this.format);
+                    // Write out the original key and the new value.
+                    Mutation m = new Mutation(key.getRow());
+                    m.put(key.getColumnFamily(), key.getColumnQualifier(), new ColumnVisibility(key.getColumnVisibility()), key.getTimestamp(), val);
+                    context.write(this.tableName, m);
+                } catch (Exception e) {
+                    throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
+                }
+                context.progress();
+            } catch (EmptyObjectException e) {
+                // not yet done, so continue fetching next
             }
-            
-            try {
-                Value val = BulkResultsFileOutputMapper.serializeResponse(responseClass, response, this.format);
-                // Write out the original key and the new value.
-                Mutation m = new Mutation(key.getRow());
-                m.put(key.getColumnFamily(), key.getColumnQualifier(), new ColumnVisibility(key.getColumnVisibility()), key.getTimestamp(), val);
-                context.write(this.tableName, m);
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
-            }
-            context.progress();
         }
     }
     
