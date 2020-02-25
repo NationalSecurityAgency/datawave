@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
@@ -76,7 +77,6 @@ public class Union implements IndexStream {
             }
             
             if (stream.hasNext()) {
-                
                 this.children.add(stream);
                 this.childNodes.add(stream.currentNode());
             } else {
@@ -174,45 +174,62 @@ public class Union implements IndexStream {
         // shard can be either a specific shard or a day denoting all shards
         String dayOrShard = head.first();
         IndexInfo pointers = head.second();
-        // use startsWith to match shards with a day
+        
         if (log.isTraceEnabled())
             log.trace("advancing " + pointers.getNode() + " " + children.peek().context());
         
-        boolean childrenAdded = false;
+        // First, collect all the tops that match our current shard.
+        boolean seenInfinite = false;
+        String shardToMatch = children.peek().peek().first();
+        
+        // This is a list because IndexInfo has some less than ideal equals/hashcode/compareTo methods.
+        // If this is a Set, you will miss hits.
+        List<IndexInfo> tops = new ArrayList<>();
+        
         while (!children.isEmpty()) {
-            String streamDayOrShard = children.peek().peek().first();
-            if (log.isTraceEnabled())
-                log.trace("we have " + streamDayOrShard + " " + dayOrShard);
-            if (!streamDayOrShard.equals(dayOrShard)) {
+            
+            String topShard = children.peek().peek().first();
+            if (!shardToMatch.equals(topShard)) {
                 // additional test if dayOrShard is a day
-                if (!(isDay(dayOrShard) && streamDayOrShard.startsWith(dayOrShard))) {
+                if (!(isDay(shardToMatch) && topShard.startsWith(shardToMatch))) {
                     break;
                 }
             }
-            IndexStream itr = children.poll();
             
-            pointers = pointers.union(itr.peek().second(), Lists.newArrayList(delayedNodes.getNodes()));
-            itr.next();
-            if (itr.hasNext())
-                children.add(itr);
-            childrenAdded = true;
+            IndexStream stream = children.poll();
+            if (stream != null && stream.hasNext()) {
+                Tuple2<String,IndexInfo> top = stream.next();
+                tops.add(top.second());
+                
+                // Check to see if this is a match on an infinite
+                if (top.second().isInfinite()) {
+                    seenInfinite = true;
+                }
+                
+                // If there are more entries to go through, add this index stream back.
+                if (stream.hasNext()) {
+                    children.add(stream);
+                }
+            }
         }
         
-        JexlNodeSet nodeSet = new JexlNodeSet();
-        if (pointers.myNode != null)
-            nodeSet.add(pointers.myNode);
-        if (delayedNodes != null && !delayedNodes.isEmpty())
-            nodeSet.addAll(delayedNodes);
+        if (log.isTraceEnabled())
+            log.trace("Union of " + tops.size() + " index streams, infinite range seen: " + seenInfinite);
         
-        currNode = null;
-        if (nodeSet.size() == 1) {
-            currNode = nodeSet.iterator().next();
-        } else {
-            currNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
+        // Second, union them together.
+        pointers = new IndexInfo();
+        pointers = pointers.unionAll(tops, delayedNodes, seenInfinite);
+        
+        // Set the current node equal to the union's node.
+        if (pointers.myNode != null) {
+            // Already flattened as part of the unionAll()
+            currNode = pointers.myNode;
         }
         
-        if (!childrenAdded) {
-            pointers.setNode(currNode);
+        // If the union did not generate a node, pass-through any delayed nodes we have.
+        if (currNode == null && delayedNodes != null && !delayedNodes.isEmpty()) {
+            currNode = JexlNodeFactory.createUnwrappedOrNode(delayedNodes.getNodes());
+            currNode = TreeFlatteningRebuildingVisitor.flatten(currNode);
         }
         
         return Tuples.tuple(dayOrShard, pointers);
@@ -254,12 +271,10 @@ public class Union implements IndexStream {
         
         public void addChildren(List<ConcurrentScannerInitializer> todo) {
             this.todo.addAll(todo);
-            
         }
         
         public Union build(ExecutorService service) {
             if (!todo.isEmpty()) {
-                
                 Collection<IndexStream> streams = ConcurrentScannerInitializer.initializeScannerStreams(todo, service);
                 for (IndexStream stream : streams) {
                     addChild(stream);
@@ -275,7 +290,6 @@ public class Union implements IndexStream {
             }
             todo.addAll(builder.todo);
         }
-        
     }
     
     public static Builder builder() {

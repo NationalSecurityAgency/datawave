@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -48,8 +49,7 @@ public class IndexInfo implements Writable, UidIntersector {
     protected ImmutableSortedSet<IndexMatch> uids;
     
     public IndexInfo() {
-        this.count = 0;
-        this.uids = ImmutableSortedSet.of();
+        this(0);
     }
     
     public IndexInfo(long count) {
@@ -122,61 +122,106 @@ public class IndexInfo implements Writable, UidIntersector {
         this.uids = setBuilder.build();
     }
     
-    public IndexInfo union(IndexInfo o) {
-        return union(o, new ArrayList<>());
-    }
-    
     /**
-     * Let's be clear about what we are doing. In this case we are dealing with a union of many nodes, or in some cases a single OrNode. If the latter, we
-     * simply use that node as our node. Otherwise, we will need to create an or node manually.
-     * 
-     * @param first
-     * @param o
+     * Union a number of IndexInfo objects all at once.
+     *
+     * @param infos
+     *            a collection of IndexInfo objects.
      * @param delayedNodes
-     * @return
+     *            a list of delayed nodes.
+     * @param containsInfinite
+     *            boolean flag indicating the presence of an IndexInfo representing an infinite range. Essentially tells us whether to propagate IndexMatches.
+     * @return an IndexInfo object representing the union of all.
      */
-    public IndexInfo union(IndexInfo first, IndexInfo o, List<JexlNode> delayedNodes) {
+    public IndexInfo unionAll(Collection<IndexInfo> infos, JexlNodeSet delayedNodes, boolean containsInfinite) {
         IndexInfo merged = new IndexInfo();
-        JexlNodeSet nodeSet = new JexlNodeSet();
+        JexlNodeSet allNodes = new JexlNodeSet();
         
-        if (null != first.myNode && first.myNode != o.myNode) {
+        // Inverted map of which JexlNodes hit upon which uids.
+        HashMultimap<String,JexlNode> ids = HashMultimap.create();
+        
+        // All events is a way of tracking global index entries that contain a count of uids but no actual uids.
+        boolean allEventOnly = true;
+        // Track the count of uid lists without uids here.
+        long uidCount = 0;
+        
+        for (IndexInfo info : infos) {
             
-            JexlNode sourceNode = getSourceNode(first.myNode);
+            if (info == null || info.myNode == null) {
+                continue;
+            }
+            
+            if (!info.onlyEvents())
+                allEventOnly = false;
+            
+            // Handle the IndexMatches, if we don't contain an infinite range.
+            if (!containsInfinite) {
+                uidCount += info.count;
+                for (IndexMatch match : info.uids) {
+                    JexlNode newNode = match.getNode();
+                    if (null != newNode)
+                        ids.put(match.uid, newNode);
+                }
+            }
+            
+            // Handle adding JexlNodes. If one of the jexl nodes is
+            JexlNode sourceNode = getSourceNode(info.myNode);
             JexlNode topLevelOr = getOrNode(sourceNode);
             
             if (null == topLevelOr) {
-                nodeSet.add(sourceNode);
+                allNodes.add(info.myNode);
             } else {
                 for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                    nodeSet.add(topLevelOr.jjtGetChild(i));
+                    allNodes.add(topLevelOr.jjtGetChild(i));
                 }
             }
         }
         
-        if (null != o.myNode) {
-            JexlNode sourceNode = getSourceNode(o.myNode);
-            JexlNode topLevelOr = getOrNode(sourceNode);
+        // Add in delayed nodes.
+        if (delayedNodes != null && !delayedNodes.isEmpty())
+            allNodes.addAll(delayedNodes.getNodes());
+        
+        // Handle the merged count and IndexMatches
+        if (containsInfinite) {
+            merged.count = -1;
+            merged.uids = ImmutableSortedSet.of();
+        } else {
             
-            if (null == topLevelOr) {
-                nodeSet.add(o.myNode);
-            } else {
-                for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                    nodeSet.add(topLevelOr.jjtGetChild(i));
+            /*
+             * Using the inverted multi-map of uids to JexlNodes, build up the final set of IndexMatches.
+             */
+            Set<IndexMatch> matches = Sets.newHashSet();
+            for (String uid : ids.keySet()) {
+                
+                JexlNodeSet nodeSet = new JexlNodeSet();
+                nodeSet.addAll(ids.get(uid)); // Grab uids from inverted uid-node map.
+                
+                // Only generate matches when there's a uid.
+                if (!nodeSet.isEmpty()) {
+                    // Only add delayed nodes if we have them.
+                    if (delayedNodes != null && !delayedNodes.isEmpty()) {
+                        nodeSet.addAll(delayedNodes.getNodes());
+                    }
+                    matches.add(new IndexMatch(nodeSet, uid, IndexMatchType.OR));
                 }
+            }
+            merged.uids = ImmutableSortedSet.copyOf(matches);
+            merged.count = merged.uids.size();
+            
+            // This accounts for the case when a uid list has a count but no uids. Persist count
+            // information beyond this union.
+            if (!allEventOnly && uidCount != merged.count) {
+                merged.count = uidCount;
             }
         }
         
-        // Add delayed nodes.
-        nodeSet.addAll(delayedNodes);
-        
-        merged.count = -1;
-        merged.uids = ImmutableSortedSet.of();
-        if (nodeSet.isEmpty()) {
+        if (allNodes.isEmpty()) {
             merged.myNode = null;
         } else {
-            merged.myNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
+            // Flatten, always flatten.
+            merged.myNode = JexlNodeFactory.createUnwrappedOrNode(allNodes.getNodes());
+            merged.myNode = TreeFlatteningRebuildingVisitor.flatten(merged.myNode);
         }
-        
         return merged;
     }
     
@@ -208,105 +253,6 @@ public class IndexInfo implements Writable, UidIntersector {
         } else {
             return delayedNode;
         }
-    }
-    
-    /**
-     * Return the union of an IndexInfo object and a list of delayed nodes.
-     *
-     * @param o
-     *            - an IndexInfo object
-     * @param delayedNodes
-     *            - a list of delayed nodes
-     * @return - the resulting union
-     */
-    public IndexInfo union(IndexInfo o, List<JexlNode> delayedNodes) {
-        
-        if (isInfinite()) {
-            return union(this, o, delayedNodes);
-        } else if (o.isInfinite()) {
-            return union(o, this, delayedNodes);
-        }
-        
-        IndexInfo merged = new IndexInfo();
-        JexlNodeSet nodeSet = new JexlNodeSet();
-        
-        if (null != myNode && myNode != o.myNode && !isInfinite()) {
-            JexlNode sourceNode = getSourceNode(myNode);
-            
-            JexlNode topLevelOr = getOrNode(sourceNode);
-            if (null == topLevelOr) {
-                nodeSet.add(myNode);
-            } else {
-                for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                    nodeSet.add(topLevelOr.jjtGetChild(i));
-                }
-            }
-        }
-        
-        if (null != o.myNode && !o.isInfinite()) {
-            
-            JexlNode sourceNode = getSourceNode(o.myNode);
-            JexlNode topLevelOr = getOrNode(sourceNode);
-            if (null == topLevelOr) {
-                nodeSet.add(o.myNode);
-            } else {
-                for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
-                    nodeSet.add(topLevelOr.jjtGetChild(i));
-                }
-            }
-        }
-        
-        // Add delayed nodes.
-        nodeSet.addAll(delayedNodes);
-        
-        if (!onlyEvents() || !o.onlyEvents()) {
-            /*
-             * We are dealing with high cardinality terms. Sum the counts and return a parent node.
-             */
-            merged.count = count + o.count;
-            merged.uids = ImmutableSortedSet.of();
-        } else {
-            HashMultimap<String,JexlNode> ids = HashMultimap.create();
-            
-            /*
-             * Concatenate all UIDs and merge the individual nodes
-             */
-            for (IndexMatch match : Iterables.concat(uids, o.uids)) {
-                
-                JexlNode newNode = match.getNode();
-                if (null != newNode)
-                    ids.put(match.uid, newNode);
-            }
-            
-            Set<IndexMatch> matches = Sets.newHashSet();
-            
-            for (String uid : ids.keySet()) {
-                Set<JexlNode> nodes = Sets.newHashSet(ids.get(uid));
-                if (!nodes.isEmpty()) {
-                    nodes.addAll(delayedNodes);
-                    matches.add(new IndexMatch(nodes, uid, IndexMatchType.OR));
-                }
-                
-            }
-            merged.uids = ImmutableSortedSet.copyOf(matches);
-            merged.count = merged.uids.size();
-        }
-        
-        /*
-         * If there are multiple levels within a union we could have an ASTOrNode. We cannot prune OrNodes as we would with an intersection, so propagate the
-         * OrNode.
-         */
-        if (log.isTraceEnabled()) {
-            for (String node : nodeSet.getNodeKeys()) {
-                log.trace("internalNodeList node  is " + node);
-            }
-        }
-        if (nodeSet.isEmpty()) {
-            merged.myNode = null;
-        } else {
-            merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes()));
-        }
-        return merged;
     }
     
     /**
@@ -599,7 +545,7 @@ public class IndexInfo implements Writable, UidIntersector {
         return "{ \"count\": " + count() + " - " + uids.size() + " }";
     }
     
-    private boolean isInfinite() {
+    public boolean isInfinite() {
         return count == -1L;
     }
     

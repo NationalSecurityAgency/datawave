@@ -4,12 +4,14 @@ import com.google.common.collect.ImmutableSortedSet;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.language.parser.jexl.JexlNodeSet;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,21 +23,6 @@ import static org.junit.Assert.assertTrue;
  * Test basic functionality of the {@link IndexInfo} class.
  */
 public class IndexInfoTest {
-    
-    // Helper method to generate index matches (document id - field, value)
-    private List<IndexMatch> buildIndexMatches(String field, String value, String... docIds) {
-        List<IndexMatch> matches = new ArrayList<>(docIds.length);
-        for (String docId : docIds) {
-            matches.add(buildIndexMatch(field, value, docId));
-        }
-        return matches;
-    }
-    
-    // Helper method to generate index matches (document id - field, value)
-    private IndexMatch buildIndexMatch(String field, String value, String docId) {
-        JexlNode eqNode = JexlNodeFactory.buildEQNode(field, value);
-        return new IndexMatch(docId, eqNode);
-    }
     
     // Helper method to generate expected index matches (document id only)
     private Set<IndexMatch> buildExpectedIndexMatches(String... docIds) {
@@ -51,19 +38,19 @@ public class IndexInfoTest {
      */
     @Test
     public void testIntersection_BothTermsHaveDocIds() {
-        List<IndexMatch> leftMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
-        IndexInfo left = new IndexInfo(leftMatches);
+        IndexInfo left = new IndexInfo(Arrays.asList("doc1", "doc2", "doc3"));
+        left.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Arrays.asList("doc2", "doc3", "doc4"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
         IndexInfo merged = left.intersect(right);
         
         // The intersection of left and right should be a set of two document ids
-        Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("doc2", "doc3");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc2", "doc3");
         
         assertEquals(2, merged.uids().size());
-        assertEquals(expectedDocs, merged.uids());
+        assertEquals(expectedMatches, merged.uids());
     }
     
     /**
@@ -72,16 +59,16 @@ public class IndexInfoTest {
     @Test
     public void testIntersection_OnlyOneTermHasDocIds() {
         IndexInfo left = new IndexInfo(20L);
-        left.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        left.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Arrays.asList("doc2", "doc3", "doc4"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
         IndexInfo merged = left.intersect(right);
         
         // The intersection of left and right should be a set of 3 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc2", "doc3", "doc4");
+        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(3, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
@@ -91,27 +78,27 @@ public class IndexInfoTest {
     public void testIntersection_NestedOrTermHasDocIdsInfiniteToSmall() {
         IndexInfo left = new IndexInfo(-1);
         List<JexlNode> children = new ArrayList<>();
-        children.add(JexlNodeFactory.buildEQNode("FIELD1", "VALUE1"));
-        children.add(JexlNodeFactory.buildEQNode("FIELD2", "VALUE2"));
-        children.add(JexlNodeFactory.buildEQNode("FIELD3", "VALUE3"));
+        children.add(JexlNodeFactory.buildEQNode("A1", "11"));
+        children.add(JexlNodeFactory.buildEQNode("A2", "12"));
+        children.add(JexlNodeFactory.buildEQNode("A3", "13"));
         
         left.applyNode(JexlNodeFactory.createOrNode(children));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Collections.singleton("doc1"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
         // build the query string before
         List<JexlNode> andChildren = new ArrayList<>();
         andChildren.add(left.getNode());
-        andChildren.add(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        andChildren.add(JexlNodeFactory.buildEQNode("A", "1"));
         
         JexlNode origQueryTree = JexlNodeFactory.createAndNode(andChildren);
         
         IndexInfo merged = left.intersect(right);
         
         // The intersection of left and right should be a set of 1 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1");
+        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(1, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
@@ -124,27 +111,27 @@ public class IndexInfoTest {
     public void testIntersection_NestedOrTermHasDocIdsSmallToInfinite() {
         IndexInfo left = new IndexInfo(-1);
         List<JexlNode> children = new ArrayList<>();
-        children.add(JexlNodeFactory.buildEQNode("FIELD1", "VALUE1"));
-        children.add(JexlNodeFactory.buildEQNode("FIELD2", "VALUE2"));
-        children.add(JexlNodeFactory.buildEQNode("FIELD3", "VALUE3"));
+        children.add(JexlNodeFactory.buildEQNode("A1", "11"));
+        children.add(JexlNodeFactory.buildEQNode("A2", "12"));
+        children.add(JexlNodeFactory.buildEQNode("A3", "13"));
         
         left.applyNode(JexlNodeFactory.createOrNode(children));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Collections.singleton("doc1"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
         // build the query string before
         List<JexlNode> andChildren = new ArrayList<>();
         andChildren.add(left.getNode());
-        andChildren.add(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        andChildren.add(JexlNodeFactory.buildEQNode("A", "1"));
         
         JexlNode origQueryTree = JexlNodeFactory.createAndNode(andChildren);
         
         IndexInfo merged = right.intersect(left);
         
         // The intersection of left and right should be a set of 1 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1");
+        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(1, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
@@ -156,21 +143,21 @@ public class IndexInfoTest {
     public void testIntersection_NestedOrTermHasDocIdsInfiniteToSmallWithDelayed() {
         IndexInfo left = new IndexInfo(-1);
         List<JexlNode> children = new ArrayList<>();
-        children.add(JexlNodeFactory.buildEQNode("FIELD1", "VALUE1"));
-        children.add(JexlNodeFactory.buildEQNode("FIELD2", "VALUE2"));
-        children.add(JexlNodeFactory.buildEQNode("FIELD3", "VALUE3"));
+        children.add(JexlNodeFactory.buildEQNode("A1", "11"));
+        children.add(JexlNodeFactory.buildEQNode("A2", "12"));
+        children.add(JexlNodeFactory.buildEQNode("A3", "13"));
         
         left.applyNode(JexlNodeFactory.createOrNode(children));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Collections.singleton("doc1"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        JexlNode delayed = JexlNodeFactory.buildEQNode("DELAYED_FIELD", "DELAYED_VALUE");
+        JexlNode delayed = JexlNodeFactory.buildEQNode("DELAYED_A", "DELAYED_1");
         
         // build the query string before
         List<JexlNode> andChildren = new ArrayList<>();
         andChildren.add(left.getNode());
-        andChildren.add(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        andChildren.add(JexlNodeFactory.buildEQNode("A", "1"));
         andChildren.add(delayed);
         
         JexlNode origQueryTree = JexlNodeFactory.createAndNode(andChildren);
@@ -178,8 +165,8 @@ public class IndexInfoTest {
         IndexInfo merged = left.intersect(right, Arrays.asList(delayed), left);
         
         // The intersection of left and right should be a set of 1 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1");
+        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(1, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
@@ -191,21 +178,21 @@ public class IndexInfoTest {
     public void testIntersection_NestedOrTermHasDocIdsSmallToInfiniteWithDelay() {
         IndexInfo left = new IndexInfo(-1);
         List<JexlNode> children = new ArrayList<>();
-        children.add(JexlNodeFactory.buildEQNode("FIELD1", "VALUE1"));
-        children.add(JexlNodeFactory.buildEQNode("FIELD2", "VALUE2"));
-        children.add(JexlNodeFactory.buildEQNode("FIELD3", "VALUE3"));
+        children.add(JexlNodeFactory.buildEQNode("A1", "11"));
+        children.add(JexlNodeFactory.buildEQNode("A2", "12"));
+        children.add(JexlNodeFactory.buildEQNode("A3", "13"));
         
         left.applyNode(JexlNodeFactory.createOrNode(children));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Collections.singleton("doc1"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        JexlNode delayed = JexlNodeFactory.buildEQNode("DELAYED_FIELD", "DELAYED_VALUE");
+        JexlNode delayed = JexlNodeFactory.buildEQNode("DELAYED_A", "DELAYED_1");
         
         // build the query string before
         List<JexlNode> andChildren = new ArrayList<>();
         andChildren.add(left.getNode());
-        andChildren.add(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        andChildren.add(JexlNodeFactory.buildEQNode("A", "1"));
         andChildren.add(delayed);
         
         JexlNode origQueryTree = JexlNodeFactory.createAndNode(andChildren);
@@ -213,8 +200,8 @@ public class IndexInfoTest {
         IndexInfo merged = right.intersect(left, Arrays.asList(delayed), right);
         
         // The intersection of left and right should be a set of 1 document ids
-        List<IndexMatch> expectedDocs = buildIndexMatches("FIELD", "VALUE", "doc1");
-        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedDocs);
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1");
+        ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(1, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
@@ -228,10 +215,10 @@ public class IndexInfoTest {
     @Test
     public void testIntersection_NoTermHasDocIds() {
         IndexInfo left = new IndexInfo(50L);
-        left.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        left.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
         IndexInfo right = new IndexInfo(90L);
-        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
         IndexInfo merged = left.intersect(right);
         assertEquals(50L, merged.count());
@@ -244,12 +231,12 @@ public class IndexInfoTest {
     @Test
     public void testIntersection_InfiniteTerm() {
         IndexInfo left = new IndexInfo(-1L);
-        left.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        left.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Arrays.asList("doc1", "doc2", "doc3"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        List<IndexMatch> expectedMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1", "doc2", "doc3");
         IndexInfo expectedMerged = new IndexInfo(expectedMatches);
         assertEquals(expectedMerged, left.intersect(right));
         assertEquals(expectedMerged, right.intersect(left));
@@ -260,19 +247,20 @@ public class IndexInfoTest {
      */
     @Test
     public void testUnion_BothTermsHaveDocIds() {
-        List<IndexMatch> leftMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
-        IndexInfo left = new IndexInfo(leftMatches);
+        IndexInfo left = new IndexInfo(Arrays.asList("doc1", "doc2", "doc3"));
+        left.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Arrays.asList("doc2", "doc3", "doc4"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        IndexInfo merged = left.union(right);
+        IndexInfo merged = new IndexInfo();
+        merged = merged.unionAll(Arrays.asList(left, right), null, false);
         
         // The union of left and right should be a set of four document ids
-        Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("doc1", "doc2", "doc3", "doc4");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1", "doc2", "doc3", "doc4");
         
         assertEquals(4, merged.uids().size());
-        assertEquals(expectedDocs, merged.uids());
+        assertEquals(expectedMatches, merged.uids());
     }
     
     /**
@@ -280,19 +268,23 @@ public class IndexInfoTest {
      */
     @Test
     public void testUnion_OneTermIsDelayedPredicate() {
-        ASTDelayedPredicate delayedPredicate = ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        ASTDelayedPredicate delayedPredicate = ASTDelayedPredicate.create(JexlNodeFactory.buildEQNode("A", "1"));
         
-        IndexInfo left = new IndexInfo(50);
-        left.applyNode(delayedPredicate);
+        IndexInfo delayed = new IndexInfo(50);
+        delayed.applyNode(delayedPredicate);
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
-        IndexInfo right = new IndexInfo(rightMatches);
-        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(delayedPredicate);
         
-        IndexInfo merged = right.union(left);
-        assertEquals(0, merged.uids().size());
-        assertEquals("Count should be 53 but is " + merged.count(), 53, merged.count());
-        String expectedQuery = "((ASTDelayedPredicate = true) && (FIELD == 'VALUE'))";
+        IndexInfo left = new IndexInfo(Arrays.asList("doc1", "doc2", "doc3"));
+        left.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
+        
+        IndexInfo merged = new IndexInfo();
+        merged = merged.unionAll(Arrays.asList(left), nodeSet, false);
+        
+        assertEquals(3, merged.uids().size());
+        assertEquals("Count should be 3 but is " + merged.count(), 3, merged.count());
+        String expectedQuery = "((ASTDelayedPredicate = true) && (A == '1'))";
         String actualQuery = JexlStringBuildingVisitor.buildQuery(merged.getNode());
         assertEquals(expectedQuery, actualQuery);
     }
@@ -303,12 +295,14 @@ public class IndexInfoTest {
     @Test
     public void testUnion_NoTermHasDocIds() {
         IndexInfo left = new IndexInfo(50L);
-        left.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        left.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
         IndexInfo right = new IndexInfo(90L);
-        right.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        IndexInfo merged = left.union(right);
+        IndexInfo merged = new IndexInfo();
+        merged = merged.unionAll(Arrays.asList(left, right), null, false);
+        
         assertEquals(140L, merged.count());
         assertTrue(merged.uids().isEmpty());
     }
@@ -319,13 +313,21 @@ public class IndexInfoTest {
     @Test
     public void testUnion_InfiniteTerm() {
         IndexInfo left = new IndexInfo(-1L);
-        left.applyNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        left.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
-        IndexInfo right = new IndexInfo(rightMatches);
+        IndexInfo right = new IndexInfo(Arrays.asList("doc1", "doc2", "doc3"));
+        right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
         IndexInfo expectedMerged = new IndexInfo(-1L);
-        assertEquals(expectedMerged, left.union(right));
-        assertEquals(expectedMerged, right.union(left));
+        
+        // Left with right.
+        IndexInfo merged = new IndexInfo();
+        merged = merged.unionAll(Arrays.asList(left, right), null, true);
+        assertEquals(expectedMerged, merged);
+        
+        // Right with left.
+        merged = new IndexInfo();
+        merged = merged.unionAll(Arrays.asList(right, left), null, true);
+        assertEquals(expectedMerged, merged);
     }
 }

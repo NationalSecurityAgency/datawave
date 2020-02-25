@@ -77,6 +77,10 @@ public class TreeEqualityVisitor implements ParserVisitor {
         public String reason = null;
     }
     
+    public static boolean isEqual(ASTJexlScript script1, ASTJexlScript script2) {
+        return isEqual(script1, script2, new TreeEqualityVisitor.Reason());
+    }
+    
     public static boolean isEqual(ASTJexlScript script1, ASTJexlScript script2, Reason reason) {
         TreeEqualityVisitor visitor = new TreeEqualityVisitor();
         
