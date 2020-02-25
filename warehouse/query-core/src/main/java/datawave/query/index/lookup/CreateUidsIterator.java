@@ -68,9 +68,11 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
     private static final Logger log = Logger.getLogger(CreateUidsIterator.class);
     
     public static final String COLLAPSE_UIDS = "index.lookup.collapse";
+    public static final String COLLAPSE_UIDS_THRESHOLD = "index.lookup.collapse.threshold";
     public static final String PARSE_TLD_UIDS = "index.lookup.parse.tld.uids";
     
     protected boolean collapseUids = false;
+    protected int collapseUidsThreshold = Integer.MAX_VALUE;
     protected boolean parseTldUids = false;
     protected SortedKeyValueIterator<Key,Value> src;
     protected Key tk;
@@ -80,17 +82,54 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         src = source;
         if (null != options) {
+            
             final String collapseOpt = options.get(COLLAPSE_UIDS);
-            if (null != collapseOpt) {
+            if (StringUtils.isNotBlank(collapseOpt)) {
                 try {
-                    collapseUids = Boolean.valueOf(collapseOpt);
+                    this.collapseUids = Boolean.parseBoolean(collapseOpt);
                 } catch (Exception e) {
-                    collapseUids = false;
+                    String errMsg = "Option [" + COLLAPSE_UIDS_THRESHOLD + "] expected a boolean, received [" + collapseOpt + "].";
+                    log.error(errMsg);
+                    throw new IllegalArgumentException(errMsg);
                 }
             }
+            
+            final String collapseThresholdOpt = options.get(COLLAPSE_UIDS_THRESHOLD);
+            if (StringUtils.isNotBlank(collapseThresholdOpt)) {
+                try {
+                    int threshold = Integer.parseInt(collapseThresholdOpt);
+                    if (threshold == -1 || threshold == Integer.MAX_VALUE) {
+                        this.collapseUidsThreshold = Integer.MAX_VALUE;
+                    } else {
+                        this.collapseUidsThreshold = threshold;
+                    }
+                } catch (Exception e) {
+                    String errMsg = "Option [" + COLLAPSE_UIDS_THRESHOLD + "] expected an integer, received [" + collapseThresholdOpt + "].";
+                    log.error(errMsg);
+                    throw new IllegalArgumentException(errMsg);
+                }
+            }
+            
             final String parseTldUidsOption = options.get(PARSE_TLD_UIDS);
-            if (null != parseTldUidsOption) {
-                parseTldUids = Boolean.parseBoolean(parseTldUidsOption);
+            if (StringUtils.isNotBlank(parseTldUidsOption)) {
+                try {
+                    this.parseTldUids = Boolean.parseBoolean(parseTldUidsOption);
+                } catch (Exception e) {
+                    String errMsg = "Option [" + PARSE_TLD_UIDS + "] expected a boolean, received [" + parseTldUidsOption + "].";
+                    log.error(errMsg);
+                    throw new IllegalArgumentException(errMsg);
+                }
+            }
+            
+            /*
+             * To reduce the logic in the next() call and to preserve operator order of precedence, turn off collapseDocRanges if collapseDocRangesThreshold is
+             * a positive non-default value.
+             */
+            if (collapseUids && (collapseUidsThreshold != Integer.MAX_VALUE && collapseUidsThreshold > 0)) {
+                if (log.isTraceEnabled())
+                    log.trace(COLLAPSE_UIDS_THRESHOLD + " is set to non default value " + collapseUidsThreshold + ". Turning off " + COLLAPSE_UIDS
+                                    + " to preserve operator order of precedence.");
+                collapseUids = false;
             }
         }
     }
@@ -104,27 +143,40 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
     public void next() throws IOException {
         tk = null;
         if (src.hasTop()) {
+            
+            // Strip the datatype from the CQ, leaving just the shard
             Key reference = makeRootKey(src.getTopKey());
+            
             List<String> uids = Lists.newLinkedList();
             long count = 0L;
-            boolean ignore = false;
-            if (collapseUids) {
-                ignore = true;
-            }
+            boolean ignore = collapseUids;
+            
             while (src.hasTop() && sameShard(reference, src.getTopKey())) {
-                Key nextTop = src.getTopKey();
-                Tuple3<Long,Boolean,List<String>> uidInfo = parseUids(nextTop, src.getTopValue());
+                
+                Key key = src.getTopKey();
+                Value value = src.getTopValue();
+                
+                Tuple3<Long,Boolean,List<String>> uidInfo = parseUids(key, value);
                 count += uidInfo.first();
                 ignore |= uidInfo.second();
-                if (!ignore)
-                    for (String uid : uidInfo.third()) {
-                        if (log.isTraceEnabled())
-                            log.trace("Adding uid " + StringUtils.split(uid, '\u0000')[1]);
-                        uids.add(uid);
-                    }
+                
+                // Three things must be true in order to return a document specific range
+                // 1. The uids stored in the index must have the ignore flag set to FALSE
+                // 2. The option to collapse all document ranges must be false.
+                // 3. The document count must be under the document threshold.
+                if (ignore || !collapseUids || (count <= collapseUidsThreshold)) {
+                    uids.addAll(uidInfo.third());
+                    if (log.isTraceEnabled())
+                        log.trace("Adding uids " + uidInfo.third().toString());
+                }
                 src.next();
             }
-            if (ignore) {
+            
+            // The following three things must be true to build a counts-only IndexInfo
+            // 1. The document count is larger than the configured threshold
+            // 2. We are blindly collapsing document ranges into shard ranges
+            // 3. We encountered a Uid object with the ignore flag set to TRUE
+            if (ignore || collapseUids || (count > collapseUidsThreshold)) {
                 tv = new IndexInfo(count);
             } else {
                 if (parseTldUids) {

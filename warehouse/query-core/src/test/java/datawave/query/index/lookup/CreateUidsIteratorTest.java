@@ -1,10 +1,12 @@
 package datawave.query.index.lookup;
 
+import com.google.common.collect.ImmutableSortedSet;
 import datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Test;
@@ -23,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static datawave.query.index.lookup.CreateUidsIterator.COLLAPSE_UIDS;
+import static datawave.query.index.lookup.CreateUidsIterator.COLLAPSE_UIDS_THRESHOLD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -230,7 +234,7 @@ public class CreateUidsIteratorTest {
         // Setup iterator
         CreateUidsIterator iterator = new CreateUidsIterator();
         Map<String,String> iteratorOptions = new HashMap<>();
-        iteratorOptions.put(CreateUidsIterator.COLLAPSE_UIDS, "true");
+        iteratorOptions.put(COLLAPSE_UIDS, "true");
         iterator.init(new SortedMapIterator(data), iteratorOptions, null);
         iterator.seek(new Range(), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
@@ -312,5 +316,406 @@ public class CreateUidsIteratorTest {
     static void addToExpectedDocs(String dataType, Iterable<String> docIds, Collection<IndexMatch> expected, JexlNode node) {
         for (String id : docIds)
             expected.add(new IndexMatch(dataType + '\u0000' + id, node));
+    }
+    
+    // Helper method for creating test data quickly
+    private static void addToData(TreeMap<Key,Value> data, String shard, String... docsIds) {
+        addToData(data, false, shard, docsIds);
+    }
+    
+    // Helper method for creating test data quickly
+    private static void addToData(TreeMap<Key,Value> data, boolean ignore, String shard, String... docsIds) {
+        // DataType is FOO
+        String columnQualifier = shard + '\u0000' + "FOO";
+        addKeyValueToData(data, ignore, columnQualifier, Arrays.asList(docsIds));
+    }
+    
+    // Helper method for creating test data quickly
+    private static void addKeyValueToData(TreeMap<Key,Value> data, boolean ignore, String cq, List<String> docIds) {
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.setCOUNT(docIds.size());
+        if (ignore) {
+            builder.setIGNORE(true);
+        } else {
+            builder.addAllUID(docIds);
+            builder.setIGNORE(false);
+        }
+        Value docs = new Value(builder.build().toByteArray());
+        
+        Key key = new Key("row", "cf", cq);
+        data.put(key, docs);
+    }
+    
+    // Helper method for creating expected data quickly
+    static void addToExpected(Collection<IndexMatch> expected, String dataType, String... docIds) {
+        addToExpected(expected, dataType, null, docIds);
+    }
+    
+    // Helper method for creating expected data quickly
+    static void addToExpected(Collection<IndexMatch> expected, String dataType, JexlNode node, String... docIds) {
+        for (String id : docIds)
+            expected.add(new IndexMatch(dataType + '\u0000' + id, node));
+    }
+    
+    /**
+     * Iterator with empty options should bring back all document specific ranges.
+     *
+     * <pre>
+     * COLLAPSE_UIDS = false
+     * COLLAPSE_UIDS_THRESHOLD = Integer.MAX_VALUE
+     * </pre>
+     */
+    @Test
+    public void testEmptyOptions() throws IOException {
+        // Setup data for test
+        TreeMap<Key,Value> data = new TreeMap<>();
+        addToData(data, "20190314_0", "doc0");
+        addToData(data, "20190314_1", "doc1");
+        // 20190314_2 should collapse due to IGNORE = TRUE
+        addToData(data, true, "20190314_2", "doc2");
+        
+        // Setup empty options
+        Map<String,String> options = new HashMap<>();
+        
+        // Create iterator & seek
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        iterator.init(new SortedMapIterator(data), options, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        
+        // Build expected data
+        List<IndexMatch> expectedDocs = new LinkedList<>();
+        addToExpected(expectedDocs, "FOO", "doc0");
+        addToExpected(expectedDocs, "FOO", "doc1");
+        
+        // Build index info for shard 20190314_0
+        assertTrue(iterator.hasTop());
+        Key expectedTopKey = new Key("row", "cf", "20190314_0");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_0
+        assertEquals(1L, indexInfo.count());
+        assertEquals(1L, indexInfo.uids().size());
+        assertEquals(expectedDocs.get(0).getUid(), indexInfo.uids().iterator().next().getUid());
+        
+        // Build index info for shard 20190314_1
+        iterator.next();
+        assertTrue(iterator.hasTop());
+        expectedTopKey = new Key("row", "cf", "20190314_1");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_1
+        assertEquals(1L, indexInfo.count());
+        assertEquals(1L, indexInfo.uids().size());
+        assertEquals(expectedDocs.get(1).getUid(), indexInfo.uids().iterator().next().getUid());
+        
+        // Build index info for shard 20190314_2
+        iterator.next();
+        assertTrue(iterator.hasTop());
+        expectedTopKey = new Key("row", "cf", "20190314_2");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_2
+        assertEquals(1L, indexInfo.count());
+        assertEquals(0L, indexInfo.uids().size());
+        
+        // Assert absence of unexpected results
+        iterator.next();
+        assertFalse(iterator.hasTop());
+    }
+    
+    /**
+     * Iterator should collapse all document ranges into shard ranges.
+     *
+     * <pre>
+     * COLLAPSE_UIDS = true
+     * COLLAPSE_UIDS_THRESHOLD = Integer.MAX_VALUE
+     * </pre>
+     */
+    @Test
+    public void testCollapseDocRanges() throws IOException {
+        // Setup data for test
+        TreeMap<Key,Value> data = new TreeMap<>();
+        addToData(data, "20190314_0", "doc0", "doc1", "doc2");
+        addToData(data, "20190314_1", "doc4");
+        
+        // Setup empty options
+        Map<String,String> options = new HashMap<>();
+        options.put(COLLAPSE_UIDS, "true");
+        // Setting this option to default value. Should not affect test behavior.
+        options.put(COLLAPSE_UIDS_THRESHOLD, "" + Integer.MAX_VALUE);
+        
+        // Create iterator & seek
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        iterator.init(new SortedMapIterator(data), options, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        
+        // No expected data as all uids are collapsed, only counts are returned.
+        
+        // Build index info for shard 20190314_0
+        assertTrue(iterator.hasTop());
+        Key expectedTopKey = new Key("row", "cf", "20190314_0");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_0
+        assertEquals(3L, indexInfo.count());
+        assertEquals(0L, indexInfo.uids().size());
+        
+        // Build index info for shard 20190314_1
+        iterator.next();
+        assertTrue(iterator.hasTop());
+        expectedTopKey = new Key("row", "cf", "20190314_1");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_1
+        assertEquals(1L, indexInfo.count());
+        assertEquals(0L, indexInfo.uids().size());
+        
+        // Assert absence of unexpected results
+        iterator.next();
+        assertFalse(iterator.hasTop());
+    }
+    
+    /**
+     * Iterator should only collapse document ranges into shard ranges for shard ranges with more document ids than the defined threshold.
+     *
+     * <pre>
+     * COLLAPSE_UIDS = false
+     * COLLAPSE_UIDS_THRESHOLD = 2
+     * </pre>
+     */
+    @Test
+    public void testCollapseDocRangesByThreshold() throws IOException {
+        // Setup data for test
+        TreeMap<Key,Value> data = new TreeMap<>();
+        addToData(data, "20190314_0", "doc0", "doc1", "doc2");
+        addToData(data, "20190314_1", "doc4", "doc5");
+        
+        // Setup empty options
+        Map<String,String> options = new HashMap<>();
+        options.put(COLLAPSE_UIDS_THRESHOLD, "2");
+        
+        // Create iterator & seek
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        iterator.init(new SortedMapIterator(data), options, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        
+        // Build expected data
+        List<IndexMatch> expectedDocs = new LinkedList<>();
+        addToExpected(expectedDocs, "FOO", "doc4");
+        addToExpected(expectedDocs, "FOO", "doc5");
+        
+        // Build index info for shard 20190314_0
+        assertTrue(iterator.hasTop());
+        Key expectedTopKey = new Key("row", "cf", "20190314_0");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_0
+        assertEquals(3L, indexInfo.count());
+        assertEquals(0L, indexInfo.uids().size());
+        
+        // Build index info for shard 20190314_1
+        iterator.next();
+        assertTrue(iterator.hasTop());
+        expectedTopKey = new Key("row", "cf", "20190314_1");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_1
+        assertEquals(2L, indexInfo.count());
+        assertEquals(2L, indexInfo.uids().size());
+        assertEquals(expectedDocs.get(0).getUid(), indexInfo.uids().first().getUid());
+        assertEquals(expectedDocs.get(1).getUid(), indexInfo.uids().last().getUid());
+        
+        // Assert absence of unexpected results
+        iterator.next();
+        assertFalse(iterator.hasTop());
+    }
+    
+    /**
+     * Iterator should only collapse document ranges into shard ranges for shard ranges with more document ids than the defined threshold.
+     *
+     * This test asserts the case when the Uids have the IGNORE flag set to true. In this case the actual document id is not present and counts may not be
+     * correct. Asserts will have no document ids present.
+     *
+     * NOTE: When the IGNORE flag is set to TRUE, it is a hint to ignore building document specific ranges, instead build shard ranges.
+     *
+     * <pre>
+     * COLLAPSE_UIDS = false
+     * COLLAPSE_UIDS_THRESHOLD = 2
+     * </pre>
+     */
+    @Test
+    public void testCollapseDocRangesByThresholdWithIgnore() throws IOException {
+        // Setup data for test
+        TreeMap<Key,Value> data = new TreeMap<>();
+        // 20190314_0 collapses due to threshold
+        addToData(data, true, "20190314_0", "doc0", "doc1", "doc2");
+        // 20190314_1 collapses due to IGNORE = TRUE
+        addToData(data, true, "20190314_1", "doc4", "doc5");
+        // 20190314_2 does not collapse.
+        addToData(data, false, "20190314_2", "doc6", "doc7");
+        
+        // Setup empty options
+        Map<String,String> options = new HashMap<>();
+        options.put(COLLAPSE_UIDS_THRESHOLD, "2");
+        
+        // Create iterator & seek
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        iterator.init(new SortedMapIterator(data), options, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        
+        // Build index info for shard 20190314_0
+        assertTrue(iterator.hasTop());
+        Key expectedTopKey = new Key("row", "cf", "20190314_0");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_0
+        assertEquals(3L, indexInfo.count());
+        assertEquals(0L, indexInfo.uids().size());
+        
+        // Build index info for shard 20190314_1
+        iterator.next();
+        assertTrue(iterator.hasTop());
+        expectedTopKey = new Key("row", "cf", "20190314_1");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_1
+        assertEquals(2L, indexInfo.count());
+        assertEquals(0L, indexInfo.uids().size());
+        
+        // Build index info for shard 20190314_2
+        iterator.next();
+        assertTrue(iterator.hasTop());
+        expectedTopKey = new Key("row", "cf", "20190314_2");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_2
+        assertEquals(2L, indexInfo.count());
+        assertEquals(2L, indexInfo.uids().size());
+        
+        // Build expected data
+        List<IndexMatch> expectedDocs = new LinkedList<>();
+        addToExpected(expectedDocs, "FOO", "doc6");
+        addToExpected(expectedDocs, "FOO", "doc7");
+        assertEquals(ImmutableSortedSet.copyOf(expectedDocs), indexInfo.uids());
+        
+        // Assert absence of unexpected results
+        iterator.next();
+        assertFalse(iterator.hasTop());
+    }
+    
+    /**
+     * Iterator should collapse document ranges into shard ranges using the threshold, respecting the order of precedence. The data in shard 20190314_1 should
+     * return a document specific range as in the above test.
+     *
+     * <pre>
+     * COLLAPSE_UIDS = true
+     * COLLAPSE_UIDS_THRESHOLD = 2
+     * </pre>
+     */
+    @Test
+    public void testCollapseByOrderOfPrecedence() throws IOException {
+        // Setup data for test
+        TreeMap<Key,Value> data = new TreeMap<>();
+        addToData(data, "20190314_0", "doc0", "doc1", "doc2");
+        addToData(data, "20190314_1", "doc4");
+        
+        // Setup empty options
+        Map<String,String> options = new HashMap<>();
+        options.put(COLLAPSE_UIDS, "true");
+        options.put(COLLAPSE_UIDS_THRESHOLD, "2");
+        
+        // Create iterator & seek
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        iterator.init(new SortedMapIterator(data), options, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        
+        // Build expected data
+        List<IndexMatch> expectedDocs = new LinkedList<>();
+        addToExpected(expectedDocs, "FOO", "doc4");
+        
+        // Build index info for shard 20190314_0
+        assertTrue(iterator.hasTop());
+        Key expectedTopKey = new Key("row", "cf", "20190314_0");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_0
+        assertEquals(3L, indexInfo.count());
+        assertEquals(0L, indexInfo.uids().size());
+        
+        // Build index info for shard 20190314_1
+        iterator.next();
+        assertTrue(iterator.hasTop());
+        expectedTopKey = new Key("row", "cf", "20190314_1");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        
+        // Assert index info is correct for shard 20190314_1
+        assertEquals(1L, indexInfo.count());
+        assertEquals(1L, indexInfo.uids().size());
+        assertEquals(expectedDocs.get(0).getUid(), indexInfo.uids().iterator().next().getUid());
+        
+        // Assert absence of unexpected results
+        iterator.next();
+        assertFalse(iterator.hasTop());
+    }
+    
+    @Test
+    public void testValidateAndDescribeOptions() {
+        HashMap<String,String> options = new HashMap<>();
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        assertTrue(iterator.validateOptions(options));
+        
+        OptionDescriber.IteratorOptions iterOpts = iterator.describeOptions();
+        assertEquals("", iterOpts.getName());
+        assertEquals("", iterOpts.getDescription());
+        assertTrue(iterOpts.getNamedOptions().isEmpty());
+        assertTrue(iterOpts.getUnnamedOptionDescriptions().isEmpty());
+    }
+    
+    /**
+     * Given an improper configuration, throw an exception.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadArgument_CollapseDocRangesThreshold() throws IOException {
+        // Set bad options to cause an exception
+        HashMap<String,String> options = new HashMap<>();
+        options.put(COLLAPSE_UIDS_THRESHOLD, "false");
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        iterator.init(null, options, null);
     }
 }

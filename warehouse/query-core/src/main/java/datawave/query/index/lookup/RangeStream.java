@@ -483,6 +483,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
                 final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS_THRESHOLD, String.valueOf(config.getCollapseUidsThreshold()));
                 uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                 scanner.addScanIterator(uidSetting);
                 
