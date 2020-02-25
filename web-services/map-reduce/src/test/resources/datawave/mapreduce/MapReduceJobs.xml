@@ -33,15 +33,16 @@
 						</property>
 						<property name="classpathJarFiles">
 							<list value-type="java.lang.String">
-								<value>vfs:/content/datawave-web-service.ear/Query.jar</value>
-								<value>vfs:/content/datawave-web-service.ear/MapReduce.jar</value>
-								<value>vfs:/content/datawave-web-service.ear/lib/xercesImpl-2.11.0.jar</value>
-								<value>vfs:/content/datawave-web-service.ear/lib/jaxrs-api.jar</value>
-								<!--
-								I am using Infinispan Base64 class here instead of commons-codec because of jar issues in Hadoop. 0.20.2 uses
-								commons-codec-1.3 and CDH3U3 uses commons-codec-1.4. We are using 1.5.
-								 -->
-								<value>vfs:/content/datawave-web-service.ear/lib/infinispan-commons.jar</value>
+								<!-- Add EJB jars that we need in order to run queries. -->
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-query-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-map-reduce-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-common-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-security-${version.datawave}.jar/</value>
+								<!-- Add every jar in the EAR's lib folder. -->
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!lib/.*\.jar/</value>
+								<!-- Now package up the config module's conf files and include them. -->
+								<value>archive:${jboss.modules.dir}/datawave/webservice/configuration/main/conf/!.*</value>
+								<!-- Note that all jar files in ${jboss.home.dir}/client/lib and ${jboss.home.dir}/tools/mapreduce/lib are added to the classpath too. -->
 							</list>
 						</property>
 						<property name="requiredRuntimeParameters">
@@ -56,8 +57,12 @@
 							</map>
 						</property>
 						<property name="jobConfigurationProperties">
-							<map key-type="java.lang.String" value-type="java.lang.String">
+							<map key-type="java.lang.String" value-type="java.lang.Object">
 								<entry key="mapred.map.tasks.speculative.execution" value="false" />
+							</map>
+						</property>
+						<property name="jobSystemProperties">
+							<map key-type="java.lang.String" value-type="java.lang.String">
 							</map>
 						</property>
 						<property name="jobJarName" value="MapReduce.jar"/>
