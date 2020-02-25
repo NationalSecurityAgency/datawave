@@ -1166,7 +1166,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
         boolean success = false;
         try {
             success = getFileSystem(destFs).rename(new Path(jobDirectory, LOADING_FILE_MARKER), new Path(jobDirectory, CLEANUP_FILE_MARKER));
-            System.out.println("renamed successful");
             log.info("Renamed " + jobDirectory + '/' + LOADING_FILE_MARKER + " to " + CLEANUP_FILE_MARKER);
         } catch (IOException e2) {
             log.error("Exception while marking " + jobDirectory + " for loading: " + e2.getMessage(), e2);
