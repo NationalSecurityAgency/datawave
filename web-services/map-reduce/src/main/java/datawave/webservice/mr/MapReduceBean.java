@@ -24,6 +24,7 @@ import datawave.webservice.mr.configuration.NeedCallerDetails;
 import datawave.webservice.mr.configuration.NeedQueryCache;
 import datawave.webservice.mr.configuration.NeedQueryLogicFactory;
 import datawave.webservice.mr.configuration.NeedQueryPersister;
+import datawave.webservice.mr.configuration.NeedSecurityDomain;
 import datawave.webservice.mr.configuration.OozieJobConfiguration;
 import datawave.webservice.mr.configuration.OozieJobConstants;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean;
@@ -62,6 +63,7 @@ import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.jboss.security.JSSESecurityDomain;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -119,6 +121,9 @@ public class MapReduceBean {
     
     @Resource
     private EJBContext ctx;
+    
+    @Inject
+    private JSSESecurityDomain jsseSecurityDomain;
     
     @Inject
     private Persister queryPersister;
@@ -257,7 +262,7 @@ public class MapReduceBean {
         Properties oozieConf = null;
         
         try {
-            oozieClient = new OozieClient(job.getJobConfigurationProperties().get(OozieJobConstants.OOZIE_CLIENT_PROP));
+            oozieClient = new OozieClient((String) job.getJobConfigurationProperties().get(OozieJobConstants.OOZIE_CLIENT_PROP));
             oozieConf = oozieClient.createConfiguration();
             job.initializeOozieConfiguration(id, oozieConf, queryParameters);
             job.validateWorkflowParameter(oozieConf, mapReduceConfiguration);
@@ -442,6 +447,10 @@ public class MapReduceBean {
         
         if (job instanceof NeedQueryCache) {
             ((NeedQueryCache) job).setQueryCache(cache);
+        }
+        
+        if (job instanceof NeedSecurityDomain) {
+            ((NeedSecurityDomain) job).setSecurityDomain(this.jsseSecurityDomain);
         }
         
         // If this job is being restarted, then the jobId will be the same. The restart method

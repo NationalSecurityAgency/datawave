@@ -1927,6 +1927,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setSequentialScheduler(sequentialScheduler);
     }
     
+    public boolean getParseTldUids() {
+        return getConfig().getParseTldUids();
+    }
+    
+    public void setParseTldUids(boolean parseRootUids) {
+        getConfig().setParseTldUids(parseRootUids);
+    }
+    
     public boolean getCollapseUids() {
         return getConfig().getCollapseUids();
     }
