@@ -744,6 +744,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         String uniqueFields = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(uniqueFields)) {
             List<String> uniqueFieldsList = Arrays.asList(StringUtils.split(uniqueFields, Constants.PARAM_VALUE_SEP));
+            uniqueFieldsList.replaceAll(String::toUpperCase);
             
             // Only set the unique fields if we were actually given some
             if (!uniqueFieldsList.isEmpty()) {
