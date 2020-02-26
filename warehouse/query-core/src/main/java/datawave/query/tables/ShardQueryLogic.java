@@ -2144,6 +2144,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setSortGeoWaveQueryRanges(sortGeoWaveQueryRanges);
     }
     
+    public boolean isPlanOrderRandom() {
+        return getConfig().isPlanOrderRandom();
+    }
+    
+    public void setPlanOrderRandom(boolean planOrderRandom) {
+        getConfig().setPlanOrderRandom(planOrderRandom);
+    }
+    
     public int getNumRangesToBuffer() {
         return getConfig().getNumRangesToBuffer();
     }

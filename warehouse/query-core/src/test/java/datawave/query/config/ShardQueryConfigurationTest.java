@@ -73,6 +73,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getSerializeQueryIterator());
         Assert.assertFalse(config.isDebugMultithreadedSources());
         Assert.assertFalse(config.isSortGeoWaveQueryRanges());
+        Assert.assertFalse(config.isPlanOrderRandom());
         Assert.assertEquals(0, config.getNumRangesToBuffer());
         Assert.assertEquals(0, config.getRangeBufferTimeoutMillis());
         Assert.assertEquals(100, config.getRangeBufferPollMillis());

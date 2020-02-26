@@ -464,6 +464,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
             }
         }
         
+        // Option to return query plans in random order for better distribution of running scans.
+        if (config.isPlanOrderRandom()) {
+            
+            if (queryPlanComparators == null)
+                queryPlanComparators = new ArrayList<>();
+            
+            queryPlanComparators.add(new DefaultQueryPlanComparator() {
+                @Override
+                public int compare(QueryPlan o1, QueryPlan o2) {
+                    int left = o1.getQueryString().hashCode() + o1.getRanges().iterator().next().getStartKey().hashCode();
+                    int right = o2.getQueryString().hashCode() + o2.getRanges().iterator().next().getStartKey().hashCode();
+                    return left - right;
+                }
+            });
+        }
+        
         // @formatter:off
         return new ThreadedRangeBundler.Builder()
                 .setOriginal(queryData)

@@ -115,6 +115,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean sortGeoWaveQueryRanges = false;
     /**
+     * Used to enable random plan order when a queue of QueryPlans exists within the ThreadedRangeBundler
+     */
+    private boolean planOrderRandom = false;
+    /**
      * Used to determine how many ranges the ThreadedRangeBundler should buffer before returning a range to the caller
      */
     private int numRangesToBuffer = 0;
@@ -359,6 +363,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSerializeQueryIterator(other.getSerializeQueryIterator());
         this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
         this.setSortGeoWaveQueryRanges(other.isSortGeoWaveQueryRanges());
+        this.setPlanOrderRandom(other.isPlanOrderRandom());
         this.setNumRangesToBuffer(other.getNumRangesToBuffer());
         this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
@@ -797,6 +802,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setSortGeoWaveQueryRanges(boolean sortGeoWaveQueryRanges) {
         this.sortGeoWaveQueryRanges = sortGeoWaveQueryRanges;
+    }
+    
+    public boolean isPlanOrderRandom() {
+        return this.planOrderRandom;
+    }
+    
+    public void setPlanOrderRandom(boolean planOrderRandom) {
+        this.planOrderRandom = planOrderRandom;
     }
     
     public int getNumRangesToBuffer() {
