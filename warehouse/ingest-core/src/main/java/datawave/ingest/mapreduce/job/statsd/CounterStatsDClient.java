@@ -205,7 +205,7 @@ public class CounterStatsDClient {
         public boolean userClassesTakesPrecedence() {
             return delegate.userClassesTakesPrecedence();
         }
-
+        
         @Override
         public Class<? extends InputFormat<?,?>> getInputFormatClass() throws ClassNotFoundException {
             return delegate.getInputFormatClass();
