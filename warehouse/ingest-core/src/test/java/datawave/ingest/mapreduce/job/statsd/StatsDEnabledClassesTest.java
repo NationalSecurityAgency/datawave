@@ -298,6 +298,11 @@ public class StatsDEnabledClassesTest {
             }
             
             @Override
+            public boolean userClassesTakesPrecedence() {
+                return false;
+            }
+
+            @Override
             public Class<? extends InputFormat<?,?>> getInputFormatClass() throws ClassNotFoundException {
                 return null;
             }
