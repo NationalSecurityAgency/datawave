@@ -357,6 +357,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         setScannerFactory(new ScannerFactory(config));
         
+        // load params before parsing jexl string so these can be injected
+        loadQueryParameters(config, settings);
+        
         String jexlQueryString = getJexlQueryString(settings);
         
         if (null == jexlQueryString) {
@@ -379,9 +382,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setEndDate(endDate);
         }
         
-        loadQueryParameters(config, settings);
-        
-        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
+        MetadataHelper metadataHelper = prepareMetadataHelper(connection, this.getMetadataTableName(), auths, config.isRawTypes());
         
         DateIndexHelper dateIndexHelper = prepareDateIndexHelper(client, this.getDateIndexTableName(), auths);
         if (config.isDateIndexTimeTravel()) {
