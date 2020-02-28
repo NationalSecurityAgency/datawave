@@ -53,7 +53,7 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
                 try {
                     boolean isLuceneQuery = isLuceneQuery(metric.getParameters());
                     String jexlQuery = (isLuceneQuery) ? toJexlQuery(metric.getQuery()) : metric.getQuery();
-                    JexlNode queryNode = JexlASTHelper.parseJexlQuery(jexlQuery);
+                    JexlNode queryNode = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
                     queryGeometries.addAll(GeoFeatureVisitor.getGeoFeatures(queryNode, isLuceneQuery));
                 } catch (Exception e) {
                     response.addException(new Exception("Unable to parse the geo features"));
@@ -83,7 +83,7 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
             if (isLuceneQuery(metric.getParameters()))
                 jexlQuery = toJexlQuery(jexlQuery, new LuceneToJexlQueryParser());
             
-            return !GeoFeatureVisitor.getGeoFeatures(JexlASTHelper.parseJexlQuery(jexlQuery)).isEmpty();
+            return !GeoFeatureVisitor.getGeoFeatures(JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery)).isEmpty();
         } catch (Exception e) {
             log.trace(new Exception("Unable to parse the geo features"));
         }

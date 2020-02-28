@@ -23,6 +23,7 @@ import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
 import datawave.query.util.MetadataHelper;
@@ -84,6 +85,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -93,6 +95,11 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
 public class JexlASTHelper {
     
     protected static final Logger log = Logger.getLogger(JexlASTHelper.class);
+    
+    // Compile patterns once up front.
+    private static Pattern AND_PATTERN = Pattern.compile("\\s+[Aa][Nn][Dd]\\s+");
+    private static Pattern OR_PATTERN = Pattern.compile("\\s+[Oo][Rr]\\s+");
+    private static Pattern NOT_PATTERN = Pattern.compile("\\s+[Nn][Oo][Tt]\\s+");
     
     public static final Character GROUPING_CHARACTER_SEPARATOR = '.';
     public static final Character IDENTIFIER_PREFIX = '$';
@@ -115,6 +122,22 @@ public class JexlASTHelper {
                     ASTNENode.class, ASTEQNode.class, ASTERNode.class, ASTNRNode.class, ASTNRNode.class, ASTERNode.class);
     
     /**
+     * Parses a query tree from a query string and also flattens the query (flattening ORs and ANDs).
+     *
+     * Note: Flattening does not remove reference nodes or reference expressions from the query tree. To do so requires explicit call to
+     * {@link TreeFlatteningRebuildingVisitor#flattenAll(JexlNode)}.
+     *
+     * @param query
+     *            string representation of a query
+     * @return a fully parsed and flattened query tree
+     * @throws ParseException
+     */
+    public static ASTJexlScript parseAndFlattenJexlQuery(String query) throws ParseException {
+        ASTJexlScript script = parseJexlQuery(query);
+        return TreeFlatteningRebuildingVisitor.flatten(script);
+    }
+    
+    /**
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
      *
@@ -127,9 +150,10 @@ public class JexlASTHelper {
         // Instantiate a parser and visitor
         Parser parser = new Parser(new StringReader(";"));
         
-        String caseFixQuery = query.replaceAll("\\s+[Aa][Nn][Dd]\\s+", " and ");
-        caseFixQuery = caseFixQuery.replaceAll("\\s+[Oo][Rr]\\s+", " or ");
-        caseFixQuery = caseFixQuery.replaceAll("\\s+[Nn][Oo][Tt]\\s+", " not ");
+        // lowercase all 'and', 'or', and 'not' portions of the query.
+        String caseFixQuery = AND_PATTERN.matcher(query).replaceAll(" and ");
+        caseFixQuery = OR_PATTERN.matcher(caseFixQuery).replaceAll(" or ");
+        caseFixQuery = NOT_PATTERN.matcher(caseFixQuery).replaceAll(" not ");
         
         if (caseFixQuery.contains(DOUBLE_BACKSLASH)) {
             try {

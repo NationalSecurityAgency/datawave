@@ -31,7 +31,6 @@ import datawave.query.planner.QueryPlan;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.SessionOptions;
-import datawave.query.tld.CreateTLDUidsIterator;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
@@ -169,7 +168,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         
         tree = node;
         
-        if (!collapseUids && createUidsIteratorClass == CreateTLDUidsIterator.class) {
+        if (!collapseUids && config.getParseTldUids()) {
             collapseUids = !(EvaluationRendering.canDisableEvaluation(script, config, metadataHelper, true));
             
             if (log.isTraceEnabled()) {
@@ -457,12 +456,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
                 if (setCondenseUids) {
                     // Setup the CondenseUidsIterator
-                    
-                    boolean condensedTld = false;
                     Class<? extends SortedKeyValueIterator<Key,Value>> iterClazz = createCondensedUidIteratorClass;
-                    if (createUidsIteratorClass == CreateTLDUidsIterator.class) {
-                        condensedTld = true;
-                    }
                     
                     RangeStreamScanner scanSession = scanners.newCondensedRangeScanner(config.getIndexTableName(), config.getAuthorizations(),
                                     config.getQuery(), config.getShardsPerDayThreshold());
@@ -483,10 +477,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.valueOf(compressUidsInRangeStream).toString());
                     
                     // Add TLD option, if applicable
-                    if (condensedTld) {
-                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(condensedTld).toString());
+                    if (config.getParseTldUids()) {
+                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(config.getParseTldUids()).toString());
                     }
                     uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                    uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                     
                     options.addScanIterator(uidSetting);
                     String queryString = fieldName + "=='" + literal + "'";
@@ -513,6 +508,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     
                     final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                     uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                    uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                     options.addScanIterator(uidSetting);
                     
                     String queryString = fieldName + "=='" + literal + "'";
@@ -532,6 +528,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
                 final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                 scanner.addScanIterator(uidSetting);
                 
                 itr = Iterators.transform(scanner.iterator(), new EntryParser(node, fieldName, literal, indexOnlyFields));
@@ -849,12 +846,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
         
-        Calendar start = Calendar.getInstance();
-        start.setTime(config.getBeginDate());
-        Calendar end = Calendar.getInstance();
-        end.setTime(config.getEndDate());
+        Calendar start = getCalendarStartOfDay(config.getBeginDate());
+        Calendar end = getCalendarStartOfDay(config.getEndDate());
         
-        while (!start.after(end)) {
+        while (start.compareTo(end) <= 0) {
             String day = DateHelper.format(start.getTime());
             IndexInfo info = new IndexInfo(-1);
             info.setNode(node);
@@ -862,6 +857,16 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             start.add(Calendar.DAY_OF_YEAR, 1);
         }
         return list;
+    }
+    
+    private static Calendar getCalendarStartOfDay(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar;
     }
     
     /**
