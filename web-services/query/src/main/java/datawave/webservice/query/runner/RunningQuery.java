@@ -169,7 +169,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.getMetric().setError(e);
             throw e;
         } finally {
-            // get the query plan from logic config object
+            // set metric query plan from the query logic
             this.getMetric().setPlan(this.logic.getQueryPlan());
             
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
