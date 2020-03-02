@@ -1411,8 +1411,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     protected ASTJexlScript parseQueryAndValidatePattern(String query, TraceStopwatch stopwatch) {
         ASTJexlScript queryTree;
         try {
-            queryTree = JexlASTHelper.parseJexlQuery(query);
-            queryTree = TreeFlatteningRebuildingVisitor.flatten(queryTree);
+            queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
             ValidPatternVisitor.check(queryTree);
         } catch (StackOverflowError soe) {
             if (log.isTraceEnabled()) {
