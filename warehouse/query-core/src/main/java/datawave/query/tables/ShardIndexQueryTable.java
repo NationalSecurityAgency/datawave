@@ -245,13 +245,14 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             log.debug("JEXL Query = " + node.getOriginalQuery());
         }
         
-        ASTJexlScript origScript = JexlASTHelper.parseJexlQuery(config.getQueryString());
+        // Parse & flatten the query.
+        ASTJexlScript origScript = JexlASTHelper.parseAndFlattenJexlQuery(config.getQueryString());
         
         ASTJexlScript script;
         try {
             Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
             script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields,
-                            config.isExpandFields(), config.isExpandValues());
+                            config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
         } catch (EmptyUnfieldedTermExpansionException e) {
             Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             config.setNormalizedTerms(emptyMap);

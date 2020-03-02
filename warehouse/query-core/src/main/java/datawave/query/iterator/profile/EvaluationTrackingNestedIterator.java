@@ -4,6 +4,7 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -15,8 +16,8 @@ public class EvaluationTrackingNestedIterator<T> extends SeekableNestedIterator<
     protected QuerySpan.Stage stageName;
     private Logger log = Logger.getLogger(EvaluationTrackingNestedIterator.class);
     
-    public EvaluationTrackingNestedIterator(QuerySpan.Stage stageName, QuerySpan mySpan, NestedIterator<T> itr) {
-        super(itr);
+    public EvaluationTrackingNestedIterator(QuerySpan.Stage stageName, QuerySpan mySpan, NestedIterator<T> itr, IteratorEnvironment env) {
+        super(itr, env);
         this.mySpan = mySpan;
         this.stageName = stageName;
     }

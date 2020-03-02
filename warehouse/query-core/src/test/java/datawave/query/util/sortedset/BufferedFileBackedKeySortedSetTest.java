@@ -1,15 +1,15 @@
 package datawave.query.util.sortedset;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.SortedSet;
 import org.apache.accumulo.core.data.Key;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.SortedSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -42,12 +42,17 @@ public class BufferedFileBackedKeySortedSetTest {
             sortedOrder[i * 2] = sortedTemplate[i] + sortedTemplate.length;
             sortedOrder[i * 2 + 1] = sortedTemplate[i];
         }
-        set = new BufferedFileBackedSortedSet(null, 5, 7, new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
+        set = new BufferedFileBackedSortedSet<>(null, 5, 7, 2, Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
             @Override
             public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
                 return new SortedSetTempFileHandler();
             }
-        }, new FileKeySortedSet.Factory());
+            
+            @Override
+            public boolean isValid() {
+                return true;
+            }
+        }), new FileKeySortedSet.Factory());
         
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...

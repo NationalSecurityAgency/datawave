@@ -470,8 +470,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     
     /**
      * Gets the {@link TInfo} associated with this query, if any. If the query is not being traced, then {@code null} is returned. Callers can continue a trace
-     * on a different thread by calling {@link org.apache.accumulo.trace.instrument.Trace#trace(TInfo, String)} with the info returned here, and then
-     * interacting with the returned {@link org.apache.accumulo.trace.instrument.Span}.
+     * on a different thread by calling {@link org.apache.accumulo.core.trace.Trace#trace(TInfo, String)} with the info returned here, and then interacting with
+     * the returned {@link org.apache.accumulo.core.trace.Span}.
      * 
      * @return the {@link TInfo} associated with this query, if any
      */

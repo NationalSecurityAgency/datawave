@@ -909,6 +909,50 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
+    public void testNegRegexOrDisallowedExpansion() throws Exception {
+        String regPhrase = RN_OP + "'.*ica'";
+        String negReg = this.dataManager.convertAnyField(regPhrase, AND_OP);
+        try {
+            this.logic.setFullTableScanEnabled(true);
+            this.logic.setExpandUnfieldedNegations(false);
+            for (final TestCities city : TestCities.values()) {
+                String cityPhrase = EQ_OP + "'" + city.name() + "'";
+                String anyCity = this.dataManager.convertAnyField(cityPhrase);
+                String query = Constants.ANY_FIELD + cityPhrase + OR_OP + Constants.ANY_FIELD + regPhrase;
+                
+                // Test the plan with all expansions
+                String expect = CityField.CITY.name() + cityPhrase;
+                if (city.name().equals("london")) {
+                    expect += JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
+                }
+                expect += JEXL_OR_OP + "!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')";
+                String plan = getPlan(query, true, true);
+                assertPlanEquals(expect, plan);
+                
+                // Test the plan sans value expansion
+                expect = CityField.CITY.name() + cityPhrase;
+                if (city.name().equals("london")) {
+                    expect += JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
+                }
+                expect += JEXL_OR_OP + "!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')";
+                plan = getPlan(query, true, false);
+                assertPlanEquals(expect, plan);
+                
+                // Test the plan sans field expansion
+                expect = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + "!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')";
+                plan = getPlan(query, false, true);
+                assertPlanEquals(expect, plan);
+                
+                // test running the query
+                expect = anyCity + OR_OP + negReg;
+                runTest(query, expect);
+            }
+        } finally {
+            this.logic.setFullTableScanEnabled(false);
+        }
+    }
+    
+    @Test
     public void testRegexPushdownAnyfield() throws Exception {
         String roPhrase = RE_OP + "'ro.*'";
         String anyRo = this.dataManager.convertAnyField(roPhrase);

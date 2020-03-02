@@ -554,12 +554,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // not carry block size or replication across. This is especially important because by default the
             // MapReduce jobs produce output with the replication set to 1 and we definitely don't want to preserve
             // that when copying across clusters.
-            DistCpOptions options = new DistCpOptions(srcPath, destPath);
-            options.setLogPath(logPath);
-            options.setSyncFolder(true);
-            options.preserve(DistCpOptions.FileAttribute.USER);
-            options.preserve(DistCpOptions.FileAttribute.GROUP);
-            options.preserve(DistCpOptions.FileAttribute.PERMISSION);
+            //@formatter:off
+            DistCpOptions options = new DistCpOptions.Builder(srcPath, destPath)
+                .withLogPath(logPath)
+                .withSyncFolder(true)
+                .preserve(DistCpOptions.FileAttribute.USER)
+                .preserve(DistCpOptions.FileAttribute.GROUP)
+                .preserve(DistCpOptions.FileAttribute.PERMISSION)
+                .build();
+            //@formatter:on
             String[] args = (jobtracker == null) ? new String[0] : new String[] {"-jt", jobtracker};
             int res = ToolRunner.run(conf, new DistCp(conf, options), args);
             if (res != 0) {
@@ -888,7 +891,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         /**
          * Return a rfile with .1 appended before the extension. {@code foo.ext -> foo.1.ext foo -> foo.1}
-         * 
+         *
          * @param rfile
          * @return a rfile with .1 appended before the extension
          */
@@ -1052,12 +1055,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
         ArrayList<String> files = new ArrayList<>();
         
         final FileSystem destFs = getFileSystem(destHdfs);
-        BufferedReader rdr = new BufferedReader(new InputStreamReader(destFs.open(new Path(jobDirectory, INPUT_FILES_MARKER))));
-        String line;
-        while ((line = rdr.readLine()) != null) {
-            files.add(line);
+        try (BufferedReader rdr = new BufferedReader(new InputStreamReader(destFs.open(new Path(jobDirectory, INPUT_FILES_MARKER))))) {
+            String line;
+            while ((line = rdr.readLine()) != null) {
+                files.add(line);
+            }
+            
         }
-        rdr.close();
         
         final FileSystem sourceFs = getFileSystem(seqFileHdfs);
         List<Callable<Boolean>> renameCallables = Lists.newArrayList();

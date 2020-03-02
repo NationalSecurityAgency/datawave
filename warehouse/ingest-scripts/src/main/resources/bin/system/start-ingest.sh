@@ -9,7 +9,10 @@ else
 fi
 THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
+script_name=$(basename ${0})
+
 . ../ingest/ingest-env.sh
+. ../util/logging_pdsh.sh
 
 export INGEST_BIN=$THIS_DIR/..
 
@@ -29,7 +32,7 @@ else
   trap 'rm -f "$ingestHost"; exit $?' INT TERM EXIT
   echo $INGEST_HOST > $ingestHost
 
-  pdsh -f 25 -w ^${ingestHost} "$INGEST_BIN/ingest/start-ingesters.sh $FORCE" < /dev/null
+  logging_pdsh "${script_name}" -f 25 -w ^${ingestHost} "$INGEST_BIN/ingest/start-ingesters.sh $FORCE"
 
   rm $ingestHost
   trap - INT TERM EXIT

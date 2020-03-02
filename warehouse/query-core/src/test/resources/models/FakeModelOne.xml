@@ -2,26 +2,25 @@
 <Model xmlns="http://webservice.datawave/v1" name="FAKE_ONE">
     <Mappings>
         <!-- Forward -->
-        <Mapping fieldName="FIELD_1" modelFieldName="UUID" direction="FORWARD"  indexOnly="false" />
-        <Mapping fieldName="FIELD_2" modelFieldName="UUID" direction="FORWARD"  indexOnly="false" />
-        <Mapping fieldName="FIELD_3" modelFieldName="UUID" direction="FORWARD"  indexOnly="false" />
+        <Mapping fieldName="FIELD_1" modelFieldName="UUID" direction="FORWARD"  columnVisibility="PUBLIC" />
+        <Mapping fieldName="FIELD_2" modelFieldName="UUID" direction="FORWARD"  columnVisibility="PUBLIC" />
+        <Mapping fieldName="FIELD_3" modelFieldName="UUID" direction="FORWARD"  columnVisibility="PUBLIC" />
+        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE_A" direction="FORWARD"  columnVisibility="PUBLIC" />
+        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE_B" direction="FORWARD"  columnVisibility="PUBLIC" />
 
-        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE_A" direction="FORWARD"  indexOnly="false" />
-        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE_B" direction="FORWARD"  indexOnly="false" />
+        <Mapping fieldName="FAKE_ONE_ONLY" modelFieldName="FAKE_ONE_ONLY" direction="FORWARD"  columnVisibility="PUBLIC" />
 
-        <Mapping fieldName="FAKE_ONE_ONLY" modelFieldName="FAKE_ONE_ONLY" direction="FORWARD"  indexOnly="false" />
-
-        <Mapping fieldName="FIELD_NAME" modelFieldName="FAKE_ONE_FIELD_DIFF" direction="FORWARD"  indexOnly="false" />
+        <Mapping fieldName="FIELD_NAME" modelFieldName="FAKE_ONE_FIELD_DIFF" direction="FORWARD"  columnVisibility="PUBLIC" />
 
         <!-- Reverse -->
-        <Mapping fieldName="FIELD_1" modelFieldName="UUID_ONE" direction="REVERSE"  indexOnly="false" />
-        <Mapping fieldName="FIELD_2" modelFieldName="UUID_TWO" direction="REVERSE"  indexOnly="false" />
-        <Mapping fieldName="FIELD_3" modelFieldName="UUID_THREE" direction="REVERSE"  indexOnly="false" />
+        <Mapping fieldName="FIELD_1" modelFieldName="UUID_ONE" direction="REVERSE"  columnVisibility="PUBLIC" />
+        <Mapping fieldName="FIELD_2" modelFieldName="UUID_TWO" direction="REVERSE"  columnVisibility="PUBLIC" />
+        <Mapping fieldName="FIELD_3" modelFieldName="UUID_THREE" direction="REVERSE"  columnVisibility="PUBLIC" />
 
-        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE" direction="REVERSE"  indexOnly="false" />
-        <Mapping fieldName="FAKE_ONE_ONLY" modelFieldName="FAKE_ONE_ONLY" direction="REVERSE"  indexOnly="false" />
+        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE" direction="REVERSE"  columnVisibility="PUBLIC" />
+        <Mapping fieldName="FAKE_ONE_ONLY" modelFieldName="FAKE_ONE_ONLY" direction="REVERSE"  columnVisibility="PUBLIC" />
 
-        <Mapping fieldName="FIELD_NAME" modelFieldName="FIELD_NAME" direction="REVERSE"  indexOnly="false" />
+        <Mapping fieldName="FIELD_NAME" modelFieldName="FIELD_NAME" direction="REVERSE"  columnVisibility="PUBLIC" />
 
     </Mappings>
 </Model>

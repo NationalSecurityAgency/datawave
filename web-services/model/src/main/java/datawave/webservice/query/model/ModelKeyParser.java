@@ -16,7 +16,6 @@ public class ModelKeyParser {
     
     public static final String NULL_BYTE = "\0";
     public static final Value NULL_VALUE = new Value(new byte[0]);
-    public static final String INDEX_ONLY = "index_only";
     private static Logger log = Logger.getLogger(ModelKeyParser.class);
     
     public static FieldMapping parseKey(Key key, Set<Authorizations> auths) {
@@ -49,8 +48,6 @@ public class ModelKeyParser {
                 modelField = row;
             }
         } else if (3 == colq.length && Direction.FORWARD == Direction.getDirection(colq[2])) {
-            // For now, index_only is in the middle
-            indexOnlyField = colq[1].trim().equalsIgnoreCase(INDEX_ONLY);
             dataField = colq[0];
             modelField = row;
             direction = Direction.FORWARD; // we already checked it in the if condition
@@ -64,7 +61,6 @@ public class ModelKeyParser {
         mapping.setDirection(direction);
         mapping.setFieldName(dataField);
         mapping.setModelFieldName(modelField);
-        mapping.setIndexOnly(indexOnlyField);
         return mapping;
     }
     
@@ -74,10 +70,9 @@ public class ModelKeyParser {
         String inName = Direction.REVERSE.equals(mapping.getDirection()) ? mapping.getFieldName() : mapping.getModelFieldName();
         String outName = Direction.REVERSE.equals(mapping.getDirection()) ? mapping.getModelFieldName() : mapping.getFieldName();
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
-        String indexOnly = mapping.getIndexOnly() ? NULL_BYTE + INDEX_ONLY : "";
         return new Key(inName, // Row
                         modelName + dataType, // ColFam
-                        outName + indexOnly + NULL_BYTE + mapping.getDirection().getValue(), // ColQual
+                        outName + NULL_BYTE + mapping.getDirection().getValue(), // ColQual
                         cv, // Visibility
                         System.currentTimeMillis() // Timestamp
         );
@@ -87,7 +82,7 @@ public class ModelKeyParser {
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
-        String indexOnly = mapping.getIndexOnly() ? NULL_BYTE + INDEX_ONLY : "";
+        
         if (Direction.REVERSE.equals(mapping.getDirection())) {
             // Reverse mappings should not have indexOnly designators. If they do, scrub it off.
             m = new Mutation(mapping.getFieldName());
@@ -95,8 +90,7 @@ public class ModelKeyParser {
             return m;
         } else {
             m = new Mutation(mapping.getModelFieldName());
-            m.put(modelName + dataType, mapping.getFieldName() + indexOnly + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(),
-                            NULL_VALUE);
+            m.put(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(), NULL_VALUE);
             return m;
         }
     }
@@ -105,15 +99,15 @@ public class ModelKeyParser {
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
-        String indexOnly = mapping.getIndexOnly() ? NULL_BYTE + INDEX_ONLY : "";
+        
         if (Direction.REVERSE.equals(mapping.getDirection())) {
             m = new Mutation(mapping.getFieldName());
-            m.putDelete(modelName + dataType, mapping.getModelFieldName() + indexOnly + NULL_BYTE + mapping.getDirection().getValue(), cv,
-                            System.currentTimeMillis());
+            m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
             return m;
         } else {
             m = new Mutation(mapping.getModelFieldName());
-            m.putDelete(modelName + dataType, mapping.getFieldName() + indexOnly + NULL_BYTE + mapping.getDirection().getValue(), cv,
+            m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
+            m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + "index_only" + NULL_BYTE + mapping.getDirection().getValue(), cv,
                             System.currentTimeMillis());
             return m;
         }

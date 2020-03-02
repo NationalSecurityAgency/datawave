@@ -7,6 +7,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
@@ -94,6 +96,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -132,7 +135,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected FileSystemCache hdfsFileSystem;
     protected String hdfsFileCompressionCodec;
     protected QueryLock queryLock;
-    protected List<String> ivaratorCacheDirURIs;
+    protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     protected String queryId;
     protected String scanId;
     protected String ivaratorCacheSubDirPrefix = "";
@@ -141,6 +144,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorCacheBufferSize = 10000;
     protected int maxRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
+    protected long maxIvaratorResults = -1;
+    protected int ivaratorNumRetries = 2;
     protected SortedKeyValueIterator<Key,Value> unsortedIvaratorSource = null;
     protected int ivaratorCount = 0;
     protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
@@ -435,6 +440,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
+            builder.setEnv(env);
             builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, node, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
             
             Range fiRange = getFiRangeForTF(range);
@@ -572,6 +578,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setTimeFilter(timeFilter);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -643,6 +650,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         node.childrenAccept(this, builder);
         
@@ -877,6 +885,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         
         return builder.build();
     }
@@ -909,6 +918,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         
         node.childrenAccept(this, builder);
         
@@ -1014,26 +1024,36 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * 
      * @return A path
      */
-    private URI getTemporaryCacheDir() throws IOException {
+    private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
+        List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
+        
         // first lets increment the count for a unique subdirectory
         String subdirectory = ivaratorCacheSubDirPrefix + "term" + Integer.toString(++ivaratorCount);
         
-        if (ivaratorCacheDirURIs != null && !ivaratorCacheDirURIs.isEmpty()) {
-            for (int i = 0; i < ivaratorCacheDirURIs.size(); i++) {
-                String hdfsCacheDirURI = ivaratorCacheDirURIs.get(i);
-                Path path = new Path(hdfsCacheDirURI, queryId);
-                if (scanId == null) {
-                    log.warn("Running query iterator for " + queryId + " without a scan id.  This could cause ivarator directory conflicts.");
-                } else {
-                    path = new Path(path, scanId);
-                }
-                path = new Path(path, subdirectory);
-                if (isUsable(path)) {
-                    return path.toUri();
+        if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
+            for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
+                
+                // first, make sure the cache configuration is valid
+                if (config.isValid()) {
+                    Path path = new Path(config.getBasePathURI(), queryId);
+                    if (scanId == null) {
+                        log.warn("Running query iterator for " + queryId + " without a scan id.  This could cause ivarator directory conflicts.");
+                    } else {
+                        path = new Path(path, scanId);
+                    }
+                    path = new Path(path, subdirectory);
+                    if (isUsable(path)) {
+                        URI uri = path.toUri();
+                        pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
+                    }
                 }
             }
         }
-        throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirURIs);
+        
+        if (pathAndFs.isEmpty())
+            throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirConfigs);
+        
+        return pathAndFs;
     }
     
     /**
@@ -1323,16 +1343,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
-        URI path = getTemporaryCacheDir();
-        builder.setHdfsFileSystem(hdfsFileSystem.getFileSystem(path));
+        builder.setIvaratorCacheDirs(getIvaratorCacheDirs());
         builder.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
         builder.setQueryLock(queryLock);
-        builder.setIvaratorCacheDirURI(path.toString());
         builder.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
         builder.setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
         builder.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
         builder.setMaxRangeSplit(maxRangeSplit);
         builder.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
+        builder.setMaxIvaratorResults(maxIvaratorResults);
+        builder.setIvaratorNumRetries(ivaratorNumRetries);
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
@@ -1507,8 +1527,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public IteratorBuildingVisitor setIvaratorCacheDirURIAlternatives(List<String> ivaratorCacheDirURIAlternatives) {
-        this.ivaratorCacheDirURIs = ivaratorCacheDirURIAlternatives;
+    public IteratorBuildingVisitor setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
         return this;
     }
     
@@ -1554,6 +1574,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorNumRetries(int ivaratorNumRetries) {
+        this.ivaratorNumRetries = ivaratorNumRetries;
         return this;
     }
     

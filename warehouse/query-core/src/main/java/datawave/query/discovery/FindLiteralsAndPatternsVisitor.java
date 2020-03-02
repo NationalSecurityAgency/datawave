@@ -53,7 +53,7 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
             if (log.isTraceEnabled()) {
                 log.trace("Found field " + JexlASTHelper.deconstructIdentifier(field.image) + "==" + node.getLiteral());
             }
-            values.addLiteral(node.getLiteral().toString(), JexlASTHelper.deconstructIdentifier(field.image));
+            values.addLiteral(node.getLiteral(), JexlASTHelper.deconstructIdentifier(field.image));
         } else if (op instanceof ASTERNode) {
             JexlNode field = JexlNodes.otherChild(op, node.jjtGetParent()).jjtGetChild(0);
             values.addPattern(node.getLiteral(), JexlASTHelper.deconstructIdentifier(field.image));

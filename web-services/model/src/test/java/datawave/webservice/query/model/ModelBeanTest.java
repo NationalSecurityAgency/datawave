@@ -222,6 +222,8 @@ public class ModelBeanTest {
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.LOW), EasyMock.eq(trackingMap))).andReturn(connector);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         connectionFactory.returnConnection(connector);
         EasyMock.expect(cache.reloadCache(ModelBean.DEFAULT_MODEL_TABLE_NAME)).andReturn(null);
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
