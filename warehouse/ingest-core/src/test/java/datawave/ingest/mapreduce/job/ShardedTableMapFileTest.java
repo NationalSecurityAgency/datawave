@@ -15,8 +15,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -41,11 +40,8 @@ import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.time.DateHelper;
-import datawave.util.TableName;
 
 public class ShardedTableMapFileTest {
-    private static final Log LOG = LogFactory.getLog(ShardedTableMapFileTest.class);
-    
     public static final String PASSWORD = "123";
     public static final String USERNAME = "root";
     private static final String TABLE_NAME = "unitTestTable";
@@ -81,14 +77,8 @@ public class ShardedTableMapFileTest {
         Assert.assertEquals(1, result.size());
     }
     
-    @Test(timeout = 30000)
+    @Test
     public void testWriteSplitsToAccumuloAndReadThem() throws Exception {
-        
-        // Added timeout to this test b/c it could hang infinitely without failing, e.g., whenever
-        // MiniAccumuloCluster starts up but tserver subsequently dies. To troubleshoot timeout errors
-        // here in the future, the MAC instance's local /tmp/ path should logged in
-        // createMiniAccumuloWithTestTableAndSplits method
-        
         Configuration conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, 1);
         conf.setInt(ShardedTableMapFile.SHARDS_BALANCED_DAYS_TO_VERIFY, 1);
@@ -121,9 +111,7 @@ public class ShardedTableMapFileTest {
     private MiniAccumuloCluster createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet) throws IOException, InterruptedException,
                     AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         MiniAccumuloCluster accumuloCluster;
-        File clusterDir = Files.createTempDir();
-        LOG.info("Created local directory for MiniAccumuloCluster: " + clusterDir.getAbsolutePath());
-        accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
+        accumuloCluster = new MiniAccumuloCluster(Files.createTempDir(), PASSWORD);
         accumuloCluster.start();
         
         Connector connector = accumuloCluster.getConnector(USERNAME, PASSWORD);

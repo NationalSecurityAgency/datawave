@@ -75,11 +75,6 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <scope>provided</scope>
@@ -112,11 +107,6 @@
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-security</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-configuration2</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

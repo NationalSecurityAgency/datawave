@@ -24,11 +24,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-data-dictionary-core</artifactId>
             <version>${project.version}</version>

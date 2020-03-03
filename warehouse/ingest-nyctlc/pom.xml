@@ -15,16 +15,6 @@
             <artifactId>datawave-ingest-csv</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-configuration2</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-csv</artifactId>
             <version>${project.version}</version>

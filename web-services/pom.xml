@@ -233,7 +233,7 @@
                         <artifactId>junit</artifactId>
                     </exclusion>
                     <exclusion>
-                        <!-- we already get commons-beanutils -->
+                        <!-- we already get commons-beanutils-core -->
                         <groupId>commons-beanutils</groupId>
                         <artifactId>commons-beanutils</artifactId>
                     </exclusion>
