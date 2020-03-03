@@ -17,6 +17,7 @@ import javax.xml.bind.Unmarshaller;
 
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;
@@ -66,7 +67,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         if (System.getProperty("ignore.weld.startMain") == null) {
             System.setProperty("com.sun.jersey.server.impl.cdi.lookupExtensionInBeanManager", "true"); // Disable CDI extensions in Jersey libs
             
-            weld = new Weld();
+            weld = new Weld("STATIC_INSTANCE");
             weld.initialize();
         }
         
@@ -107,29 +108,33 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         entries.clear();
         entries.put(key, value);
         for (Entry<Key,Value> entry : entries.entrySet()) {
-            Object o = t.transform(entry);
-            BaseQueryResponse response = t.createResponse(new ResultsPage(Collections.singletonList(o)));
-            Class<? extends BaseQueryResponse> responseClass = null;
             try {
-                responseClass = getResponseClass(response.getClass().getName());
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Unable to find response class: " + response.getClass().getName(), e);
-            }
-            
-            try {
-                Value val = serializeResponse(responseClass, response, this.format);
-                // Write out the original key and the new value.
-                if (context.getOutputKeyClass() == null || context.getOutputKeyClass().equals(NullWritable.class)) {
-                    // don't write the key in this case, write only the value
-                    key = null;
-                } else {
-                    key = new Key(key); // to preserve whatever the reason was for this wrapping of the key in the original code
+                Object o = t.transform(entry);
+                BaseQueryResponse response = t.createResponse(new ResultsPage(Collections.singletonList(o)));
+                Class<? extends BaseQueryResponse> responseClass = null;
+                try {
+                    responseClass = getResponseClass(response.getClass().getName());
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException("Unable to find response class: " + response.getClass().getName(), e);
                 }
-                context.write(key, val);
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
+                
+                try {
+                    Value val = serializeResponse(responseClass, response, this.format);
+                    // Write out the original key and the new value.
+                    if (context.getOutputKeyClass() == null || context.getOutputKeyClass().equals(NullWritable.class)) {
+                        // don't write the key in this case, write only the value
+                        key = null;
+                    } else {
+                        key = new Key(key); // to preserve whatever the reason was for this wrapping of the key in the original code
+                    }
+                    context.write(key, val);
+                } catch (Exception e) {
+                    throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
+                }
+                context.progress();
+            } catch (EmptyObjectException e) {
+                // not yet done, so continue fetching next
             }
-            context.progress();
         }
     }
     

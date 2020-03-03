@@ -34,10 +34,10 @@
 						<property name="classpathJarFiles">
 							<list value-type="java.lang.String">
                                 <!-- Add EJB jars that we need in order to run queries. -->
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!Common\.jar/</value>
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!Query\.jar/</value>
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!MapReduce\.jar/</value>
-								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!Security\.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-query-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-map-reduce-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-common-${version.datawave}.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!datawave-ws-security-${version.datawave}.jar/</value>
 								<!-- Add every jar in the EAR's lib folder. -->
 								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!lib/.*\.jar/</value>
 								<!-- Now package up the config module's conf files and include them. -->
@@ -58,13 +58,21 @@
 							</map>
 						</property>
 						<property name="jobConfigurationProperties">
-							<map key-type="java.lang.String" value-type="java.lang.String">
+							<map key-type="java.lang.String" value-type="java.lang.Object">
 								<entry key="mapreduce.map.speculative" value="false" />
-								<entry key="mapreduce.map.java.opts" value="-Dorg.apache.deltaspike.ProjectStage=DatawaveEmbedded" />
+								<entry key="mapreduce.map.java.opts">
+									<map key-type="java.lang.String" value-type="java.lang.String">
+										<entry key="-Dorg.apache.deltaspike.ProjectStage=DatawaveEmbedded" value="" />
+									</map>
+								</entry>
 								<entry key="mapreduce.map.output.compress" value="false" />
 								<entry key="mapreduce.output.fileoutputformat.compress" value="false" />
 								<!-- Use the user classes first so we pick up our newer version of Guava before the old Hadoop-supplied one. -->
 								<entry key="mapreduce.job.user.classpath.first" value="true" />
+							</map>
+						</property>
+						<property name="jobSystemProperties">
+							<map key-type="java.lang.String" value-type="java.lang.String">
 							</map>
 						</property>
 						<property name="jobJarName" value="MapReduce.jar"/>
