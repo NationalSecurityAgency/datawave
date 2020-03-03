@@ -143,11 +143,22 @@
         <!--<property name="tokenizedFields" ref="tokenizeFields"/>-->
         <!--<property name="allowedFunctions" ref="allowedQueryFunctions"/>-->
     <!--</bean>-->
-    
-    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
 
+    <util:list id="pushdownRegexPatterns" value-type="java.lang.String">
+        <value>[.?*]+[0-9a-zA-Z]{0,2}</value>
+        <value>[0-9a-zA-Z]{0,2}[.?*]+</value>
+    </util:list>
+
+    <util:list id="transformRuleList" value-type="datawave.query.planner.NodeTransformRule">
+        <bean scope="prototype" class="datawave.query.planner.rules.RegexPushdownTransformRule">
+            <property name="regexPatterns" ref="pushdownRegexPatterns"/>
+        </bean>
+    </util:list>
+
+    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
+        <property name="transformRules" ref="transformRuleList" />
     </bean>
-    
+
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
