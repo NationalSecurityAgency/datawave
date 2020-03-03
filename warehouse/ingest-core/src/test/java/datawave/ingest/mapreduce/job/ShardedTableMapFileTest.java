@@ -81,7 +81,7 @@ public class ShardedTableMapFileTest {
         Assert.assertEquals(1, result.size());
     }
     
-    @Test(timeout = 240000)
+    @Test(timeout = 30000)
     public void testWriteSplitsToAccumuloAndReadThem() throws Exception {
         
         // Added timeout to this test b/c it could hang infinitely without failing, e.g., whenever
