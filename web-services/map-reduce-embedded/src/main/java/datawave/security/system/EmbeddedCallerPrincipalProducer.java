@@ -1,13 +1,13 @@
 package datawave.security.system;
 
-import datawave.security.authorization.DatawavePrincipal;
-import org.infinispan.commons.util.Base64;
-
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Alternative;
 import javax.enterprise.inject.Produces;
 import javax.interceptor.Interceptor;
+
+import datawave.security.authorization.DatawavePrincipal;
+import org.infinispan.commons.util.Base64;
 
 /**
  * Caller principal producer supplied just for Embedded mode (e.g., inside of MapReduce jars). This archive should not be included for normal web applications.
@@ -20,7 +20,7 @@ public class EmbeddedCallerPrincipalProducer {
     private DatawavePrincipal callerPrincipal;
     
     @Produces
-    @ServerPrincipal
+    @CallerPrincipal
     public DatawavePrincipal produceCallerPrincipal() {
         if (!initialized) {
             initializeCallerPrincipal();
