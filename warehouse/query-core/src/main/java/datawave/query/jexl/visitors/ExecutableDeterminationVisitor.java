@@ -694,6 +694,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         if (state == STATE.EXECUTABLE) {
             state = STATE.NEGATED_EXECUTABLE;
         }
+        
+        // global index does not yet support NEGATED_EXECUTABLE so unless it is an error it's always NON_EXECUTABLE
+        if (!forFieldIndex && state != STATE.ERROR) {
+            state = STATE.NON_EXECUTABLE;
+        }
+        
         return state;
     }
     

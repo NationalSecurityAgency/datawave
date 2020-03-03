@@ -289,16 +289,16 @@ public class AndOrIteratorTest {
     public void testDeferredOrWithAccept() {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
-    
+        
         childExcludes.add(getItr(Lists.newArrayList("a", "b", "c", "d"), false));
         childIncludes.add(getItr(Lists.newArrayList("b", "c"), false));
-    
+        
         NestedIterator child1 = new OrIterator(childIncludes, childExcludes);
-    
+        
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(child1);
         includes.add(getItr(Lists.newArrayList("c", "d"), false));
-    
+        
         NestedIterator child2 = new OrIterator(includes);
         
         includes = new HashSet<>();
@@ -307,11 +307,11 @@ public class AndOrIteratorTest {
         
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
-    
+        
         Assert.assertFalse(iterator.isDeferred());
         Assert.assertTrue(child2.isDeferred());
         Assert.assertTrue(child1.isDeferred());
-    
+        
         Assert.assertTrue(iterator.hasNext());
         Assert.assertEquals("b", iterator.next());
         Assert.assertTrue(iterator.hasNext());
@@ -326,22 +326,22 @@ public class AndOrIteratorTest {
     public void testDeferredOrAdvanceInMove() {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
-    
+        
         childIncludes.add(getItr(Lists.newArrayList("b", "b1", "b2", "b3", "c"), false));
         childExcludes.add(getItr(Lists.newArrayList("a", "b"), false));
-    
+        
         OrIterator childOr = new OrIterator(childIncludes, childExcludes);
-    
+        
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(childOr);
         includes.add(getItr(Lists.newArrayList("a", "c"), false));
-    
+        
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
-    
+        
         Assert.assertFalse(iterator.isDeferred());
         Assert.assertTrue(childOr.isDeferred());
-    
+        
         Assert.assertTrue(iterator.hasNext());
         Assert.assertEquals("c", iterator.next());
         Assert.assertFalse(iterator.hasNext());
@@ -352,19 +352,19 @@ public class AndOrIteratorTest {
     public void testDeferredNoMatches() {
         Set<NestedIterator<String>> childIncludes = new HashSet<>();
         Set<NestedIterator<String>> childExcludes = new HashSet<>();
-    
+        
         childIncludes.add(getItr(Lists.newArrayList("b", "b1", "b2", "b3", "c"), false));
         childExcludes.add(getItr(Lists.newArrayList("z", "z1"), false));
-    
+        
         OrIterator childOr = new OrIterator(childIncludes, childExcludes);
-    
+        
         Set<NestedIterator<String>> includes = new HashSet<>();
         includes.add(childOr);
         includes.add(getItr(Lists.newArrayList("z"), false));
-    
+        
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
-    
+        
         Assert.assertFalse(iterator.isDeferred());
         Assert.assertTrue(childOr.isDeferred());
         
