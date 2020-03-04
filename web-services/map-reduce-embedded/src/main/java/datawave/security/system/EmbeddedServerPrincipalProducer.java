@@ -10,12 +10,12 @@ import datawave.security.authorization.DatawavePrincipal;
 import org.infinispan.commons.util.Base64;
 
 /**
- * Server security producer supplied just for Embedded mode (e.g., inside of MapReduce jars). This archive should not be included for normal web applications.
+ * Server principal producer supplied just for Embedded mode (e.g., inside of MapReduce jars). This archive should not be included for normal web applications.
  */
 @Alternative
 @Priority(Interceptor.Priority.APPLICATION)
 @ApplicationScoped
-public class EmbeddedServerSecurityProducer {
+public class EmbeddedServerPrincipalProducer {
     private boolean initialized = false;
     private DatawavePrincipal serverPrincipal;
     

@@ -5,9 +5,7 @@
         <resource-root path="hadoop-common-${version.hadoop}.jar"/>
         <resource-root path="htrace-core4-${version.htrace}.jar"/>
         <resource-root path="protobuf-java-${version.protobuf}.jar"/>
-        <resource-root path="commons-configuration2-${version.commons-configuration2}.jar"/>
-        <resource-root path="woodstox-core-${version.woodstox-core}.jar"/>
-        <resource-root path="stax2-api-${version.woodstox-stax2}.jar"/>
+        <resource-root path="commons-configuration-${version.commons-configuration}.jar"/>
         <resource-root path="servlet-api-2.5.jar"/>
         <resource-root path="hadoop-conf"/>
     </resources>
