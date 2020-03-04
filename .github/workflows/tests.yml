@@ -57,7 +57,7 @@ jobs:
           ${{ runner.os }}-maven-
     - name: Build and Run Unit Tests
       run: |
-        RUN_TESTS="mvn -V -B -e -Pdev,examples,assemble -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -V -B -e -Pdev,examples,assemble -Ddeploy -Ddist -T1C clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
