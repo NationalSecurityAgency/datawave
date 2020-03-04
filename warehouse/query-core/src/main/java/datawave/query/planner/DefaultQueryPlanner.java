@@ -746,7 +746,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
-        if (enforceUniqueTermsWithinExpressions) {
+        // Enforce if either DefaultQueryPlanner or ShardQueryConfig is true
+        if (enforceUniqueTermsWithinExpressions || config.getEnforceUniqueTermsWithinExpressions()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique terms within AND and OR expressions");
             queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
             if (log.isDebugEnabled()) {
