@@ -151,6 +151,11 @@
             <artifactId>weld-core-impl</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.picketbox</groupId>
+            <artifactId>picketbox</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
