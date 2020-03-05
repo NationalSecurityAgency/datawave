@@ -239,7 +239,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     newOptions.addScanIterator(newIteratorSetting);
                     
                     if (log.isDebugEnabled()) {
-                        log.debug("VisitorFunction result: " + newSettings.getRanges() + " -> " + newQuery);
+                        log.debug("VisitorFunction result: " + newSettings.getRanges());
                     }
                     
                     if (log.isTraceEnabled()) {
