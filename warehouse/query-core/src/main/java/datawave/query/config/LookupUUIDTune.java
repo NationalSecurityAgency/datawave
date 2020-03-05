@@ -54,8 +54,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
-            if (enforceUniqueTermsWithinExpressions)
-                rsq.setEnforceUniqueTermsWithinExpressions(true);
+            rsq.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
             
             if (querySyntaxParsers != null) {
                 rsq.setQuerySyntaxParsers(querySyntaxParsers);
@@ -68,8 +67,6 @@ public class LookupUUIDTune implements Profile {
                 SeekingQueryPlanner planner = new SeekingQueryPlanner();
                 planner.setMaxFieldHitsBeforeSeek(maxFieldHitsBeforeSeek);
                 planner.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
-                if (enforceUniqueTermsWithinExpressions)
-                    planner.setEnforceUniqueTermsWithinExpressions(true);
                 
                 rsq.setQueryPlanner(planner);
                 
@@ -90,8 +87,6 @@ public class LookupUUIDTune implements Profile {
             DefaultQueryPlanner dqp = DefaultQueryPlanner.class.cast(planner);
             dqp.setCacheDataTypes(enableCaching);
             dqp.setCondenseUidsInRangeStream(false);
-            // Should the query planner attempt to de-dupe query terms post model expansion?
-            dqp.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
             
             if (transforms != null) {
                 dqp.setTransformRules(transforms);
@@ -130,8 +125,8 @@ public class LookupUUIDTune implements Profile {
             if (maxShardsPerDayThreshold != -1) {
                 rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
             }
-            if (enforceUniqueTermsWithinExpressions)
-                rsqc.setEnforceUniqueTermsWithinExpressions(true);
+            rsqc.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
+            
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
             rsqc.setTrackSizes(trackSizes);
