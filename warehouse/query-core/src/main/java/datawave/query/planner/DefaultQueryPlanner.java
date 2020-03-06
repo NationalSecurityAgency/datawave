@@ -131,7 +131,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -149,11 +148,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
     public static String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
     
     protected boolean limitScanners = false;
-    
-    /**
-     * Allows developers to enable/disable the enforcing of unique nodes with OR and AND nodes.
-     */
-    private boolean enforceUniqueTermsWithinExpressions = false;
     
     /**
      * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
@@ -746,7 +740,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
-        if (enforceUniqueTermsWithinExpressions) {
+        // Enforce unique terms within an AND or OR expression.
+        if (config.getEnforceUniqueTermsWithinExpressions()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique terms within AND and OR expressions");
             queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
             if (log.isDebugEnabled()) {
@@ -2437,13 +2432,5 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (null != builderThread) {
             builderThread.shutdown();
         }
-    }
-    
-    public boolean isEnforceUniqueTermsWithinExpressions() {
-        return enforceUniqueTermsWithinExpressions;
-    }
-    
-    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
-        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
 }
