@@ -9,8 +9,8 @@ DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
 
 DW_HADOOP_DFS_URI="hdfs://localhost:9000"
-DW_HADOOP_MR_INTER_DIR="${DW_CLOUD_DATA}/hadoop/jobhist/inter"
-DW_HADOOP_MR_DONE_DIR="${DW_CLOUD_DATA}/hadoop/jobhist/done"
+DW_HADOOP_MR_INTER_DIR="/jobhist/inter"
+DW_HADOOP_MR_DONE_DIR="/jobhist/done"
 DW_HADOOP_RESOURCE_MANAGER_ADDRESS="localhost:8050"
 
 # core-site.xml (Format: <property-name><space><property-value>{<newline>})
@@ -20,6 +20,7 @@ io.compression.codecs org.apache.hadoop.io.compress.GzipCodec"
 
 # hdfs-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_HDFS_SITE_CONF="dfs.namenode.name.dir file://${DW_CLOUD_DATA}/hadoop/nn
+dfs.namenode.secondary.http-address localhost
 dfs.namenode.checkpoint.dir file://${DW_CLOUD_DATA}/hadoop/nnchk
 dfs.datanode.data.dir file://${DW_CLOUD_DATA}/hadoop/dn
 dfs.datanode.handler.count 10
@@ -89,12 +90,12 @@ export PATH=${HADOOP_HOME}/bin:$PATH
 
 # Service helpers...
 
-DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-all.sh && ./mr-jobhistory-daemon.sh start historyserver )"
-DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && ./mr-jobhistory-daemon.sh stop historyserver &&./stop-all.sh )"
-DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -f 'datanode.DataNode|namenode.NameNode|namenode.SecondaryNameNode|nodemanager.NodeManager|resourcemanager.ResourceManager|mapreduce.v2.hs.JobHistoryServer'"
+DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && mapred --daemon start historyserver )"
+DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
+DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {
-    DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
     [ -z "${DW_HADOOP_PID_LIST}" ] && return 1 || return 0
 }
 

@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
@@ -1572,16 +1573,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setFullTableScanEnabled(fullTableScanEnabled);
     }
     
-    public List<String> getIvaratorCacheBaseURIsAsList() {
-        return getConfig().getIvaratorCacheBaseURIsAsList();
+    public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
+        return getConfig().getIvaratorCacheDirConfigs();
     }
     
-    public String getIvaratorCacheBaseURIs() {
-        return getConfig().getIvaratorCacheBaseURIs();
-    }
-    
-    public void setIvaratorCacheBaseURIs(String ivaratorCacheBaseURIs) {
-        getConfig().setIvaratorCacheBaseURIs(ivaratorCacheBaseURIs);
+    public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        getConfig().setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
     
     public String getIvaratorFstHdfsBaseURIs() {
@@ -1660,12 +1657,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
     }
     
+    public int getIvaratorNumRetries() {
+        return getConfig().getIvaratorNumRetries();
+    }
+    
+    public void setIvaratorNumRetries(int ivaratorNumRetries) {
+        getConfig().setIvaratorNumRetries(ivaratorNumRetries);
+    }
+    
     public int getMaxIvaratorSources() {
         return getConfig().getMaxIvaratorSources();
     }
     
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         getConfig().setMaxIvaratorSources(maxIvaratorSources);
+    }
+    
+    public long getMaxIvaratorResults() {
+        return getConfig().getMaxIvaratorResults();
+    }
+    
+    public void setMaxIvaratorResults(long maxIvaratorResults) {
+        getConfig().setMaxIvaratorResults(maxIvaratorResults);
     }
     
     public int getMaxEvaluationPipelines() {
@@ -1915,6 +1928,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setSequentialScheduler(sequentialScheduler);
     }
     
+    public boolean getParseTldUids() {
+        return getConfig().getParseTldUids();
+    }
+    
+    public void setParseTldUids(boolean parseRootUids) {
+        getConfig().setParseTldUids(parseRootUids);
+    }
+    
     public boolean getCollapseUids() {
         return getConfig().getCollapseUids();
     }
@@ -1985,6 +2006,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
         getConfig().setAllowTermFrequencyLookup(allowTermFrequencyLookup);
+    }
+    
+    public boolean isExpandUnfieldedNegations() {
+        return getConfig().isExpandUnfieldedNegations();
+    }
+    
+    public void setExpandUnfieldedNegations(boolean expandUnfieldedNegations) {
+        getConfig().setExpandUnfieldedNegations(expandUnfieldedNegations);
     }
     
     public boolean getAccrueStats() {

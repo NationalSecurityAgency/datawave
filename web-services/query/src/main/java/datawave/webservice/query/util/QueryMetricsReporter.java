@@ -173,33 +173,29 @@ public class QueryMetricsReporter {
         }
         
         // Open up a BatchScanner to the QueryMetrics table
-        BatchScanner bs = null;
-        try {
-            bs = connector.createBatchScanner(tableName, Authorizations.EMPTY, 8);
+        try (BatchScanner bs = connector.createBatchScanner(tableName, Authorizations.EMPTY, 8)) {
+            // Set a range for the entire table
+            Range r = null;
+            if (null == queryUser)
+                r = new Range();
+            else
+                r = new Range(queryUser);
+            
+            bs.setRanges(Collections.singleton(r));
+            IteratorSetting cfRegex = new IteratorSetting(20, RegExFilter.class);
+            cfRegex.addOption(RegExFilter.COLF_REGEX, "RunningQuery.*");
+            bs.addScanIterator(cfRegex);
+            
+            // Collect the data
+            processResults(beginDate, endDate, bs.iterator());
+            
+            printResults(beginDate, endDate);
+            
         } catch (TableNotFoundException e) {
             log.error("The requested table '" + tableName + "' does not exist!", e);
             
             return 2;
         }
-        
-        // Set a range for the entire table
-        Range r = null;
-        if (null == queryUser)
-            r = new Range();
-        else
-            r = new Range(queryUser);
-        
-        bs.setRanges(Collections.singleton(r));
-        IteratorSetting cfRegex = new IteratorSetting(20, RegExFilter.class);
-        cfRegex.addOption(RegExFilter.COLF_REGEX, "RunningQuery.*");
-        bs.addScanIterator(cfRegex);
-        
-        // Collect the data
-        processResults(beginDate, endDate, bs.iterator());
-        
-        printResults(beginDate, endDate);
-        
-        bs.close();
         
         return 0;
     }

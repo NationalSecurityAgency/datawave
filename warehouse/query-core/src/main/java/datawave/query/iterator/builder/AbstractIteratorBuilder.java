@@ -3,6 +3,8 @@ package datawave.query.iterator.builder;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+
 import datawave.query.iterator.NestedIterator;
 
 import com.google.common.collect.HashMultimap;

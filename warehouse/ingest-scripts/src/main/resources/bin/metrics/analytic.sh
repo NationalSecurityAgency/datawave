@@ -33,6 +33,7 @@ then
 	CLASSPATH=$(findJar guava):${CLASSPATH}
 	CLASSPATH=$(findJar javatuples):${CLASSPATH}
 	CLASSPATH=$(findJar datawave-core):${CLASSPATH}
+	CLASSPATH=$(findJar common-utils):${CLASSPATH}
 
 	#
 	# Transform the classpath into a comma-separated list also

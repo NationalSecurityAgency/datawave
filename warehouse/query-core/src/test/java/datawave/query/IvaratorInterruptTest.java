@@ -8,6 +8,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.TypeMetadata;
@@ -89,7 +90,8 @@ public abstract class IvaratorInterruptTest {
         
         // setup a directory for cache results
         File tmpDir = this.tmpDir.newFolder("Ivarator.cache");
-        logic.setIvaratorCacheBaseURIs(tmpDir.toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
         
         deserializer = new KryoDocumentDeserializer();
     }

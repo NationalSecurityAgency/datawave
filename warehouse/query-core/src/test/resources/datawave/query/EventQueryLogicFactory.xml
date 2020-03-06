@@ -104,7 +104,7 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
-        <property name="ivaratorCacheBaseURIs" value="file:///tmp/IvaratorCache" />	<!-- was ${ivarator.cache.base.uris} -->
+        <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${ivarator.cache.dir.config} -->
         <property name="ivaratorCacheBufferSize" value="10000" />
         <property name="ivaratorCacheScanPersistThreshold" value="100000" />
         <!-- property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />	 -->
@@ -125,6 +125,12 @@
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
     </bean>
+
+    <util:list id="IvaratorCacheDirConfigs">
+        <bean class="datawave.query.iterator.ivarator.IvaratorCacheDirConfig">
+            <constructor-arg value="file:///tmp/IvaratorCache" />
+        </bean>
+    </util:list>
 
      <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
     </bean>

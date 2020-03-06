@@ -55,4 +55,3 @@ deploy_and_test:
   tags:
     - datawave
     - shell-executor
-

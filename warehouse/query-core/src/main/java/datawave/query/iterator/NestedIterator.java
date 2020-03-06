@@ -3,6 +3,8 @@ package datawave.query.iterator;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+
 import datawave.query.attributes.Document;
 
 /**
@@ -44,4 +46,9 @@ public interface NestedIterator<T> extends Iterator<T> {
      * Returns a <code>Document</code> object that is composed of attributes read in by the leaf nodes of this sub-tree.
      */
     Document document();
+    
+    /**
+     * Provides configuration information to the Iterator before initializing and seeking. Default does nothing.
+     */
+    default void setEnvironment(IteratorEnvironment env) {}
 }

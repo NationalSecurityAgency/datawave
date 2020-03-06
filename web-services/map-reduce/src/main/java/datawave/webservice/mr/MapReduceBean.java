@@ -596,21 +596,22 @@ public class MapReduceBean {
                 Path resultsDir = new Path(thisJob.getResultsDirectory());
                 hdfs.getConf().set("mapreduce.jobtracker.address", thisJob.getJobTracker());
                 // Create a Job object
-                JobClient job = new JobClient(new JobConf(hdfs.getConf()));
-                for (String killId : jobIdsToKill) {
-                    try {
-                        JobID jid = JobID.forName(killId);
-                        RunningJob rj = job.getJob(new org.apache.hadoop.mapred.JobID(jid.getJtIdentifier(), jid.getId()));
-                        // job.getJob(jid);
-                        if (null != rj)
-                            rj.killJob();
-                        else
-                            mapReduceState.updateState(killId, MapReduceState.KILLED);
-                    } catch (IOException | QueryException e) {
-                        QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_KILL_ERROR, e, MessageFormat.format("job_id: {0}", killId));
-                        log.error(qe);
-                        response.addException(qe.getBottomQueryException());
-                        throw new DatawaveWebApplicationException(qe, response);
+                try (JobClient job = new JobClient(new JobConf(hdfs.getConf()))) {
+                    for (String killId : jobIdsToKill) {
+                        try {
+                            JobID jid = JobID.forName(killId);
+                            RunningJob rj = job.getJob(new org.apache.hadoop.mapred.JobID(jid.getJtIdentifier(), jid.getId()));
+                            // job.getJob(jid);
+                            if (null != rj)
+                                rj.killJob();
+                            else
+                                mapReduceState.updateState(killId, MapReduceState.KILLED);
+                        } catch (IOException | QueryException e) {
+                            QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_KILL_ERROR, e, MessageFormat.format("job_id: {0}", killId));
+                            log.error(qe);
+                            response.addException(qe.getBottomQueryException());
+                            throw new DatawaveWebApplicationException(qe, response);
+                        }
                     }
                 }
                 // Delete the contents of the results directory
