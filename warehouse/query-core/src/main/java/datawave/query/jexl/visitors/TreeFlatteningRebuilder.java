@@ -203,8 +203,12 @@ public class TreeFlatteningRebuilder {
             // 2) this node is the same type as the root node and
             // -- a) this is an OR node, or
             // -- b) this is an AND node (but not a bounded range)
-            if (currNode == node || node.getClass().isInstance(currNode)
-                            && (currNode instanceof ASTOrNode || (currNode instanceof ASTAndNode && !isBoundedRange((ASTAndNode) currNode)))) {
+            // @formatter:off
+            if (currNode == node ||
+                (node.getClass().isInstance(currNode) &&
+                        (currNode instanceof ASTOrNode ||
+                        (currNode instanceof ASTAndNode && !isBoundedRange((ASTAndNode) currNode))))) {
+                // @formatter:on
                 for (JexlNode child : children(currNode)) {
                     stack.push(child);
                 }

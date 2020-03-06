@@ -35,9 +35,6 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
             }
         }
         
-        // flatten the tree before extracting nodes
-        jexlScript = TreeFlatteningRebuildingVisitor.flatten(jexlScript);
-        
         if (jexlScript != null) {
             eqNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
         }
