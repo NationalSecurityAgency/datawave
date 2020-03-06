@@ -382,7 +382,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setEndDate(endDate);
         }
         
-        MetadataHelper metadataHelper = prepareMetadataHelper(connection, this.getMetadataTableName(), auths, config.isRawTypes());
+        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
         
         DateIndexHelper dateIndexHelper = prepareDateIndexHelper(client, this.getDateIndexTableName(), auths);
         if (config.isDateIndexTimeTravel()) {
