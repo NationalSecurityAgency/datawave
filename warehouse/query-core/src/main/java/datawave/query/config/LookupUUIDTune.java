@@ -125,7 +125,6 @@ public class LookupUUIDTune implements Profile {
             if (maxShardsPerDayThreshold != -1) {
                 rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
             }
-            rsqc.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
             
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
