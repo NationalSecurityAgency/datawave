@@ -1952,6 +1952,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.config.setCollapseUidsThreshold(collapseUidsThreshold);
     }
     
+    public boolean getEnforceUniqueTermsWithinExpressions() {
+        return this.config.getEnforceUniqueTermsWithinExpressions();
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
+    }
+    
     public long getMaxIndexScanTimeMillis() {
         return getConfig().getMaxIndexScanTimeMillis();
     }
