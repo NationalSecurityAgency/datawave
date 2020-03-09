@@ -878,13 +878,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
         stopwatch.stop();
         
         if (reduceQuery) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query");
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - final reduce query");
             
             // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
             queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
             
             if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after reduction:");
+                logQuery(queryTree, "Query after final reduction:");
             }
             
             stopwatch.stop();
@@ -948,6 +948,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after fixing unfielded queries:");
             }
+            stopwatch.stop();
+        }
+        
+        if (reduceQuery) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query after anyfield expansions");
+            
+            // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after anyfield expansion reduction:");
+            }
+            
             stopwatch.stop();
         }
         
