@@ -9,7 +9,6 @@ import java.util.Set;
 
 import datawave.query.Constants;
 import datawave.query.language.parser.QueryParser;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.SeekingQueryPlanner;
@@ -43,6 +42,7 @@ public class LookupUUIDTune implements Profile {
     protected boolean reduceFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
     protected boolean reduceQuery = false;
+    private boolean enforceUniqueTermsWithinExpressions = false;
     protected List<NodeTransformRule> transforms = null;
     protected Map<String,QueryParser> querySyntaxParsers = null;
     
@@ -54,6 +54,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
+            rsq.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
             
             if (querySyntaxParsers != null) {
                 rsq.setQuerySyntaxParsers(querySyntaxParsers);
@@ -66,6 +67,7 @@ public class LookupUUIDTune implements Profile {
                 SeekingQueryPlanner planner = new SeekingQueryPlanner();
                 planner.setMaxFieldHitsBeforeSeek(maxFieldHitsBeforeSeek);
                 planner.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
+                
                 rsq.setQueryPlanner(planner);
                 
                 if (maxPageSize != -1) {
@@ -85,8 +87,6 @@ public class LookupUUIDTune implements Profile {
             DefaultQueryPlanner dqp = DefaultQueryPlanner.class.cast(planner);
             dqp.setCacheDataTypes(enableCaching);
             dqp.setCondenseUidsInRangeStream(false);
-            // Should the query planner attempt to de-dupe query terms post model expansion?
-            dqp.setEnforceUniqueTermsWithinExpressions(reduceQuery);
             
             if (transforms != null) {
                 dqp.setTransformRules(transforms);
@@ -125,6 +125,7 @@ public class LookupUUIDTune implements Profile {
             if (maxShardsPerDayThreshold != -1) {
                 rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
             }
+            
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
             rsqc.setTrackSizes(trackSizes);
@@ -291,6 +292,14 @@ public class LookupUUIDTune implements Profile {
     
     public void setReduceQuery(boolean reduceQuery) {
         this.reduceQuery = reduceQuery;
+    }
+    
+    public boolean isEnforceUniqueTermsWithinExpressions() {
+        return enforceUniqueTermsWithinExpressions;
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
     
     public List<NodeTransformRule> getTransforms() {
