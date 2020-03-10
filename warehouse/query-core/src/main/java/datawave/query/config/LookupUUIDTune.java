@@ -86,8 +86,6 @@ public class LookupUUIDTune implements Profile {
         if (planner instanceof DefaultQueryPlanner) {
             DefaultQueryPlanner dqp = DefaultQueryPlanner.class.cast(planner);
             dqp.setCacheDataTypes(enableCaching);
-            // Should the query planner attempt to de-dupe query terms post model expansion?
-            dqp.setEnforceUniqueTermsWithinExpressions(reduceQuery);
             
             if (transforms != null) {
                 dqp.setTransformRules(transforms);
