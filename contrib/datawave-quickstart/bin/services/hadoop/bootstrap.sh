@@ -93,8 +93,8 @@ export PATH=${HADOOP_HOME}/bin:$PATH
 
 # Service helpers...
 
-DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && ./mr-jobhistory-daemon.sh start historyserver )"
-DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && ./mr-jobhistory-daemon.sh stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
+DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && mapred --daemon start historyserver )"
+DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
 DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {

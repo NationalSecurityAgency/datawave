@@ -117,10 +117,11 @@ public class MetadataHelperUpdateHdfsListener {
                             log.debug("table:" + metadataTableName + " " + this + " setTriState to UPDATING");
                         }
                         // get a connection for my MetadataHelper, and get the TypeMetadata map
-                        AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(username, password).build();
-                        TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(client, metadataTableName,
-                                        allMetadataAuths, false);
-                        typeMetadataWriter.writeTypeMetadataMap(typeMetadataHelper.getTypeMetadataMap(this.allMetadataAuths), metadataTableName);
+                        try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(username, password).build()) {
+                            TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(client, metadataTableName,
+                                            allMetadataAuths, false);
+                            typeMetadataWriter.writeTypeMetadataMap(typeMetadataHelper.getTypeMetadataMap(this.allMetadataAuths), metadataTableName);
+                        }
                         if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
                         }
