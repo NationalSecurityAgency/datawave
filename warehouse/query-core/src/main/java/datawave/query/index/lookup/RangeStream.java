@@ -54,6 +54,7 @@ import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -563,6 +564,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return ScannerStream.delayedExpression(node);
+    }
+    
+    @Override
+    public Object visit(ASTFalseNode node, Object data) {
+        return ScannerStream.noData(node);
     }
     
     private boolean isUnOrNotFielded(JexlNode node) {

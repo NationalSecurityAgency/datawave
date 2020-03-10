@@ -150,11 +150,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
     protected boolean limitScanners = false;
     
     /**
-     * Allows developers to enable/disable the enforcing of unique nodes with OR and AND nodes.
-     */
-    private boolean enforceUniqueTermsWithinExpressions = false;
-    
-    /**
      * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
      */
     protected boolean disableBoundedLookup = false;
@@ -734,7 +729,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
-        if (enforceUniqueTermsWithinExpressions) {
+        // Enforce unique terms within an AND or OR expression.
+        if (config.getEnforceUniqueTermsWithinExpressions()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique terms within AND and OR expressions");
             queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
             if (log.isDebugEnabled()) {
@@ -871,13 +867,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
         stopwatch.stop();
         
         if (reduceQuery) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query");
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - final reduce query");
             
             // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
             queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
             
             if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after reduction:");
+                logQuery(queryTree, "Query after final reduction:");
             }
             
             stopwatch.stop();
@@ -941,6 +937,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after fixing unfielded queries:");
             }
+            stopwatch.stop();
+        }
+        
+        if (reduceQuery) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query after anyfield expansions");
+            
+            // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after anyfield expansion reduction:");
+            }
+            
             stopwatch.stop();
         }
         
@@ -2405,13 +2414,5 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (null != builderThread) {
             builderThread.shutdown();
         }
-    }
-    
-    public boolean isEnforceUniqueTermsWithinExpressions() {
-        return enforceUniqueTermsWithinExpressions;
-    }
-    
-    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
-        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
 }
