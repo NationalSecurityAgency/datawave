@@ -695,6 +695,46 @@ public class CreateUidsIteratorTest {
     }
     
     @Test
+    public void testRespectIgnoreFlag() throws IOException {
+        // Setup data for test
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.setCOUNT(42);
+        builder.addUID("uid");
+        builder.setIGNORE(true);
+        
+        Value docs = new Value(builder.build().toByteArray());
+        Key key = new Key("bar", "FOO", "20190314_0\u0000datatype");
+        
+        TreeMap<Key,Value> data = new TreeMap<>();
+        data.put(key, docs);
+        
+        // Setup empty options
+        Map<String,String> options = new HashMap<>();
+        options.put(COLLAPSE_UIDS, "false");
+        options.put(COLLAPSE_UIDS_THRESHOLD, String.valueOf(Integer.MAX_VALUE)); // Use default value for collapse threshold
+        
+        // Create iterator & seek
+        CreateUidsIterator iterator = new CreateUidsIterator();
+        iterator.init(new SortedMapIterator(data), options, null);
+        iterator.seek(new Range(), Collections.emptySet(), false);
+        
+        // Build index info for shard 20190314_0
+        assertTrue(iterator.hasTop());
+        Key expectedTopKey = new Key("bar", "FOO", "20190314_0");
+        assertEquals(expectedTopKey, iterator.getTopKey());
+        
+        // Assert index info is correct for shard 20190314_0
+        IndexInfo indexInfo = new IndexInfo();
+        indexInfo.readFields(new DataInputStream(new ByteArrayInputStream(iterator.getTopValue().get())));
+        assertEquals(42L, indexInfo.count());
+        assertEquals(0L, indexInfo.uids().size());
+        
+        // Assert absence of unexpected results
+        iterator.next();
+        assertFalse(iterator.hasTop());
+    }
+    
+    @Test
     public void testValidateAndDescribeOptions() {
         HashMap<String,String> options = new HashMap<>();
         CreateUidsIterator iterator = new CreateUidsIterator();
