@@ -116,7 +116,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected IndexStream queryStream;
     protected boolean limitScanners = false;
     protected Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass = CreateUidsIterator.class;
-    protected Class<? extends SortedKeyValueIterator<Key,Value>> createCondensedUidIteratorClass = CondensedUidIterator.class;
     protected Multimap<String,Type<?>> fieldDataTypes;
     
     protected BlockingQueue<Runnable> runnables;
@@ -137,10 +136,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected ExecutorService streamExecutor;
     
     protected boolean collapseUids = false;
-    
-    private boolean setCondenseUids = true;
-    
-    private boolean compressUidsInRangeStream = false;
     
     protected Set<String> indexOnlyFields = Sets.newHashSet();
     
@@ -455,74 +450,29 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             int stackStart = config.getBaseIteratorPriority();
             
             if (limitScanners) {
+                // Setup the CreateUidsIterator
+                RangeStreamScanner scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
+                                config.getShardsPerDayThreshold());
+                scanSession.setMaxResults(config.getMaxIndexBatchSize());
+                scanSession.setExecutor(streamExecutor);
                 
-                if (setCondenseUids) {
-                    // Setup the CondenseUidsIterator
-                    
-                    boolean condensedTld = false;
-                    Class<? extends SortedKeyValueIterator<Key,Value>> iterClazz = createCondensedUidIteratorClass;
-                    if (createUidsIteratorClass == CreateTLDUidsIterator.class) {
-                        condensedTld = true;
-                    }
-                    
-                    RangeStreamScanner scanSession = scanners.newCondensedRangeScanner(config.getIndexTableName(), config.getAuthorizations(),
-                                    config.getQuery(), config.getShardsPerDayThreshold());
-                    scanSession.setMaxResults(config.getMaxIndexBatchSize());
-                    scanSession.setExecutor(streamExecutor);
-                    
-                    if (log.isTraceEnabled()) {
-                        log.trace("Provided new object " + scanSession.hashCode());
-                    }
-                    SessionOptions options = new SessionOptions();
-                    options.fetchColumnFamily(new Text(fieldName));
-                    options.addScanIterator(makeDataTypeFilter(config, stackStart++));
-                    
-                    final IteratorSetting uidSetting = new IteratorSetting(stackStart++, iterClazz);
-                    // Set condense-specific options
-                    uidSetting.addOption(CondensedUidIterator.SHARDS_TO_EVALUATE, Integer.valueOf(config.getShardsPerDayThreshold()).toString());
-                    uidSetting.addOption(CondensedUidIterator.MAX_IDS, Integer.valueOf(MAX_MEDIAN).toString());
-                    uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.valueOf(compressUidsInRangeStream).toString());
-                    
-                    // Add TLD option, if applicable
-                    if (condensedTld) {
-                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(condensedTld).toString());
-                    }
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                    
-                    options.addScanIterator(uidSetting);
-                    String queryString = fieldName + "=='" + literal + "'";
-                    options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
-                    
-                    scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
-                    
-                    itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
-                    
-                } else {
-                    // Setup the CreateUidsIterator
-                    
-                    RangeStreamScanner scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                    config.getShardsPerDayThreshold());
-                    scanSession.setMaxResults(config.getMaxIndexBatchSize());
-                    scanSession.setExecutor(streamExecutor);
-                    
-                    if (log.isTraceEnabled()) {
-                        log.trace("Provided new object " + scanSession.hashCode());
-                    }
-                    SessionOptions options = new SessionOptions();
-                    options.fetchColumnFamily(new Text(fieldName));
-                    options.addScanIterator(makeDataTypeFilter(config, stackStart++));
-                    
-                    final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                    options.addScanIterator(uidSetting);
-                    
-                    String queryString = fieldName + "=='" + literal + "'";
-                    options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
-                    
-                    scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
-                    
-                    itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
+                if (log.isTraceEnabled()) {
+                    log.trace("Provided new object " + scanSession.hashCode());
                 }
+                SessionOptions options = new SessionOptions();
+                options.fetchColumnFamily(new Text(fieldName));
+                options.addScanIterator(makeDataTypeFilter(config, stackStart++));
+                
+                final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                options.addScanIterator(uidSetting);
+                
+                String queryString = fieldName + "=='" + literal + "'";
+                options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
+                
+                scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
+                
+                itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
                 
             } else {
                 
@@ -929,10 +879,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return this;
     }
     
-    public void setCreateCondensedUidIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> createCondensedUidIteratorClass) {
-        this.createCondensedUidIteratorClass = createCondensedUidIteratorClass;
-    }
-    
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
         return createUidsIteratorClass;
     }
@@ -991,13 +937,5 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public void close() {
         streamExecutor.shutdownNow();
         executor.shutdownNow();
-    }
-    
-    public void setCondenseUids(boolean setCondenseUids) {
-        this.setCondenseUids = setCondenseUids;
-    }
-    
-    public void setCompressUids(boolean compressUidsInRangeStream) {
-        this.compressUidsInRangeStream = compressUidsInRangeStream;
     }
 }
