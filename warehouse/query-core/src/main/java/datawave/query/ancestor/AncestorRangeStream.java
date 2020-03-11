@@ -1,7 +1,6 @@
 package datawave.query.ancestor;
 
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.index.lookup.AncestorCondensedUidIterator;
 import datawave.query.index.lookup.AncestorIndexStream;
 import datawave.query.index.lookup.IndexStream;
 import datawave.query.index.lookup.RangeStream;
@@ -16,7 +15,6 @@ import org.apache.commons.jexl2.parser.ASTOrNode;
 public class AncestorRangeStream extends RangeStream {
     public AncestorRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         super(config, scanners, metadataHelper);
-        setCreateCondensedUidIteratorClass(AncestorCondensedUidIterator.class);
     }
     
     @Override
