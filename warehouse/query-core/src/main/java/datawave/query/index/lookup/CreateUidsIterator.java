@@ -164,7 +164,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 // 1. The uids stored in the index must have the ignore flag set to FALSE
                 // 2. The option to collapse all document ranges must be false.
                 // 3. The document count must be under the document threshold.
-                if (ignore || !collapseUids || (count <= collapseUidsThreshold)) {
+                if (!ignore || !collapseUids || (count <= collapseUidsThreshold)) {
                     uids.addAll(uidInfo.third());
                     if (log.isTraceEnabled())
                         log.trace("Adding uids " + uidInfo.third().toString());
