@@ -78,6 +78,7 @@ import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
+import datawave.query.planner.comparator.RandomOrderQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.planner.rules.NodeTransformRule;
@@ -137,6 +138,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -467,17 +469,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
         // Option to return query plans in random order for better distribution of running scans.
         if (config.isPlanOrderRandom()) {
             
-            if (queryPlanComparators == null)
+            if (queryPlanComparators == null) {
                 queryPlanComparators = new ArrayList<>();
+            }
             
-            queryPlanComparators.add(new DefaultQueryPlanComparator() {
-                @Override
-                public int compare(QueryPlan o1, QueryPlan o2) {
-                    int left = o1.getQueryString().hashCode() + o1.getRanges().iterator().next().getStartKey().hashCode();
-                    int right = o2.getQueryString().hashCode() + o2.getRanges().iterator().next().getStartKey().hashCode();
-                    return left - right;
-                }
-            });
+            queryPlanComparators.add(new RandomOrderQueryPlanComparator());
         }
         
         // @formatter:off
