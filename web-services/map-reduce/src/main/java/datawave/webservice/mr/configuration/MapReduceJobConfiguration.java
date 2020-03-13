@@ -420,7 +420,8 @@ public class MapReduceJobConfiguration {
     }
     
     protected void exportSystemProperties(String jobId, Job job, FileSystem fs, Path classpath) {
-        Properties systemProperties = System.getProperties();
+        Properties systemProperties = new Properties();
+        systemProperties.putAll(System.getProperties());
         if (this.jobSystemProperties != null) {
             systemProperties.putAll(this.jobSystemProperties);
         }
