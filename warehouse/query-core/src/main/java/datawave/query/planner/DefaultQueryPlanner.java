@@ -131,7 +131,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -149,11 +148,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
     public static String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
     
     protected boolean limitScanners = false;
-    
-    /**
-     * Allows developers to enable/disable the enforcing of unique nodes with OR and AND nodes.
-     */
-    private boolean enforceUniqueTermsWithinExpressions = false;
     
     /**
      * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
@@ -200,16 +194,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
      *
      */
     protected int docsToCombineForEvaluation = -1;
-    
-    /**
-     * Boolean it identify if we wish to condense
-     */
-    protected boolean condenseUidsInRangeStream = true;
-    
-    /**
-     * Boolean it identify if we wish to condense
-     */
-    protected boolean compressUidsInRangeStream = true;
     
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
@@ -322,7 +306,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         rangeStreamClass = other.rangeStreamClass;
         setSourceLimit(other.sourceLimit);
         setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
-        setCondenseUidsInRangeStream(other.getCondenseUidsInRangeStream());
         setPushdownThreshold(other.getPushdownThreshold());
     }
     
@@ -746,7 +729,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
-        if (enforceUniqueTermsWithinExpressions) {
+        // Enforce unique terms within an AND or OR expression.
+        if (config.getEnforceUniqueTermsWithinExpressions()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique terms within AND and OR expressions");
             queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
             if (log.isDebugEnabled()) {
@@ -883,13 +867,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
         stopwatch.stop();
         
         if (reduceQuery) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query");
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - final reduce query");
             
             // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
             queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
             
             if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after reduction:");
+                logQuery(queryTree, "Query after final reduction:");
             }
             
             stopwatch.stop();
@@ -953,6 +937,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after fixing unfielded queries:");
             }
+            stopwatch.stop();
+        }
+        
+        if (reduceQuery) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce query after anyfield expansions");
+            
+            // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+            queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after anyfield expansion reduction:");
+            }
+            
             stopwatch.stop();
         }
         
@@ -2026,10 +2023,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             RangeStream stream = initializeRangeStream(config, scannerFactory, metadataHelper);
             
-            stream.setCondenseUids(condenseUidsInRangeStream);
-            
-            stream.setCompressUids(compressUidsInRangeStream);
-            
             ranges = stream.streamPlans(queryTree);
             
             if (log.isTraceEnabled()) {
@@ -2373,22 +2366,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         this.docsToCombineForEvaluation = docsToCombineForEvaluation;
     }
     
-    public boolean getCondenseUidsInRangeStream() {
-        return condenseUidsInRangeStream;
-    }
-    
-    public void setCondenseUidsInRangeStream(boolean condenseUidsInRangeStream) {
-        this.condenseUidsInRangeStream = condenseUidsInRangeStream;
-    }
-    
-    public boolean getCompressUids() {
-        return compressUidsInRangeStream;
-    }
-    
-    public void setCompressUids(boolean compressUidsInRangeStream) {
-        this.compressUidsInRangeStream = compressUidsInRangeStream;
-    }
-    
     public boolean getExecutableExpansion() {
         return executableExpansion;
     }
@@ -2437,13 +2414,5 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (null != builderThread) {
             builderThread.shutdown();
         }
-    }
-    
-    public boolean isEnforceUniqueTermsWithinExpressions() {
-        return enforceUniqueTermsWithinExpressions;
-    }
-    
-    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
-        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
 }
