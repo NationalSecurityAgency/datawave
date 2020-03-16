@@ -238,7 +238,7 @@ public class XMLFieldConfigHelperTest {
         assertTrue(helper.isReverseTokenizedField("F"));
         assertFalse(helper.isReverseTokenizedField("G"));
         assertFalse(helper.isReverseTokenizedField("H"));
-
+        
         assertFalse(helper.isIndexOnlyField("A"));
         assertFalse(helper.isIndexOnlyField("B"));
         assertFalse(helper.isIndexOnlyField("C"));
@@ -247,7 +247,7 @@ public class XMLFieldConfigHelperTest {
         assertTrue(helper.isIndexOnlyField("F"));
         assertFalse(helper.isIndexOnlyField("G"));
         assertFalse(helper.isIndexOnlyField("H"));
-
+        
         assertType(LcNoDiacriticsType.class, ingestHelper.getDataTypes("A"));
         assertType(LcNoDiacriticsType.class, ingestHelper.getDataTypes("B"));
         assertType(LcNoDiacriticsType.class, ingestHelper.getDataTypes("C"));
@@ -325,7 +325,7 @@ public class XMLFieldConfigHelperTest {
         assertFalse(helper.isReverseTokenizedField("F"));
         assertTrue(helper.isReverseTokenizedField("G"));
         assertTrue(helper.isReverseTokenizedField("H"));
-
+        
         assertTrue(helper.isIndexOnlyField("A"));
         assertFalse(helper.isIndexOnlyField("B"));
         assertFalse(helper.isIndexOnlyField("C"));
@@ -334,7 +334,7 @@ public class XMLFieldConfigHelperTest {
         assertFalse(helper.isIndexOnlyField("F"));
         assertFalse(helper.isIndexOnlyField("G"));
         assertFalse(helper.isIndexOnlyField("H"));
-
+        
         assertType(LcNoDiacriticsType.class, ingestHelper.getDataTypes("A"));
         assertType(LcNoDiacriticsType.class, ingestHelper.getDataTypes("B"));
         assertType(LcNoDiacriticsType.class, ingestHelper.getDataTypes("C"));
