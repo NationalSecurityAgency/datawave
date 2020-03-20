@@ -78,8 +78,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean allTermsIndexOnly;
     private String accumuloPassword = "";
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
+    // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
+    private boolean parseTldUids = false;
     private boolean collapseUids = false;
     private int collapseUidsThreshold = -1;
+    // Should this query dedupe terms within ANDs and ORs
+    private boolean enforceUniqueTermsWithinExpressions = false;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -338,6 +342,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
+        this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
+        this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
@@ -1759,6 +1765,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxIndexScanTimeMillis = maxTime;
     }
     
+    public boolean getParseTldUids() {
+        return parseTldUids;
+    }
+    
+    public void setParseTldUids(boolean parseTldUids) {
+        this.parseTldUids = parseTldUids;
+    }
+    
     public boolean getCollapseUids() {
         return collapseUids;
     }
@@ -1773,6 +1787,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setCollapseUidsThreshold(int collapseUidsThreshold) {
         this.collapseUidsThreshold = collapseUidsThreshold;
+    }
+    
+    public boolean getEnforceUniqueTermsWithinExpressions() {
+        return enforceUniqueTermsWithinExpressions;
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
     
     public boolean getSequentialScheduler() {

@@ -42,12 +42,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
  *
  * Justification: The benefit of using this Function is that we can perform necessary transformations in the context of a thread about to send a request to
- * tabletservers. This parallelizes requests sent to the tablet servers.
+ * tablet servers. This parallelizes requests sent to the tablet servers.
  */
 public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
@@ -59,7 +60,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
     
-    Map<String,String> previouslyExpanded = Maps.newHashMap();
+    Map<String,String> previouslyExpanded = new ConcurrentHashMap<>();
     
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
     
@@ -122,7 +123,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     boolean madeChange = false;
                     
                     if (!evaluatedPreviously && config.isCleanupShardsAndDaysQueryHints()) {
-                        script = JexlASTHelper.parseJexlQuery(query);
+                        script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                         script = DateIndexCleanupVisitor.cleanup(script);
                         madeChange = true;
                     }
@@ -134,7 +135,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         debug = Lists.newArrayList();
                     if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
                         if (null == script)
-                            script = JexlASTHelper.parseJexlQuery(query);
+                            script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                         
                         if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, debug,
                                         this.metadataHelper)) {
@@ -212,7 +213,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
                                 if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
                                     if (null == script)
-                                        script = JexlASTHelper.parseJexlQuery(query);
+                                        script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                                     try {
                                         script = pushdownLargeFieldedLists(config, script);
                                         madeChange = true;
@@ -237,7 +238,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (madeChange)
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
                     
-                    previouslyExpanded.put(query, newQuery);
+                    try {
+                        previouslyExpanded.put(query, newQuery);
+                    } catch (NullPointerException npe) {
+                        throw new DatawaveFatalQueryException(String.format("New query is null! madeChange: %b, qid: %s", madeChange,
+                                        setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
+                    }
                     
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());

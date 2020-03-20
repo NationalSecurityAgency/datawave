@@ -357,6 +357,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         setScannerFactory(new ScannerFactory(config));
         
+        // load params before parsing jexl string so these can be injected
+        loadQueryParameters(config, settings);
+        
         String jexlQueryString = getJexlQueryString(settings);
         
         if (null == jexlQueryString) {
@@ -378,8 +381,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } else {
             config.setEndDate(endDate);
         }
-        
-        loadQueryParameters(config, settings);
         
         MetadataHelper metadataHelper = prepareMetadataHelper(connection, this.getMetadataTableName(), auths, config.isRawTypes());
         
@@ -1927,6 +1928,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setSequentialScheduler(sequentialScheduler);
     }
     
+    public boolean getParseTldUids() {
+        return getConfig().getParseTldUids();
+    }
+    
+    public void setParseTldUids(boolean parseRootUids) {
+        getConfig().setParseTldUids(parseRootUids);
+    }
+    
     public boolean getCollapseUids() {
         return getConfig().getCollapseUids();
     }
@@ -1941,6 +1950,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setCollapseUidsThreshold(int collapseUidsThreshold) {
         this.config.setCollapseUidsThreshold(collapseUidsThreshold);
+    }
+    
+    public boolean getEnforceUniqueTermsWithinExpressions() {
+        return this.config.getEnforceUniqueTermsWithinExpressions();
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
     }
     
     public long getMaxIndexScanTimeMillis() {

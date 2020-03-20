@@ -15,6 +15,7 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.FieldConfigHelper;
+import datawave.ingest.data.config.XMLFieldConfigHelper;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -177,7 +178,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     protected MarkingsHelper markingsHelper = null;
     
-    protected FieldConfigHelper fieldHelper = null;
+    protected FieldConfigHelper fieldConfigHelper = null;
     
     @Override
     public void setup(Configuration config) {
@@ -226,7 +227,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             if (log.isDebugEnabled()) {
                 log.debug("Field config file " + fieldConfigFile + " specified for: " + this.getType().typeName() + FIELD_CONFIG_FILE);
             }
-            this.fieldHelper = FieldConfigHelper.load(fieldConfigFile, this);
+            this.fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
         }
         
         // Process the indexed fields
@@ -243,7 +244,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
         
         // Load the proper list of fields to (not) index
-        if (fieldHelper != null) {
+        if (fieldConfigHelper != null) {
             log.info("Using field config helper for " + this.getType().typeName());
         } else if (null == configProperty || configProperty.isEmpty()) {
             log.warn("No index fields or blacklist fields specified, not generating index fields for " + this.getType().typeName());
@@ -543,6 +544,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     @Override
     public boolean isIndexOnlyField(String fieldName) {
+        if (fieldConfigHelper != null) {
+            return fieldConfigHelper.isIndexOnlyField(fieldName);
+        }
         return indexOnlyFields.contains(fieldName);
     }
     
@@ -788,22 +792,22 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     @Override
     public boolean isShardExcluded(String fieldname) {
-        if (fieldHelper != null) {
-            return !fieldHelper.isStoredField(fieldname);
+        if (fieldConfigHelper != null) {
+            return !fieldConfigHelper.isStoredField(fieldname);
         }
         return super.isShardExcluded(fieldname);
     }
     
     @Override
     public boolean isIndexedField(String fieldName) {
-        if (fieldHelper != null) {
-            return fieldHelper.isIndexedField(fieldName);
+        if (fieldConfigHelper != null) {
+            return fieldConfigHelper.isIndexedField(fieldName);
         }
         return this.hasIndexBlacklist() ? !isIndexed(fieldName) : isIndexed(fieldName);
     }
     
     private boolean isIndexed(String fieldName) {
-        if (fieldHelper != null && fieldHelper.isIndexedField(fieldName)) {
+        if (fieldConfigHelper != null && fieldConfigHelper.isIndexedField(fieldName)) {
             return true;
         } else if (this.indexedFields.contains(fieldName)) {
             return true;
@@ -825,15 +829,15 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     @Override
     public boolean isReverseIndexedField(String fieldName) {
-        if (fieldHelper != null) {
-            return fieldHelper.isReverseIndexedField(fieldName);
+        if (fieldConfigHelper != null) {
+            return fieldConfigHelper.isReverseIndexedField(fieldName);
         }
         
         return super.hasReverseIndexBlacklist() ? !this.isReverseIndexed(fieldName) : this.isReverseIndexed(fieldName);
     }
     
     private boolean isReverseIndexed(String fieldName) {
-        if (fieldHelper != null && fieldHelper.isReverseIndexedField(fieldName)) {
+        if (fieldConfigHelper != null && fieldConfigHelper.isReverseIndexedField(fieldName)) {
             return true;
         } else if (this.reverseIndexedFields.contains(fieldName)) {
             return true;

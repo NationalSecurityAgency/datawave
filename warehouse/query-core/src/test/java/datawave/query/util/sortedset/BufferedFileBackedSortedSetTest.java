@@ -51,7 +51,7 @@ public class BufferedFileBackedSortedSetTest {
                             public boolean isValid() {
                                 return true;
                             }
-                        }));
+                        }), new FileSerializableSortedSet.Factory());
         
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
