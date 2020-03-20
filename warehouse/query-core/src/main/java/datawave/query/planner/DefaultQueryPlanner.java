@@ -198,7 +198,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
      */
-    private static int maxChildNodesToPrint = 10;
+    public static int maxChildNodesToPrint = 10;
     
     private final long maxRangesPerQueryPiece;
     
