@@ -56,7 +56,7 @@ function datawaveQuery() {
    local curlcmd="/usr/bin/curl \
     --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
     --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA}" \
-    --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: application/json' \
+    --header 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8' --header 'Accept: application/json' \
     ${DW_REQUEST_HEADERS} ${DW_CURL_DATA} -X POST ${DW_QUERY_URI}/${DW_QUERY_LOGIC}/${DW_QUERY_CREATE_MODE}"
 
    local response="$( eval "${curlcmd}" )"
@@ -133,7 +133,7 @@ function setQueryIdFromResponse() {
 function prettyPrintJson() {
     local PY=$( which python )
     if [ -n "${PY}" ] ; then
-        echo "${1}" | ${PY} -c 'import sys,json;data=json.loads(sys.stdin.read()); print json.dumps(data, indent=2, sort_keys=True)'
+        echo "${1}" | ${PY} -c 'import sys,json;data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
         local exitStatus=$?
         echo
         if [ "${exitStatus}" != "0" ] ; then
