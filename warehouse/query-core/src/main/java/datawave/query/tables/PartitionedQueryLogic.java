@@ -18,8 +18,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
-public class PartitionedQueryTable extends ShardQueryLogic {
-    protected static final Logger log = Logger.getLogger(PartitionedQueryTable.class);
+public class PartitionedQueryLogic extends ShardQueryLogic {
+    protected static final Logger log = Logger.getLogger(PartitionedQueryLogic.class);
     
     private AccumuloClient client;
     private Query settings;
@@ -27,16 +27,13 @@ public class PartitionedQueryTable extends ShardQueryLogic {
     
     private Chunker chunker;
     
-    private QueryPlanner delegatePlanner = null;
-    
-    public PartitionedQueryTable() {
+    public PartitionedQueryLogic() {
         super();
     }
     
-    public PartitionedQueryTable(PartitionedQueryTable other) {
+    public PartitionedQueryLogic(PartitionedQueryLogic other) {
         super(other);
         this.setChunker(other.chunker.clone());
-        this.setDelegateQueryPlanner(other.getDelegateQueryPlanner());
     }
     
     @Override
@@ -47,6 +44,7 @@ public class PartitionedQueryTable extends ShardQueryLogic {
         this.auths = auths;
         
         this.settings = settings.duplicate(settings.getQueryName() + "-chunk");
+        this.settings.setQuery(getJexlQueryString(this.settings));
         chunker.setBaseQuery(this.settings);
         
         // this logic only accepts a list of selectors, possibly with ORs between them (simplified LUCENE)
@@ -69,10 +67,6 @@ public class PartitionedQueryTable extends ShardQueryLogic {
             }
             
             chunker.initialize(config);
-        }
-        
-        if (null != delegatePlanner) {
-            setQueryPlanner(delegatePlanner);
         }
         
         return initializeNextChunk();
@@ -143,8 +137,8 @@ public class PartitionedQueryTable extends ShardQueryLogic {
     }
     
     @Override
-    public PartitionedQueryTable clone() {
-        return new PartitionedQueryTable(this);
+    public PartitionedQueryLogic clone() {
+        return new PartitionedQueryLogic(this);
     }
     
     public Chunker getChunker() {
@@ -153,13 +147,5 @@ public class PartitionedQueryTable extends ShardQueryLogic {
     
     public void setChunker(Chunker chunker) {
         this.chunker = chunker;
-    }
-    
-    public QueryPlanner getDelegateQueryPlanner() {
-        return delegatePlanner;
-    }
-    
-    public void setDelegateQueryPlanner(QueryPlanner planner) {
-        this.delegatePlanner = planner;
     }
 }
