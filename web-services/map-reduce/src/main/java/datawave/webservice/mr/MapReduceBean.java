@@ -500,7 +500,7 @@ public class MapReduceBean {
             j.submit();
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_START_ERROR, e);
-            log.error(qe);
+            log.error(qe.getMessage(), qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         }
