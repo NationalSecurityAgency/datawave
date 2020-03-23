@@ -432,6 +432,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         this.plannedScript = newQueryString;
+        config.setQueryString(this.plannedScript);
         
         Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
         
