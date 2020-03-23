@@ -323,21 +323,10 @@ public class MapReduceJobConfiguration {
             try (FileOutputStream fos = new FileOutputStream(f); ZipOutputStream zipOutputStream = new ZipOutputStream(fos)) {
                 try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(source))) {
                     for (ZipEntry zipEntry = zipInputStream.getNextEntry(); zipEntry != null; zipEntry = zipInputStream.getNextEntry()) {
-                        boolean include = true;
-                        Iterator<Pattern> patternItr = patterns.iterator();
-                        while (patternItr.hasNext() && include == true) {
-                            Pattern p = patternItr.next();
-                            if (p.matcher(zipEntry.getName()).matches()) {
-                                include = false;
-                            }
-                        }
-                        if (include) {
+                        final String entryName = zipEntry.getName();
+                        if (patterns.stream().noneMatch(p -> p.matcher(entryName).matches())) {
                             zipOutputStream.putNextEntry(zipEntry);
-                            byte[] buffer = new byte[2048];
-                            int len;
-                            while ((len = zipInputStream.read(buffer)) > 0) {
-                                zipOutputStream.write(buffer, 0, len);
-                            }
+                            ByteStreams.copy(zipInputStream, zipOutputStream);
                         }
                     }
                 } catch (Exception e) {
