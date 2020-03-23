@@ -31,6 +31,8 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
@@ -42,9 +44,11 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.infinispan.commons.util.Base64;
+import org.jboss.security.JSSESecurityDomain;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -52,11 +56,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class BulkResultsJobConfiguration extends MapReduceJobConfiguration implements NeedCallerDetails, NeedAccumuloConnectionFactory, NeedAccumuloDetails,
-                NeedQueryLogicFactory, NeedQueryPersister, NeedQueryCache {
+                NeedQueryLogicFactory, NeedQueryPersister, NeedQueryCache, NeedSecurityDomain {
     
     /**
      * Container for query settings
@@ -102,6 +107,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     
     private Logger log = Logger.getLogger(this.getClass());
     
+    private JSSESecurityDomain jsseSecurityDomain = null;
     private AccumuloConnectionFactory connectionFactory;
     private QueryLogicFactory queryFactory;
     private Persister persister;
@@ -279,13 +285,15 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         job.getConfiguration().set(
                         BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH,
                         "classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml," + "classpath*:datawave/query/*QueryLogicFactory.xml,"
-                                        + "classpath*:/MarkingFunctionsContext.xml," + "classpath*:/CacheContext.xml");
+                                        + "classpath*:/MarkingFunctionsContext.xml," + "classpath*:/MetadataHelperContext.xml,"
+                                        + "classpath*:/CacheContext.xml");
         job.getConfiguration().set(BulkResultsFileOutputMapper.SPRING_CONFIG_LOCATIONS,
                         job.getConfiguration().get(BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH));
         // Tell the Mapper/Reducer to use a specific set of application context files when doing Spring-CDI integration.
         String cdiOpts = "'-Dcdi.spring.configs=" + job.getConfiguration().get(BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH) + "'";
         // Pass our server DN along to the child VM so it can be made available for injection.
-        cdiOpts += " '-Dserver.principal=" + encodeServerPrincipal(serverPrincipal) + "'";
+        cdiOpts += " '-Dserver.principal=" + encodePrincipal(serverPrincipal) + "'";
+        cdiOpts += " '-Dcaller.principal=" + encodePrincipal((DatawavePrincipal) principal) + "'";
         String javaOpts = job.getConfiguration().get("mapreduce.map.java.opts");
         javaOpts = (javaOpts == null) ? cdiOpts : (javaOpts + " " + cdiOpts);
         job.getConfiguration().set("mapreduce.map.java.opts", javaOpts);
@@ -295,8 +303,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         job.setWorkingDirectory(jobDir);
     }
     
-    private String encodeServerPrincipal(DatawavePrincipal serverPrincipal) throws IOException {
-        return Base64.encodeObject(serverPrincipal, Base64.GZIP | Base64.DONT_BREAK_LINES);
+    private String encodePrincipal(DatawavePrincipal principal) throws IOException {
+        return Base64.encodeObject(principal, Base64.GZIP | Base64.DONT_BREAK_LINES);
     }
     
     private QuerySettings setupQuery(String sid, String queryId, Principal principal) throws Exception {
@@ -346,6 +354,58 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                 throw new QueryException("More than one query object matches the id", Response.Status.NOT_FOUND.getStatusCode());
             return queries.get(0);
         }
+    }
+    
+    @Override
+    public void setSecurityDomain(JSSESecurityDomain jsseSecurityDomain) {
+        this.jsseSecurityDomain = jsseSecurityDomain;
+    }
+    
+    protected void exportSystemProperties(String jobId, Job job, FileSystem fs, Path classpath) {
+        Properties systemProperties = System.getProperties();
+        if (this.jobSystemProperties != null) {
+            systemProperties.putAll(this.jobSystemProperties);
+        }
+        
+        if (this.jsseSecurityDomain != null) {
+            String useJobCacheString = systemProperties.getProperty("dw.mapreduce.securitydomain.useJobCache");
+            boolean useJobCache = Boolean.parseBoolean(useJobCacheString);
+            if (useJobCache) {
+                try {
+                    String keyStoreURL = systemProperties.getProperty("dw.mapreduce.securitydomain.keyStoreURL");
+                    File keyStore = new File(keyStoreURL);
+                    Path keyStorePath = new Path(classpath, keyStore.getName());
+                    addSingleFile(keyStoreURL, keyStorePath, jobId, job, fs);
+                    systemProperties.setProperty("dw.mapreduce.securitydomain.keyStoreURL", keyStore.getName());
+                } catch (IOException e) {
+                    log.error(e.getMessage(), e);
+                }
+                try {
+                    String trustStoreURL = systemProperties.getProperty("dw.mapreduce.securitydomain.trustStoreURL");
+                    File trustStore = new File(trustStoreURL);
+                    Path trustStorePath = new Path(classpath, trustStore.getName());
+                    addSingleFile(trustStoreURL, trustStorePath, jobId, job, fs);
+                    systemProperties.setProperty("dw.mapreduce.securitydomain.trustStoreURL", trustStore.getName());
+                } catch (IOException e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+            
+            if (jsseSecurityDomain.getClientAlias() != null) {
+                systemProperties.setProperty("dw.mapreduce.securitydomain.clientAlias", jsseSecurityDomain.getClientAlias());
+            }
+            if (jsseSecurityDomain.getServerAlias() != null) {
+                systemProperties.setProperty("dw.mapreduce.securitydomain.serverAlias", jsseSecurityDomain.getServerAlias());
+            }
+            if (jsseSecurityDomain.getCipherSuites() != null) {
+                systemProperties.setProperty("dw.mapreduce.securitydomain.cipherSuites", StringUtils.join(jsseSecurityDomain.getCipherSuites(), ','));
+            }
+            if (jsseSecurityDomain.getProtocols() != null) {
+                systemProperties.setProperty("dw.mapreduce.securitydomain.protocols", StringUtils.join(jsseSecurityDomain.getProtocols(), ','));
+            }
+            systemProperties.setProperty("dw.mapreduce.securitydomain.clientAuth", Boolean.toString(jsseSecurityDomain.isClientAuth()));
+        }
+        writeProperties(jobId, job, fs, classpath, systemProperties);
     }
     
     @Override
