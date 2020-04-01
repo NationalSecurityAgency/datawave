@@ -78,8 +78,13 @@ jobs:
     # Allow us to use the "--squash" option below
     - name: Turn on Docker Experimental Features
       run: |
-        sudo sed -ri 's/\s*}\s*$/, "experimental": true }/' /etc/docker/daemon.json
+        if [[ -f /etc/docker/daemon.json ]]; then
+          sudo sed -ri 's/\s*}\s*$/, "experimental": true }/' /etc/docker/daemon.json
+        else
+          echo $'{\n    "experimental": true\n}' | sudo tee /etc/docker/daemon.json
+        fi
         sudo systemctl restart docker
+        echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
     - uses: actions/cache@v1
       with:
         path: ~/.m2/repository
