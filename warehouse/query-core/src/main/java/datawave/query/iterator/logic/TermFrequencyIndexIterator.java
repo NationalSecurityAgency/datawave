@@ -187,11 +187,19 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
             
             for (int i = 0; i < 256 && source.hasTop() && key.getFieldName().compareTo(field) < 0; ++i) {
                 source.next();
-                key = new DatawaveKey(source.getTopKey());
+                
+                tk = source.getTopKey();
+                if (tk == null)
+                    break;
+                
+                key = new DatawaveKey(tk);
                 if (log.isTraceEnabled()) {
                     log.trace("Have key " + key + " < " + field);
                 }
             }
+            
+            if (tk == null)
+                continue;
             
             if (key.getFieldName().compareTo(field) < 0) {
                 
