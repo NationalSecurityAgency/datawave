@@ -1,11 +1,12 @@
 package datawave.query.language.functions.jexl;
 
+import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.query.search.WildcardFieldedFilter;
 
 public class Exclude extends AbstractEvaluationPhaseFunction {
     public Exclude() {
-        super("exclude");
+        super(QueryFunctions.EXCLUDE_FUNCTION);
     }
     
     @Override

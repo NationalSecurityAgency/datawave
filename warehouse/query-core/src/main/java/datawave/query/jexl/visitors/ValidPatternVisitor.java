@@ -2,15 +2,18 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Maps;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -22,7 +25,7 @@ public class ValidPatternVisitor extends BaseVisitor {
     private Map<String,Pattern> patternCache;
     
     public ValidPatternVisitor() {
-        patternCache = Maps.newHashMap();
+        this.patternCache = Maps.newHashMap();
     }
     
     public static void check(JexlNode node) {
@@ -41,7 +44,7 @@ public class ValidPatternVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTERNode node, Object data) {
-        parseAndPutLiteral(node);
+        parseAndPutPattern(node);
         return data;
     }
     
@@ -56,73 +59,65 @@ public class ValidPatternVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        parseAndPutLiteral(node);
+        parseAndPutPattern(node);
         return data;
     }
     
+    /**
+     * Visit an ASTFunctionNode to catch cases like #INCLUDE or #EXCLUDE that accept a regex as an argument
+     * 
+     * @param node
+     * @param data
+     * @return
+     */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         
-        if (node.jjtGetNumChildren() >= 4) {
-            
-            // Should be a filter function.
-            String functionType = JexlASTHelper.getIdentifier(node.jjtGetChild(0));
-            if (functionType == null || !functionType.equals("filter")) {
-                return data;
-            }
-            
-            // Filter should be includeRegex or excludeRegex.
-            String filterType = JexlASTHelper.getIdentifier(node.jjtGetChild(1));
-            if (filterType == null || !(filterType.equals("includeRegex") || filterType.equals("excludeRegex"))) {
-                return data;
-            }
-            
-            // Child 3 is the field to be included/excluded.
-            // JexlNode child3 = node.jjtGetChild(2);
-            
-            // Child 4 is the field that *may* contain a regex.
-            JexlNode child4 = node.jjtGetChild(3);
-            if (child4 instanceof ASTReference) {
-                
-                JexlNode literalNode = child4.jjtGetChild(0);
-                if (StringUtils.containsAny(literalNode.image, "?.*^+-[]()")) {
-                    try {
-                        parseAndPutLiteral(literalNode);
-                    } catch (PatternSyntaxException e) {
-                        String builtNode = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-                        String errMsg = "Invalid pattern found in filter function '" + builtNode + "'";
-                        throw new PatternSyntaxException(errMsg, e.getPattern(), e.getIndex());
-                    }
+        // Should pull back an EvaluationPhaseFilterFunctionsDescriptor
+        JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+        if (descriptor == null) {
+            throw new IllegalStateException("Could not get descriptor for ASTFunctionNode");
+        }
+        
+        if (descriptor.regexArguments()) {
+            // Extract the args for this function
+            FunctionJexlNodeVisitor functionVisitor = new FunctionJexlNodeVisitor();
+            functionVisitor.visit(node, null);
+            List<JexlNode> args = functionVisitor.args();
+            for (JexlNode arg : args) {
+                // Only take the literals
+                if (arg instanceof ASTStringLiteral) {
+                    parseAndPutPattern(arg);
                 }
             }
         }
-        
         // Do not descend to children, the ValidPatternVisitor views a function node as a leaf node.
         return data;
     }
     
     /**
      * Parse a literal value and put into the pattern cache if it does not exist.
-     * 
+     *
      * @param node
      */
-    public void parseAndPutLiteral(JexlNode node) {
-        Object literalValue;
-        
+    public void parseAndPutPattern(JexlNode node) {
         // Catch the situation where a user might enter FIELD1 !~ VALUE1
-        try {
-            literalValue = JexlASTHelper.getLiteralValue(node);
-        } catch (NoSuchElementException e) {
-            return;
-        }
-        
+        Object literalValue = JexlASTHelper.getLiteralValue(node);
         if (literalValue != null && String.class.equals(literalValue.getClass())) {
             String literalString = (String) literalValue;
-            if (patternCache.containsKey(literalString)) {
-                return;
+            // Only parse literals that contain a regex char
+            if (StringUtils.containsAny(literalString, "?.*^+-_[](){}")) {
+                try {
+                    if (patternCache.containsKey(literalString)) {
+                        return;
+                    }
+                    patternCache.put(literalString, Pattern.compile(literalString));
+                } catch (PatternSyntaxException e) {
+                    String builtNode = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+                    String errMsg = "Invalid pattern found in filter function '" + builtNode + "'";
+                    throw new PatternSyntaxException(errMsg, e.getPattern(), e.getIndex());
+                }
             }
-            patternCache.put(literalString, Pattern.compile(literalString));
         }
-        return;
     }
 }

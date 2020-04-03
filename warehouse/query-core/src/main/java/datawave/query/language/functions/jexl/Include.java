@@ -1,11 +1,12 @@
 package datawave.query.language.functions.jexl;
 
+import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.query.search.WildcardFieldedFilter;
 
 public class Include extends AbstractEvaluationPhaseFunction {
     public Include() {
-        super("include");
+        super(QueryFunctions.INCLUDE_FUNCTION);
     }
     
     @Override
