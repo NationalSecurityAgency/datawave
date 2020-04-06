@@ -44,8 +44,20 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      * 
      */
     public interface SortedSetFileHandler {
+        /**
+         * Return the input stream
+         * 
+         * @return the input stream
+         * @throws IOException
+         */
         InputStream getInputStream() throws IOException;
         
+        /**
+         * Return the output stream
+         * 
+         * @return the sorted set output stream
+         * @throws IOException
+         */
         OutputStream getOutputStream() throws IOException;
         
         long getSize();
@@ -88,7 +100,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     }
     
     /**
-     * Create a persistede sorted set
+     * Create a persisted sorted set
      * 
      * @param comparator
      * @param handler
@@ -120,25 +132,33 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      * @param handler
      */
     public FileSortedSet(SortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException {
-        this.handler = handler;
         if (!persist) {
             this.set = new TreeSet<>(set);
             this.persisted = false;
         } else {
             this.set = new TreeSet<>(set.comparator());
-            persist(set);
+            persist(set, handler);
             persisted = true;
         }
     }
     
     /**
      * This will dump the set to the file, making the set "persisted"
-     * 
+     *
      * @throws IOException
      */
     public void persist() throws IOException {
+        persist(this.handler);
+    }
+    
+    /**
+     * This will dump the set to the file, making the set "persisted"
+     *
+     * @throws IOException
+     */
+    public void persist(SortedSetFileHandler handler) throws IOException {
         if (!persisted) {
-            persist(this.set);
+            persist(this.set, handler);
             this.set.clear();
             persisted = true;
         }
@@ -147,71 +167,68 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     /**
      * Persist the supplied set to a file as defined by this classes sorted set file handler.
      */
-    private void persist(SortedSet<E> set) throws IOException {
-        boolean verified = false;
-        Exception failure = null;
+    private void persist(SortedSet<E> set, SortedSetFileHandler handler) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("Persisting " + handler);
         }
+        
         long start = System.currentTimeMillis();
-        for (int i = 0; i < 10 && !verified; i++) {
+        try {
+            // assign the passed in file handler
+            // if we can't persist, we will reset to null
+            this.handler = handler;
+            
+            int actualSize = 0;
+            List<E> firstOneHundred = new ArrayList<>();
+            OutputStream stream = getOutputStream();
             try {
-                int actualSize = 0;
-                List<E> firstOneHundred = new ArrayList<>();
-                OutputStream stream = getOutputStream();
-                try {
-                    for (E t : set) {
-                        writeObject(stream, t);
-                        if (firstOneHundred.size() < 100) {
-                            firstOneHundred.add(t);
-                        }
-                        actualSize++;
+                for (E t : set) {
+                    writeObject(stream, t);
+                    if (firstOneHundred.size() < 100) {
+                        firstOneHundred.add(t);
                     }
-                    stream.write((actualSize >>> 24) & 0xFF);
-                    stream.write((actualSize >>> 16) & 0xFF);
-                    stream.write((actualSize >>> 8) & 0xFF);
-                    stream.write((actualSize >>> 0) & 0xFF);
-                } finally {
-                    stream.close();
+                    actualSize++;
                 }
-                // verify we wrote at least the size....
-                if (handler.getSize() < 4) {
-                    throw new IOException("Failed to verify file existence");
-                }
-                // now verify the first 100 objects were written correctly
-                InputStream inStream = getInputStream();
-                try {
-                    int count = 0;
-                    for (E t : firstOneHundred) {
-                        count++;
-                        E input = readObject(inStream);
-                        if (!equals(t, input)) {
-                            throw new IOException("Failed to verify element " + count + " was written");
-                        }
-                    }
-                } finally {
-                    inStream.close();
-                }
-                
-                // now verify the size was written at the end
-                int test = readSize();
-                if (test != actualSize) {
-                    throw new IOException("Failed to verify file size was written");
-                }
-                
-                verified = true;
-                if (log.isDebugEnabled()) {
-                    long delta = System.currentTimeMillis() - start;
-                    log.debug("Persisting " + handler + " took " + delta + "ms");
-                }
-            } catch (Exception e) {
-                log.warn("Attempt #" + i + " failed to persist " + handler);
-                // ok, try again
-                failure = e;
+                stream.write((actualSize >>> 24) & 0xFF);
+                stream.write((actualSize >>> 16) & 0xFF);
+                stream.write((actualSize >>> 8) & 0xFF);
+                stream.write((actualSize >>> 0) & 0xFF);
+            } finally {
+                stream.close();
             }
+            // verify we wrote at least the size....
+            if (handler.getSize() == 0) {
+                throw new IOException("Failed to verify file existence");
+            }
+            // now verify the first 100 objects were written correctly
+            InputStream inStream = getInputStream();
+            try {
+                int count = 0;
+                for (E t : firstOneHundred) {
+                    count++;
+                    E input = readObject(inStream);
+                    if (!equals(t, input)) {
+                        throw new IOException("Failed to verify element " + count + " was written");
+                    }
+                }
+            } finally {
+                inStream.close();
+            }
+            
+            // now verify the size was written at the end
+            int test = readSize();
+            if (test != actualSize) {
+                throw new IOException("Failed to verify file size was written");
+            }
+        } catch (IOException e) {
+            handler.deleteFile();
+            this.handler = null;
+            throw e;
         }
-        if (!verified) {
-            throw new IOException("Failed to write sorted set", failure);
+        
+        if (log.isDebugEnabled()) {
+            long delta = System.currentTimeMillis() - start;
+            log.debug("Persisting " + handler + " took " + delta + "ms");
         }
     }
     

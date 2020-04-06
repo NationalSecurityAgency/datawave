@@ -79,6 +79,8 @@ public class ModelKeyParserTest {
         FORWARD_DELETE_MUTATION = new Mutation(MODEL_FIELD_NAME);
         FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(),
                         new ColumnVisibility(COLVIZ), TIMESTAMP);
+        FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only"
+                        + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
         
         REVERSE_MUTATION = new Mutation(FIELD_NAME);
         REVERSE_MUTATION.put(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(),
@@ -202,7 +204,7 @@ public class ModelKeyParserTest {
     
     @Test
     public void testForwardCreateDeleteMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP).times(2);
         PowerMock.replayAll();
         Mutation m = ModelKeyParser.createDeleteMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
         PowerMock.verifyAll();
@@ -211,11 +213,13 @@ public class ModelKeyParserTest {
         
         // Test with null datatype
         PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP).times(2);
         FORWARD_FIELD_MAPPING.setDatatype(null);
         PowerMock.replayAll();
         FORWARD_DELETE_MUTATION = new Mutation(MODEL_FIELD_NAME);
         FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
+        FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + ModelKeyParser.NULL_BYTE + FORWARD.getValue(),
+                        new ColumnVisibility(COLVIZ), TIMESTAMP);
         m = ModelKeyParser.createDeleteMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
         PowerMock.verifyAll();
         m.getUpdates();
@@ -261,10 +265,9 @@ public class ModelKeyParserTest {
         forwardMapping.setDirection(FORWARD);
         forwardMapping.setFieldName(FIELD_NAME);
         forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
-        forwardMapping.setIndexOnly(true);
         
         Key expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, FIELD_NAME + ModelKeyParser.NULL_BYTE
-                        + "index_only" + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
+                        + FORWARD.getValue(), COLVIZ, TIMESTAMP);
         
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         PowerMock.replayAll();
@@ -278,10 +281,8 @@ public class ModelKeyParserTest {
         forwardMapping.setDirection(FORWARD);
         forwardMapping.setFieldName(FIELD_NAME);
         forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
-        forwardMapping.setIndexOnly(true);
         
-        expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + ModelKeyParser.NULL_BYTE
-                        + FORWARD.getValue(), COLVIZ, TIMESTAMP);
+        expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
         
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         PowerMock.replayAll();
@@ -297,11 +298,10 @@ public class ModelKeyParserTest {
         forwardMapping.setDirection(FORWARD);
         forwardMapping.setFieldName(FIELD_NAME);
         forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
-        forwardMapping.setIndexOnly(true);
         
         Mutation expectedforwardMutation = new Mutation(MODEL_FIELD_NAME);
         Text cf = new Text(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE);
-        Text cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
+        Text cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
         expectedforwardMutation.put(cf, cq, new ColumnVisibility(COLVIZ), TIMESTAMP, ModelKeyParser.NULL_VALUE);
         
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
@@ -317,11 +317,10 @@ public class ModelKeyParserTest {
         forwardMapping.setDirection(FORWARD);
         forwardMapping.setFieldName(FIELD_NAME);
         forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
-        forwardMapping.setIndexOnly(true);
         
         expectedforwardMutation = new Mutation(MODEL_FIELD_NAME);
         cf = new Text(MODEL_NAME);
-        cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
+        cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
         expectedforwardMutation.put(cf, cq, new ColumnVisibility(COLVIZ), TIMESTAMP, ModelKeyParser.NULL_VALUE);
         
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);

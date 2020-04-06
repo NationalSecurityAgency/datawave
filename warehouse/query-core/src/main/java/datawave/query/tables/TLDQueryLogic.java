@@ -1,7 +1,6 @@
 package datawave.query.tables;
 
 import datawave.query.planner.QueryPlanner;
-import datawave.query.tld.CreateTLDUidsIterator;
 import datawave.query.tld.TLDQueryIterator;
 
 /**
@@ -15,13 +14,14 @@ public class TLDQueryLogic extends ShardQueryLogic {
     public TLDQueryLogic() {
         super();
         setIsTldQuery(true);
-        setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
+        setParseTldUids(true);
         setIter();
     }
     
     public TLDQueryLogic(TLDQueryLogic other) {
         super(other);
         setIsTldQuery(true);
+        setParseTldUids(true);
         setIter();
     }
     

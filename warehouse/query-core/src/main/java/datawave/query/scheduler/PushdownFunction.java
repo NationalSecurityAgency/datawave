@@ -12,21 +12,11 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.planner.QueryPlan;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.TableOfflineException;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.client.impl.Tables;
-import org.apache.accumulo.core.client.impl.TabletLocator;
-import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.client.admin.Locations;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.master.state.tables.TableState;
-import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -56,25 +46,18 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     private ShardQueryConfiguration config;
     
     /**
-     * Tablet locator
-     */
-    private TabletLocator tl;
-    
-    /**
      * Set of query plans
      */
     protected Set<Integer> queryPlanSet;
     protected Collection<IteratorSetting> customSettings;
     
-    protected String tableId = "0";
+    protected String tableName;
     
-    public PushdownFunction(TabletLocator tl, ShardQueryConfiguration config, Collection<IteratorSetting> settings, String tableId) {
-        this.tl = tl;
+    public PushdownFunction(ShardQueryConfiguration config, Collection<IteratorSetting> settings, String tableName) {
         this.config = config;
         queryPlanSet = Sets.newHashSet();
         this.customSettings = settings;
-        this.tableId = tableId;
-        
+        this.tableName = tableName;
     }
     
     public List<ScannerChunk> apply(QueryData qd) {
@@ -82,7 +65,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         List<ScannerChunk> chunks = Lists.newArrayList();
         try {
             
-            redistributeQueries(serverPlan, tl, new QueryPlan(qd));
+            redistributeQueries(serverPlan, new QueryPlan(qd));
             
             for (String server : serverPlan.keySet()) {
                 Collection<QueryPlan> plans = serverPlan.get(server);
@@ -126,31 +109,25 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                 }
             }
             
-        } catch (AccumuloException e) {
-            throw new RuntimeException(e);
-        } catch (AccumuloSecurityException e) {
-            throw new RuntimeException(e);
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (ParseException e) {
+        } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException | ParseException e) {
             throw new RuntimeException(e);
         }
         return chunks;
     }
     
-    protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, TabletLocator tl, QueryPlan currentPlan) throws AccumuloException,
-                    AccumuloSecurityException, TableNotFoundException {
+    protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, QueryPlan currentPlan) throws AccumuloException, AccumuloSecurityException,
+                    TableNotFoundException {
         
         List<Range> ranges = Lists.newArrayList(currentPlan.getRanges());
         if (!ranges.isEmpty()) {
-            Map<String,Map<KeyExtent,List<Range>>> binnedRanges = binRanges(tl, config.getConnector().getInstance(), ranges);
+            Map<String,Map<TabletId,List<Range>>> binnedRanges = binRanges(ranges);
             
             for (String server : binnedRanges.keySet()) {
-                Map<KeyExtent,List<Range>> hostedExtentMap = binnedRanges.get(server);
+                Map<TabletId,List<Range>> hostedExtentMap = binnedRanges.get(server);
                 
                 Iterable<Range> rangeIter = Lists.newArrayList();
                 
-                for (Entry<KeyExtent,List<Range>> rangeEntry : hostedExtentMap.entrySet()) {
+                for (Entry<TabletId,List<Range>> rangeEntry : hostedExtentMap.entrySet()) {
                     if (log.isTraceEnabled())
                         log.trace("Adding range from " + rangeEntry.getValue());
                     rangeIter = Iterables.concat(rangeIter, rangeEntry.getValue());
@@ -167,58 +144,24 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         
     }
     
-    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(TabletLocator tl, Instance instance, List<Range> ranges) throws AccumuloException,
-                    AccumuloSecurityException, TableNotFoundException {
-        Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        
-        int lastFailureSize = Integer.MAX_VALUE;
-        
-        while (true) {
-            
-            binnedRanges.clear();
-            AuthenticationToken authToken = new PasswordToken(config.getAccumuloPassword());
-            Credentials creds = new Credentials(config.getConnector().whoami(), authToken);
-            List<Range> failures = tl.binRanges(new ClientContext(instance, creds, AccumuloConfiguration.getDefaultConfiguration()), ranges, binnedRanges);
-            
-            if (!failures.isEmpty()) {
-                // tried to only do table state checks when failures.size()
-                // == ranges.size(), however this did
-                // not work because nothing ever invalidated entries in the
-                // tabletLocator cache... so even though
-                // the table was deleted the tablet locator entries for the
-                // deleted table were not cleared... so
-                // need to always do the check when failures occur
-                if (failures.size() >= lastFailureSize)
-                    if (!Tables.exists(instance, tableId))
-                        throw new TableDeletedException(tableId);
-                    else if (Tables.getTableState(instance, tableId) == TableState.OFFLINE)
-                        throw new TableOfflineException(instance, tableId);
-                
-                lastFailureSize = failures.size();
-                
-                if (log.isTraceEnabled())
-                    log.trace("Failed to bin " + failures.size() + " ranges, tablet locations were null, retrying in 100ms");
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                break;
-            }
-            
+    protected Map<String,Map<TabletId,List<Range>>> binRanges(List<Range> ranges) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        Map<String,Map<TabletId,List<Range>>> binnedRanges = new HashMap<>();
+        Locations locations = config.getConnector().tableOperations().locate(tableName, ranges);
+        Map<TabletId,List<Range>> tabletToRange = locations.groupByTablet();
+        for (TabletId tid : tabletToRange.keySet()) {
+            binnedRanges.put(locations.getTabletLocation(tid), tabletToRange);
         }
         
         // truncate the ranges to within the tablets... this makes it easier
         // to know what work
         // needs to be redone when failures occurs and tablets have merged
         // or split
-        Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<>();
-        for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
-            Map<KeyExtent,List<Range>> tabletMap = new HashMap<>();
+        Map<String,Map<TabletId,List<Range>>> binnedRanges2 = new HashMap<>();
+        for (Entry<String,Map<TabletId,List<Range>>> entry : binnedRanges.entrySet()) {
+            Map<TabletId,List<Range>> tabletMap = new HashMap<>();
             binnedRanges2.put(entry.getKey(), tabletMap);
-            for (Entry<KeyExtent,List<Range>> tabletRanges : entry.getValue().entrySet()) {
-                Range tabletRange = tabletRanges.getKey().toDataRange();
+            for (Entry<TabletId,List<Range>> tabletRanges : entry.getValue().entrySet()) {
+                Range tabletRange = tabletRanges.getKey().toRange();
                 List<Range> clippedRanges = new ArrayList<>();
                 tabletMap.put(tabletRanges.getKey(), clippedRanges);
                 for (Range range : tabletRanges.getValue())

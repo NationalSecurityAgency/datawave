@@ -256,7 +256,7 @@ public abstract class GroupingTest {
                 .build();
         // @formatter:on
         
-        extraParameters.put("group.fields", "AGE,GENDER");
+        extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
         
         List<List<EventBase>> responseEvents = new ArrayList<>();
@@ -377,7 +377,7 @@ public abstract class GroupingTest {
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "UUID =~ '^[CS].*' && f:groupby('AGE','GENDER')";
+        String queryString = "UUID =~ '^[CS].*' && f:groupby('$AGE','GENDER')";
         
         // @formatter:off
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
@@ -408,7 +408,7 @@ public abstract class GroupingTest {
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AGE','GENDER')";
+        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AGE','$GENDER')";
         
         // @formatter:off
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()

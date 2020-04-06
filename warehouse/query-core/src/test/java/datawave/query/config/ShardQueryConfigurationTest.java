@@ -58,6 +58,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals("", config.getAccumuloPassword());
         Assert.assertEquals(Long.MAX_VALUE, config.getMaxIndexScanTimeMillis());
         Assert.assertFalse(config.getCollapseUids());
+        Assert.assertFalse(config.getParseTldUids());
         Assert.assertFalse(config.getSequentialScheduler());
         Assert.assertFalse(config.getCollectTimingDetails());
         Assert.assertFalse(config.getLogTimingDetails());
@@ -160,7 +161,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertNull(config.getHdfsSiteConfigURLs());
         Assert.assertNull(config.getHdfsFileCompressionCodec());
         Assert.assertNull(config.getZookeeperConfig());
-        Assert.assertNull(config.getIvaratorCacheBaseURIs());
+        Assert.assertTrue(config.getIvaratorCacheDirConfigs().isEmpty());
+        Assert.assertEquals(2, config.getIvaratorNumRetries());
         Assert.assertNull(config.getIvaratorFstHdfsBaseURIs());
         Assert.assertEquals(10000, config.getIvaratorCacheBufferSize());
         Assert.assertEquals(100000, config.getIvaratorCacheScanPersistThreshold());
@@ -430,7 +432,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 166;
+        int expectedObjectCount = 170;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

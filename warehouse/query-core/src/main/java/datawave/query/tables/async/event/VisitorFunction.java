@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
  *
  * Justification: The benefit of using this Function is that we can perform necessary transformations in the context of a thread about to send a request to
- * tabletservers. This parallelizes requests sent to the tablet servers.
+ * tablet servers. This parallelizes requests sent to the tablet servers.
  */
 public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
@@ -123,7 +123,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     boolean madeChange = false;
                     
                     if (!evaluatedPreviously && config.isCleanupShardsAndDaysQueryHints()) {
-                        script = JexlASTHelper.parseJexlQuery(query);
+                        script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                         script = DateIndexCleanupVisitor.cleanup(script);
                         madeChange = true;
                     }
@@ -135,7 +135,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         debug = Lists.newArrayList();
                     if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
                         if (null == script)
-                            script = JexlASTHelper.parseJexlQuery(query);
+                            script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                         
                         if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, debug,
                                         this.metadataHelper)) {
@@ -213,7 +213,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
                                 if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
                                     if (null == script)
-                                        script = JexlASTHelper.parseJexlQuery(query);
+                                        script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                                     try {
                                         script = pushdownLargeFieldedLists(config, script);
                                         madeChange = true;
@@ -249,6 +249,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     newOptions.removeScanIterator(setting.getName());
                     newOptions.addScanIterator(newIteratorSetting);
                     
+                    if (log.isDebugEnabled()) {
+                        log.debug("VisitorFunction result: " + newSettings.getRanges() + " -> " + newQuery);
+                    }
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
                 }

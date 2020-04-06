@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
@@ -119,18 +120,21 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 
                 ASTJexlScript jexlScript = null;
                 try {
-                    jexlScript = JexlASTHelper.parseJexlQuery(query);
+                    // Parse and flatten here before visitors visit.
+                    jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(query);
                 } catch (Throwable t1) {
                     // not JEXL, try LUCENE
                     try {
                         LuceneToJexlQueryParser luceneToJexlParser = new LuceneToJexlQueryParser();
                         QueryNode node = luceneToJexlParser.parse(query);
                         String jexlQuery = node.getOriginalQuery();
-                        jexlScript = JexlASTHelper.parseJexlQuery(jexlQuery);
+                        jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
                     } catch (Throwable t2) {
                         
                     }
                 }
+                
+                jexlScript = TreeFlatteningRebuildingVisitor.flatten(jexlScript);
                 
                 if (jexlScript != null) {
                     List<ASTEQNode> positiveEQNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);

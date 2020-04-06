@@ -13,6 +13,7 @@ import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 import com.google.common.base.Predicate;
@@ -34,6 +35,7 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected Set<String> fieldsToAggregate;
     protected EventDataQueryFilter attrFilter;
     protected TermFrequencyAggregator termFrequencyAggregator;
+    protected IteratorEnvironment iteratorEnvironment;
     
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
@@ -101,6 +103,10 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     
     public void setTermFrequencyAggregator(TermFrequencyAggregator termFrequencyAggregator) {
         this.termFrequencyAggregator = termFrequencyAggregator;
+    }
+    
+    public void setEnv(IteratorEnvironment env) {
+        this.iteratorEnvironment = env;
     }
     
     @SuppressWarnings("unchecked")

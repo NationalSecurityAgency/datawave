@@ -425,12 +425,13 @@ public class IngestJob implements Tool {
         Counters counters = job.getCounters();
         log.info(counters);
         
-        JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration());
-        RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
-        
-        // If the job failed, then don't bring the map files online.
-        if (!job.isSuccessful()) {
-            return jobFailed(job, runningJob, outputFs, workDirPath);
+        try (JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration())) {
+            RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
+            
+            // If the job failed, then don't bring the map files online.
+            if (!job.isSuccessful()) {
+                return jobFailed(job, runningJob, outputFs, workDirPath);
+            }
         }
         
         // determine if we had processing errors
@@ -1358,13 +1359,11 @@ public class IngestJob implements Tool {
             throw new IOException("Unable to access " + flagFile + " for copying into hdfs " + workDir + " directory");
         }
         
-        InputStream is = new BufferedInputStream(new FileInputStream(flagFile));
-        try {
+        try (InputStream is = new BufferedInputStream(new FileInputStream(flagFile))) {
             String flagFileBase = getBaseFlagFileName(flagFile.getName());
             Path destFile = new Path(workDir, flagFileBase);
-            OutputStream os = new BufferedOutputStream(fs.create(destFile));
             log.info("Copying flag file into " + destFile);
-            try {
+            try (OutputStream os = new BufferedOutputStream(fs.create(destFile))) {
                 
                 byte[] buffer = new byte[2048];
                 int bytesRead = is.read(buffer);
@@ -1374,11 +1373,7 @@ public class IngestJob implements Tool {
                     }
                     bytesRead = is.read(buffer);
                 }
-            } finally {
-                os.close();
             }
-        } finally {
-            is.close();
         }
     }
     
@@ -1556,51 +1551,51 @@ public class IngestJob implements Tool {
         
         // We are going to serialize the counters into a file in HDFS.
         // The context was set in the processKeyValues method below, and should not be null. We'll guard against NPE anyway
-        RawLocalFileSystem rawFS = new RawLocalFileSystem();
-        rawFS.setConf(conf);
-        CompressionCodec cc = new GzipCodec();
-        CompressionType ct = CompressionType.BLOCK;
-        
-        // Add additional counters
-        if (!outputMutations) {
-            counters.findCounter(IngestProcess.OUTPUT_DIRECTORY.name(), job.getWorkingDirectory().getName()).increment(1);
-        } else {
-            counters.findCounter(IngestProcess.LIVE_INGEST).increment(1);
+        try (RawLocalFileSystem rawFS = new RawLocalFileSystem()) {
+            rawFS.setConf(conf);
+            CompressionCodec cc = new GzipCodec();
+            CompressionType ct = CompressionType.BLOCK;
+            
+            // Add additional counters
+            if (!outputMutations) {
+                counters.findCounter(IngestProcess.OUTPUT_DIRECTORY.name(), job.getWorkingDirectory().getName()).increment(1);
+            } else {
+                counters.findCounter(IngestProcess.LIVE_INGEST).increment(1);
+            }
+            counters.findCounter(IngestProcess.START_TIME).increment(start);
+            counters.findCounter(IngestProcess.END_TIME).increment(stop);
+            
+            if (metricsLabelOverride != null) {
+                counters.getGroup(IngestProcess.METRICS_LABEL_OVERRIDE.name()).findCounter(metricsLabelOverride).increment(1);
+            }
+            
+            // Serialize the counters to a file in HDFS.
+            Path src = new Path("/tmp" + File.separator + job.getJobName() + ".metrics");
+            src = rawFS.makeQualified(src);
+            createFileWithRetries(rawFS, src);
+            try (Writer writer = SequenceFile.createWriter(conf, Writer.file(src), Writer.keyClass(Text.class), Writer.valueClass(Counters.class),
+                            Writer.compression(ct, cc))) {
+                writer.append(new Text(jobId.toString()), counters);
+            }
+            
+            // Now we will try to move the file to HDFS.
+            // Copy the file to the temp dir
+            try {
+                if (!fs.exists(statsDir))
+                    fs.mkdirs(statsDir);
+                Path dst = new Path(statsDir, src.getName());
+                log.info("Copying file " + src + " to " + dst);
+                fs.copyFromLocalFile(false, true, src, dst);
+                // If this worked, then remove the local file
+                rawFS.delete(src, false);
+                // also remove the residual crc file
+                rawFS.delete(getCrcFile(src), false);
+            } catch (IOException e) {
+                // If an error occurs in the copy, then we will leave in the local metrics directory.
+                log.error("Error copying metrics file into HDFS, will remain in metrics directory.", e);
+                return false;
+            }
         }
-        counters.findCounter(IngestProcess.START_TIME).increment(start);
-        counters.findCounter(IngestProcess.END_TIME).increment(stop);
-        
-        if (metricsLabelOverride != null) {
-            counters.getGroup(IngestProcess.METRICS_LABEL_OVERRIDE.name()).findCounter(metricsLabelOverride).increment(1);
-        }
-        
-        // Serialize the counters to a file in HDFS.
-        Path src = new Path("/tmp" + File.separator + job.getJobName() + ".metrics");
-        src = rawFS.makeQualified(src);
-        createFileWithRetries(rawFS, src);
-        Writer writer = SequenceFile.createWriter(conf, Writer.file(src), Writer.keyClass(Text.class), Writer.valueClass(Counters.class),
-                        Writer.compression(ct, cc));
-        writer.append(new Text(jobId.toString()), counters);
-        writer.close();
-        
-        // Now we will try to move the file to HDFS.
-        // Copy the file to the temp dir
-        try {
-            if (!fs.exists(statsDir))
-                fs.mkdirs(statsDir);
-            Path dst = new Path(statsDir, src.getName());
-            log.info("Copying file " + src + " to " + dst);
-            fs.copyFromLocalFile(false, true, src, dst);
-            // If this worked, then remove the local file
-            rawFS.delete(src, false);
-            // also remove the residual crc file
-            rawFS.delete(getCrcFile(src), false);
-        } catch (IOException e) {
-            // If an error occurs in the copy, then we will leave in the local metrics directory.
-            log.error("Error copying metrics file into HDFS, will remain in metrics directory.", e);
-            return false;
-        }
-        
         // now if configured, lets write the stats out to statsd
         CounterToStatsDConfiguration statsDConfig = new CounterToStatsDConfiguration(conf);
         if (statsDConfig.isConfigured()) {
