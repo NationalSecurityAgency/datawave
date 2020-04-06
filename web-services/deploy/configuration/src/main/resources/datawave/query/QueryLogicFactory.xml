@@ -240,6 +240,7 @@
         <property name="statsdHost" value="localhost" />
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+        <property name="evaluationOnlyFields" value="${evaluation.only.fields}" />
     </bean>
     
     <util:map id="BaseEventQueryFilterOptions">
