@@ -769,6 +769,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         String sourceRow = this.fiRow.toString();
         setupRowBasedHdfsBackedSet(sourceRow);
         
+        // if keys is not null, then we already had a completed set which was loaded in setupRowBasedHdfsBackedSet
+        if (keys != null) {
+            moveToNextRow();
+            return;
+        }
+        
         // for each range, fork off a runnable
         List<Future<?>> futures = new ArrayList<>(boundingFiRanges.size());
         if (log.isDebugEnabled()) {
