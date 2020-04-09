@@ -4,6 +4,8 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import datawave.core.iterators.DatawaveFieldIndexRangeIteratorJexl;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -23,6 +25,7 @@ import org.junit.Test;
 import java.io.File;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +81,9 @@ public class IvaratorReloadTest {
     }
     
     public static DatawaveFieldIndexRangeIteratorJexl createRangeIvarator(FileSystem fs, Path uniqueDir) {
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(uniqueDir.toUri().toString());
+        List<IvaratorCacheDir> cacheDirs = Collections.singletonList(new IvaratorCacheDir(config, fs, uniqueDir.toUri().toString()));
+        
         // @formatter:off
         return DatawaveFieldIndexRangeIteratorJexl.builder()
                 .withFieldName(new Text("POINT"))
@@ -93,8 +99,7 @@ public class IvaratorReloadTest {
                 .withHdfsBackedSetBufferSize(10000)
                 .withMaxRangeSplit(1)
                 .withMaxOpenFiles(100)
-                .withFileSystem(fs)
-                .withUniqueDir(uniqueDir)
+                .withIvaratorCacheDirs(cacheDirs)
                 .withQueryLock(null)
                 .allowDirResuse(true)
                 .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
