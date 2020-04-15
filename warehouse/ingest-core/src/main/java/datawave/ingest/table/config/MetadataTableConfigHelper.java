@@ -23,10 +23,10 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (tableName != null) {
             for (IteratorScope scope : IteratorScope.values()) {
-                // setFrequencyCombiner(tops, scope.name());
+                setFrequencyCombiner(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
-                setFrequencyColumnIterator(tops, scope.name());
+                // setFrequencyColumnIterator(tops, scope.name());
             }
         }
         
