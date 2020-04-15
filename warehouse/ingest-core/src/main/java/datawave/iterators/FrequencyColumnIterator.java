@@ -28,19 +28,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
     
     @Override
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
-        Key topKey;
         
-        while (sortedKeyValueIterator.hasTop()) {
-            topKey = sortedKeyValueIterator.getTopKey();
-            if (topKey != null) {
-                Value value = sortedKeyValueIterator.getTopValue();
-                Text columnQualifier = topKey.getColumnQualifier();
-                replaceColumnQualifier(topKey, new Text("csv"));
-                // byte[] buffer = new byte[columnQualifier.getBytes().length + value.get().length];
-                value.set(columnQualifier.getBytes());
-            }
-            sortedKeyValueIterator.next();
-        }
     }
     
 }
