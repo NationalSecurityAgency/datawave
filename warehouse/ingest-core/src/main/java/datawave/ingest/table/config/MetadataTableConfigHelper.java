@@ -63,8 +63,8 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     private String setFrequencyColumnIterator(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException,
                     TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyColumnIterator");
-        setPropertyIfNecessary(tableName, stem, "15,datawave.iterators.FrequencyColumnIterator", tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem, "25,datawave.iterators.FrequencyColumnIterator", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", "zeiberg", tops, log);
         return stem;
     }
     
