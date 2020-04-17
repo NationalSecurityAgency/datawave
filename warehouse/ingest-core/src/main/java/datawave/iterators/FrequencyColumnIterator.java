@@ -28,7 +28,10 @@ public class FrequencyColumnIterator extends TransformingIterator {
     
     @Override
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
-        
+        while (sortedKeyValueIterator.hasTop()) {
+            kvBuffer.append(sortedKeyValueIterator.getTopKey(), sortedKeyValueIterator.getTopValue());
+            sortedKeyValueIterator.next();
+        }
     }
     
 }
