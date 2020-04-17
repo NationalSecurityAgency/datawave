@@ -23,7 +23,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
     
     @Override
     protected PartialKey getKeyPrefix() {
-        return null;
+        return PartialKey.ROW;
     }
     
     @Override

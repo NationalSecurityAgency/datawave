@@ -26,7 +26,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
                 setFrequencyCombiner(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
-                // setFrequencyColumnIterator(tops, scope.name());
+                setFrequencyColumnIterator(tops, scope.name());
             }
         }
         
@@ -65,6 +65,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyColumnIterator");
         setPropertyIfNecessary(tableName, stem, "25,datawave.iterators.FrequencyColumnIterator", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", "zeiberg", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
         return stem;
     }
     
