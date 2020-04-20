@@ -182,6 +182,7 @@
         <property name="numRangesToBuffer" value="15" />
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
+        <property name="evaluationOnlyFields" value="_ANYFIELD_" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">
