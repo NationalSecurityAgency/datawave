@@ -25,6 +25,8 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,6 +37,8 @@ import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class MapReduceJobConfiguration {
     
@@ -249,7 +253,7 @@ public class MapReduceJobConfiguration {
             } else {
                 // Jars within the deployed EAR in Wildfly use the VFS protocol, and need to be handled specially.
                 if (jarFile.startsWith("vfs:")) {
-                    Set<String> files = new HashSet<>();
+                    Set<String> files = new LinkedHashSet<>();
                     try (InputStream urlInputStream = new URL(jarFile).openStream()) {
                         JarInputStream jarInputStream = (JarInputStream) urlInputStream;
                         for (JarEntry jarEntry = jarInputStream.getNextJarEntry(); jarEntry != null; jarEntry = jarInputStream.getNextJarEntry()) {
@@ -284,7 +288,17 @@ public class MapReduceJobConfiguration {
         File[] jarFiles = libDir.listFiles(jarFilter);
         if (jarFiles != null) {
             for (File jar : jarFiles) {
-                addSingleFile(jar, new Path(classpath, jar.getName()), jobId, job, fs);
+                // remove guava classes from jboss-client.jar
+                if (jar.getName().equals("jboss-client.jar")) {
+                    List<Pattern> patterns = new ArrayList<>();
+                    patterns.add(Pattern.compile("^com/google.*"));
+                    patterns.add(Pattern.compile("^META-INF/maven/com.google.guava.*"));
+                    File filteredJar = filterJar(jar, patterns);
+                    addSingleFile(filteredJar, new Path(classpath, jar.getName()), jobId, job, fs);
+                    filteredJar.delete();
+                } else {
+                    addSingleFile(jar, new Path(classpath, jar.getName()), jobId, job, fs);
+                }
             }
         }
         
@@ -300,6 +314,29 @@ public class MapReduceJobConfiguration {
             }
         }
         exportSystemProperties(jobId, job, fs, classpath);
+    }
+    
+    private File filterJar(File source, List<Pattern> patterns) {
+        File f = null;
+        try {
+            f = File.createTempFile(source.getName() + ".", "");
+            try (FileOutputStream fos = new FileOutputStream(f); ZipOutputStream zipOutputStream = new ZipOutputStream(fos)) {
+                try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(source))) {
+                    for (ZipEntry zipEntry = zipInputStream.getNextEntry(); zipEntry != null; zipEntry = zipInputStream.getNextEntry()) {
+                        final String entryName = zipEntry.getName();
+                        if (patterns.stream().noneMatch(p -> p.matcher(entryName).matches())) {
+                            zipOutputStream.putNextEntry(zipEntry);
+                            ByteStreams.copy(zipInputStream, zipOutputStream);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return f;
     }
     
     protected void addSingleFile(File source, Path destination, String jobId, Job job, FileSystem fs) throws IOException {
@@ -420,7 +457,8 @@ public class MapReduceJobConfiguration {
     }
     
     protected void exportSystemProperties(String jobId, Job job, FileSystem fs, Path classpath) {
-        Properties systemProperties = System.getProperties();
+        Properties systemProperties = new Properties();
+        systemProperties.putAll(System.getProperties());
         if (this.jobSystemProperties != null) {
             systemProperties.putAll(this.jobSystemProperties);
         }
