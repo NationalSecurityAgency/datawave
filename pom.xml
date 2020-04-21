@@ -896,6 +896,11 @@
                 <version>${version.geotools}</version>
             </dependency>
             <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-annotations</artifactId>
+                <version>3.4.0.GA</version>
+            </dependency>
+            <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-commons</artifactId>
                 <version>${version.infinispan}</version>
@@ -1136,9 +1141,10 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>boundless</id>
-            <url>https://repo.boundlessgeo.com/main/</url>
+            <id>osgeo</id>
+            <url>https://repo.osgeo.org/repository/release/</url>
         </repository>
+        <!--
         <repository>
             <snapshots>
                 <enabled>false</enabled>
@@ -1147,6 +1153,7 @@
             <name>Open Source Geospatial Foundation Repository</name>
             <url>https://download.osgeo.org/webdav/geotools/</url>
         </repository>
+        -->
     </repositories>
     <pluginRepositories>
         <!--
