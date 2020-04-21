@@ -14,8 +14,6 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.util.StringUtils;
 import datawave.webservice.query.logic.BaseQueryLogic;
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
@@ -37,25 +35,20 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * This is a iterator that will filter documents base on a uniqueness across a set of configured fields. Only the first instance of an event with a unique set
- * of those fields will be returned. This transform is thread safe.
+ * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
+ * fields will be returned. This transform is thread safe.
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
     
     private static final Logger log = Logger.getLogger(GroupingTransform.class);
     
     private BloomFilter<byte[]> bloom = null;
-    private HashSet<ByteSequence> seen;
     private Set<String> fields;
     private Multimap<String,String> modelMapping;
-    private final boolean DEBUG = false;
     
     public UniqueTransform(Set<String> fields) {
         this.fields = fields;
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
-        if (DEBUG) {
-            this.seen = new HashSet<>();
-        }
         if (log.isTraceEnabled())
             log.trace("unique fields: " + this.fields);
     }
@@ -117,19 +110,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     private boolean isDuplicate(Document document) throws IOException {
         byte[] bytes = getBytes(document);
-        ByteSequence byteSeq = new ArrayByteSequence(bytes);
         synchronized (bloom) {
             if (bloom.mightContain(bytes)) {
-                if (DEBUG && !seen.contains(byteSeq)) {
-                    throw new IllegalStateException("This event is 1 in 1Q!");
-                } else {
-                    return true;
-                }
+                return true;
             }
             bloom.put(bytes);
-            if (DEBUG) {
-                seen.add(byteSeq);
-            }
         }
         return false;
     }
