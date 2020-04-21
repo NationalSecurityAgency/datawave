@@ -5,6 +5,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -2238,5 +2239,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setSettings(Query settings) {
         getConfig().setQuery(settings);
+    }
+    
+    public void setEvaluationOnlyFields(String evaluationOnlyFields) {
+        getConfig().setEvaluationOnlyFields(Sets.newHashSet(evaluationOnlyFields.split(",")));
+    }
+    
+    public Set<String> getEvaluationOnlyFields() {
+        return getConfig().getEvaluationOnlyFields();
     }
 }
