@@ -565,6 +565,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        builder.setQueryId(queryId);
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
@@ -643,6 +644,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
             isNegation = oib.isInANot();
         }
+        builder.setQueryId(queryId);
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
@@ -882,6 +884,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         
         IteratorToSortedKeyValueIterator kvIter = new IteratorToSortedKeyValueIterator(getExceededEntry(identifier, range).iterator());
+        builder.setQueryId(queryId);
         builder.setSource(kvIter);
         builder.setValue(null != range.getLower() ? range.getLower().toString() : "null");
         builder.setField(identifier);
@@ -919,6 +922,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         boolean isNegation = (null != data && data instanceof AbstractIteratorBuilder && ((AbstractIteratorBuilder) data).isInANot());
         builder.setSource(getSourceIterator(node, isNegation));
         
+        builder.setQueryId(queryId);
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
@@ -1366,6 +1370,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param data
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
+        builder.setQueryId(queryId);
         builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
