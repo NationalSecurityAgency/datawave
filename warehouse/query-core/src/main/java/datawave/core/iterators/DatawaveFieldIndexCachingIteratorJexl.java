@@ -10,6 +10,7 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
 import datawave.query.iterator.CachingIterator;
 import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
+import datawave.query.iterator.SeekableIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
@@ -297,7 +298,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // a thread safe wrapper around the sorted set used by the scan threads
     private SortedSet<Key> threadSafeSet = null;
     // the iterator (merge sort) of key values once the sorted set has been filled
-    private PeekingIterator<Key> keys = null;
+    private CachingIterator<Key> keys = null;
     // the current row covered by the hdfs set
     private String currentRow = null;
     // did we create the row directory
@@ -740,6 +741,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                             log.debug("setting as topKey " + topKey);
                         }
                         break;
+                    }
+                    // so the range does not contain the key. determine if we need to seek
+                    else if (key.compareTo(this.lastRangeSeeked.getStartKey()) < 0) {
+                        this.keys = new CachingIterator<>(threadSafeSet.tailSet(this.lastRangeSeeked.getStartKey()).iterator());
                     }
                 }
             }

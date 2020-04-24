@@ -1,18 +1,10 @@
 package datawave.query.util.sortedset;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Comparator;
 import java.util.SortedSet;
+import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
@@ -34,13 +26,24 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
     }
     
     /**
+     * Create a file sorted subset from another one
+     * 
+     * @param other
+     * @param from
+     * @param to
+     */
+    public FileKeySortedSet(FileKeySortedSet other, Key from, Key to) {
+        super(other, from, to);
+    }
+    
+    /**
      * Create a persisted sorted set
      * 
      * @param handler
      * @param persisted
      */
     public FileKeySortedSet(SortedSetFileHandler handler, boolean persisted) {
-        super(handler, persisted);
+        super(new KeyFileHandler(handler), new FileKeySortedSet.Factory(), persisted);
     }
     
     /**
@@ -51,7 +54,10 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * @param persisted
      */
     public FileKeySortedSet(Comparator<? super Key> comparator, SortedSetFileHandler handler, boolean persisted) {
-        super(comparator, handler, persisted);
+        this(handler, persisted);
+        if (comparator != null) {
+            throw new UnsupportedOperationException("Cannot supply a comparator for a FileKeySortedSet.  Only a Key comparator will work");
+        }
     }
     
     /**
@@ -61,7 +67,7 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * @param handler
      */
     public FileKeySortedSet(SortedSet<Key> set, SortedSetFileHandler handler) {
-        super(set, handler);
+        super(set, new KeyFileHandler(handler), new FileKeySortedSet.Factory());
     }
     
     /**
@@ -72,56 +78,17 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      * @param handler
      */
     public FileKeySortedSet(SortedSet<Key> set, SortedSetFileHandler handler, boolean persist) throws IOException {
-        super(set, handler, persist);
+        super(set, new KeyFileHandler(handler), new FileKeySortedSet.Factory(), persist);
     }
     
     /**
-     * Get an input stream
-     * 
-     * @return the input stream
-     * @throws FileNotFoundException
-     * @throws IOException
-     */
-    @Override
-    protected DataInputStream getInputStream() throws IOException {
-        return new DataInputStream(new BufferedInputStream(handler.getInputStream()));
-    }
-    
-    /**
-     * Get an output stream
-     * 
-     * @return the output stream
-     * @throws IOException
-     */
-    @Override
-    protected DataOutputStream getOutputStream() throws IOException {
-        return new DataOutputStream(new BufferedOutputStream(handler.getOutputStream()));
-    }
-    
-    /**
-     * Write T to an object output stream
-     * 
-     * @param stream
-     * @param t
-     * @throws IOException
-     */
-    @Override
-    protected void writeObject(OutputStream stream, Key t) throws IOException {
-        t.write((DataOutputStream) stream);
-    }
-    
-    /**
-     * Read T from an object input stream
+     * This will dump the set to the file, making the set "persisted"
      *
-     * @param stream
-     * @return a key
      * @throws IOException
      */
-    @Override
-    protected Key readObject(InputStream stream) throws IOException {
-        Key o = new Key();
-        o.readFields((DataInputStream) stream);
-        return o;
+    public void persist(SortedSetFileHandler handler) throws IOException {
+        // ensure this handler is wrapped with our handler
+        super.persist(new KeyFileHandler(handler));
     }
     
     /**
@@ -129,13 +96,59 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
      */
     @Override
     public FileKeySortedSet clone() {
-        return new FileKeySortedSet(this);
+        return (FileKeySortedSet) super.clone();
+    }
+    
+    /**
+     * A sortedsetfilehandler that can bound the input stream
+     */
+    public static class KeyFileHandler implements BoundedTypedSortedSetFileHandler<Key> {
+        SortedSetFileHandler delegate;
+        
+        public KeyFileHandler(SortedSetFileHandler handler) {
+            this.delegate = handler;
+        }
+        
+        @Override
+        public SortedSetInputStream<Key> getInputStream() throws IOException {
+            return new RFileKeyInputStream(delegate.getInputStream(), delegate.getSize());
+        }
+        
+        @Override
+        public SortedSetInputStream<Key> getInputStream(Key start, Key end) throws IOException {
+            return new RFileKeyInputStream(delegate.getInputStream(), delegate.getSize(), start, end);
+        }
+        
+        @Override
+        public SortedSetOutputStream getOutputStream() throws IOException {
+            return new RFileKeyOutputStream(delegate.getOutputStream());
+        }
+        
+        @Override
+        public long getSize() {
+            return delegate.getSize();
+        }
+        
+        @Override
+        public void deleteFile() {
+            delegate.deleteFile();
+        }
     }
     
     /**
      * A factory for these file sorted sets
      */
     public static class Factory implements FileSortedSetFactory<Key> {
+        
+        @Override
+        public FileKeySortedSet newInstance(FileSortedSet<Key> other) {
+            return new FileKeySortedSet((FileKeySortedSet) other);
+        }
+        
+        @Override
+        public FileKeySortedSet newInstance(FileSortedSet<Key> other, Key from, Key to) {
+            return new FileKeySortedSet((FileKeySortedSet) other, from, to);
+        }
         
         @Override
         public FileKeySortedSet newInstance(SortedSetFileHandler handler, boolean persisted) {

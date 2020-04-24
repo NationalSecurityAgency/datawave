@@ -143,7 +143,10 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
     public E first() {
         SortedSet<E> firstSet = new TreeSet<>(comparator());
         for (SortedSet<E> set : sets) {
-            firstSet.add(set.first());
+            E s = set.first();
+            if (s != null) {
+                firstSet.add(s);
+            }
         }
         return firstSet.first();
     }
@@ -152,13 +155,16 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
     public E last() {
         SortedSet<E> lastSet = new TreeSet<>(comparator());
         for (SortedSet<E> set : sets) {
-            lastSet.add(set.last());
+            E s = set.last();
+            if (s != null) {
+                lastSet.add(s);
+            }
         }
         return lastSet.last();
     }
     
-    @Override
-    public String toString() {
-        return sets.toString();
-    }
+    // @Override
+    // public String toString() {
+    // return sets.toString();
+    // }
 }

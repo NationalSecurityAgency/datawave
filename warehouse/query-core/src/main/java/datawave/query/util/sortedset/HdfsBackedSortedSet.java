@@ -1,7 +1,6 @@
 package datawave.query.util.sortedset;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,10 +8,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
-
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
-import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
-
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsStatus;
@@ -156,7 +151,7 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         }
         
         @Override
-        public SortedSetFileHandler createHandler() throws IOException {
+        public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
             FileSystem fs = getFs();
             Path uniqueDir = getUniqueDir();
             
@@ -177,7 +172,7 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         
     }
     
-    public static class SortedSetHdfsFileHandler implements SortedSetFileHandler {
+    public static class SortedSetHdfsFileHandler implements FileSortedSet.SortedSetFileHandler {
         private FileSystem fs;
         private Path file;
         
@@ -199,7 +194,7 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
             if (log.isDebugEnabled()) {
                 log.debug("Reading " + file);
             }
-            return new BufferedInputStream(fs.open(file));
+            return fs.open(file);
         }
         
         @Override
@@ -207,7 +202,7 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
             if (log.isDebugEnabled()) {
                 log.debug("Creating " + file);
             }
-            return new BufferedOutputStream(fs.create(file));
+            return fs.create(file);
         }
         
         @Override
