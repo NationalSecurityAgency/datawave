@@ -321,7 +321,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         }
         
         // get the table priorities
-        Map<String,Integer> tablePriorities = IngestJob.getTablePriorities(conf);
+        Map<String,Integer> tablePriorities = TableConfigurationUtil.getTablePriorities(conf);
         if (tablePriorities.isEmpty()) {
             log.error("Configured tables for configured data types is empty");
             System.exit(-2);

@@ -19,7 +19,7 @@ public class MetadataTableSplitsCacheStatus {
      * @return
      */
     public static boolean isCacheValid(Configuration conf) throws IOException {
-        Path splitsPath = MetadataTableSplits.getSplitsPath(conf);
+        Path splitsPath = TableSplitsCache.getSplitsPath(conf);
         FileStatus fileStatus = null;
         try {
             fileStatus = FileSystem.get(splitsPath.toUri(), conf).getFileStatus(splitsPath);
