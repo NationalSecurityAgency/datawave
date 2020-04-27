@@ -138,10 +138,6 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             if (numArgs == 0) {
                 throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
             }
-        } else if (name.equals(QueryFunctions.INCLUDE_FUNCTION) || name.equals(QueryFunctions.EXCLUDE_FUNCTION)) {
-            if (numArgs < 2) {
-                throw new IllegalArgumentException("Wrong number of arguments expected for " + name + " function");
-            }
         } else {
             throw new IllegalArgumentException("Unknown Query function: " + name);
         }

@@ -22,8 +22,6 @@ public class QueryFunctions {
     public static final String OPTIONS_FUNCTION = "options";
     public static final String UNIQUE_FUNCTION = "unique";
     public static final String GROUPBY_FUNCTION = "groupby";
-    public static final String INCLUDE_FUNCTION = "include";
-    public static final String EXCLUDE_FUNCTION = "exclude";
     
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
     

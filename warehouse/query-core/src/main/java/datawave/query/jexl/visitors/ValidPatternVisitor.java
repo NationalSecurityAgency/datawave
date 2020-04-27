@@ -67,7 +67,9 @@ public class ValidPatternVisitor extends BaseVisitor {
      * Visit an ASTFunctionNode to catch cases like #INCLUDE or #EXCLUDE that accept a regex as an argument
      * 
      * @param node
+     *            - an ASTFunctionNode
      * @param data
+     *            - the data
      * @return
      */
     @Override
@@ -105,18 +107,15 @@ public class ValidPatternVisitor extends BaseVisitor {
         Object literalValue = JexlASTHelper.getLiteralValue(node);
         if (literalValue != null && String.class.equals(literalValue.getClass())) {
             String literalString = (String) literalValue;
-            // Only parse literals that contain a regex char
-            if (StringUtils.containsAny(literalString, "?.*^+-_[](){}")) {
-                try {
-                    if (patternCache.containsKey(literalString)) {
-                        return;
-                    }
-                    patternCache.put(literalString, Pattern.compile(literalString));
-                } catch (PatternSyntaxException e) {
-                    String builtNode = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-                    String errMsg = "Invalid pattern found in filter function '" + builtNode + "'";
-                    throw new PatternSyntaxException(errMsg, e.getPattern(), e.getIndex());
+            try {
+                if (patternCache.containsKey(literalString)) {
+                    return;
                 }
+                patternCache.put(literalString, Pattern.compile(literalString));
+            } catch (PatternSyntaxException e) {
+                String builtNode = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+                String errMsg = "Invalid pattern found in filter function '" + builtNode + "'";
+                throw new PatternSyntaxException(errMsg, e.getPattern(), e.getIndex());
             }
         }
     }
