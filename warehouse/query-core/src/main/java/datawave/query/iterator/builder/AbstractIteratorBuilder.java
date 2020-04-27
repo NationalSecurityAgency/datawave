@@ -8,7 +8,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import datawave.query.iterator.NestedIterator;
 
 import com.google.common.collect.HashMultimap;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
  * Provides semantics for adding sources to a nested iterator but deferring the creation of iterator. This is meant to be used in a visitor.
@@ -24,6 +23,8 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     protected boolean inANot;
     
     protected boolean sortedUIDs;
+    
+    protected String queryId;
     
     public boolean isSortedUIDs() {
         return sortedUIDs;
@@ -93,6 +94,14 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     
     public String getValue() {
         return this.value;
+    }
+    
+    public String getQueryId() {
+        return queryId;
+    }
+    
+    public void setQueryId(String queryId) {
+        this.queryId = queryId;
     }
     
     /**

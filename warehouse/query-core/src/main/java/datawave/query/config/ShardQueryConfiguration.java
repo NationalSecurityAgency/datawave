@@ -192,6 +192,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -481,6 +482,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
+        this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
     }
     
     /**
@@ -1996,5 +1998,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setContentFieldNames(List<String> contentFieldNames) {
         this.contentFieldNames = contentFieldNames;
+    }
+    
+    public void setEvaluationOnlyFields(Set<String> evaluationOnlyFields) {
+        this.evaluationOnlyFields = evaluationOnlyFields;
+    }
+    
+    public Set<String> getEvaluationOnlyFields() {
+        return this.evaluationOnlyFields;
     }
 }
