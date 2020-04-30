@@ -2,7 +2,6 @@ package datawave.ingest.mapreduce.handler.facet;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.clearspring.analytics.stream.frequency.CountMinSketch;
-import jj2000.j2k.util.FacilityManager;
 import org.apache.accumulo.core.data.Value;
 
 import java.io.ByteArrayOutputStream;

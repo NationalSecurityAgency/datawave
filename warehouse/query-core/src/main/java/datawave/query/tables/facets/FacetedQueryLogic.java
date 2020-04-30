@@ -208,6 +208,18 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         facetedConfig.setMaximumFacetGroupCount(maxGroup);
     }
     
+    public void setFacetTableName(String facetTableName) {
+        facetedConfig.setFacetTableName(facetTableName);
+    }
+    
+    public void setFacetMetadataTableName(String facetMetadataTableName) {
+        facetedConfig.setFacetMetadataTableName(facetMetadataTableName);
+    }
+    
+    public void setFacetHashTableName(String facetHashTableName) {
+        facetedConfig.setFacetHashTableName(facetHashTableName);
+    }
+    
     protected FacetedQueryPlanner getPlanner() {
         return (FacetedQueryPlanner) this.getQueryPlanner();
     }

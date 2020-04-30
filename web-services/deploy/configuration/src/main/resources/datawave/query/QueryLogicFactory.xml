@@ -471,6 +471,9 @@
         <property name="logicDescription" value="Faceted search over indexed fields, returning aggregate counts for field values" />
         <property name="queryPlanner" ref="FacetedQueryPlanner" />
         <property name="facetedSearchType" value="FIELD_VALUE_FACETS" />
+        <property name="facetTableName" value="${facet.table.name}" />
+        <property name="facetMetadataTableName" value="${facet.metadata.table.name}" />
+        <property name="facetHashTableName" value="${facet.hash.table.name" />
         <property name="maximumFacetGrouping" value="200" />
         <property name="minimumFacet" value="1" />
         <property name="streaming" value="true" />

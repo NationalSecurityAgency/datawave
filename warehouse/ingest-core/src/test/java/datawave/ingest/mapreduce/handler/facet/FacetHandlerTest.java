@@ -203,7 +203,7 @@ public class FacetHandlerTest {
         try {
             handler.process(null, event, eventFields, sctx, contextWriter);
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Error setting up context writer", e);
+            throw new RuntimeException("Error processing event data", e);
         }
     }
     
