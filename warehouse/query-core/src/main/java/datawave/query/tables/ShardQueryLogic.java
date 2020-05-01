@@ -1666,6 +1666,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIvaratorNumRetries(ivaratorNumRetries);
     }
     
+    public boolean isIvaratorPersistVerify() {
+        return getConfig().isIvaratorPersistVerify();
+    }
+    
+    public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
+        getConfig().setIvaratorPersistVerify(ivaratorPersistVerify);
+    }
+    
+    public int getIvaratorPersistVerifyCount() {
+        return getConfig().getIvaratorPersistVerifyCount();
+    }
+    
+    public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
+        getConfig().setIvaratorPersistVerifyCount(ivaratorPersistVerifyCount);
+    }
+    
     public int getMaxIvaratorSources() {
         return getConfig().getMaxIvaratorSources();
     }

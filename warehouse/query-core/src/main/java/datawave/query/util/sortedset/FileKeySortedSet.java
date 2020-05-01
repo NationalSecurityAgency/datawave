@@ -125,6 +125,11 @@ public class FileKeySortedSet extends FileSortedSet<Key> {
         }
         
         @Override
+        public PersistOptions getPersistOptions() {
+            return delegate.getPersistOptions();
+        }
+        
+        @Override
         public long getSize() {
             return delegate.getSize();
         }

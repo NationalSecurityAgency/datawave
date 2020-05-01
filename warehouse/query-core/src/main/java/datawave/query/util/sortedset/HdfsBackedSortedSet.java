@@ -22,41 +22,46 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         super(other);
     }
     
-    public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries) throws IOException {
-        this(ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
+    public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries,
+                    FileSortedSet.PersistOptions persistOptions) throws IOException {
+        this(ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, persistOptions, new FileSerializableSortedSet.Factory());
     }
     
     public HdfsBackedSortedSet(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles, int numRetries,
-                    FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
-        this(null, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries);
+                    FileSortedSet.PersistOptions persistOptions, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
+        this(null, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, persistOptions, setFactory);
     }
     
     public HdfsBackedSortedSet(Comparator<? super E> comparator, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles,
-                    int numRetries) throws IOException {
-        this(comparator, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
+                    int numRetries, FileSortedSet.PersistOptions persistOptions) throws IOException {
+        this(comparator, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, persistOptions, new FileSerializableSortedSet.Factory());
     }
     
     public HdfsBackedSortedSet(Comparator<? super E> comparator, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath, int maxOpenFiles,
-                    int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
-        this(comparator, 10000, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries);
+                    int numRetries, FileSortedSet.PersistOptions persistOptions, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
+        this(comparator, 10000, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, persistOptions, setFactory);
     }
     
-    private static List<SortedSetFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath) {
+    private static List<SortedSetFileHandlerFactory> createFileHandlerFactories(List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
+                    FileSortedSet.PersistOptions persistOptions) {
         List<SortedSetFileHandlerFactory> fileHandlerFactories = new ArrayList<>();
         for (IvaratorCacheDir ivaratorCacheDir : ivaratorCacheDirs) {
-            fileHandlerFactories.add(new SortedSetHdfsFileHandlerFactory(ivaratorCacheDir, uniqueSubPath));
+            fileHandlerFactories.add(new SortedSetHdfsFileHandlerFactory(ivaratorCacheDir, uniqueSubPath, persistOptions));
         }
         return fileHandlerFactories;
     }
     
     public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
-                    int maxOpenFiles, int numRetries) throws IOException {
-        this(comparator, bufferPersistThreshold, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, new FileSerializableSortedSet.Factory());
+                    int maxOpenFiles, int numRetries, FileSortedSet.PersistOptions persistOptions) throws IOException {
+        this(comparator, bufferPersistThreshold, ivaratorCacheDirs, uniqueSubPath, maxOpenFiles, numRetries, persistOptions,
+                        new FileSerializableSortedSet.Factory());
     }
     
     public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, List<IvaratorCacheDir> ivaratorCacheDirs, String uniqueSubPath,
-                    int maxOpenFiles, int numRetries, FileSortedSet.FileSortedSetFactory<E> setFactory) throws IOException {
-        super(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, createFileHandlerFactories(ivaratorCacheDirs, uniqueSubPath), setFactory);
+                    int maxOpenFiles, int numRetries, FileSortedSet.PersistOptions persistOptions, FileSortedSet.FileSortedSetFactory<E> setFactory)
+                    throws IOException {
+        super(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, createFileHandlerFactories(ivaratorCacheDirs, uniqueSubPath, persistOptions),
+                        setFactory);
         
         // for each of the handler factories, check to see if there are any existing files we should load
         for (SortedSetFileHandlerFactory handlerFactory : handlerFactories) {
@@ -73,7 +78,7 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
                         for (FileStatus file : files) {
                             if (!file.isDir() && file.getPath().getName().startsWith(FILENAME_PREFIX)) {
                                 count++;
-                                addSet(setFactory.newInstance(comparator, new SortedSetHdfsFileHandler(fs, file.getPath()), true));
+                                addSet(setFactory.newInstance(comparator, new SortedSetHdfsFileHandler(fs, file.getPath(), persistOptions), true));
                             }
                         }
                     }
@@ -103,10 +108,12 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
         final private IvaratorCacheDir ivaratorCacheDir;
         private String uniqueSubPath;
         private int fileCount = 0;
+        private FileSortedSet.PersistOptions persistOptions;
         
-        public SortedSetHdfsFileHandlerFactory(IvaratorCacheDir ivaratorCacheDir, String uniqueSubPath) {
+        public SortedSetHdfsFileHandlerFactory(IvaratorCacheDir ivaratorCacheDir, String uniqueSubPath, FileSortedSet.PersistOptions persistOptions) {
             this.ivaratorCacheDir = ivaratorCacheDir;
             this.uniqueSubPath = uniqueSubPath;
+            this.persistOptions = persistOptions;
         }
         
         public IvaratorCacheDir getIvaratorCacheDir() {
@@ -162,7 +169,7 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
             // generate a unique file name
             fileCount++;
             Path file = new Path(uniqueDir, FILENAME_PREFIX + fileCount + '.' + System.currentTimeMillis());
-            return new SortedSetHdfsFileHandler(fs, file);
+            return new SortedSetHdfsFileHandler(fs, file, persistOptions);
         }
         
         @Override
@@ -175,10 +182,12 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
     public static class SortedSetHdfsFileHandler implements FileSortedSet.SortedSetFileHandler {
         private FileSystem fs;
         private Path file;
+        private FileSortedSet.PersistOptions persistOptions;
         
-        public SortedSetHdfsFileHandler(FileSystem fs, Path file) {
+        public SortedSetHdfsFileHandler(FileSystem fs, Path file, FileSortedSet.PersistOptions persistOptions) {
             this.fs = fs;
             this.file = file;
+            this.persistOptions = persistOptions;
         }
         
         private String getScheme() {
@@ -203,6 +212,11 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> imple
                 log.debug("Creating " + file);
             }
             return fs.create(file);
+        }
+        
+        @Override
+        public FileSortedSet.PersistOptions getPersistOptions() {
+            return persistOptions;
         }
         
         @Override

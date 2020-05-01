@@ -120,6 +120,11 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
         }
         
         @Override
+        public PersistOptions getPersistOptions() {
+            return delegate.getPersistOptions();
+        }
+        
+        @Override
         public long getSize() {
             return delegate.getSize();
         }

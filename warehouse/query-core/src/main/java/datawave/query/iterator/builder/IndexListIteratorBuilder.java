@@ -86,6 +86,7 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                         .withMaxOpenFiles(ivaratorMaxOpenFiles)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
                         .withNumRetries(ivaratorNumRetries)
+                        .withPersistOptions(ivaratorPersistOptions)
                         .withMaxResults(maxIvaratorResults)
                         .withQueryLock(queryLock)
                         .allowDirResuse(true)

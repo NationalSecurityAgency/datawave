@@ -41,6 +41,11 @@ public class SortedSetTempFileHandler implements FileSortedSet.SortedSetFileHand
     }
     
     @Override
+    public FileSortedSet.PersistOptions getPersistOptions() {
+        return new FileSortedSet.PersistOptions();
+    }
+    
+    @Override
     public long getSize() {
         return (file.exists() ? file.length() : -1);
     }
