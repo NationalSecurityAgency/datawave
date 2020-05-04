@@ -88,8 +88,6 @@
         <!--<lookup-method name="getQueryModelProvider" bean="metadataHelperQueryModelProvider" />-->
     </bean>
 
-    <bean id="FacetedQueryPlanner" scope="prototype" class="datawave.query.planner.FacetedQueryPlanner"/>
-
     <bean id="queryModelProviderFactory" class="datawave.query.planner.QueryModelProvider.Factory" >
         <lookup-method name="createQueryModelProvider" bean="metadataHelperQueryModelProvider" />
     </bean>
@@ -469,11 +467,10 @@
     <bean id="FacetedQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.facets.FacetedQueryLogic">
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Faceted search over indexed fields, returning aggregate counts for field values" />
-        <property name="queryPlanner" ref="FacetedQueryPlanner" />
         <property name="facetedSearchType" value="FIELD_VALUE_FACETS" />
-        <property name="facetTableName" value="${facet.table.name}" />
-        <property name="facetMetadataTableName" value="${facet.metadata.table.name}" />
-        <property name="facetHashTableName" value="${facet.hash.table.name" />
+        <property name="facetTableName" value="${table.name.facet}" />
+        <property name="facetMetadataTableName" value="${table.name.facet.metadata}" />
+        <property name="facetHashTableName" value="${table.name.facet.hashes}" />
         <property name="maximumFacetGrouping" value="200" />
         <property name="minimumFacet" value="1" />
         <property name="streaming" value="true" />

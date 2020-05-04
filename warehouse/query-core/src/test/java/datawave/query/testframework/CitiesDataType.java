@@ -58,7 +58,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             this.cityName = name;
         }
         
-        private String getIngestFile() {
+        public String getIngestFile() {
             return this.ingestFile;
         }
         

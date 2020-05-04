@@ -72,8 +72,6 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     private static final String NULL = "\0";
     private static final Value EMPTY_VALUE = new Value(new byte[] {});
     
-    // protected Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
-    
     /* Global configuration fields */
     
     protected Text facetTableName;
@@ -321,7 +319,6 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         return new Text(pivotFieldName + NULL + facetFieldName);
     }
     
-    /** TODO */
     @Override
     public FacetValue estimate(RawRecordContainer input) {
         // precision value: 10, sparse set disabled.
