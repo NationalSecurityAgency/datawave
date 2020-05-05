@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>3.1.0-SNAPSHOT</version>
+    <version>2.10.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -33,14 +33,13 @@
         <version.accumulo>1.9.2</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
-        <version.avro>1.8.2</version.avro>
+        <version.avro>1.7.4</version.avro>
         <version.caffeine>2.7.0</version.caffeine>
         <version.commons-beanutils>1.9.3</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.12</version.commons-codec>
         <version.commons-collections>4.3</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
-        <version.commons-configuration2>2.3</version.commons-configuration2>
         <version.commons-io>2.6</version.commons-io>
         <version.commons-jexl>2.1.1</version.commons-jexl>
         <version.commons-lang>2.6</version.commons-lang>
@@ -56,7 +55,7 @@
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
-        <version.hadoop>3.0.0-cdh6.2.0</version.hadoop>
+        <version.hadoop>2.6.0-cdh5.9.1</version.hadoop>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
@@ -107,10 +106,8 @@
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
-        <version.woodstox-core>5.0.3</version.woodstox-core>
-        <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.0.SP02</version.xerces>
-        <version.zookeeper>3.4.5-cdh6.3.1</version.zookeeper>
+        <version.zookeeper>3.4.5-cdh5.9.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
     </properties>
@@ -155,11 +152,6 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-jaxb-annotations</artifactId>
                 <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.woodstox</groupId>
-                <artifactId>woodstox-core</artifactId>
-                <version>${version.woodstox-core}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -611,11 +603,6 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
-                <artifactId>commons-configuration2</artifactId>
-                <version>${version.commons-configuration2}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
                 <artifactId>commons-jexl</artifactId>
                 <version>${version.commons-jexl}</version>
             </dependency>
@@ -896,6 +883,11 @@
                 <version>${version.geotools}</version>
             </dependency>
             <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-annotations</artifactId>
+                <version>3.4.0.GA</version>
+            </dependency>
+            <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-commons</artifactId>
                 <version>${version.infinispan}</version>
@@ -1136,9 +1128,10 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>boundless</id>
-            <url>https://repo.boundlessgeo.com/main/</url>
+            <id>osgeo</id>
+            <url>https://repo.osgeo.org/repository/release/</url>
         </repository>
+        <!--
         <repository>
             <snapshots>
                 <enabled>false</enabled>
@@ -1147,6 +1140,7 @@
             <name>Open Source Geospatial Foundation Repository</name>
             <url>https://download.osgeo.org/webdav/geotools/</url>
         </repository>
+        -->
     </repositories>
     <pluginRepositories>
         <!--
@@ -1273,7 +1267,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>8.21</version>
+                            <version>8.29</version>
                         </dependency>
                     </dependencies>
                     <executions>

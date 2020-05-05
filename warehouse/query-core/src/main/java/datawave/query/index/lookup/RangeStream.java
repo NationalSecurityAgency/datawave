@@ -31,7 +31,6 @@ import datawave.query.planner.QueryPlan;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.SessionOptions;
-import datawave.query.tld.CreateTLDUidsIterator;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
@@ -55,6 +54,7 @@ import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -115,7 +115,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected IndexStream queryStream;
     protected boolean limitScanners = false;
     protected Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass = CreateUidsIterator.class;
-    protected Class<? extends SortedKeyValueIterator<Key,Value>> createCondensedUidIteratorClass = CondensedUidIterator.class;
     protected Multimap<String,Type<?>> fieldDataTypes;
     
     protected BlockingQueue<Runnable> runnables;
@@ -136,10 +135,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected ExecutorService streamExecutor;
     
     protected boolean collapseUids = false;
-    
-    private boolean setCondenseUids = true;
-    
-    private boolean compressUidsInRangeStream = false;
     
     protected Set<String> indexOnlyFields = Sets.newHashSet();
     
@@ -169,7 +164,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         
         tree = node;
         
-        if (!collapseUids && createUidsIteratorClass == CreateTLDUidsIterator.class) {
+        if (!collapseUids && config.getParseTldUids()) {
             collapseUids = !(EvaluationRendering.canDisableEvaluation(script, config, metadataHelper, true));
             
             if (log.isTraceEnabled()) {
@@ -454,74 +449,30 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             int stackStart = config.getBaseIteratorPriority();
             
             if (limitScanners) {
+                // Setup the CreateUidsIterator
+                RangeStreamScanner scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
+                                config.getShardsPerDayThreshold());
+                scanSession.setMaxResults(config.getMaxIndexBatchSize());
+                scanSession.setExecutor(streamExecutor);
                 
-                if (setCondenseUids) {
-                    // Setup the CondenseUidsIterator
-                    
-                    boolean condensedTld = false;
-                    Class<? extends SortedKeyValueIterator<Key,Value>> iterClazz = createCondensedUidIteratorClass;
-                    if (createUidsIteratorClass == CreateTLDUidsIterator.class) {
-                        condensedTld = true;
-                    }
-                    
-                    RangeStreamScanner scanSession = scanners.newCondensedRangeScanner(config.getIndexTableName(), config.getAuthorizations(),
-                                    config.getQuery(), config.getShardsPerDayThreshold());
-                    scanSession.setMaxResults(config.getMaxIndexBatchSize());
-                    scanSession.setExecutor(streamExecutor);
-                    
-                    if (log.isTraceEnabled()) {
-                        log.trace("Provided new object " + scanSession.hashCode());
-                    }
-                    SessionOptions options = new SessionOptions();
-                    options.fetchColumnFamily(new Text(fieldName));
-                    options.addScanIterator(makeDataTypeFilter(config, stackStart++));
-                    
-                    final IteratorSetting uidSetting = new IteratorSetting(stackStart++, iterClazz);
-                    // Set condense-specific options
-                    uidSetting.addOption(CondensedUidIterator.SHARDS_TO_EVALUATE, Integer.valueOf(config.getShardsPerDayThreshold()).toString());
-                    uidSetting.addOption(CondensedUidIterator.MAX_IDS, Integer.valueOf(MAX_MEDIAN).toString());
-                    uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.valueOf(compressUidsInRangeStream).toString());
-                    
-                    // Add TLD option, if applicable
-                    if (condensedTld) {
-                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(condensedTld).toString());
-                    }
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                    
-                    options.addScanIterator(uidSetting);
-                    String queryString = fieldName + "=='" + literal + "'";
-                    options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
-                    
-                    scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
-                    
-                    itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
-                    
-                } else {
-                    // Setup the CreateUidsIterator
-                    
-                    RangeStreamScanner scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                    config.getShardsPerDayThreshold());
-                    scanSession.setMaxResults(config.getMaxIndexBatchSize());
-                    scanSession.setExecutor(streamExecutor);
-                    
-                    if (log.isTraceEnabled()) {
-                        log.trace("Provided new object " + scanSession.hashCode());
-                    }
-                    SessionOptions options = new SessionOptions();
-                    options.fetchColumnFamily(new Text(fieldName));
-                    options.addScanIterator(makeDataTypeFilter(config, stackStart++));
-                    
-                    final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                    options.addScanIterator(uidSetting);
-                    
-                    String queryString = fieldName + "=='" + literal + "'";
-                    options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
-                    
-                    scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
-                    
-                    itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
+                if (log.isTraceEnabled()) {
+                    log.trace("Provided new object " + scanSession.hashCode());
                 }
+                SessionOptions options = new SessionOptions();
+                options.fetchColumnFamily(new Text(fieldName));
+                options.addScanIterator(makeDataTypeFilter(config, stackStart++));
+                
+                final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
+                options.addScanIterator(uidSetting);
+                
+                String queryString = fieldName + "=='" + literal + "'";
+                options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
+                
+                scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
+                
+                itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
                 
             } else {
                 
@@ -532,6 +483,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
                 final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                 scanner.addScanIterator(uidSetting);
                 
                 itr = Iterators.transform(scanner.iterator(), new EntryParser(node, fieldName, literal, indexOnlyFields));
@@ -612,6 +564,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return ScannerStream.delayedExpression(node);
+    }
+    
+    @Override
+    public Object visit(ASTFalseNode node, Object data) {
+        return ScannerStream.noData(node);
     }
     
     private boolean isUnOrNotFielded(JexlNode node) {
@@ -849,12 +806,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
         
-        Calendar start = Calendar.getInstance();
-        start.setTime(config.getBeginDate());
-        Calendar end = Calendar.getInstance();
-        end.setTime(config.getEndDate());
+        Calendar start = getCalendarStartOfDay(config.getBeginDate());
+        Calendar end = getCalendarStartOfDay(config.getEndDate());
         
-        while (!start.after(end)) {
+        while (start.compareTo(end) <= 0) {
             String day = DateHelper.format(start.getTime());
             IndexInfo info = new IndexInfo(-1);
             info.setNode(node);
@@ -862,6 +817,16 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             start.add(Calendar.DAY_OF_YEAR, 1);
         }
         return list;
+    }
+    
+    private static Calendar getCalendarStartOfDay(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar;
     }
     
     /**
@@ -913,10 +878,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public RangeStream setUidIntersector(UidIntersector uidIntersector) {
         this.uidIntersector = uidIntersector;
         return this;
-    }
-    
-    public void setCreateCondensedUidIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> createCondensedUidIteratorClass) {
-        this.createCondensedUidIteratorClass = createCondensedUidIteratorClass;
     }
     
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
@@ -977,13 +938,5 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public void close() {
         streamExecutor.shutdownNow();
         executor.shutdownNow();
-    }
-    
-    public void setCondenseUids(boolean setCondenseUids) {
-        this.setCondenseUids = setCondenseUids;
-    }
-    
-    public void setCompressUids(boolean compressUidsInRangeStream) {
-        this.compressUidsInRangeStream = compressUidsInRangeStream;
     }
 }

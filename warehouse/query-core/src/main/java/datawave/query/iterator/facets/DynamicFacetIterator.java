@@ -115,7 +115,8 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                 
                 try {
                     
-                    script = JexlASTHelper.parseJexlQuery(this.getQuery());
+                    // Parse & flatten the query tree.
+                    script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
                     
                     myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
                     
