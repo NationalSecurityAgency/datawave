@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>3.1.0-SNAPSHOT</version>
+        <version>2.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
@@ -559,22 +559,12 @@
                                             <version>4.0.1-incubating</version>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>com.fasterxml.woodstox</groupId>
-                                            <artifactId>woodstox-core</artifactId>
-                                            <version>${version.woodstox-core}</version>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.codehaus.woodstox</groupId>
-                                            <artifactId>stax2-api</artifactId>
-                                            <version>${version.woodstox-stax2}</version>
-                                        </artifactItem>
-                                        <artifactItem>
                                             <groupId>com.google.protobuf</groupId>
                                             <artifactId>protobuf-java</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.apache.commons</groupId>
-                                            <artifactId>commons-configuration2</artifactId>
+                                            <groupId>commons-configuration</groupId>
+                                            <artifactId>commons-configuration</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.servlet</groupId>

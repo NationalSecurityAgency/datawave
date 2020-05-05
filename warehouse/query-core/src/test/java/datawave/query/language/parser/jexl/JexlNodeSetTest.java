@@ -15,9 +15,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class JexlNodeSetTest {
     
@@ -321,6 +319,22 @@ public class JexlNodeSetTest {
         assertEquals(1, nodeSet.size());
         assertEquals(source, nodeSet.getNodeKeys().iterator().next());
         assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(nodeSet.getNodes().iterator().next()));
+    }
+    
+    @Test
+    public void testEquals() {
+        JexlNodeSet prime = new JexlNodeSet();
+        
+        assertFalse(prime.equals(null));
+        assertTrue(prime.equals(prime));
+        
+        JexlNodeSet other = new JexlNodeSet();
+        other.add(JexlNodeFactory.buildEQNode("FOO", "bar"));
+        
+        assertFalse(prime.equals(other));
+        
+        prime.add(JexlNodeFactory.buildEQNode("FOO", "bar"));
+        assertTrue(prime.equals(other));
     }
     
     // Test exercises the directAddAll() codepath found within the addAll() method.

@@ -38,10 +38,11 @@ public class IndexInfoTest {
     }
     
     // Helper method to generate expected index matches (document id only)
-    private Set<IndexMatch> buildExpectedIndexMatches(String... docIds) {
+    private Set<IndexMatch> buildExpectedIndexMatches(String field, String value, String... docIds) {
+        JexlNode node = JexlNodeFactory.buildEQNode(field, value);
         Set<IndexMatch> expected = new HashSet<>(docIds.length);
         for (String docId : docIds) {
-            expected.add(new IndexMatch(docId));
+            expected.add(new IndexMatch(docId, node));
         }
         return expected;
     }
@@ -60,7 +61,7 @@ public class IndexInfoTest {
         IndexInfo merged = left.intersect(right);
         
         // The intersection of left and right should be a set of two document ids
-        Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("doc2", "doc3");
+        Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("FIELD", "VALUE", "doc2", "doc3");
         
         assertEquals(2, merged.uids().size());
         assertEquals(expectedDocs, merged.uids());
@@ -269,7 +270,7 @@ public class IndexInfoTest {
         IndexInfo merged = left.union(right);
         
         // The union of left and right should be a set of four document ids
-        Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("doc1", "doc2", "doc3", "doc4");
+        Set<IndexMatch> expectedDocs = buildExpectedIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3", "doc4");
         
         assertEquals(4, merged.uids().size());
         assertEquals(expectedDocs, merged.uids());

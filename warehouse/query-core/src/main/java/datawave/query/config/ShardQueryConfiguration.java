@@ -15,7 +15,6 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
-import datawave.query.UnindexType;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
@@ -83,6 +82,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean parseTldUids = false;
     private boolean collapseUids = false;
     private int collapseUidsThreshold = -1;
+    // Should this query dedupe terms within ANDs and ORs
+    private boolean enforceUniqueTermsWithinExpressions = false;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -190,6 +191,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -341,6 +343,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
+        this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
         this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
@@ -478,6 +481,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
+        this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
     }
     
     /**
@@ -1276,11 +1280,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
         this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
-        for (Entry<String,Type<?>> entry : indexedFieldsAndTypes.entries()) {
-            if (entry.getValue() instanceof UnindexType) {
-                this.indexedFields.remove(entry.getKey());
-            }
-        }
     }
     
     public void setIndexedFields(Set<String> indexedFields) {
@@ -1293,11 +1292,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
         this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
-        for (Entry<String,Type<?>> entry : reverseIndexedFieldsAndTypes.entries()) {
-            if (entry.getValue() instanceof UnindexType) {
-                this.reverseIndexedFields.remove(entry.getKey());
-            }
-        }
     }
     
     public void setReverseIndexedFields(Set<String> reverseIndexedFields) {
@@ -1797,6 +1791,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.collapseUidsThreshold = collapseUidsThreshold;
     }
     
+    public boolean getEnforceUniqueTermsWithinExpressions() {
+        return enforceUniqueTermsWithinExpressions;
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
+    }
+    
     public boolean getSequentialScheduler() {
         return sequentialScheduler;
     }
@@ -1985,5 +1987,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setContentFieldNames(List<String> contentFieldNames) {
         this.contentFieldNames = contentFieldNames;
+    }
+    
+    public void setEvaluationOnlyFields(Set<String> evaluationOnlyFields) {
+        this.evaluationOnlyFields = evaluationOnlyFields;
+    }
+    
+    public Set<String> getEvaluationOnlyFields() {
+        return this.evaluationOnlyFields;
     }
 }

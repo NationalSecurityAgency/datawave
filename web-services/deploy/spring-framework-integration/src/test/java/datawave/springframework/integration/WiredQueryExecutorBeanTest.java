@@ -6,6 +6,7 @@ import java.util.Properties;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.metrics.QueryMetricQueryLogic;
 import datawave.query.discovery.DiscoveryLogic;
@@ -38,6 +39,7 @@ import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.security.JSSESecurityDomain;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -70,14 +72,14 @@ public class WiredQueryExecutorBeanTest {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
-                                        "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration")
+                                        "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
                         .addClasses(DefaultResponseObjectFactory.class, QueryExpirationConfiguration.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
                                         DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, CountingShardQueryLogic.class,
                                         EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class, CompositeQueryLogic.class,
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
                                         QueryLogicFactoryImpl.class, NoOpQueryMetricHandler.class, DatawaveRoleManager.class, EasyRoleManager.class,
                                         CachedResultsConfiguration.class, DateIndexHelperFactory.class, EdgeDictionaryResponseTypeProducer.class,
-                                        RemoteEdgeDictionary.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+                                        RemoteEdgeDictionary.class, DefaultMapperDecorator.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
     
     @Test
@@ -99,19 +101,19 @@ public class WiredQueryExecutorBeanTest {
         }
     }
     
+    private static JSSESecurityDomain mockJsseSecurityDomain = EasyMock.createMock(JSSESecurityDomain.class);
     private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
-    private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
     
     public static class Producer {
+        @Produces
+        public static JSSESecurityDomain produceSecurityDomain() {
+            return mockJsseSecurityDomain;
+        }
+        
         @Produces
         @CallerPrincipal
         public static DatawavePrincipal produceDatawavePrincipal() {
             return mockDatawavePrincipal;
-        }
-        
-        @Produces
-        public static RemoteEdgeDictionary produceRemoteEdgeDictionary() {
-            return mockRemoteEdgeDictionary;
         }
     }
 }
