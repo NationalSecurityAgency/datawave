@@ -200,7 +200,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
      */
-    private static int maxChildNodesToPrint = 10;
+    public static int maxChildNodesToPrint = 10;
     
     private final long maxRangesPerQueryPiece;
     
@@ -970,11 +970,26 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             // Verify that the query does not contain fields we've never seen
             // before
+            Set<String> specialFields = Sets.newHashSet(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD, Constants.NO_FIELD);
+            specialFields.addAll(config.getEvaluationOnlyFields());
             Set<String> nonexistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(metadataHelper, queryTree, config.getDatatypeFilter(),
-                            Sets.newHashSet(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD, Constants.NO_FIELD));
+                            specialFields);
             if (log.isDebugEnabled()) {
                 log.debug("Testing for non-existent fields, found: " + nonexistentFields.size());
             }
+            // ensure that all of the fields actually exist in the data dictionary
+            Set<String> allFields = null;
+            try {
+                allFields = metadataHelper.getAllFields(config.getDatatypeFilter());
+            } catch (TableNotFoundException e) {
+                throw new DatawaveQueryException("Unable get get data dictionary", e);
+            }
+            if (!allFields.containsAll(config.getUniqueFields())) {
+                Set<String> missingFields = Sets.newHashSet(config.getUniqueFields());
+                missingFields.removeAll(allFields);
+                nonexistentFields.addAll(missingFields);
+            }
+            
             if (!nonexistentFields.isEmpty()) {
                 String datatypeFilterSet = (null == config.getDatatypeFilter()) ? "none" : config.getDatatypeFilter().toString();
                 if (log.isTraceEnabled()) {
