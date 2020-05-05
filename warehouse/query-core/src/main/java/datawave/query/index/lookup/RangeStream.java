@@ -9,7 +9,6 @@ import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
-import datawave.query.UnindexType;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.index.lookup.IndexStream.StreamContext;
@@ -773,17 +772,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     public static boolean isIndexed(String field, Multimap<String,Type<?>> ctx) {
         Collection<Type<?>> norms = ctx.get(field);
-        boolean isIndexed = !norms.isEmpty();
-        if (isIndexed) {
-            // if the dataTypes contain the UnindexedFieldNoOpType, then this is an unindexed field
-            for (Type<?> norm : norms) {
-                if (norm instanceof UnindexType) {
-                    isIndexed = false;
-                    break;
-                }
-            }
-        }
-        return isIndexed;
+        
+        return !norms.isEmpty();
     }
     
     public static boolean isIndexed(String field, Set<String> ctx) {
