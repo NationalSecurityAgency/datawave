@@ -160,4 +160,22 @@
         <Bug pattern="NP_NULL_PARAM_DEREF" />
     </Match>
 
+    <Match>
+        <Class name="~datawave\.query.*Configuration" />
+        <Field type="java.util.Map" />
+        <Bug pattern="SE_BAD_FIELD" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.query.*Configuration" />
+        <Field type="java.util.Set" />
+        <Bug pattern="SE_BAD_FIELD" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.query.*Configuration" />
+        <Field type="java.util.List" />
+        <Bug pattern="SE_BAD_FIELD" />
+    </Match>
+
 </FindBugsFilter>

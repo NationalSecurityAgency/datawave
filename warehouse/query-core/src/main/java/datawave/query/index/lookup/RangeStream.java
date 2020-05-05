@@ -142,7 +142,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         this.config = config;
         this.scanners = scanners;
         this.metadataHelper = metadataHelper;
-        int maxLookup = (int) Math.max(Math.ceil(config.getNumIndexLookupThreads()), 1);
+        int maxLookup = (int) Math.max(config.getNumIndexLookupThreads(), 1);
         executor = Executors.newFixedThreadPool(maxLookup);
         runnables = new LinkedBlockingDeque<>();
         int executeLookupMin = (int) Math.max(maxLookup / 2, 1);
@@ -238,15 +238,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
-                    if (queryStream != null) {
-                        for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
-                            log.debug(line);
-                        }
+                    for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                        log.debug(line);
                     }
                 }
                 
-                this.itr = queryStream == null ? Collections.<QueryPlan> emptySet().iterator() : filter(
-                                concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), new EmptyPlanPruner());
+                this.itr = filter(concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), new EmptyPlanPruner());
             }
         } finally {
             // shut down the executor as all threads have completed
