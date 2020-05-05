@@ -4,14 +4,12 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.io.WKTReader;
 import datawave.data.normalizer.NoOpNormalizer;
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.BaseType;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.GeometryType;
-import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.DateIndexHelper;
@@ -1262,7 +1260,7 @@ public class ExpandCompositeTermsTest {
         System.err.println();
     }
     
-    private static class MockDiscreteIndexType extends BaseType implements DiscreteIndexType {
+    private static class MockDiscreteIndexType extends BaseType<String> implements DiscreteIndexType<String> {
         
         public MockDiscreteIndexType() {
             super(new NoOpNormalizer());
@@ -1289,7 +1287,7 @@ public class ExpandCompositeTermsTest {
         }
         
         @Override
-        public int compareTo(Object o) {
+        public int compareTo(Type<String> o) {
             return 0;
         }
     }

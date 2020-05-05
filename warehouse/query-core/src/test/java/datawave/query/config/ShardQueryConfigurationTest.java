@@ -58,6 +58,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals("", config.getAccumuloPassword());
         Assert.assertEquals(Long.MAX_VALUE, config.getMaxIndexScanTimeMillis());
         Assert.assertFalse(config.getCollapseUids());
+        Assert.assertFalse(config.getParseTldUids());
         Assert.assertFalse(config.getSequentialScheduler());
         Assert.assertFalse(config.getCollectTimingDetails());
         Assert.assertFalse(config.getLogTimingDetails());
@@ -431,7 +432,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 167;
+        int expectedObjectCount = 170;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
