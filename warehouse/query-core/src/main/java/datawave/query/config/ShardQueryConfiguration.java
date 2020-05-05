@@ -15,7 +15,6 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
-import datawave.query.UnindexType;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
@@ -1281,11 +1280,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
         this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
-        for (Entry<String,Type<?>> entry : indexedFieldsAndTypes.entries()) {
-            if (entry.getValue() instanceof UnindexType) {
-                this.indexedFields.remove(entry.getKey());
-            }
-        }
     }
     
     public void setIndexedFields(Set<String> indexedFields) {
@@ -1298,11 +1292,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
         this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
-        for (Entry<String,Type<?>> entry : reverseIndexedFieldsAndTypes.entries()) {
-            if (entry.getValue() instanceof UnindexType) {
-                this.reverseIndexedFields.remove(entry.getKey());
-            }
-        }
     }
     
     public void setReverseIndexedFields(Set<String> reverseIndexedFields) {
