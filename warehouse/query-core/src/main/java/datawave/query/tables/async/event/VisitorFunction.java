@@ -9,13 +9,8 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
-import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
+import datawave.query.jexl.visitors.*;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
-import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
-import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.RangeDefinition;
@@ -42,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
@@ -59,7 +55,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
     
-    Map<String,String> previouslyExpanded = Maps.newHashMap();
+    Map<String,String> previouslyExpanded = new ConcurrentHashMap<>();
     
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
     
@@ -237,15 +233,28 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (madeChange)
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
                     
-                    previouslyExpanded.put(query, newQuery);
+                    try {
+                        previouslyExpanded.put(query, newQuery);
+                    } catch (NullPointerException npe) {
+                        throw new DatawaveFatalQueryException(String.format("New query is null! madeChange: %b, qid: %s", madeChange,
+                                        setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
+                    }
                     
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
                     newOptions.addScanIterator(newIteratorSetting);
                     
                     if (log.isDebugEnabled()) {
-                        log.debug("VisitorFunction result: " + newSettings.getRanges() + " -> " + newQuery);
+                        log.debug("VisitorFunction result: " + newSettings.getRanges());
                     }
+                    
+                    if (log.isTraceEnabled()) {
+                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script), "VistorFunction::apply method");
+                    } else if (log.isDebugEnabled()) {
+                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
+                                        "VistorFunction::apply method");
+                    }
+                    
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
                 }

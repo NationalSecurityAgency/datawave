@@ -25,10 +25,11 @@ import static org.junit.Assert.assertTrue;
 public class IndexInfoTest {
     
     // Helper method to generate expected index matches (document id only)
-    private Set<IndexMatch> buildExpectedIndexMatches(String... docIds) {
+    private Set<IndexMatch> buildExpectedIndexMatches(String field, String value, String... docIds) {
+        JexlNode node = JexlNodeFactory.buildEQNode(field, value);
         Set<IndexMatch> expected = new HashSet<>(docIds.length);
         for (String docId : docIds) {
-            expected.add(new IndexMatch(docId));
+            expected.add(new IndexMatch(docId, node));
         }
         return expected;
     }
@@ -47,7 +48,7 @@ public class IndexInfoTest {
         IndexInfo merged = left.intersect(right);
         
         // The intersection of left and right should be a set of two document ids
-        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc2", "doc3");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("A", "1", "doc2", "doc3");
         
         assertEquals(2, merged.uids().size());
         assertEquals(expectedMatches, merged.uids());
@@ -67,7 +68,7 @@ public class IndexInfoTest {
         IndexInfo merged = left.intersect(right);
         
         // The intersection of left and right should be a set of 3 document ids
-        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc2", "doc3", "doc4");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("A", "1", "doc2", "doc3", "doc4");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(3, merged.uids().size());
@@ -97,7 +98,7 @@ public class IndexInfoTest {
         IndexInfo merged = left.intersect(right);
         
         // The intersection of left and right should be a set of 1 document ids
-        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("A", "1", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(1, merged.uids().size());
@@ -130,7 +131,7 @@ public class IndexInfoTest {
         IndexInfo merged = right.intersect(left);
         
         // The intersection of left and right should be a set of 1 document ids
-        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("A", "1", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(1, merged.uids().size());
@@ -165,7 +166,7 @@ public class IndexInfoTest {
         IndexInfo merged = left.intersect(right, Arrays.asList(delayed), left);
         
         // The intersection of left and right should be a set of 1 document ids
-        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("A", "1", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(1, merged.uids().size());
@@ -200,7 +201,7 @@ public class IndexInfoTest {
         IndexInfo merged = right.intersect(left, Arrays.asList(delayed), right);
         
         // The intersection of left and right should be a set of 1 document ids
-        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("A", "1", "doc1");
         ImmutableSortedSet<IndexMatch> expectedSorted = ImmutableSortedSet.copyOf(expectedMatches);
         
         assertEquals(1, merged.uids().size());
@@ -236,7 +237,7 @@ public class IndexInfoTest {
         IndexInfo right = new IndexInfo(Arrays.asList("doc1", "doc2", "doc3"));
         right.applyNode(JexlNodeFactory.buildEQNode("A", "1"));
         
-        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1", "doc2", "doc3");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("A", "1", "doc1", "doc2", "doc3");
         IndexInfo expectedMerged = new IndexInfo(expectedMatches);
         assertEquals(expectedMerged, left.intersect(right));
         assertEquals(expectedMerged, right.intersect(left));
@@ -257,7 +258,7 @@ public class IndexInfoTest {
         merged = merged.unionAll(Arrays.asList(left, right), null, false);
         
         // The union of left and right should be a set of four document ids
-        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("doc1", "doc2", "doc3", "doc4");
+        Set<IndexMatch> expectedMatches = buildExpectedIndexMatches("A", "1", "doc1", "doc2", "doc3", "doc4");
         
         assertEquals(4, merged.uids().size());
         assertEquals(expectedMatches, merged.uids());
