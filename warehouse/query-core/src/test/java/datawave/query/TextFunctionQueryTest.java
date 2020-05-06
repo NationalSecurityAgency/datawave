@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -56,6 +57,21 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
         query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(" + state + ")";
         // should return the empty set
         runTestQuery(Collections.EMPTY_SET, query);
+    }
+    
+    @Test
+    public void testAnyFieldTextNoHits() throws Exception {
+        log.info("------  testAnyFieldTextNoHits  ------");
+        
+        ((DefaultQueryPlanner) this.logic.getQueryPlanner()).setReduceQuery(true);
+        
+        String code = "europe";
+        // must be same case as original value in event
+        String state = "blah";
+        String phrase = EQ_OP + "'" + state + "'";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + OR_OP + "#TEXT(" + state + ")";
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + OR_OP + this.dataManager.convertAnyField(phrase);
+        runTest(query, expect);
     }
     
     @Test

@@ -69,6 +69,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public static final Text FI_END = new Text("fi\0~");
     
     public abstract static class Builder<B extends Builder<B>> {
+        private String queryId;
         private Text fieldName;
         protected Text fieldValue;
         private Predicate<Key> datatypeFilter;
@@ -97,6 +98,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         @SuppressWarnings("unchecked")
         protected B self() {
             return (B) this;
+        }
+        
+        public B withQueryId(String queryId) {
+            this.queryId = queryId;
+            return self();
         }
         
         public B withFieldName(Text fieldName) {
@@ -237,6 +243,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected Range currentFiRange = null;
     private Text fiRow = null;
     
+    // This is the query id which is used for tracking purposes
+    protected final String queryId;
     // This is the fieldname of interest
     private final Text fieldName;
     // part of the datawave shard structure: fi\0fieldname
@@ -344,6 +352,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     public DatawaveFieldIndexCachingIteratorJexl() {
         super();
+        this.queryId = null;
         this.fieldName = null;
         this.fieldValue = null;
         this.fiName = null;
@@ -376,6 +385,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      */
     protected DatawaveFieldIndexCachingIteratorJexl(Builder builder) {
         
+        this.queryId = builder.queryId;
         this.ivaratorSourcePool = builder.ivaratorSourcePool;
         
         if (builder.fieldName.toString().startsWith("fi" + NULL_BYTE)) {
@@ -432,6 +442,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     public DatawaveFieldIndexCachingIteratorJexl(DatawaveFieldIndexCachingIteratorJexl other, IteratorEnvironment env) {
         setSource(other.getSource().deepCopy(env));
+        this.queryId = other.queryId;
         this.fieldName = other.fieldName;
         this.fiName = other.fiName;
         this.returnKeyType = other.returnKeyType;
@@ -830,6 +841,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private void fillSortedSets() throws IOException {
         String sourceRow = this.fiRow.toString();
         setupRowBasedHdfsBackedSet(sourceRow);
+        
+        // if keys is not null, then we already had a completed set which was loaded in setupRowBasedHdfsBackedSet
+        if (keys != null) {
+            moveToNextRow();
+            return;
+        }
         
         // for each range, fork off a runnable
         List<Future<?>> futures = new ArrayList<>(boundingFiRanges.size());
