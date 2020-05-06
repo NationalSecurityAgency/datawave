@@ -31,7 +31,7 @@ import javax.annotation.Nullable;
 public class AttributeFactory {
     private static final Logger log = Logger.getLogger(AttributeFactory.class);
     
-    protected static LoadingCache<String,Class<?>> clazzCache = CacheBuilder.newBuilder().maximumSize(128).expireAfterAccess(1, TimeUnit.HOURS)
+    protected static final LoadingCache<String,Class<?>> clazzCache = CacheBuilder.newBuilder().maximumSize(128).expireAfterAccess(1, TimeUnit.HOURS)
                     .build(new CacheLoader<String,Class<?>>() {
                         @Override
                         public Class<?> load(String clazz) throws Exception {

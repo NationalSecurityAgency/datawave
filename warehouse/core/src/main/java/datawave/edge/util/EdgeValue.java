@@ -488,7 +488,7 @@ public class EdgeValue {
             getUuidObject();
         }
         if (uuidObj != null) { // if it's impossible to use uuidObj, then use uuidString
-            result = 31 * result + (uuidObj != null ? uuidObj.hashCode() : 0);
+            result = 31 * result + uuidObj.hashCode();
         } else {
             result = 31 * result + (uuidString != null ? uuidString.hashCode() : 0);
         }

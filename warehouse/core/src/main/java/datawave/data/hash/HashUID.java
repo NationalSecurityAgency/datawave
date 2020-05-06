@@ -35,6 +35,7 @@ import org.apache.hadoop.util.hash.MurmurHash;
  */
 public class HashUID extends UID {
     
+    private static final long serialVersionUID = 4016018180334520481L;
     private static final HashUIDBuilder DEFAULT_BUILDER = new HashUIDBuilder();
     private static final int SEED0 = 2011;
     private static final int SEED1 = 650567;

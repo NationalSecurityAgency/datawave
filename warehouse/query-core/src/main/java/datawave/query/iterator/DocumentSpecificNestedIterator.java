@@ -38,7 +38,7 @@ public class DocumentSpecificNestedIterator extends NestedQueryIterator<Key> {
         } else {
             this.next = null;
         }
-        return this.next.getKey();
+        return this.next == null ? null : this.next.getKey();
     }
     
     @Override

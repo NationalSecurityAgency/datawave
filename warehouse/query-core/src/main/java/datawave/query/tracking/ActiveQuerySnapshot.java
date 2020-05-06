@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class ActiveQuerySnapshot {
     
-    public static Comparator<ActiveQuerySnapshot> greatestElapsedTime = Comparator.comparingLong(ActiveQuerySnapshot::totalElapsedTime).reversed();
+    public static final Comparator<ActiveQuerySnapshot> greatestElapsedTime = Comparator.comparingLong(ActiveQuerySnapshot::totalElapsedTime).reversed();
     
     private final String queryId;
     private final long lastSourceCount;
