@@ -1,5 +1,7 @@
 package datawave.query.util.sortedset;
 
+import java.util.TreeSet;
+import org.apache.accumulo.core.data.Key;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -184,7 +186,11 @@ public class BufferedFileBackedSortedSetTest {
         int end = start * 2;
         try {
             SortedSet<byte[]> subSet = set.subSet(data[sortedOrder[start]], data[sortedOrder[end]]);
-            fail("Expected the subSet operation to fail with underlying persisted FileSortedSets");
+            SortedSet<byte[]> expected = new TreeSet<>(set.comparator());
+            for (int i = start; i < end; i++) {
+                expected.add(data[sortedOrder[i]]);
+            }
+            assertEquals(expected, subSet);
         } catch (Exception e) {
             // expected
         }
@@ -195,7 +201,11 @@ public class BufferedFileBackedSortedSetTest {
         int end = sortedOrder.length / 3;
         try {
             SortedSet<byte[]> subSet = set.headSet(data[sortedOrder[end]]);
-            fail("Expected the headSet operation to fail with underlying persisted FileSortedSets");
+            SortedSet<byte[]> expected = new TreeSet<>(set.comparator());
+            for (int i = 0; i < end; i++) {
+                expected.add(data[sortedOrder[i]]);
+            }
+            assertEquals(expected, subSet);
         } catch (Exception e) {
             // expected
         }
@@ -206,7 +216,11 @@ public class BufferedFileBackedSortedSetTest {
         int start = sortedOrder.length / 3;
         try {
             SortedSet<byte[]> subSet = set.tailSet(data[sortedOrder[start]]);
-            fail("Expected the tailSet operation to fail with underlying persisted FileSortedSets");
+            SortedSet<byte[]> expected = new TreeSet<>(set.comparator());
+            for (int i = start; i < sortedOrder.length; i++) {
+                expected.add(data[sortedOrder[i]]);
+            }
+            assertEquals(expected, subSet);
         } catch (Exception e) {
             // expected
         }

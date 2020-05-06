@@ -284,6 +284,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxFieldIndexRangeSplit = 11;
     private int ivaratorMaxOpenFiles = 100;
     private int ivaratorNumRetries = 2;
+    private boolean ivaratorPersistVerify = true;
+    private int ivaratorPersistVerifyCount = 100;
     private int maxIvaratorSources = 33;
     private long maxIvaratorResults = -1;
     private int maxEvaluationPipelines = 25;
@@ -462,6 +464,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
         this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
         this.setIvaratorNumRetries(other.getIvaratorNumRetries());
+        this.setIvaratorPersistVerify(other.isIvaratorPersistVerify());
+        this.setIvaratorPersistVerifyCount(other.getIvaratorPersistVerifyCount());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
         this.setMaxIvaratorResults(other.getMaxIvaratorResults());
         this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
@@ -1192,6 +1196,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
         this.ivaratorNumRetries = ivaratorNumRetries;
+    }
+    
+    public boolean isIvaratorPersistVerify() {
+        return ivaratorPersistVerify;
+    }
+    
+    public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
+        this.ivaratorPersistVerify = ivaratorPersistVerify;
+    }
+    
+    public int getIvaratorPersistVerifyCount() {
+        return ivaratorPersistVerifyCount;
+    }
+    
+    public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
+        this.ivaratorPersistVerifyCount = ivaratorPersistVerifyCount;
     }
     
     public int getMaxIvaratorSources() {

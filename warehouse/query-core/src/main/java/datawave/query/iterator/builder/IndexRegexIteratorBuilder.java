@@ -63,6 +63,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withMaxResults(maxIvaratorResults)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
                         .withNumRetries(ivaratorNumRetries)
+                        .withPersistOptions(ivaratorPersistOptions)
                         .withQueryLock(queryLock)
                         .allowDirResuse(true)
                         .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
