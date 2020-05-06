@@ -55,6 +55,7 @@ import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -614,6 +615,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return ScannerStream.delayedExpression(node);
     }
     
+    @Override
+    public Object visit(ASTFalseNode node, Object data) {
+        return ScannerStream.noData(node);
+    }
+    
     private boolean isUnOrNotFielded(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
@@ -849,12 +855,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
         
-        Calendar start = Calendar.getInstance();
-        start.setTime(config.getBeginDate());
-        Calendar end = Calendar.getInstance();
-        end.setTime(config.getEndDate());
+        Calendar start = getCalendarStartOfDay(config.getBeginDate());
+        Calendar end = getCalendarStartOfDay(config.getEndDate());
         
-        while (!start.after(end)) {
+        while (start.compareTo(end) <= 0) {
             String day = DateHelper.format(start.getTime());
             IndexInfo info = new IndexInfo(-1);
             info.setNode(node);
@@ -862,6 +866,16 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             start.add(Calendar.DAY_OF_YEAR, 1);
         }
         return list;
+    }
+    
+    private static Calendar getCalendarStartOfDay(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar;
     }
     
     /**

@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
@@ -59,7 +60,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
     
-    Map<String,String> previouslyExpanded = Maps.newHashMap();
+    Map<String,String> previouslyExpanded = new ConcurrentHashMap<>();
     
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
     
@@ -225,7 +226,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (madeChange)
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
                     
-                    previouslyExpanded.put(query, newQuery);
+                    try {
+                        previouslyExpanded.put(query, newQuery);
+                    } catch (NullPointerException npe) {
+                        throw new DatawaveFatalQueryException(String.format("New query is null! madeChange: %b, qid: %s", madeChange,
+                                        setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
+                    }
                     
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());

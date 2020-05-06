@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,15 +25,20 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class MapReduceJobConfiguration {
     
@@ -49,7 +55,8 @@ public class MapReduceJobConfiguration {
     protected Map<String,Class<?>> optionalRuntimeParameters = null;
     private List<String> requiredRoles = null;
     private List<String> requiredAuths = null;
-    protected Map<String,String> jobConfigurationProperties = null;
+    protected Map<String,Object> jobConfigurationProperties = null;
+    protected Map<String,String> jobSystemProperties = null;
     
     protected String callbackServletURL = null;
     protected String mapReduceBaseDirectory = null;
@@ -87,8 +94,12 @@ public class MapReduceJobConfiguration {
         return optionalRuntimeParameters;
     }
     
-    public Map<String,String> getJobConfigurationProperties() {
+    public Map<String,Object> getJobConfigurationProperties() {
         return jobConfigurationProperties;
+    }
+    
+    public Map<String,String> getJobSystemProperties() {
+        return jobSystemProperties;
     }
     
     public List<String> getRequiredRoles() {
@@ -139,8 +150,12 @@ public class MapReduceJobConfiguration {
         this.optionalRuntimeParameters = optionalRuntimeParameters;
     }
     
-    public void setJobConfigurationProperties(Map<String,String> jobConfigurationProperties) {
+    public void setJobConfigurationProperties(Map<String,Object> jobConfigurationProperties) {
         this.jobConfigurationProperties = jobConfigurationProperties;
+    }
+    
+    public void setJobSystemProperties(Map<String,String> jobSystemProperties) {
+        this.jobSystemProperties = jobSystemProperties;
     }
     
     public void setRequiredRoles(List<String> roles) {
@@ -238,7 +253,7 @@ public class MapReduceJobConfiguration {
             } else {
                 // Jars within the deployed EAR in Wildfly use the VFS protocol, and need to be handled specially.
                 if (jarFile.startsWith("vfs:")) {
-                    Set<String> files = new HashSet<>();
+                    Set<String> files = new LinkedHashSet<>();
                     try (InputStream urlInputStream = new URL(jarFile).openStream()) {
                         JarInputStream jarInputStream = (JarInputStream) urlInputStream;
                         for (JarEntry jarEntry = jarInputStream.getNextJarEntry(); jarEntry != null; jarEntry = jarInputStream.getNextJarEntry()) {
@@ -273,7 +288,17 @@ public class MapReduceJobConfiguration {
         File[] jarFiles = libDir.listFiles(jarFilter);
         if (jarFiles != null) {
             for (File jar : jarFiles) {
-                addSingleFile(jar, new Path(classpath, jar.getName()), jobId, job, fs);
+                // remove guava classes from jboss-client.jar
+                if (jar.getName().equals("jboss-client.jar")) {
+                    List<Pattern> patterns = new ArrayList<>();
+                    patterns.add(Pattern.compile("^com/google.*"));
+                    patterns.add(Pattern.compile("^META-INF/maven/com.google.guava.*"));
+                    File filteredJar = filterJar(jar, patterns);
+                    addSingleFile(filteredJar, new Path(classpath, jar.getName()), jobId, job, fs);
+                    filteredJar.delete();
+                } else {
+                    addSingleFile(jar, new Path(classpath, jar.getName()), jobId, job, fs);
+                }
             }
         }
         
@@ -288,9 +313,33 @@ public class MapReduceJobConfiguration {
                 addSingleFile(jar, new Path(classpath, jar.getName()), jobId, job, fs);
             }
         }
+        exportSystemProperties(jobId, job, fs, classpath);
     }
     
-    private void addSingleFile(File source, Path destination, String jobId, Job job, FileSystem fs) throws IOException {
+    private File filterJar(File source, List<Pattern> patterns) {
+        File f = null;
+        try {
+            f = File.createTempFile(source.getName() + ".", "");
+            try (FileOutputStream fos = new FileOutputStream(f); ZipOutputStream zipOutputStream = new ZipOutputStream(fos)) {
+                try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(source))) {
+                    for (ZipEntry zipEntry = zipInputStream.getNextEntry(); zipEntry != null; zipEntry = zipInputStream.getNextEntry()) {
+                        final String entryName = zipEntry.getName();
+                        if (patterns.stream().noneMatch(p -> p.matcher(entryName).matches())) {
+                            zipOutputStream.putNextEntry(zipEntry);
+                            ByteStreams.copy(zipInputStream, zipOutputStream);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return f;
+    }
+    
+    protected void addSingleFile(File source, Path destination, String jobId, Job job, FileSystem fs) throws IOException {
         Path jarPath = new Path(source.getAbsolutePath());
         try {
             fs.copyFromLocalFile(false, false, jarPath, destination);
@@ -303,7 +352,7 @@ public class MapReduceJobConfiguration {
         job.addFileToClassPath(destination);
     }
     
-    private void addSingleFile(String source, Path destination, String jobId, Job job, FileSystem fs) throws IOException {
+    protected void addSingleFile(String source, Path destination, String jobId, Job job, FileSystem fs) throws IOException {
         try (FSDataOutputStream hadoopOutputStream = fs.create(destination, false); InputStream urlInputStream = new URL(source).openStream()) {
             
             // Copy raw file to hadoop
@@ -407,6 +456,33 @@ public class MapReduceJobConfiguration {
         }
     }
     
+    protected void exportSystemProperties(String jobId, Job job, FileSystem fs, Path classpath) {
+        Properties systemProperties = new Properties();
+        systemProperties.putAll(System.getProperties());
+        if (this.jobSystemProperties != null) {
+            systemProperties.putAll(this.jobSystemProperties);
+        }
+        writeProperties(jobId, job, fs, classpath, systemProperties);
+    }
+    
+    protected void writeProperties(String jobId, Job job, FileSystem fs, Path classpath, Properties properties) {
+        
+        File f = null;
+        try {
+            f = File.createTempFile(jobId, ".properties");
+            try (FileOutputStream fos = new FileOutputStream(f)) {
+                properties.store(fos, "");
+            }
+            addSingleFile(f, new Path(classpath, "embedded-configuration.properties"), jobId, job, fs);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        } finally {
+            if (f != null) {
+                f.delete();
+            }
+        }
+    }
+    
     public void initializeConfiguration(String jobId, Job job, Map<String,String> runtimeParameters, DatawavePrincipal serverPrincipal) throws Exception {
         
         // Validate the required runtime parameters exist
@@ -447,9 +523,27 @@ public class MapReduceJobConfiguration {
         prepareClasspath(jobId, job, jobDir);
         
         // Add any configuration properties set in the config
-        for (Entry<String,String> entry : this.getJobConfigurationProperties().entrySet())
-            job.getConfiguration().set(entry.getKey(), entry.getValue());
-        
+        for (Entry<String,Object> entry : this.getJobConfigurationProperties().entrySet()) {
+            String key = entry.getKey();
+            Object object = entry.getValue();
+            if (object instanceof String) {
+                job.getConfiguration().set(key, (String) object);
+            } else if (object instanceof Map) {
+                StringBuilder sb = new StringBuilder();
+                Map<String,String> valueMap = (Map<String,String>) object;
+                for (Map.Entry<String,String> valueEntry : valueMap.entrySet()) {
+                    if (sb.length() > 0) {
+                        sb.append(" ");
+                    }
+                    if (StringUtils.isBlank(valueEntry.getValue())) {
+                        sb.append(valueEntry.getKey());
+                    } else {
+                        sb.append(valueEntry.getKey()).append("=").append(valueEntry.getValue());
+                    }
+                    job.getConfiguration().set(key, sb.toString());
+                }
+            }
+        }
         _initializeConfiguration(job, jobDir, jobId, runtimeParameters, serverPrincipal);
     }
     
