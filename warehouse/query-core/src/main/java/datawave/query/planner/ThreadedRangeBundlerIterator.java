@@ -385,7 +385,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             Text row = firstPlan.getRanges().iterator().next().getStartKey().getRow();
             firstPlan.setRanges(Collections.singleton(new Range(row)));
         }
-        firstQueryIterator.addOption(QueryOptions.BATCHED_QUERY, Integer.valueOf(count).toString());
+        firstQueryIterator.addOption(QueryOptions.BATCHED_QUERY, Integer.toString(count));
         firstPlan.getSettings().add(firstQueryIterator);
         return firstPlan;
         
@@ -445,7 +445,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                 if (null != querySettings) {
                     if (querySettings.getOptions().get(QueryOptions.BATCHED_QUERY) != null) {
                         newSetting.addOption(QueryOptions.QUERY, "true==false");
-                        int batches = Integer.valueOf(querySettings.getOptions().get(QueryOptions.BATCHED_QUERY));
+                        int batches = Integer.parseInt(querySettings.getOptions().get(QueryOptions.BATCHED_QUERY));
                         newSetting.addOption(QueryOptions.BATCHED_QUERY, querySettings.getOptions().get(QueryOptions.BATCHED_QUERY));
                         for (int i = 0; i < batches; i++) {
                             newSetting.addOption(QueryOptions.BATCHED_QUERY_PREFIX + i, querySettings.getOptions().get(QueryOptions.BATCHED_QUERY_PREFIX + i));

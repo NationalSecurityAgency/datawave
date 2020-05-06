@@ -31,9 +31,9 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     @SuppressWarnings("unchecked")
     public static final FunctionalSet EMPTY_SET = new EmptySet<>();
     
-    protected static Logger log = Logger.getLogger(FunctionalSet.class);
+    protected static final Logger log = Logger.getLogger(FunctionalSet.class);
     
-    protected static FunctionalSet EMPTY = new FunctionalSet();
+    protected static final FunctionalSet EMPTY = new FunctionalSet();
     
     public FunctionalSet() {
         delegate = new LinkedHashSet<>();

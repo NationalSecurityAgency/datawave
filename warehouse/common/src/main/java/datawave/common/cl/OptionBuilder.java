@@ -19,8 +19,8 @@ public class OptionBuilder {
     /** Whether or not the next Option's argument is optional; defaults to false. */
     public boolean optionalArg;
     
-    /** The next Option's type; defaults to null. */
-    public Object type;
+    /** The next Option's type; defaults to {@link String#getClass()}. */
+    public Class<?> type = String.class;
     
     /**
      * Creates an Option using OptionBuilder's State and the given parameters.
@@ -64,6 +64,6 @@ public class OptionBuilder {
         required = false;
         optionalArg = false;
         valSeparator = 0;
-        type = null;
+        type = String.class;
     }
 }

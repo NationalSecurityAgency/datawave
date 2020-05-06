@@ -54,7 +54,6 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            Map<String,String> fieldValues = new HashMap<>();
             
             if (functionMetadata.name().equals("atomValuesMatch")) {
                 // special case

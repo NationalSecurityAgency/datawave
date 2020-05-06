@@ -36,7 +36,7 @@ public class EvaluationPhaseFilterFunctions {
     public static final String EVAL_PHASE_FUNCTION_NAMESPACE = "filter";
     public static final String CASE_SENSITIVE_EXPRESSION = ".*\\(\\?[idmsux]*-[dmsux]*i[idmsux]*\\).*";
     
-    protected static Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
+    protected static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
     
     public static boolean occurrence(Iterable<?> fieldValues, String operator, int count) {
         return evaluateSizeOf(fieldValues, operator, count);
@@ -357,7 +357,7 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> afterLoadDate(Object fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
-            if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), getTime(start, true), Long.MAX_VALUE)) {
+            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start, true), Long.MAX_VALUE)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
             }
         } catch (ParseException pe) {
@@ -382,7 +382,7 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             for (Object o : fieldValue) {
-                if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(o)), getTime(start, true), Long.MAX_VALUE)) {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), getTime(start, true), Long.MAX_VALUE)) {
                     matches = FunctionalSet.singleton(getHitTerm(o));
                     break;
                 }
@@ -413,7 +413,7 @@ public class EvaluationPhaseFilterFunctions {
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
-            if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
+            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
             }
         } catch (ParseException pe) {
@@ -442,7 +442,7 @@ public class EvaluationPhaseFilterFunctions {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
             for (Object o : fieldValue) {
-                if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(o)), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
                     matches = FunctionalSet.singleton(getHitTerm(o));
                     break;
                 }
@@ -468,7 +468,7 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> beforeLoadDate(Object fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
-            if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), 0, getTime(end) - 1)) {
+            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), 0, getTime(end) - 1)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
             }
         } catch (ParseException pe) {
@@ -493,7 +493,7 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             for (Object o : fieldValue) {
-                if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(o)), 0, getTime(end) - 1)) {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), 0, getTime(end) - 1)) {
                     matches = FunctionalSet.singleton(getHitTerm(o));
                     break;
                 }
@@ -522,7 +522,7 @@ public class EvaluationPhaseFilterFunctions {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), 0, getTime(end, rangeFormat) - 1)) {
+            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), 0, getTime(end, rangeFormat) - 1)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
             }
         } catch (ParseException pe) {
@@ -550,7 +550,7 @@ public class EvaluationPhaseFilterFunctions {
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             for (Object o : fieldValue) {
-                if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(o)), 0, getTime(end, rangeFormat) - 1)) {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), 0, getTime(end, rangeFormat) - 1)) {
                     matches = FunctionalSet.singleton(getHitTerm(o));
                     break;
                 }
@@ -578,7 +578,7 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> betweenLoadDates(Object fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
-            if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), getTime(start), getTime(end, true) - 1)) {
+            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start), getTime(end, true) - 1)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
             }
         } catch (ParseException pe) {
@@ -607,7 +607,7 @@ public class EvaluationPhaseFilterFunctions {
             long lStart = getTime(start);
             long lEnd = getTime(end, true) - 1;
             for (Object o : fieldValue) {
-                if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(o)), lStart, lEnd)) {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), lStart, lEnd)) {
                     matches = FunctionalSet.singleton(getHitTerm(o));
                 }
             }
@@ -638,7 +638,7 @@ public class EvaluationPhaseFilterFunctions {
         try {
             DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
             int granularity = getGranularity(rangePattern);
-            if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(fieldValue)), getTime(start, rangeFormat),
+            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start, rangeFormat),
                             getNextTime(end, rangeFormat, granularity) - 1)) {
                 matches = FunctionalSet.singleton(getHitTerm(fieldValue));
             }
@@ -672,7 +672,7 @@ public class EvaluationPhaseFilterFunctions {
             long lStart = getTime(start, rangeFormat);
             long lEnd = getNextTime(end, rangeFormat, granularity) - 1;
             for (Object o : fieldValue) {
-                if (betweenInclusive(Long.valueOf(ValueTuple.getStringValue(o)), lStart, lEnd)) {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), lStart, lEnd)) {
                     matches = FunctionalSet.singleton(getHitTerm(o));
                     break;
                 }

@@ -218,7 +218,6 @@ public class EdgeKeyVersioningCache {
      * @throws TableNotFoundException
      */
     public void createMetadataEntry(long time, int keyVersionNum) throws Exception {
-        Value emptyVal = new Value();
         if (this.cbHelper == null) {
             this.cbHelper = new AccumuloHelper();
             this.cbHelper.setup(conf);
