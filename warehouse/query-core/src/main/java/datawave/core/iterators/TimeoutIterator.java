@@ -50,7 +50,7 @@ public class TimeoutIterator extends WrappingIterator {
         final String maxSessionOpt = options.get(MAX_SESSION_TIME);
         if (null != maxSessionOpt) {
             try {
-                maxSessionTime = Long.valueOf(maxSessionOpt);
+                maxSessionTime = Long.parseLong(maxSessionOpt);
             } catch (NumberFormatException nfe) {
                 if (log.isTraceEnabled()) {
                     log.trace("Defaulting to Long.MAX_VALUE since maxKeysVisit is an invalid long value");

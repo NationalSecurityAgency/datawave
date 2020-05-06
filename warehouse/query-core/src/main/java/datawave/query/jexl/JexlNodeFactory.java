@@ -64,8 +64,9 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
  * 
  */
 public class JexlNodeFactory {
-    public static final Set<Class<?>> REAL_NUMBERS = Sets.<Class<?>> newHashSet(BigDecimal.class, Double.class, Float.class);
-    public static final Set<Class<?>> NATURAL_NUMBERS = Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class, Short.class, Byte.class);
+    public static final Set<Class<?>> REAL_NUMBERS = Collections.unmodifiableSet(Sets.<Class<?>> newHashSet(BigDecimal.class, Double.class, Float.class));
+    public static final Set<Class<?>> NATURAL_NUMBERS = Collections.unmodifiableSet(Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class,
+                    Short.class, Byte.class));
     
     public enum ContainerType {
         OR_NODE, AND_NODE

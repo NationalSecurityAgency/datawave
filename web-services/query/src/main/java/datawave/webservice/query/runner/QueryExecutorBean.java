@@ -315,7 +315,6 @@ public class QueryExecutorBean implements QueryExecutor {
         q.setExpirationDate(now);
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
-        ResultsPage emptyList = new ResultsPage();
         
         for (QueryLogic<?> l : logicList) {
             try {
@@ -2814,8 +2813,6 @@ public class QueryExecutorBean implements QueryExecutor {
                             maxResultsOverride, parameters);
             
             // Fire off an audit prior to updating
-            Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
-            cbAuths.retainAll(methodAuths);
             AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
             if (!auditType.equals(AuditType.NONE)) {
                 try {
