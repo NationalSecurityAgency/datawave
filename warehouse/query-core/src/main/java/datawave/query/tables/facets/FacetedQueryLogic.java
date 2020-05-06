@@ -114,12 +114,12 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         
         final String maximumGroupCount = settings.findParameter(FacetedConfiguration.MAXIMUM_GROUP_COUNT).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(maximumGroupCount)) {
-            facetedConfig.setMaximumFacetGroupCount(Integer.valueOf(maximumGroupCount));
+            facetedConfig.setMaximumFacetGroupCount(Integer.parseInt(maximumGroupCount));
         }
         
         final String minimumCount = settings.findParameter(FacetedConfiguration.MINIMUM_COUNT).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(minimumCount)) {
-            facetedConfig.setMinimumCount(Integer.valueOf(minimumCount));
+            facetedConfig.setMinimumCount(Integer.parseInt(minimumCount));
         }
         
         return super.initialize(connection, settings, auths);

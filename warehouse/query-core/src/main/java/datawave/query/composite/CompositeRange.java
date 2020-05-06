@@ -16,6 +16,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,9 +31,9 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  */
 public class CompositeRange extends Composite {
     
-    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Sets.newHashSet(ASTNENode.class, ASTERNode.class);
-    public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Sets.newHashSet(ASTAndNode.class, ASTEQNode.class, ASTGTNode.class, ASTGENode.class,
-                    ASTLTNode.class, ASTLENode.class);
+    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTNENode.class, ASTERNode.class));
+    public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTAndNode.class, ASTEQNode.class, ASTGTNode.class,
+                    ASTGENode.class, ASTLTNode.class, ASTLENode.class));
     
     private final List<JexlNode> jexlNodeListLowerBound = new ArrayList<>();
     private final List<JexlNode> jexlNodeListUpperBound = new ArrayList<>();

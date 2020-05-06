@@ -3022,7 +3022,6 @@ public class ExtendedQueryExecutorBeanTest {
         this.cache.put(queryId.toString(), this.runningQuery);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
-        expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
         
         // Run the test
         PowerMock.replayAll();
