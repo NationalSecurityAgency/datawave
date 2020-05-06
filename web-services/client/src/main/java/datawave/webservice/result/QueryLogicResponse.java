@@ -77,7 +77,6 @@ public class QueryLogicResponse extends BaseResponse implements HtmlProvider {
                 builder.append("<tr>");
             }
             x++;
-            
             builder.append("<td>").append(qld.getName()).append("</td>");
             builder.append("<td>").append(qld.getLogicDescription()).append("</td>");
             builder.append("<td>").append(StringUtils.join(qld.getSupportedParams(), "<br>")).append("</td>");

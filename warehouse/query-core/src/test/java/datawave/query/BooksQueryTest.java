@@ -90,6 +90,16 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
+    public void testEvaluationOnlyAuthor() throws Exception {
+        log.info("------  testEvaluationOnlyAuthor  ------");
+        String bloch = "'BLOCH'";
+        String authorLastName = "AUTHOR_LAST_NAME";
+        logic.setEvaluationOnlyFields(authorLastName);
+        String query = authorLastName + EQ_OP + bloch + AND_OP + BooksField.LANGUAGE.name() + EQ_OP + "'ENGLISH'";
+        runTest(query, query, QUERY_OPTIONS);
+    }
+    
+    @Test
     public void testAuthorAndISBN_10() throws Exception {
         log.info("------  testISBN_10  ------");
         String[] isbn_10 = {"'0-321-33678-X'", "'0-321-34960-1'"};

@@ -269,4 +269,33 @@ public class JexlNodeSet implements Set<JexlNode> {
             return nodeToKey(node);
         }
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o == null)
+            return false;
+        
+        // Check for the same memory address.
+        if (this == o)
+            return true;
+        
+        if (o instanceof JexlNodeSet) {
+            JexlNodeSet other = (JexlNodeSet) o;
+            
+            // Size first.
+            if (this.size() != other.size())
+                return false;
+            
+            // Node keys second.
+            return this.nodeMap.keySet().equals(other.nodeMap.keySet());
+        }
+        return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = (useSourceNodeForKeys ? 1 : 0);
+        result = 31 * result + (nodeMap != null ? nodeMap.hashCode() : 0);
+        return result;
+    }
 }

@@ -58,6 +58,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,28 +73,45 @@ import java.util.Set;
  * tree look like if we reduce it based on everything we know to be TRUE/FALSE about the tree?
  */
 public class QueryPruningVisitor extends BaseVisitor {
+    private static final Logger log = Logger.getLogger(QueryPruningVisitor.class);
+    
     public enum TruthState {
         UNKNOWN, TRUE, FALSE
     }
     
     /**
-     * Given a JexlNode, determine if any children or even the node itself can be replaced by a TrueNode or FalseNode, For any rewritten sub-trees, create an
-     * AND node which combines an assignment showing the section of the pruned tree, and the replacement ASTTrue/ASTFalse result of the prune. The assignment
-     * node is useful for debugging query tree pruning, and functionally is not required.
+     * Given a JexlNode, determine if any children or even the node itself can be replaced by a TrueNode or FalseNode, For any rewritten sub-trees, log the
+     * pruned tree, and the replace with ASTTrue/ASTFalse.
      * 
      * @param node
      *            a non-null query node
      * @param showPrune
-     *            if set to true, ASTAssignmentNode will be generated for each section of pruned tree, otherwise pruning will simply write an ASTTrue/ASTFalse
+     *            if set to true, debug lines will be written showing what was pruned out of each tree
      * @return a rewritten query tree for node
      */
     public static JexlNode reduce(JexlNode node, boolean showPrune) {
         QueryPruningVisitor visitor = new QueryPruningVisitor(true, showPrune);
         
+        String before = null;
+        String after;
+        
+        if (showPrune) {
+            before = JexlStringBuildingVisitor.buildQuery(node);
+        }
+        
         // flatten the tree and create a copy
         JexlNode copy = TreeFlatteningRebuildingVisitor.flatten(node);
         
         copy.jjtAccept(visitor, null);
+        
+        if (showPrune) {
+            after = JexlStringBuildingVisitor.buildQuery(copy);
+            if (StringUtils.equals(before, after)) {
+                log.debug("Query was not pruned");
+            } else {
+                log.debug("Query before prune: " + before + "\nQuery after prune: " + after);
+            }
+        }
         
         return copy;
     }
@@ -496,16 +515,11 @@ public class QueryPruningVisitor extends BaseVisitor {
         if (rewrite && toReplace != null) {
             JexlNode parent = toReplace.jjtGetParent();
             if (parent != null && parent != toReplace) {
-                if (queryString != null) {
-                    JexlNode assignment = JexlNodeFactory.createAssignment("pruned", queryString);
-                    List<JexlNode> children = new ArrayList<>(2);
-                    children.add(assignment);
-                    children.add(baseReplacement);
-                    JexlNodes.swap(parent, toReplace, JexlNodeFactory.createAndNode(children));
-                } else {
-                    // just straight up prune the tree
-                    JexlNodes.swap(parent, toReplace, baseReplacement);
+                if (queryString != null && log.isDebugEnabled()) {
+                    log.debug("Pruning " + queryString + " to " + (baseReplacement instanceof ASTTrueNode ? "true" : "false"));
                 }
+                
+                JexlNodes.swap(parent, toReplace, baseReplacement);
             }
         }
     }

@@ -400,15 +400,7 @@ public class ShardIndexQueryTableStaticMethods {
         
         bs.setRanges(ranges);
         
-        // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
-        // the times in the index table have been truncated to the day.
-        Date begin = DateUtils.truncate(config.getBeginDate(), Calendar.DAY_OF_MONTH);
-        // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
-        Date end = config.getEndDate();
-        
-        LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         SessionOptions options = new SessionOptions();
-        // options.addScanIterator(configureGlobalIndexDateRangeFilter(config, dateRange));
         options.addScanIterator(configureDateRangeIterator(config));
         IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
         if (setting != null) {

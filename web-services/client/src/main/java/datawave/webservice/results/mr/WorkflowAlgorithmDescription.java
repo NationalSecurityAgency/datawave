@@ -1,6 +1,8 @@
 package datawave.webservice.results.mr;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.io.Serializable;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -14,7 +16,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "Algorithm")
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class WorkflowAlgorithmDescription {
+public class WorkflowAlgorithmDescription implements Serializable {
+    private static final long serialVersionUID = -3497664868427218059L;
+    
     @XmlAttribute(name = "name")
     protected String name = null;
     

@@ -189,7 +189,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         ASTJexlScript origScript = null;
         ASTJexlScript script = null;
         try {
-            origScript = JexlASTHelper.parseJexlQuery(queryString);
+            origScript = JexlASTHelper.parseAndFlattenJexlQuery(queryString);
             HashSet<String> allFields = new HashSet<>();
             allFields.addAll(getEdgeQueryModel().getAllInternalFieldNames());
             script = QueryModelVisitor.applyModel(origScript, getEdgeQueryModel(), allFields);
@@ -257,7 +257,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // These strings are going to be parsed again in the iterator but if there is a problem with
         // normalizing the query we want to fail here instead of over on the server side
-        if (!visitationContext.getNormalizedQuery().equals("")) {
+        if (!visitationContext.getNormalizedQuery().toString().equals("")) {
             try {
                 
                 JexlASTHelper.parseJexlQuery(visitationContext.getNormalizedQuery().toString());
@@ -270,7 +270,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         
-        if (!visitationContext.getNormalizedStatsQuery().equals("")) {
+        if (!visitationContext.getNormalizedStatsQuery().toString().equals("")) {
             try {
                 JexlASTHelper.parseJexlQuery(visitationContext.getNormalizedStatsQuery().toString());
             } catch (ParseException e) {

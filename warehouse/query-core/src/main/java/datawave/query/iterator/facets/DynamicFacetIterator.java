@@ -57,9 +57,9 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
     private static final Logger log = Logger.getLogger(DynamicFacetIterator.class);
     
-    public static String FACETED_SEARCH_TYPE = "query.facet.type";
-    public static String FACETED_MINIMUM = "query.facet.minimum";
-    public static String FACETED_SEARCH_FIELDS = "query.facet.fields";
+    public static final String FACETED_SEARCH_TYPE = "query.facet.type";
+    public static final String FACETED_MINIMUM = "query.facet.minimum";
+    public static final String FACETED_SEARCH_FIELDS = "query.facet.fields";
     
     FacetedConfiguration configuration;
     
@@ -95,7 +95,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         if (options.containsKey(FACETED_MINIMUM)) {
             try {
-                configuration.setMinimumCount(Integer.valueOf(options.get(FACETED_MINIMUM)));
+                configuration.setMinimumCount(Integer.parseInt(options.get(FACETED_MINIMUM)));
             } catch (NumberFormatException nfe) {
                 log.error(nfe);
                 // defaulting to 1
@@ -115,7 +115,8 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                 
                 try {
                     
-                    script = JexlASTHelper.parseJexlQuery(this.getQuery());
+                    // Parse & flatten the query tree.
+                    script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
                     
                     myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
                     
