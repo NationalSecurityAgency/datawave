@@ -27,7 +27,7 @@ public class LoadAverageWatchIterator extends WrappingIterator {
     
     protected double loadThresholdAboveProcs = 2.0;
     
-    protected static OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+    protected static final OperatingSystemMXBean OS_BEAN = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
     
     public LoadAverageWatchIterator(LoadAverageWatchIterator other, IteratorEnvironment env) {
         this.setSource(other.getSource().deepCopy(env));
@@ -65,7 +65,7 @@ public class LoadAverageWatchIterator extends WrappingIterator {
     
     protected boolean loadExceedThreshold() {
         
-        if (osBean.getSystemLoadAverage() / osBean.getAvailableProcessors() > loadThresholdAboveProcs) {
+        if (OS_BEAN.getSystemLoadAverage() / OS_BEAN.getAvailableProcessors() > loadThresholdAboveProcs) {
             return true;
         }
         return false;

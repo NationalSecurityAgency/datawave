@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTransformer<I,O> implements CacheableLogic, EdgeModelAware {
-    private Logger log = Logger.getLogger(EdgeQueryTransformerSupport.class);
     protected Authorizations auths;
     protected ResponseObjectFactory responseObjectFactory;
     
@@ -240,6 +239,6 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         int hashCode = new HashCodeBuilder().append(this.getClass().getCanonicalName()).append(edge.getDate()).append(edge.getSource()).append(edge.getSink())
                         .append(edge.getEdgeRelationship()).toHashCode();
         
-        return Integer.valueOf(hashCode).toString();
+        return Integer.toString(hashCode);
     }
 }

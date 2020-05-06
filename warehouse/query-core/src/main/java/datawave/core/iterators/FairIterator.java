@@ -26,7 +26,7 @@ public class FairIterator extends WrappingIterator {
      */
     public static final String MAX_SESSION_TIME = "max.session.time";
     
-    protected static Value EXCEPTEDVALUE = new Value(new byte[] {0x0d, 0x0e, 0x0a, 0x0d, 0x0b, 0x0e, 0x0e, 0x0f});
+    protected static final Value EXCEPTEDVALUE = new Value(new byte[] {0x0d, 0x0e, 0x0a, 0x0d, 0x0b, 0x0e, 0x0e, 0x0f});
     
     /**
      * Maximum consecutive keys visited.
@@ -91,7 +91,7 @@ public class FairIterator extends WrappingIterator {
         final String maxKeysOpt = options.get(MAX_SESSION_TIME);
         if (null != maxKeysOpt) {
             try {
-                maxSessionTime = Long.valueOf(maxKeysOpt);
+                maxSessionTime = Long.parseLong(maxKeysOpt);
             } catch (NumberFormatException nfe) {
                 if (log.isTraceEnabled()) {
                     log.trace("Defaulting to Long.MAX_VALUE since maxKeysVisit is an invalid long value");

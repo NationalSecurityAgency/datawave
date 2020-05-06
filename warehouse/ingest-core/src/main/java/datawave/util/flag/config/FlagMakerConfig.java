@@ -21,7 +21,7 @@ import java.util.List;
 public class FlagMakerConfig {
     
     // A value used as a default to denote that it was unset
-    public static int UNSET = Integer.MIN_VALUE;
+    public static final int UNSET = Integer.MIN_VALUE;
     
     @XmlElement
     private List<FlagDataTypeConfig> flagCfg = new ArrayList<>();

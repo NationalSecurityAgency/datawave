@@ -249,7 +249,7 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         }
         
         public static synchronized void clear(String file) {
-            fstCache.remove(file);
+            fstCache.remove(new Path(file));
         }
         
         public static synchronized void clear() {
