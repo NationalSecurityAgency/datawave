@@ -71,7 +71,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
         }
         
         cfg.addOption(DynamicFacetIterator.FACETED_SEARCH_TYPE, facetedConfig.getType().toString());
-        cfg.addOption(DynamicFacetIterator.FACETED_MINIMUM, Integer.valueOf(facetedConfig.getMinimumFacetCount()).toString());
+        cfg.addOption(DynamicFacetIterator.FACETED_MINIMUM, Integer.toString(facetedConfig.getMinimumFacetCount()));
         cfg.addOption(DynamicFacetIterator.FACETED_SEARCH_FIELDS, Joiner.on(",").join(facetedConfig.getFacetedFields()));
         
         if (log.isTraceEnabled())

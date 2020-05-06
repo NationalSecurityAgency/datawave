@@ -162,8 +162,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         
         currentBatch = Queues.newLinkedBlockingDeque();
         
-        delegatedResourceInitializer = super.delegatedResourceInitializer;
-        
         setThreads(1);
         
         listenerService = Executors.newFixedThreadPool(1);
@@ -227,6 +225,13 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         }
         
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = localTableName != null ? localTableName.hashCode() : 0;
+        result = 31 * result + (localAuths != null ? localAuths.hashCode() : 0);
+        return result;
     }
     
     /**
