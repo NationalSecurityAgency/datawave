@@ -20,7 +20,7 @@ import datawave.query.attributes.Document;
 
 public class HitListArithmetic extends DatawaveArithmetic implements StatefulArithmetic {
     
-    static Logger log = Logger.getLogger(HitListArithmetic.class);
+    private static final Logger log = Logger.getLogger(HitListArithmetic.class);
     
     private static final String LESS_THAN = "<", GREATER_THAN = ">", LESS_THAN_OR_EQUAL = "<=", GREATER_THAN_OR_EQUAL = ">=";
     
@@ -222,7 +222,6 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                 Object normalizedRight = ValueTuple.getNormalizedValue(right);
                 if (compare(normalizedO, normalizedRight, LESS_THAN) < 0) {
                     this.addTheCorrectHitSetValue(hitSet, o, right);
-                    if (log.isTraceEnabled()) {}
                     if (!exhaustiveHits) {
                         return true;
                     } else {

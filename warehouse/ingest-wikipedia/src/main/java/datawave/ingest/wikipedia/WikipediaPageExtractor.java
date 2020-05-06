@@ -16,7 +16,7 @@ import javax.xml.stream.XMLStreamReader;
  */
 public class WikipediaPageExtractor {
     
-    public static final SimpleDateFormat TIMESTAMP_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
+    public static final ThreadLocal<SimpleDateFormat> TIMESTAMP_DATE_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z"));
     
     // Extract expected metadata elements about a page
     public static final String TITLE_ELEMENT = "title";
@@ -98,7 +98,7 @@ public class WikipediaPageExtractor {
                     int id = Integer.parseInt(idText.toString());
                     long timestamp;
                     try {
-                        timestamp = TIMESTAMP_DATE_FORMAT.parse(timestampText.append("+0000").toString()).getTime();
+                        timestamp = TIMESTAMP_DATE_FORMAT.get().parse(timestampText.append("+0000").toString()).getTime();
                         return new WikipediaPage(id, title, timestamp, comment, text);
                     } catch (ParseException e) {
                         return null;

@@ -210,7 +210,7 @@ public class QueryParametersImpl implements QueryParameters {
     protected static final String defaultEndTime = "235959";
     protected static final String defaultEndMillisec = "999";
     protected static final String formatPattern = "yyyyMMdd HHmmss.SSS";
-    protected static final SimpleDateFormat dateFormat;
+    private static final SimpleDateFormat dateFormat;
     
     static {
         dateFormat = new SimpleDateFormat(formatPattern);

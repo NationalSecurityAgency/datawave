@@ -41,7 +41,7 @@ public class CardinalityRecord implements Serializable {
     }
     
     public CardinalityRecord(CardinalityRecord other) {
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             this.dateType = other.dateType;
             this.resultCardinalityValueFields = new HashSet<>();
             this.resultCardinalityValueFields.addAll(other.resultCardinalityValueFields);
@@ -147,7 +147,7 @@ public class CardinalityRecord implements Serializable {
         DateFieldValueCardinalityRecord fvc = getDateFieldValueCardinalityRecord(date, fieldName, fieldValue, dataType);
         if (fvc == null) {
             fvc = new DateFieldValueCardinalityRecord(date, fieldName, fieldValue, dataType);
-            synchronized (cardinalityMap) {
+            synchronized (this) {
                 cardinalityMap.put(fvc.hashCode(), fvc);
             }
         }
@@ -160,7 +160,7 @@ public class CardinalityRecord implements Serializable {
         if (fvc == null) {
             fvc = new DateFieldValueCardinalityRecord(date, fieldName, fieldValue, dataType);
             int hash = DateFieldValueCardinalityRecord.hash(date, fieldName, fieldValue, dataType);
-            synchronized (cardinalityMap) {
+            synchronized (this) {
                 cardinalityMap.put(hash, fvc);
             }
         }
@@ -171,7 +171,7 @@ public class CardinalityRecord implements Serializable {
         
         int hash = DateFieldValueCardinalityRecord.hash(date, fieldName, fieldValue, dataType);
         Set<DateFieldValueCardinalityRecord> possibleFvcSet = null;
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             possibleFvcSet = cardinalityMap.get(hash);
         }
         DateFieldValueCardinalityRecord fvc = null;
@@ -189,7 +189,7 @@ public class CardinalityRecord implements Serializable {
     
     public HashMultimap<Integer,DateFieldValueCardinalityRecord> getCardinalityMap() {
         HashMultimap<Integer,DateFieldValueCardinalityRecord> newCardinalityMap = HashMultimap.create();
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             for (Map.Entry<Integer,DateFieldValueCardinalityRecord> entry : cardinalityMap.entries()) {
                 newCardinalityMap.put(entry.getKey(), new DateFieldValueCardinalityRecord(entry.getValue()));
             }
@@ -201,7 +201,7 @@ public class CardinalityRecord implements Serializable {
         
         // make a copy of the object, clear the current object, and write the copy to disk asynchronously
         CardinalityRecord newCardinalityRecord;
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             newCardinalityRecord = new CardinalityRecord(this);
             this.cardinalityMap.clear();
         }
@@ -212,7 +212,7 @@ public class CardinalityRecord implements Serializable {
         
         // make a copy of the object and write the copy to disk asynchronously
         CardinalityRecord newResulsCardinalityRecord;
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             newResulsCardinalityRecord = new CardinalityRecord(this);
         }
         CardinalityRecord.writeToDisk(newResulsCardinalityRecord, file);
@@ -261,7 +261,7 @@ public class CardinalityRecord implements Serializable {
             throw new IllegalArgumentException("ResultsCardinalityRecords have different recorded fields");
         }
         
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             for (DateFieldValueCardinalityRecord record : other.cardinalityMap.values()) {
                 addRecord(record);
             }
@@ -277,7 +277,7 @@ public class CardinalityRecord implements Serializable {
             throw new IllegalArgumentException("ResultsCardinalityRecords have different resultCardinalityValueFields");
         }
         
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             for (DateFieldValueCardinalityRecord record : cardinalityRecord.cardinalityMap.values()) {
                 addRecord(record);
             }
