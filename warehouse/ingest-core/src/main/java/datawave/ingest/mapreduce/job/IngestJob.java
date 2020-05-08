@@ -286,7 +286,6 @@ public class IngestJob implements Tool {
                 return -1;
             } else
                 log.info("Created tables: " + tableNames + " successfully!");
-            return 0;
         }
         
         try {
