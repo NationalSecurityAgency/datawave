@@ -1,7 +1,7 @@
 package datawave.query.cardinality;
 
-import com.vividsolutions.jts.util.Assert;
 import org.junit.Test;
+import org.locationtech.jts.util.Assert;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -50,7 +50,7 @@
         <version.easymock>4.0.2</version.easymock>
         <version.geoserver>2.14.2</version.geoserver>
         <version.geotools>20.1</version.geotools>
-        <version.geowave>0.9.5</version.geowave>
+        <version.geowave>1.1.0</version.geowave>
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
@@ -85,7 +85,7 @@
         <version.microservice.dictionary-api>1.0</version.microservice.dictionary-api>
         <version.microservice.metadata-utils>1.3</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
-        <version.microservice.type-utils>1.4</version.microservice.type-utils>
+        <version.microservice.type-utils>1.6</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.15</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
@@ -377,99 +377,6 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${version.log4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-adapter-auth</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework.security</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-adapter-raster</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-adapter-vector</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-vfs2</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-analytic-mapreduce</artifactId>
-                <version>${version.geowave}</version>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-cli-stats</artifactId>
-                <version>${version.geowave}</version>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-core-geotime</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.accumulo</groupId>
-                        <artifactId>accumulo-minicluster</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-datastore-accumulo</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.accumulo</groupId>
-                        <artifactId>accumulo-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.accumulo</groupId>
-                        <artifactId>accumulo-minicluster</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.accumulo</groupId>
-                        <artifactId>accumulo-monitor</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -914,6 +821,25 @@
                 <version>${version.jgroups}</version>
             </dependency>
             <dependency>
+                <groupId>org.locationtech.geowave</groupId>
+                <artifactId>geowave-core-geotime</artifactId>
+                <version>${version.geowave}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.accumulo</groupId>
+                        <artifactId>accumulo-minicluster</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jul-to-slf4j</artifactId>
                 <version>${version.slf4j}</version>
@@ -1121,26 +1047,10 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>geowave</id>
-            <url>http://geowave-maven.s3-website-us-east-1.amazonaws.com/release</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>osgeo</id>
+            <id>osgeo-release</id>
+            <name>Open Source Geospatial Foundation Repository</name>
             <url>https://repo.osgeo.org/repository/release/</url>
         </repository>
-        <!--
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>osgeo</id>
-            <name>Open Source Geospatial Foundation Repository</name>
-            <url>https://download.osgeo.org/webdav/geotools/</url>
-        </repository>
-        -->
     </repositories>
     <pluginRepositories>
         <!--
