@@ -24,25 +24,44 @@ public abstract class BaseHdfsFileCacheUtil {
     public BaseHdfsFileCacheUtil(Configuration conf) {
         Validate.notNull(conf, "Configuration object passed in null");
         this.conf = conf;
-        this.cacheFilePath = getCacheFilePath(conf);
+        setCacheFilePath(conf);
     }
     
-    protected abstract Path getCacheFilePath(Configuration conf);
+    public Path getCacheFilePath() {
+        return this.cacheFilePath;
+    }
     
-    public void read() throws Exception {
+    public abstract void setCacheFilePath(Configuration conf);
+    
+    public void read() throws IOException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
-            readCache(in, "\t");
+            readCache(in, delimiter);
         } catch (IOException ex) {
+            if (shouldRefreshCache(this.conf)) {
+                update();
+            } else {
+                throw new IOException("Unable to read cache file at " + this.cacheFilePath, ex);
+            }
             
         }
         
     }
     
-    public void write() {
-        
-    }
+    public abstract void writeCacheFile(FileSystem fs, Path tempFile) throws IOException;
     
     public void update() {
+        FileSystem fs = null;
+        Path tempFile = null;
+        try {
+            fs = FileSystem.get(cacheFilePath.toUri(), conf);
+            tempFile = createTempFile(fs);
+            writeCacheFile(fs, tempFile);
+            createCacheFile(fs, tempFile);
+        } catch (IOException e) {
+            cleanup(fs, tempFile);
+            
+            log.error("Unable to update cache file " + cacheFilePath + " " + e.getMessage());
+        }
         
     }
     
@@ -62,14 +81,18 @@ public abstract class BaseHdfsFileCacheUtil {
             
         } catch (Exception e) {
             log.warn("Unable to rename " + tmpCacheFile + " to " + this.cacheFilePath + "probably because somebody else replaced it ", e);
-            try {
-                fs.delete(tmpCacheFile, false);
-            } catch (Exception e2) {
-                log.error("Unable to clean up " + tmpCacheFile, e2);
-            }
+            cleanup(fs, tmpCacheFile);
         }
         log.info("Updated " + cacheFilePath);
         
+    }
+    
+    protected void cleanup(FileSystem fs, Path tmpCacheFile) {
+        try {
+            fs.delete(tmpCacheFile, false);
+        } catch (Exception e) {
+            log.error("Unable to clean up " + tmpCacheFile, e);
+        }
     }
     
     protected void readCache(BufferedReader in, String delimiter) throws IOException {
@@ -100,5 +123,9 @@ public abstract class BaseHdfsFileCacheUtil {
         return tmpCacheFile;
     }
     
-    protected abstract boolean shouldRefreshCache(Configuration conf);
+    protected boolean shouldRefreshCache(Configuration conf) {
+        // most caches will be updated by external processes. we don't always want multiple clients trying to update the same file if they call update at the
+        // same time (e.g. every ingest job or mapper)
+        return false;
+    }
 }

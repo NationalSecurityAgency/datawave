@@ -126,7 +126,6 @@ public class TableConfigurationUtil {
      * @throws AccumuloSecurityException
      * @throws AccumuloException
      * @throws TableNotFoundException
-     * @throws ClassNotFoundException
      */
     public boolean configureTables(Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         // Check to see if the tables exist
@@ -335,9 +334,8 @@ public class TableConfigurationUtil {
         try {
             cache.read();
         } catch (Exception e) {
-            log.error("Unable to read accumulo config cache at " + conf.get(TableConfigCache.ACCUMULO_CONFIG_CACHE_PROPERTY)
-                            + ". Proceeding to read directly from Accumulo.");
-            Map<String,String> configMap = getTableAggregatorConfigs(accumuloHelper, conf, log, tableNames);
+            log.error("Unable to read accumulo config cache at " + cache.getCacheFilePath() + ". Proceeding to read directly from Accumulo.");
+            Map<String,String> configMap = getTableAggregatorConfigs(accumuloHelper, log, tableNames);
             for (Map.Entry entry : configMap.entrySet()) {
                 conf.set(entry.getKey().toString(), entry.getValue().toString());
             }
@@ -345,12 +343,11 @@ public class TableConfigurationUtil {
         
     }
     
-    public Map<String,String> getTableAggregatorConfigs(Configuration config) throws AccumuloException, ClassNotFoundException, TableNotFoundException,
-                    AccumuloSecurityException {
-        return getTableAggregatorConfigs(accumuloHelper, config, log, tableNames);
+    public Map<String,String> getTableAggregatorConfigs() throws AccumuloException, ClassNotFoundException, TableNotFoundException, AccumuloSecurityException {
+        return getTableAggregatorConfigs(accumuloHelper, log, tableNames);
     }
     
-    private static Map<String,String> getTableAggregatorConfigs(AccumuloHelper accumuloHelper, Configuration conf, Logger log, String[] tableNames)
+    private static Map<String,String> getTableAggregatorConfigs(AccumuloHelper accumuloHelper, Logger log, String[] tableNames)
                     throws AccumuloSecurityException, AccumuloException, TableNotFoundException, ClassNotFoundException {
         
         Map<String,String> configMap = new HashMap<>();

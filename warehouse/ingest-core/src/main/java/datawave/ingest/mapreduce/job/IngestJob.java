@@ -576,7 +576,7 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-mapper")) {
                 mapper = Class.forName(args[++i]).asSubclass(Mapper.class);
             } else if (args[i].equals("-splitsCacheTimeoutMs")) {
-                conf.set(MetadataTableSplitsCacheStatus.SPLITS_CACHE_TIMEOUT_MS, args[++i]);
+                conf.set(TableSplitsCacheStatus.SPLITS_CACHE_TIMEOUT_MS, args[++i]);
             } else if (args[i].equals("-disableRefreshSplits")) {
                 conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
             } else if (args[i].equals("-splitsCacheDir")) {

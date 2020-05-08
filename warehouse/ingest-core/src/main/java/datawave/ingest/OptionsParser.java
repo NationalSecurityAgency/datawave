@@ -26,7 +26,7 @@ public class OptionsParser {
     
     public static Configuration parseArguments(String[] args, Configuration conf) {
         String configDir = null;
-        for (int i = 1; i < args.length; i++) {
+        for (int i = 0; i < args.length; i++) {
             if (args[i].equals(instanceFlag)) {
                 AccumuloHelper.setInstanceName(conf, args[++i]);
             } else if (args[i].equals(zookeepersFlag)) {
@@ -43,7 +43,9 @@ public class OptionsParser {
                 conf.addResource(args[i]);
             }
         }
-        ConfigurationFileHelper.setConfigurationFromFiles(conf, configDir, configDirSuffix);
+        if (null != configDir) {
+            ConfigurationFileHelper.setConfigurationFromFiles(conf, configDir, configDirSuffix);
+        }
         return conf;
     }
     

@@ -87,8 +87,8 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     @Override
-    protected Path getCacheFilePath(Configuration conf) {
-        return getSplitsPath(conf);
+    public void setCacheFilePath(Configuration conf) {
+        this.cacheFilePath = new Path(conf.get(SPLITS_CACHE_DIR, DEFAULT_SPLITS_CACHE_DIR), SPLITS_CACHE_FILE);
     }
     
     public static Path getSplitsPath(Configuration conf) {
@@ -131,33 +131,14 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     /**
      * updates the splits file if the splits in the new file have not decreased beyond the maximum deviation allowed
      */
-    public void update() {
-        try {
-            FileSystem fs = FileSystem.get(this.splitsPath.toUri(), conf);
-            initAccumuloHelper();
-            Path tmpSplitsFile = createTempFile(fs);
-            Map<String,Integer> tmpSplitsPerTable = writeSplits(fs, tmpSplitsFile);
-            if (null == getFileStatus() || !exceedsMaxSplitsDeviation(tmpSplitsPerTable)) {
-                log.info("updating splits file");
-                createCacheFile(fs, tmpSplitsFile);
-            } else {
-                log.info("Deleting " + tmpSplitsFile);
-                fs.delete(tmpSplitsFile, false);
-            }
-        } catch (IOException | AccumuloException | AccumuloSecurityException | TableNotFoundException ex) {
-            log.error("Unable to update the splits file", ex);
-        }
-        
-    }
-    
-    private Map<String,Integer> writeSplits(FileSystem fs, Path tmpSplitsFile) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
-                    IOException {
+    @Override
+    public void writeCacheFile(FileSystem fs, Path tmpSplitsFile) throws IOException {
         TableOperations tops = null;
         initAccumuloHelper();
         try {
             tops = this.accumuloHelper.getConnector().tableOperations();
         } catch (AccumuloSecurityException | AccumuloException ex) {
-            throw new AccumuloException("Could not get TableOperations", ex);
+            throw new IOException("Could not get TableOperations", ex);
         }
         Set<String> tableNames = getIngestTableNames();
         Map<String,Integer> splitsPerTable = new HashMap<>();
@@ -175,15 +156,19 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                         out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
                     }
                 }
+                if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
+                    // if the file exists and the new file would exceed the deviation threshold, don't replace it
+                    throw new IOException("Splits file will not be replaced");
+                }
             } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
                 log.error("Unable to write new splits file", ex);
-                throw ex;
+                throw new IOException(ex);
             }
         }
-        return splitsPerTable;
+        
     }
     
-    private boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) throws IOException {
+    private boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) {
         Map<String,Integer> currentSplitsPerTable = getCurrentSplitsPerTable();
         if (!currentSplitsPerTable.isEmpty()) {
             Set<String> currentTables = currentSplitsPerTable.keySet();
@@ -214,20 +199,6 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             currentSplitsPerTable.put(tableName, this.splits.get(tableName).size());
         }
         return currentSplitsPerTable;
-    }
-    
-    @Override
-    public void read() throws IOException {
-        log.info(String.format("Reading the metadata table splits (@ '%s')...", this.splitsPath.toUri().toString()));
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.splitsPath.toUri(), conf).open(this.splitsPath)))) {
-            readCache(in, "\t");
-        } catch (IOException ex) {
-            if (shouldRefreshSplits(this.conf)) {
-                update();
-            } else {
-                throw new IOException("Could not read metadata table splits file", ex);
-            }
-        }
     }
     
     /**

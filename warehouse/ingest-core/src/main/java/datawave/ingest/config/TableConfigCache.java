@@ -26,14 +26,22 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
         super(conf);
     }
     
-    public void setTableConfigs(TableConfigurationUtil tableConfig, Configuration conf) {
+    public void setTableConfigs(Configuration conf) {
         try {
-            configMap = tableConfig.getTableAggregatorConfigs(conf);
+            TableConfigurationUtil tableConfig = new TableConfigurationUtil(conf);
+            configMap = tableConfig.getTableAggregatorConfigs();
         } catch (Exception e) {
             log.error("Unable to get table configurations " + e.getMessage());
         }
     }
     
+    @Override
+    public void update() {
+        setTableConfigs(this.conf);
+        super.update();
+    }
+    
+    @Override
     public void writeCacheFile(FileSystem fs, Path tmpCacheFile) {
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpCacheFile)))) {
             for (Map.Entry e : configMap.entrySet()) {
@@ -45,14 +53,9 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     }
     
     @Override
-    protected Path getCacheFilePath(Configuration conf) {
+    public void setCacheFilePath(Configuration conf) {
         this.cacheFilePath = new Path(config.get(ACCUMULO_CONFIG_CACHE_PROPERTY, DEFAULT_ACCUMULO_CONFIG_CACHE_DIR));
-        return null;
+        
     }
     
-    @Override
-    protected boolean shouldRefreshCache(Configuration conf) {
-        // todo
-        return false;
-    }
 }
