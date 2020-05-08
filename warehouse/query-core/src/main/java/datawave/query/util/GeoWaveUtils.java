@@ -59,7 +59,7 @@ public class GeoWaveUtils {
      * @param byteArrayRanges
      *            the original byte array ranges generated for the query geometry
      * @param rangeSplitThreshold
-     *            used to determine the minimum number of segments to break a range into - higher values will take longer to computer, but will yield tighter
+     *            used to determine the minimum number of segments to break a range into - higher values will take longer to compute, but will yield tighter
      *            ranges
      * @param maxRangeOverlap
      *            the maximum amount of overlap a range is allowed to have compared to the envelope of the query geometry - expressed as a double between 0 and
@@ -80,7 +80,7 @@ public class GeoWaveUtils {
      * @param byteArrayRanges
      *            the original byte array ranges generated for the query geometry
      * @param rangeSplitThreshold
-     *            used to determine the minimum number of segments to break a range into - higher values will take longer to computer, but will yield tighter
+     *            used to determine the minimum number of segments to break a range into - higher values will take longer to compute, but will yield tighter
      *            ranges
      * @param maxRangeOverlap
      *            the maximum amount of overlap a range is allowed to have compared to the envelope of the query geometry - expressed as a double between 0 and
@@ -113,7 +113,7 @@ public class GeoWaveUtils {
      * @param byteArrayRange
      *            a byte array range representing a portion of the query geometry
      * @param rangeSplitThreshold
-     *            used to determine the minimum number of segments to break a range into - higher values will take longer to computer, but will yield tighter
+     *            used to determine the minimum number of segments to break a range into - higher values will take longer to compute, but will yield tighter
      *            ranges
      * @param maxRangeOverlap
      *            the maximum amount of overlap a range is allowed to have compared to the envelope of the query geometry - expressed as a double between 0 and
@@ -134,7 +134,7 @@ public class GeoWaveUtils {
      * @param byteArrayRange
      *            a byte array range representing a portion of the query geometry
      * @param rangeSplitThreshold
-     *            used to determine the minimum number of segments to break a range into - higher values will take longer to computer, but will yield tighter
+     *            used to determine the minimum number of segments to break a range into - higher values will take longer to compute, but will yield tighter
      *            ranges
      * @param maxRangeOverlap
      *            the maximum amount of overlap a range is allowed to have compared to the envelope of the query geometry - expressed as a double between 0 and
@@ -194,26 +194,7 @@ public class GeoWaveUtils {
                                 // note: all cells for tiers 0 and 1 are within the bounds of the map
                                 if (curTier <= 1 || inBounds(scaledBounds)) {
                                     
-                                    Geometry scaledGeom = null;
-                                    if (curTier <= 1) {
-                                        // @formatter:off
-                                        scaledGeom = gf.toGeometry(
-                                                new Envelope(
-                                                        scaledBounds.getMinValuesPerDimension()[0],
-                                                        scaledBounds.getMaxValuesPerDimension()[0],
-                                                        Math.max(-90, scaledBounds.getMinValuesPerDimension()[1]),
-                                                        Math.min(90, scaledBounds.getMaxValuesPerDimension()[1])));
-                                        // @formatter:on
-                                    } else {
-                                        // @formatter:off
-                                        scaledGeom = gf.toGeometry(
-                                                new Envelope(
-                                                        scaledBounds.getMinValuesPerDimension()[0],
-                                                        scaledBounds.getMaxValuesPerDimension()[0],
-                                                        scaledBounds.getMinValuesPerDimension()[1],
-                                                        scaledBounds.getMaxValuesPerDimension()[1]));
-                                        // @formatter:on
-                                    }
+                                    Geometry scaledGeom = boundsToGeometry(gf, scaledBounds);
                                     
                                     // make sure that the scaled geometry intersects the original query geometry
                                     if (scaledGeom.intersects(queryGeometry)) {
@@ -251,6 +232,26 @@ public class GeoWaveUtils {
         }
         
         return byteArrayRanges;
+    }
+    
+    /**
+     * Creates a bounding box geometry from MultiDimensionalNumericData. Bounds with latitudes greater than 90 and less than -90 will be appropriately clamped.
+     *
+     * @param gf
+     *            the geometry factory to use
+     * @param bounds
+     *            the bounds of the box
+     * @return a bounding box geometry
+     */
+    private static Geometry boundsToGeometry(GeometryFactory gf, MultiDimensionalNumericData bounds) {
+        // @formatter:off
+        return gf.toGeometry(
+                new Envelope(
+                        bounds.getMinValuesPerDimension()[0],
+                        bounds.getMaxValuesPerDimension()[0],
+                        Math.max(-90, bounds.getMinValuesPerDimension()[1]),
+                        Math.min(90, bounds.getMaxValuesPerDimension()[1])));
+        // @formatter:on
     }
     
     /**
@@ -615,26 +616,7 @@ public class GeoWaveUtils {
      */
     public static Geometry positionToGeometry(byte[] byteArray) {
         MultiDimensionalNumericData bounds = GeometryNormalizer.indexStrategy.getRangeForId(null, byteArray);
-        
-        if (decodeTier(byteArray) <= 1) {
-            // @formatter:off
-            return new GeometryFactory().toGeometry(
-                    new Envelope(
-                            bounds.getMinValuesPerDimension()[0],
-                            bounds.getMaxValuesPerDimension()[0],
-                            Math.max(-90, bounds.getMinValuesPerDimension()[1]),
-                            Math.min(90, bounds.getMaxValuesPerDimension()[1])));
-            // @formatter:on
-        } else {
-            // @formatter:off
-            return new GeometryFactory().toGeometry(
-                    new Envelope(
-                            bounds.getMinValuesPerDimension()[0],
-                            bounds.getMaxValuesPerDimension()[0],
-                            bounds.getMinValuesPerDimension()[1],
-                            bounds.getMaxValuesPerDimension()[1]));
-            // @formatter:on
-        }
+        return boundsToGeometry(new GeometryFactory(), bounds);
     }
     
     /**
@@ -717,24 +699,8 @@ public class GeoWaveUtils {
         for (byte[] byteArray : byteArrays) {
             MultiDimensionalNumericData bounds = GeometryNormalizer.indexStrategy.getRangeForId(null, byteArray);
             
-            if (decodeTier(byteArray) <= 1) {
-                // @formatter:off
-                geometries.add(gf.toGeometry(
-                        new Envelope(
-                                bounds.getMinValuesPerDimension()[0],
-                                bounds.getMaxValuesPerDimension()[0],
-                                Math.max(-90, bounds.getMinValuesPerDimension()[1]),
-                                Math.min(90, bounds.getMaxValuesPerDimension()[1]))));
-                // @formatter:on
-            } else if (inBounds(bounds)) {
-                // @formatter:off
-                geometries.add(gf.toGeometry(
-                        new Envelope(
-                                bounds.getMinValuesPerDimension()[0],
-                                bounds.getMaxValuesPerDimension()[0],
-                                bounds.getMinValuesPerDimension()[1],
-                                bounds.getMaxValuesPerDimension()[1])));
-                // @formatter:on
+            if (decodeTier(byteArray) <= 1 || inBounds(bounds)) {
+                geometries.add(boundsToGeometry(gf, bounds));
             }
         }
         

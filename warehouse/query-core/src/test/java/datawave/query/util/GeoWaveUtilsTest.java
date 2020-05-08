@@ -164,8 +164,8 @@ public class GeoWaveUtilsTest {
         Assert.assertEquals(expectedGeom.toText(), geom.toText());
         
         // int, long
-        geom = GeoWaveUtils.positionToGeometry(3, 4);
-        expectedGeom = new WKTReader().read("POLYGON((-90 -180, -90 -135, -45 -135, -45 -180, -90 -180))");
+        geom = GeoWaveUtils.positionToGeometry(3, 32);
+        expectedGeom = new WKTReader().read("POLYGON ((0 0, 0 45, 45 45, 45 0, 0 0))");
         Assert.assertEquals(expectedGeom.toText(), geom.toText());
     }
     
