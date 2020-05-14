@@ -160,12 +160,10 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 count += uidInfo.first();
                 ignore |= uidInfo.second();
                 
-                // Three things must be true in order to return a document specific range
-                // 1. The uids stored in the index must NOT have the ignore flag set to FALSE
-                // 2. The option to collapse all document ranges cannot be set.
-                // 3. The document count must be under the document threshold.
-                // If any of those is false, do not add the uids.
-                if (!ignore || !collapseUids || (count <= collapseUidsThreshold)) {
+                // Two things must be true in order to return a document specific range:
+                // 1) The ignore flag must be false
+                // 2) Either the collapse flag is false, or the document count is under the document threshold
+                if (!ignore && (!collapseUids || (count <= collapseUidsThreshold))) {
                     uids.addAll(uidInfo.third());
                     if (log.isTraceEnabled())
                         log.trace("Adding uids " + uidInfo.third().toString());
@@ -173,10 +171,10 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
                 src.next();
             }
             
-            // The following three things must be true to build a counts-only IndexInfo
-            // 1. The document count is larger than the configured threshold
-            // 2. We are blindly collapsing document ranges into shard ranges
-            // 3. We encountered a Uid object with the ignore flag set to TRUE
+            // Any of the following three conditions causes a counts-only IndexInfo to be built.
+            // 1. The IGNORE flag is set to TRUE, indicating no uids are present.
+            // 2. The collapseUids flag is set to TRUE, indicating a request for no uids.
+            // 3. The uids count exceeds the specified collapseUidsThreshold
             if (ignore || collapseUids || (count > collapseUidsThreshold)) {
                 tv = new IndexInfo(count);
             } else {
