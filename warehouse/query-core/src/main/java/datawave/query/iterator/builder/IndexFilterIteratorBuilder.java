@@ -80,6 +80,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                         .withMaxResults(maxIvaratorResults)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
                         .withNumRetries(ivaratorNumRetries)
+                        .withPersistOptions(ivaratorPersistOptions)
                         .withQueryLock(queryLock)
                         .allowDirResuse(true)
                         .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
