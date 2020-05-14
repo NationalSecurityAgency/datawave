@@ -1346,6 +1346,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setMaxRangeSplit(this.getMaxIndexRangeSplit())
                 .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles())
                 .setIvaratorNumRetries(this.getIvaratorNumRetries())
+                .setIvaratorPersistOptions(this.getIvaratorPersistOptions())
                 .setUnsortedIvaratorSource(this.sourceForDeepCopies)
                 .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources))
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
