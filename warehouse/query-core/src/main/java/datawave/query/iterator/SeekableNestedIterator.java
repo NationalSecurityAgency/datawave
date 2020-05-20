@@ -80,12 +80,12 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
     }
     
     @Override
-    public boolean isDeferred() {
-        return source.isDeferred();
+    public boolean isContextRequired() {
+        return source.isContextRequired();
     }
     
     @Override
-    public void setDeferredContext(T context) {
-        source.setDeferredContext(context);
+    public void setContext(T context) {
+        source.setContext(context);
     }
 }

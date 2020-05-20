@@ -26,18 +26,18 @@ import com.google.common.collect.TreeMultimap;
  */
 public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     // temporary stores of uninitialized streams of iterators
-    private List<NestedIterator<T>> includes, excludes, deferredIncludes, deferredExcludes;
+    private List<NestedIterator<T>> includes, excludes, contextIncludes, contextExcludes;
     
     private Map<T,T> transforms;
     private Transformer<T> transformer;
     
-    private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads, deferredIncludeHeads, deferredExcludeHeads, deferredIncludeNullHeads,
-                    deferredExcludeNullHeads;
+    private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads, contextIncludeHeads, contextExcludeHeads, contextIncludeNullHeads,
+                    contextExcludeNullHeads;
     private T prev;
     private T next;
     
     private Document prevDocument, document;
-    private T deferredContext;
+    private T evaluationContext;
     
     private static final Logger log = Logger.getLogger(AndIterator.class);
     
@@ -47,10 +47,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     public AndIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters) {
         includes = new LinkedList<>();
-        deferredIncludes = new LinkedList<>();
+        contextIncludes = new LinkedList<>();
         for (NestedIterator<T> src : sources) {
-            if (src.isDeferred()) {
-                deferredIncludes.add(src);
+            if (src.isContextRequired()) {
+                contextIncludes.add(src);
             } else {
                 includes.add(src);
             }
@@ -58,13 +58,13 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         
         if (filters == null) {
             excludes = Collections.emptyList();
-            deferredExcludes = Collections.emptyList();
+            contextExcludes = Collections.emptyList();
         } else {
             excludes = new LinkedList<>();
-            deferredExcludes = new LinkedList<>();
+            contextExcludes = new LinkedList<>();
             for (NestedIterator<T> filter : filters) {
-                if (filter.isDeferred()) {
-                    deferredExcludes.add(filter);
+                if (filter.isContextRequired()) {
+                    contextExcludes.add(filter);
                 } else {
                     excludes.add(filter);
                 }
@@ -91,14 +91,14 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
         }
         
-        if (deferredIncludes != null && deferredIncludes.size() > 0) {
-            deferredIncludeHeads = TreeMultimap.create(keyComp, itrComp);
-            deferredIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+        if (contextIncludes != null && contextIncludes.size() > 0) {
+            contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
+            contextIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
         
-        if (deferredExcludes != null && deferredExcludes.size() > 0) {
-            deferredExcludeHeads = TreeMultimap.create(keyComp, itrComp);
-            deferredExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+        if (contextExcludes != null && contextExcludes.size() > 0) {
+            contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
+            contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
         
         next();
@@ -111,8 +111,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @return the previously found next
      */
     public T next() {
-        if (isDeferred() && deferredContext == null) {
-            throw new IllegalStateException("deferredContext must be set prior to each next");
+        if (isContextRequired() && evaluationContext == null) {
+            throw new IllegalStateException("evaluationContext must be set prior to each next");
         }
         
         prev = next;
@@ -125,28 +125,45 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             
             if (lowest.equals(highest)) {
                 if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
-                    // test for deferred includes
-                    T deferredInclude = DeferredIterator.evalAnd(lowest, deferredIncludes, deferredIncludeHeads, deferredIncludeNullHeads, transformer);
-                    if (lowest.equals(deferredInclude)) {
-                        // test for deferred excludes
-                        T deferredExclude = DeferredIterator.evalAndNegated(lowest, deferredExcludes, deferredExcludeHeads, deferredExcludeNullHeads,
+                    if (contextIncludes.size() > 0) {
+                        T highestContextInclude = NestedIteratorContextUtil.intersect(lowest, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
                                         transformer);
-                        if (deferredExclude == null || !lowest.equals(deferredExclude)) {
+                        // if there wasn't an intersection here move to the next one
+                        if (!lowest.equals(highestContextInclude)) {
+                            if (highestContextInclude != null) {
+                                // move to the next highest key
+                                includeHeads = moveIterators(lowest, highestContextInclude);
+                                continue;
+                            } else {
+                                // all we know is they didn't intersect advance to next
+                                includeHeads = advanceIterators(lowest);
+                                continue;
+                            }
+                        }
+                    }
+                    
+                    if (contextExcludes.size() > 0) {
+                        // DeMorgans Law: (~A) AND (~B) == ~(A OR B)
+                        // for an exclude union lowest with the set
+                        T unionExclude = NestedIteratorContextUtil.union(lowest, contextExcludes, contextExcludeHeads, contextExcludeNullHeads, transformer);
+                        // if the union matched it is not a hit
+                        if (!lowest.equals(unionExclude)) {
+                            // hit
                             next = transforms.get(lowest);
                             document = Util.buildNewDocument(includeHeads.values());
                             includeHeads = advanceIterators(lowest);
                             break;
                         } else {
-                            // the deferred evaluation did not match, so advance and try again
-                            includeHeads = advanceIterators(lowest);
+                            // advance and try again
+                            advanceIterators(lowest);
+                            continue;
                         }
-                    } else if (deferredInclude == null) {
-                        // the deferred evaluation did not match, so advance and try again
-                        includeHeads = advanceIterators(lowest);
-                    } else {
-                        // the deferred evaluation did not match and had a minimum next key, advance to that
-                        includeHeads = moveIterators(lowest, deferredInclude);
                     }
+                    
+                    next = transforms.get(lowest);
+                    document = Util.buildNewDocument(includeHeads.values());
+                    includeHeads = advanceIterators(lowest);
+                    break;
                 } else {
                     includeHeads = advanceIterators(lowest);
                 }
@@ -190,8 +207,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new IllegalStateException("initialize() was never called");
         }
         
-        // special evaluation if deferred since this means there are no sources at all and next is useless
-        if (isDeferred()) {
+        // special evaluation if iterator requires context since this means there are no sources at all and next is useless
+        if (isContextRequired()) {
             // reset internal tracking
             prev = null;
             next = null;
@@ -202,6 +219,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             includeHeads = TreeMultimap.create(keyComp, itrComp);
             transforms = new HashMap<>();
             
+            // replace includeHeads to force minimum for next evaluation
             T[] array = (T[]) new Comparable[1];
             array[0] = minimum;
             includeHeads.put(minimum, new ArrayIterator(array));
@@ -245,14 +263,6 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             leaves.addAll(itr.leaves());
         }
         for (NestedIterator<T> itr : excludes) {
-            leaves.addAll(itr.leaves());
-        }
-        
-        for (NestedIterator<T> itr : deferredIncludes) {
-            leaves.addAll(itr.leaves());
-        }
-        
-        for (NestedIterator<T> itr : deferredExcludes) {
             leaves.addAll(itr.leaves());
         }
         
@@ -350,11 +360,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         sb.append("Includes: ");
         sb.append(includes);
         sb.append(", Deferred Includes: ");
-        sb.append(deferredIncludes);
+        sb.append(contextIncludes);
         sb.append(", Excludes: ");
         sb.append(excludes);
         sb.append(", Deferred Excludes: ");
-        sb.append(deferredExcludes);
+        sb.append(contextExcludes);
         
         return sb.toString();
     }
@@ -364,17 +374,17 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     }
     
     /**
-     * As long as there is at least one sourced include the entire and has a source
+     * As long as there is at least one sourced included no context is required
      * 
-     * @return
+     * @return true if there are no includes, false otherwise
      */
     @Override
-    public boolean isDeferred() {
-        return includes.stream().allMatch(i -> i.isDeferred() || includes.size() == 0);
+    public boolean isContextRequired() {
+        return includes.size() == 0;
     }
     
     @Override
-    public void setDeferredContext(T context) {
-        this.deferredContext = context;
+    public void setContext(T context) {
+        this.evaluationContext = context;
     }
 }

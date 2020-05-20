@@ -148,12 +148,12 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
     }
     
     @Override
-    public boolean isDeferred() {
+    public boolean isContextRequired() {
         return false;
     }
     
     @Override
-    public void setDeferredContext(T context) {
+    public void setContext(T context) {
         // no-op
     }
 }

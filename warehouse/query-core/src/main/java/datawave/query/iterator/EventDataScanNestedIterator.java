@@ -188,12 +188,12 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     }
     
     @Override
-    public boolean isDeferred() {
+    public boolean isContextRequired() {
         return false;
     }
     
     @Override
-    public void setDeferredContext(Key context) {
+    public void setContext(Key context) {
         // no-op
     }
 }

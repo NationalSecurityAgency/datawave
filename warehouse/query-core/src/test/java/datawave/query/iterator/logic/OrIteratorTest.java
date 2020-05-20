@@ -51,17 +51,17 @@ public class OrIteratorTest {
         includes.add(getItr(Lists.newArrayList("b", "d"), true));
         
         OrIterator iterator = new OrIterator(includes);
-        iterator.setDeferredContext("d");
+        iterator.setContext("d");
         iterator.initialize();
         
         Assert.assertTrue(iterator.hasNext());
-        iterator.setDeferredContext("d");
+        iterator.setContext("d");
         Assert.assertEquals("a", iterator.next());
         Assert.assertTrue(iterator.hasNext());
-        iterator.setDeferredContext("d");
+        iterator.setContext("d");
         Assert.assertEquals("b", iterator.next());
         Assert.assertTrue(iterator.hasNext());
-        iterator.setDeferredContext("d");
+        iterator.setContext("d");
         Assert.assertEquals("d", iterator.next());
         Assert.assertFalse(iterator.hasNext());
     }
@@ -72,14 +72,14 @@ public class OrIteratorTest {
         includes.add(getItr(Lists.newArrayList("b", "d"), true));
         
         OrIterator iterator = new OrIterator(includes);
-        iterator.setDeferredContext("b");
+        iterator.setContext("b");
         iterator.initialize();
         
         Assert.assertTrue(iterator.hasNext());
-        iterator.setDeferredContext("d");
+        iterator.setContext("d");
         Assert.assertEquals("b", iterator.next());
         Assert.assertTrue(iterator.hasNext());
-        iterator.setDeferredContext("e");
+        iterator.setContext("e");
         Assert.assertEquals("d", iterator.next());
         Assert.assertFalse(iterator.hasNext());
     }
@@ -90,19 +90,19 @@ public class OrIteratorTest {
         excludes.add(getItr(Lists.newArrayList("b", "d"), true));
         
         OrIterator iterator = new OrIterator(Collections.emptySet(), excludes);
-        iterator.setDeferredContext("a");
+        iterator.setContext("a");
         iterator.initialize();
         
-        iterator.setDeferredContext("a");
+        iterator.setContext("a");
         Assert.assertEquals("a", iterator.move("a"));
         
-        iterator.setDeferredContext("b");
+        iterator.setContext("b");
         Assert.assertEquals(null, iterator.move("b"));
         
-        iterator.setDeferredContext("d");
+        iterator.setContext("d");
         Assert.assertEquals(null, iterator.move("d"));
         
-        iterator.setDeferredContext("e");
+        iterator.setContext("e");
         Assert.assertEquals("e", iterator.move("e"));
     }
     
@@ -113,28 +113,28 @@ public class OrIteratorTest {
         excludes.add(getItr(Lists.newArrayList("f"), true));
         
         OrIterator iterator = new OrIterator(Collections.emptySet(), excludes);
-        iterator.setDeferredContext("a");
+        iterator.setContext("a");
         iterator.initialize();
         
-        iterator.setDeferredContext("a");
+        iterator.setContext("a");
         Assert.assertEquals("a", iterator.move("a"));
         
         // second iterator covers this one
-        iterator.setDeferredContext("b");
+        iterator.setContext("b");
         Assert.assertEquals("b", iterator.move("b"));
         
         // second iterator covers this one
-        iterator.setDeferredContext("d");
+        iterator.setContext("d");
         Assert.assertEquals("d", iterator.move("d"));
         
-        iterator.setDeferredContext("e");
+        iterator.setContext("e");
         Assert.assertEquals("e", iterator.move("e"));
         
         // first iterator covers this one
-        iterator.setDeferredContext("f");
+        iterator.setContext("f");
         Assert.assertEquals("f", iterator.move("f"));
         
-        iterator.setDeferredContext("g");
+        iterator.setContext("g");
         Assert.assertEquals("g", iterator.move("g"));
     }
     
@@ -145,19 +145,19 @@ public class OrIteratorTest {
         includes.add(getItr(Lists.newArrayList("b", "d"), false));
         
         OrIterator iterator = new OrIterator(includes);
-        iterator.setDeferredContext("a");
+        iterator.setContext("a");
         iterator.initialize();
         
-        iterator.setDeferredContext("a");
+        iterator.setContext("a");
         Assert.assertEquals("a", iterator.move("a"));
         
-        iterator.setDeferredContext("b");
+        iterator.setContext("b");
         Assert.assertEquals("b", iterator.move("b"));
         
-        iterator.setDeferredContext("c");
+        iterator.setContext("c");
         Assert.assertEquals("d", iterator.move("c"));
         
-        iterator.setDeferredContext("e");
+        iterator.setContext("e");
         Assert.assertEquals(null, iterator.move("e"));
     }
     
@@ -223,7 +223,7 @@ public class OrIteratorTest {
         OrIterator iterator = new OrIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isDeferred());
+        Assert.assertFalse(iterator.isContextRequired());
         Assert.assertTrue(iterator.hasNext());
         Assert.assertEquals("a", iterator.next());
         Assert.assertTrue(iterator.hasNext());
@@ -251,7 +251,7 @@ public class OrIteratorTest {
         OrIterator iterator = new OrIterator(includes);
         iterator.initialize();
         
-        Assert.assertFalse(iterator.isDeferred());
+        Assert.assertFalse(iterator.isContextRequired());
         Assert.assertTrue(iterator.hasNext());
         Assert.assertEquals("b", iterator.move("a~"));
         Assert.assertTrue(iterator.hasNext());
@@ -276,8 +276,8 @@ public class OrIteratorTest {
         
         OrIterator iterator = new OrIterator(includes);
         
-        Assert.assertTrue(iterator.isDeferred());
-        Assert.assertTrue(childOr.isDeferred());
+        Assert.assertTrue(iterator.isContextRequired());
+        Assert.assertTrue(childOr.isContextRequired());
         
         iterator.initialize();
     }
@@ -297,15 +297,15 @@ public class OrIteratorTest {
         
         OrIterator iterator = new OrIterator(includes);
         
-        Assert.assertTrue(iterator.isDeferred());
-        Assert.assertTrue(childOr.isDeferred());
+        Assert.assertTrue(iterator.isContextRequired());
+        Assert.assertTrue(childOr.isContextRequired());
         
-        iterator.setDeferredContext("f");
+        iterator.setContext("f");
         iterator.initialize();
         
         Assert.assertEquals(null, iterator.move("f"));
         Assert.assertFalse(iterator.hasNext());
-        iterator.setDeferredContext("g");
+        iterator.setContext("g");
         Assert.assertEquals("g", iterator.move("g"));
         Assert.assertFalse(iterator.hasNext());
     }
@@ -325,35 +325,35 @@ public class OrIteratorTest {
         
         OrIterator iterator = new OrIterator(includes);
         
-        Assert.assertTrue(iterator.isDeferred());
-        Assert.assertTrue(childOr.isDeferred());
+        Assert.assertTrue(iterator.isContextRequired());
+        Assert.assertTrue(childOr.isContextRequired());
         
-        iterator.setDeferredContext("a");
+        iterator.setContext("a");
         iterator.initialize();
         
         Assert.assertTrue(iterator.hasNext());
-        iterator.setDeferredContext("b");
+        iterator.setContext("b");
         Assert.assertEquals("a", iterator.next());
         Assert.assertTrue(iterator.hasNext());
-        iterator.setDeferredContext("c");
+        iterator.setContext("c");
         Assert.assertEquals("b", iterator.next());
         Assert.assertTrue(iterator.hasNext());
-        iterator.setDeferredContext("d");
+        iterator.setContext("d");
         Assert.assertEquals("c", iterator.next());
         Assert.assertTrue(iterator.hasNext());
         
-        iterator.setDeferredContext("f");
+        iterator.setContext("f");
         Assert.assertEquals(null, iterator.move("f"));
         Assert.assertFalse(iterator.hasNext());
-        iterator.setDeferredContext("g");
+        iterator.setContext("g");
         Assert.assertEquals(null, iterator.move("g"));
         Assert.assertFalse(iterator.hasNext());
-        iterator.setDeferredContext("h");
+        iterator.setContext("h");
         Assert.assertEquals("h", iterator.move("h"));
         Assert.assertFalse(iterator.hasNext());
     }
     
-    private NegationFilterTest.Itr<String> getItr(List<String> source, boolean deferred) {
-        return new NegationFilterTest.Itr<>(source, deferred);
+    private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {
+        return new NegationFilterTest.Itr<>(source, contextRequired);
     }
 }
