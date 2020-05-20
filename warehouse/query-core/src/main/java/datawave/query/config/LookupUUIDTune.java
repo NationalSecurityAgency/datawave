@@ -8,9 +8,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.query.Constants;
+import datawave.query.language.parser.QueryParser;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.SeekingQueryPlanner;
+import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.CreateTLDUidsIterator;
 import datawave.query.tld.TLDQueryIterator;
@@ -41,6 +44,8 @@ public class LookupUUIDTune implements Profile {
     protected boolean reduceFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
     protected boolean reduceQuery = false;
+    protected List<NodeTransformRule> transforms = null;
+    protected Map<String,QueryParser> querySyntaxParsers = null;
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -50,6 +55,11 @@ public class LookupUUIDTune implements Profile {
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
+            
+            if (querySyntaxParsers != null) {
+                rsq.setQuerySyntaxParsers(querySyntaxParsers);
+            }
+            
             if (reduceResponse) {
                 rsq.setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
                 
@@ -78,6 +88,11 @@ public class LookupUUIDTune implements Profile {
             dqp.setCondenseUidsInRangeStream(false);
             // Should the query planner attempt to de-dupe query terms post model expansion?
             dqp.setEnforceUniqueTermsWithinExpressions(reduceQuery);
+            
+            if (transforms != null) {
+                dqp.setTransformRules(transforms);
+            }
+            
             if (disableComplexFunctions) {
                 dqp.setDisableAnyFieldLookup(true);
                 dqp.setDisableBoundedLookup(true);
@@ -277,5 +292,21 @@ public class LookupUUIDTune implements Profile {
     
     public void setReduceQuery(boolean reduceQuery) {
         this.reduceQuery = reduceQuery;
+    }
+    
+    public List<NodeTransformRule> getTransforms() {
+        return transforms;
+    }
+    
+    public void setTransforms(List<NodeTransformRule> transforms) {
+        this.transforms = transforms;
+    }
+    
+    public Map<String,QueryParser> getQuerySyntaxParsers() {
+        return querySyntaxParsers;
+    }
+    
+    public void setQuerySyntaxParsers(Map<String,QueryParser> querySyntaxParsers) {
+        this.querySyntaxParsers = querySyntaxParsers;
     }
 }
