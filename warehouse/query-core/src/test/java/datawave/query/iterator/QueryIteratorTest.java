@@ -53,6 +53,14 @@ public class QueryIteratorTest {
         assertFalse(QueryIterator.isDocumentSpecificRange(shardRange));
     }
     
+    @Test
+    public void testIsDocumentSpecificRange_withRebuiltShardRange() {
+        Key start = new Key("20190314_0", "dataType\0doc0");
+        Key end = new Key("20190314_0\u0000");
+        Range range = new Range(start, false, end, false);
+        assertFalse(QueryIterator.isDocumentSpecificRange(range));
+    }
+    
     /**
      * <pre>
      * Shard key format
