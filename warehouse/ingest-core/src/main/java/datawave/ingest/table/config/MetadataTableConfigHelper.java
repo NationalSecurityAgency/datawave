@@ -23,7 +23,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (tableName != null) {
             for (IteratorScope scope : IteratorScope.values()) {
-                setFrequencyCombiner(tops, scope.name());
+                // setFrequencyCombiner(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
                 setFrequencyColumnIterator(tops, scope.name());
@@ -64,7 +64,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
                     TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyColumnIterator");
         setPropertyIfNecessary(tableName, stem, "25,datawave.iterators.FrequencyColumnIterator", tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns", "zeiberg", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
         return stem;
     }
