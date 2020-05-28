@@ -23,13 +23,16 @@ public class FrequencyColumnIterator extends TransformingIterator {
     
     @Override
     protected PartialKey getKeyPrefix() {
-        return PartialKey.ROW;
+        return PartialKey.ROW_COLFAM;
     }
     
     @Override
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
         while (sortedKeyValueIterator.hasTop()) {
-            kvBuffer.append(sortedKeyValueIterator.getTopKey(), sortedKeyValueIterator.getTopValue());
+            Text cq = sortedKeyValueIterator.getTopKey().getColumnQualifier();
+            Key oldKey = sortedKeyValueIterator.getTopKey();
+            Key newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text("csv"));
+            kvBuffer.append(newKey, new Value(cq));
             sortedKeyValueIterator.next();
         }
     }
