@@ -7,9 +7,11 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.TransformingIterator;
 import org.apache.hadoop.io.Text;
+import scala.util.control.Exception;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Map;
 
 public class FrequencyColumnIterator extends TransformingIterator {
@@ -28,13 +30,22 @@ public class FrequencyColumnIterator extends TransformingIterator {
     
     @Override
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
+        Key newKey = null;
+        StringBuilder newValueSb = new StringBuilder();
+        
         while (sortedKeyValueIterator.hasTop()) {
             Text cq = sortedKeyValueIterator.getTopKey().getColumnQualifier();
             Key oldKey = sortedKeyValueIterator.getTopKey();
-            Key newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text("csv"));
-            kvBuffer.append(newKey, new Value(cq));
+            if (newKey == null)
+                newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text("csv"));
+            Value oldValue = sortedKeyValueIterator.getTopValue();
+            newValueSb = newValueSb.append(Arrays.toString(cq.getBytes()));
+            newValueSb.append(Arrays.toString(oldValue.get()));
             sortedKeyValueIterator.next();
         }
+        
+        kvBuffer.append(newKey, new Value(newValueSb.toString().getBytes()));
+        
     }
     
 }
