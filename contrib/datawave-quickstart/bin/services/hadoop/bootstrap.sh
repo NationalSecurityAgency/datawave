@@ -204,3 +204,13 @@ function hadoopPidList() {
    hadoopIsRunning && echo "${DW_HADOOP_PID_LIST}"
 
 }
+
+function hadoopDisplayBinaryInfo() {
+  echo "Source: ${DW_HADOOP_DIST_URI}"
+  local tarballName="$(basename "$DW_HADOOP_DIST_URI")"
+  if [[ -f "${DW_HADOOP_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_HADOOP_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
+}
