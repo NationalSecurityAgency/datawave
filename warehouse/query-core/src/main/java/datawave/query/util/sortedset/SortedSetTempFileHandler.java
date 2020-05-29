@@ -1,15 +1,12 @@
 package datawave.query.util.sortedset;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 /**
  * A sorted set file handler factory that uses temporary local based files.
@@ -17,12 +14,17 @@ import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
  * 
  * 
  */
-public class SortedSetTempFileHandler implements SortedSetFileHandler {
-    private File file;
+public class SortedSetTempFileHandler implements FileSortedSet.SortedSetFileHandler {
+    private final FileSystem fs;
+    private final File file;
+    private final Path path;
     
     public SortedSetTempFileHandler() throws IOException {
-        this.file = File.createTempFile("SortedSet", "bin");
+        this.file = File.createTempFile("SortedSet", ".bin");
         this.file.deleteOnExit();
+        this.path = new Path(file.toURI());
+        Configuration conf = new Configuration();
+        this.fs = path.getFileSystem(conf);
     }
     
     public File getFile() {
@@ -31,11 +33,16 @@ public class SortedSetTempFileHandler implements SortedSetFileHandler {
     
     @Override
     public InputStream getInputStream() throws IOException {
-        return new BufferedInputStream(new FileInputStream(file));
+        return fs.open(path);
     }
     
     public OutputStream getOutputStream() throws IOException {
-        return new BufferedOutputStream(new FileOutputStream(file));
+        return fs.create(path, true);
+    }
+    
+    @Override
+    public FileSortedSet.PersistOptions getPersistOptions() {
+        return new FileSortedSet.PersistOptions();
     }
     
     @Override

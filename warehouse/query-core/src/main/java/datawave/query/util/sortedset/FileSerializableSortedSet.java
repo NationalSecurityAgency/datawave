@@ -1,8 +1,5 @@
 package datawave.query.util.sortedset;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -11,6 +8,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.SortedSet;
+import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 
 /**
@@ -33,13 +31,24 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
     }
     
     /**
+     * Create a file sorted subset from another one
+     *
+     * @param other
+     * @param from
+     * @param to
+     */
+    public FileSerializableSortedSet(FileSerializableSortedSet other, E from, E to) {
+        super(other, from, to);
+    }
+    
+    /**
      * Create a persisted sorted set
      *
      * @param handler
      * @param persisted
      */
-    public FileSerializableSortedSet(SortedSetFileHandler handler, boolean persisted) {
-        super(handler, persisted);
+    public FileSerializableSortedSet(TypedSortedSetFileHandler handler, boolean persisted) {
+        super(handler, new Factory(), persisted);
     }
     
     /**
@@ -49,8 +58,8 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * @param handler
      * @param persisted
      */
-    public FileSerializableSortedSet(Comparator<? super E> comparator, SortedSetFileHandler handler, boolean persisted) {
-        super(comparator, handler, persisted);
+    public FileSerializableSortedSet(Comparator<? super E> comparator, TypedSortedSetFileHandler handler, boolean persisted) {
+        super(comparator, handler, new Factory(), persisted);
     }
     
     /**
@@ -59,8 +68,8 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * @param set
      * @param handler
      */
-    public FileSerializableSortedSet(SortedSet<E> set, SortedSetFileHandler handler) {
-        super(set, handler);
+    public FileSerializableSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler) {
+        super(set, handler, new Factory());
     }
     
     /**
@@ -70,65 +79,144 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
      * @param set
      * @param handler
      */
-    public FileSerializableSortedSet(SortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException {
-        super(set, handler, persist);
+    public FileSerializableSortedSet(SortedSet<E> set, TypedSortedSetFileHandler handler, boolean persist) throws IOException {
+        super(set, handler, new Factory(), persist);
     }
     
     /**
-     * Get an input stream
+     * Persist a set using the specified handler
      * 
-     * @return the input stream
-     * @throws FileNotFoundException
+     * @param handler
      * @throws IOException
      */
     @Override
-    protected ObjectInputStream getInputStream() throws IOException {
-        return new ObjectInputStream(new BufferedInputStream(handler.getInputStream()));
+    public void persist(SortedSetFileHandler handler) throws IOException {
+        super.persist(new SerializableFileHandler(handler));
+    }
+    
+    @Override
+    public FileSerializableSortedSet<E> clone() {
+        return (FileSerializableSortedSet) super.clone();
     }
     
     /**
-     * Get an output stream
-     * 
-     * @return the output stream
-     * @throws IOException
+     * A sortedsetfilehandler that can handler serializable objects
      */
-    @Override
-    protected ObjectOutputStream getOutputStream() throws IOException {
-        return new ObjectOutputStream(new BufferedOutputStream(handler.getOutputStream()));
-    }
-    
-    /**
-     * Write KeyValueSerializable to an object output stream
-     * 
-     * @param stream
-     * @param t
-     * @throws IOException
-     */
-    @Override
-    protected void writeObject(OutputStream stream, E t) throws IOException {
-        ((ObjectOutputStream) stream).writeObject(t);
-    }
-    
-    /**
-     * Read KeyValueSerializable from an object input stream
-     *
-     * @param stream
-     * @return a key
-     * @throws IOException
-     */
-    @Override
-    protected E readObject(InputStream stream) throws IOException {
-        try {
-            Object o = ((ObjectInputStream) stream).readObject();
-            return (E) o;
-        } catch (ClassNotFoundException e) {
-            throw new IOException("Could not deserialize object", e);
+    public static class SerializableFileHandler<E> implements TypedSortedSetFileHandler<Key> {
+        SortedSetFileHandler delegate;
+        
+        public SerializableFileHandler(SortedSetFileHandler handler) {
+            this.delegate = handler;
+        }
+        
+        @Override
+        public SortedSetInputStream<Key> getInputStream() throws IOException {
+            return new SerializableInputStream(delegate.getInputStream(), delegate.getSize());
+        }
+        
+        @Override
+        public SortedSetOutputStream getOutputStream() throws IOException {
+            return new SerializableOutputStream(delegate.getOutputStream());
+        }
+        
+        @Override
+        public PersistOptions getPersistOptions() {
+            return delegate.getPersistOptions();
+        }
+        
+        @Override
+        public long getSize() {
+            return delegate.getSize();
+        }
+        
+        @Override
+        public void deleteFile() {
+            delegate.deleteFile();
         }
     }
     
-    @Override
-    public FileSortedSet<E> clone() {
-        return new FileSerializableSortedSet(this);
+    public static class SerializableInputStream<E> implements SortedSetInputStream<E> {
+        private final InputStream stream;
+        private ObjectInputStream delegate;
+        private final long length;
+        
+        public SerializableInputStream(InputStream stream, long length) throws IOException {
+            this.stream = stream;
+            this.length = length;
+        }
+        
+        private ObjectInputStream getDelegate() throws IOException {
+            if (delegate == null) {
+                this.delegate = new ObjectInputStream(stream);
+            }
+            return delegate;
+        }
+        
+        @Override
+        public E readObject() throws IOException {
+            try {
+                return (E) getDelegate().readObject();
+            } catch (IOException ioe) {
+                return null;
+            } catch (ClassNotFoundException nnfe) {
+                return null;
+            }
+        }
+        
+        @Override
+        public int readSize() throws IOException {
+            long bytesToSkip = length - 4;
+            long total = 0;
+            long cur = 0;
+            
+            while ((total < bytesToSkip) && ((cur = stream.skip(bytesToSkip - total)) > 0)) {
+                total += cur;
+            }
+            
+            byte[] buffer = new byte[4];
+            stream.read(buffer);
+            
+            return ((buffer[3] & 0xFF)) + ((buffer[2] & 0xFF) << 8) + ((buffer[1] & 0xFF) << 16) + ((buffer[0]) << 24);
+        }
+        
+        @Override
+        public void close() {
+            try {
+                if (delegate != null) {
+                    delegate.close();
+                } else {
+                    stream.close();
+                }
+            } catch (Exception e) {
+                log.error("Failed to close input stream", e);
+            }
+        }
+    }
+    
+    public static class SerializableOutputStream<E> implements SortedSetOutputStream<E> {
+        private ObjectOutputStream delegate;
+        
+        public SerializableOutputStream(OutputStream stream) throws IOException {
+            delegate = new ObjectOutputStream(stream);
+        }
+        
+        @Override
+        public void writeObject(E obj) throws IOException {
+            delegate.writeObject(obj);
+        }
+        
+        @Override
+        public void writeSize(int size) throws IOException {
+            delegate.write((size >>> 24) & 0xFF);
+            delegate.write((size >>> 16) & 0xFF);
+            delegate.write((size >>> 8) & 0xFF);
+            delegate.write((size >>> 0) & 0xFF);
+        }
+        
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
     }
     
     /**
@@ -137,23 +225,33 @@ public class FileSerializableSortedSet<E extends Serializable> extends FileSorte
     public static class Factory<E extends Serializable> implements FileSortedSetFactory<E> {
         
         @Override
+        public FileSerializableSortedSet<E> newInstance(FileSortedSet<E> other) {
+            return new FileSerializableSortedSet((FileSerializableSortedSet) other);
+        }
+        
+        @Override
+        public FileSerializableSortedSet<E> newInstance(FileSortedSet<E> other, E from, E to) {
+            return new FileSerializableSortedSet((FileSerializableSortedSet) other, from, to);
+        }
+        
+        @Override
         public FileSerializableSortedSet<E> newInstance(SortedSetFileHandler handler, boolean persisted) {
-            return new FileSerializableSortedSet(handler, persisted);
+            return new FileSerializableSortedSet(new SerializableFileHandler(handler), persisted);
         }
         
         @Override
         public FileSerializableSortedSet<E> newInstance(Comparator<? super E> comparator, SortedSetFileHandler handler, boolean persisted) {
-            return new FileSerializableSortedSet(comparator, handler, persisted);
+            return new FileSerializableSortedSet(comparator, new SerializableFileHandler(handler), persisted);
         }
         
         @Override
         public FileSerializableSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler) {
-            return new FileSerializableSortedSet(set, handler);
+            return new FileSerializableSortedSet(set, new SerializableFileHandler(handler));
         }
         
         @Override
         public FileSerializableSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException {
-            return new FileSerializableSortedSet(set, handler, persist);
+            return new FileSerializableSortedSet(set, new SerializableFileHandler(handler), persist);
         }
     }
     
