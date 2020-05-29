@@ -2,10 +2,6 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
-import com.vividsolutions.jts.geom.GeometryFactory;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.normalizer.PointNormalizer;
@@ -20,10 +16,6 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-import mil.nga.giat.geowave.core.geotime.GeometryUtils;
-import mil.nga.giat.geowave.core.index.ByteArrayRange;
-import mil.nga.giat.geowave.core.index.NumericIndexStrategy;
-import mil.nga.giat.geowave.core.index.sfc.data.MultiDimensionalNumericData;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -32,9 +24,18 @@ import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
+import org.locationtech.geowave.core.geotime.util.GeometryUtils;
+import org.locationtech.geowave.core.index.ByteArrayRange;
+import org.locationtech.geowave.core.index.sfc.data.MultiDimensionalNumericData;
+import org.locationtech.geowave.core.store.api.Index;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -141,21 +142,21 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
         
         protected static JexlNode getIndexNode(String fieldName, List<Envelope> envs, ShardQueryConfiguration config, MetadataHelper helper) {
-            NumericIndexStrategy indexStrategy;
+            Index index;
             int maxExpansion;
             if (isOnlyPointType(fieldName, helper)) {
-                indexStrategy = PointNormalizer.indexStrategy;
+                index = PointNormalizer.index;
                 maxExpansion = config.getPointMaxExpansion();
             } else {
-                indexStrategy = GeometryNormalizer.indexStrategy;
+                index = GeometryNormalizer.index;
                 maxExpansion = config.getGeometryMaxExpansion();
             }
             
-            List<ByteArrayRange> allRanges = new ArrayList<>();
+            Collection<ByteArrayRange> allRanges = new ArrayList<>();
             int maxRanges = maxExpansion / envs.size();
             for (Envelope env : envs) {
-                for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(env).getIndexConstraints(indexStrategy)) {
-                    allRanges.addAll(indexStrategy.getQueryRanges(range, maxRanges));
+                for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(env).getIndexConstraints(index)) {
+                    allRanges.addAll(index.getIndexStrategy().getQueryRanges(range, maxRanges).getCompositeQueryRanges());
                 }
             }
             allRanges = ByteArrayRange.mergeIntersections(allRanges, ByteArrayRange.MergeOperation.UNION);
@@ -269,7 +270,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         
         @Override
         public JexlNode apply(ByteArrayRange input) {
-            if (input.getStart().equals(input.getEnd())) {
+            if (Arrays.equals(input.getStart(), input.getEnd())) {
                 return JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), fieldName,
                                 AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
             } else {
