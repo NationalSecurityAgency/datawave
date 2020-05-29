@@ -32,20 +32,33 @@ public class FrequencyColumnIterator extends TransformingIterator {
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
         Key newKey = null;
         StringBuilder newValueSb = new StringBuilder();
+        Long numRecords = 0L;
+        Key topKey = null;
+        Value topValue = null;
+        if (sortedKeyValueIterator.hasTop()) {
+            topKey = sortedKeyValueIterator.getTopKey();
+            topValue = sortedKeyValueIterator.getTopValue();
+        }
         
         while (sortedKeyValueIterator.hasTop()) {
+            numRecords++;
             Text cq = sortedKeyValueIterator.getTopKey().getColumnQualifier();
             Key oldKey = sortedKeyValueIterator.getTopKey();
+            Value oldValue = sortedKeyValueIterator.getTopValue();
             if (newKey == null)
                 newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text("csv"));
-            Value oldValue = sortedKeyValueIterator.getTopValue();
             newValueSb = newValueSb.append(Arrays.toString(cq.getBytes()));
             newValueSb.append(Arrays.toString(oldValue.get()));
             sortedKeyValueIterator.next();
         }
         
-        kvBuffer.append(newKey, new Value(newValueSb.toString().getBytes()));
+        if (numRecords > 1)
+            kvBuffer.append(newKey, new Value(new Text(String.valueOf(newValueSb))));
+        else if (numRecords == 1) {
+            if (topKey != null && topValue != null)
+                kvBuffer.append(topKey, topValue);
+            log.info("Range did not need to be transformed  (ran identity transform");
+        }
         
     }
-    
 }
