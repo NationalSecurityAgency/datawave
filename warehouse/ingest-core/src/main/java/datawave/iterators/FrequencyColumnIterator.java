@@ -35,14 +35,10 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Long numRecords = 0L;
         Key topKey = null;
         Value topValue = null;
-        boolean compressedRecord = false;
+
         if (sortedKeyValueIterator.hasTop()) {
             topKey = sortedKeyValueIterator.getTopKey();
             topValue = sortedKeyValueIterator.getTopValue();
-            if (String.valueOf(topValue.get()).startsWith("compressed")) {
-                compressedRecord = true;
-            }
-            
         }
         
         while (sortedKeyValueIterator.hasTop()) {
