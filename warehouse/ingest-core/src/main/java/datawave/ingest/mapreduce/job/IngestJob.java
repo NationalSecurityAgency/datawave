@@ -212,7 +212,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-splitsCacheTimeoutMs timeout]");
         System.out.println("                     [-disableRefreshSplits]");
         System.out.println("                     [-splitsCacheDir /path/to/directory]");
-        System.out.println("                     [-accumuloConfigCacheDir /path/to/directory]");
+        System.out.println("                     [-accumuloConfigCachePath /path/to/file]");
         System.out.println("                     [-cacheBaseDir baseDir] [-cacheJars jar,jar,...]");
         System.out.println("                     [-multipleNumShardsCacheDir /path/to/directory]");
         System.out.println("                     [-skipMarkerFileGeneration] [-markerFileLIFO]");
@@ -582,8 +582,11 @@ public class IngestJob implements Tool {
                 conf.set(TableSplitsCache.SPLITS_CACHE_DIR, args[++i]);
             } else if (args[i].equals("-multipleNumShardsCacheDir")) {
                 conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, args[++i]);
-            } else if (args[i].equalsIgnoreCase("-accumuloConfigCacheDir")) {
-                conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PROPERTY, args[++i]);
+            } else if (args[i].equals("-enableAccumuloConfigCache")) {
+                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, true);
+            } else if (args[i].equalsIgnoreCase("-accumuloConfigCachePath")) {
+                conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, args[++i]);
+                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, true);
             } else if (args[i].equals("-disableSpeculativeExecution")) {
                 disableSpeculativeExecution = true;
             } else if (args[i].equals("-skipMarkerFileGeneration")) {

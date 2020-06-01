@@ -36,7 +36,7 @@ public class OptionsParser {
             } else if (args[i].equals(passwordFlag)) {
                 AccumuloHelper.setPassword(conf, PasswordConverter.parseArg(args[++i]).getBytes());
             } else if (args[i].equals(accCacheDirFlag)) {
-                conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PROPERTY, args[++i]);
+                conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, args[++i]);
             } else if (args[i].equals(configDirFlag)) {
                 configDir = args[++i];
             } else if (!args[i].startsWith(additionalResourceFlag)) {

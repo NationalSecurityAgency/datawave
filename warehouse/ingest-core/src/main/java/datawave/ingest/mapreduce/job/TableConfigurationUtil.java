@@ -330,15 +330,19 @@ public class TableConfigurationUtil {
      */
     void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloException, ClassNotFoundException,
                     TableNotFoundException, AccumuloSecurityException {
-        TableConfigCache cache = new TableConfigCache(conf);
-        try {
-            cache.read();
-        } catch (Exception e) {
-            log.error("Unable to read accumulo config cache at " + cache.getCacheFilePath() + ". Proceeding to read directly from Accumulo.");
-            Map<String,String> configMap = getTableAggregatorConfigs(accumuloHelper, log, tableNames);
-            for (Map.Entry entry : configMap.entrySet()) {
-                conf.set(entry.getKey().toString(), entry.getValue().toString());
+        
+        if (conf.getBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, false)) {
+            TableConfigCache cache = new TableConfigCache(conf);
+            try {
+                cache.read();
+                return;
+            } catch (Exception e) {
+                log.error("Unable to read accumulo config cache at " + cache.getCacheFilePath() + ". Proceeding to read directly from Accumulo.");
             }
+        }
+        Map<String,String> configMap = getTableAggregatorConfigs(accumuloHelper, log, tableNames);
+        for (Map.Entry entry : configMap.entrySet()) {
+            conf.set(entry.getKey().toString(), entry.getValue().toString());
         }
         
     }

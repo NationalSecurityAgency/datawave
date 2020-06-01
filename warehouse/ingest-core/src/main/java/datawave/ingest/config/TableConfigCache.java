@@ -15,8 +15,10 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     
     protected static Configuration config = new Configuration();
     
-    public static final String ACCUMULO_CONFIG_CACHE_PROPERTY = "accumulo.config.cache.dir";
-    public static final String DEFAULT_ACCUMULO_CONFIG_CACHE_DIR = "/data/accumuloConfigCache/accConfCache.txt";
+    public static final String ACCUMULO_CONFIG_CACHE_PATH_PROPERTY = "accumulo.config.cache.path";
+    public static final String DEFAULT_ACCUMULO_CONFIG_CACHE_PATH = "/data/accumuloConfigCache/accConfCache.txt";
+    public static final String ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY = "accumulo.config.cache.enable";
+    
     protected static final String DELIMITER = "\t";
     protected static Map<String,String> configMap;
     
@@ -54,7 +56,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     
     @Override
     public void setCacheFilePath(Configuration conf) {
-        this.cacheFilePath = new Path(config.get(ACCUMULO_CONFIG_CACHE_PROPERTY, DEFAULT_ACCUMULO_CONFIG_CACHE_DIR));
+        this.cacheFilePath = new Path(config.get(ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, DEFAULT_ACCUMULO_CONFIG_CACHE_PATH));
         
     }
     
