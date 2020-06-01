@@ -76,6 +76,19 @@ public class QueryPropertyMarkerTest {
     }
     
     @Test
+    public void getPropertyMarker_and_test() throws ParseException {
+        String query = "FIELD == 'value1' AND FIELD == 'value2'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        for (JexlNode eqNode : JexlASTHelper.getEQNodes(script)) {
+            ExceededValueThresholdMarkerJexlNode valueMarker = new ExceededValueThresholdMarkerJexlNode(eqNode);
+            JexlNode delayedMarker = ASTDelayedPredicate.create(valueMarker);
+            TreeFlatteningRebuildingVisitor.flatten(delayedMarker);
+            Assert.assertEquals(valueMarker, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ExceededValueThresholdMarkerJexlNode.class));
+            Assert.assertEquals(delayedMarker, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ASTDelayedPredicate.class));
+        }
+    }
+    
+    @Test
     public void getPropertyMarker_notPropertyMarker_test() throws ParseException {
         String query = "FIELD == 'value'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);

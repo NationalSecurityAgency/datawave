@@ -85,13 +85,20 @@ public class NestedIteratorContextUtil {
     }
     
     /**
-     * Intersect the List of NestedIterator with the context and return the highest T of the intersection or null if no intersection is possible
+     * Intersect the List of context required NestedIterator with the context and return the highest T of the intersection or null if no intersection is
+     * possible
      *
      * @param context
+     *            the context to be used to move the contextRequiredIterators
      * @param contextRequiredIterators
+     *            the iterators to intersect against that require context
      * @param headMap
+     *            the contextRequiredIterators head map
      * @param nullHeadMap
+     *            the contextRequiredIterators null head map. This is required to track when a move resulted in no intersection with a given context which will
+     *            need to always be moved
      * @param transformer
+     *            transformer to apply to all results from the contextRequiredIterators
      *
      * @return
      */
@@ -125,10 +132,16 @@ public class NestedIteratorContextUtil {
      * Union the context with the contextRequiredIterators and return the lowest T of the intersection or null if no union is possible
      *
      * @param context
+     *            the context to be used to move the contextRequiredIterators
      * @param contextRequiredIterators
+     *            the iterators to union against that require context
      * @param headMap
+     *            the contextRequiredIterators head map
      * @param nullHeadMap
+     *            the contextRequiredIterators null head map. This is required to track when a move resulted in no union with a given context which will need to
+     *            always be moved
      * @param transformer
+     *            transformer to apply to all results from the contextRequiredIterators
      * 
      * @return
      */

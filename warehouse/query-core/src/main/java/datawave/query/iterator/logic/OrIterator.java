@@ -270,6 +270,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             leaves.addAll(itr.leaves());
         }
         
+        // these do not include contextIncludes/contextExcludes because they will be initialized on demand
+        
         return leaves;
     }
     
@@ -283,11 +285,12 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     @Override
     public Collection<NestedIterator<T>> children() {
-        ArrayList<NestedIterator<T>> children = new ArrayList<>(includes.size());
+        ArrayList<NestedIterator<T>> children = new ArrayList<>(includes.size() + contextIncludes.size() + contextExcludes.size());
         
         children.addAll(includes);
         
-        // TODO add deferred?
+        children.addAll(contextIncludes);
+        children.addAll(contextExcludes);
         
         return children;
     }

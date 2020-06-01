@@ -147,15 +147,9 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                         // for an exclude union lowest with the set
                         T unionExclude = NestedIteratorContextUtil.union(lowest, contextExcludes, contextExcludeHeads, contextExcludeNullHeads, transformer);
                         // if the union matched it is not a hit
-                        if (!lowest.equals(unionExclude)) {
-                            // hit
-                            next = transforms.get(lowest);
-                            document = Util.buildNewDocument(includeHeads.values());
-                            includeHeads = advanceIterators(lowest);
-                            break;
-                        } else {
+                        if (lowest.equals(unionExclude)) {
                             // advance and try again
-                            advanceIterators(lowest);
+                            includeHeads = advanceIterators(lowest);
                             continue;
                         }
                     }
@@ -266,17 +260,19 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             leaves.addAll(itr.leaves());
         }
         
+        // these do not include contextIncludes/contextExcludes because they will be initialized on demand
+        
         return leaves;
     }
     
     @Override
     public Collection<NestedIterator<T>> children() {
-        ArrayList<NestedIterator<T>> children = new ArrayList<>(includes.size() + excludes.size());
+        ArrayList<NestedIterator<T>> children = new ArrayList<>(includes.size() + excludes.size() + contextIncludes.size() + contextExcludes.size());
         
         children.addAll(includes);
         children.addAll(excludes);
-        
-        // TODO add deferred?
+        children.addAll(contextIncludes);
+        children.addAll(contextExcludes);
         
         return children;
     }

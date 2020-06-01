@@ -119,7 +119,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
         PushdownUnexecutableNodesVisitor visitor = new PushdownUnexecutableNodesVisitor(config, forFieldIndex, indexedFields, indexOnlyFields, nonEventFields,
                         helper);
         
-        // rewrite the tree to pushdown all negatoins before anything else
+        // rewrite the tree to push down all negations before anything else
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(queryTree);
         return (JexlNode) pushedDownTree.jjtAccept(visitor, null);
     }

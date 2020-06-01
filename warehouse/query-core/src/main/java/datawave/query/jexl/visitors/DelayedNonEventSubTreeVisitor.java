@@ -76,31 +76,23 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        if (data != null && (boolean) data) {
-            // continue processing the tree in case the IteratorBuildingVisitor decided to discard leafs. This is not the most efficient or ideal
-            // but it avoids logic problems in AndIterator/OrIterator that haven't yet been fixed.
-            extractDelayedFields(node);
-        }
-        
-        return super.visit(node, data);
+        return processDelayedFields(node, data);
     }
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        if (data != null && (boolean) data) {
-            // continue processing the tree in case the IteratorBuildingVisitor decided to discard leafs. This is not the most efficient or ideal
-            // but it avoids logic problems in AndIterator/OrIterator that haven't yet been fixed.
-            extractDelayedFields(node);
-        }
-        
-        return super.visit(node, data);
+        return processDelayedFields(node, data);
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
+        return processDelayedFields(node, data);
+    }
+    
+    private Object processDelayedFields(JexlNode node, Object data) {
         if (data != null && (boolean) data) {
             // continue processing the tree in case the IteratorBuildingVisitor decided to discard leafs. This is not the most efficient or ideal
-            // but it avoids logic problems in AndIterator/OrIterator that haven't yet been fixed.
+            // but because the IteratorBuildingVisitor will only identify a root if it has includes we have to look after each recursion.
             extractDelayedFields(node);
         }
         
