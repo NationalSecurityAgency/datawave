@@ -52,7 +52,10 @@ public class FrequencyColumnIterator extends TransformingIterator {
             Value oldValue = sortedKeyValueIterator.getTopValue();
             if (newKey == null)
                 newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text("compressed"));
-            newValueSb = newValueSb.append(Arrays.toString(cq.getBytes()));
+            
+            if (!cq.toString().startsWith("compressed"))
+                newValueSb = newValueSb.append(Arrays.toString(cq.getBytes()));
+            
             newValueSb.append(Arrays.toString(oldValue.get()));
             sortedKeyValueIterator.next();
         }
@@ -60,8 +63,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
         if (numRecords > 1)
             kvBuffer.append(newKey, new Value(new Text(String.valueOf(newValueSb))));
         else if (numRecords == 1) {
-            if (!compressedRecord)
-                kvBuffer.append(topKey, topValue);
+            kvBuffer.append(topKey, topValue);
             log.info("Range did not need to be transformed  (ran identity transform");
         }
         
