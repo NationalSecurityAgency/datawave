@@ -3,7 +3,6 @@ package datawave.core.iterators;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.PeekingIterator;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.composite.CompositeMetadata;
@@ -17,6 +16,7 @@ import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileKeySortedSet;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -84,6 +84,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         private int hdfsBackedSetBufferSize = 10000;
         private int maxOpenFiles = 100;
         private int numRetries = 2;
+        private FileSortedSet.PersistOptions persistOptions = new FileSortedSet.PersistOptions();
         private boolean sortedUIDs = true;
         protected QuerySpanCollector querySpanCollector = null;
         protected volatile boolean collectTimingDetails = false;
@@ -164,6 +165,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         public B withNumRetries(int numRetries) {
             this.numRetries = numRetries;
+            return self();
+        }
+        
+        public B withPersistOptions(FileSortedSet.PersistOptions persistOptions) {
+            this.persistOptions = persistOptions;
             return self();
         }
         
@@ -278,6 +284,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private final int maxOpenFiles;
     // the max number of retries when attempting to persist a sorted set to a filesystem
     private final int numRetries;
+    // the persistence options
+    private final FileSortedSet.PersistOptions persistOptions;
     
     // the current top key
     private Key topKey = null;
@@ -297,7 +305,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // a thread safe wrapper around the sorted set used by the scan threads
     private SortedSet<Key> threadSafeSet = null;
     // the iterator (merge sort) of key values once the sorted set has been filled
-    private PeekingIterator<Key> keys = null;
+    private CachingIterator<Key> keys = null;
     // the current row covered by the hdfs set
     private String currentRow = null;
     // did we create the row directory
@@ -364,6 +372,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.numRetries = 2;
         this.maxRangeSplit = 11;
         this.maxResults = -1;
+        this.persistOptions = new FileSortedSet.PersistOptions();
         
         this.sortedUIDs = true;
     }
@@ -412,6 +421,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.hdfsBackedSetBufferSize = builder.hdfsBackedSetBufferSize;
         this.maxOpenFiles = builder.maxOpenFiles;
         this.numRetries = builder.numRetries;
+        this.persistOptions = builder.persistOptions;
         this.maxRangeSplit = builder.maxRangeSplit;
         
         this.sortedUIDs = builder.sortedUIDs;
@@ -452,6 +462,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.hdfsBackedSetBufferSize = other.hdfsBackedSetBufferSize;
         this.maxOpenFiles = other.maxOpenFiles;
         this.numRetries = other.numRetries;
+        this.persistOptions = other.persistOptions;
         
         this.set = other.set;
         this.keys = other.keys;
@@ -740,6 +751,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                             log.debug("setting as topKey " + topKey);
                         }
                         break;
+                    }
+                    // so the range does not contain the key. determine if we need to seek
+                    else if (key.compareTo(this.lastRangeSeeked.getStartKey()) < 0) {
+                        this.keys = new CachingIterator<>(threadSafeSet.tailSet(this.lastRangeSeeked.getStartKey()).iterator());
                     }
                 }
             }
@@ -1235,7 +1250,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.createdRowDir = false;
             }
             
-            this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, ivaratorCacheDirs, row, maxOpenFiles, numRetries,
+            this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, ivaratorCacheDirs, row, maxOpenFiles, numRetries, persistOptions,
                             new FileKeySortedSet.Factory());
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
             this.currentRow = row;

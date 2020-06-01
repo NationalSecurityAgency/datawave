@@ -19,6 +19,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
 import datawave.query.iterator.SourceManager;
@@ -146,6 +147,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorMaxOpenFiles = 100;
     protected long maxIvaratorResults = -1;
     protected int ivaratorNumRetries = 2;
+    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
     protected SortedKeyValueIterator<Key,Value> unsortedIvaratorSource = null;
     protected int ivaratorCount = 0;
     protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
@@ -1353,6 +1355,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
         builder.setMaxIvaratorResults(maxIvaratorResults);
         builder.setIvaratorNumRetries(ivaratorNumRetries);
+        builder.setIvaratorPersistOptions(ivaratorPersistOptions);
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
@@ -1584,6 +1587,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setIvaratorNumRetries(int ivaratorNumRetries) {
         this.ivaratorNumRetries = ivaratorNumRetries;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorPersistOptions(FileSortedSet.PersistOptions persistOptions) {
+        this.ivaratorPersistOptions = persistOptions;
         return this;
     }
     
