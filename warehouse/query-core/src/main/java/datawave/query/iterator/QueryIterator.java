@@ -182,7 +182,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected boolean groupingContextAddedByMe = false;
     
     protected TypeMetadata typeMetadataWithNonIndexed = null;
-    protected TypeMetadata typeMetadata = null;
     
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
@@ -1347,6 +1346,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setMaxRangeSplit(this.getMaxIndexRangeSplit())
                 .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles())
                 .setIvaratorNumRetries(this.getIvaratorNumRetries())
+                .setIvaratorPersistOptions(this.getIvaratorPersistOptions())
                 .setUnsortedIvaratorSource(this.sourceForDeepCopies)
                 .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources))
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
@@ -1471,7 +1471,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected UniqueTransform getUniqueTransform() {
-        if (uniqueTransform == null && getUniqueFields() != null & !getUniqueFields().isEmpty()) {
+        if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
                     uniqueTransform = new UniqueTransform(getUniqueFields());
@@ -1482,7 +1482,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected GroupingTransform getGroupingTransform() {
-        if (groupingTransform == null && getGroupFields() != null & !getGroupFields().isEmpty()) {
+        if (groupingTransform == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
                 if (groupingTransform == null) {
                     groupingTransform = new GroupingTransform(null, getGroupFields(), true);

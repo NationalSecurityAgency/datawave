@@ -19,7 +19,6 @@ import org.apache.lucene.util.fst.FST;
 import org.apache.lucene.util.fst.NoOutputs;
 import org.apache.lucene.util.fst.Outputs;
 import org.apache.lucene.util.fst.Util;
-import org.apache.lucene.util.packed.PackedInts;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -101,7 +100,11 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("DatawaveFieldIndexFSTIteratorJexl{fName=").append(getFieldName()).append(", negated=").append(isNegated()).append("}");
+        if (fst != null)
+            builder.append("DatawaveFieldIndexFSTIteratorJexl");
+        else
+            builder.append("DatawaveFieldIndexListIteratorJexl");
+        builder.append(" (").append(queryId).append(") {fName=").append(getFieldName()).append(", negated=").append(isNegated()).append("}");
         return builder.toString();
     }
     
@@ -246,7 +249,7 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         }
         
         public static synchronized void clear(String file) {
-            fstCache.remove(file);
+            fstCache.remove(new Path(file));
         }
         
         public static synchronized void clear() {

@@ -81,6 +81,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                         .withMaxOpenFiles(ivaratorMaxOpenFiles)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
                         .withNumRetries(ivaratorNumRetries)
+                        .withPersistOptions(ivaratorPersistOptions)
                         .withMaxResults(maxIvaratorResults)
                         .withQueryLock(queryLock)
                         .allowDirResuse(true)

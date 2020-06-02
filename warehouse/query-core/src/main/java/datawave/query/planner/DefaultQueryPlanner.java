@@ -141,11 +141,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-public class DefaultQueryPlanner extends QueryPlanner {
+public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
     
-    public static String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
+    public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
     
     protected boolean limitScanners = false;
     
@@ -1677,6 +1677,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
                         addOption(cfg, QueryOptions.IVARATOR_NUM_RETRIES, Integer.toString(config.getIvaratorNumRetries()), false);
+                        addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY, Boolean.toString(config.isIvaratorPersistVerify()), false);
+                        addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, Integer.toString(config.getIvaratorPersistVerifyCount()), false);
                         addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                         addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);

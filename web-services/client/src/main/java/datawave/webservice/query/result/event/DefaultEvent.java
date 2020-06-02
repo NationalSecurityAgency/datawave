@@ -1,11 +1,12 @@
 package datawave.webservice.query.result.event;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.util.StringMapAdapter;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
+import org.apache.commons.lang.builder.EqualsBuilder;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -15,16 +16,12 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-
-import datawave.webservice.query.data.ObjectSizeOf;
-
-import datawave.webservice.query.util.StringMapAdapter;
-import org.apache.commons.lang.builder.EqualsBuilder;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
@@ -58,7 +55,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
     
     public void setMarkings(Map<String,String> markings) {
         if (null != markings) {
-            this.markings = new HashMap<String,String>(markings);
+            this.markings = new HashMap<>(markings);
         } else {
             this.markings = null;
         }
@@ -87,6 +84,14 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
         }
         
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = markings != null ? markings.hashCode() : 0;
+        result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
+        result = 31 * result + (fields != null ? fields.hashCode() : 0);
+        return result;
     }
     
     @Override

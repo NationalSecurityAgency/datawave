@@ -332,3 +332,18 @@ function datawaveIngestCreateTableSplits() {
    # Force splits file creation for use by any upcoming jobs, to ensure proper partitioning
    ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-splits-file.sh
 }
+
+function datawaveIngestDisplayBinaryInfo() {
+  echo "Source: DataWave Ingest Version $(getDataWaveVersion)//$(datawaveIngestTarballName)"
+  local installedTarball="$(ls -1 ${DW_DATAWAVE_SERVICE_DIR}/$(basename ${DW_DATAWAVE_INGEST_TARBALL}) 2>/dev/null)"
+  if [[ -n "${installedTarball}" ]]; then
+     echo " Local: ${installedTarball}"
+  else
+     echo " Local: Not loaded"
+  fi
+}
+
+function datawaveIngestTarballName() {
+   local dwVersion="$(getDataWaveVersion)"
+   echo "$( basename "${DW_DATAWAVE_INGEST_TARBALL/-\*-/-$dwVersion-}" )"
+}

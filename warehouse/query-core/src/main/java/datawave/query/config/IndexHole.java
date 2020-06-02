@@ -1,9 +1,13 @@
 package datawave.query.config;
 
+import java.io.Serializable;
+
 /**
  * This class represents a hole in the global index. Used by the PushdownMissingIndexRangeNodesVisitor.
  */
-public class IndexHole implements Comparable<IndexHole> {
+public class IndexHole implements Serializable, Comparable<IndexHole> {
+    private static final long serialVersionUID = -6778479621810682281L;
+    
     private String startValue;
     private String endValue;
     private String startDate;
@@ -74,12 +78,22 @@ public class IndexHole implements Comparable<IndexHole> {
         return builder.toString();
     }
     
+    @Override
     public boolean equals(Object o) {
         if (o instanceof IndexHole) {
             IndexHole hole = (IndexHole) o;
             return startValue.equals(hole.startValue) && endValue.equals(hole.endValue) && startDate.equals(hole.startDate) && endDate.equals(hole.endDate);
         }
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = startValue != null ? startValue.hashCode() : 0;
+        result = 31 * result + (endValue != null ? endValue.hashCode() : 0);
+        result = 31 * result + (startDate != null ? startDate.hashCode() : 0);
+        result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
+        return result;
     }
     
     /**

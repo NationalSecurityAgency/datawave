@@ -8,6 +8,7 @@ import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Comparator;
@@ -38,7 +39,7 @@ import org.apache.log4j.Logger;
  * 
  */
 
-public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable {
+public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable, Serializable {
     
     private static final Logger LOGGER = Logger.getLogger(UID.class);
     

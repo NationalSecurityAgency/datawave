@@ -2,11 +2,9 @@ package datawave.query.composite;
 
 import org.junit.Assert;
 import org.junit.Test;
-import scala.math.BigInt;
 
-import java.math.BigInteger;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class CompositeUtilsTest {
     
