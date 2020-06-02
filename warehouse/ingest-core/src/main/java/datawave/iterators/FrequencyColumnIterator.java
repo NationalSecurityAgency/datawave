@@ -7,7 +7,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.TransformingIterator;
 import org.apache.hadoop.io.Text;
-import scala.util.control.Exception;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -15,7 +14,8 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class FrequencyColumnIterator extends TransformingIterator {
-    
+    public static String COL_QUAL_PREFIX = "compressed-";
+
     public FrequencyColumnIterator() {};
     
     public FrequencyColumnIterator(FrequencyColumnIterator aThis, IteratorEnvironment environment) {
@@ -47,9 +47,9 @@ public class FrequencyColumnIterator extends TransformingIterator {
             Key oldKey = sortedKeyValueIterator.getTopKey();
             Value oldValue = sortedKeyValueIterator.getTopValue();
             if (newKey == null)
-                newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text("compressed-" + cq.toString().substring(0, 3)));
+                newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(COL_QUAL_PREFIX + cq.toString().substring(0, 3)));
             
-            if (!cq.toString().startsWith("compressed-" + cq.toString().substring(0, 3))) {
+            if (!cq.toString().startsWith(COL_QUAL_PREFIX + cq.toString().substring(0, 3))) {
                 newValueSb = newValueSb.append(Arrays.toString(cq.getBytes()));
                 newValueSb.append(Arrays.toString(oldValue.get()));
             } else {
