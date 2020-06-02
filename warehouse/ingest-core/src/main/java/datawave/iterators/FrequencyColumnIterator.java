@@ -35,7 +35,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Long numRecords = 0L;
         Key topKey = null;
         Value topValue = null;
-
+        
         if (sortedKeyValueIterator.hasTop()) {
             topKey = sortedKeyValueIterator.getTopKey();
             topValue = sortedKeyValueIterator.getTopValue();
@@ -47,12 +47,14 @@ public class FrequencyColumnIterator extends TransformingIterator {
             Key oldKey = sortedKeyValueIterator.getTopKey();
             Value oldValue = sortedKeyValueIterator.getTopValue();
             if (newKey == null)
-                newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text("compressed"));
+                newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text("compressed-" + cq.toString().substring(0, 3)));
             
-            if (!cq.toString().startsWith("compressed"))
+            if (!cq.toString().startsWith("compressed-" + cq.toString().substring(0, 3))) {
                 newValueSb = newValueSb.append(Arrays.toString(cq.getBytes()));
-            
-            newValueSb.append(Arrays.toString(oldValue.get()));
+                newValueSb.append(Arrays.toString(oldValue.get()));
+            } else {
+                newValueSb.append(oldValue.get());
+            }
             sortedKeyValueIterator.next();
         }
         
