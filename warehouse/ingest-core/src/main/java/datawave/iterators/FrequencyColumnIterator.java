@@ -49,7 +49,9 @@ public class FrequencyColumnIterator extends TransformingIterator {
             
             if (!cq.toString().startsWith(COL_QUAL_PREFIX + cq.toString().substring(0, 3))) {
                 newValueSb.append(cq);
+                newValueSb.append("^");
                 newValueSb.append(oldValue);
+                newValueSb.append("|");
                 if (newKey == null)
                     newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(COL_QUAL_PREFIX + cq.toString().substring(0, 3)));
                 
