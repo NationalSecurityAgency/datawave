@@ -11,10 +11,12 @@ import org.apache.hadoop.io.Text;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 public class FrequencyColumnIterator extends TransformingIterator {
     public static String COL_QUAL_PREFIX = "compressed-";
+    private HashMap<String,Long> qualifierToFrequencyValueMap = new HashMap<>();
     
     public FrequencyColumnIterator() {};
     
@@ -35,6 +37,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Long numRecords = 0L;
         Key topKey = null;
         Value topValue = null;
+        qualifierToFrequencyValueMap.clear();
         
         if (sortedKeyValueIterator.hasTop()) {
             topKey = sortedKeyValueIterator.getTopKey();
@@ -48,26 +51,68 @@ public class FrequencyColumnIterator extends TransformingIterator {
             Value oldValue = sortedKeyValueIterator.getTopValue();
             
             if (!cq.toString().startsWith(COL_QUAL_PREFIX + cq.toString().substring(0, 3))) {
-                newValueSb.append(cq);
-                newValueSb.append("^");
-                newValueSb.append(oldValue);
-                newValueSb.append("|");
+                /*
+                 * newValueSb.append(cq); newValueSb.append("^"); newValueSb.append(oldValue); newValueSb.append("|");
+                 */
+                insertIntoMap(cq.toString(), oldValue.toString());
+                
                 if (newKey == null)
                     newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(COL_QUAL_PREFIX + cq.toString().substring(0, 3)));
                 
             } else {
                 newValueSb.append(oldValue);
                 newKey = oldKey;
+                deserializeCompressedValue(oldValue);
             }
             sortedKeyValueIterator.next();
         }
         
         if (numRecords > 1)
-            kvBuffer.append(newKey, new Value(new Text(String.valueOf(newValueSb))));
+            kvBuffer.append(newKey, serialize());
         else if (numRecords == 1) {
             kvBuffer.append(topKey, topValue);
             log.info("Range did not need to be transformed  (ran identity transform");
         }
         
     }
+    
+    private void deserializeCompressedValue(Value oldValue) {
+        String[] kvps = oldValue.toString().split("|");
+        for (String kvp : kvps) {
+            String[] pair = kvp.split("^");
+            if (pair.length == 2) {
+                log.info("cq: " + pair[0] + " value: " + pair[1]);
+                String key = pair[0];
+                String value = pair[1];
+                insertIntoMap(key, value);
+                
+            }
+        }
+        log.info("The contents of the frequency map are " + qualifierToFrequencyValueMap.toString());
+    }
+    
+    private void insertIntoMap(String key, String value) {
+        try {
+            long lvalue = 0;
+            if (!qualifierToFrequencyValueMap.containsKey(key))
+                qualifierToFrequencyValueMap.put(key, Long.valueOf(value));
+            else {
+
+                long lastValue = qualifierToFrequencyValueMap.get(value);
+                qualifierToFrequencyValueMap.put(key, lastValue + Long.valueOf(value));
+            }
+        } catch (Exception e) {
+            log.error("Error inserting into map", e);
+        }
+    }
+    
+    private Value serialize() {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String,Long> entry : qualifierToFrequencyValueMap.entrySet()) {
+            sb.append(entry.getKey()).append("^").append(String.valueOf(entry.getValue())).append("|");
+        }
+        
+        return new Value(sb.toString());
+    }
+    
 }
