@@ -48,13 +48,13 @@ public class FrequencyColumnIterator extends TransformingIterator {
             Value oldValue = sortedKeyValueIterator.getTopValue();
             
             if (!cq.toString().startsWith(COL_QUAL_PREFIX + cq.toString().substring(0, 3))) {
-                newValueSb.append(Arrays.toString(cq.getBytes()));
-                newValueSb.append(Arrays.toString(oldValue.get()));
+                newValueSb.append(cq);
+                newValueSb.append(oldValue);
                 if (newKey == null)
                     newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(COL_QUAL_PREFIX + cq.toString().substring(0, 3)));
                 
             } else {
-                newValueSb.append(oldValue.get());
+                newValueSb.append(oldValue);
                 newKey = oldKey;
             }
             sortedKeyValueIterator.next();
