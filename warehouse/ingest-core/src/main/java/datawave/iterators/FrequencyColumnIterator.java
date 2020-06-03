@@ -92,14 +92,23 @@ public class FrequencyColumnIterator extends TransformingIterator {
     }
     
     private void insertIntoMap(String key, String value) {
+        long parsedLong;
+        
         try {
-            long lvalue = 0;
+            parsedLong = Long.parseLong(value);
+        } catch (Exception e) {
+            log.error("Could not parse " + value + " to long for this key " + key, e);
+            return;
+        }
+        
+        try {
+            
             if (!qualifierToFrequencyValueMap.containsKey(key))
-                qualifierToFrequencyValueMap.put(key, Long.valueOf(value));
+                qualifierToFrequencyValueMap.put(key, parsedLong);
             else {
-
+                
                 long lastValue = qualifierToFrequencyValueMap.get(value);
-                qualifierToFrequencyValueMap.put(key, lastValue + Long.valueOf(value));
+                qualifierToFrequencyValueMap.put(key, lastValue + parsedLong);
             }
         } catch (Exception e) {
             log.error("Error inserting into map", e);
