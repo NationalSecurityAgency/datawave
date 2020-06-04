@@ -225,7 +225,7 @@ public class NonShardedSplitsFile {
                         Map<String,Map<Text,String>> splitsAndLocations, String previousTableName, boolean hasSplits, boolean hasLocations) {
             Collections.sort(cutPoints);
             if (hasLocations) {
-                splitsAndLocations.put(previousTableName, cutPointsAndLocations);
+                splitsAndLocations.put(previousTableName, new TreeMap(cutPointsAndLocations));
                 log.info("Adding cut points and locations for the table: " + previousTableName);
                 splits.put(previousTableName, cutPointsAndLocations.keySet().toArray(new Text[cutPointsAndLocations.size()]));
             } else if (hasSplits) {

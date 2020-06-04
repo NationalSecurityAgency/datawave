@@ -18,8 +18,8 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
             return SPLIT_TO_REDUCER_MAP.get(tableName).get(index);
         }
         assignPartitions(numPartitions, tableName, cutPointArrayLength);
-        log.trace("Index was not found after recomputing the reducer map");
-        return 0;
+        return isAssignedPartition(tableName, index) ? SPLIT_TO_REDUCER_MAP.get(tableName).get(index) : 0;
+        
     }
     
     private void assignPartitions(int numPartitions, String tableName, int cutPointArrayLength) {
@@ -41,23 +41,15 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
     
     private void mapPartitions(int numPartitions, int cutPointArrayLength, Map<Text,String> currentTableSplitToLocation,
                     Map<Integer,Integer> tempSplitReducerMap, Text[] cutPointArray) {
-        int locationsPerSmallReducer;
-        int numReducersWithExtraLocation;
-        int firstLargeReducer;
+        
         int locationsAssigned = 0;
         int assignedReducer = 0;
-        int numLocations;
-        boolean reducerFull;
+        
         TreeMultimap<String,Integer> locationToSplits = TreeMultimap.create();
         
         for (int k = 0; k < cutPointArrayLength; k++) {
             locationToSplits.put(currentTableSplitToLocation.get(cutPointArray[k]), k);
         }
-        
-        numLocations = locationToSplits.keys().size();
-        locationsPerSmallReducer = numLocations / numPartitions;
-        numReducersWithExtraLocation = numLocations % numPartitions;
-        firstLargeReducer = numPartitions - numReducersWithExtraLocation;
         
         Iterator<String> locationIterator = locationToSplits.keySet().iterator();
         while (locationIterator.hasNext()) {
@@ -67,23 +59,13 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
                 tempSplitReducerMap.put(splitIndex, assignedReducer);
                 tempSplitReducerMap.put(-splitIndex - 1, assignedReducer);
             }
+            
             locationsAssigned++;
-            reducerFull = ((locationsAssigned == locationsPerSmallReducer) && (assignedReducer < firstLargeReducer))
-                            || ((locationsAssigned == locationsPerSmallReducer + 1) && (assignedReducer >= firstLargeReducer));
-            if (reducerFull)
-                assignedReducer = incrementReducer(numPartitions, assignedReducer);
+            // simple round robin for now. if accumulo isn't balanced we will feel the effects here and will likely want to add constraints at some point
+            assignedReducer = locationsAssigned % numPartitions;
+            
         }
         
-    }
-    
-    private int incrementReducer(int numPartitions, int i) {
-        if (i < numPartitions - 1) {
-            i++;
-            
-        } else
-            i = 0;
-        
-        return i;
     }
     
     private boolean isAssignedPartition(String tableName, int index) {
