@@ -131,7 +131,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
     private Value serialize() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String,Long> entry : qualifierToFrequencyValueMap.entrySet()) {
-            sb.append(entry.getKey()).append("^").append(String.valueOf(entry.getValue())).append("|");
+            sb.append(entry.getKey()).append("^").append(entry.getValue()).append("|");
         }
         
         return new Value(sb.toString());
