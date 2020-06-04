@@ -53,7 +53,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
             log.info("Top key: " + oldKey + " Top value: " + oldValue);
             
             if (cq.toString().startsWith(COL_QUAL_PREFIX)) {
-                log.info("Aggregate key is " + oldKey );
+                log.info("Aggregate key is " + oldKey);
                 newKey = oldKey;
                 log.info("deserialize old value " + oldValue);
                 
@@ -106,7 +106,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
         log.info("inserting key: " + key + " value: " + value);
         if (value.isEmpty())
             return;
-
+        
         try {
             parsedLong = Long.parseLong(value);
         } catch (Exception e) {
