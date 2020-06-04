@@ -53,8 +53,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
             log.info("Top key: " + oldKey + " Top value: " + oldValue);
             
             if (cq.toString().startsWith(COL_QUAL_PREFIX)) {
-                if (numRecords > 0)
-                    log.info("Aggregate key " + oldKey + " is not the first key - frequencies won't get summed");
+                log.info("Aggregate key is " + oldKey );
                 newKey = oldKey;
                 log.info("deserialize old value " + oldValue);
                 
