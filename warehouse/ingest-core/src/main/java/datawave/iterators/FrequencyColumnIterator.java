@@ -33,7 +33,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
     @Override
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
         Key newKey = null;
-        StringBuilder newValueSb = new StringBuilder();
+        // StringBuilder newValueSb = new StringBuilder();
         Long numRecords = 0L;
         Key topKey = null;
         Value topValue = null;
@@ -50,7 +50,16 @@ public class FrequencyColumnIterator extends TransformingIterator {
             Key oldKey = sortedKeyValueIterator.getTopKey();
             Value oldValue = sortedKeyValueIterator.getTopValue();
             
-            if (!cq.toString().startsWith(COL_QUAL_PREFIX + cq.toString().substring(0, 3))) {
+            log.info("Top key: " + oldKey + " Top value: " + oldValue);
+            
+            if (cq.toString().startsWith(COL_QUAL_PREFIX)) {
+                if (numRecords > 0)
+                    log.info("Aggregate key " + oldKey + " is not the first key - frequencies won't get summed");
+                newKey = oldKey;
+                log.info("deserialize old value " + oldValue);
+                
+                deserializeCompressedValue(oldValue);
+            } else {
                 /*
                  * newValueSb.append(cq); newValueSb.append("^"); newValueSb.append(oldValue); newValueSb.append("|");
                  */
@@ -59,11 +68,8 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 if (newKey == null)
                     newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(COL_QUAL_PREFIX + cq.toString().substring(0, 3)));
                 
-            } else {
-                newValueSb.append(oldValue);
-                newKey = oldKey;
-                deserializeCompressedValue(oldValue);
             }
+            
             sortedKeyValueIterator.next();
         }
         
@@ -74,16 +80,20 @@ public class FrequencyColumnIterator extends TransformingIterator {
             log.info("Range did not need to be transformed  (ran identity transform");
         }
         
+        log.info(" Number of key values iterated is " + numRecords);
+        
     }
     
     private void deserializeCompressedValue(Value oldValue) {
         String[] kvps = oldValue.toString().split("|");
+        log.info("deserializeCompressedValue: there are " + kvps.length + " key value pairs.");
         for (String kvp : kvps) {
             String[] pair = kvp.split("^");
             if (pair.length == 2) {
-                log.info("cq: " + pair[0] + " value: " + pair[1]);
+                log.info("deserializeCompressedValue -- cq: " + pair[0] + " value: " + pair[1]);
                 String key = pair[0];
                 String value = pair[1];
+                log.info("deserializeCompressedValue key: " + pair[0] + " value: " + pair[2]);
                 insertIntoMap(key, value);
                 
             }
@@ -94,6 +104,10 @@ public class FrequencyColumnIterator extends TransformingIterator {
     private void insertIntoMap(String key, String value) {
         long parsedLong;
         
+        log.info("inserting key: " + key + " value: " + value);
+        if (value.isEmpty())
+            return;
+
         try {
             parsedLong = Long.parseLong(value);
         } catch (Exception e) {
@@ -107,7 +121,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 qualifierToFrequencyValueMap.put(key, parsedLong);
             else {
                 
-                long lastValue = qualifierToFrequencyValueMap.get(value);
+                long lastValue = qualifierToFrequencyValueMap.get(key);
                 qualifierToFrequencyValueMap.put(key, lastValue + parsedLong);
             }
         } catch (Exception e) {
