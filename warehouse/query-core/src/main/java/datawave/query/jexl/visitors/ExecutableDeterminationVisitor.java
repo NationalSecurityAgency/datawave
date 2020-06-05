@@ -156,7 +156,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
      * Negate the current data object
      * 
      * @param data
-     *            the data passed along to hte visitor, may be null or a string
+     *            the data passed along to the visitor, may be null or a string
      * @return NEGATION_PREFIX if the string was null or the old string appended with NEGATION_PREFIX
      */
     public static Object negateData(Object data) {

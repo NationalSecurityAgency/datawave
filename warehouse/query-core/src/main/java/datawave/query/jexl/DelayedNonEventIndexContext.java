@@ -59,7 +59,7 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
     @Override
     public Object get(String name) {
         // only do something special if there is delayed work to do
-        if ((null != name) && delayedNonEventFieldMap.keySet().contains(name) && !fetched.contains(name)) {
+        if ((null != name) && delayedNonEventFieldMap.containsKey(name) && !fetched.contains(name)) {
             // fetch the field that was delayed
             List<Document> documentFragments = null;
             try {

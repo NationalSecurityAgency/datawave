@@ -3,7 +3,6 @@ package datawave.query.iterator.logic;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 
 import datawave.query.iterator.Util;
 import datawave.query.iterator.NestedIterator;

@@ -14,12 +14,15 @@ import java.util.Set;
 public class NestedIteratorContextUtil {
     
     /**
-     * Given t, get all bound iterators that are less than t in headMap, or have never been evaluated. Will remove iterators from the headMap
-     * 
+     * Given a context for evaluation, get all contextRequiredIterators that need to be moved based upon the current head/null maps. Any contextRequiredIterator
+     * with a headMap entry less than context or which has an entry in the nullHeadMap needs to be moved. If the iterator hasn't been used at all it will be
+     * initialized.
+     *
+     * The headMap and nullHeadMap will have all entries removed correlating with with NestedIterators which should be moved based on context
+     *
      * @param context
      * @param contextRequiredIterators
      * @param headMap
-     * @param <T>
      * @return a non-null Set of initialized NestedIterators which should be moved
      */
     private static <T> Set<NestedIterator<T>> getIteratorsToMove(T context, List<NestedIterator<T>> contextRequiredIterators,
@@ -38,7 +41,7 @@ public class NestedIteratorContextUtil {
                 sourcesToMove.add(source);
             }
         }
-        // take all previously seen keys that are less than t and move them again
+        // take all previously seen keys that are less than context and move them again
         Set<T> keysToMove = headMap.keySet().headSet(context);
         
         // find and remove these sources, note that they have now been removed from the headMap nothing should return early until they are re-added
@@ -104,28 +107,7 @@ public class NestedIteratorContextUtil {
      */
     public static <T> T intersect(T context, List<NestedIterator<T>> contextRequiredIterators, TreeMultimap<T,NestedIterator<T>> headMap,
                     TreeMultimap<T,NestedIterator<T>> nullHeadMap, Util.Transformer<T> transformer) {
-        // no intersection with nothing
-        if (headMap == null) {
-            return null;
-        }
-        
-        Set<NestedIterator<T>> sourcesToMove = getIteratorsToMove(context, contextRequiredIterators, headMap, nullHeadMap);
-        Set<NestedIterator<T>> nullSources = processMoves(context, sourcesToMove, headMap, transformer);
-        
-        // get the latest key in the head map or null if there is nothing
-        T headMapKey = headMap.keySet().size() > 0 ? headMap.keySet().last() : null;
-        
-        // nulls indicate that a source had no match to the context so cannot be intersected
-        if (nullSources.size() > 0) {
-            nullHeadMap.putAll(context, nullSources);
-            
-            // at least one contextRequiredIterator source could not be intersected
-            return null;
-        }
-        
-        // if there were no null sources then take the last entry in the head map which will match context if intersected, or be the highest value across all
-        // iterators that was non-null if not intersected
-        return headMapKey;
+        return applyContext(context, contextRequiredIterators, headMap, nullHeadMap, transformer, false);
     }
     
     /**
@@ -147,6 +129,29 @@ public class NestedIteratorContextUtil {
      */
     public static <T> T union(T context, List<NestedIterator<T>> contextRequiredIterators, TreeMultimap<T,NestedIterator<T>> headMap,
                     TreeMultimap<T,NestedIterator<T>> nullHeadMap, Util.Transformer<T> transformer) {
+        return applyContext(context, contextRequiredIterators, headMap, nullHeadMap, transformer, true);
+    }
+    
+    /**
+     * Apply a context to a List of contextRequiredIterators as either a union or intersection, taking into account previous state of the headmap and
+     * nullHeadMap
+     *
+     * @param context
+     *            the context to be used to move the contextRequiredIterators
+     * @param contextRequiredIterators
+     *            the iterators to union against that require context
+     * @param headMap
+     *            the contextRequiredIterators head map
+     * @param nullHeadMap
+     *            the contextRequiredIterators null head map. This is required to track when a move resulted in no result from the iterator and will always be
+     *            moved
+     * @param transformer
+     *            transformer to apply to all results from the contextRequiredIterators
+     * @param union
+     *            if set to true apply the context as a union with the contextRequiredIterators, otherwise apply as an intersection
+     */
+    private static <T> T applyContext(T context, List<NestedIterator<T>> contextRequiredIterators, TreeMultimap<T,NestedIterator<T>> headMap,
+                    TreeMultimap<T,NestedIterator<T>> nullHeadMap, Util.Transformer<T> transformer, boolean union) {
         if (context == null) {
             return null;
         }
@@ -160,21 +165,26 @@ public class NestedIteratorContextUtil {
         // null iterators from previous passes should always be moved again
         Set<NestedIterator<T>> nullSources = processMoves(context, sourcesToMove, headMap, transformer);
         
-        // get the lowest key in the headMap since only one match is required for union
-        T headMapKey = headMap.keySet().size() > 0 ? headMap.keySet().first() : null;
+        T headMapKey;
+        if (union) {
+            // union
+            headMapKey = headMap.keySet().size() > 0 ? headMap.keySet().first() : null;
+        } else {
+            // intersection
+            headMapKey = headMap.keySet().size() > 0 ? headMap.keySet().last() : null;
+        }
         
         // check for nulls first, since a null source means that the move on the iterator yielded no matches
         if (nullSources.size() > 0) {
             // add them to the nullHeads with the current key
             nullHeadMap.putAll(context, nullSources);
             
-            // if all the sources were null there is no union
-            if (nullSources.size() == sourcesToMove.size()) {
+            if (union && nullSources.size() == sourcesToMove.size() || !union) {
                 return null;
             }
         }
         
-        // if all the sources were not null there will be a headMapKey and it is the union
+        // valid headMapKey to return
         return headMapKey;
     }
 }

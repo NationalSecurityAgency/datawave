@@ -2,14 +2,19 @@ package datawave.query.jexl.nodes;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.scripting.JexlScriptEngine;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 public class QueryPropertyMarkerTest {
     
@@ -32,80 +37,11 @@ public class QueryPropertyMarkerTest {
     }
     
     @Test
-    public void getPropertyMarker_happy_test() throws ParseException {
+    public void instanceOfAnyExceptTest() throws Exception {
         String query = "FIELD == 'value'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        
-        for (JexlNode eqNode : JexlASTHelper.getEQNodes(script)) {
-            // create a delay
-            JexlNode delayedNode = ASTDelayedPredicate.create(eqNode);
-            Assert.assertEquals(delayedNode, QueryPropertyMarker.getQueryPropertyMarker(eqNode, null));
-        }
-    }
-    
-    @Test
-    public void getPropertyMarker_null_test() {
-        Assert.assertEquals(null, QueryPropertyMarker.getQueryPropertyMarker(null, null));
-    }
-    
-    @Test
-    public void getPropertyMarker_arbitraryReference_test() throws ParseException {
-        String query = "FIELD == 'value'";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        
-        for (JexlNode eqNode : JexlASTHelper.getEQNodes(script)) {
-            // create a delay
-            ASTDelayedPredicate.create(eqNode);
-            Assert.assertEquals(null, QueryPropertyMarker.getQueryPropertyMarker(eqNode.jjtGetParent(), null));
-        }
-    }
-    
-    @Test
-    public void getPropertyMarker_nested_test() throws ParseException {
-        String query = "FIELD == 'value'";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        
-        for (JexlNode eqNode : JexlASTHelper.getEQNodes(script)) {
-            // create a delay that has an ExceededValueThresholdMarkerJexlNode inside
-            ExceededValueThresholdMarkerJexlNode valueMarker = new ExceededValueThresholdMarkerJexlNode(eqNode);
-            JexlNode delayedMarker = ASTDelayedPredicate.create(valueMarker);
-            TreeFlatteningRebuildingVisitor.flatten(delayedMarker);
-            Assert.assertEquals(valueMarker, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ExceededValueThresholdMarkerJexlNode.class));
-            Assert.assertEquals(delayedMarker, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ASTDelayedPredicate.class));
-        }
-    }
-    
-    @Test
-    public void getPropertyMarker_and_test() throws ParseException {
-        String query = "FIELD == 'value1' AND FIELD == 'value2'";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        for (JexlNode eqNode : JexlASTHelper.getEQNodes(script)) {
-            ExceededValueThresholdMarkerJexlNode valueMarker = new ExceededValueThresholdMarkerJexlNode(eqNode);
-            JexlNode delayedMarker = ASTDelayedPredicate.create(valueMarker);
-            TreeFlatteningRebuildingVisitor.flatten(delayedMarker);
-            Assert.assertEquals(valueMarker, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ExceededValueThresholdMarkerJexlNode.class));
-            Assert.assertEquals(delayedMarker, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ASTDelayedPredicate.class));
-        }
-    }
-    
-    @Test
-    public void getPropertyMarker_notPropertyMarker_test() throws ParseException {
-        String query = "FIELD == 'value'";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        for (JexlNode eqNode : JexlASTHelper.getEQNodes(script)) {
-            Assert.assertEquals(null, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ExceededValueThresholdMarkerJexlNode.class));
-        }
-        
-        query = "FIELD == 'value1' AND FIELD == 'value2'";
-        script = JexlASTHelper.parseJexlQuery(query);
-        for (JexlNode eqNode : JexlASTHelper.getEQNodes(script)) {
-            Assert.assertEquals(null, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ExceededValueThresholdMarkerJexlNode.class));
-        }
-        
-        query = "FIELD == 'value1' OR FIELD == 'value2'";
-        script = JexlASTHelper.parseJexlQuery(query);
-        for (JexlNode eqNode : JexlASTHelper.getEQNodes(script)) {
-            Assert.assertEquals(null, QueryPropertyMarker.getQueryPropertyMarker(eqNode, ExceededValueThresholdMarkerJexlNode.class));
-        }
+        JexlNode evalOnly = ASTEvaluationOnly.create(script);
+        Assert.assertFalse(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, Arrays.asList(ASTEvaluationOnly.class)));
+        Assert.assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, Arrays.asList(ASTDelayedPredicate.class)));
     }
 }

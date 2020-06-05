@@ -9,10 +9,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedSet;
 
 import datawave.query.iterator.Util.Transformer;
+import org.apache.hadoop.util.hash.Hash;
 import org.apache.log4j.Logger;
 
 import datawave.query.attributes.Document;
@@ -91,17 +93,58 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
         }
         
-        if (contextIncludes != null && contextIncludes.size() > 0) {
+        if (!contextIncludes.isEmpty()) {
             contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
             contextIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
         
-        if (contextExcludes != null && contextExcludes.size() > 0) {
+        if (contextExcludes != null && !contextExcludes.isEmpty()) {
             contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
             contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
         
         next();
+    }
+    
+    /**
+     * Apply a candidate as a context against both contextIncludes and contextExcludes.
+     *
+     * @param candidate
+     *            to be used as context against contextIncludes and contextExcludes
+     * @return true if candidate is included in all contextIncludes and excluded in all contextExcludes, false otherwise
+     */
+    private boolean applyContextRequired(T candidate) {
+        if (contextIncludes.size() > 0) {
+            T highestContextInclude = NestedIteratorContextUtil
+                            .intersect(candidate, contextIncludes, contextIncludeHeads, contextIncludeNullHeads, transformer);
+            // if there wasn't an intersection here move to the next one
+            if (!candidate.equals(highestContextInclude)) {
+                if (highestContextInclude != null) {
+                    // move to the next highest key
+                    includeHeads = moveIterators(candidate, highestContextInclude);
+                    return false;
+                } else {
+                    // all we know is they didn't intersect advance to next
+                    includeHeads = advanceIterators(candidate);
+                    return false;
+                }
+            }
+        }
+        
+        // test any contextExcludes against candidate
+        if (contextExcludes.size() > 0) {
+            // DeMorgans Law: (~A) AND (~B) == ~(A OR B)
+            // for an exclude union lowest with the set
+            T unionExclude = NestedIteratorContextUtil.union(candidate, contextExcludes, contextExcludeHeads, contextExcludeNullHeads, transformer);
+            // if the union matched it is not a hit
+            if (candidate.equals(unionExclude)) {
+                // advance and try again
+                includeHeads = advanceIterators(candidate);
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     /**
@@ -112,58 +155,72 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      */
     public T next() {
         if (isContextRequired() && evaluationContext == null) {
-            throw new IllegalStateException("evaluationContext must be set prior to each next");
+            throw new IllegalStateException("evaluationContext must be set prior to calling next");
         }
         
         prev = next;
         prevDocument = document;
         
+        // look through includes for candidates if there are any
         while (!includeHeads.isEmpty()) {
             SortedSet<T> topKeys = includeHeads.keySet();
             T lowest = topKeys.first();
             T highest = topKeys.last();
             
-            if (lowest.equals(highest)) {
-                if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
-                    if (contextIncludes.size() > 0) {
-                        T highestContextInclude = NestedIteratorContextUtil.intersect(lowest, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
-                                        transformer);
-                        // if there wasn't an intersection here move to the next one
-                        if (!lowest.equals(highestContextInclude)) {
-                            if (highestContextInclude != null) {
-                                // move to the next highest key
-                                includeHeads = moveIterators(lowest, highestContextInclude);
-                                continue;
-                            } else {
-                                // all we know is they didn't intersect advance to next
-                                includeHeads = advanceIterators(lowest);
-                                continue;
-                            }
-                        }
-                    }
-                    
-                    if (contextExcludes.size() > 0) {
-                        // DeMorgans Law: (~A) AND (~B) == ~(A OR B)
-                        // for an exclude union lowest with the set
-                        T unionExclude = NestedIteratorContextUtil.union(lowest, contextExcludes, contextExcludeHeads, contextExcludeNullHeads, transformer);
-                        // if the union matched it is not a hit
-                        if (lowest.equals(unionExclude)) {
-                            // advance and try again
-                            includeHeads = advanceIterators(lowest);
-                            continue;
-                        }
-                    }
-                    
-                    next = transforms.get(lowest);
-                    document = Util.buildNewDocument(includeHeads.values());
-                    includeHeads = advanceIterators(lowest);
+            // short circuit if possible from a supplied evaluation context
+            if (evaluationContext != null) {
+                int lowestCompare = lowest.compareTo(evaluationContext);
+                int highestCompare = highest.compareTo(evaluationContext);
+                
+                if (lowestCompare > 0 || highestCompare > 0) {
+                    // if any value is beyond the evaluationContext it's not possible to intersect
                     break;
+                }
+                
+                if (highestCompare < 0) {
+                    // the highest value is less than evaluation context, its safe to move both lowest and highest and try again
+                    includeHeads = moveIterators(lowest, evaluationContext);
+                    includeHeads = moveIterators(highest, evaluationContext);
+                    continue;
+                }
+                
+                if (lowestCompare < 0) {
+                    // lowest value is less but highest value is more so just move the lowest and try again
+                    includeHeads = moveIterators(lowest, evaluationContext);
+                    continue;
+                }
+            }
+            
+            // if the highest and lowest are the same we are currently intersecting
+            if (lowest.equals(highest)) {
+                // make sure this value isn't filtered
+                if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
+                    // use this value as a candidate against any includes/excludes that require context
+                    if (applyContextRequired(lowest)) {
+                        // found a match, set next/document and advance
+                        next = transforms.get(lowest);
+                        document = Util.buildNewDocument(includeHeads.values());
+                        includeHeads = advanceIterators(lowest);
+                        break;
+                    }
                 } else {
+                    // filtered, advance the lowest and start again
                     includeHeads = advanceIterators(lowest);
                 }
             } else {
-                // jump the lowest to the highest
+                // move the lowest to its first position at or beyond highest
                 includeHeads = moveIterators(lowest, highest);
+            }
+        }
+        
+        // for cases where there are no sources the only source for a candidate is the evaluationContext.
+        if (isContextRequired()) {
+            // test exclude for the candidate in case there are excludes
+            if (!NegationFilter.isFiltered(evaluationContext, excludeHeads, transformer)) {
+                if (applyContextRequired(evaluationContext)) {
+                    next = evaluationContext;
+                    document = Util.buildNewDocument(Collections.emptyList());
+                }
             }
         }
         
@@ -199,25 +256,6 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     public T move(T minimum) {
         if (null == includeHeads) {
             throw new IllegalStateException("initialize() was never called");
-        }
-        
-        // special evaluation if iterator requires context since this means there are no sources at all and next is useless
-        if (isContextRequired()) {
-            // reset internal tracking
-            prev = null;
-            next = null;
-            
-            // includeHeads won't be used, so just force minimum in
-            Comparator<T> keyComp = Util.keyComparator();
-            Comparator<NestedIterator<T>> itrComp = Util.nestedIteratorComparator();
-            includeHeads = TreeMultimap.create(keyComp, itrComp);
-            transforms = new HashMap<>();
-            
-            // replace includeHeads to force minimum for next evaluation
-            T[] array = (T[]) new Comparable[1];
-            array[0] = minimum;
-            includeHeads.put(minimum, new ArrayIterator(array));
-            transforms.put(transformer.transform(minimum), minimum);
         }
         
         if (prev != null && prev.compareTo(minimum) >= 0) {
@@ -376,9 +414,14 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      */
     @Override
     public boolean isContextRequired() {
-        return includes.size() == 0;
+        return includes.isEmpty();
     }
     
+    /**
+     * This context will be used even if isContextRequired is false as an anchor point for highest/lowest during next calls
+     * 
+     * @param context
+     */
     @Override
     public void setContext(T context) {
         this.evaluationContext = context;

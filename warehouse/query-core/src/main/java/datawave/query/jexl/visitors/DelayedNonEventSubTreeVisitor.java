@@ -18,7 +18,7 @@ import java.util.Set;
 
 /**
  * Visitor builds a map from all nonEvent fields contained within delayed subtrees to their respective processing nodes. This map then can be used with the
- * DelayedNonEventIndexContext to fetch these values at evaluation time. This visitor will modify/destroy the tree so a copy should always be used.
+ * DelayedNonEventIndexContext to fetch these values at evaluation time.
  */
 public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
     private IteratorBuildingVisitor iteratorBuildingVisitor;
@@ -27,7 +27,7 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
     
     public static Multimap<String,JexlNode> getDelayedNonEventFieldMap(IteratorBuildingVisitor iteratorBuildingVisitor, ASTJexlScript script,
                     Set<String> nonEventFields) {
-        // create a safe copy to rip apart
+        // ensure we are flattened
         ASTJexlScript copy = TreeFlatteningRebuildingVisitor.flatten(script);
         
         // run the visitor on the copy
@@ -65,8 +65,8 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
             
             extractDelayedFields(candidate);
             
-            // continue processing the tree in case the IteratorBuildingVisitor decided to discard leafs. This is not the most efficient or ideal
-            // but it avoids logic problems in AndIterator/OrIterator that haven't yet been fixed.
+            // continue processing the tree in case the IteratorBuildingVisitor decided to discard leafs. The IteratorBuildingVisitor will only identify a root
+            // if it has includes and for our purposes we need to keep processing.
             return super.visit(candidate, true);
         }
         

@@ -40,6 +40,9 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     
     private boolean identifierFound = false;
     
+    protected Set<String> rejectedIdentifiers = new HashSet<>();
+    private boolean rejectedIdentifiersFound = false;
+    
     static {
         TYPE_IDENTIFIERS = new HashSet<>();
         TYPE_IDENTIFIERS.add(IndexHoleMarkerJexlNode.class.getSimpleName());
@@ -64,11 +67,11 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         return instanceOf(node, types != null ? Lists.newArrayList(types) : null, sourceNodes);
     }
     
-    public static boolean instanceOfAny(JexlNode node, Class<? extends QueryPropertyMarker> except) {
-        return instanceOfAny(node, except, null);
+    public static boolean instanceOfAnyExcept(JexlNode node, List<Class<? extends QueryPropertyMarker>> except) {
+        return instanceOfAnyExcept(node, except, null);
     }
     
-    public static boolean instanceOfAny(JexlNode node, Class<? extends QueryPropertyMarker> except, List<JexlNode> sourceNodes) {
+    public static boolean instanceOfAnyExcept(JexlNode node, List<Class<? extends QueryPropertyMarker>> except, List<JexlNode> sourceNodes) {
         return instanceOf(node, null, except, sourceNodes);
     }
     
@@ -80,7 +83,16 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         return instanceOf(node, types, null, sourceNodes);
     }
     
-    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, Class<? extends QueryPropertyMarker> except,
+    /**
+     * Check a node for any QueryPropertyMarker in types as long as it doesn't have any QueryPropertyMarkers in except
+     * 
+     * @param node
+     * @param types
+     * @param except
+     * @param sourceNodes
+     * @return true if at least one of the types QueryPropertyMarkers exists and there are no QueryPropertyMarkers from except, false otherwise
+     */
+    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, List<Class<? extends QueryPropertyMarker>> except,
                     List<JexlNode> sourceNodes) {
         QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor();
         
@@ -91,7 +103,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                 visitor.typeIdentifiers.addAll(TYPE_IDENTIFIERS);
             
             if (except != null) {
-                visitor.typeIdentifiers.remove(except.getSimpleName());
+                except.stream().forEach(e -> visitor.rejectedIdentifiers.add(e.getSimpleName()));
             }
             
             node.jjtAccept(visitor, null);
@@ -100,7 +112,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                 if (sourceNodes != null)
                     for (JexlNode sourceNode : visitor.sourceNodes)
                         sourceNodes.add(trimReferenceNodes(sourceNode));
-                return true;
+                return !visitor.rejectedIdentifiersFound;
             }
         }
         
@@ -121,6 +133,10 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             String identifier = JexlASTHelper.getIdentifier(node);
             if (identifier != null) {
                 foundIdentifiers.add(identifier);
+            }
+            
+            if (rejectedIdentifiers.contains(identifier)) {
+                rejectedIdentifiersFound = true;
             }
         }
         return null;

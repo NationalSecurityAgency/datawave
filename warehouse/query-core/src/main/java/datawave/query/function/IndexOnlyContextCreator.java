@@ -120,11 +120,6 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         this.createIndexOnlyJexlContext = (null != query) && query.contains(SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX);
     }
     
-    public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
-                    final CompositeMetadata compositeMetadata, final QueryOptions options, JexlContextValueComparator comparatorFactory) {
-        this(source, range, typeMetadata, compositeMetadata, options, Collections.emptySet(), null, null, null, null, false, comparatorFactory);
-    }
-    
     @Override
     public Tuple3<Key,Document,DatawaveJexlContext> apply(Tuple3<Key,Document,Map<String,Object>> from) {
         final Tuple3<Key,Document,DatawaveJexlContext> tuple;
@@ -190,7 +185,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         }
         
         // see if there are any delayed nodes that need to be processed
-        if (delayedNonEventFieldMap != null && delayedNonEventFieldMap.keySet().size() > 0) {
+        if (delayedNonEventFieldMap != null && !delayedNonEventFieldMap.keySet().isEmpty()) {
             // build the current document range from the document Key to end of the document, even though for some query logics this may be too large a range,
             // it will be narrowed with equality later
             Key startKey = new Key(from.first().getRow(), from.first().getColumnFamily());

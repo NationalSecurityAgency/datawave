@@ -160,7 +160,7 @@ public class PushdownNegationVisitor extends BaseVisitor {
             NegationState state = (NegationState) data;
             
             if (state.isNegated()) {
-                // replace this node with an RE node
+                // replace this node with an ER node
                 JexlNode eqNode = JexlNodeFactory.buildERNode(JexlASTHelper.getIdentifier(node), JexlASTHelper.getLiteral(node).image);
                 
                 JexlNodes.swap(node.jjtGetParent(), node, eqNode);
@@ -175,13 +175,16 @@ public class PushdownNegationVisitor extends BaseVisitor {
     
     /**
      * Apply De Morgan's law to a node, splicing out the old root and putting a replacement in its place. De Morgans law states that the negation of a
-     * disjunction is the conjunction of the negations; and the ne
+     * disjunction is the conjunction of the negations; and the negation of a conjunction is the disjunction of the negations
      *
-     * By generalizing De Morgans duality, an ASTAndNode can be converted to an ASTOrNode by applying a negation, flipping the operator (AND to OR vice versa),
-     * and negating each child then splicing the newly ro
+     * By generalizing De Morgans duality, an ASTAndNode can be converted to an ASTOrNode by applying a negation to the root, flipping the operator (AND to OR
+     * vice versa), and negating each child then splicing the new root into the parent
      * 
      * @param root
      *            the node to apply De Morgan's law to either an ASTAndNode or ASTOrNode, must not be null
+     * @param negateRoot
+     *            apply the negation of the parent here, or assume that will be done eventually elsewhere
+     *
      * @return the replacement for root which was replaced, will always be an ASTNotNode
      */
     public static JexlNode applyDeMorgans(JexlNode root, boolean negateRoot) {

@@ -174,9 +174,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     public Object visit(ASTAndNode node, Object data) {
         ExpandData parentData = (ExpandData) data;
         
-        // ignore marked nodes except delays
-        if (QueryPropertyMarkerVisitor.instanceOfAny(node, ASTDelayedPredicate.class)
-                        || QueryPropertyMarkerVisitor.instanceOfAny(node, ASTEvaluationOnly.class)) {
+        // only process delayed predicates
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Arrays.asList(ASTDelayedPredicate.class))) {
             return node;
         }
         
@@ -291,26 +290,24 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         return node;
     }
     
-    // don't descend into delayed predicates
+    // only descend into delayed predicates
     @Override
     public Object visit(ASTReference node, Object data) {
-        // ignore marked nodes except delays
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node, ASTDelayedPredicate.class)
-                        || QueryPropertyMarkerVisitor.instanceOfAny(node, ASTEvaluationOnly.class)) {
-            return super.visit(node, data);
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Arrays.asList(ASTDelayedPredicate.class))) {
+            return node;
         }
-        return node;
+        
+        return super.visit(node, data);
     }
     
-    // don't descend into delayed predicates
+    // only descend into delayed predicates
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        // ignore marked nodes except delays
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node, ASTDelayedPredicate.class)
-                        || QueryPropertyMarkerVisitor.instanceOfAny(node, ASTEvaluationOnly.class)) {
-            return super.visit(node, data);
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Arrays.asList(ASTDelayedPredicate.class))) {
+            return node;
         }
-        return node;
+        
+        return super.visit(node, data);
     }
     
     /**

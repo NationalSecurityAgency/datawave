@@ -25,6 +25,7 @@ import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.function.IndexOnlyContextCreator;
+import datawave.query.function.IndexOnlyContextCreatorBuilder;
 import datawave.query.function.JexlContextCreator;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.KeyToDocumentData;
@@ -954,12 +955,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor, script,
                                 getNonEventFields());
                 
-                final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource),
-                                typeMetadataForEval, compositeMetadata, this, variables, iteratorBuildingVisitor, delayedNonEventFieldMap, equality,
-                                columnFamilies, inclusive, QueryIterator.this);
+                IndexOnlyContextCreatorBuilder contextCreatorBuilder = new IndexOnlyContextCreatorBuilder().setSource(sourceDeepCopy)
+                                .setRange(getDocumentRange(documentSource)).setTypeMetadata(typeMetadataForEval).setCompositeMetadata(compositeMetadata)
+                                .setOptions(this).setVariables(variables).setIteratorBuildingVisitor(iteratorBuildingVisitor)
+                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(equality).setColumnFamilies(columnFamilies)
+                                .setInclusive(inclusive).setComparatorFactory(this);
+                final IndexOnlyContextCreator contextCreator = contextCreatorBuilder.build();
                 
-                if (exceededOrEvaluationCache != null)
+                if (exceededOrEvaluationCache != null) {
                     contextCreator.addAdditionalEntries(exceededOrEvaluationCache);
+                }
                 
                 final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
                 Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction);

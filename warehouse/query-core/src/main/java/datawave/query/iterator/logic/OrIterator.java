@@ -109,7 +109,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      */
     public T next() {
         if (isContextRequired() && evaluationContext == null) {
-            throw new IllegalStateException("deferredContext must be set prior to each next");
+            throw new IllegalStateException("evaluationContext must be set prior to calling next");
         }
         
         prev = next;
@@ -330,7 +330,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     }
     
     /**
-     *
+     * If there are contextIncludes or contextExcludes this iterator requires context
+     * 
      * @return
      */
     @Override
@@ -338,6 +339,11 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         return !contextExcludes.isEmpty() || !contextIncludes.isEmpty();
     }
     
+    /**
+     * Context will be considered when evaluating contextIncludes and contextExcludes if it is lower than the lowest includes value
+     * 
+     * @param context
+     */
     @Override
     public void setContext(T context) {
         this.evaluationContext = context;

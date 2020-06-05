@@ -242,6 +242,58 @@ public class AndIteratorTest {
         Assert.assertFalse(iterator.hasNext());
     }
     
+    @Test
+    public void testContextWhenNotRequiredMoveAll() {
+        Set<NestedIterator<String>> includes = new HashSet<>();
+        includes.add(getItr(Lists.newArrayList("c", "d", "e"), false));
+        includes.add(getItr(Lists.newArrayList("c", "d", "e"), false));
+        
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        iterator.setContext("e");
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("c", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("e", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
+    }
+    
+    @Test
+    public void testContextWhenNotRequiredShortCircuit() {
+        Set<NestedIterator<String>> includes = new HashSet<>();
+        includes.add(getItr(Lists.newArrayList("c", "s", "z"), false));
+        includes.add(getItr(Lists.newArrayList("c", "z"), false));
+        
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        iterator.setContext("d");
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("c", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
+    }
+    
+    @Test
+    public void testContextWhenNotRequiredSkipLowestMoveLowest() {
+        Set<NestedIterator<String>> includes = new HashSet<>();
+        includes.add(getItr(Lists.newArrayList("c", "s", "z"), false));
+        includes.add(getItr(Lists.newArrayList("c", "z"), false));
+        
+        AndIterator iterator = new AndIterator(includes);
+        iterator.initialize();
+        
+        Assert.assertFalse(iterator.isContextRequired());
+        iterator.setContext("z");
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("c", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("z", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
+    }
+    
     private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {
         return new NegationFilterTest.Itr<>(source, contextRequired);
     }

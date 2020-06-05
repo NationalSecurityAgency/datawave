@@ -8,10 +8,10 @@ import datawave.query.attributes.Document;
 /**
  * An interface that allows nested iterators (such as ANDs, and ORs) to return references to their leaf nodes. NestedIterators can be visualized as a tree. The
  * top level NestedIterator forms the root, and its children form the next layer all the way down to the leaf nodes. During normal evaluation all leaf nodes are
- * initialized and then candidates bubble up to the root node. When a NestedIterator requires context its means that it cannot be independently, but requires
- * outside context for its evaluation. This is most often the case when checking for the absence of a specific value. While checking for a specific value is
- * quick, checking against all values that aren't the specific value without context would equate to a near full table scan (both things that aren't that value
- * or just don't have that field). By providing a context of a specific candidate to be tested, the lookup becomes tractable.
+ * initialized and then candidates bubble up to the root node. When a NestedIterator requires context it cannot be independently evaluated, but requires outside
+ * context for its evaluation. This is most often the case when checking for the absence of a specific value. While checking for a specific value is quick,
+ * checking against all values that aren't the specific value without context would equate to a near full table scan (both things that aren't that value or just
+ * don't have that field). By providing a context of a specific candidate to be tested, the lookup becomes tractable.
  */
 public interface NestedIterator<T> extends Iterator<T> {
     /**
@@ -58,7 +58,7 @@ public interface NestedIterator<T> extends Iterator<T> {
     boolean isContextRequired();
     
     /**
-     * Sets the context for evaluation
+     * Sets the context for evaluation, this may or may not be used depending upon the implementation
      * 
      * @param context
      *            non-null context for evaluation
