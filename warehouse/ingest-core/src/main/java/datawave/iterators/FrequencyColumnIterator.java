@@ -16,6 +16,8 @@ import java.util.Map;
 
 public class FrequencyColumnIterator extends TransformingIterator {
     public static String COL_QUAL_PREFIX = "compressed-";
+    public static String COL_QUAL_TOTAL = "total";
+    private long total = 0L;
     private HashMap<String,Long> qualifierToFrequencyValueMap = new HashMap<>();
     
     public FrequencyColumnIterator() {};
@@ -35,6 +37,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Key newKey = null;
         // StringBuilder newValueSb = new StringBuilder();
         Long numRecords = 0L;
+        total = 0L;
         Key topKey = null;
         Value topValue = null;
         qualifierToFrequencyValueMap.clear();
@@ -62,7 +65,8 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 /*
                  * newValueSb.append(cq); newValueSb.append("^"); newValueSb.append(oldValue); newValueSb.append("|");
                  */
-                insertIntoMap(cq.toString(), oldValue.toString());
+                if (!cq.toString().startsWith(COL_QUAL_TOTAL))
+                    insertIntoMap(cq.toString(), oldValue.toString());
                 
                 if (newKey == null)
                     newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(COL_QUAL_PREFIX + cq.toString().substring(0, 3)));
@@ -72,10 +76,14 @@ public class FrequencyColumnIterator extends TransformingIterator {
             sortedKeyValueIterator.next();
         }
         
-        if (numRecords > 1)
+        if (numRecords > 1) {
             kvBuffer.append(newKey, serialize());
-        else if (numRecords == 1) {
+            if (newKey.getColumnQualifier().toString().startsWith(COL_QUAL_PREFIX))
+                kvBuffer.append(new Key(newKey.getRow(), newKey.getColumnFamily(), new Text(COL_QUAL_TOTAL)), new Value(Long.toString(total)));
+        } else if (numRecords == 1) {
             kvBuffer.append(topKey, topValue);
+            if (topKey.getColumnQualifier().toString().startsWith(COL_QUAL_PREFIX))
+                kvBuffer.append(new Key(topKey.getRow(), topKey.getColumnFamily(), new Text(COL_QUAL_TOTAL)), new Value(Long.toString(total)));
             log.info("Range did not need to be transformed  (ran identity transform");
         }
         
@@ -109,6 +117,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
         
         try {
             parsedLong = Long.parseLong(value);
+            total += parsedLong;
         } catch (Exception e) {
             log.error("Could not parse " + value + " to long for this key " + key, e);
             return;
