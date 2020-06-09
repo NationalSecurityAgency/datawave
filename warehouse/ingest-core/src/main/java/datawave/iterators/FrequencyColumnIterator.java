@@ -9,17 +9,10 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.TransformingIterator;
 import org.apache.hadoop.io.Text;
-
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 public class FrequencyColumnIterator extends TransformingIterator {
-    // public static String COL_QUAL_PREFIX = "compressed-";
     public static String COL_QUAL_TOTAL = "total";
-    private HashMap<String,Long> qualifierToFrequencyValueMap = new HashMap<>();
     private FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
     
     public FrequencyColumnIterator() {};
@@ -41,7 +34,6 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Key topKey = null;
         Value topValue = null;
         frequencyFamilyCounter.clear();
-        qualifierToFrequencyValueMap.clear();
         
         if (sortedKeyValueIterator.hasTop()) {
             topKey = sortedKeyValueIterator.getTopKey();
