@@ -12,7 +12,7 @@ import org.apache.hadoop.io.Text;
 import java.io.IOException;
 
 public class FrequencyColumnIterator extends TransformingIterator {
-    public static String COL_QUAL_TOTAL = "total";
+    public static final String COL_QUAL_TOTAL = "total";
     private FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
     
     public FrequencyColumnIterator() {};
