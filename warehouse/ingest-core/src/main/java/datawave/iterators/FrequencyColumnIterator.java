@@ -33,6 +33,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Long numRecords = 0L;
         Key topKey = null;
         Value topValue = null;
+        String aggregatedColumnQualifier = null;
         frequencyFamilyCounter.clear();
         
         if (sortedKeyValueIterator.hasTop()) {
@@ -47,7 +48,10 @@ public class FrequencyColumnIterator extends TransformingIterator {
             Value oldValue = sortedKeyValueIterator.getTopValue();
             
             if (cq.toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
+                aggregatedColumnQualifier = cq.toString();
                 log.info("Aggregate key is " + oldKey);
+                // TODO - Need to check if newKey is not null and another aggregate record
+                // for another datatype needs to be generated.
                 newKey = oldKey;
                 frequencyFamilyCounter.deserializeCompressedValue(oldValue);
             } else {
@@ -55,8 +59,13 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 if (!cq.toString().startsWith(COL_QUAL_TOTAL))
                     frequencyFamilyCounter.insertIntoMap(cq.toString(), oldValue.toString());
                 
+                String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
+                
+                if (aggregatedColumnQualifier != null && !aggregatedColumnQualifier.equals(newColumnQualifier))
+                    log.error("There is multiple aggregated datatypes for this row and this needs be handled");
+                
                 if (newKey == null)
-                    newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3)));
+                    newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(newColumnQualifier));
                 
             }
             
