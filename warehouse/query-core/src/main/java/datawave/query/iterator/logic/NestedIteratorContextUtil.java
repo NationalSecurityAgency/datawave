@@ -168,10 +168,10 @@ public class NestedIteratorContextUtil {
         T headMapKey;
         if (union) {
             // union
-            headMapKey = headMap.keySet().size() > 0 ? headMap.keySet().first() : null;
+            headMapKey = headMap.isEmpty() ? null : headMap.keySet().first();
         } else {
             // intersection
-            headMapKey = headMap.keySet().size() > 0 ? headMap.keySet().last() : null;
+            headMapKey = headMap.isEmpty() ? null : headMap.keySet().last();
         }
         
         // check for nulls first, since a null source means that the move on the iterator yielded no matches

@@ -185,7 +185,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         }
         
         // see if there are any delayed nodes that need to be processed
-        if (delayedNonEventFieldMap != null && !delayedNonEventFieldMap.keySet().isEmpty()) {
+        if (delayedNonEventFieldMap != null && !delayedNonEventFieldMap.isEmpty()) {
             // build the current document range from the document Key to end of the document, even though for some query logics this may be too large a range,
             // it will be narrowed with equality later
             Key startKey = new Key(from.first().getRow(), from.first().getColumnFamily());
