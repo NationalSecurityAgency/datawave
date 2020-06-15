@@ -1,5 +1,6 @@
 package datawave.iterators;
 
+import datawave.data.ColumnFamilyConstants;
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.data.Key;
@@ -56,7 +57,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
             } else {
                 
                 if (!cq.toString().startsWith(COL_QUAL_TOTAL))
-                    frequencyFamilyCounter.aggregateRecord(cq.toString(), oldValue.toString());
+                    frequencyFamilyCounter.aggregateRecord(cq.toString(), oldValue.toString(), true);
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
