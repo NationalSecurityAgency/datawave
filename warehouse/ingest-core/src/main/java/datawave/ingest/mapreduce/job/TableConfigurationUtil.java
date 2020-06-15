@@ -11,7 +11,12 @@ import datawave.ingest.mapreduce.job.reduce.AggregatingReducer;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.iterators.PropogatingIterator;
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.NamespaceExistsException;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
@@ -20,7 +25,12 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class TableConfigurationUtil {
     
