@@ -4,11 +4,14 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
+
+import java.util.Collection;
 
 public class PipelineFactory {
     
@@ -37,13 +40,14 @@ public class PipelineFactory {
      */
     public static PipelineIterator createIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, boolean requestSerialPipeline,
                     QuerySpanCollector querySpanCollector, QuerySpan querySpan, QueryIterator sourceIterator,
-                    SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env, YieldCallback<Key> yield, long yieldThresholdMs) {
+                    SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env, YieldCallback<Key> yield, long yieldThresholdMs,
+                    Collection<ByteSequence> columnFamilies, boolean inclusive) {
         if (maxPipelines > 1 && !requestSerialPipeline) {
             return new PipelineIterator(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env,
-                            yield, yieldThresholdMs);
+                            yield, yieldThresholdMs, columnFamilies, inclusive);
         } else {
             return new SerialIterator(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env, yield,
-                            yieldThresholdMs);
+                            yieldThresholdMs, columnFamilies, inclusive);
         }
         
     }
