@@ -1,25 +1,25 @@
-20150707,ldn-uk-7,London,London,United Kingdom,Europe,GBR,Euro,10
-20150707,par-fra-lle-7,Paris,lle-de-France,France,Europe,FRA,Euro,20
-20150707,rom-ita-7,Rome,Lazio,Italy,Europe,ITA,Euro,30
-20150808,par-usa-oh-8,Paris,Ohio,United States,North America,USA,NA,100
-20150808,rom-usa-oh-8,Rome,Ohio,United States,North America,USA,NA,100
-20150808,ldn-usa-oh-8,London,Ohio,United States,North America,USA,NA,100
-20150808,par-usa-mo-8,Paris,Missouri,United States,North America,USA,NA,110
-20150808,rom-usa-mo-8,Rome,Missouri,United States,North America,USA,NA,110
-20150808,ldn-usa-mo-8,London,Missouri,United States,North America,USA,NA,110
-20150909,par-usa-oh-9,Paris,Ohio,United States,North America,USA,NA,100
-20151010,par-usa-ma-10,Paris,Maine,United States,North America,USA,NA,120
-20151010,rom-usa-ms-10,Rome,Mississippi,United States,North America,USA,NA,130
-20151010,ldn-usa-mi-10,London,Michigan,United States,North America,USA,NA,140
-20151111,par-ita-11,Paris,Lazio,Italy,Europe,ITA,Euro,30
-20151111,rom-bel-11,Rome,Hainaut,Belgium,Europe,BEL,Euro,50
-20151111,ldn-fra-lle-11,London,lle-de-France,France,Europe,FRA,Euro,20
-20151111,edge-case-id-1,\Edge-City-1,Edgeville,Edgeland,Edgeope,EDG,NA,110
-20151111,edge-case-id-2,\\Edge-City-2,Edgeville,Edgeland,Edgeope,EDG,NA,220
-20151111,edge-case-id-3,\\\Edge-City-3,Edgeville,Edgeland,Edgeope,EDG,NA,330
-20151111,edge-case-id-4,Edge-City-4\,Edgeville,Edgeland,Edgeope,EDG,NA,110
-20151111,edge-case-id-5,Edge-City-5\\,Edgeville,Edgeland,Edgeope,EDG,NA,220
-20151111,edge-case-id-6,Edge-City-6\\\,Edgeville,Edgeland,Edgeope,EDG,NA,330
-20151111,edge-case-id-7,Edge-C\ity-7,Edgeville,Edgeland,Edgeope,EDG,NA,110
-20151111,edge-case-id-8,Edge-C\\ity-8,Edgeville,Edgeland,Edgeope,EDG,NA,220
-20151111,edge-case-id-9,Edge-C\\\ity-9,Edgeville,Edgeland,Edgeope,EDG,NA,330
+20150707,ldn-uk-7,London,London,United Kingdom,Europe,GBR,Euro,10,51.51_-0.13
+20150707,par-fra-lle-7,Paris,lle-de-France,France,Europe,FRA,Euro,20,48.86_2.21
+20150707,rom-ita-7,Rome,Lazio,Italy,Europe,ITA,Euro,30,41.91_12.26
+20150808,par-usa-oh-8,Paris,Ohio,United States,North America,USA,NA,100,40.80_-81.18
+20150808,rom-usa-oh-8,Rome,Ohio,United States,North America,USA,NA,100,41.60_-80.88
+20150808,ldn-usa-oh-8,London,Ohio,United States,North America,USA,NA,100,39.89_-83.50
+20150808,par-usa-mo-8,Paris,Missouri,United States,North America,USA,NA,110,39.48_-92.02
+20150808,rom-usa-mo-8,Rome,Missouri,United States,North America,USA,NA,110,36.84_-92.79
+20150808,ldn-usa-mo-8,London,Missouri,United States,North America,USA,NA,110,39.58_-91.42
+20150909,par-usa-oh-9,Paris,Ohio,United States,North America,USA,NA,100,40.80_-81.18
+20151010,par-usa-ma-10,Paris,Maine,United States,North America,USA,NA,120,44.24_-70.56
+20151010,rom-usa-ms-10,Rome,Mississippi,United States,North America,USA,NA,130,33.96_-90.50
+20151010,ldn-usa-mi-10,London,Michigan,United States,North America,USA,NA,140,42.04_-83.67
+20151111,par-ita-11,Paris,Lazio,Italy,Europe,ITA,Euro,30,41.91_12.26
+20151111,rom-bel-11,Rome,Hainaut,Belgium,Europe,BEL,Euro,50,50.54_3.25
+20151111,ldn-fra-lle-11,London,lle-de-France,France,Europe,FRA,Euro,20,46.63_5.08
+20151111,edge-case-id-1,\Edge-City-1,Edgeville,Edgeland,Edgeope,EDG,NA,110,0_0
+20151111,edge-case-id-2,\\Edge-City-2,Edgeville,Edgeland,Edgeope,EDG,NA,220,0_0
+20151111,edge-case-id-3,\\\Edge-City-3,Edgeville,Edgeland,Edgeope,EDG,NA,330,0_0
+20151111,edge-case-id-4,Edge-City-4\,Edgeville,Edgeland,Edgeope,EDG,NA,110,0_0
+20151111,edge-case-id-5,Edge-City-5\\,Edgeville,Edgeland,Edgeope,EDG,NA,220,0_0
+20151111,edge-case-id-6,Edge-City-6\\\,Edgeville,Edgeland,Edgeope,EDG,NA,330,0_0
+20151111,edge-case-id-7,Edge-C\ity-7,Edgeville,Edgeland,Edgeope,EDG,NA,110,0_0
+20151111,edge-case-id-8,Edge-C\\ity-8,Edgeville,Edgeland,Edgeope,EDG,NA,220,0_0
+20151111,edge-case-id-9,Edge-C\\\ity-9,Edgeville,Edgeland,Edgeope,EDG,NA,330,0_0
