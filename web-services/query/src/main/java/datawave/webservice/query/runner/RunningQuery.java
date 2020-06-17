@@ -466,6 +466,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      */
     public void setTraceInfo(TInfo traceInfo) {
         this.traceInfo = traceInfo;
+        // Need to propagate traceInfo in order to keep spans properly rooted in subsequent thread contexts
+        if (null != this.traceInfo && null != this.getSettings()) {
+            this.settings.addParameter("trace.id.parent", Long.toString(this.traceInfo.parentId));
+            this.settings.addParameter("trace.id", Long.toString(this.traceInfo.traceId));
+        }
     }
     
     /**

@@ -49,7 +49,6 @@ import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
@@ -334,10 +333,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(Trace.trace(this.traceInfo, "query:close")).andReturn(this.span);
         this.span.data(eq("closedAt"), isA(String.class));
         this.span.stop();
-        // TODO: 1.8.1: no longer done
-        // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
-        // expect(Tracer.getInstance()).andReturn(this.tracer);
-        // this.tracer.flush();
+        expect(this.traceCache.getSpan(queryId.toString())).andReturn(this.span);
+        expect(this.span.getSpan()).andReturn(Span.NULL_SPAN.getSpan());
+        this.traceCache.removeSpan(queryId.toString());
         
         // Run the test
         PowerMock.replayAll();
@@ -347,6 +345,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, QueryTraceCache.class, traceCache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -587,10 +586,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(Trace.trace(this.traceInfo, "query:close")).andReturn(this.span);
         this.span.data(eq("closedAt"), isA(String.class));
         this.span.stop();
-        // TODO: 1.8.1: no longer done
-        // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
-        // expect(Tracer.getInstance()).andReturn(this.tracer);
-        // this.tracer.flush();
+        expect(this.traceCache.getSpan(queryId.toString())).andReturn(this.span);
+        expect(this.span.getSpan()).andReturn(Span.NULL_SPAN.getSpan());
+        this.traceCache.removeSpan(queryId.toString());
         
         // Run the test
         PowerMock.replayAll();
@@ -600,6 +598,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, QueryTraceCache.class, traceCache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -1106,6 +1105,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
+        this.traceCache.put(eq(queryId.toString()), isA(Span.class));
         expect(this.traceInfos.get(userSid)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andThrow(
                         new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
@@ -1134,6 +1134,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(subject, QueryTraceCache.class, traceCache);
         Throwable result1 = null;
         try {
             subject.createQueryAndNext(queryLogicName, queryParameters);

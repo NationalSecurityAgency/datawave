@@ -198,7 +198,32 @@
             <scope>runtime</scope>
         </dependency>
         <!--
-                         The following dependencies are pulled in just to silence some Wildfly warnings about missing jars that
+          The htrace-zipkin:3.1.0-incubating dependency enables Zipkin integration, if desired, and can be leveraged by
+          any Accumulo 1.x trace client, providing a better UI for trace visualization. All that's required to use
+          Zipkin as a sink for DW traces is to set some external configuration and to run a Zipkin server.
+
+          For example, just add the following to DW's local Accumulo client.conf file
+          ...
+          trace.span.receivers=org.apache.accumulo.tracer.ZooTraceClient,org.apache.htrace.impl.ZipkinSpanReceiver
+          trace.span.receiver.zipkin.collector-hostname=zipkin-hostname
+          trace.span.receiver.zipkin.collector-port=9410
+          ...
+          And add the same properties to accumulo-site.xml. The htrace-zipkin jar must also be deployed to
+          $ACCUMULO_HOME/lib/ (NOT /lib/ext)
+
+          To run a Zipkin server, see https://zipkin.io/pages/quickstart.html. For example...
+
+          export COLLECTOR_SCRIBE_ENABLED=true # Ensures that the scribe/thrift protocol is enabled
+          java -jar /path/to/zipkin.jar
+        -->
+        <dependency>
+            <groupId>org.apache.htrace</groupId>
+            <artifactId>htrace-zipkin</artifactId>
+            <version>3.1.0-incubating</version>
+            <scope>runtime</scope>
+        </dependency>
+        <!--
+            The following dependencies are pulled in just to silence some Wildfly warnings about missing jars that
             are referenced in another jar's Class-Path in the manifest. Some of these are test jars that will
             go away from future versions of the emissary jar.
         

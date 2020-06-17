@@ -1,5 +1,6 @@
 package datawave.query.tables.async;
 
+import java.net.InetAddress;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -10,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.impl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
@@ -17,6 +19,10 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.trace.DistributedTrace;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
+import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -120,6 +126,7 @@ public class Scan implements Callable<Scan> {
      */
     @Override
     public Scan call() throws Exception {
+        Span span = null;
         try {
             
             /**
@@ -134,6 +141,11 @@ public class Scan implements Callable<Scan> {
                     }
                 }
                 initialized = true;
+            }
+            
+            TInfo parentTrace = initializeQueryTrace();
+            if (null != parentTrace) {
+                span = Trace.trace(parentTrace, this.getClass().getName() + " - Thread: [" + Thread.currentThread().getName() + "]");
             }
             
             do {
@@ -232,6 +244,10 @@ public class Scan implements Callable<Scan> {
                     log.trace("Setting " + SCAN_ID + " = " + scanId);
                 }
                 
+                if (null != span) {
+                    span.data(SCAN_ID, scanId);
+                }
+                
                 for (IteratorSetting setting : myScan.getOptions().getIterators()) {
                     myScan.getOptions().updateScanIteratorOption(setting.getName(), SCAN_ID, scanId);
                 }
@@ -314,6 +330,12 @@ public class Scan implements Callable<Scan> {
             if (null != delegatedResource) {
                 delegatorReference.close(delegatedResource);
             }
+            
+            if (null != span) {
+                span.data("lastSeenKey", (null == lastSeenKey) ? "null" : lastSeenKey.toString());
+                span.data("currentRange", (null == currentRange) ? "null" : currentRange.toString());
+                span.stop();
+            }
         }
         return this;
         
@@ -369,4 +391,27 @@ public class Scan implements Callable<Scan> {
         myStats = null;
     }
     
+    /**
+     * If tracing was in progress, then we must enable tracing on this new thread so that we can resume the parent span
+     *
+     * @return TInfo representing the existing parent span
+     */
+    private TInfo initializeQueryTrace() {
+        // @formatter:off
+        Query q = myScan.getOptions().getConfiguration().getQuery();
+        if (null != q) {
+            try {
+                String traceId = q.findParameter("trace.id").getParameterValue();
+                if (null != traceId && !traceId.isEmpty()) {
+                    DistributedTrace.enable(InetAddress.getLocalHost().getHostName(), "DATAWAVE_WS");
+                    return new TInfo(Long.parseLong(traceId),
+                        Long.parseLong(q.findParameter("trace.id.parent").getParameterValue()));
+                }
+            } catch (Exception e) {
+                log.warn("Failed to initialize query tracing", e);
+            }
+        }
+        // @formatter:on
+        return null;
+    }
 }
