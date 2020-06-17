@@ -3,9 +3,12 @@ package datawave.query.jexl.visitors;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
+import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
@@ -15,10 +18,14 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -33,6 +40,77 @@ import java.util.Map;
 import java.util.Set;
 
 public class IteratorBuildingVisitorTest {
+    
+    private IteratorBuildingVisitor getDefault() {
+        IteratorBuildingVisitor visitor = new IteratorBuildingVisitor();
+        visitor.setSource(new SourceFactory(Collections.emptyIterator()), new BaseIteratorEnvironment());
+        visitor.setTypeMetadata(new TypeMetadata());
+        visitor.setTimeFilter(TimeFilter.alwaysTrue());
+        return visitor;
+    }
+    
+    /**
+     * null value should result in no iterator being built
+     */
+    @Test
+    public void visitEqNode_nullValueTest() {
+        ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", null);
+        
+        IteratorBuildingVisitor visitor = getDefault();
+        
+        Assert.assertEquals(null, node.jjtAccept(visitor, null));
+    }
+    
+    /**
+     * index only null value should result in an error
+     */
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void visitEqNode_nullValueIndexOnlyTest() {
+        ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", null);
+        
+        IteratorBuildingVisitor visitor = getDefault();
+        visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
+        
+        node.jjtAccept(visitor, null);
+        
+        // this should never be reached
+        Assert.assertFalse(true);
+    }
+    
+    /**
+     * null value should result in no iterator being built. In this case a top level negation is not allowed, so pair it with an indexed lookup
+     */
+    @Test
+    public void visitNeNode_nullValueTest() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar' && FIELD != null");
+        
+        IteratorBuildingVisitor visitor = getDefault();
+        
+        query.jjtAccept(visitor, null);
+        NestedIterator nestedIterator = visitor.root();
+        
+        // the only leaf in the iterator is FOO == 'bar'
+        Assert.assertNotEquals(null, nestedIterator);
+        Assert.assertEquals(1, nestedIterator.leaves().size());
+        Assert.assertTrue(nestedIterator.leaves().iterator().next().toString().contains("FOO"));
+    }
+    
+    /**
+     * null value should result in an error. In this case a top level negation is not allowed, so pair it with an indexed lookup
+     */
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void visitNeNode_nullValueIndexOnlyTest() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar' && FIELD != null");
+        
+        IteratorBuildingVisitor visitor = getDefault();
+        visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
+        
+        query.jjtAccept(visitor, null);
+        
+        // this should never be reached
+        Assert.assertFalse(true);
+    }
+    
     @Test
     public void buildLiteralRange_trailingWildcardTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO =~ 'bar.*'");
@@ -84,6 +162,55 @@ public class IteratorBuildingVisitorTest {
         Assert.assertTrue(range.isLowerInclusive());
         Assert.assertTrue(range.getUpper().equals("barbaz"));
         Assert.assertTrue(range.isUpperInclusive());
+    }
+    
+    @Test
+    @Ignore
+    public void NeTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 != 'v1'");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F1", "v0" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+                        Collections.singleton("F2"));
+        
+    }
+    
+    @Test
+    @Ignore
+    public void excludedOrTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' || !(F2 == 'v2')");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F2", "v2" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+                        Collections.singleton("F2"));
+    }
+    
+    @Test
+    @Ignore
+    public void nestedExcludeOnlyTest() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' && (!(F2 == 'v2') || !(F3 == 'v3'))");
+        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        
+        List<Map.Entry<Key,Value>> source = new ArrayList<>();
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "F2", "v3" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        
+        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
+                        Collections.singleton("F2"));
     }
     
     @Test
@@ -831,7 +958,7 @@ public class IteratorBuildingVisitorTest {
         
         @Override
         public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-            return new IteratorToSortedKeyValueIterator(iterator);
+            return new SortedListKeyValueIterator(iterator);
         }
     }
 }

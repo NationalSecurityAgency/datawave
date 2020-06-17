@@ -50,7 +50,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirURI, hdfsFileSystem)) {
+        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirURI, hdfsFileSystem, getField(), getNode())) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + filter + " over " + range);
             }
@@ -100,7 +100,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                 throw new IllegalStateException("Unable to initialize regex iterator stack", e);
             }
             
-            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator);
+            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, getNode(), getField());
             range = null;
             filter = null;
             source = null;
@@ -110,6 +110,8 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             timeFilter = null;
             hdfsFileSystem = null;
             ivaratorCacheDirURI = null;
+            node = null;
+            field = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);
