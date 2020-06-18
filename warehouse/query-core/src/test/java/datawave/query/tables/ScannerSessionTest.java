@@ -37,7 +37,7 @@ import java.util.TreeSet;
 
 /**
  * This test spins up a mini accumulo to accurately test the effect of underlying Scanner/Batch scanners against the ScannerSession. InMemoryAccumulo makes some
- * simplications that in the past have masked bugs
+ * simplifications that in the past have masked bugs
  */
 public class ScannerSessionTest {
     private static final String PASSWORD = "";
