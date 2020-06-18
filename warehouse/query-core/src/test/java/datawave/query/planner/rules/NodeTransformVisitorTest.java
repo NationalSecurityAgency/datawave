@@ -26,6 +26,7 @@ public class NodeTransformVisitorTest {
     
     private static final List<String> PATTERNS = Arrays.asList(new String[] {".\\.\\*", "\\.\\*.", "\\.\\*<[^<>]+>"});
     private static final RegexPushdownTransformRule regexPushdownRule = new RegexPushdownTransformRule();
+    private static final RegexSimplifierTransformRule regexSimplifier = new RegexSimplifierTransformRule();
     private static final NodeTransformRule reverseAndRule = new NodeTransformRule() {
         @Override
         public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
@@ -59,7 +60,11 @@ public class NodeTransformVisitorTest {
     private void testPushdown(String query, String expected) throws Exception {
         testPushdown(query, expected, Collections.singletonList(regexPushdownRule));
     }
-    
+
+    private void testSimplify(String query, String expected) throws Exception {
+        testPushdown(query, expected, Collections.singletonList(regexSimplifier));
+    }
+
     private void testPushdown(String query, String expected, List<NodeTransformRule> rules) throws Exception {
         // create a query tree
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
@@ -112,7 +117,24 @@ public class NodeTransformVisitorTest {
             // ok
         }
     }
-    
+
+    @Test
+    public void regexSimplifierTransformRuleTest() throws Exception {
+        // @formatter:off
+        String query = "BLA == '.*?.*?x' && " +
+                "BLA =~ 'ab.*.*' && " +
+                "BLA =~ 'a.*.*.*.*?.*?' && " +
+                "BLA =~ '.*?.*?.*bla.*?.*?blabla' && " +
+                "_ANYFIELD_ =~ '.*.*?.*?<bla>'";
+        String expected = "BLA == '.*?.*?x' && " +
+                "BLA =~ 'ab.*?' && " +
+                "BLA =~ 'a.*?' && " +
+                "BLA =~ '.*?bla.*?blabla' && " +
+                "_ANYFIELD_ =~ '.*?<bla>'";
+        // @formatter:on
+        testSimplify(query, expected);
+    }
+
     @Test
     public void skipQueryMarkersTest() throws Exception {
         // @formatter:off
