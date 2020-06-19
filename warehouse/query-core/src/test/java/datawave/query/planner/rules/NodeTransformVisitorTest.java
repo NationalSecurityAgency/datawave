@@ -60,11 +60,11 @@ public class NodeTransformVisitorTest {
     private void testPushdown(String query, String expected) throws Exception {
         testPushdown(query, expected, Collections.singletonList(regexPushdownRule));
     }
-
+    
     private void testSimplify(String query, String expected) throws Exception {
         testPushdown(query, expected, Collections.singletonList(regexSimplifier));
     }
-
+    
     private void testPushdown(String query, String expected, List<NodeTransformRule> rules) throws Exception {
         // create a query tree
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
@@ -117,7 +117,7 @@ public class NodeTransformVisitorTest {
             // ok
         }
     }
-
+    
     @Test
     public void regexSimplifierTransformRuleTest() throws Exception {
         // @formatter:off
@@ -134,7 +134,7 @@ public class NodeTransformVisitorTest {
         // @formatter:on
         testSimplify(query, expected);
     }
-
+    
     @Test
     public void skipQueryMarkersTest() throws Exception {
         // @formatter:off

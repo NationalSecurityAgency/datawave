@@ -1,4 +1,3 @@
-
 package datawave.query.planner.rules;
 
 import datawave.query.config.ShardQueryConfiguration;
@@ -12,15 +11,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class is intended to simplify when multiple .* or .*? are consecutively placed in a regex.  The reason
- * we need to simplify this is because there is an exponential increase in the time to match relative to the
- * number of consecutive .* or .*? and to the size of the value.  This has been witnessed to take over many days
- * to complete with 8 consecutive .*? and a value length on the order of 1K+.
+ * This class is intended to simplify when multiple .* or .*? are consecutively placed in a regex. The reason we need to simplify this is because there is an
+ * exponential increase in the time to match relative to the number of consecutive .* or .*? and to the size of the value. This has been witnessed to take over
+ * many days to complete with 8 consecutive .*? and a value length on the order of 1K+.
  */
 public class RegexSimplifierTransformRule implements NodeTransformRule {
     private static final Logger log = Logger.getLogger(RegexSimplifierTransformRule.class);
     private Pattern pattern = Pattern.compile("(\\.\\*\\??){2,}");
-
+    
     @Override
     public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         if (node instanceof ASTERNode) {
