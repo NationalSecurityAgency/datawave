@@ -313,6 +313,11 @@ public class DatawaveInterpreter extends Interpreter {
     }
     
     public Object visit(ASTAndNode node, Object data) {
+        // we could have arrived here after the node was dereferenced
+        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+            return visitExceededOrThresholdMarker(node);
+        }
+        
         // check for the special case of a range (conjunction of a G/GE and a L/LE node) and reinterpret as a function
         Object evaluation = evaluateRange(node);
         if (evaluation != null) {
@@ -431,7 +436,7 @@ public class DatawaveInterpreter extends Interpreter {
         }
     }
     
-    private Object visitExceededOrThresholdMarker(ASTReference node) {
+    private Object visitExceededOrThresholdMarker(JexlNode node) {
         String id = ExceededOrThresholdMarkerJexlNode.getId(node);
         String field = ExceededOrThresholdMarkerJexlNode.getField(node);
         
