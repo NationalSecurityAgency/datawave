@@ -4,6 +4,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.util.sortedset.FileSortedSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -32,6 +33,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected int ivaratorMaxOpenFiles = 100;
     protected long maxIvaratorResults = -1;
     protected int ivaratorNumRetries = 2;
+    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
     protected boolean collectTimingDetails = false;
     protected QuerySpanCollector querySpanCollector = null;
     protected CompositeMetadata compositeMetadata;
@@ -133,6 +135,14 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
         this.ivaratorNumRetries = ivaratorNumRetries;
+    }
+    
+    public FileSortedSet.PersistOptions getIvaratorPersistOptions() {
+        return ivaratorPersistOptions;
+    }
+    
+    public void setIvaratorPersistOptions(FileSortedSet.PersistOptions ivaratorPersistOptions) {
+        this.ivaratorPersistOptions = ivaratorPersistOptions;
     }
     
     public void setCollectTimingDetails(boolean collectTimingDetails) {

@@ -164,13 +164,13 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             this.logic.setFullTableScanEnabled(true);
             try {
                 // Test the plan with all expansions
-                anyCity = "(CITY == '" + city.name() + "'";
+                anyCity = "!(CITY == '" + city.name() + "'";
                 if (city.name().equals("london")) {
-                    anyCity = '(' + anyCity + JEXL_OR_OP + "STATE == '" + city.name() + "'))";
+                    anyCity += ")" + JEXL_AND_OP + "!(STATE == '" + city.name() + "')";
                 } else {
                     anyCity = anyCity + ')';
                 }
-                anyCity = '!' + anyCity;
+                anyCity = "(((" + anyCity + ")))";
                 String plan = getPlan(query, true, true);
                 assertPlanEquals(anyCity, plan);
                 

@@ -20,7 +20,7 @@ import java.util.Set;
 public class GroupingRequiredFilterFunctions {
     public static final String GROUPING_REQUIRED_FUNCTION_NAMESPACE = "grouping";
     
-    protected static Logger log = Logger.getLogger(GroupingRequiredFilterFunctions.class);
+    protected static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctions.class);
     
     /**
      * <pre>

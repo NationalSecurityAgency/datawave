@@ -160,3 +160,25 @@ function datawaveWebStart() {
     done
     return 1
 }
+
+function datawaveWebDisplayBinaryInfo() {
+  echo "Source: DataWave Web Version $(getDataWaveVersion)//$(datawaveWebTarballName)"
+  local installedTarball="$(ls -1 ${DW_DATAWAVE_SERVICE_DIR}/$(basename ${DW_DATAWAVE_WEB_TARBALL}) 2>/dev/null)"
+  if [[ -n "${installedTarball}" ]]; then
+     echo " Local: ${installedTarball}"
+  else
+     echo " Local: Not loaded"
+  fi
+  echo "Source: ${DW_WILDFLY_DIST_URI}"
+  local tarballName="$(basename "$DW_WILDFLY_DIST_URI")"
+  if [[ -f "${DW_DATAWAVE_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_DATAWAVE_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
+}
+
+function datawaveWebTarballName() {
+   local dwVersion="$(getDataWaveVersion)"
+   echo "$( basename "${DW_DATAWAVE_WEB_TARBALL/-\*-/-$dwVersion-}" )"
+}

@@ -141,11 +141,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-public class DefaultQueryPlanner extends QueryPlanner {
+public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
     
-    public static String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
+    public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
     
     protected boolean limitScanners = false;
     
@@ -1137,7 +1137,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 debugOutput = new ArrayList<>(32);
             }
             if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
                                 nonEventFields, metadataHelper);
                 if (log.isDebugEnabled()) {
                     logDebug(debugOutput, "Executable state after pushing low-selective terms:");
@@ -1197,8 +1197,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 // the terms to be delayed.
                 if (!ExecutableDeterminationVisitor
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, indexOnlyFields,
-                                    nonEventFields, metadataHelper);
+                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, false, config, indexedFields,
+                                    indexOnlyFields, nonEventFields, metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges:");
                         logQuery(queryTree, "Query after delayed pullup:");
@@ -1233,7 +1233,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 }
                 if (!ExecutableDeterminationVisitor
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
                                     nonEventFields, metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
@@ -1677,6 +1677,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
                         addOption(cfg, QueryOptions.IVARATOR_NUM_RETRIES, Integer.toString(config.getIvaratorNumRetries()), false);
+                        addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY, Boolean.toString(config.isIvaratorPersistVerify()), false);
+                        addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, Integer.toString(config.getIvaratorPersistVerifyCount()), false);
                         addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                         addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                         addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
