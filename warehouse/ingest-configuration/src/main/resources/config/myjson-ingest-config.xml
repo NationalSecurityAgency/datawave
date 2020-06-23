@@ -288,6 +288,6 @@
 
     <property>
         <name>myjson.facet.category.name.network</name>
-        <value>NETWORK_NAME/GENRES,EMBEDDED_CAST_PERSON_GENDER,RATING_AVERAGE</value>
+        <value>NETWORK_NAME;GENRES,EMBEDDED_CAST_PERSON_GENDER,RATING_AVERAGE</value>
     </property>
 </configuration>

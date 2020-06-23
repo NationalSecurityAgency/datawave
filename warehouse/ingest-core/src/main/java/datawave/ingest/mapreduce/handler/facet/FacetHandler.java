@@ -68,6 +68,8 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     
     public static final String FACET_CATEGORY_PREFIX_REGEX = "\\.facet\\.category\\.name\\..*";
     
+    public static final String DEFAULT_FACET_CATEGORY_DELIMITER = ";";
+    
     private static final Text PV = new Text("pv");
     private static final String NULL = "\0";
     private static final Value EMPTY_VALUE = new Value(new byte[] {});
@@ -81,7 +83,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     /* Per-datatype configuration fields */
     
     protected int facetHashThreshold;
-    protected String categoryDelimiter = "/";
+    protected String categoryDelimiter = DEFAULT_FACET_CATEGORY_DELIMITER;
     
     /* Instance variables */
     
@@ -215,8 +217,9 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
                     throws IOException, InterruptedException {
         
-        final String shardId = shardIdFactory.getShardId(event).substring(0, 8);
-        Text dateColumnQualifier = new Text(shardId); // TODO: Makes an assumption about the structure of the shardId.
+        final String shardId = shardIdFactory.getShardId(event);
+        final String shardDate = ShardIdFactory.getDateString(shardId);
+        Text dateColumnQualifier = new Text(shardDate);
         
         HyperLogLogPlus cardinality = new HyperLogLogPlus(10);
         cardinality.offer(event.getId().toString());
@@ -244,15 +247,15 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         for (String pivotFieldName : pivotMap.keySet()) {
             Text reflexiveCf = createColumnFamily(pivotFieldName, pivotFieldName);
             for (NormalizedContentInterface pivotTypes : eventFields.get(pivotFieldName)) {
+                if (HashTableFunction.isReduced(pivotTypes))
+                    continue;
+                
                 for (String facetFieldName : pivotMap.get(pivotFieldName)) {
                     if (pivotFieldName.equals(facetFieldName))
                         continue;
                     
                     Text generatedCf = createColumnFamily(pivotFieldName, facetFieldName);
                     Text myCf = generatedCf;
-                    
-                    if (HashTableFunction.isReduced(pivotTypes))
-                        continue;
                     
                     for (NormalizedContentInterface facetTypes : eventFields.get(facetFieldName)) {
                         if (HashTableFunction.isReduced(facetTypes)) {

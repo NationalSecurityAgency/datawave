@@ -114,9 +114,9 @@ public class FacetHandlerTest {
     }
     
     public void configureFacets(Configuration conf) {
-        conf.set("test.facet.category.name.manufacturer", "MAKE/STYLE,MODEL,COLOR");
-        conf.set("test.facet.category.name.style", "STYLE/MANUFACTURER,MODEL,COLOR");
-        conf.set("test.facet.category.name.color", "COLOR/MANUFACTURER,MODEL,STYLE");
+        conf.set("test.facet.category.name.manufacturer", "MAKE;STYLE,MODEL,COLOR");
+        conf.set("test.facet.category.name.style", "STYLE;MANUFACTURER,MODEL,COLOR");
+        conf.set("test.facet.category.name.color", "COLOR;MANUFACTURER,MODEL,STYLE");
     }
     
     @Test
