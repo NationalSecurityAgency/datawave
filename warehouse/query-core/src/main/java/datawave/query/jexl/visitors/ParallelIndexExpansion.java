@@ -16,9 +16,8 @@ import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.JavaRegexAnalyzer;
@@ -306,11 +305,40 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     public Object visit(ASTERNode node, Object data) {
         Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
         
-        // we've already been delayed.
+        String fieldName = JexlASTHelper.getIdentifier(node);
+        
+        // if its evaluation only tag an exceeded value marker for a deferred ivarator
         if (markedParents != null) {
+            boolean evalOnly = false;
+            boolean exceededValueMarker = false;
+            boolean exceededTermMarker = false;
             for (JexlNode markedParent : markedParents) {
-                if (QueryPropertyMarker.instanceOf(markedParent, null))
-                    return node;
+                if (QueryPropertyMarker.instanceOf(markedParent, ASTEvaluationOnly.class)) {
+                    evalOnly = true;
+                }
+                if (QueryPropertyMarker.instanceOf(markedParent, ExceededValueThresholdMarkerJexlNode.class)) {
+                    exceededValueMarker = true;
+                }
+                if (QueryPropertyMarker.instanceOf(markedParent, ExceededTermThresholdMarkerJexlNode.class)) {
+                    exceededTermMarker = true;
+                }
+            }
+            
+            boolean indexOnly;
+            try {
+                indexOnly = helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
+            } catch (TableNotFoundException e) {
+                throw new DatawaveFatalQueryException(e);
+            }
+            
+            if (evalOnly && !exceededValueMarker && !exceededTermMarker && indexOnly) {
+                return ExceededValueThresholdMarkerJexlNode.create(node);
+            } else if (exceededValueMarker || exceededTermMarker) {
+                // already did this expansion
+                return node;
+            } else if (!indexOnly && evalOnly) {
+                // no need to expand its going to come out of the event
+                return node;
             }
         }
         
@@ -355,7 +383,6 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 log.debug("Skipping cost estimation since we have a timeout ");
         }
         
-        String fieldName = JexlASTHelper.getIdentifier(node);
         try {
             if (!helper.isIndexed(fieldName, config.getDatatypeFilter())) {
                 log.debug("Not expanding regular expression node as the field is not indexed");
@@ -401,15 +428,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (!QueryPropertyMarker.instanceOf(node, null)) {
-            ASTReference ref = (ASTReference) super.visit(node, data);
-            if (JexlNodes.children(ref).length == 0) {
-                return null;
-            } else {
-                return ref;
-            }
+        ASTReference ref = (ASTReference) super.visit(node, data);
+        if (JexlNodes.children(ref).length == 0) {
+            return null;
         } else {
-            return node;
+            return ref;
         }
     }
     
