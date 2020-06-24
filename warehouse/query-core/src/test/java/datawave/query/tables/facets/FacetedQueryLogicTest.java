@@ -51,7 +51,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
-    private static final Logger log = Logger.getLogger(IndexQueryLogicTest.class);
+    private static final Logger log = Logger.getLogger(FacetedQueryLogicTest.class);
     
     public FacetedQueryLogicTest() {
         super(CarsDataType.getManager());
@@ -60,7 +60,6 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
     @BeforeClass
     public static void setupClass() throws Exception {
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-        
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
         generic.addIndexField(CityField.COUNTRY.name());
@@ -114,9 +113,18 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         log.info("------ Test precomputed facet ------");
         
         Set<String> expected = new HashSet<>(2);
-        expected.add("[" + "CITY; london -- london//2, " + "CITY; paris -- paris//2, " + "CITY; rome -- rome//2, " + "CONTINENT; europe -- europe//2, "
-                        + "STATE; hainaut -- hainaut//1, " + "STATE; lazio -- lazio//2, " + "STATE; lle-de-france -- lle-de-france//2, "
-                        + "STATE; london -- london//1" + "]");
+        // @formatter:off
+        expected.add("[" +
+                "CITY; london -- london//2, " +
+                "CITY; paris -- paris//2, " +
+                "CITY; rome -- rome//2, " +
+                "CONTINENT; europe -- europe//2, " +
+                "STATE; hainaut -- hainaut//1, " +
+                "STATE; lazio -- lazio//2, " +
+                "STATE; lle-de-france -- lle-de-france//2, " +
+                "STATE; london -- london//1" +
+                "]");
+        // @formatter:on
         String query = CitiesDataType.CityField.CONTINENT.name() + " == 'Europe'";
         
         runTest(query, Collections.emptyMap(), expected);

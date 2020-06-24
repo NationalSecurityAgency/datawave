@@ -151,7 +151,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         
         filterList.add(filter);
         
-        iterator = new MergedReadAhead<>(facetedConfig, iterator, new FacetedFunction(deserializer, serializer, functionList), filterList);
+        iterator = new MergedReadAhead<>(facetedConfig.isStreaming, iterator, new FacetedFunction(deserializer, serializer, functionList), filterList);
         
     }
     
