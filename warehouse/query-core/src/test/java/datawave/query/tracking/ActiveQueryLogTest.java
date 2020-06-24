@@ -16,6 +16,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 public class ActiveQueryLogTest {
     
     private static Random rand = new Random();
@@ -29,11 +34,11 @@ public class ActiveQueryLogTest {
         return rand.nextInt(3) + 1;
     }
     
-    public class QueryTask implements Runnable {
-        private String queryId;
-        private int numSeeks;
-        private int numNexts;
-        private boolean randomSleep;
+    public static class QueryTask implements Runnable {
+        private final String queryId;
+        private final int numSeeks;
+        private final int numNexts;
+        private final boolean randomSleep;
         
         public QueryTask(String queryId, int numSeeks, int numNexts, boolean randomSleep) {
             this.queryId = queryId;
@@ -91,6 +96,33 @@ public class ActiveQueryLogTest {
     }
     
     @Test
+    public void whenRetrievingInstance_givenNullName_shouldReturnsDefaultInstance() {
+        ActiveQueryLog namedInstance = ActiveQueryLog.getInstance(null);
+        assertSame(namedInstance, ActiveQueryLog.getInstance());
+    }
+    
+    @Test
+    public void whenRetrievingInstance_givenBlankName_shouldReturnsDefaultInstance() {
+        ActiveQueryLog namedInstance = ActiveQueryLog.getInstance(" ");
+        assertSame(namedInstance, ActiveQueryLog.getInstance());
+    }
+    
+    @Test
+    public void whenRetrievingInstance_givenUnencounteredName_shouldReturnsNewInstance() {
+        ActiveQueryLog namedInstance = ActiveQueryLog.getInstance("name");
+        assertNotNull(namedInstance);
+        assertNotSame(namedInstance, ActiveQueryLog.getInstance());
+    }
+    
+    @Test
+    public void whenRetrievingInstance_givenPreviouslyEncounteredName_shouldReturnsExistingInstance() {
+        ActiveQueryLog firstInstance = ActiveQueryLog.getInstance("test");
+        ActiveQueryLog secondInstance = ActiveQueryLog.getInstance("test");
+        assertSame(firstInstance, secondInstance);
+        assertNotSame(secondInstance, ActiveQueryLog.getInstance());
+    }
+    
+    @Test
     public void testThreadSafety() {
         
         ActiveQueryLog.getInstance().setLogPeriod(2000);
@@ -111,9 +143,7 @@ public class ActiveQueryLogTest {
         while (executor.getCompletedTaskCount() < numQueries) {
             try {
                 TimeUnit.MILLISECONDS.sleep(50);
-            } catch (InterruptedException e) {
-                
-            }
+            } catch (InterruptedException ignored) {}
         }
         
         for (Map.Entry<String,QueryTask> e : tasks.entrySet()) {

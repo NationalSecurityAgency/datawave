@@ -287,7 +287,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     @Override
     public void next() throws IOException {
-        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
+        ActiveQueryLog.getInstance(getActiveQueryLogName()).get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
         Span s = Trace.start("QueryIterator.next()");
         if (log.isTraceEnabled()) {
             log.trace("next");
@@ -305,10 +305,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
-            ActiveQueryLog.getInstance().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.NEXT);
+            ActiveQueryLog.getInstance(getActiveQueryLogName()).get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.NEXT);
             if (this.key == null && this.value == null) {
                 // no entries to return
-                ActiveQueryLog.getInstance().remove(getQueryId(), this.originalRange);
+                ActiveQueryLog.getInstance(getActiveQueryLogName()).remove(getQueryId(), this.originalRange);
             }
         }
     }
@@ -318,10 +318,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         originalRange = range;
-        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
+        ActiveQueryLog.getInstance(getActiveQueryLogName()).get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         Span span = Trace.start("QueryIterator.seek");
         
-        if (this.isIncludeGroupingContext() == false
+        if (!this.isIncludeGroupingContext()
                         && (this.query.contains("grouping:") || this.query.contains("matchesInGroup") || this.query.contains("MatchesInGroup") || this.query
                                         .contains("atomValuesMatch"))) {
             this.setIncludeGroupingContext(true);
@@ -443,7 +443,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             pipelineDocuments,
                             keyDocumentEntry -> {
                                 // last chance before the documents are serialized
-                                ActiveQueryLog.getInstance().get(getQueryId())
+                                ActiveQueryLog.getInstance(getActiveQueryLogName()).get(getQueryId())
                                                 .recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
                                 // Always return true since we just want to record data in the ActiveQueryLog
                                 return true;
@@ -509,10 +509,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
-            ActiveQueryLog.getInstance().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.SEEK);
+            ActiveQueryLog.getInstance(getActiveQueryLogName()).get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.SEEK);
             if (this.key == null && this.value == null) {
                 // no entries to return
-                ActiveQueryLog.getInstance().remove(getQueryId(), this.originalRange);
+                ActiveQueryLog.getInstance(getActiveQueryLogName()).remove(getQueryId(), this.originalRange);
             }
         }
     }

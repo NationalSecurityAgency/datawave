@@ -60,7 +60,11 @@ import java.util.stream.Collectors;
  * Webservice QueryTable and apply them to this configuration object
  */
 public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable {
+    
     public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
+    public static final String TABLE_NAME_SOURCE = "tableName";
+    public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
+    
     @SuppressWarnings("unused")
     private static final long serialVersionUID = -4354990715046146110L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
@@ -329,6 +333,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<String> contentFieldNames = Collections.emptyList();
     
     /**
+     * The source to use as the active query log name for all query iterators in scans generated for the shard query logic. If the value
+     * {@value #TABLE_NAME_SOURCE} is supplied, the shard table name will be used. If {@value #QUERY_LOGIC_NAME_SOURCE} is supplied, the name of the shard query
+     * logic class will be used. Otherwise, no custom name will be supplied.
+     */
+    private String activeQueryLogNameSource;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -502,6 +513,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
+        this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
     }
     
     /**
@@ -2055,5 +2067,34 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public Set<String> getEvaluationOnlyFields() {
         return this.evaluationOnlyFields;
+    }
+    
+    public String getActiveQueryLogNameSource() {
+        return activeQueryLogNameSource;
+    }
+    
+    public void setActiveQueryLogNameSource(String activeQueryLogNameSource) {
+        this.activeQueryLogNameSource = activeQueryLogNameSource;
+    }
+    
+    /**
+     * Returns the name to use for the active query log for query iterators, derived from the value {@link #activeQueryLogNameSource}. Cases:
+     * <ul>
+     * <li>{@value TABLE_NAME_SOURCE}: returns the shard table name</li>
+     * <li>{@value QUERY_LOGIC_NAME_SOURCE}: returns the name of the shard query logic class</li>
+     * <li>otherwise returns a blank value</li>
+     * </ul>
+     * 
+     * @return the custom active query name to use, or a blank value if the default active query log should be used
+     */
+    @JsonIgnore
+    public String getActiveQueryLogName() {
+        if (TABLE_NAME_SOURCE.equals(activeQueryLogNameSource)) {
+            return getTableName();
+        } else if (QUERY_LOGIC_NAME_SOURCE.equals(activeQueryLogNameSource)) {
+            return this.getClass().getSimpleName();
+        } else {
+            return "";
+        }
     }
 }
