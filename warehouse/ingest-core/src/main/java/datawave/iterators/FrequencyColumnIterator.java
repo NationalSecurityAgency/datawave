@@ -57,7 +57,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
             } else {
                 
                 if (!cq.toString().startsWith(COL_QUAL_TOTAL))
-                    frequencyFamilyCounter.aggregateRecord(cq.toString(), oldValue.toString(), true);
+                    frequencyFamilyCounter.aggregateRecord(cq.toString(), oldValue.toString());
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
