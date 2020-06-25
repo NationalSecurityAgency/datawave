@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -305,6 +306,104 @@ public class RangeStreamTest {
         
         m = new Mutation("oreo");
         m.put(new Text("FOO"), new Text("20190314_1\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+        
+        // ---------------
+        
+        // Terms for high-low cardinality test with query (FOO == 'low_card' && FOO == 'high_card')
+        // Four terms {'highest_card', 'high_card', 'low_card', 'lowest_card'}
+        // Ranges fall across 8 days, each day has up to 50 shards.
+        builder = Uid.List.newBuilder();
+        builder.addUID("a.b.c");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+        
+        m = new Mutation("lowest_card");
+        m.put(new Text("FOO"), new Text("20190310_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_22\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_49\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+        
+        m = new Mutation("low_card");
+        m.put(new Text("FOO"), new Text("20190310_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190312_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_22\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_33\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190317_1\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+        
+        builder = Uid.List.newBuilder();
+        builder.addUID("a.b.c");
+        builder.addUID("d.e.f");
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        list = builder.build();
+        
+        m = new Mutation("high_card");
+        for (int day = 0; day < 8; day += 2) {
+            for (int ii = 1; ii < 50; ii++) {
+                m.put(new Text("FOO"), new Text("2019031" + day + "_" + ii + "\0" + "datatype1"), new Value(list.toByteArray()));
+            }
+        }
+        bw.addMutation(m);
+        
+        m = new Mutation("highest_card");
+        for (int day = 0; day < 8; day++) {
+            for (int ii = 1; ii < 50; ii++) {
+                m.put(new Text("FOO"), new Text("2019031" + day + "_" + ii + "\0" + "datatype1"), new Value(list.toByteArray()));
+            }
+        }
+        bw.addMutation(m);
+        
+        // ---------------
+        
+        // Keep it simple, just have one hit.
+        builder = Uid.List.newBuilder();
+        builder.addUID("a.b.c");
+        builder.setIGNORE(true);
+        builder.setCOUNT(5000);
+        list = builder.build();
+        
+        // With shards per day set to zero, these will roll up
+        m = new Mutation("day_ranges");
+        m.put(new Text("FOO"), new Text("20190310_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_2\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_3\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_4\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_5\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_6\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_7\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190310_8\0" + "datatype1"), new Value(list.toByteArray()));
+        
+        m.put(new Text("FOO"), new Text("20190311_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190312_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190313_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190314_0\0" + "datatype1"), new Value(list.toByteArray()));
+        
+        m.put(new Text("FOO"), new Text("20190315_0\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_1\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_2\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_3\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_4\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_5\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_6\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_7\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_8\0" + "datatype1"), new Value(list.toByteArray()));
+        
+        m.put(new Text("FOO"), new Text("20190316_0\0" + "datatype1"), new Value(list.toByteArray()));
+        bw.addMutation(m);
+        
+        builder = Uid.List.newBuilder();
+        builder.addUID("a.b.c");
+        builder.setIGNORE(false);
+        builder.setCOUNT(1);
+        list = builder.build();
+        
+        m = new Mutation("shard_range");
+        m.put(new Text("FOO"), new Text("20190310_21\0" + "datatype1"), new Value(list.toByteArray()));
+        m.put(new Text("FOO"), new Text("20190315_51\0" + "datatype1"), new Value(list.toByteArray()));
         bw.addMutation(m);
         
         // ---------------
@@ -1079,5 +1178,313 @@ public class RangeStreamTest {
         List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = RangeStream.createFullFieldIndexScanList(config, null);
         
         Assert.assertEquals(2, fullFieldIndexScanList.size());
+    }
+    
+    // (A && B)
+    @Test
+    public void testIntersection_HighAndLowCardinality_withSeek() throws Exception {
+        String originalQuery = "(FOO == 'lowest_card' && FOO == 'highest_card')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        config.setBeginDate(sdf.parse("20190310"));
+        config.setEndDate(sdf.parse("20190320"));
+        
+        config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
+        
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("LAUGH", Sets.newHashSet(new LcNoDiacriticsType()));
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+        
+        // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
+        Range range1 = makeTestRange("20190310_1", "datatype1\u0000a.b.c");
+        Range range2 = makeTestRange("20190314_22", "datatype1\u0000a.b.c");
+        Range range3 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
+        Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
+        
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream.setLimitScanners(true);
+        CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
+        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
+        for (QueryPlan queryPlan : queryPlans) {
+            Iterable<Range> ranges = queryPlan.getRanges();
+            for (Range range : ranges) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
+                                expectedRanges.remove(range));
+            }
+        }
+        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+    }
+    
+    // (A && (B || C))
+    @Test
+    public void testIntersection_NestedUnionOfHighCardinalityTerm_withSeek() throws Exception {
+        String originalQuery = "(FOO == 'lowest_card' && (FOO == 'high_card' || FOO == 'highest_card'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        config.setBeginDate(sdf.parse("20190310"));
+        config.setEndDate(sdf.parse("20190320"));
+        
+        config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
+        
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("LAUGH", Sets.newHashSet(new LcNoDiacriticsType()));
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+        
+        // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
+        Range range1 = makeTestRange("20190310_1", "datatype1\u0000a.b.c");
+        Range range2 = makeTestRange("20190314_22", "datatype1\u0000a.b.c");
+        Range range3 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
+        Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
+        
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream.setLimitScanners(true);
+        CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
+        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
+        for (QueryPlan queryPlan : queryPlans) {
+            Iterable<Range> ranges = queryPlan.getRanges();
+            for (Range range : ranges) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
+                                expectedRanges.remove(range));
+            }
+        }
+        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+    }
+    
+    // A && (B || C)
+    @Test
+    public void testIntersection_NestedUnionOfLowCardinalityTerm_withSeek() throws Exception {
+        String originalQuery = "(FOO == 'highest_card' && (FOO == 'low_card' || FOO == 'lowest_card'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        config.setBeginDate(sdf.parse("20190310"));
+        config.setEndDate(sdf.parse("20190320"));
+        
+        config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
+        
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("LAUGH", Sets.newHashSet(new LcNoDiacriticsType()));
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+        
+        Range range1 = makeTestRange("20190310_1", "datatype1\u0000a.b.c");
+        Range range2 = makeTestRange("20190312_1", "datatype1\u0000a.b.c");
+        Range range3 = makeTestRange("20190314_22", "datatype1\u0000a.b.c");
+        Range range4 = makeTestRange("20190315_33", "datatype1\u0000a.b.c");
+        Range range5 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
+        Range range6 = makeTestRange("20190317_1", "datatype1\u0000a.b.c");
+        Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3, range4, range5, range6);
+        
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream.setLimitScanners(true);
+        CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
+        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
+        for (QueryPlan queryPlan : queryPlans) {
+            Iterable<Range> ranges = queryPlan.getRanges();
+            for (Range range : ranges) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
+                                expectedRanges.remove(range));
+            }
+        }
+        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+    }
+    
+    // A || (B && C)
+    @Test
+    public void testUnion_HighCardWithNestedIntersectionOfLowCardTerms_withSeek() throws Exception {
+        String originalQuery = "(FOO == 'low_card' || (FOO == 'high_card' && FOO == 'highest_card'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        config.setBeginDate(sdf.parse("20190310"));
+        config.setEndDate(sdf.parse("20190320"));
+        
+        config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
+        
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("LAUGH", Sets.newHashSet(new LcNoDiacriticsType()));
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+        
+        // Union with the Intersection of the high & highest cardinality terms means we hit every 'high_card' shard.
+        Set<Range> expectedRanges = new HashSet<>();
+        for (int day = 0; day < 8; day += 2) {
+            for (int ii = 1; ii < 50; ii++) {
+                expectedRanges.add(makeTestRange("2019031" + day + "_" + ii, "datatype1\u0000a.b.c"));
+                expectedRanges.add(makeTestRange("2019031" + day + "_" + ii, "datatype1\u0000d.e.f"));
+            }
+        }
+        expectedRanges.add(makeTestRange("20190315_33", "datatype1\u0000a.b.c"));
+        expectedRanges.add(makeTestRange("20190317_1", "datatype1\u0000a.b.c"));
+        
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream.setLimitScanners(true);
+        CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
+        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
+        for (QueryPlan queryPlan : queryPlans) {
+            Iterable<Range> ranges = queryPlan.getRanges();
+            for (Range range : ranges) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
+                                expectedRanges.remove(range));
+            }
+        }
+        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+    }
+    
+    // (A && B) || (C && D)
+    @Test
+    public void testUnion_OfTwoNestedIntersections_LeftLowCardTerms_withSeek() throws Exception {
+        String originalQuery = "(FOO == 'low_card' && FOO == 'lowest_card') || (FOO == 'high_card' && FOO == 'highest_card')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        config.setBeginDate(sdf.parse("20190310"));
+        config.setEndDate(sdf.parse("20190320"));
+        
+        config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
+        
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("LAUGH", Sets.newHashSet(new LcNoDiacriticsType()));
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+        
+        Set<Range> expectedRanges = new HashSet<>();
+        for (int day = 0; day < 8; day += 2) {
+            for (int ii = 1; ii < 50; ii++) {
+                expectedRanges.add(makeTestRange("2019031" + day + "_" + ii, "datatype1\u0000a.b.c"));
+                expectedRanges.add(makeTestRange("2019031" + day + "_" + ii, "datatype1\u0000d.e.f"));
+            }
+        }
+        
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream.setLimitScanners(true);
+        CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
+        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
+        for (QueryPlan queryPlan : queryPlans) {
+            Iterable<Range> ranges = queryPlan.getRanges();
+            for (Range range : ranges) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
+                                expectedRanges.remove(range));
+            }
+        }
+        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+    }
+    
+    // (A || B) && (C || D)
+    @Test
+    public void testIntersection_OfTwoNestedUnions_LeftLowCardTerms_withSeek() throws Exception {
+        String originalQuery = "(FOO == 'low_card' || FOO == 'lowest_card') && (FOO == 'high_card' || FOO == 'highest_card')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        config.setBeginDate(sdf.parse("20190310"));
+        config.setEndDate(sdf.parse("20190320"));
+        
+        config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
+        
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("LAUGH", Sets.newHashSet(new LcNoDiacriticsType()));
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+        
+        // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
+        Range range1 = makeTestRange("20190310_1", "datatype1\u0000a.b.c");
+        Range range2 = makeTestRange("20190312_1", "datatype1\u0000a.b.c");
+        Range range3 = makeTestRange("20190314_22", "datatype1\u0000a.b.c");
+        Range range4 = makeTestRange("20190315_33", "datatype1\u0000a.b.c");
+        Range range5 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
+        Range range6 = makeTestRange("20190317_1", "datatype1\u0000a.b.c");
+        Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3, range4, range5, range6);
+        
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream.setLimitScanners(true);
+        CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
+        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
+        for (QueryPlan queryPlan : queryPlans) {
+            Iterable<Range> ranges = queryPlan.getRanges();
+            for (Range range : ranges) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
+                                expectedRanges.remove(range));
+            }
+        }
+        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+    }
+    
+    // A && B when A term is day ranges and B term is a single shard range within the last day.
+    @Test
+    public void testIntersection_ofDayRangesAndShardRange() throws Exception {
+        String originalQuery = "FOO == 'day_ranges' && FOO == 'shard_range'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        // config.setBeginDate(new Date(0));
+        config.setBeginDate(sdf.parse("20190310"));
+        config.setEndDate(sdf.parse("20190320"));
+        
+        config.setDatatypeFilter(Sets.newHashSet("datatype1", "datatype2"));
+        
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("LAUGH", Sets.newHashSet(new LcNoDiacriticsType()));
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+        config.setShardsPerDayThreshold(2);
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+        
+        // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
+        Range range1 = makeTestRange("20190310_21", "datatype1\u0000a.b.c");
+        // Fun story. It's hard to roll up to a day range when you seek most of the way through the day and don't have all the shards for the day.
+        // Range range2 = makeTestRange("20190315_51", "datatype1\u0000a.b.c");
+        Set<Range> expectedRanges = Sets.newHashSet(range1);
+        
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        rangeStream.setLimitScanners(true);
+        CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
+        assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
+        for (QueryPlan queryPlan : queryPlans) {
+            Iterable<Range> ranges = queryPlan.getRanges();
+            for (Range range : ranges) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
+                                expectedRanges.remove(range));
+            }
+        }
+        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
     }
 }
