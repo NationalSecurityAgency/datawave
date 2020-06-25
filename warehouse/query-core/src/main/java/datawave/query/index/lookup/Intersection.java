@@ -375,14 +375,14 @@ public class Intersection extends BaseIndexStream {
                     dayOrShard = max;
                     break;
                 }
-                // if (dayOrShard.compareTo(max) >= 0) {
-                // break;
-                // }
-                // if (isDay(dayOrShard) && max.startsWith(dayOrShard)) {
-                // // use the existing max instead of the day to add to the list
-                // dayOrShard = max;
-                // break;
-                // }
+                if (dayOrShard.compareTo(max) >= 0) {
+                    break;
+                }
+                if (ShardEquality.isDay(dayOrShard) && max.startsWith(dayOrShard)) {
+                    // use the existing max instead of the day to add to the list
+                    dayOrShard = max;
+                    break;
+                }
                 itr.next();
             }
             // add the item into our map
