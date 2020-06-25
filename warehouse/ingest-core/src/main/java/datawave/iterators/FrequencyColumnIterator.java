@@ -74,14 +74,8 @@ public class FrequencyColumnIterator extends TransformingIterator {
         
         if (numRecords > 1) {
             kvBuffer.append(newKey, frequencyFamilyCounter.serialize(true));
-            if (newKey.getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX))
-                kvBuffer.append(new Key(newKey.getRow(), newKey.getColumnFamily(), new Text(COL_QUAL_TOTAL)),
-                                new Value(Long.toString(frequencyFamilyCounter.getTotal())));
         } else if (numRecords == 1) {
             kvBuffer.append(topKey, topValue);
-            if (topKey.getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX))
-                kvBuffer.append(new Key(topKey.getRow(), topKey.getColumnFamily(), new Text(COL_QUAL_TOTAL)),
-                                new Value(Long.toString(frequencyFamilyCounter.getTotal())));
             log.info("Range did not need to be transformed  (ran identity transform");
         }
         
