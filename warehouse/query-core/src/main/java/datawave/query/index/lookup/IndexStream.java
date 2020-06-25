@@ -6,6 +6,11 @@ import datawave.query.util.Tuple2;
 
 import com.google.common.collect.PeekingIterator;
 
+/**
+ * IndexStreams must support the PeekingIterator interface.
+ *
+ * All inheriting classes must support the ability to seek to a specific shard.
+ */
 public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
     enum StreamContext {
         /**
@@ -72,4 +77,14 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
     
     JexlNode currentNode();
     
+    /**
+     * Advance the underlying iterator to the first element that is greater than or equal to the <code>seekShard</code>.
+     *
+     * If no data exists beyond the <code>seekShard</code> then a null value is returned, signifying the end of this index stream.
+     *
+     * @param seekShard
+     *            the seek target
+     * @return the top shard after seeking, or null if no more values exist
+     */
+    String seek(String seekShard);
 }
