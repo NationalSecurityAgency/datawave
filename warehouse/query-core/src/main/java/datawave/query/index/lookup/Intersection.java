@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.TreeMultimap;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,10 +16,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
+
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.Tuple2;
@@ -26,20 +26,56 @@ import datawave.query.util.Tuples;
 import datawave.util.StringUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 /**
+ * Intersect global index range streams by the shard key denoting a day range or a shard range.
+ *
  * Intersect global index range streams. This will take a set of underlying streams and will intersect them: e.g. stream 1: 20130102_4/UID1,UID2,UID3
  * 20130104_5/UID5 20130106_2/UID6 20130107/{inf} stream 2: 20130102_4/UID2,UID3 20130104_5/UID5 20130105_3/{inf} 20130106_2/{inf} 20130107_3/{inf}
  * 
  * result: 20130102_4/UID2,UID3 20130104_5/UID5 20130106_2/UID6 20130107_3/{inf}
+ *
+ * <code>
+ * Assumptions:
+ * 1) The streams are ordered
+ * 2) Any one stream cannot contain a mix of day and shards for the same day (e.g. 20130101, 20130101_4, ...)
+ *    In other words, each stream being intersected is a stream of days (20130101, 20130102 ...)
+ *    or a stream of shards (20130101_4, 20130101_8, 20130102_3 ...).
+ * </code>
+ *
+ * More formally, we are intersecting 2 to K iterators of 1 to N sorted elements. The iterators support seeking to the highest top key.
+ *
+ *
+ * Some notes about base cases and edge cases.
+ *
+ * At a high level this class is concerned with intersecting a stream of keys that represent day or shard ranges. To see how individual hits are intersected see
+ * {@link IndexInfo#intersect(IndexInfo)}.
+ *
+ * Only similar shards may be intersected (20190314_22 and 20190314_22), or shards that fall within a day range (20190314_22 and 20190314).
+ *
+ * This class implements an Iterator interface, as well as a PeekingIterator, and a seeking iterator. This functionality holds true at nearly all levels in the
+ * iterator stack. As such it is imperative that care is taken when modifying code in this class or one of the other classes in this stack.
+ *
+ * <code>
+ *     Simple Diagram of IndexStream stack
  * 
- * Assumptions: 1) The streams are ordered 2) Any one stream cannot contain a mix of day and shards for the same day (e.g. 20130101, 20130101_4, ...) In other
- * words, each stream being intersected is a stream of days (20130101, 20130102 ...) or a stream of shards (20130101_4, 20130101_8, 20130102_3 ...).
+ *     Intersection ( you are here )
+ *     - (1 or more layers of Unions, nested Unions and/or Intersections as described by the JexlNode tree)
+ *     - Scanner Stream (1 per query term)
+ *     - RangeStreamScanner (1 per ScannerStream)
+ *     - Iterator on the global index (CreateUidsIterator, 1 per RangeStreamScanner)
+ * </code>
+ *
+ * A note on Seeking to a shard. According to the method contract a seek call will return one of three values;
+ * <ul>
+ * <li>The shard specified.</li>
+ * <li>The next-highest shard if the specified shard does not exist in the IndexStream.</li>
+ * <li>Null if the specified shard lies beyond the bounds of this IndexStream.</li>
+ * </ul>
  */
-public class Intersection implements IndexStream {
+public class Intersection extends BaseIndexStream {
     private TreeMultimap<String,IndexStream> children;
     private final StreamContext context;
     private final String contextDebug;
@@ -148,7 +184,6 @@ public class Intersection implements IndexStream {
                 this.contextDebug = "children may intersect";
                 next();
             }
-            
         } else {
             this.context = StreamContext.ABSENT;
             this.contextDebug = "no children";
@@ -157,19 +192,9 @@ public class Intersection implements IndexStream {
             log.trace("Stream context " + this.context);
     }
     
-    protected boolean isDelayed(JexlNode testNode) {
-        if (ASTDelayedPredicate.instanceOf(testNode)) {
-            return true;
-            // We do not consider the index hole marker delayed as that is only a hole in the global index, not the field index
-            // } else if (IndexHoleMarkerJexlNode.instanceOf(testNode)) {
-            // return true;
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(testNode)) {
-            return true;
-        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(testNode)) {
-            return true;
-        } else {
-            return false;
-        }
+    @Override
+    public Tuple2<String,IndexInfo> peek() {
+        return next;
     }
     
     @Override
@@ -180,28 +205,33 @@ public class Intersection implements IndexStream {
     @Override
     public Tuple2<String,IndexInfo> next() {
         Tuple2<String,IndexInfo> ret = next;
-        
         next = null;
-        
         while (!children.isEmpty() && next == null) {
             final SortedSet<String> keys = children.keySet();
             if (keys.size() == 1) {
-                IndexInfo shard = intersect(children.values());
-                
-                if (shard.count() != 0) {
-                    next = Tuples.tuple(keys.first(), shard);
-                }
-                children = nextAll(keys.first(), children.get(keys.first()));
+                intersect(keys);
             } else {
-                children = pivot(children);
+                // Seek all child IndexStreams to the highest top key.
+                String max = children.keySet().last();
+                children = advanceStreams(children, max);
             }
         }
         return ret;
     }
     
-    @Override
-    public Tuple2<String,IndexInfo> peek() {
-        return next;
+    /**
+     * Intersect the top elements of all child IndexStreams, then advance.
+     *
+     * @param keys
+     *            a sorted set of child IndexStreams. Should be of size 1.
+     */
+    public void intersect(SortedSet<String> keys) {
+        IndexInfo shard = intersect(children.values());
+        
+        if (shard.count() != 0) {
+            next = Tuples.tuple(keys.first(), shard);
+        }
+        children = nextAll(keys.first(), children.get(keys.first()));
     }
     
     @Override
@@ -211,11 +241,18 @@ public class Intersection implements IndexStream {
         return key(itr.peek());
     }
     
-    static String key(Tuple2<String,IndexInfo> tuple) {
+    public static String key(Tuple2<String,IndexInfo> tuple) {
         return tuple.first();
     }
     
-    static Iterable<IndexInfo> convert(Iterable<? extends PeekingIterator<Tuple2<String,IndexInfo>>> i) {
+    /**
+     * Converts an iterator of String-IndexInfo to an iterator of IndexInfo objects
+     *
+     * @param i
+     *            an iterator of iterators, irritating isn't it?
+     * @return an iterator whose elements are IndexInfo objects
+     */
+    public static Iterable<IndexInfo> convert(Iterable<? extends PeekingIterator<Tuple2<String,IndexInfo>>> i) {
         final Function<PeekingIterator<Tuple2<String,IndexInfo>>,IndexInfo> f = itr -> {
             if (log.isTraceEnabled())
                 log.trace("ah" + itr.peek().first() + " " + itr.peek().second());
@@ -224,7 +261,14 @@ public class Intersection implements IndexStream {
         return Iterables.transform(i, f);
     }
     
-    IndexInfo intersect(Iterable<? extends PeekingIterator<Tuple2<String,IndexInfo>>> iterators) {
+    /**
+     * Intersect the top {@link IndexInfo} elements.
+     *
+     * @param iterators
+     *            an iterator of child IndexStreams
+     * @return
+     */
+    public IndexInfo intersect(Iterable<? extends PeekingIterator<Tuple2<String,IndexInfo>>> iterators) {
         Iterator<IndexInfo> infos = convert(iterators).iterator();
         IndexInfo merged = infos.next();
         
@@ -262,7 +306,7 @@ public class Intersection implements IndexStream {
         return merged;
     }
     
-    static boolean allChildrenAreUnindexed(Iterable<IndexStream> stuff) {
+    public static boolean allChildrenAreUnindexed(Iterable<IndexStream> stuff) {
         for (IndexStream is : stuff) {
             if (StreamContext.UNINDEXED != is.context()) {
                 return false;
@@ -278,10 +322,12 @@ public class Intersection implements IndexStream {
      * then it is added into the returned multimap with the next key it will return. If an iterator ever does not have a have a next, an empty multimap is
      * returned, signifying the exhaustion of this intersection.
      */
-    static TreeMultimap<String,IndexStream> nextAll(String key, Collection<IndexStream> streams) {
+    public static TreeMultimap<String,IndexStream> nextAll(String key, Collection<IndexStream> streams) {
         TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
         for (IndexStream itr : streams) {
-            if (!isDay(key) && isDay(key(itr.peek()))) {
+            
+            // If we are next'ing based on a shard and this is a day, keep the day.
+            if (!ShardEquality.isDay(key) && ShardEquality.isDay(key(itr.peek()))) {
                 newChildren.put(itr.peek().first(), itr);
             } else {
                 itr.next();
@@ -296,6 +342,13 @@ public class Intersection implements IndexStream {
     }
     
     /*
+     * This method is deprecated because it is faster to seek() the underlying RangeStreamScanner than to next() through the IndexStream.
+     * 
+     * Consider the arbitrary case of intersecting two streams of integers. One stream contains every integer between 1 and 100, inclusive. The second stream
+     * has two values, 1 and 100. There is no point in advancing the stream with a hundred integers by calling next() 99 times when a single seek() call would
+     * suffice.
+     * 
+     * 
      * Calls `next()` on all iterators that aren't mapped to the highest key in the multimap until that iterator's next value (as returned by `peek()`) is
      * greater than or equal to the previous max key.
      * 
@@ -303,7 +356,8 @@ public class Intersection implements IndexStream {
      * 
      * <code>children</code> must be non-empty
      */
-    static TreeMultimap<String,IndexStream> pivot(TreeMultimap<String,IndexStream> children) {
+    @Deprecated
+    public static TreeMultimap<String,IndexStream> pivot(TreeMultimap<String,IndexStream> children) {
         TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
         final String max = children.keySet().last();
         newChildren.putAll(max, children.removeAll(max));
@@ -316,7 +370,7 @@ public class Intersection implements IndexStream {
                 if (dayOrShard.compareTo(max) >= 0) {
                     break;
                 }
-                if (isDay(dayOrShard) && max.startsWith(dayOrShard)) {
+                if (ShardEquality.isDay(dayOrShard) && max.startsWith(dayOrShard)) {
                     // use the existing max instead of the day to add to the list
                     dayOrShard = max;
                     break;
@@ -334,12 +388,152 @@ public class Intersection implements IndexStream {
         return newChildren;
     }
     
-    static boolean isDay(String dayOrShard) {
-        return (dayOrShard.indexOf('_') < 0);
+    /**
+     * For each IndexStream not already mapped to the high key, advance the stream to the specified high key. This method will dynamically update the high key
+     * if a new high key is found.
+     *
+     * If an IndexStream is exhausted by the seek call, an empty multi-map is returned to signify the end of this intersection.
+     *
+     * @param children
+     *            a non-empty sorted multi-map of {@link IndexStream}
+     * @param max
+     *            the seek key
+     * @return a new sorted multi-map of {@link IndexStream}, or an empty multi-map if the intersection is exhausted
+     */
+    public static TreeMultimap<String,IndexStream> advanceStreams(TreeMultimap<String,IndexStream> children, String max) {
+        TreeMultimap<String,IndexStream> newChildren = TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+        
+        // Remove all IndexStreams already mapped to the highest key.
+        newChildren.putAll(max, children.removeAll(max));
+        
+        for (IndexStream stream : children.values()) {
+            
+            // Advance the IndexStream to the high key.
+            String dayOrShard = advanceStream(stream, max);
+            
+            // Cannot intersect with an empty IndexStream, return empty multi-map to signify end of intersection.
+            if (dayOrShard == null || !stream.hasNext()) {
+                return TreeMultimap.create(Ordering.natural(), Ordering.arbitrary());
+            } else {
+                // add the item into our map
+                newChildren.put(dayOrShard, stream);
+                
+                // Adaptive max.
+                if (dayOrShard.compareTo(max) > 0) {
+                    max = dayOrShard;
+                }
+            }
+        }
+        return newChildren;
     }
     
-    static boolean isShard(String dayOrShard) {
-        return !isDay(dayOrShard);
+    /**
+     * Advance the IndexStream to the high key (shard), or the next-highest key if the high key does not exist but there are still results.
+     *
+     * If no results exist at or beyond the high key, a null value is returned.
+     *
+     * @param stream
+     *            the IndexStream
+     * @param max
+     *            the seek key
+     * @return the shard advanced to, or null if the IndexStream is exhausted
+     */
+    public static String advanceStream(IndexStream stream, String max) {
+        String dayOrShard = null;
+        while (stream.hasNext()) {
+            
+            dayOrShard = stream.peek().first();
+            
+            if (ShardEquality.greaterThanOrEqual(dayOrShard, max)) {
+                break;
+            }
+            if (ShardEquality.matches(dayOrShard, max)) {
+                dayOrShard = max;
+                break;
+            }
+            
+            // Delegate seek operation to the underlying IndexStream
+            dayOrShard = stream.seek(max);
+        }
+        return dayOrShard;
+    }
+    
+    /**
+     * Seek the underlying IndexStreams to the specified high key.
+     *
+     * This method is a wrapper around {@link #advanceStreams}. It ensures this intersection always seeks to the next common key.
+     *
+     * @param seekShard
+     *            the shard to advance to.
+     * @return the lowest shard after seeking
+     */
+    @Override
+    public String seek(String seekShard) {
+        
+        // Guard against the case when an seek range like YYYYMMDD_ is provided.
+        if (seekShard.charAt(seekShard.length() - 1) == '_')
+            seekShard = new String(seekShard.getBytes(), 0, seekShard.length() - 1);
+        
+        // Check the current element first
+        String currShard = isTopElementAMatch(seekShard);
+        if (currShard != null) {
+            // If the top element is a day and we are seeking to a shard range within the day, re-map the top element to the shard range. This allows us to
+            // actually intersect.
+            if (ShardEquality.matches(this.next.first(), seekShard) && ShardEquality.isShard(seekShard)) {
+                this.next = new Tuple2<>(seekShard, this.next.second());
+            }
+            
+            return currShard;
+        } else {
+            // If the top element did not match then null it out. We're skipping forward.
+            this.next = null;
+        }
+        
+        // Initial seek
+        children = advanceStreams(children, seekShard);
+        
+        // Continue seeking until the next intersection is reached (when each IndexStream maps to a single common key)
+        while (children.keySet().size() > 1) {
+            String max = children.keySet().last();
+            children = advanceStreams(children, max);
+        }
+        
+        if (!children.isEmpty()) {
+            // We only advanced the IndexStreams. Now intersect them and return the shard key for this intersection.
+            next();
+            
+            // Check to make sure this intersection did not advance beyond the end of it's data.
+            if (next != null) {
+                return next.first();
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Used to determine if this intersection should be seek'd to the provided shard.
+     *
+     * Returns false if the top element sorts less than the provided shard.
+     *
+     * @param shard
+     *            the shard to match
+     * @return true if the top element is equal or greater than the shard
+     */
+    public String isTopElementAMatch(String shard) {
+        // Check the current element first
+        if (next != null) {
+            
+            // Is it greater than or equal to the seek shard
+            String topShard = next.first();
+            
+            if (ShardEquality.greaterThanOrEqual(topShard, shard)) {
+                return topShard;
+            }
+            if (ShardEquality.matches(topShard, shard)) {
+                return shard;
+            }
+        }
+        return null;
     }
     
     public static class Builder {
@@ -347,7 +541,7 @@ public class Intersection implements IndexStream {
         
         protected UidIntersector uidIntersector = new IndexInfo();
         
-        protected IdentityHashMap<IndexStream,Object> children = new IdentityHashMap<>();
+        protected IdentityHashMap<BaseIndexStream,Object> children = new IdentityHashMap<>();
         
         protected List<ConcurrentScannerInitializer> todo = Lists.newArrayList();
         
@@ -357,7 +551,7 @@ public class Intersection implements IndexStream {
             this.uidIntersector = uidIntersector;
         }
         
-        public boolean addChild(IndexStream child) {
+        public boolean addChild(BaseIndexStream child) {
             if (built) {
                 throw new IllegalStateException("Builder already built an Intersection!");
             } else {
@@ -365,7 +559,7 @@ public class Intersection implements IndexStream {
             }
         }
         
-        public ArrayList<IndexStream> children() {
+        public ArrayList<BaseIndexStream> children() {
             return Lists.newArrayList(children.keySet());
         }
         
@@ -374,8 +568,8 @@ public class Intersection implements IndexStream {
             if (!todo.isEmpty()) {
                 if (log.isTraceEnabled())
                     log.trace("building " + todo.size() + " scanners concurrently");
-                Collection<IndexStream> streams = ConcurrentScannerInitializer.initializeScannerStreams(todo, service);
-                for (IndexStream stream : streams) {
+                Collection<BaseIndexStream> streams = ConcurrentScannerInitializer.initializeScannerStreams(todo, service);
+                for (BaseIndexStream stream : streams) {
                     addChild(stream);
                 }
             }
@@ -389,7 +583,7 @@ public class Intersection implements IndexStream {
         }
         
         public void consume(Builder builder) {
-            for (IndexStream childStream : builder.children()) {
+            for (BaseIndexStream childStream : builder.children()) {
                 addChild(childStream);
             }
             todo.addAll(builder.todo);
