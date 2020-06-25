@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
@@ -36,12 +37,16 @@ import org.apache.hadoop.io.Text;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -185,6 +190,7 @@ public class RangeStreamScannerTest {
     private RangeStreamScanner buildRangeStreamScanner(String fieldName, String fieldValue) throws Exception {
         
         String queryString = fieldName + "=='" + fieldValue + "'";
+        Range range = rangeForTerm(fieldValue, fieldName, config);
         
         // Build the executors
         int maxLookup = (int) Math.max(Math.ceil(config.getNumIndexLookupThreads()), 1);
@@ -194,31 +200,31 @@ public class RangeStreamScannerTest {
         
         int priority = 50; // Iterator priority
         
+        RangeStreamScanner scanSession = scannerFactory.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
+                        config.getShardsPerDayThreshold());
+        
+        scanSession.setMaxResults(config.getMaxIndexBatchSize());
+        scanSession.setExecutor(streamExecutor);
+        
         // Build options for RangeStreamScanner
         SessionOptions options = new SessionOptions();
         options.fetchColumnFamily(new Text(fieldName));
         
-        // Set iterator datatype filter
-        IteratorSetting is = new IteratorSetting(priority++, DataTypeFilter.class);
-        is.addOption(DataTypeFilter.TYPES, config.getDatatypeFilterAsString());
-        options.addScanIterator(is);
+        // Add datatype filter
+        IteratorSetting dtFilter = new IteratorSetting(priority++, DataTypeFilter.class);
+        dtFilter.addOption(DataTypeFilter.TYPES, config.getDatatypeFilterAsString());
+        options.addScanIterator(dtFilter);
         
         // Set iterator option. Do not collapse uids into shard ranges, just pass results back.
         final IteratorSetting uidSetting = new IteratorSetting(priority++, CreateUidsIterator.class);
         uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(false).toString());
-        options.addScanIterator(uidSetting);
         
-        // Set query option
+        options.addScanIterator(uidSetting);
         options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
         
-        // Build RangeStreamScanner
-        RangeStreamScanner rangeStreamScanner = scannerFactory.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                        config.getShardsPerDayThreshold());
-        rangeStreamScanner.setMaxResults(config.getMaxIndexBatchSize());
-        rangeStreamScanner.setExecutor(streamExecutor);
-        rangeStreamScanner.setRanges(Collections.singleton(rangeForTerm(fieldValue, fieldName, config))).setOptions(options);
+        scanSession.setRanges(Collections.singleton(range)).setOptions(options);
         
-        return rangeStreamScanner;
+        return scanSession;
     }
     
     /**
@@ -235,8 +241,8 @@ public class RangeStreamScannerTest {
         // Construct a ScannerStream from RangeStreamScanner, iterator, entry parser.
         RangeStreamScanner rangeStreamScanner = buildRangeStreamScanner(fieldName, fieldValue);
         EntryParser entryParser = new EntryParser(eqNode, fieldName, fieldValue, config.getIndexedFields());
-        Iterator<Tuple2<String,IndexInfo>> iterator = Iterators.transform(rangeStreamScanner, entryParser);
-        ScannerStream scannerStream = ScannerStream.initialized(iterator, eqNode);
+        
+        ScannerStream scannerStream = ScannerStream.initialized(rangeStreamScanner, entryParser, eqNode);
         
         // Assert the iterator correctly iterates over the iterables without irritating the unit test.
         assertTrue(scannerStream.hasNext());
@@ -335,8 +341,8 @@ public class RangeStreamScannerTest {
         // Construct a ScannerStream from RangeStreamScanner, iterator, entry parser.
         RangeStreamScanner rangeStreamScanner = buildRangeStreamScanner(fieldName, fieldValue);
         EntryParser entryParser = new EntryParser(eqNode, fieldName, fieldValue, config.getIndexedFields());
-        Iterator<Tuple2<String,IndexInfo>> iterator = Iterators.transform(rangeStreamScanner, entryParser);
-        ScannerStream scannerStream = ScannerStream.initialized(iterator, eqNode);
+        // Iterator<Tuple2<String,IndexInfo>> iterator = Iterators.transform(rangeStreamScanner, entryParser);
+        ScannerStream scannerStream = ScannerStream.initialized(rangeStreamScanner, entryParser, eqNode);
         
         // Assert the iterator correctly iterates over the iterables without irritating the unit test.
         assertTrue(scannerStream.hasNext());
@@ -370,5 +376,135 @@ public class RangeStreamScannerTest {
         
         key = new Key("row".getBytes(), "cf".getBytes());
         assertNull(rangeStreamScanner.getDay(key));
+    }
+    
+    @Test
+    public void testAdvanceQueueToShard() throws Exception {
+        
+        TreeMap<Key,Value> sortedDatas = new TreeMap<>();
+        for (int ii = 0; ii < 20; ii++) {
+            Entry<Key,Value> entry = buildEntry("20190314_" + ii, "FOO", "bar");
+            sortedDatas.put(entry.getKey(), entry.getValue());
+        }
+        
+        Queue<Entry<Key,Value>> datas = Queues.newArrayDeque();
+        for (Key key : sortedDatas.keySet()) {
+            datas.add(new AbstractMap.SimpleEntry<>(key, sortedDatas.get(key)));
+        }
+        
+        RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
+        
+        assertEquals("20190314_0", datas.peek().getKey().getColumnQualifier().toString());
+        scanner.advanceQueueToShard(datas, "20190314_15");
+        assertEquals("20190314_15", datas.peek().getKey().getColumnQualifier().toString());
+    }
+    
+    @Test
+    public void testShardFromKey() {
+        Key key = new Key("baz", "FOO", "20190314_0");
+        assertEquals("20190314_0", RangeStreamScanner.shardFromKey(key));
+        
+        key = new Key("baz", "FOO", "20190314_");
+        assertEquals("20190314", RangeStreamScanner.shardFromKey(key));
+        
+        key = new Key("baz", "FOO", "20190314");
+        assertEquals("20190314", RangeStreamScanner.shardFromKey(key));
+    }
+    
+    @Test
+    public void testTrimTrailingUnderscoreFromKey() {
+        // Expected case.
+        Key underscored = new Key("bar", "FOO", "20190314_");
+        Key expected = new Key("bar", "FOO", "20190314");
+        assertEquals(expected, RangeStreamScanner.trimTrailingUnderscore(underscored));
+        
+        // Ensure shard ranges are not affected.
+        Key shard = new Key("bar", "FOO", "20190314_0");
+        assertEquals(shard, RangeStreamScanner.trimTrailingUnderscore(shard));
+    }
+    
+    @Test
+    public void testTrimTrailingUnderscoreFromEntry() {
+        // Expected case.
+        Entry<Key,Value> underscored = new AbstractMap.SimpleEntry<>(new Key("bar", "FOO", "20190314_"), new Value());
+        Entry<Key,Value> expected = new AbstractMap.SimpleEntry<>(new Key("bar", "FOO", "20190314"), new Value());
+        assertEquals(expected, RangeStreamScanner.trimTrailingUnderscore(underscored));
+        
+        // Ensure shard ranges are not affected.
+        Entry<Key,Value> shard = new AbstractMap.SimpleEntry<>(new Key("bar", "FOO", "20190314_0"), new Value());
+        assertEquals(shard, RangeStreamScanner.trimTrailingUnderscore(shard));
+    }
+    
+    @Test
+    public void testCurrentEntryMatchesShard_exactMatch() throws Exception {
+        RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
+        
+        // Top value is a day
+        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
+        scanner.currentEntry = topDay;
+        assertEquals("20190314", scanner.currentEntryMatchesShard("20190314"));
+        
+        // Top value is a shard
+        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
+        scanner.currentEntry = topShard;
+        assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190314_0"));
+    }
+    
+    @Test
+    public void testCurrentEntryMatchesShard_topShardBeyondSeekShard() throws Exception {
+        RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
+        
+        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
+        scanner.currentEntry = topDay;
+        assertEquals("20190314", scanner.currentEntryMatchesShard("20190310"));
+        
+        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
+        scanner.currentEntry = topShard;
+        assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190310_0"));
+    }
+    
+    @Test
+    public void testCurrentEntryMatchesShard_topShardMatchesDay() throws Exception {
+        RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
+        
+        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
+        scanner.currentEntry = topShard;
+        assertEquals("20190314_0", scanner.currentEntryMatchesShard("20190310"));
+    }
+    
+    @Test
+    public void testCurrentEntryMatchesShard_topDayMatchesShard() throws Exception {
+        RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
+        
+        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
+        scanner.currentEntry = topDay;
+        assertEquals("20190314", scanner.currentEntryMatchesShard("20190310_0"));
+    }
+    
+    @Test
+    public void testCurrentEntryMatchesShard_noMatch() throws Exception {
+        RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
+        
+        Entry<Key,Value> topDay = buildEntry("20190314", "FOO", "bar");
+        scanner.currentEntry = topDay;
+        assertNull(scanner.currentEntryMatchesShard("20190315"));
+        
+        Entry<Key,Value> topShard = buildEntry("20190314_0", "FOO", "bar");
+        scanner.currentEntry = topShard;
+        assertNull("20190314_0", scanner.currentEntryMatchesShard("20190315_0"));
+    }
+    
+    // Assumes entries have the datatype stripped off, per the CreateUidsIterator contract.
+    private Entry<Key,Value> buildEntry(String shard, String field, String value) {
+        Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.addAllUID(Collections.singletonList("uid0"));
+        builder.setCOUNT(1);
+        builder.setIGNORE(false);
+        Uid.List list = builder.build();
+        
+        Value uids = new Value(list.toByteArray());
+        Key key = new Key(value, field, shard);
+        
+        return new AbstractMap.SimpleEntry<>(key, uids);
     }
 }
