@@ -689,7 +689,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     /**
      * Get the shard from the accumulo key.
      *
-     * The {@link datawave.query.index.lookup.CondensedUidIterator} adds a trailing underscore, strip that off of the returned shard.
+     * Strip any trailing underscores from the returned shard.
      *
      * @param key
      *            the key to everything
@@ -881,8 +881,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     }
     
     /**
-     * The {@link datawave.query.index.lookup.CondensedUidIterator} will append a trailing underscore to a day range and the {@link CondensedRangeStreamScanner}
-     * will remove it. To account for this we must check for and remove any underscores that exist.
+     * It may be possible that a trailing underscore is appended to a day range. Check for and remove any trailing underscores that exist.
      *
      * @param key
      *            the key
