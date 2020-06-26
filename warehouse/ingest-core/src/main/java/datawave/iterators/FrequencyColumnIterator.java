@@ -14,7 +14,7 @@ import java.io.IOException;
 
 public class FrequencyColumnIterator extends TransformingIterator {
     public static final String COL_QUAL_TOTAL = "total";
-    private FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
+    private FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter(false);
     
     public FrequencyColumnIterator() {};
     
@@ -73,7 +73,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
         }
         
         if (numRecords > 1) {
-            kvBuffer.append(newKey, frequencyFamilyCounter.serialize(true));
+            kvBuffer.append(newKey, frequencyFamilyCounter.serialize());
         } else if (numRecords == 1) {
             kvBuffer.append(topKey, topValue);
             log.info("Range did not need to be transformed  (ran identity transform");
