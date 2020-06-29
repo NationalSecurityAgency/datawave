@@ -1,0 +1,10 @@
+<Model xmlns="http://webservice.datawave/v1" name="Model3">
+    <Mappings>
+        <Mapping datatype="d1" fieldName="field_f" modelFieldName="model_field_3" direction="FORWARD" columnVisibility="PUBLIC"/>
+        <Mapping datatype="d2" fieldName="field_e" modelFieldName="model_field_5" direction="REVERSE" columnVisibility="PRIVATE"/>
+        <Mapping datatype="d3" fieldName="field_d" modelFieldName="model_field_1" direction="FORWARD" columnVisibility="PUBLIC"/>
+        <Mapping datatype="d4" fieldName="field_c" modelFieldName="model_field_2" direction="REVERSE" columnVisibility="PRIVATE"/>
+        <Mapping datatype="d5" fieldName="field_b" modelFieldName="model_field_4" direction="FORWARD" columnVisibility="PUBLIC"/>
+        <Mapping datatype="d6" fieldName="field_a" modelFieldName="model_field_6" direction="REVERSE" columnVisibility="PRIVATE"/>
+    </Mappings>
+</Model>

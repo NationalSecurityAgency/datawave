@@ -26,7 +26,7 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
     private static final long serialVersionUID = 1L;
     private String jqueryUri;
     private String dataTablesUri;
-    private static final String TITLE = "Model Description", EMPTY = "";
+    private static final String TITLE = "Model Description";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
                     + "<script type=''text/javascript'' src=''{1}''></script>\n"
                     + "<script type=''text/javascript''>\n"

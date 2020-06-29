@@ -119,9 +119,8 @@ public class FieldMapping implements Serializable, Comparable<FieldMapping> {
         if (obj == this)
             return 0;
         
-        return new CompareToBuilder().append(datatype, ((FieldMapping) obj).datatype).append(fieldName, ((FieldMapping) obj).fieldName)
-                        .append(modelFieldName, ((FieldMapping) obj).modelFieldName).append(direction, ((FieldMapping) obj).direction)
-                        .append(columnVisibility, ((FieldMapping) obj).columnVisibility).toComparison();
+        return new CompareToBuilder().append(datatype, obj.datatype).append(fieldName, obj.fieldName).append(modelFieldName, obj.modelFieldName)
+                        .append(direction, obj.direction).append(columnVisibility, obj.columnVisibility).toComparison();
     }
     
 }

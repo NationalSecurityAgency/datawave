@@ -94,26 +94,26 @@ public class ModelKeyParserTest {
     
     @Test
     public void testForwardKeyParse() throws Exception {
-        FieldMapping mapping = ModelKeyParser.parseKey(FORWARD_KEY, AUTHS);
+        FieldMapping mapping = ModelKeyParser.parseKey(FORWARD_KEY);
         Assert.assertEquals(FORWARD_FIELD_MAPPING, mapping);
         
         // Test ForwardKeyParse with no datatype
         FORWARD_FIELD_MAPPING.setDatatype(null);
         FORWARD_KEY = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
         
-        mapping = ModelKeyParser.parseKey(FORWARD_KEY, AUTHS);
+        mapping = ModelKeyParser.parseKey(FORWARD_KEY);
         Assert.assertEquals(FORWARD_FIELD_MAPPING, mapping);
     }
     
     @Test
     public void testReverseKeyParse() throws Exception {
-        FieldMapping mapping = ModelKeyParser.parseKey(REVERSE_KEY, AUTHS);
+        FieldMapping mapping = ModelKeyParser.parseKey(REVERSE_KEY);
         Assert.assertEquals(REVERSE_FIELD_MAPPING, mapping);
         
         // Test ReverseKeyParse with no datatype
         REVERSE_FIELD_MAPPING.setDatatype(null);
         REVERSE_KEY = new Key(FIELD_NAME, MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), COLVIZ, TIMESTAMP);
-        mapping = ModelKeyParser.parseKey(REVERSE_KEY, AUTHS);
+        mapping = ModelKeyParser.parseKey(REVERSE_KEY);
         Assert.assertEquals("ReverseKeyParse with no datatype failed.", REVERSE_FIELD_MAPPING, mapping);
     }
     
@@ -251,7 +251,7 @@ public class ModelKeyParserTest {
     
     @Test
     public void testParseKeyNullCV() throws Exception {
-        FieldMapping mapping = ModelKeyParser.parseKey(NULL_CV_KEY, AUTHS);
+        FieldMapping mapping = ModelKeyParser.parseKey(NULL_CV_KEY);
         Assert.assertEquals(NULL_CV_MAPPING, mapping);
     }
     
@@ -340,20 +340,20 @@ public class ModelKeyParserTest {
     public void testKeyWithNoDirection() throws Exception {
         // Test key with no direction
         Key keyNoDirection = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME, COLVIZ, TIMESTAMP);
-        ModelKeyParser.parseKey(keyNoDirection, AUTHS);
+        ModelKeyParser.parseKey(keyNoDirection);
     }
     
     @Test(expected = IllegalArgumentException.class)
     public void testKeyWithInvalidDirection() throws Exception {
         Key keyWrongDirection = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "someInvalidDirection", COLVIZ, TIMESTAMP);
-        ModelKeyParser.parseKey(keyWrongDirection, AUTHS);
+        ModelKeyParser.parseKey(keyWrongDirection);
     }
     
     @Test(expected = IllegalArgumentException.class)
     public void testKeyWithTooManyPartsInColQualifier() throws Exception {
         Key keyTooManyParts = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue() + ModelKeyParser.NULL_BYTE
                         + "index_only" + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), COLVIZ, TIMESTAMP);
-        ModelKeyParser.parseKey(keyTooManyParts, AUTHS);
+        ModelKeyParser.parseKey(keyTooManyParts);
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -361,7 +361,7 @@ public class ModelKeyParserTest {
         // Correct cq: field\x00
         Key mismatchedParts = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue() + ModelKeyParser.NULL_BYTE
                         + "index_only", COLVIZ, TIMESTAMP);
-        ModelKeyParser.parseKey(mismatchedParts, AUTHS);
+        ModelKeyParser.parseKey(mismatchedParts);
         Assert.fail("Expected IllegalArgumentException on key with 'index_only' and 'forward' in wrong positions.");
     }
     
@@ -370,6 +370,6 @@ public class ModelKeyParserTest {
         // Test index_only on a reverse key.. reverse keys should not have index_only
         Key reverseIndexOnly = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + REVERSE.getValue(), COLVIZ,
                         TIMESTAMP);
-        ModelKeyParser.parseKey(reverseIndexOnly, AUTHS);
+        ModelKeyParser.parseKey(reverseIndexOnly);
     }
 }
