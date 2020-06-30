@@ -1,7 +1,0 @@
-<j2eeRoleService>
-  <id>ffffffff:fffffffffff:-7ffe</id>
-  <name>j2ee-role-service</name>
-  <className>org.geoserver.security.impl.GeoServerJ2eeRoleService</className>
-  <adminRoleName>Administrator</adminRoleName>
-  <groupAdminRoleName>JBossAdministrator</groupAdminRoleName>
-</j2eeRoleService>

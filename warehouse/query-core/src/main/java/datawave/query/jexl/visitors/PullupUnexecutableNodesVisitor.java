@@ -73,11 +73,13 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     protected Set<String> nonEventFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> indexedFields;
+    protected boolean forFieldIndex;
     
-    public PullupUnexecutableNodesVisitor(ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields,
-                    MetadataHelper helper) {
+    public PullupUnexecutableNodesVisitor(ShardQueryConfiguration config, boolean forFieldIndex, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    Set<String> nonEventFields, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
+        this.forFieldIndex = forFieldIndex;
         this.indexedFields = indexedFields;
         this.indexOnlyFields = indexOnlyFields;
         this.nonEventFields = nonEventFields;
@@ -113,15 +115,19 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     
     private static final Logger log = Logger.getLogger(PullupUnexecutableNodesVisitor.class);
     
-    public static JexlNode pullupDelayedPredicates(JexlNode queryTree, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                    Set<String> nonEventFields, MetadataHelper helper) {
-        PullupUnexecutableNodesVisitor visitor = new PullupUnexecutableNodesVisitor(config, indexedFields, indexOnlyFields, nonEventFields, helper);
-        return (JexlNode) queryTree.jjtAccept(visitor, null);
+    public static JexlNode pullupDelayedPredicates(JexlNode queryTree, boolean forFieldIndex, ShardQueryConfiguration config, Set<String> indexedFields,
+                    Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
+        PullupUnexecutableNodesVisitor visitor = new PullupUnexecutableNodesVisitor(config, forFieldIndex, indexedFields, indexOnlyFields, nonEventFields,
+                        helper);
+        
+        // rewrite the trees by pushing down all negations first
+        JexlNode pushDownTree = PushdownNegationVisitor.pushdownNegations(queryTree);
+        return (JexlNode) pushDownTree.jjtAccept(visitor, null);
     }
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, forFieldIndex, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -130,7 +136,8 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     private boolean containsChild(JexlNode node, ExecutableDeterminationVisitor.STATE state) {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
-            if (state == ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+            if (state == ExecutableDeterminationVisitor.getState(child, forFieldIndex, config, indexedFields, indexOnlyFields, nonEventFields, false, null,
+                            helper)) {
                 return true;
             }
         }
@@ -143,7 +150,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         // TODO we should use some cost/index stats info
         
         // determine if we have any executable children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             
             boolean executable = containsChild(node, ExecutableDeterminationVisitor.STATE.EXECUTABLE);
             
@@ -155,10 +162,10 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode child = node.jjtGetChild(i);
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                                nonEventFields, false, null, helper);
+                                nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.ERROR) {
                     child.jjtAccept(this, data);
-                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper);
+                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
                 }
                 if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
                     executable = true;
@@ -169,10 +176,10 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
                 JexlNode child = node.jjtGetChild(i);
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                                nonEventFields, false, null, helper);
+                                nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
                     child.jjtAccept(this, data);
-                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper);
+                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
                 }
                 if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
                     executable = true;
@@ -183,10 +190,10 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
                 JexlNode child = node.jjtGetChild(i);
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                                nonEventFields, false, null, helper);
+                                nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE) {
                     child.jjtAccept(this, data);
-                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper);
+                    state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
                 }
                 if (state == ExecutableDeterminationVisitor.STATE.EXECUTABLE) {
                     executable = true;
@@ -202,10 +209,10 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTOrNode node, Object data) {
         // if not executable, then visit all non-executable children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode child = node.jjtGetChild(i);
-                if (!ExecutableDeterminationVisitor.isExecutable(child, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+                if (!ExecutableDeterminationVisitor.isExecutable(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
                     child.jjtAccept(this, data);
                 }
             }
@@ -216,7 +223,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not executable, then visit all children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -225,7 +232,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNotNode node, Object data) {
         // if not executable, then visit all children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -238,7 +245,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             JexlNode source = ASTDelayedPredicate.getDelayedPredicateSource(node);
             JexlNodes.swap(node.jjtGetParent(), node, source);
             return source;
-        } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
+        } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }
         return node;

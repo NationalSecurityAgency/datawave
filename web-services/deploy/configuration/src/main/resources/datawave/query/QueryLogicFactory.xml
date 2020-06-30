@@ -316,6 +316,15 @@
         <property name="logicDescription" value="Query that returns a document given the document identifier" />
     </bean>
 
+    <!-- Query Logic that returns document term frequency information -->
+    <bean id="TermFrequencyQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.term.TermFrequencyQueryTable">
+        <property name="tableName" value="${shard.table.name}" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns data from the term frequency query table" />
+    </bean>
+
     <!-- Query Logic which performs a count on error table fieldIndex keys -->
     <bean id="ErrorFieldIndexCountQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.shard.FieldIndexCountQueryLogic">
         <property name="tableName" value="${error.shard.table.name}" />

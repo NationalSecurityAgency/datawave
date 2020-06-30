@@ -1,6 +1,5 @@
 package datawave.query.jexl.functions;
 
-import com.vividsolutions.jts.geom.Envelope;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -15,6 +14,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.locationtech.jts.geom.Envelope;
 import org.powermock.reflect.Whitebox;
 
 import java.io.BufferedReader;

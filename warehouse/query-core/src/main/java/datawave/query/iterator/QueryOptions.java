@@ -47,6 +47,7 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataProvider;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
 import org.apache.accumulo.core.data.Key;
@@ -210,6 +211,10 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String IVARATOR_NUM_RETRIES = "ivarator.num.retries";
     
+    public static final String IVARATOR_PERSIST_VERIFY = "ivarator.persist.verify";
+    
+    public static final String IVARATOR_PERSIST_VERIFY_COUNT = "ivarator.persist.verify.count";
+    
     public static final String MAX_IVARATOR_SOURCES = "max.ivarator.sources";
     
     public static final String MAX_IVARATOR_RESULTS = "max.ivarator.results";
@@ -320,6 +325,7 @@ public class QueryOptions implements OptionDescriber {
     protected int maxIndexRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
     protected int ivaratorNumRetries = 2;
+    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
     
     protected int maxIvaratorSources = 33;
     
@@ -881,6 +887,14 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorNumRetries = ivaratorNumRetries;
     }
     
+    public FileSortedSet.PersistOptions getIvaratorPersistOptions() {
+        return ivaratorPersistOptions;
+    }
+    
+    public void setIvaratorPersistOptions(FileSortedSet.PersistOptions ivaratorPersistOptions) {
+        this.ivaratorPersistOptions = ivaratorPersistOptions;
+    }
+    
     public int getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
@@ -1438,6 +1452,18 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(IVARATOR_NUM_RETRIES)) {
             this.setIvaratorNumRetries(Integer.parseInt(options.get(IVARATOR_NUM_RETRIES)));
+        }
+        
+        if (options.containsKey(IVARATOR_PERSIST_VERIFY)) {
+            boolean verify = Boolean.parseBoolean(options.get(IVARATOR_PERSIST_VERIFY));
+            FileSortedSet.PersistOptions persistOptions = getIvaratorPersistOptions();
+            this.setIvaratorPersistOptions(new FileSortedSet.PersistOptions(verify, verify, persistOptions.getNumElementsToVerify()));
+        }
+        
+        if (options.containsKey(IVARATOR_PERSIST_VERIFY_COUNT)) {
+            int numElements = Integer.parseInt(options.get(IVARATOR_PERSIST_VERIFY_COUNT));
+            FileSortedSet.PersistOptions persistOptions = getIvaratorPersistOptions();
+            this.setIvaratorPersistOptions(new FileSortedSet.PersistOptions(persistOptions.isVerifySize(), persistOptions.isVerifyElements(), numElements));
         }
         
         if (options.containsKey(MAX_IVARATOR_SOURCES)) {
