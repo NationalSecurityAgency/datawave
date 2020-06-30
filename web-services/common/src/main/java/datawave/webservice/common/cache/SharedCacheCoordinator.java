@@ -59,7 +59,7 @@ public class SharedCacheCoordinator implements Serializable {
     private transient CuratorFramework curatorClient;
     private String localName;
     private String serverIdentifierPath;
-    private PersistentNode serverIdentifierNode;
+    private transient PersistentNode serverIdentifierNode;
     
     private int evictionReaperIntervalInSeconds;
     private int numLocks;

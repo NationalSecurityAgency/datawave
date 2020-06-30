@@ -596,15 +596,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // not carry block size or replication across. This is especially important because by default the
             // MapReduce jobs produce output with the replication set to 1 and we definitely don't want to preserve
             // that when copying across clusters.
-            //@formatter:off
-            DistCpOptions options = new DistCpOptions.Builder(srcPath, destPath)
-                .withLogPath(logPath)
-                .withSyncFolder(true)
-                .preserve(DistCpOptions.FileAttribute.USER)
-                .preserve(DistCpOptions.FileAttribute.GROUP)
-                .preserve(DistCpOptions.FileAttribute.PERMISSION)
-                .build();
-            //@formatter:on
+            DistCpOptions options = new DistCpOptions(srcPath, destPath);
+            options.setLogPath(logPath);
+            options.setSyncFolder(true);
+            options.preserve(DistCpOptions.FileAttribute.USER);
+            options.preserve(DistCpOptions.FileAttribute.GROUP);
+            options.preserve(DistCpOptions.FileAttribute.PERMISSION);
             String[] args = (jobtracker == null) ? new String[0] : new String[] {"-jt", jobtracker};
             int res = ToolRunner.run(conf, new DistCp(conf, options), args);
             if (res != 0) {

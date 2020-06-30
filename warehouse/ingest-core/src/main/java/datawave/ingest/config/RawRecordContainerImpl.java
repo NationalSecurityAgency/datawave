@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -403,11 +404,6 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         return copyInto(new RawRecordContainerImpl());
     }
     
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals(Object other) {
         if (other == null) {
@@ -435,6 +431,24 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         equals.append(this.auxMap, e.auxMap);
         equals.append(this.securityMarkings, e.securityMarkings);
         return equals.isEquals();
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = (int) (eventDate ^ (eventDate >>> 32));
+        result = 31 * result + (dataType != null ? dataType.hashCode() : 0);
+        result = 31 * result + (uid != null ? uid.hashCode() : 0);
+        result = 31 * result + (errors != null ? errors.hashCode() : 0);
+        result = 31 * result + (visibility != null ? visibility.hashCode() : 0);
+        result = 31 * result + (rawFileName != null ? rawFileName.hashCode() : 0);
+        result = 31 * result + (int) (rawFileTimeStamp ^ (rawFileTimeStamp >>> 32));
+        result = 31 * result + (int) (rawRecordNumber ^ (rawRecordNumber >>> 32));
+        result = 31 * result + (ids != null ? ids.hashCode() : 0);
+        result = 31 * result + Arrays.hashCode(rawData);
+        result = 31 * result + (auxData != null ? auxData.hashCode() : 0);
+        result = 31 * result + (auxMap != null ? auxMap.hashCode() : 0);
+        result = 31 * result + (securityMarkings != null ? securityMarkings.hashCode() : 0);
+        return result;
     }
     
     /**

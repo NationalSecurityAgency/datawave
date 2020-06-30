@@ -167,7 +167,7 @@ public class ActiveQueryLog {
         String maxIdleStr = conf.get(MAX_IDLE);
         if (maxIdleStr != null) {
             try {
-                setMaxIdle(Long.valueOf(maxIdleStr));
+                setMaxIdle(Long.parseLong(maxIdleStr));
             } catch (NumberFormatException e) {
                 log.error("Bad value: (" + maxIdleStr + ") in " + MAX_IDLE + " : " + e.getMessage());
             }
@@ -178,7 +178,7 @@ public class ActiveQueryLog {
         String logPeriodStr = conf.get(LOG_PERIOD);
         if (logPeriodStr != null) {
             try {
-                setLogPeriod(Long.valueOf(logPeriodStr));
+                setLogPeriod(Long.parseLong(logPeriodStr));
             } catch (NumberFormatException e) {
                 log.error("Bad value: (" + logPeriodStr + ") in " + LOG_PERIOD + " : " + e.getMessage());
             }
@@ -189,7 +189,7 @@ public class ActiveQueryLog {
         String logMaxQueriesStr = conf.get(LOG_MAX_QUERIES);
         if (logMaxQueriesStr != null) {
             try {
-                setLogMaxQueries(Integer.valueOf(logMaxQueriesStr));
+                setLogMaxQueries(Integer.parseInt(logMaxQueriesStr));
             } catch (NumberFormatException e) {
                 log.error("Bad value: (" + logMaxQueriesStr + ") in " + LOG_MAX_QUERIES + " : " + e.getMessage());
             }
@@ -198,7 +198,7 @@ public class ActiveQueryLog {
         String windowSizeStr = conf.get(WINDOW_SIZE);
         if (windowSizeStr != null) {
             try {
-                setWindowSize(Integer.valueOf(windowSizeStr));
+                setWindowSize(Integer.parseInt(windowSizeStr));
             } catch (NumberFormatException e) {
                 log.error("Bad value: (" + windowSizeStr + ") in " + WINDOW_SIZE + " : " + e.getMessage());
             }
@@ -229,7 +229,7 @@ public class ActiveQueryLog {
     }
     
     public ActiveQuery get(String queryId) {
-        ActiveQuery activeQuery = null;
+        ActiveQuery activeQuery;
         cacheLock.readLock().lock();
         try {
             activeQuery = this.CACHE.get(queryIdFor(queryId), s -> new ActiveQuery(queryIdFor(queryId), this.windowSize));

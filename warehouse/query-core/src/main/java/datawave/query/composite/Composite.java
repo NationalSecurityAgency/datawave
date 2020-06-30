@@ -7,7 +7,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Composite {
+public abstract class Composite implements Cloneable {
     
     protected final String compositeName; // FU_BA_BAZ
     protected final String separator;

@@ -15,7 +15,6 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
-import datawave.query.UnindexType;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
@@ -70,7 +69,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,String> filterOptions = new HashMap<>();
     private boolean disableIndexOnlyDocuments = false;
     @JsonIgnore
-    private QueryStopwatch timers = new QueryStopwatch();
+    private transient QueryStopwatch timers = new QueryStopwatch();
     private int maxScannerBatchSize = 1000;
     /**
      * Index batch size is the size of results use for each index lookup
@@ -83,6 +82,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean parseTldUids = false;
     private boolean collapseUids = false;
     private int collapseUidsThreshold = -1;
+    // Should this query dedupe terms within ANDs and ORs
+    private boolean enforceUniqueTermsWithinExpressions = false;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -190,6 +191,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -341,6 +343,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
+        this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
         this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
@@ -478,6 +481,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
+        this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
     }
     
     /**
@@ -725,7 +729,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     private Set<String> deconstruct(Collection<String> fields) {
-        return fields.stream().map(field -> JexlASTHelper.deconstructIdentifier(field)).collect(Collectors.toSet());
+        return fields == null ? null : fields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
     }
     
     public Set<String> getProjectFields() {
@@ -879,7 +883,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
     
-    @SuppressWarnings("unchecked")
     public Map<String,String> getFilterOptions() {
         return Collections.unmodifiableMap(filterOptions);
     }
@@ -1276,15 +1279,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
         this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
-        for (Entry<String,Type<?>> entry : indexedFieldsAndTypes.entries()) {
-            if (entry.getValue() instanceof UnindexType) {
-                this.indexedFields.remove(entry.getKey());
-            }
-        }
     }
     
     public void setIndexedFields(Set<String> indexedFields) {
-        this.indexedFields = Sets.newHashSet(indexedFields);
+        this.indexedFields = (null == indexedFields) ? Collections.emptySet() : Sets.newHashSet(indexedFields);
     }
     
     public Set<String> getReverseIndexedFields() {
@@ -1293,15 +1291,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
         this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
-        for (Entry<String,Type<?>> entry : reverseIndexedFieldsAndTypes.entries()) {
-            if (entry.getValue() instanceof UnindexType) {
-                this.reverseIndexedFields.remove(entry.getKey());
-            }
-        }
     }
     
     public void setReverseIndexedFields(Set<String> reverseIndexedFields) {
-        this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFields);
+        this.reverseIndexedFields = reverseIndexedFields == null ? new HashSet<>() : Sets.newHashSet(reverseIndexedFields);
     }
     
     public Set<String> getNormalizedFields() {
@@ -1373,8 +1366,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setNormalizedFieldsDatatypes(Multimap<String,Type<?>> normalizedFieldsDatatypes) {
-        this.normalizedFieldsDatatypes = normalizedFieldsDatatypes;
-        this.normalizedFields = Sets.newHashSet(normalizedFieldsDatatypes.keySet());
+        this.normalizedFieldsDatatypes = (null == normalizedFieldsDatatypes) ? HashMultimap.create() : normalizedFieldsDatatypes;
+        this.normalizedFields = Sets.newHashSet(this.normalizedFieldsDatatypes.keySet());
     }
     
     public Set<String> getLimitFields() {
@@ -1566,8 +1559,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setDocumentPermutations(List<String> documentPermutations) {
+        List<String> permutations = (null == documentPermutations) ? Collections.emptyList() : documentPermutations;
         // validate we have instances of DocumentPermutation
-        for (String perm : documentPermutations) {
+        for (String perm : permutations) {
             try {
                 Class<?> clazz = Class.forName(perm);
                 if (!DocumentPermutation.class.isAssignableFrom(clazz)) {
@@ -1577,7 +1571,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 throw new IllegalArgumentException("Unable to load " + perm + " as a DocumentPermutation");
             }
         }
-        this.documentPermutations = documentPermutations;
+        this.documentPermutations = permutations;
     }
     
     public boolean isReducedResponse() {
@@ -1797,6 +1791,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.collapseUidsThreshold = collapseUidsThreshold;
     }
     
+    public boolean getEnforceUniqueTermsWithinExpressions() {
+        return enforceUniqueTermsWithinExpressions;
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
+    }
+    
     public boolean getSequentialScheduler() {
         return sequentialScheduler;
     }
@@ -1985,5 +1987,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setContentFieldNames(List<String> contentFieldNames) {
         this.contentFieldNames = contentFieldNames;
+    }
+    
+    public void setEvaluationOnlyFields(Set<String> evaluationOnlyFields) {
+        this.evaluationOnlyFields = evaluationOnlyFields;
+    }
+    
+    public Set<String> getEvaluationOnlyFields() {
+        return this.evaluationOnlyFields;
     }
 }
