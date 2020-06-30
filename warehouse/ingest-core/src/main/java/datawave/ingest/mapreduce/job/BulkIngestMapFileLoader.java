@@ -78,7 +78,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static int SHUTDOWN_PORT = 24111;
     private static boolean FIFO = true;
     private static boolean INGEST_METRICS = true;
-
+    
     public static final String REMOVE_FILE_MARKER = "job.remove";
     public static final String CLEANUP_FILE_MARKER = "job.cleanup";
     public static final String COMPLETE_FILE_MARKER = "job.complete";
@@ -396,7 +396,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             while (true) {
                 try {
                     if (firstRun) {
-
+                        
                         cleanJobDirectoriesOnStartup();
                         firstRun = false;
                     }
@@ -497,21 +497,22 @@ public final class BulkIngestMapFileLoader implements Runnable {
         }
         log.info("Bulk map file loader shutting down.");
     }
-
-    //take ownership by renaming files and then running cleanup script
+    
+    // take ownership by renaming files and then running cleanup script
     private void cleanJobDirectoriesOnStartup() throws IOException {
         Path[] cleanupDirectories = getJobDirectories(new Path(workDir, jobDirPattern + '/' + CLEANUP_FILE_MARKER));
         for (int i = 0; i < cleanupDirectories.length; i++) {
             boolean success = false;
-
+            
             try {
-                success = getFileSystem(srcHdfs).rename(new Path(cleanupDirectories[i], CLEANUP_FILE_MARKER), new Path(cleanupDirectories[i], REMOVE_FILE_MARKER));
+                success = getFileSystem(srcHdfs).rename(new Path(cleanupDirectories[i], CLEANUP_FILE_MARKER),
+                                new Path(cleanupDirectories[i], REMOVE_FILE_MARKER));
                 log.info("Renamed " + cleanupDirectories[i] + '/' + CLEANUP_FILE_MARKER + " to " + REMOVE_FILE_MARKER);
             } catch (IOException e2) {
                 log.error("Exception while marking " + cleanupDirectories[i] + " for removal: " + e2.getMessage(), e2);
             }
             
-            if(success) {
+            if (success) {
                 markSourceFilesLoaded(cleanupDirectories[i]);
                 getFileSystem(srcHdfs).delete(cleanupDirectories[i], true);
                 runCleanUpScript(cleanupDirectories[i], true);
