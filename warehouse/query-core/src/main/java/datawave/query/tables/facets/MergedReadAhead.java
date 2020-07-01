@@ -58,9 +58,6 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
         
         log.trace("starting...");
         startAsync();
-        log.trace("waiting for startup...");
-        awaitRunning();
-        log.trace("started...");
     }
     
     private Iterator<T> configureIterator(Iterator<T> iterator, Function<T,T> functionalMerge, List<Predicate<T>> filters) {
@@ -89,7 +86,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
         
         try {
             // Block & loop while running and no data is available on the queue
-            while (state() == State.RUNNING) {
+            while (state() != State.TERMINATED) {
                 log.trace("Waiting for data...");
                 this.buffer = queue.poll(1L, TimeUnit.SECONDS);
                 if (this.buffer != null) {
