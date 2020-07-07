@@ -13,8 +13,8 @@ import org.apache.hadoop.io.Text;
 import java.io.IOException;
 
 public class FrequencyColumnIterator extends TransformingIterator {
-    public static final String COL_QUAL_TOTAL = "total";
-    private FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter(false);
+    
+    private FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
     
     public FrequencyColumnIterator() {};
     
@@ -55,9 +55,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 newKey = oldKey;
                 frequencyFamilyCounter.deserializeCompressedValue(oldValue);
             } else {
-                
-                if (!cq.toString().startsWith(COL_QUAL_TOTAL))
-                    frequencyFamilyCounter.aggregateRecord(cq.toString(), oldValue.toString());
+                frequencyFamilyCounter.aggregateRecord(cq.toString(), oldValue.toString());
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
