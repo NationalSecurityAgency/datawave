@@ -2028,7 +2028,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } else {
                 try {
                     close(id);
-                } catch (Exception ce){
+                } catch (Exception ce) {
                     log.error(qe, ce);
                 }
                 log.error(qe, e);
