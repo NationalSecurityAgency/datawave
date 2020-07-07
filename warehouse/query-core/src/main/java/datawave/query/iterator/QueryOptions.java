@@ -1029,7 +1029,6 @@ public class QueryOptions implements OptionDescriber {
         options.put(QUERY, "The JEXL query to evaluate documents against");
         options.put(QUERY_ID, "The UUID of the query");
         options.put(TYPE_METADATA, "A mapping of field name to a set of DataType class names");
-        options.put(METADATA_TABLE_NAME, "The name of the metadata table");
         options.put(QUERY_MAPPING_COMPRESS, "Boolean value to indicate Normalizer mapping is compressed");
         options.put(REDUCED_RESPONSE, "Whether or not to return visibility markings on each attribute. Default: " + reducedResponse);
         options.put(Constants.RETURN_TYPE, "The method to use to serialize data for return to the client");
