@@ -367,14 +367,6 @@ public class Intersection extends BaseIndexStream {
             while (itr.hasNext()) {
                 
                 dayOrShard = key(itr.peek());
-                if (ShardEquality.greaterThanOrEqual(dayOrShard, max)) {
-                    break;
-                }
-                
-                if (ShardEquality.matches(dayOrShard, max)) {
-                    dayOrShard = max;
-                    break;
-                }
                 if (dayOrShard.compareTo(max) >= 0) {
                     break;
                 }
