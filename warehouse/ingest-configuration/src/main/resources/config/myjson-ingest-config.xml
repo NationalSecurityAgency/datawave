@@ -64,7 +64,7 @@
 
     <property>
         <name>myjson.handler.classes</name>
-        <value>datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler</value>
+        <value>datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler,datawave.ingest.mapreduce.handler.facet.FacetHandler</value>
         <description>List of classes that should process each event</description>
     </property>
 
@@ -286,4 +286,8 @@
         <value>datawave.data.type.NumberType</value>
     </property>
 
+    <property>
+        <name>myjson.facet.category.name.network</name>
+        <value>NETWORK_NAME;GENRES,EMBEDDED_CAST_PERSON_GENDER,RATING_AVERAGE</value>
+    </property>
 </configuration>

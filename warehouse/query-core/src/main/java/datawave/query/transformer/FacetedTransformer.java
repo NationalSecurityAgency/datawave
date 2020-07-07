@@ -115,6 +115,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
                     value.setNormalizedValue(v.toString());
                     
                     FieldCardinalityBase fc = this.responseObjectFactory.getFieldCardinality();
+                    fc.setField(v.getFieldName());
                     fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), auths)); // reduces colvis based on
                                                                                                                                // visibility
                     fc.setColumnVisibility(new String(markingFunctions.translateToColumnVisibility(fc.getMarkings()).flatten()));
