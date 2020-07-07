@@ -2026,7 +2026,11 @@ public class QueryExecutorBean implements QueryExecutor {
                 close(id);
                 closedQueryCache.add(id); // remember that we auto-closed this query
             } else {
-                close(id);
+                try {
+                    close(id);
+                } catch (Exception ce){
+                    log.error(qe, ce);
+                }
                 log.error(qe, e);
                 response.addException(qe.getBottomQueryException());
             }
