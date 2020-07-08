@@ -7,8 +7,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.accumulo.core.util.format.Formatter;
 import org.apache.accumulo.core.util.format.FormatterConfig;
-import org.apache.accumulo.core.util.interpret.ScanInterpreter;
-import org.apache.hadoop.io.Text;
 
 import java.util.Comparator;
 import java.util.Iterator;
