@@ -97,6 +97,12 @@ public class FieldNameLookupTest {
         // Build and set datatypes
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Collections.singleton(new LcNoDiacriticsType()));
+        dataTypes.putAll("FOO2", Collections.singleton(new LcNoDiacriticsType()));
+        dataTypes.putAll("AAA", Collections.singleton(new LcNoDiacriticsType()));
+        dataTypes.putAll("BBB", Collections.singleton(new LcNoDiacriticsType()));
+        dataTypes.putAll("CCC", Collections.singleton(new LcNoDiacriticsType()));
+        dataTypes.putAll("DDD", Collections.singleton(new LcNoDiacriticsType()));
+        dataTypes.putAll("EEE", Collections.singleton(new LcNoDiacriticsType()));
         
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
