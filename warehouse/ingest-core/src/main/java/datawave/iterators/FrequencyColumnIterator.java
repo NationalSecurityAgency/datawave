@@ -41,29 +41,34 @@ public class FrequencyColumnIterator extends TransformingIterator {
             topKey = sortedKeyValueIterator.getTopKey();
             topValue = sortedKeyValueIterator.getTopValue();
         }
+        Key lastKey, aggregatedKey = null;
+        Value lastValue;
+        Value aggregatedValue = null;
         
         while (sortedKeyValueIterator.hasTop()) {
             numRecords++;
             Text cq = sortedKeyValueIterator.getTopKey().getColumnQualifier();
-            Key oldKey = sortedKeyValueIterator.getTopKey();
-            Value oldValue = sortedKeyValueIterator.getTopValue();
+            lastKey = sortedKeyValueIterator.getTopKey();
+            lastValue = sortedKeyValueIterator.getTopValue();
             
             if (cq.toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
                 aggregatedColumnQualifier = cq.toString();
-                log.info("Aggregate key is " + oldKey);
+                log.info("Aggregate key is " + lastKey);
                 // TODO - Need to check if newKey is not null and another aggregate record for another datatype needs to be generated.
-                newKey = oldKey;
-                frequencyFamilyCounter.deserializeCompressedValue(oldValue);
+                newKey = lastKey;
+                frequencyFamilyCounter.deserializeCompressedValue(lastValue);
+                aggregatedValue = lastValue;
+                aggregatedKey = lastKey;
             } else {
-                frequencyFamilyCounter.aggregateRecord(cq.toString(), oldValue.toString());
+                frequencyFamilyCounter.aggregateRecord(cq.toString(), lastValue.toString());
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
                 if (aggregatedColumnQualifier != null && !aggregatedColumnQualifier.equals(newColumnQualifier))
-                    log.error("There is multiple aggregated datatypes for this row and this needs be handled");
+                    log.error("There are multiple aggregated datatypes for this row and this needs be handled");
                 
                 if (newKey == null)
-                    newKey = new Key(oldKey.getRow(), oldKey.getColumnFamily(), new Text(newColumnQualifier));
+                    newKey = new Key(lastKey.getRow(), lastKey.getColumnFamily(), new Text(newColumnQualifier));
                 
             }
             
@@ -71,7 +76,14 @@ public class FrequencyColumnIterator extends TransformingIterator {
         }
         
         if (numRecords > 1) {
-            kvBuffer.append(newKey, frequencyFamilyCounter.serialize());
+            try {
+                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() > 0)
+                    kvBuffer.append(newKey, frequencyFamilyCounter.serialize());
+            } catch (Exception e) {
+                log.error("Could not serialize frequency range properly for key " + newKey.toString(), e);
+                if (aggregatedValue != null && aggregatedKey != null)
+                    kvBuffer.append(aggregatedKey, aggregatedValue);
+            }
         } else if (numRecords == 1) {
             kvBuffer.append(topKey, topValue);
             log.info("Range did not need to be transformed  (ran identity transform");

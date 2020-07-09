@@ -31,8 +31,14 @@ public class FrequencyColumnValueFormatter implements Formatter {
         
         if (entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
             frequencyFamilyCounter.deserializeCompressedValue(entry.getValue());
-            frequencyFamilyCounter.getDateToFrequencyValueMap().entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey))
-                            .forEach(sorted -> sb.append("Date: " + sorted.getKey() + " Frequency: " + sorted.getValue().toString() + "\n"));
+            frequencyFamilyCounter
+                            .getDateToFrequencyValueMap()
+                            .entrySet()
+                            .stream()
+                            .sorted(Comparator.comparing(Map.Entry::getKey))
+                            .forEach(sorted -> sb.append(entry.getKey().getRow()).append(" " + entry.getKey().getColumnFamily().toString())
+                                            .append(" " + entry.getKey().getColumnQualifier().toString().replaceAll(MetadataHelper.COL_QUAL_PREFIX, ""))
+                                            .append(" Date: " + sorted.getKey()).append(" Frequency: " + sorted.getValue().toString() + "\n"));
             return sb.toString();
         } else {
             return DefaultFormatter.formatEntry(entry, false);
