@@ -14,7 +14,7 @@ import java.io.IOException;
 
 public class FrequencyColumnIterator extends TransformingIterator {
     
-    private FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
+    private FrequencyFamilyCounter frequencyFamilyCounter;
     
     public FrequencyColumnIterator() {};
     
@@ -35,12 +35,13 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Key topKey = null;
         Value topValue = null;
         String aggregatedColumnQualifier = null;
-        frequencyFamilyCounter.clear();
+        frequencyFamilyCounter = new FrequencyFamilyCounter();
         
         if (sortedKeyValueIterator.hasTop()) {
             topKey = sortedKeyValueIterator.getTopKey();
             topValue = sortedKeyValueIterator.getTopValue();
         }
+        
         Key lastKey, aggregatedKey = null;
         Value lastValue;
         Value aggregatedValue = null;
@@ -53,7 +54,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
             
             if (cq.toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
                 aggregatedColumnQualifier = cq.toString();
-                log.info("Aggregate key is " + lastKey);
+                log.info("Aggregate key is " + lastKey, new Exception());
                 // TODO - Need to check if newKey is not null and another aggregate record for another datatype needs to be generated.
                 newKey = lastKey;
                 frequencyFamilyCounter.deserializeCompressedValue(lastValue);
@@ -81,12 +82,14 @@ public class FrequencyColumnIterator extends TransformingIterator {
                     kvBuffer.append(newKey, frequencyFamilyCounter.serialize());
             } catch (Exception e) {
                 log.error("Could not serialize frequency range properly for key " + newKey.toString(), e);
-                if (aggregatedValue != null && aggregatedKey != null)
+                if (aggregatedValue != null && aggregatedKey != null) {
                     kvBuffer.append(aggregatedKey, aggregatedValue);
+                    log.info("Should not have insert aggregate record like this", new Exception());
+                }
             }
         } else if (numRecords == 1) {
             kvBuffer.append(topKey, topValue);
-            log.info("Range did not need to be transformed  (ran identity transform");
+            log.info("Range did not need to be transformed  (ran identity transform)", new Exception());
         }
         
         log.info(" Number of key values iterated is " + numRecords);
