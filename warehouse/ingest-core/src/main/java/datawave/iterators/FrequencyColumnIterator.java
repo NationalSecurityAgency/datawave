@@ -34,8 +34,9 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Long numRecords = 0L;
         Key topKey = null;
         Value topValue = null;
-        String aggregatedColumnQualifier = null;
         frequencyFamilyCounter = new FrequencyFamilyCounter();
+        
+        log.info("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
         
         if (sortedKeyValueIterator.hasTop()) {
             topKey = sortedKeyValueIterator.getTopKey();
@@ -53,9 +54,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
             lastValue = sortedKeyValueIterator.getTopValue();
             
             if (cq.toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
-                aggregatedColumnQualifier = cq.toString();
                 log.info("Aggregate key is " + lastKey, new Exception());
-                // TODO - Need to check if newKey is not null and another aggregate record for another datatype needs to be generated.
                 newKey = lastKey;
                 frequencyFamilyCounter.deserializeCompressedValue(lastValue);
                 aggregatedValue = lastValue;
@@ -65,11 +64,10 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
-                if (aggregatedColumnQualifier != null && !aggregatedColumnQualifier.equals(newColumnQualifier))
-                    log.error("There are multiple aggregated datatypes for this row and this needs be handled");
-                
-                if (newKey == null)
+                if (newKey == null) {
                     newKey = new Key(lastKey.getRow(), lastKey.getColumnFamily(), new Text(newColumnQualifier));
+                    log.info("Creating new key for aggregated frequency records " + newKey.toStringNoTime());
+                }
                 
             }
             
@@ -88,8 +86,13 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 }
             }
         } else if (numRecords == 1) {
-            kvBuffer.append(topKey, topValue);
-            log.info("Range did not need to be transformed  (ran identity transform)", new Exception());
+            if (aggregatedValue != null && aggregatedKey != null) {
+                kvBuffer.append(aggregatedKey, aggregatedValue);
+                log.info("Range tranformed a single aggregated range.", new Exception());
+            } else {
+                kvBuffer.append(topKey, topValue);
+                log.info("Range did not need to be transformed  (ran identity transform)", new Exception());
+            }
         }
         
         log.info(" Number of key values iterated is " + numRecords);
