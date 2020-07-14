@@ -26,9 +26,10 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
                 // setFrequencyCombiner(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
-                if (!scope.name().equals(IteratorScope.minc))
-                    setFrequencyColumnIterator(tops, scope.name());
             }
+            
+            setFrequencyColumnIterator(tops, IteratorScope.scan.name());
+            setFrequencyColumnIterator(tops, IteratorScope.majc.name());
         }
         
     }

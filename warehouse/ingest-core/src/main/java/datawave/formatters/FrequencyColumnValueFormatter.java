@@ -16,7 +16,6 @@ public class FrequencyColumnValueFormatter implements Formatter {
     
     private Iterator<Map.Entry<Key,Value>> iter;
     private FormatterConfig config;
-    private FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
     
     @Override
     public boolean hasNext() {
@@ -26,10 +25,10 @@ public class FrequencyColumnValueFormatter implements Formatter {
     @Override
     public String next() {
         StringBuilder sb = new StringBuilder();
-        
         Map.Entry<Key,Value> entry = iter.next();
         
         if (entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
+            FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
             frequencyFamilyCounter.deserializeCompressedValue(entry.getValue());
             frequencyFamilyCounter
                             .getDateToFrequencyValueMap()
