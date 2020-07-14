@@ -464,6 +464,29 @@
         <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
     </bean>
 
+    <bean id="FacetedQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.facets.FacetedQueryLogic">
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Faceted search over indexed fields, returning aggregate counts for field values" />
+        <property name="facetedSearchType" value="FIELD_VALUE_FACETS" />
+        <property name="facetTableName" value="${table.name.facet}" />
+        <property name="facetMetadataTableName" value="${table.name.facet.metadata}" />
+        <property name="facetHashTableName" value="${table.name.facet.hashes}" />
+        <property name="maximumFacetGrouping" value="200" />
+        <property name="minimumFacet" value="1" />
+        <property name="streaming" value="true" />
+        <property name="querySyntaxParsers">
+            <map key-type="java.lang.String" value-type="datawave.query.language.parser.QueryParser">
+                <entry key="JEXL">
+                    <null/>
+                </entry>
+                <entry key="LUCENE">
+                    <bean class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser" />
+                </entry>
+                <entry key="LUCENE-UUID" value-ref="LuceneToJexlUUIDQueryParser" />
+            </map>
+        </property>
+    </bean>
+
     <bean id="HitHighlights" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.IndexQueryLogic">
         <property name="tableName" value="${shard.table.name}" />
         <property name="metadataTableName" value="${metadata.table.name}" />
