@@ -121,5 +121,5 @@ represent a query metrics *Data Object*.
 [apache_hadoop]: http://hadoop.apache.org/
 [data_fusion]: https://en.wikipedia.org/wiki/Data_fusion
 [graph_theory]: https://en.wikipedia.org/wiki/Graph_theory
-[cell_level_sec]: https://accumulo.apache.org/1.8/accumulo_user_manual.html#_security
-[acc_data_model]: https://accumulo.apache.org/1.8/accumulo_user_manual.html#_data_model
+[cell_level_sec]: https://accumulo.apache.org/1.9/accumulo_user_manual.html#_security
+[acc_data_model]: https://accumulo.apache.org/1.9/accumulo_user_manual.html#_data_model

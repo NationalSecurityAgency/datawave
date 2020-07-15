@@ -42,6 +42,6 @@ REST API to retrieve data of interest from the warehouse Accumulo repository.
 
 [apache_accumulo]: http://accumulo.apache.org/
 [apache_hadoop]: http://hadoop.apache.org/
-[cell_level_sec]: https://accumulo.apache.org/1.8/accumulo_user_manual.html#_security
+[cell_level_sec]: https://accumulo.apache.org/1.9/accumulo_user_manual.html#_security
 
 

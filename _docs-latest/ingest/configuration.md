@@ -106,8 +106,8 @@ Java class: *datawave.ingest.mapreduce.job.BulkIngestMapFileLoader*
    caption="Bulk Loader Arguments" 
    sort_by_name=true %}
 
-[dw_blob_flag_config_bulk]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-configuration/src/main/resources/config/flag-maker-bulk.xml
-[dw_blob_flag_config_live]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-configuration/src/main/resources/config/flag-maker-live.xml
+[dw_blob_flag_config_bulk]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/flag-maker-bulk.xml
+[dw_blob_flag_config_live]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/flag-maker-live.xml
 
-[dw_blob_myjson_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-configuration/src/main/resources/config/myjson-ingest-config.xml
-[dw_blob_edge_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-configuration/src/main/resources/config/edge-definitions.xml
+[dw_blob_myjson_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/myjson-ingest-config.xml
+[dw_blob_edge_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/edge-definitions.xml

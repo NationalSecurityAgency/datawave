@@ -23,26 +23,10 @@ using its example datasets, configuration files, and many of its [utility functi
 
 ```bash
  $ allStatus
-   ======  Hadoop Status  ======
-   pids: 30722 31065 31328 31824 31894
-   [DW-INFO] - ResourceManager => 31328
-   [DW-INFO] - NameNode => 30722
-   [DW-INFO] - NodeManager => 31824
-   [DW-INFO] - JobHistoryServer => 31894
-   [DW-INFO] - DataNode => 31065
-   ======  Accumulo Status  ======
-   pids: 327 430 32371 32509 32697
-   [DW-INFO] - gc => 327
-   [DW-INFO] - tracer => 430
-   [DW-INFO] - monitor => 32371
-   [DW-INFO] - master => 32697
-   [DW-INFO] - tserver => 32509
-   ======  ZooKeeper Status  ======
-   [DW-INFO] - ZooKeeper => 32245
-   ======  DataWave Ingest Status  ======
-   [DW-INFO] - No ingest processes are running
-   ======  DataWave Web Status  ======
-   [DW-INFO] - Wildfly is running => 518
+    Hadoop is running. PIDs: 9318 9629 9988 10188 10643 10705
+    Accumulo is running. PIDs: 11196 11326 11536 11645 11750 11081
+    DataWave Ingest is not running
+    DataWave Web is running. PIDs: 17462
     
  # If DataWave Ingest is running, stop it for now...
  $ datawaveIngestStop

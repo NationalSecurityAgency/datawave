@@ -483,10 +483,10 @@ In **Steps 4** and **5**, we acquired some new raw data via the TVMAZE-API servi
   ``` 
 </div>
   
-[dw_blob_myjson_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-configuration/src/main/resources/config/myjson-ingest-config.xml
-[dw_blob_ingest_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-configuration/src/main/resources/config/ingest-config.xml
-[dw_blob_all_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-configuration/src/main/resources/config/all-config.xml
-[dw_blob_edge_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-configuration/src/main/resources/config/edge-definitions.xml
-[dw_blob_ingest_tv_shows]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/contrib/datawave-quickstart/bin/services/datawave/ingest-examples/ingest-tv-shows.sh
-[dw_blob_ingest_job]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-core/src/main/java/datawave/ingest/mapreduce/job/IngestJob.java
-[dw_blob_live_ingest_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ site.default_branch }}/warehouse/ingest-scripts/src/main/resources/bin/ingest/live-ingest.sh
+[dw_blob_myjson_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/myjson-ingest-config.xml
+[dw_blob_ingest_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/ingest-config.xml
+[dw_blob_all_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/all-config.xml
+[dw_blob_edge_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/edge-definitions.xml
+[dw_blob_ingest_tv_shows]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/ingest-examples/ingest-tv-shows.sh
+[dw_blob_ingest_job]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-core/src/main/java/datawave/ingest/mapreduce/job/IngestJob.java
+[dw_blob_live_ingest_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-scripts/src/main/resources/bin/ingest/live-ingest.sh

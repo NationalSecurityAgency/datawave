@@ -8,14 +8,11 @@ repository: NationalSecurityAgency/datawave
 # you'll need to run the site locally with "jekyll serve --baseurl '' ... " in order for things to work
 baseurl: /datawave
 
-# project default branch
-default_branch: release/version2.6
-
 # latest minor release
-latest_minor_release: 2.6
+latest_minor_release: 2.9
 
-# latest release
-latest_release: 2.6.2
+# latest revision
+latest_release: 2.9.4
 
 # max news posts to display on the home page
 num_home_posts: 8
@@ -83,9 +80,13 @@ collections:
     output: true
     permalink: "/docs/2.3/:path"
 
-  docs-latest:
+  docs-2-6:
     output: true
     permalink: "/docs/2.6/:path"
+
+  docs-latest:
+    output: true
+    permalink: "/docs/2.9/:path"
 
 ##########################################################
 # Frontmatter defaults
@@ -146,6 +147,7 @@ defaults:
       layout: "docs"
       title_prefix: "DataWave 2.1 Docs - "
       sidebar: docs-2-1-sidebar
+      release_tag: 2.1.9
       show_summary: true
       skip_title_for_h1: false
       toc: true
@@ -158,6 +160,7 @@ defaults:
       layout: "docs"
       title_prefix: "DataWave 2.2 Docs - "
       sidebar: docs-2-2-sidebar
+      release_tag: 2.2.14
       show_summary: true
       skip_title_for_h1: false
       toc: true
@@ -170,6 +173,20 @@ defaults:
       layout: "docs"
       title_prefix: "DataWave 2.3 Docs - "
       sidebar: docs-2-3-sidebar
+      release_tag: 2.3.13
+      show_summary: true
+      skip_title_for_h1: false
+      toc: true
+      topnav: topnav
+  -
+    scope:
+      path: ""
+      type: "docs-2-6"
+    values:
+      layout: "docs"
+      title_prefix: "DataWave 2.6 Docs - "
+      sidebar: docs-2-6-sidebar
+      release_tag: 2.6.2
       show_summary: true
       skip_title_for_h1: false
       toc: true
@@ -181,7 +198,8 @@ defaults:
     values:
       layout: "docs"
       title_prefix: "DataWave Docs - "
-      sidebar: docs-2-6-sidebar
+      sidebar: docs-2-9-sidebar
+      release_tag: 2.9.4
       show_summary: true
       skip_title_for_h1: false
       toc: true

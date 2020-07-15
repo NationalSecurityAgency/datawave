@@ -33,5 +33,5 @@ other formats.
 
 {% include devtag_todo.html content="Add graphic depicting the above overview" %}
 
-[acc_iterators]: https://accumulo.apache.org/1.8/accumulo_user_manual.html#_iterators
+[acc_iterators]: https://accumulo.apache.org/1.9/accumulo_user_manual.html#_iterators
 [jexl]: http://commons.apache.org/proper/commons-jexl/

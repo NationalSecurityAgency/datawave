@@ -57,4 +57,4 @@ consumption, particularly when leveraging dedicated ingest nodes that are physic
 cluster. Therefore, the tradeoff here is the potential for increased latency, in terms of the time that it takes
 for the most recent data to be made available for query.
 
-[acc_data_model]: https://accumulo.apache.org/1.8/accumulo_user_manual.html#_data_model
+[acc_data_model]: https://accumulo.apache.org/1.9/accumulo_user_manual.html#_data_model
