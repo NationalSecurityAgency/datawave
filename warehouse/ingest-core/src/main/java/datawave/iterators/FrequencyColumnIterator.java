@@ -32,19 +32,12 @@ public class FrequencyColumnIterator extends TransformingIterator {
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
         Key newKey = null;
         Long numRecords = 0L;
-        Key topKey = null;
-        Value topValue = null;
         frequencyFamilyCounter = new FrequencyFamilyCounter();
         
-        log.info("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
+        log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
         
-        if (sortedKeyValueIterator.hasTop()) {
-            topKey = sortedKeyValueIterator.getTopKey();
-            topValue = sortedKeyValueIterator.getTopValue();
-        }
-        
-        Key lastKey, aggregatedKey = null;
-        Value lastValue;
+        Key lastKey = null, aggregatedKey = null;
+        Value lastValue = null;
         Value aggregatedValue = null;
         
         while (sortedKeyValueIterator.hasTop()) {
@@ -54,20 +47,26 @@ public class FrequencyColumnIterator extends TransformingIterator {
             lastValue = sortedKeyValueIterator.getTopValue();
             
             if (cq.toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
-                log.info("Aggregate key is " + lastKey);
                 newKey = lastKey;
                 frequencyFamilyCounter.deserializeCompressedValue(lastValue);
+                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() == 0)
+                    log.error("Compressed value was not deserialized properly");
                 aggregatedValue = lastValue;
                 aggregatedKey = lastKey;
+                log.trace("Aggregate Key: " + aggregatedKey.toStringNoTime());
+                
             } else {
+                
                 frequencyFamilyCounter.aggregateRecord(cq.toString(), lastValue.toString());
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
                 if (newKey == null) {
                     newKey = new Key(lastKey.getRow(), lastKey.getColumnFamily(), new Text(newColumnQualifier));
-                    log.info("Creating new key for aggregated frequency records " + newKey.toStringNoTime());
+                    log.trace("Creating new key for aggregated frequency records " + newKey.toStringNoTime());
                 }
+                
+                log.trace("Non-compressed Key: " + lastKey.toStringNoTime());
                 
             }
             
@@ -78,41 +77,28 @@ public class FrequencyColumnIterator extends TransformingIterator {
             try {
                 if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() > 0) {
                     kvBuffer.append(newKey, frequencyFamilyCounter.serialize());
-                    log.info(numRecords + " for " + newKey.toString() + " were serialized");
+                    log.trace(numRecords + " frequency records for " + newKey.toStringNoTime().replaceAll("false", "") + " were serialized");
                 }
                 
             } catch (Exception e) {
                 log.error("Could not serialize frequency range properly for key " + newKey.toString(), e);
                 if (aggregatedValue != null && aggregatedKey != null) {
                     kvBuffer.append(aggregatedKey, aggregatedValue);
-                    log.info("Number of records " + numRecords + " " + "Should not have insert aggregate record like this");
+                    log.error("Number of records " + numRecords + " " + "Should not have insert aggregate record like this");
                 }
             }
         } else if (numRecords == 1) {
             if (aggregatedValue != null && aggregatedKey != null) {
-                kvBuffer.append(aggregatedKey, aggregatedValue);
-                log.info("Number of records " + numRecords + " " + aggregatedKey.toStringNoTime() + "Range tranformed a single aggregated range.",
-                                new Exception());
+                kvBuffer.append(aggregatedKey, frequencyFamilyCounter.serialize());
+                log.trace("Number of records is 1 Key is: " + aggregatedKey.toStringNoTime() + " - Range tranformed a single aggregated range.");
             } else {
-                kvBuffer.append(topKey, topValue);
-                log.info("Number of records " + numRecords + " " + topKey.toStringNoTime() + "Range did not need to be transformed  (ran identity transform)",
+                kvBuffer.append(lastKey, lastValue);
+                log.trace("Number of records is 1 Key is: " + lastKey.toStringNoTime() + " - Range did not need to be transformed  (ran identity transform)",
                                 new Exception());
             }
-        } else {
-            if (topKey != null && topValue != null) {
-                kvBuffer.append(topKey, topValue);
-                log.info("Number of records " + numRecords + " " + topKey.toStringNoTime()
-                                + " - Range did not need to be transformed  (ran identity transform)");
-            } else {
-                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() > 0) {
-                    kvBuffer.append(newKey, frequencyFamilyCounter.serialize());
-                    log.info(numRecords + " for " + newKey.toString() + " were serialized");
-                }
-            }
-            
         }
         
-        log.info(" Number of key values iterated is " + numRecords);
+        log.trace(" Number of key values iterated is " + numRecords);
         
     }
     
