@@ -36,42 +36,56 @@ public class FrequencyColumnIterator extends TransformingIterator {
         
         log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
         
-        Key lastKey = null, aggregatedKey = null;
-        Value lastValue = null;
+        Key topKey = null, aggregatedKey = null;
+        Value topValue = null;
         Value aggregatedValue = null;
+        boolean isFrequencyRange = false;
         
         while (sortedKeyValueIterator.hasTop()) {
             numRecords++;
             Text cq = sortedKeyValueIterator.getTopKey().getColumnQualifier();
-            lastKey = sortedKeyValueIterator.getTopKey();
-            lastValue = sortedKeyValueIterator.getTopValue();
+            topKey = sortedKeyValueIterator.getTopKey();
+            topValue = sortedKeyValueIterator.getTopValue();
+            
+            // Just do an identity transform if there it is not a Frequency Column
+            if (!topKey.getColumnFamily().toString().equals(ColumnFamilyConstants.COLF_F.toString())) {
+                kvBuffer.append(sortedKeyValueIterator.getTopKey(), sortedKeyValueIterator.getTopValue());
+                sortedKeyValueIterator.next();
+                isFrequencyRange = false;
+                continue;
+            } else {
+                isFrequencyRange = true;
+            }
             
             if (cq.toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
-                newKey = lastKey;
-                frequencyFamilyCounter.deserializeCompressedValue(lastValue);
+                newKey = topKey;
+                frequencyFamilyCounter.deserializeCompressedValue(topValue);
                 if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() == 0)
                     log.error("Compressed value was not deserialized properly");
-                aggregatedValue = lastValue;
-                aggregatedKey = lastKey;
+                aggregatedValue = topValue;
+                aggregatedKey = topKey;
                 log.trace("Aggregate Key: " + aggregatedKey.toStringNoTime());
                 
             } else {
                 
-                frequencyFamilyCounter.aggregateRecord(cq.toString(), lastValue.toString());
+                frequencyFamilyCounter.aggregateRecord(cq.toString(), topValue.toString());
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
                 if (newKey == null) {
-                    newKey = new Key(lastKey.getRow(), lastKey.getColumnFamily(), new Text(newColumnQualifier));
+                    newKey = new Key(topKey.getRow(), topKey.getColumnFamily(), new Text(newColumnQualifier));
                     log.trace("Creating new key for aggregated frequency records " + newKey.toStringNoTime());
                 }
                 
-                log.trace("Non-compressed Key: " + lastKey.toStringNoTime());
+                log.trace("Non-compressed Key: " + topKey.toStringNoTime());
                 
             }
             
             sortedKeyValueIterator.next();
         }
+        
+        if (!isFrequencyRange)
+            return;
         
         if (numRecords > 1) {
             try {
@@ -92,8 +106,8 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 kvBuffer.append(aggregatedKey, frequencyFamilyCounter.serialize());
                 log.trace("Number of records is 1 Key is: " + aggregatedKey.toStringNoTime() + " - Range tranformed a single aggregated range.");
             } else {
-                kvBuffer.append(lastKey, lastValue);
-                log.trace("Number of records is 1 Key is: " + lastKey.toStringNoTime() + " - Range did not need to be transformed  (ran identity transform)",
+                kvBuffer.append(topKey, topValue);
+                log.trace("Number of records is 1 Key is: " + topKey.toStringNoTime() + " - Range did not need to be transformed  (ran identity transform)",
                                 new Exception());
             }
         }
