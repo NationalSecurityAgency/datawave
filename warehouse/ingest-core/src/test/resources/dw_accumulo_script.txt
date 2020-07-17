@@ -1,0 +1,82 @@
+table datawave.metadata
+config -t datawave.metadata -s table.iterator.majc.vers.opt.maxVersions=10
+config -t datawave.metadata -s table.iterator.minc.vers.opt.maxVersions=10
+config -t datawave.metadata -s table.iterator.scan.vers.opt.maxVersions=10
+config -t datawave.metadata -s table.compaction.minor.idle=3m
+config -t datawave.metadata -s table.compaction.major.everything.idle=6m
+
+formatter -f datawave.formatters.FrequencyColumnValueFormatter -t datawave.metadata
+#config -t datawave.metadata -s table.file.compress.type=none
+
+insert BAR_FIELD f csv\x0020160426  2
+insert BAR_FIELD f csv\x0020160426  2
+insert BAR_FIELD f csv\x0020160426  0x10
+insert BAR_FIELD f csv\x0020160427  2
+insert BAR_FIELD f csv\x0020160427  2
+insert BAR_FIELD f csv\x0020160427  0x10
+insert BAR_FIELD f csv\x0020160428  2
+insert BAR_FIELD f csv\x0020160428  2
+insert BAR_FIELD f csv\x0020160428  0x10
+insert BAR_FIELD f csv\x0020160429  2
+insert BAR_FIELD f csv\x0020160429  2
+insert BAR_FIELD f csv\x0020160429  0x10
+insert BAR_FIELD f csv\x0020160430  2
+insert BAR_FIELD f csv\x0020160430  2
+insert BAR_FIELD f csv\x0020160430  0x10
+insert BAR_FIELD f csv\x0020160501  2
+insert BAR_FIELD f csv\x0020160501  2
+insert BAR_FIELD f csv\x0020160501  0x10
+insert BAR_FIELD i String\x00BarField \x00
+insert BAR_FIELD  e STRING \x00
+
+
+
+insert NAME_FIELD f csv\x0020160426  4
+insert NAME_FIELD f csv\x0020160426  4
+insert NAME_FIELD f csv\x0020160426  0x30
+insert NAME_FIELD f csv\x0020160427  4
+insert NAME_FIELD f csv\x0020160427  4
+insert NAME_FIELD f csv\x0020160427  0x30
+insert NAME_FIELD f csv\x0020160428  4
+insert NAME_FIELD f csv\x0020160428  4
+insert NAME_FIELD f csv\x0020160428  0x30
+insert NAME_FIELD f csv\x0020160429  4
+insert NAME_FIELD f csv\x0020160429  4
+insert NAME_FIELD f csv\x0020160429  0x30
+insert NAME_FIELD f csv\x0020160430  4
+insert NAME_FIELD f csv\x0020160430  4
+insert NAME_FIELD f csv\x0020160430  0x30
+insert NAME_FIELD f csv\x0020160501  4
+insert NAME_FIELD f csv\x0020160501  4
+insert NAME_FIELD f csv\x0020160501  0x30
+insert NAME_FIELD i String\x00BarField \x00
+insert NAME_FIELD  e STRING \x00
+
+insert PUB_FIELD f csv\x0020160426  5
+insert PUB_FIELD f csv\x0020160426  5
+insert PUB_FIELD f csv\x0020160426  0x40
+insert PUB_FIELD f csv\x0020160427  5
+insert PUB_FIELD f csv\x0020160427  5
+insert PUB_FIELD f csv\x0020160427  0x40
+insert PUB_FIELD f csv\x0020160428  5
+insert PUB_FIELD f csv\x0020160428  5
+insert PUB_FIELD f csv\x0020160428  0x40
+insert PUB_FIELD f csv\x0020160429  5
+insert PUB_FIELD f csv\x0020160429  5
+insert PUB_FIELD f csv\x0020160429  0x40
+insert PUB_FIELD f csv\x0020160430  5
+insert PUB_FIELD f csv\x0020160430  5
+insert PUB_FIELD f csv\x0020160430  0x40
+insert PUB_FIELD f csv\x0020160501  5
+insert PUB_FIELD f csv\x0020160501  5
+insert PUB_FIELD f csv\x0020160501  0x40
+insert PUB_FIELD i String\x00BarField \x00
+insert PUB_FIELD  e STRING \x00
+
+
+
+
+
+
+
+
