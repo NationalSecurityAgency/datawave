@@ -164,13 +164,13 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             this.logic.setFullTableScanEnabled(true);
             try {
                 // Test the plan with all expansions
-                anyCity = "(CITY == '" + city.name() + "'";
+                anyCity = "!(CITY == '" + city.name() + "'";
                 if (city.name().equals("london")) {
-                    anyCity = '(' + anyCity + JEXL_OR_OP + "STATE == '" + city.name() + "'))";
+                    anyCity += ")" + JEXL_AND_OP + "!(STATE == '" + city.name() + "')";
                 } else {
                     anyCity = anyCity + ')';
                 }
-                anyCity = '!' + anyCity;
+                anyCity = "(((" + anyCity + ")))";
                 String plan = getPlan(query, true, true);
                 assertPlanEquals(anyCity, plan);
                 
@@ -548,7 +548,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             String query = qCity + AND_OP + Constants.ANY_FIELD + phrase;
             
             // Test the plan with all expansions
-            String expect = qCity + JEXL_AND_OP + "((ASTDelayedPredicate = true)" + JEXL_AND_OP + "(" + Constants.NO_FIELD + phrase + "))";
+            String expect = qCity + JEXL_AND_OP + Constants.NO_FIELD + phrase;
             String plan = getPlan(query, true, true);
             assertPlanEquals(expect, plan);
             
