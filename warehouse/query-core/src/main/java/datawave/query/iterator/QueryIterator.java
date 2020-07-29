@@ -87,6 +87,7 @@ import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
 import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
+import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -334,6 +335,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // determine whether this is a teardown/rebuild range
             long resultCount = 0;
             if (!range.isStartKeyInclusive()) {
+                // see if we can fail fast. If we were rebuilt with the FinalDocument key, then we are already completely done
+                if (collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
+                    this.seekKeySource = new EmptyTreeIterable();
+                    this.serializedDocuments = EmptyIterator.emptyIterator();
+                    prepareKeyValue(span);
+                    return;
+                }
+                
                 // see if we have a count in the cf
                 Key startKey = range.getStartKey();
                 String[] parts = StringUtils.split(startKey.getColumnFamily().toString(), '\0');
