@@ -549,7 +549,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             String query = qCity + AND_OP + Constants.ANY_FIELD + phrase;
             
             // Test the plan with all expansions
-            String expect = qCity + JEXL_AND_OP + "((ASTDelayedPredicate = true)" + JEXL_AND_OP + "(" + Constants.NO_FIELD + phrase + "))";
+            String expect = qCity + JEXL_AND_OP + Constants.NO_FIELD + phrase;
             String plan = getPlan(query, true, true);
             assertPlanEquals("false", plan);
             
