@@ -344,6 +344,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         // determine whether we have the tools to expand this in the first place
         try {
+            // check special case NO_FIELD
+            if (fieldName.equals(Constants.NO_FIELD)) {
+                return node;
+            }
+            
             if (!isExpandable(node)) {
                 if (mustExpand(node)) {
                     throw new DatawaveFatalQueryException("We must expand but yet cannot expand a regex: " + PrintingVisitor.formattedQueryString(node));
