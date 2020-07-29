@@ -1135,7 +1135,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 debugOutput = new ArrayList<>(32);
             }
             if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
                                 nonEventFields, metadataHelper);
                 if (log.isDebugEnabled()) {
                     logDebug(debugOutput, "Executable state after pushing low-selective terms:");
@@ -1195,8 +1195,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 // the terms to be delayed.
                 if (!ExecutableDeterminationVisitor
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, indexOnlyFields,
-                                    nonEventFields, metadataHelper);
+                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, false, config, indexedFields,
+                                    indexOnlyFields, nonEventFields, metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges:");
                         logQuery(queryTree, "Query after delayed pullup:");
@@ -1231,7 +1231,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 }
                 if (!ExecutableDeterminationVisitor
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
                                     nonEventFields, metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges and regex again:");

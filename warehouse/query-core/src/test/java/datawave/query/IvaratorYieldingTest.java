@@ -9,6 +9,7 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -123,7 +124,8 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         
         // setup a directory for cache results
         File tmpDir = this.tmpDir.newFolder("Ivarator.cache");
-        logic.setIvaratorCacheBaseURIs(tmpDir.toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
         
         logic.setYieldThresholdMs(1);
         logic.getQueryPlanner().setQueryIteratorClass(YieldingQueryIterator.class);

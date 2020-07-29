@@ -2,6 +2,7 @@ package datawave.query.planner;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -123,7 +124,7 @@ public class QueryPlan {
             newSetting.addOptions(setting.getOptions());
             if (newSetting.getOptions().containsKey(QueryIterator.QUERY)) {
                 newSetting.addOption(QueryIterator.QUERY, JexlStringBuildingVisitor.buildQuery(queryTree));
-                
+                newSetting.addOption(QueryIterator.RANGES, this.ranges.stream().map(Range::toString).collect(Collectors.joining(",", "[", "]")));
             }
             this.settings.add(newSetting);
             
