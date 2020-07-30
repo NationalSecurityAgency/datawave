@@ -266,7 +266,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                                 boolean added = fieldsToValues.put(field, term);
                                 
                                 // if there was a failure to add, and the key threshold isn't exceeded, increment the value exceeded count
-                                if (!added && !fieldsToValues.isKeyThresholdExceeded()) {
+                                if (!added && !fieldsToValues.isKeyThresholdExceeded() && fieldsToValues.get(field).isThresholdExceeded()) {
                                     valueExceededCount++;
                                 }
                                 
