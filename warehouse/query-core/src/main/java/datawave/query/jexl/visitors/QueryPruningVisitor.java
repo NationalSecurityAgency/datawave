@@ -552,7 +552,7 @@ public class QueryPruningVisitor extends BaseVisitor {
                     List<JexlNode> children = new ArrayList<>(parent.jjtGetNumChildren() - 1);
                     for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
                         JexlNode child = parent.jjtGetChild(i);
-                        if (!child.equals(toReplace)) {
+                        if (child != toReplace) {
                             children.add(child);
                         } else {
                             // clear the old nodes parentage
