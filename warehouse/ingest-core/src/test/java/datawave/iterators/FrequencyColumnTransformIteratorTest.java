@@ -1,10 +1,15 @@
 package datawave.iterators;
 
+import com.google.common.collect.Maps;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.ColumnFamilyConstants;
+import datawave.query.composite.CompositeMetadataHelper;
+import datawave.query.util.AllFieldMetadataHelper;
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeMetadataHelper;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.admin.NewTableConfiguration;
@@ -16,6 +21,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.junit.*;
+import org.powermock.api.extension.listener.MockMetadata;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,12 +68,12 @@ public class FrequencyColumnTransformIteratorTest {
     
     @Before
     public void setup() throws Exception {
-        //TODO would like to set up and tear down data before each test
+        // TODO would like to set up and tear down data before each test
     }
     
     @After
     public void cleanUp() {
-        //TODO - might need to implement this later.
+        // TODO - might need to implement this later.
     }
     
     private void loadData() throws Exception {
@@ -196,7 +202,7 @@ public class FrequencyColumnTransformIteratorTest {
         } catch (InterruptedException e) {
             Assert.fail("did not sleep for compaction");
         }
-
+        
         // Test for indempotency
         connector.tableOperations().compact(METADATA_TABLE_NAME, new Text("A"), new Text("Z"), true, true);
     }
@@ -218,6 +224,31 @@ public class FrequencyColumnTransformIteratorTest {
         Assert.assertTrue(counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get("20160728").equals(56));
         Assert.assertTrue(counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get("20160729").equals(57));
         Assert.assertTrue(counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get("20160801").equals(58));
+    }
+    
+    private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector) {
+        final Set<Authorizations> allMetadataAuths = Collections.emptySet();
+        final Set<Authorizations> auths = Collections.emptySet();
+        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, connector, METADATA_TABLE_NAME, auths, false);
+        CompositeMetadataHelper cmh = new CompositeMetadataHelper(connector, METADATA_TABLE_NAME, auths);
+        return new AllFieldMetadataHelper(tmh, cmh, connector, METADATA_TABLE_NAME, auths, allMetadataAuths);
+        
+    }
+    
+    @Test
+    public void testMetadataHelper() throws Exception {
+        
+        loadData();
+        HashSet<Authorizations> authorizations = new HashSet<>();
+        authorizations.add(auths);
+        MetadataHelper metadataHelper = new MetadataHelper(createAllFieldMetadataHelper(connector), Collections.emptySet(), connector, METADATA_TABLE_NAME,
+                        authorizations, authorizations);
+        HashSet<String> dataTypes = new HashSet<>();
+        dataTypes.add("csv");
+        long count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160426", dataTypes);
+        
+        Assert.assertTrue(count == 36l);
+        
     }
     
 }
