@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>2.9.4-hadoop3</version>
+        <version>2.9.5-hadoop3</version>
     </parent>
     <artifactId>datawave-ingest-core</artifactId>
     <packaging>jar</packaging>
@@ -28,30 +28,6 @@
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>mil.nga.giat</groupId>
-            <artifactId>geowave-adapter-raster</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.geoserver</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>mil.nga.giat</groupId>
-            <artifactId>geowave-adapter-vector</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.geoserver</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>mil.nga.giat</groupId>
-            <artifactId>geowave-datastore-accumulo</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>2.9.4-hadoop3</version>
+        <version>2.9.5-hadoop3</version>
     </parent>
     <artifactId>assemble-parent</artifactId>
     <packaging>pom</packaging>
@@ -12,17 +12,4 @@
         <module>webservice</module>
         <module>datawave</module>
     </modules>
-    <profiles>
-        <profile>
-            <id>geoserver</id>
-            <activation>
-                <property>
-                    <name>geoserver</name>
-                </property>
-            </activation>
-            <modules>
-                <module>geowave</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

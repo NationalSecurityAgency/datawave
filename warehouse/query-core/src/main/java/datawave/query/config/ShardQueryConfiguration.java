@@ -135,6 +135,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int pointMaxExpansion = 32;
     /**
+     * Used during geowave range optimization to determine the minimum number of sub-ranges we should split a range into.
+     */
+    private int geoWaveRangeSplitThreshold = 16;
+    /**
+     * Used during geowave range optimization to determine whether or not a large range should be split into smaller ranges - expressed as a float between 0 and
+     * 1.0
+     */
+    private double geoWaveMaxRangeOverlap = 0.25;
+    /**
+     * Determines whether or not we should attempt to optimize the GeoWave ranges which are produced.
+     */
+    private boolean optimizeGeoWaveRanges = true;
+    /**
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
     private int geoWaveMaxEnvelopes = 4;
@@ -192,6 +205,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -283,6 +297,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxFieldIndexRangeSplit = 11;
     private int ivaratorMaxOpenFiles = 100;
     private int ivaratorNumRetries = 2;
+    private boolean ivaratorPersistVerify = true;
+    private int ivaratorPersistVerifyCount = 100;
     private int maxIvaratorSources = 33;
     private long maxIvaratorResults = -1;
     private int maxEvaluationPipelines = 25;
@@ -364,6 +380,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
         this.setGeometryMaxExpansion(other.getGeometryMaxExpansion());
         this.setPointMaxExpansion(other.getPointMaxExpansion());
+        this.setGeoWaveRangeSplitThreshold(other.getGeoWaveRangeSplitThreshold());
+        this.setGeoWaveMaxRangeOverlap(other.getGeoWaveMaxRangeOverlap());
+        this.setOptimizeGeoWaveRanges(other.isOptimizeGeoWaveRanges());
         this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
         this.setShardTableName(other.getShardTableName());
         this.setIndexTableName(other.getIndexTableName());
@@ -461,6 +480,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
         this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
         this.setIvaratorNumRetries(other.getIvaratorNumRetries());
+        this.setIvaratorPersistVerify(other.isIvaratorPersistVerify());
+        this.setIvaratorPersistVerifyCount(other.getIvaratorPersistVerifyCount());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
         this.setMaxIvaratorResults(other.getMaxIvaratorResults());
         this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
@@ -481,6 +502,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
+        this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
     }
     
     /**
@@ -839,6 +861,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.pointMaxExpansion = pointMaxExpansion;
     }
     
+    public int getGeoWaveRangeSplitThreshold() {
+        return geoWaveRangeSplitThreshold;
+    }
+    
+    public void setGeoWaveRangeSplitThreshold(int geoWaveRangeSplitThreshold) {
+        this.geoWaveRangeSplitThreshold = geoWaveRangeSplitThreshold;
+    }
+    
+    public double getGeoWaveMaxRangeOverlap() {
+        return geoWaveMaxRangeOverlap;
+    }
+    
+    public void setGeoWaveMaxRangeOverlap(double geoWaveMaxRangeOverlap) {
+        this.geoWaveMaxRangeOverlap = geoWaveMaxRangeOverlap;
+    }
+    
+    public boolean isOptimizeGeoWaveRanges() {
+        return optimizeGeoWaveRanges;
+    }
+    
+    public void setOptimizeGeoWaveRanges(boolean optimizeGeoWaveRanges) {
+        this.optimizeGeoWaveRanges = optimizeGeoWaveRanges;
+    }
+    
     public int getGeoWaveMaxEnvelopes() {
         return geoWaveMaxEnvelopes;
     }
@@ -1190,6 +1236,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
         this.ivaratorNumRetries = ivaratorNumRetries;
+    }
+    
+    public boolean isIvaratorPersistVerify() {
+        return ivaratorPersistVerify;
+    }
+    
+    public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
+        this.ivaratorPersistVerify = ivaratorPersistVerify;
+    }
+    
+    public int getIvaratorPersistVerifyCount() {
+        return ivaratorPersistVerifyCount;
+    }
+    
+    public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
+        this.ivaratorPersistVerifyCount = ivaratorPersistVerifyCount;
     }
     
     public int getMaxIvaratorSources() {
@@ -1996,5 +2058,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setContentFieldNames(List<String> contentFieldNames) {
         this.contentFieldNames = contentFieldNames;
+    }
+    
+    public void setEvaluationOnlyFields(Set<String> evaluationOnlyFields) {
+        this.evaluationOnlyFields = evaluationOnlyFields;
+    }
+    
+    public Set<String> getEvaluationOnlyFields() {
+        return this.evaluationOnlyFields;
     }
 }

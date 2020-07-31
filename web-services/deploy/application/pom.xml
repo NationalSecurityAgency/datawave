@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>2.9.4-hadoop3</version>
+        <version>2.9.5-hadoop3</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
@@ -391,70 +391,6 @@
                                     <groupId>gov.nsa.datawave.webservices</groupId>
                                     <artifactId>datawave-ws-examples-client-login</artifactId>
                                 </ejbModule>
-                            </modules>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <!--
-            When the geoserver profile is active, we will include a geoserver deployment in the ear which includes
-            support for the GeoWave datastore.
-        -->
-        <profile>
-            <id>geoserver</id>
-            <activation>
-                <property>
-                    <name>geoserver</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>gov.nsa.datawave.webservices</groupId>
-                    <artifactId>datawave-ws-geoserver-application</artifactId>
-                    <version>${project.version}</version>
-                    <type>war</type>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <version>3.0.0</version>
-                        <executions>
-                            <execution>
-                                <id>copy-dependencies</id>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <phase>prepare-package</phase>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>gov.nsa.datawave.webservices</groupId>
-                                            <artifactId>datawave-ws-geoserver-application</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                            <overWrite>true</overWrite>
-                                            <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}</outputDirectory>
-                                            <destFileName>datawave-ws-geoserver-application-${project.version}.war</destFileName>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-ear-plugin</artifactId>
-                        <configuration>
-                            <modules>
-                                <webModule>
-                                    <groupId>gov.nsa.datawave.webservices</groupId>
-                                    <artifactId>datawave-ws-geoserver-application</artifactId>
-                                    <bundleFileName>datawave-ws-geoserver-application-${project.version}.war</bundleFileName>
-                                    <contextRoot>/geoserver</contextRoot>
-                                </webModule>
                             </modules>
                         </configuration>
                     </plugin>

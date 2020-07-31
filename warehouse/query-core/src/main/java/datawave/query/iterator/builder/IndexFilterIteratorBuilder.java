@@ -46,7 +46,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirs)) {
+        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirs, getField(), getNode())) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + filter + " over " + range);
             }
@@ -80,6 +80,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                         .withMaxResults(maxIvaratorResults)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
                         .withNumRetries(ivaratorNumRetries)
+                        .withPersistOptions(ivaratorPersistOptions)
                         .withQueryLock(queryLock)
                         .allowDirResuse(true)
                         .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME)
@@ -111,7 +112,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                 throw new IllegalStateException("Unable to initialize regex iterator stack", e);
             }
             
-            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator);
+            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, getNode(), getField());
             range = null;
             filter = null;
             source = null;
@@ -120,6 +121,8 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             keyTform = null;
             timeFilter = null;
             ivaratorCacheDirs = null;
+            node = null;
+            field = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);
