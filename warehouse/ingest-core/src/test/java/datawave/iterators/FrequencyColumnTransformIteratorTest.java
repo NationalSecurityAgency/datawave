@@ -1,23 +1,12 @@
 package datawave.iterators;
 
-import com.google.common.collect.Sets;
-import com.google.common.io.Files;
-import com.google.inject.internal.cglib.core.$ClassNameReader;
-import com.google.inject.internal.util.$SourceProvider;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.ColumnFamilyConstants;
-import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
-import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.admin.CompactionConfig;
 import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
@@ -25,7 +14,6 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.junit.*;
 
