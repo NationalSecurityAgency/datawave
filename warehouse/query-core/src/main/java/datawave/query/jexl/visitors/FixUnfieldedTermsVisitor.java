@@ -142,7 +142,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
                     }
                 } else {
                     // Otherwise, we want to add the child regardless
-                    node.jjtAddChild(newChild, newIndex);
+                    node.jjtAddChild(node.jjtGetChild(i), newIndex);
                     newIndex++;
                 }
                 
