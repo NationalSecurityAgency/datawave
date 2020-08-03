@@ -48,7 +48,10 @@ public class FrequencyColumnTransformIteratorTest {
     public static void setUp() throws Exception {
         instance = new InMemoryInstance();
         connector = instance.getConnector("root", new PasswordToken(""));
-        
+    }
+    
+    @Before
+    public void setup() throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         Date date = format.parse("20190101");
         timestamp = date.getTime();
@@ -63,17 +66,12 @@ public class FrequencyColumnTransformIteratorTest {
         EnumSet<IteratorUtil.IteratorScope> scopes = EnumSet.allOf(IteratorUtil.IteratorScope.class);
         scopes.remove(IteratorUtil.IteratorScope.minc);
         connector.tableOperations().attachIterator(METADATA_TABLE_NAME, settings, scopes);
-        
-    }
-    
-    @Before
-    public void setup() throws Exception {
-        // TODO would like to set up and tear down data before each test
     }
     
     @After
-    public void cleanUp() {
+    public void cleanUp() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         // TODO - might need to implement this later.
+        connector.tableOperations().delete(METADATA_TABLE_NAME);
     }
     
     private void loadData() throws Exception {
@@ -145,7 +143,35 @@ public class FrequencyColumnTransformIteratorTest {
     }
     
     @Test
-    public void testFrequencyTransformIterator() throws Throwable {
+    public void testFrequencyTransformIteratorAtScanScope() throws Throwable {
+        // TODO scan the metadata table and looked for compressed keys and inspect the values.
+        
+        loadData();
+        
+        Scanner scanner = connector.createScanner(METADATA_TABLE_NAME, auths);
+        scanner.setBatchSize(200);
+        scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_F));
+        int numEntries = 0;
+        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
+        
+        for (Map.Entry<Key,Value> entry : scanner) {
+            Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
+            FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
+            counter.deserializeCompressedValue(entry.getValue());
+            HashMap<String,Integer> dateFreqMap = counter.getDateToFrequencyValueMap();
+            for (Map.Entry<String,Integer> entry2 : dateFreqMap.entrySet()) {
+                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
+            }
+            counterHashMap.put(entry.getKey().getRow().toString(), counter);
+            numEntries++;
+        }
+        
+        checkFrequencyCompressedData(numEntries, counterHashMap);
+        
+    }
+    
+    @Test
+    public void testFrequencyTransformIteratorAtMajcScope() throws Throwable {
         // TODO scan the metadata table and looked for compressed keys and inspect the values.
         
         loadData();
@@ -246,8 +272,37 @@ public class FrequencyColumnTransformIteratorTest {
         HashSet<String> dataTypes = new HashSet<>();
         dataTypes.add("csv");
         long count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160426", dataTypes);
+        Assert.assertTrue(count == 18l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160427", dataTypes);
+        Assert.assertTrue(count == 19l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160428", dataTypes);
+        Assert.assertTrue(count == 20l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160429", dataTypes);
+        Assert.assertTrue(count == 21l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160501", dataTypes);
+        Assert.assertTrue(count == 22l);
         
+        count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160526", dataTypes);
         Assert.assertTrue(count == 36l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160527", dataTypes);
+        Assert.assertTrue(count == 37l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160528", dataTypes);
+        Assert.assertTrue(count == 38l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160529", dataTypes);
+        Assert.assertTrue(count == 39l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160601", dataTypes);
+        Assert.assertTrue(count == 40l);
+        
+        count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160726", dataTypes);
+        Assert.assertTrue(count == 54l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160727", dataTypes);
+        Assert.assertTrue(count == 55l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160728", dataTypes);
+        Assert.assertTrue(count == 56l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160729", dataTypes);
+        Assert.assertTrue(count == 57l);
+        count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160801", dataTypes);
+        Assert.assertTrue(count == 58l);
         
     }
     
