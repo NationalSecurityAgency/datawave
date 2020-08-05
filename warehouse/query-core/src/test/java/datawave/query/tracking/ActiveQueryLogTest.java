@@ -96,26 +96,26 @@ public class ActiveQueryLogTest {
     }
     
     @Test
-    public void whenRetrievingInstance_givenNullName_shouldReturnsDefaultInstance() {
+    public void getInstance_givenNullName_returnDefaultInstance() {
         ActiveQueryLog namedInstance = ActiveQueryLog.getInstance(null);
         assertSame(namedInstance, ActiveQueryLog.getInstance());
     }
     
     @Test
-    public void whenRetrievingInstance_givenBlankName_shouldReturnsDefaultInstance() {
+    public void getInstance_givenBlankName_returnDefaultInstance() {
         ActiveQueryLog namedInstance = ActiveQueryLog.getInstance(" ");
         assertSame(namedInstance, ActiveQueryLog.getInstance());
     }
     
     @Test
-    public void whenRetrievingInstance_givenUnencounteredName_shouldReturnsNewInstance() {
+    public void getInstance_givenNewName_returnNewInstance() {
         ActiveQueryLog namedInstance = ActiveQueryLog.getInstance("name");
         assertNotNull(namedInstance);
         assertNotSame(namedInstance, ActiveQueryLog.getInstance());
     }
     
     @Test
-    public void whenRetrievingInstance_givenPreviouslyEncounteredName_shouldReturnsExistingInstance() {
+    public void getInstance_givenExistingName_returnExistingInstance() {
         ActiveQueryLog firstInstance = ActiveQueryLog.getInstance("test");
         ActiveQueryLog secondInstance = ActiveQueryLog.getInstance("test");
         assertSame(firstInstance, secondInstance);
