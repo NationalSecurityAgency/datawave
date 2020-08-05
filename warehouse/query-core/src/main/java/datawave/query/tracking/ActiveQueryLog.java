@@ -210,6 +210,7 @@ public class ActiveQueryLog {
                 } finally {
                     cacheLock.writeLock().unlock();
                 }
+                this.maxIdle = maxIdle;
             } else {
                 log.error("Bad value: (" + maxIdle + ") for maxIdle");
             }
