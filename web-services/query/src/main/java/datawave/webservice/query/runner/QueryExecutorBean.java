@@ -655,6 +655,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 auditType = qd.logic.getAuditType(q);
+                response.setQueryID(q.getId().toString());
             } finally {
                 queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                 
@@ -691,6 +692,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 connection = connectionFactory.getConnection(qd.logic.getConnPoolName(), priority, trackingMap);
             } finally {
+                // TODO put the q.getId() inside of the GenericResponse
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
             // If we're supposed to trace this query, then turn tracing on and set information about the query
