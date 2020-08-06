@@ -322,7 +322,7 @@ public class BasicQueryBean {
         }
         String queryId = createResponse.getResult();
         CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
-        queryWizardStep3Response.setQueryID(queryId);
+        queryWizardStep3Response.setQueryId(queryId);
         
         BaseQueryLogic logic = getQueryLogic(logicName);
         if (logic != null && !(NO_PLAN_REQUIRED.contains(logic.getClass().getName()))) {

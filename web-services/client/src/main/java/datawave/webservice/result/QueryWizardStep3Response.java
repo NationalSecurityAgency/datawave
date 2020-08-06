@@ -69,7 +69,7 @@ public class QueryWizardStep3Response extends BaseResponse implements HtmlProvid
         if (plan != null)
             builder.append("<H2>The query plan: " + plan + "</H2>");
         else {
-            builder.append("<H2>Datawave could not generate a plan for the query: " + getQueryID());
+            builder.append("<H2>Datawave could not generate a plan for the query: " + getQueryId());
             if (errorMessage != null && !errorMessage.isEmpty()) {
                 builder.append("<br><H3>" + errorMessage + "</H3>");
             }
@@ -79,7 +79,7 @@ public class QueryWizardStep3Response extends BaseResponse implements HtmlProvid
         builder.append("<br/>");
         builder.append("<H2>Results</H2>");
         builder.append("<br/><br/>");
-        builder.append("<FORM id=\"queryform\" action=\"/DataWave/BasicQuery/" + getQueryID()
+        builder.append("<FORM id=\"queryform\" action=\"/DataWave/BasicQuery/" + getQueryId()
                         + "/showQueryWizardResults\"  method=\"get\" target=\"_self\" enctype=\"application/x-www-form-urlencoded\">");
         builder.append("<center><input type=\"submit\" value=\"Next\" align=\"left\" width=\"50\" /></center>");
         

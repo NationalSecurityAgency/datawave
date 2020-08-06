@@ -655,7 +655,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 auditType = qd.logic.getAuditType(q);
-                response.setQueryID(q.getId().toString());
+                response.setQueryId(q.getId().toString());
             } finally {
                 queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                 
