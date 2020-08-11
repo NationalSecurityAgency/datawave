@@ -52,6 +52,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
+import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -1180,6 +1181,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                 config.isExpandValues());
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding ranges:");
+                }
+                Multimap<String,String> prunedTerms = HashMultimap.create();
+                queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
+                if (log.isDebugEnabled()) {
+                    log.debug("Pruned the following GeoWave terms: ["
+                                    + prunedTerms.entries().stream().map(x -> x.getKey() + "==" + x.getValue()).collect(Collectors.joining(",")) + "]");
                 }
                 queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                 if (log.isDebugEnabled()) {
