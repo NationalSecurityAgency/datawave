@@ -14,6 +14,8 @@ import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.locationtech.jts.geom.Geometry;
@@ -80,6 +82,18 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         }
         
         return copiedNode;
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        JexlNode rebuiltNode = (JexlNode) super.visit(node, data);
+        return (rebuiltNode.jjtGetNumChildren() == 0) ? null : rebuiltNode;
+    }
+    
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        JexlNode rebuiltNode = (JexlNode) super.visit(node, data);
+        return (rebuiltNode.jjtGetNumChildren() == 0) ? null : rebuiltNode;
     }
     
     @Override
