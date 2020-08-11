@@ -4,10 +4,7 @@ import com.google.common.collect.Maps;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.ColumnFamilyConstants;
 import datawave.query.composite.CompositeMetadataHelper;
-import datawave.query.util.AllFieldMetadataHelper;
-import datawave.query.util.FrequencyFamilyCounter;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.TypeMetadataHelper;
+import datawave.query.util.*;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.util.TableName;
 import org.apache.accumulo.core.client.*;
@@ -158,8 +155,8 @@ public class FrequencyColumnTransformIteratorTest {
             Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
             FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
             counter.deserializeCompressedValue(entry.getValue());
-            HashMap<String,Integer> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<String,Integer> entry2 : dateFreqMap.entrySet()) {
+            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
+            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
                 System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
             }
             counterHashMap.put(entry.getKey().getRow().toString(), counter);
@@ -186,8 +183,8 @@ public class FrequencyColumnTransformIteratorTest {
             Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
             FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
             counter.deserializeCompressedValue(entry.getValue());
-            HashMap<String,Integer> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<String,Integer> entry2 : dateFreqMap.entrySet()) {
+            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
+            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
                 System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
             }
             counterHashMap.put(entry.getKey().getRow().toString(), counter);
@@ -208,8 +205,8 @@ public class FrequencyColumnTransformIteratorTest {
             Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
             FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
             counter.deserializeCompressedValue(entry.getValue());
-            HashMap<String,Integer> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<String,Integer> entry2 : dateFreqMap.entrySet()) {
+            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
+            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
                 System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
             }
             counterHashMap.put(entry.getKey().getRow().toString(), counter);
@@ -235,21 +232,24 @@ public class FrequencyColumnTransformIteratorTest {
     
     private void checkFrequencyCompressedData(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
         Assert.assertTrue(numEntries == 3);
-        Assert.assertTrue(counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get("20160426").equals(18));
-        Assert.assertTrue(counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get("20160427").equals(19));
-        Assert.assertTrue(counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get("20160428").equals(20));
-        Assert.assertTrue(counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get("20160429").equals(21));
-        Assert.assertTrue(counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get("20160501").equals(22));
-        Assert.assertTrue(counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get("20160526").equals(36));
-        Assert.assertTrue(counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get("20160527").equals(37));
-        Assert.assertTrue(counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get("20160528").equals(38));
-        Assert.assertTrue(counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get("20160529").equals(39));
-        Assert.assertTrue(counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get("20160601").equals(40));
-        Assert.assertTrue(counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get("20160726").equals(54));
-        Assert.assertTrue(counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get("20160727").equals(55));
-        Assert.assertTrue(counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get("20160728").equals(56));
-        Assert.assertTrue(counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get("20160729").equals(57));
-        Assert.assertTrue(counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get("20160801").equals(58));
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160426"))).getValue() == 18);
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160427"))).getValue() == 19);
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160428"))).getValue() == 20);
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160429"))).getValue() == 21);
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160501"))).getValue() == 22);
+        
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160526"))).getValue() == 36);
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160527"))).getValue() == 37);
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160528"))).getValue() == 38);
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160529"))).getValue() == 39);
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160601"))).getValue() == 40);
+        
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160726"))).getValue() == 54);
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160727"))).getValue() == 55);
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160728"))).getValue() == 56);
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160729"))).getValue() == 57);
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160801"))).getValue() == 58);
+        
     }
     
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector) {
