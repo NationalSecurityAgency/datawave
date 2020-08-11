@@ -148,15 +148,13 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         JexlNode reduced = QueryPruningVisitor.reduce(script, true);
         
-        Assert.assertEquals("FIELD1 == 'x'", JexlStringBuildingVisitor.buildQuery(reduced));
-        Assert.assertEquals("FIELD1 == 'x'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+        Assert.assertEquals("FIELD1 == 'x' || (false)", JexlStringBuildingVisitor.buildQuery(reduced));
+        Assert.assertEquals("FIELD1 == 'x' || (false)", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
-        Assert.assertTrue(logAppender.getMessages().size() == 3);
+        Assert.assertTrue(logAppender.getMessages().size() == 2);
         Assert.assertEquals("Pruning _NOFIELD_ == 'y' && FIELD2 == 'z' to false", logAppender.getMessages().get(0));
-        Assert.assertEquals("Pruning (_NOFIELD_ == 'y' && FIELD2 == 'z') from FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')", logAppender.getMessages()
-                        .get(1));
-        Assert.assertEquals("Query before prune: FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')\nQuery after prune: FIELD1 == 'x'", logAppender
-                        .getMessages().get(2));
+        Assert.assertEquals("Query before prune: FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')\nQuery after prune: FIELD1 == 'x' || (false)",
+                        logAppender.getMessages().get(1));
     }
     
     @Test
@@ -166,16 +164,14 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         JexlNode reduced = QueryPruningVisitor.reduce(script, true);
         
-        Assert.assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(reduced));
-        Assert.assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+        Assert.assertEquals("(false) || FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(reduced));
+        Assert.assertEquals("(false) || FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
         Assert.assertEquals(3, logAppender.getMessages().size());
-        Assert.assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z' to false", logAppender.getMessages().get(0));
+        Assert.assertEquals("Pruning _NOFIELD_ == 'x' || _NOFIELD_ == 'y' to false", logAppender.getMessages().get(0));
+        Assert.assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z' to false", logAppender.getMessages().get(1));
         Assert.assertEquals(
-                        "Pruning ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z') from ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z') || FIELD2 == 'z'",
-                        logAppender.getMessages().get(1));
-        Assert.assertEquals(
-                        "Query before prune: ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z') || FIELD2 == 'z'\nQuery after prune: FIELD2 == 'z'",
+                        "Query before prune: ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z') || FIELD2 == 'z'\nQuery after prune: (false) || FIELD2 == 'z'",
                         logAppender.getMessages().get(2));
     }
     
@@ -186,17 +182,15 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         JexlNode reduced = QueryPruningVisitor.reduce(script, true);
         
-        Assert.assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(reduced));
-        Assert.assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+        Assert.assertEquals("(false) || FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(reduced));
+        Assert.assertEquals("(false) || FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
         Assert.assertEquals(logAppender.getMessages().size() + "", 3, logAppender.getMessages().size());
+        Assert.assertEquals("Pruning _NOFIELD_ == 'x' || _NOFIELD_ == 'y' to false", logAppender.getMessages().get(0));
         Assert.assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z' to false",
-                        logAppender.getMessages().get(0));
-        Assert.assertEquals(
-                        "Pruning ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') from ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'",
                         logAppender.getMessages().get(1));
         Assert.assertEquals(
-                        "Query before prune: ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'\nQuery after prune: FIELD2 == 'z'",
+                        "Query before prune: ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'\nQuery after prune: (false) || FIELD2 == 'z'",
                         logAppender.getMessages().get(2));
     }
     
