@@ -37,7 +37,7 @@ public class FrequencyColumnValueFormatter implements Formatter {
                             .sorted(Comparator.comparing(Map.Entry::getKey))
                             .forEach(sorted -> sb.append(entry.getKey().getRow()).append(" " + entry.getKey().getColumnFamily().toString())
                                             .append(" " + entry.getKey().getColumnQualifier().toString().replaceAll(MetadataHelper.COL_QUAL_PREFIX, ""))
-                                            .append(" Date: " + sorted.getKey()).append(" Frequency: " + sorted.getValue().toString() + "\n"));
+                                            .append(" Date: " + sorted.getKey().getYyyymmdd()).append(" Frequency: " + sorted.getValue().getValue() + "\n"));
             return sb.toString();
         } else {
             return DefaultFormatter.formatEntry(entry, false);
