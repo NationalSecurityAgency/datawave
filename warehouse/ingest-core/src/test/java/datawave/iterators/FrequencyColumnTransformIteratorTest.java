@@ -34,12 +34,7 @@ public class FrequencyColumnTransformIteratorTest {
     private static long timestamp;
     static String METADATA_TABLE_NAME = "metadata";
     
-    private DatawavePrincipal datawavePrincipal;
     private Authorizations auths = new Authorizations("STUFF,THINGS");
-    
-    private static final Value NULL_VALUE = new Value(new byte[0]);
-    
-    private Path temporaryFolder;
     
     @BeforeClass
     public static void setUp() throws Exception {
@@ -57,17 +52,16 @@ public class FrequencyColumnTransformIteratorTest {
         properties.put("table.iterator.majc.vers.opt.maxVersions", "10");
         properties.put("table.iterator.minc.vers.opt.maxVersions", "10");
         properties.put("table.iterator.scan.vers.opt.maxVersions", "10");
+        properties.put("table.compaction.minor.idle", "10s");
         newTableConfiguration.setProperties(properties);
         connector.tableOperations().create(METADATA_TABLE_NAME, newTableConfiguration);
         IteratorSetting settings = new IteratorSetting(19, FrequencyColumnIterator.class, properties);
         EnumSet<IteratorUtil.IteratorScope> scopes = EnumSet.allOf(IteratorUtil.IteratorScope.class);
-        scopes.remove(IteratorUtil.IteratorScope.minc);
         connector.tableOperations().attachIterator(METADATA_TABLE_NAME, settings, scopes);
     }
     
     @After
     public void cleanUp() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        // TODO - might need to implement this later.
         connector.tableOperations().delete(METADATA_TABLE_NAME);
     }
     
@@ -141,7 +135,6 @@ public class FrequencyColumnTransformIteratorTest {
     
     @Test
     public void testFrequencyTransformIteratorAtScanScope() throws Throwable {
-        // TODO scan the metadata table and looked for compressed keys and inspect the values.
         
         loadData();
         
@@ -168,8 +161,35 @@ public class FrequencyColumnTransformIteratorTest {
     }
     
     @Test
+    public void testFrequencyTransformIteratorAtMincScope() throws Throwable {
+        
+        loadData();
+        // Sleep long enough to perform a minimum compaction.
+        Thread.sleep(15000);
+        Scanner scanner = connector.createScanner(METADATA_TABLE_NAME, auths);
+        scanner.setBatchSize(200);
+        scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_F));
+        int numEntries = 0;
+        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
+        
+        for (Map.Entry<Key,Value> entry : scanner) {
+            Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
+            FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
+            counter.deserializeCompressedValue(entry.getValue());
+            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
+            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
+                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
+            }
+            counterHashMap.put(entry.getKey().getRow().toString(), counter);
+            numEntries++;
+        }
+        
+        checkFrequencyCompressedData(numEntries, counterHashMap);
+        
+    }
+    
+    @Test
     public void testFrequencyTransformIteratorAtMajcScope() throws Throwable {
-        // TODO scan the metadata table and looked for compressed keys and inspect the values.
         
         loadData();
         

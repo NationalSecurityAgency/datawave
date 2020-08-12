@@ -1,8 +1,10 @@
 package datawave.iterators;
 
 import datawave.data.ColumnFamilyConstants;
+import datawave.query.util.Frequency;
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.YearMonthDay;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
@@ -11,10 +13,15 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.TransformingIterator;
 import org.apache.hadoop.io.Text;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 public class FrequencyColumnIterator extends TransformingIterator {
     
     private FrequencyFamilyCounter frequencyFamilyCounter;
+    private HashMap<String,FrequencyFamilyCounter> rowIdToCompressedFreqCQMap = new HashMap<>();
     
     public FrequencyColumnIterator() {};
     
@@ -33,8 +40,9 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Key newKey = null;
         Long numRecords = 0L;
         frequencyFamilyCounter = new FrequencyFamilyCounter();
-        
-        log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
+
+        if (log.isTraceEnabled())
+            log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
         
         Key topKey = null, aggregatedKey = null;
         Value topValue = null;
@@ -65,6 +73,18 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 aggregatedValue = topValue;
                 aggregatedKey = topKey;
                 log.trace("Aggregate Key: " + aggregatedKey.toStringNoTime());
+                
+                if (!rowIdToCompressedFreqCQMap.containsKey(aggregatedKey.getRow() + cq.toString()))
+                    rowIdToCompressedFreqCQMap.put(aggregatedKey.getRow().toString() + cq.toString(), frequencyFamilyCounter);
+                else {
+                    FrequencyFamilyCounter previousCounter = rowIdToCompressedFreqCQMap.get(aggregatedKey.getRow() + cq.toString());
+                    for (Map.Entry<YearMonthDay,Frequency> entry : previousCounter.getDateToFrequencyValueMap().entrySet()) {
+                        frequencyFamilyCounter.aggregateRecord(entry.getKey().getYyyymmdd(), String.valueOf(entry.getValue().getValue()));
+                    }
+                    rowIdToCompressedFreqCQMap.remove(aggregatedKey.getRow() + cq.toString());
+                    rowIdToCompressedFreqCQMap.put(aggregatedKey.getRow() + cq.toString(), frequencyFamilyCounter);
+                    
+                }
                 
             } else {
                 
