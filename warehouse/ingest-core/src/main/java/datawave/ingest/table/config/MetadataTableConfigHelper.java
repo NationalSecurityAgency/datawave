@@ -25,9 +25,8 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
             for (IteratorScope scope : IteratorScope.values()) {
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
+                setFrequencyColumnIterator(tops, scope.name());
             }
-            setFrequencyColumnIterator(tops, IteratorScope.scan.name());
-            setFrequencyColumnIterator(tops, IteratorScope.majc.name());
         }
         
     }
