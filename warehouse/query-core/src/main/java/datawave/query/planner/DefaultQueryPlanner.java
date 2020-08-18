@@ -115,6 +115,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
+import org.graalvm.compiler.core.common.alloc.Trace;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -1167,31 +1168,45 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         if (!disableBoundedLookup) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges");
-            
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
+            TraceStopwatch innerStopwatch = null;
+    
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
                                 config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding regex:");
                 }
+                innerStopwatch.stop();
+    
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
                 queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
                                 config.isExpandValues());
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding ranges:");
                 }
+                innerStopwatch.stop();
+    
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Prune GeoWave terms");
                 Multimap<String,String> prunedTerms = HashMultimap.create();
                 queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
                 if (log.isDebugEnabled()) {
                     log.debug("Pruned the following GeoWave terms: ["
                                     + prunedTerms.entries().stream().map(x -> x.getKey() + "==" + x.getValue()).collect(Collectors.joining(",")) + "]");
                 }
+                innerStopwatch.stop();
+    
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand pushing functions into exceeded value ranges");
                 queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
                 }
+                innerStopwatch.stop();
+    
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Remove delayed predicates");
                 // if we now have an unexecutable tree because of delayed
                 // predicates, then remove delayed predicates as needed and
                 // reexpand
@@ -1231,10 +1246,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
                     }
                 }
+                innerStopwatch.stop();
                 
                 // if we now have an unexecutable tree because of missing
                 // delayed predicates, then add delayed predicates where
                 // possible
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Add delayed predicates");
                 if (log.isDebugEnabled()) {
                     debugOutput.clear();
                 }
@@ -1247,6 +1264,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         logQuery(queryTree, "Query after partially executable pushdown:");
                     }
                 }
+                innerStopwatch.stop();
                 
             } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
                 stopwatch.stop();
@@ -1259,6 +1277,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new DatawaveFatalQueryException(qe);
             } catch (ExecutionException e) {
                 log.error("Exception while expanding ranges", e);
+            } finally {
+                // Ensure the inner stopwatch is stopped.
+                if (innerStopwatch != null && innerStopwatch.isRunning()) {
+                    innerStopwatch.stop();
+                }
             }
             stopwatch.stop();
         } else {
