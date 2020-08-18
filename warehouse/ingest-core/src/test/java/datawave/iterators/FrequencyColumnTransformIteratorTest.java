@@ -52,6 +52,9 @@ public class FrequencyColumnTransformIteratorTest {
         properties.put("table.iterator.majc.vers.opt.maxVersions", "10");
         properties.put("table.iterator.minc.vers.opt.maxVersions", "10");
         properties.put("table.iterator.scan.vers.opt.maxVersions", "10");
+        properties.put("table.iterator.scan.vers.opt.ageOffDate", "20160427");
+        properties.put("table.iterator.minc.vers.opt.ageOffDate", "20160427");
+        properties.put("table.iterator.majc.vers.opt.ageOffDate", "20160427");
         properties.put("table.compaction.minor.idle", "10s");
         newTableConfiguration.setProperties(properties);
         connector.tableOperations().create(METADATA_TABLE_NAME, newTableConfiguration);
@@ -252,7 +255,7 @@ public class FrequencyColumnTransformIteratorTest {
     
     private void checkFrequencyCompressedData(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
         Assert.assertTrue(numEntries == 3);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160426"))).getValue() == 18);
+        // Assert.assertFalse((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160426"))).getValue() == 18);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160427"))).getValue() == 19);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160428"))).getValue() == 20);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160429"))).getValue() == 21);
@@ -292,7 +295,7 @@ public class FrequencyColumnTransformIteratorTest {
         HashSet<String> dataTypes = new HashSet<>();
         dataTypes.add("csv");
         long count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160426", dataTypes);
-        Assert.assertTrue(count == 18l);
+        Assert.assertTrue(count == 0l);
         count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160427", dataTypes);
         Assert.assertTrue(count == 19l);
         count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160428", dataTypes);

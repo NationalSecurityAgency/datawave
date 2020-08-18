@@ -3,8 +3,10 @@ package datawave.ingest.table.config;
 import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
+import datawave.iterators.FrequencyColumnIterator;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
@@ -12,6 +14,8 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import java.util.HashMap;
 
 public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     
@@ -65,6 +69,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         setPropertyIfNecessary(tableName, stem, "25,datawave.iterators.FrequencyColumnIterator", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.ageOffDate", "20160427", tops, log);
         return stem;
     }
     

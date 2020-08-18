@@ -22,12 +22,21 @@ public class FrequencyColumnIterator extends TransformingIterator {
     
     private FrequencyFamilyCounter frequencyFamilyCounter;
     private HashMap<String,FrequencyFamilyCounter> rowIdToCompressedFreqCQMap = new HashMap<>();
+    private String ageOffDate = "20100101";
     
-    public FrequencyColumnIterator() {};
+    public FrequencyColumnIterator() {
+        setAgeOffDate();
+    }
     
     public FrequencyColumnIterator(FrequencyColumnIterator aThis, IteratorEnvironment environment) {
         super();
         setSource(aThis.getSource().deepCopy(environment));
+        setAgeOffDate();
+    }
+    
+    private void setAgeOffDate() {
+        if (describeOptions().getNamedOptions().get("ageOffDate") != null)
+            ageOffDate = describeOptions().getNamedOptions().get("ageOffDate");
     }
     
     @Override
@@ -40,7 +49,8 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Key newKey = null;
         Long numRecords = 0L;
         frequencyFamilyCounter = new FrequencyFamilyCounter();
-
+        log.info("ageOffDate is: " + ageOffDate);
+        
         if (log.isTraceEnabled())
             log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
         
@@ -72,6 +82,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
                     log.error("Compressed value was not deserialized properly");
                 aggregatedValue = topValue;
                 aggregatedKey = topKey;
+                
                 log.trace("Aggregate Key: " + aggregatedKey.toStringNoTime());
                 
                 if (!rowIdToCompressedFreqCQMap.containsKey(aggregatedKey.getRow() + cq.toString()))
@@ -79,7 +90,8 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 else {
                     FrequencyFamilyCounter previousCounter = rowIdToCompressedFreqCQMap.get(aggregatedKey.getRow() + cq.toString());
                     for (Map.Entry<YearMonthDay,Frequency> entry : previousCounter.getDateToFrequencyValueMap().entrySet()) {
-                        frequencyFamilyCounter.aggregateRecord(entry.getKey().getYyyymmdd(), String.valueOf(entry.getValue().getValue()));
+                        if (ageOffDate.compareTo(entry.getKey().getYyyymmdd()) < 0)
+                            frequencyFamilyCounter.aggregateRecord(entry.getKey().getYyyymmdd(), String.valueOf(entry.getValue().getValue()));
                     }
                     rowIdToCompressedFreqCQMap.remove(aggregatedKey.getRow() + cq.toString());
                     rowIdToCompressedFreqCQMap.put(aggregatedKey.getRow() + cq.toString(), frequencyFamilyCounter);
@@ -88,7 +100,8 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 
             } else {
                 
-                frequencyFamilyCounter.aggregateRecord(cq.toString(), topValue.toString());
+                if (ageOffDate.compareTo(cq.toString().substring(cq.getLength() - 8)) < 0)
+                    frequencyFamilyCounter.aggregateRecord(cq.toString(), topValue.toString());
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
