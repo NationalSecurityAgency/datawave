@@ -56,6 +56,7 @@ import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPlanMetadataVisitor;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
@@ -889,7 +890,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         TraceStopwatch stopwatch = null;
         
-        if (!disableExpandIndexFunction) {
+        // Parse out some metadata about the query plan to make informed decisions as the query tree is processed.
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Build QueryPlanMetadata");
+        QueryPlanMetadata planMetadata = QueryPlanMetadataVisitor.getQueryPlanMetadata(queryTree);
+        stopwatch.stop();
+        
+        if (planMetadata.hasFunctionNodes() && !disableExpandIndexFunction) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
             
             // expand the index queries for the functions
@@ -897,6 +903,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after function index queries were expanded:");
             }
+            
+            // Need to refresh the plan metadata after functions were expanded.
+            planMetadata = QueryPlanMetadataVisitor.getQueryPlanMetadata(queryTree);
             
             stopwatch.stop();
         }
@@ -912,7 +921,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // If the max regex expansion is reached for a term, then it will be
         // left as a regex
         Set<String> expansionFields = null;
-        if (!disableAnyFieldLookup) {
+        if (!disableAnyFieldLookup && planMetadata.hasAnyFieldNodes()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ANYFIELD regex nodes");
             
             try {
@@ -1004,7 +1013,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
         }
         
-        if (!disableRangeCoalescing) {
+        if (!disableRangeCoalescing && planMetadata.boundedRangesPossible()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Coalesce ranges");
             
             // Coalesce any bounded ranges into separate AND subtrees
@@ -1013,9 +1022,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after ranges were coalesced:");
             }
-            
             stopwatch.stop();
-            
         }
         
         // apply the node transform rules
@@ -1166,108 +1173,141 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
         }
         
-        if (!disableBoundedLookup) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges");
-            
-            // Expand any bounded ranges into a conjunction of discrete terms
+        ParallelIndexExpansion regexExpansion = null;
+        if (!disableBoundedLookup && (planMetadata.hasRegexNodes() || planMetadata.hasAnyFieldNodes())) {
             try {
-                ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
-                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
+                stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - ParallelIndexExpansion expand regex terms");
+                regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields, config.isExpandFields(),
+                                config.isExpandValues(), config.isExpandUnfieldedNegations());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                if (log.isDebugEnabled()) {
-                    logQuery(queryTree, "Query after expanding regex:");
-                }
-                queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
-                                config.isExpandValues());
-                if (log.isDebugEnabled()) {
-                    logQuery(queryTree, "Query after expanding ranges:");
-                }
-                Multimap<String,String> prunedTerms = HashMultimap.create();
-                queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
-                if (log.isDebugEnabled()) {
-                    log.debug("Pruned the following GeoWave terms: ["
-                                    + prunedTerms.entries().stream().map(x -> x.getKey() + "==" + x.getValue()).collect(Collectors.joining(",")) + "]");
-                }
-                queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
-                if (log.isDebugEnabled()) {
-                    logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
-                }
-                // if we now have an unexecutable tree because of delayed
-                // predicates, then remove delayed predicates as needed and
-                // reexpand
-                List<String> debugOutput = null;
-                if (log.isDebugEnabled()) {
-                    debugOutput = new ArrayList<>(32);
-                }
                 
-                // Unless config.isExandAllTerms is true, this may set some of
-                // the terms to be delayed.
-                if (!ExecutableDeterminationVisitor
-                                .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, false, config, indexedFields,
-                                    indexOnlyFields, nonEventFields, metadataHelper);
-                    if (log.isDebugEnabled()) {
-                        logDebug(debugOutput, "Executable state after expanding ranges:");
-                        logQuery(queryTree, "Query after delayed pullup:");
-                    }
-                    
-                    boolean expandAllTerms = config.isExpandAllTerms();
-                    // set the expand all terms flag to avoid any more delayed
-                    // predicates based on cost...
-                    config.setExpandAllTerms(true);
-                    
-                    queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding regex again:");
-                    }
-                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
-                                    config.isExpandValues());
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding ranges again:");
-                    }
-                    queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
-                    config.setExpandAllTerms(expandAllTerms);
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
-                    }
-                }
-                
-                // if we now have an unexecutable tree because of missing
-                // delayed predicates, then add delayed predicates where
-                // possible
-                if (log.isDebugEnabled()) {
-                    debugOutput.clear();
-                }
-                if (!ExecutableDeterminationVisitor
-                                .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
-                                    nonEventFields, metadataHelper);
-                    if (log.isDebugEnabled()) {
-                        logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
-                        logQuery(queryTree, "Query after partially executable pushdown:");
-                    }
-                }
-                
-            } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
-                stopwatch.stop();
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e1);
+            } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             } catch (CannotExpandUnfieldedTermFatalException e) {
                 if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException)
                     throw (DoNotPerformOptimizedQueryException) e.getCause();
                 QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
                 throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException e) {
-                log.error("Exception while expanding ranges", e);
-            }
-            stopwatch.stop();
-        } else {
-            
-            if (log.isDebugEnabled()) {
-                log.debug("Bounded range and regex conversion has been disabled");
+            } finally {
+                if (log.isDebugEnabled())
+                    logQuery(queryTree, "Query after expanding regex:");
+                stopwatch.stop();
             }
         }
         
+        if (!disableBoundedLookup && planMetadata.boundedRangesPossible()) {
+            try {
+                stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges");
+                queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
+                                config.isExpandValues());
+            } catch (TableNotFoundException | ExecutionException e) {
+                e.printStackTrace();
+            } finally {
+                if (log.isDebugEnabled())
+                    logQuery(queryTree, "Query after expanding ranges:");
+                stopwatch.stop();
+            }
+        }
+        
+        Multimap<String,String> prunedTerms = HashMultimap.create();
+        queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
+        if (log.isDebugEnabled()) {
+            log.debug("Pruned the following GeoWave terms: ["
+                            + prunedTerms.entries().stream().map(x -> x.getKey() + "==" + x.getValue()).collect(Collectors.joining(",")) + "]");
+        }
+        
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Push functions into exceeded value ranges");
+        queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
+        if (log.isDebugEnabled()) {
+            logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
+        }
+        stopwatch.stop();
+        
+        // if we now have an unexecutable tree because of delayed
+        // predicates, then remove delayed predicates as needed and
+        // re-expand
+        List<String> debugOutput = null;
+        if (log.isDebugEnabled()) {
+            debugOutput = new ArrayList<>(32);
+        }
+        
+        // Unless config.isExpandAllTerms is true, this may set some of
+        // the terms to be delayed.
+        if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+            
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rewrite Query For Execution");
+            queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
+                            nonEventFields, metadataHelper);
+            if (log.isDebugEnabled()) {
+                logDebug(debugOutput, "Executable state after expanding ranges:");
+                logQuery(queryTree, "Query after delayed pullup:");
+            }
+            
+            boolean expandAllTerms = config.isExpandAllTerms();
+            // set the expand all terms flag to avoid any more delayed
+            // predicates based on cost...
+            config.setExpandAllTerms(true);
+            
+            if (planMetadata.hasRegexNodes() || planMetadata.hasAnyFieldNodes()) {
+                try {
+                    // Might be null if above steps were skipped..
+                    if (regexExpansion == null) {
+                        regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields, config.isExpandFields(),
+                                        config.isExpandValues(), config.isExpandUnfieldedNegations());
+                    }
+                    
+                    queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                    
+                } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+                    throw new DatawaveFatalQueryException(qe);
+                } catch (CannotExpandUnfieldedTermFatalException e) {
+                    if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException)
+                        throw (DoNotPerformOptimizedQueryException) e.getCause();
+                    QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
+                    throw new DatawaveFatalQueryException(qe);
+                } finally {
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding regex again:");
+                    }
+                }
+            }
+            
+            if (planMetadata.boundedRangesPossible()) {
+                try {
+                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
+                                    config.isExpandValues());
+                } catch (TableNotFoundException | ExecutionException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (log.isDebugEnabled())
+                        logQuery(queryTree, "Query after expanding ranges again:");
+                }
+            }
+            
+            queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
+            config.setExpandAllTerms(expandAllTerms);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
+            }
+            stopwatch.stop();
+        }
+        
+        // if we now have an unexecutable tree because of missing
+        // delayed predicates, then add delayed predicates where
+        // possible
+        if (log.isDebugEnabled()) {
+            debugOutput.clear();
+        }
+        if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+            queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
+                            nonEventFields, metadataHelper);
+            if (log.isDebugEnabled()) {
+                logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
+                logQuery(queryTree, "Query after partially executable pushdown:");
+            }
+        }
         return queryTree;
     }
     
@@ -1407,7 +1447,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.error(qe);
             throw new DatawaveFatalQueryException(qe);
         }
+        
         queryTree = QueryModelVisitor.applyModel(queryTree, queryModel, allFields);
+        
+        // Temporary patch, QueryModelVisitor needs to not return an unflattened query tree.
+        queryTree = TreeFlatteningRebuildingVisitor.flatten(queryTree); // Flatten, always flatten
+        
         if (log.isTraceEnabled())
             log.trace("queryTree:" + PrintingVisitor.formattedQueryString(queryTree));
         return queryTree;
