@@ -255,7 +255,7 @@ public class FrequencyColumnTransformIteratorTest {
     
     private void checkFrequencyCompressedData(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
         Assert.assertTrue(numEntries == 3);
-        // Assert.assertFalse((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160426"))).getValue() == 18);
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160426"))).getValue() == 18);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160427"))).getValue() == 19);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160428"))).getValue() == 20);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160429"))).getValue() == 21);
@@ -295,7 +295,7 @@ public class FrequencyColumnTransformIteratorTest {
         HashSet<String> dataTypes = new HashSet<>();
         dataTypes.add("csv");
         long count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160426", dataTypes);
-        Assert.assertTrue(count == 0l);
+        Assert.assertTrue(count == 18l);
         count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160427", dataTypes);
         Assert.assertTrue(count == 19l);
         count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160428", dataTypes);
