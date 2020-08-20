@@ -115,7 +115,6 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
-import org.graalvm.compiler.core.common.alloc.Trace;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -1170,7 +1169,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!disableBoundedLookup) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
             TraceStopwatch innerStopwatch = null;
-    
+            
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
@@ -1181,7 +1180,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     logQuery(queryTree, "Query after expanding regex:");
                 }
                 innerStopwatch.stop();
-    
+                
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
                 queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
                                 config.isExpandValues());
@@ -1189,7 +1188,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     logQuery(queryTree, "Query after expanding ranges:");
                 }
                 innerStopwatch.stop();
-    
+                
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Prune GeoWave terms");
                 Multimap<String,String> prunedTerms = HashMultimap.create();
                 queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
@@ -1198,14 +1197,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                     + prunedTerms.entries().stream().map(x -> x.getKey() + "==" + x.getValue()).collect(Collectors.joining(",")) + "]");
                 }
                 innerStopwatch.stop();
-    
+                
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand pushing functions into exceeded value ranges");
                 queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
                 }
                 innerStopwatch.stop();
-    
+                
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Remove delayed predicates");
                 // if we now have an unexecutable tree because of delayed
                 // predicates, then remove delayed predicates as needed and
