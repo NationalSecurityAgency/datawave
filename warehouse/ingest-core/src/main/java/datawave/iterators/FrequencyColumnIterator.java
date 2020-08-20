@@ -13,14 +13,15 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.TransformingIterator;
 import org.apache.hadoop.io.Text;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public class FrequencyColumnIterator extends TransformingIterator {
     
     private FrequencyFamilyCounter frequencyFamilyCounter;
+    // TODO Figure out how to keep the rowIdToCompressedFreqCQMap from getting too large
+    // TODO maybe we do not have to worry about that from happening.
     private HashMap<String,FrequencyFamilyCounter> rowIdToCompressedFreqCQMap = new HashMap<>();
     private String ageOffDate = "20100101";
     
@@ -35,8 +36,20 @@ public class FrequencyColumnIterator extends TransformingIterator {
     }
     
     private void setAgeOffDate() {
-        if (describeOptions().getNamedOptions().get("ageOffDate") != null)
-            ageOffDate = describeOptions().getNamedOptions().get("ageOffDate");
+        // TODO Get this function to actually set the AgeOffDate by using the Accumulo framework
+        // tried strings: table.iterator.FrequencyColumnIterator.opt.ageOffDate , ageOffDate
+        List<String> unamedOptions = describeOptions().getUnnamedOptionDescriptions();
+        if (unamedOptions == null) {
+            if (log.isTraceEnabled())
+                log.trace("The base class unnamed options are null");
+        }
+        String configuredAgeOffDate = describeOptions().getNamedOptions().get("table.iterator.majc.FrequencyColumnIterator.opt.ageOffDate");
+        if (configuredAgeOffDate == null || configuredAgeOffDate.isEmpty()) {
+            if (log.isTraceEnabled())
+                log.trace("Couldn't find age off date in describeOptions().getNamedOptions().  Using default ageOffDate");
+        }
+        
+        ageOffDate = configuredAgeOffDate != null ? configuredAgeOffDate : this.ageOffDate;
     }
     
     @Override
@@ -102,6 +115,10 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 
                 if (ageOffDate.compareTo(cq.toString().substring(cq.getLength() - 8)) < 0)
                     frequencyFamilyCounter.aggregateRecord(cq.toString(), topValue.toString());
+                else {
+                    if (log.isTraceEnabled())
+                        log.trace("Aged off the date " + cq.toString().substring(cq.getLength() - 8));
+                }
                 
                 String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
                 
