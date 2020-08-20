@@ -52,13 +52,13 @@ public class FrequencyColumnTransformIteratorTest {
         properties.put("table.iterator.majc.vers.opt.maxVersions", "10");
         properties.put("table.iterator.minc.vers.opt.maxVersions", "10");
         properties.put("table.iterator.scan.vers.opt.maxVersions", "10");
-        properties.put("table.iterator.scan.vers.opt.ageOffDate", "20160427");
-        properties.put("table.iterator.minc.vers.opt.ageOffDate", "20160427");
-        properties.put("table.iterator.majc.vers.opt.ageOffDate", "20160427");
         properties.put("table.compaction.minor.idle", "10s");
         newTableConfiguration.setProperties(properties);
         connector.tableOperations().create(METADATA_TABLE_NAME, newTableConfiguration);
-        IteratorSetting settings = new IteratorSetting(19, FrequencyColumnIterator.class, properties);
+        HashMap<String,String> propertiesIt = new HashMap<>();
+        propertiesIt.put("ageOffDate", "20160427");
+        propertiesIt.put("type", "VARLEN");
+        IteratorSetting settings = new IteratorSetting(19, FrequencyColumnIterator.class, propertiesIt);
         EnumSet<IteratorUtil.IteratorScope> scopes = EnumSet.allOf(IteratorUtil.IteratorScope.class);
         connector.tableOperations().attachIterator(METADATA_TABLE_NAME, settings, scopes);
     }
@@ -75,6 +75,9 @@ public class FrequencyColumnTransformIteratorTest {
         BatchWriter bw = connector.createBatchWriter(METADATA_TABLE_NAME, bwConfig);
         
         Mutation m = new Mutation("BAR_FIELD");
+        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value("1"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value("1"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value("0x10"));
         m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value("1"));
         m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value("1"));
         m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value("0x10"));
@@ -94,6 +97,9 @@ public class FrequencyColumnTransformIteratorTest {
         bw.addMutation(m);
         
         m = new Mutation("NAME_FIELD");
+        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value("2"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value("2"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value("0x20"));
         m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value("2"));
         m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value("2"));
         m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value("0x20"));
@@ -112,6 +118,9 @@ public class FrequencyColumnTransformIteratorTest {
         bw.addMutation(m);
         
         m = new Mutation("PUB_FIELD");
+        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value("3"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value("3"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value("0x30"));
         m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value("3"));
         m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value("3"));
         m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value("0x30"));
@@ -165,7 +174,8 @@ public class FrequencyColumnTransformIteratorTest {
     
     @Test
     public void testFrequencyTransformIteratorAtMincScope() throws Throwable {
-        
+        //TODO  I have verified minimum compaction in the Accumlo Shell  - I am sceptical that this test really
+        // tests minimum compaction although it should work.
         loadData();
         // Sleep long enough to perform a minimum compaction.
         Thread.sleep(15000);
@@ -188,6 +198,34 @@ public class FrequencyColumnTransformIteratorTest {
         }
         
         checkFrequencyCompressedData(numEntries, counterHashMap);
+        
+    }
+    
+    @Test
+    public void testFrequencyTransformIteratorAgeOff() throws Throwable {
+        
+        loadData();
+        // Sleep long enough to perform a minimum compaction.
+        Thread.sleep(15000);
+        Scanner scanner = connector.createScanner(METADATA_TABLE_NAME, auths);
+        scanner.setBatchSize(200);
+        scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_F));
+        int numEntries = 0;
+        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
+        
+        for (Map.Entry<Key,Value> entry : scanner) {
+            Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
+            FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
+            counter.deserializeCompressedValue(entry.getValue());
+            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
+            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
+                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
+            }
+            counterHashMap.put(entry.getKey().getRow().toString(), counter);
+            numEntries++;
+        }
+        
+        checkFrequencyCompressedDataForAgeOff(numEntries, counterHashMap);
         
     }
     
@@ -254,24 +292,36 @@ public class FrequencyColumnTransformIteratorTest {
     }
     
     private void checkFrequencyCompressedData(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
+        // Also verifies AgeOff
         Assert.assertTrue(numEntries == 3);
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090426"))) == null);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160426"))).getValue() == 18);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160427"))).getValue() == 19);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160428"))).getValue() == 20);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160429"))).getValue() == 21);
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160501"))).getValue() == 22);
         
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090526"))) == null);
         Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160526"))).getValue() == 36);
         Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160527"))).getValue() == 37);
         Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160528"))).getValue() == 38);
         Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160529"))).getValue() == 39);
         Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160601"))).getValue() == 40);
         
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090726"))) == null);
         Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160726"))).getValue() == 54);
         Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160727"))).getValue() == 55);
         Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160728"))).getValue() == 56);
         Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160729"))).getValue() == 57);
         Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160801"))).getValue() == 58);
+        
+    }
+    
+    private void checkFrequencyCompressedDataForAgeOff(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
+        Assert.assertTrue(numEntries == 3);
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090426"))) == null);
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090526"))) == null);
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090726"))) == null);
         
     }
     
