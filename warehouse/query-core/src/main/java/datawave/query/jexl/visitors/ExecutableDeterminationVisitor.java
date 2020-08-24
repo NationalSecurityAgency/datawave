@@ -280,8 +280,11 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             log.trace("node:" + PrintingVisitor.formattedQueryString(node));
             log.trace("states are:" + states);
         }
-        // if only one state, then that is the state
-        if (states.size() == 1) {
+        if (states.size() == 0) {
+            // no child states, so nothing to evaluate
+            state = STATE.IGNORABLE;
+        } else if (states.size() == 1) {
+            // if only one state, then that is the state
             state = states.iterator().next();
         } else {
             // else remove the ignorable state
@@ -337,8 +340,11 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data + PREFIX)));
         }
-        // if only one state, then that is the state
-        if (states.size() == 1) {
+        if (states.size() == 0) {
+            // no child states, so nothing to evaluate
+            state = STATE.IGNORABLE;
+        } else if (states.size() == 1) {
+            // if only one state, then that is the state
             state = states.iterator().next();
         } else {
             // else remove the ignorable state

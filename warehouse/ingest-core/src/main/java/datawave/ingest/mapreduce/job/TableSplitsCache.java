@@ -12,14 +12,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
+
+import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -32,22 +32,30 @@ import org.apache.log4j.Logger;
  * cache. When the splits cache is updated, the current file will be compared to the new file to ensure that the MAX_SPLIT_DECREASE and
  * MAX_SPLIT_PERCENTAGE_DECREASE thresholds have not been exceeded.
  */
-public class MetadataTableSplits {
+public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     
     public static final String REFRESH_SPLITS = "datawave.ingest.refresh.splits";
     public static final String SPLITS_CACHE_DIR = "datawave.ingest.splits.cache.dir";
     public static final String MAX_SPLIT_DECREASE = "datawave.ingest.splits.max.decrease.number";
     public static final String MAX_SPLIT_PERCENTAGE_DECREASE = "datawave.ingest.splits.max.decrease.percentage";
-    private static final Logger log = Logger.getLogger(MetadataTableSplits.class);
+    private static final Logger log = Logger.getLogger(TableSplitsCache.class);
     private static final String DEFAULT_SPLITS_CACHE_DIR = "/data/splitsCache";
     private static final String SPLITS_CACHE_FILE = "all-splits.txt";
     private static final short DEFAULT_MAX_SPLIT_DECREASE = 42;
     private static final double DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE = .5;
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
-    private final Configuration conf;
-    private AccumuloHelper cbHelper = null;
     private Path splitsPath = null;
     private Map<String,List<Text>> splits = null;
+    
+    /**
+     *
+     * @param conf
+     */
+    
+    public TableSplitsCache(Configuration conf) {
+        super(conf);
+        this.splitsPath = getSplitsPath(conf);
+    }
     
     /**
      * @param tableSplits
@@ -78,23 +86,18 @@ public class MetadataTableSplits {
         return subset;
     }
     
-    /**
-     * 
-     * @param conf
-     */
-    
-    public MetadataTableSplits(Configuration conf) {
-        Validate.notNull(conf, "Configuration object passed to MetadataTableSplits is null");
-        this.conf = conf;
-        this.splitsPath = getSplitsPath(conf);
+    @Override
+    public void setCacheFilePath(Configuration conf) {
+        this.cacheFilePath = new Path(conf.get(SPLITS_CACHE_DIR, DEFAULT_SPLITS_CACHE_DIR), SPLITS_CACHE_FILE);
     }
     
     public static Path getSplitsPath(Configuration conf) {
         return new Path(conf.get(SPLITS_CACHE_DIR, DEFAULT_SPLITS_CACHE_DIR), SPLITS_CACHE_FILE);
     }
     
-    public static Path getSplitsDir(Configuration conf) {
-        return new Path(conf.get(SPLITS_CACHE_DIR, DEFAULT_SPLITS_CACHE_DIR));
+    @Override
+    protected boolean shouldRefreshCache(Configuration conf) {
+        return shouldRefreshSplits(conf);
     }
     
     public static boolean shouldRefreshSplits(Configuration conf) {
@@ -116,56 +119,8 @@ public class MetadataTableSplits {
         return splitsStatus;
     }
     
-    private void initAccumuloHelper() {
-        if (cbHelper == null) {
-            cbHelper = new AccumuloHelper();
-            cbHelper.setup(conf);
-        }
-    }
-    
-    private Path createTempFile(FileSystem fs) throws IOException {
-        // create a new temporary file
-        int count = 1;
-        Path tmpSplitsFile = null;
-        try {
-            do {
-                Path parentDirectory = this.splitsPath.getParent();
-                String fileName = SPLITS_CACHE_FILE + "." + count;
-                log.info("Attempting to create " + fileName + " under " + parentDirectory);
-                tmpSplitsFile = new Path(parentDirectory, fileName);
-                count++;
-            } while (!fs.createNewFile(tmpSplitsFile));
-        } catch (IOException ex) {
-            throw new IOException("Could not create temp splits file", ex);
-        }
-        
-        return tmpSplitsFile;
-        
-    }
-    
-    private void createCacheFile(FileSystem fs, Path tmpSplitsFile) {
-        // now move the temporary file to the file cache
-        try {
-            fs.delete(this.splitsPath, false);
-            // Note this rename will fail if the file already exists (i.e. the delete failed or somebody just replaced it)
-            // but this is OK...
-            if (!fs.rename(tmpSplitsFile, this.splitsPath)) {
-                throw new IOException("Failed to rename temporary splits file");
-            }
-        } catch (Exception e) {
-            log.warn("Unable to rename " + tmpSplitsFile + " to " + this.splitsPath + " probably because somebody else replaced it", e);
-            try {
-                fs.delete(tmpSplitsFile, false);
-            } catch (Exception e2) {
-                log.error("Unable to clean up " + tmpSplitsFile, e2);
-            }
-        }
-        log.info("Updated the metadata table splits");
-        
-    }
-    
     private Set<String> getIngestTableNames() {
-        Set<String> tableNames = IngestJob.getTables(conf);
+        Set<String> tableNames = TableConfigurationUtil.getTables(conf);
         if (tableNames.isEmpty()) {
             log.error("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
             throw new IllegalArgumentException("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
@@ -176,33 +131,14 @@ public class MetadataTableSplits {
     /**
      * updates the splits file if the splits in the new file have not decreased beyond the maximum deviation allowed
      */
-    public void update() {
-        try {
-            FileSystem fs = FileSystem.get(this.splitsPath.toUri(), conf);
-            initAccumuloHelper();
-            Path tmpSplitsFile = createTempFile(fs);
-            Map<String,Integer> tmpSplitsPerTable = writeSplits(fs, tmpSplitsFile);
-            if (null == getFileStatus() || !exceedsMaxSplitsDeviation(tmpSplitsPerTable)) {
-                log.info("updating splits file");
-                createCacheFile(fs, tmpSplitsFile);
-            } else {
-                log.info("Deleting " + tmpSplitsFile);
-                fs.delete(tmpSplitsFile, false);
-            }
-        } catch (IOException | AccumuloException | AccumuloSecurityException | TableNotFoundException ex) {
-            log.error("Unable to update the splits file", ex);
-        }
-        
-    }
-    
-    private Map<String,Integer> writeSplits(FileSystem fs, Path tmpSplitsFile) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
-                    IOException {
+    @Override
+    public void writeCacheFile(FileSystem fs, Path tmpSplitsFile) throws IOException {
         TableOperations tops = null;
         initAccumuloHelper();
         try {
-            tops = this.cbHelper.getConnector().tableOperations();
+            tops = this.accumuloHelper.getConnector().tableOperations();
         } catch (AccumuloSecurityException | AccumuloException ex) {
-            throw new AccumuloException("Could not get TableOperations", ex);
+            throw new IOException("Could not get TableOperations", ex);
         }
         Set<String> tableNames = getIngestTableNames();
         Map<String,Integer> splitsPerTable = new HashMap<>();
@@ -220,15 +156,19 @@ public class MetadataTableSplits {
                         out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
                     }
                 }
+                if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
+                    // if the file exists and the new file would exceed the deviation threshold, don't replace it
+                    throw new IOException("Splits file will not be replaced");
+                }
             } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
                 log.error("Unable to write new splits file", ex);
-                throw ex;
+                throw new IOException(ex);
             }
         }
-        return splitsPerTable;
+        
     }
     
-    private boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) throws IOException {
+    private boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) {
         Map<String,Integer> currentSplitsPerTable = getCurrentSplitsPerTable();
         if (!currentSplitsPerTable.isEmpty()) {
             Set<String> currentTables = currentSplitsPerTable.keySet();
@@ -261,19 +201,6 @@ public class MetadataTableSplits {
         return currentSplitsPerTable;
     }
     
-    private void read() throws IOException {
-        log.info(String.format("Reading the metadata table splits (@ '%s')...", this.splitsPath.toUri().toString()));
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.splitsPath.toUri(), conf).open(this.splitsPath)))) {
-            readCache(in);
-        } catch (IOException ex) {
-            if (shouldRefreshSplits(this.conf)) {
-                update();
-            } else {
-                throw new IOException("Could not read metadata table splits file", ex);
-            }
-        }
-    }
-    
     /**
      * Read a stream into a map of table name to split points
      * 
@@ -281,13 +208,14 @@ public class MetadataTableSplits {
      *            an input stream containing the split points to read
      * @throws IOException
      */
-    private void readCache(BufferedReader in) throws IOException {
+    @Override
+    protected void readCache(BufferedReader in, String delimiter) throws IOException {
         this.splits = new HashMap<>();
         String line;
         String tableName = null;
         List<Text> splits = null;
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, '\t');
+            String[] parts = StringUtils.split(line, delimiter);
             if (tableName == null || !tableName.equals(parts[0])) {
                 tableName = parts[0];
                 splits = new ArrayList<>();
