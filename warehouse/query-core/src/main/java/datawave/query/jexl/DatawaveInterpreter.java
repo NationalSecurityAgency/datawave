@@ -133,6 +133,16 @@ public class DatawaveInterpreter extends Interpreter {
         return null;
     }
     
+    /**
+     * Triggered when method, function or constructor invocation fails.
+     * @param xjexl the JexlException wrapping the original error
+     * @return throws JexlException
+     */
+    @Override
+    protected Object invocationFailed(JexlException xjexl) {
+        throw xjexl;
+    }
+    
     @Override
     public Object visit(ASTEQNode node, Object data) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
