@@ -135,7 +135,9 @@ public class DatawaveInterpreter extends Interpreter {
     
     /**
      * Triggered when method, function or constructor invocation fails.
-     * @param xjexl the JexlException wrapping the original error
+     * 
+     * @param xjexl
+     *            the JexlException wrapping the original error
      * @return throws JexlException
      */
     @Override

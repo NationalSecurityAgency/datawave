@@ -52,10 +52,10 @@ public class DatawaveInterpreterTest {
         JexlContext context = mock(JexlContext.class);
         DatawaveInterpreter interpreter = new DatawaveInterpreter(engine, context, false, false);
         JexlException exception = new JexlException(new ASTStringLiteral(1), "Function failure");
-    
+        
         // Make mocks available.
         EasyMock.replay(engine, context);
-    
+        
         // Capture the expected exception.
         Exception thrown = null;
         try {
