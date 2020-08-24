@@ -758,6 +758,20 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
     
     @Test
+    public void tf_exceededValue_negated_leadingWildcard_multiTerm_documentSpecific_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b c'))";
+        tf_test(seekRange, query, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void tf_exceededValue_negated_leadingWildcard_multiTerm_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b c'))";
+        tf_test(seekRange, query, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
     public void tf_exceededValue_negated_leadingWildcard_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))";

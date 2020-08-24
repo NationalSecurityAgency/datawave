@@ -97,6 +97,22 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
     }
     
+    @Test
+    public void tf_exceededValue_leadingWildcard_fullValueMatch_documentSpecific_tld_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*r s'))";
+        Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
+        List<String> tfField1Hits = new ArrayList<>();
+        // from parent
+        tfField1Hits.add("a b c");
+        // from child
+        tfField1Hits.add("q r s");
+        expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
+        
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+    }
+    
     /**
      * Shard range given expected from RangePartitioner and EVENT_FIELD1 index lookup. ExceededValueThreshold TF FIELD triggers TF index lookup for evaluation.
      *

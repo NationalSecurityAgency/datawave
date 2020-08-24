@@ -51,9 +51,13 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
         super(-1);
     }
     
+    protected ByteSequence getPointerData(Key key) {
+        return key.getColumnQualifierData();
+    }
+    
     @Override
     protected ByteSequence parsePointer(Key current) {
-        return parsePointer(current.getColumnQualifierData());
+        return parsePointer(getPointerData(current));
     }
     
     @Override
@@ -76,7 +80,7 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
     public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException {
         Key key = itr.getTopKey();
         Text row = key.getRow();
-        ByteSequence pointer = parsePointer(key.getColumnQualifierData());
+        ByteSequence pointer = parsePointer(getPointerData(key));
         while (itr.hasTop() && samePointer(row, pointer, itr.getTopKey()))
             itr.next();
         
@@ -86,7 +90,7 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
     
     protected boolean samePointer(Text row, ByteSequence pointer, Key key) {
         if (row.equals(key.getRow())) {
-            ByteSequence pointer2 = parsePointer(key.getColumnQualifierData());
+            ByteSequence pointer2 = parsePointer(getPointerData(key));
             return (pointer.equals(pointer2));
         }
         return false;
@@ -96,7 +100,7 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
     public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException {
         Key key = itr.getTopKey();
         Text row = key.getRow();
-        ByteSequence pointer = parsePointer(key.getColumnQualifierData());
+        ByteSequence pointer = parsePointer(getPointerData(key));
         Key nextKey = key;
         while (nextKey != null && samePointer(row, pointer, nextKey)) {
             Key topKey = nextKey;
