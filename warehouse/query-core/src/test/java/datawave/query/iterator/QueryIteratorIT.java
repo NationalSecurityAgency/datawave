@@ -1,6 +1,8 @@
 package datawave.query.iterator;
 
 import com.google.common.io.Files;
+import datawave.data.normalizer.AbstractNormalizer;
+import datawave.data.normalizer.Normalizer;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -113,8 +115,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         typeMetadata.put("EVENT_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("EVENT_FIELD4", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("EVENT_FIELD6", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("TF_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("TF_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("TF_FIELD1", DEFAULT_DATATYPE, CommaFreeType.class.getName());
+        typeMetadata.put("TF_FIELD2", DEFAULT_DATATYPE, CommaFreeType.class.getName());
         typeMetadata.put("INDEX_ONLY_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("INDEX_ONLY_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("INDEX_ONLY_FIELD3", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
@@ -152,7 +154,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), new Value()));
         
         // add some indexed TF fields
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a b c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
@@ -161,7 +163,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTime), new Value()));
         
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
@@ -1009,8 +1011,9 @@ public class QueryIteratorIT extends EasyMockSupport {
         expectedDocument.put("EVENT_FIELD5", Arrays.asList(new String[] {"e"}));
         expectedDocument.put("EVENT_FIELD6", Arrays.asList(new String[] {"f"}));
         
-        expectedDocument.put("TF_FIELD1", Arrays.asList(new String[] {"a b c"}));
-        expectedDocument.put("TF_FIELD2", Arrays.asList(new String[] {"x y z"}));
+        // non-normalized form
+        expectedDocument.put("TF_FIELD1", Arrays.asList(new String[] {"a,, b,,, c,,"}));
+        expectedDocument.put("TF_FIELD2", Arrays.asList(new String[] {",x, ,y, ,z,"}));
         
         return new AbstractMap.SimpleEntry<>(hitKey, expectedDocument);
     }
@@ -1085,7 +1088,8 @@ public class QueryIteratorIT extends EasyMockSupport {
                                     + "\nexpected: " + expected, dictSet.size(), expected.size());
                     Iterator<Attribute> dictIterator = dictSet.iterator();
                     while (dictIterator.hasNext()) {
-                        assertTrue(expected.remove(dictIterator.next().getData().toString()));
+                        String foundString = dictIterator.next().getData().toString();
+                        assertTrue("could not find " + foundString + " in results! Still had " + expected, expected.remove(foundString));
                     }
                     // verify that the expected set is now empty
                     assertEquals(0, expected.size());

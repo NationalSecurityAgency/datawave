@@ -431,7 +431,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (limitLookup) {
             ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
             NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier, new AttributeFactory(
-                            this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
+                            this.typeMetadata), this.typeMetadata, getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
             builder.setSource(source.deepCopy(env));
             builder.setTypeMetadata(typeMetadata);

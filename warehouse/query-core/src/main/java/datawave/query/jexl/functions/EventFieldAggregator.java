@@ -1,12 +1,18 @@
 package datawave.query.jexl.functions;
 
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -45,5 +51,17 @@ public class EventFieldAggregator extends IdentityAggregator {
     @Override
     protected ByteSequence parsePointer(ByteSequence columnFamily) {
         return columnFamily;
+    }
+    
+    @Override
+    public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException {
+        Key result = super.apply(itr, doc, attrs);
+        
+        // for each thing in the doc, mark it as to-keep false because it will ultimately come from the document aggregation, otherwise there will be duplicates
+        for (Attribute<?> attr : doc.getDictionary().values()) {
+            attr.setToKeep(false);
+        }
+        
+        return result;
     }
 }
