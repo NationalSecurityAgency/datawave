@@ -394,7 +394,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         }
         return false;
     }
-
+    
     @Override
     public boolean remove(Object o) {
         boolean removed = false;
@@ -476,7 +476,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         }
         return modified;
     }
-
+    
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
         boolean removed = false;
@@ -503,7 +503,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         }
         return removed;
     }
-
+    
     @Override
     public void clear() {
         // This will cause the MultiSetBackedSortedSet to call clear on each Set in its Set of Sets, including the buffer
