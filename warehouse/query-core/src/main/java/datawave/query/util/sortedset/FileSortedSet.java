@@ -495,7 +495,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.removeAll(c);
         }
     }
-
+    
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
         if (persisted) {
@@ -504,7 +504,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.removeIf(filter);
         }
     }
-
+    
     @Override
     public void clear() {
         if (persisted) {
