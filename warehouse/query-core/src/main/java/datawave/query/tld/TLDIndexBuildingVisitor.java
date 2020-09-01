@@ -2,6 +2,7 @@ package datawave.query.tld;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.DatawaveKey;
@@ -189,7 +190,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     
     @Override
     protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
-        return new TLDEventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1);
+        return new TLDEventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
     }
     
     /**

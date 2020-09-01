@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.data.type.NoOpType;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.iterator.EventFieldIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
@@ -431,7 +432,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (limitLookup) {
             ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
             NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier, new AttributeFactory(
-                            this.typeMetadata), this.typeMetadata, getEventFieldAggregator(identifier, wrapped));
+                            this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
             builder.setSource(source.deepCopy(env));
             builder.setTypeMetadata(typeMetadata);
@@ -459,7 +460,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
-        return new EventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1);
+        return new EventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
     }
     
     /**

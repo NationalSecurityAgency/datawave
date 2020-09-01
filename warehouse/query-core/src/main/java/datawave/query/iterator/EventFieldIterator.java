@@ -1,11 +1,9 @@
 package datawave.query.iterator;
 
-import datawave.data.type.NoOpType;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
-import datawave.query.iterator.logic.EventFieldNormalizingIterator;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -22,21 +20,18 @@ public class EventFieldIterator implements NestedIterator<Key> {
     private final Range range;
     private final SortedKeyValueIterator<Key,Value> source;
     private final String field;
-    private final AttributeFactory attributeFactory;
-    private final TypeMetadata typeMetadata;
     private final IdentityAggregator aggregator;
+    private final AttributeFactory attributeFactory;
     private Key key;
     private Document document;
     private boolean initialized = false;
-    private EventFieldNormalizingIterator normalizingIterator;
     
     public EventFieldIterator(Range range, SortedKeyValueIterator<Key,Value> source, String field, AttributeFactory attributeFactory,
-                    TypeMetadata typeMetadata, IdentityAggregator aggregator) {
+                    IdentityAggregator aggregator) {
         this.range = range;
         this.source = source;
         this.field = field;
         this.attributeFactory = attributeFactory;
-        this.typeMetadata = typeMetadata;
         this.aggregator = aggregator;
     }
     
@@ -60,7 +55,7 @@ public class EventFieldIterator implements NestedIterator<Key> {
         
         Key top = source.getTopKey();
         
-        if (minimum.compareTo(top) < -1) {
+        if (minimum.compareTo(top) < 0) {
             throw new IllegalStateException("cannot move iterator backwards to " + minimum);
         }
         
@@ -72,7 +67,7 @@ public class EventFieldIterator implements NestedIterator<Key> {
                 init(newRange);
             } else {
                 // just seek
-                normalizingIterator.seek(newRange, Collections.emptyList(), false);
+                source.seek(newRange, Collections.emptyList(), false);
                 getNext();
             }
         } catch (IOException e) {
@@ -113,7 +108,7 @@ public class EventFieldIterator implements NestedIterator<Key> {
         try {
             if (!initialized) {
                 init(range);
-            } else if (key == null && normalizingIterator.hasTop()) {
+            } else if (key == null && source.hasTop()) {
                 getNext();
             }
         } catch (IOException e) {
@@ -133,8 +128,7 @@ public class EventFieldIterator implements NestedIterator<Key> {
     
     private void init(Range seekRange) throws IOException {
         if (!initialized) {
-            normalizingIterator = new EventFieldNormalizingIterator(field, source, typeMetadata, NoOpType.class.getName());
-            normalizingIterator.seek(seekRange, Collections.emptyList(), false);
+            source.seek(seekRange, Collections.emptyList(), false);
             getNext();
             
             initialized = true;
@@ -142,21 +136,40 @@ public class EventFieldIterator implements NestedIterator<Key> {
     }
     
     private void getNext() throws IOException {
+        key = null;
         // normalizingIterator is already reduced down to the proper field and range, just aggregate if it has anything
-        if (normalizingIterator.hasTop()) {
-            document = new Document();
-            key = aggregator.apply(normalizingIterator, document, attributeFactory);
+        while (source.hasTop() && key == null) {
+            Key topKey = source.getTopKey();
+            String cq = topKey.getColumnQualifier().toString();
+            int nullIndex1 = cq.indexOf('\u0000');
             
-            // only return a key if something was added to the document, documents that only contain Document.DOCKEY_FIELD_NAME
-            // should not be returned
-            if (document.size() == 1 && document.get(Document.DOCKEY_FIELD_NAME) != null) {
-                key = null;
-                
-                // empty the document
-                document.remove(Document.DOCKEY_FIELD_NAME);
+            if (nullIndex1 == -1) {
+                // invalid key, keep going
+                source.next();
+                continue;
             }
-        } else {
-            key = null;
+            
+            String fieldName = cq.substring(0, nullIndex1);
+            
+            if (JexlASTHelper.removeGroupingContext(fieldName).equals(field)) {
+                document = new Document();
+                key = aggregator.apply(source, document, attributeFactory);
+                
+                // only return a key if something was added to the document, documents that only contain Document.DOCKEY_FIELD_NAME
+                // should not be returned
+                if (document.size() == 1 && document.get(Document.DOCKEY_FIELD_NAME) != null) {
+                    key = null;
+                    
+                    // empty the document
+                    document.remove(Document.DOCKEY_FIELD_NAME);
+                }
+            }
+            
+            source.next();
+        }
+        
+        // clear the document if no next was found
+        if (key == null) {
             document = null;
         }
     }

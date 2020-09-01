@@ -2,6 +2,8 @@ package datawave.query.jexl.functions;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import datawave.query.attributes.AttributeFactory;
@@ -33,9 +35,9 @@ public class TermFrequencyAggregator extends IdentityAggregator {
     }
     
     @Override
-    protected Tuple2<String,String> parserFieldNameValue(Key topKey) {
+    protected List<Tuple2<String,String>> parserFieldNameValue(Key topKey) {
         DatawaveKey parser = new DatawaveKey(topKey);
-        return new Tuple2<>(parser.getFieldName(), parser.getFieldValue());
+        return Arrays.asList(new Tuple2<>(parser.getFieldName(), parser.getFieldValue()));
     }
     
     @Override
