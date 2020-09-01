@@ -163,19 +163,24 @@ public class ScannerStream extends BaseIndexStream {
         while (hasNext()) {
             entry = peek();
             if (entry.first().compareTo(target) < 0) {
+                // Continue advancing so long as the top shard sorts before the seekShard
                 next();
             } else {
+                // If we match or exceed the seekShard, breakout.
                 break;
             }
         }
         
-        // Then advance by shards within a day.
+        // Then advance by shards within a day. The day will sort before day_shard
         if (entry != null && !ShardEquality.isDay(entry.first()) && entry.first().compareTo(seekShard) <= 0) {
+            // Only drop in here if the top shard is not a day and is less than the seekShard.
             while (hasNext()) {
                 entry = peek();
                 if (entry.first().compareTo(seekShard) < 0) {
+                    // If the top shard is less than the seekShard keep going.
                     next();
                 } else {
+                    // If we matched or exceed the seekShard, breakout.
                     break;
                 }
             }
