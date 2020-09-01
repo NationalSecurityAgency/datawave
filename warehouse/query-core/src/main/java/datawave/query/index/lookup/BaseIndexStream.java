@@ -76,7 +76,11 @@ public abstract class BaseIndexStream implements IndexStream {
     @Override
     public Tuple2<String,IndexInfo> peek() {
         if (!hasPeeked) {
-            peekedElement = backingIter.next();
+            if (backingIter.hasNext()) {
+                peekedElement = backingIter.next();
+            } else {
+                peekedElement = null;
+            }
             hasPeeked = true;
         }
         return peekedElement;

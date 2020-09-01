@@ -12,11 +12,37 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 public class ScannerStreamTest {
     
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+    
+    @Test
+    public void testHasNextPeekIteration() {
+        List<Tuple2<String,IndexInfo>> elements = createIter("20090606", "20090704");
+        ScannerStream stream = buildScannerStream(elements.iterator());
+        
+        while (stream.hasNext()) {
+            stream.peek();
+            stream.next();
+        }
+        assertFalse(stream.hasNext());
+    }
+    
+    // Repeated peek() calls followed by a next() should return the same element.
+    @Test
+    public void testPeekingIteratorContract() {
+        List<Tuple2<String,IndexInfo>> elements = createIter("20090606", "20090606");
+        ScannerStream stream = buildScannerStream(elements.iterator());
+        
+        Tuple2<String,IndexInfo> top = stream.peek();
+        for (int ii = 0; ii < 25; ii++) {
+            assertEquals(top, stream.peek());
+        }
+        assertEquals(top, stream.next());
+    }
     
     // It's overkill to create a fresh stream before each seek, but standards.
     @Test

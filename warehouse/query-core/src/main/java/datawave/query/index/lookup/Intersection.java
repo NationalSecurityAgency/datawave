@@ -479,7 +479,7 @@ public class Intersection extends BaseIndexStream {
             
             return currShard;
         } else {
-            // If the top element did not match then null it out
+            // If the top element did not match then null it out. We're skipping forward.
             this.next = null;
         }
         
@@ -504,6 +504,15 @@ public class Intersection extends BaseIndexStream {
         return null;
     }
     
+    /**
+     * Used to determine if this intersection should be seek'd to the provided shard.
+     *
+     * Returns false if the top element sorts less than the provided shard.
+     *
+     * @param shard
+     *            the shard to match
+     * @return true if the top element is equal or greater than the shard
+     */
     public String isTopElementAMatch(String shard) {
         // Check the current element first
         if (next != null) {

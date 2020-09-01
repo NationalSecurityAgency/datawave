@@ -197,7 +197,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         Text cf = startKey.getColumnFamily();
         startKey = new Key(row, cf, new Text(seekShard));
         
-        return new Range(startKey, true, range.getEndKey(), false);
+        return new Range(startKey, true, range.getEndKey(), range.isEndKeyInclusive());
     }
     
     /**
@@ -243,7 +243,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      *
      * @param seekShard
      *            the shard we should advance to
-     * @return the matched shard, the next highest shard, or null
+     * @return the matched shard if exact match, the next highest shard if greater than seekShard, or null if no more elements exist
      */
     public String advanceQueues(String seekShard) {
         
@@ -361,10 +361,11 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         return null;
     }
     
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.util.Iterator#hasNext()
+    /**
+     * If the currentEntry is null this method will first check the resultQueue for an entry. If the resultQueue is empty then the scanner will submit a new
+     * task which pulls results off the shard index, thus populating the result queue.
+     *
+     * @return true if the scanner has a next element
      */
     @Override
     public boolean hasNext() {
