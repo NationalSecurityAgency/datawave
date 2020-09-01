@@ -17,7 +17,7 @@ public class DisjunctionEliminationVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(DisjunctionEliminationVisitor.class);
     
     /**
-     * Given a JexlNode, determine if any duplicate conjunctions in the node can be removed.
+     * Given a JexlNode, determine if any duplicate disjunctions in the node can be removed.
      *
      * @param node
      *            a query node
@@ -71,10 +71,10 @@ public class DisjunctionEliminationVisitor extends RebuildingVisitor {
         return node instanceof ASTOrNode;
     }
     
-    // Return true if the conjunction node
-    private boolean hasDuplicate(JexlNode conjunction, JexlNode otherScript) throws ParseException {
+    // Return true if the disjunction node contains a duplicate of the provided node.
+    private boolean hasDuplicate(JexlNode conjunction, JexlNode otherNode) throws ParseException {
         int totalChildren = conjunction.jjtGetNumChildren();
-        ASTJexlScript script = getScript(otherScript);
+        ASTJexlScript script = getScript(otherNode);
         for (int i = 0; i < totalChildren; i++) {
             JexlNode child = conjunction.jjtGetChild(i);
             if (isEquivalent(child, script)) {

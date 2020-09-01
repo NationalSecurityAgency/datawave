@@ -71,10 +71,10 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
         return node instanceof ASTAndNode;
     }
     
-    // Return true if the conjunction node
-    private boolean hasDuplicate(JexlNode conjunction, JexlNode otherScript) throws ParseException {
+    // Return true if the conjunction node contains a duplicate of the provided node.
+    private boolean hasDuplicate(JexlNode conjunction, JexlNode otherNode) throws ParseException {
         int totalChildren = conjunction.jjtGetNumChildren();
-        ASTJexlScript script = getScript(otherScript);
+        ASTJexlScript script = getScript(otherNode);
         for (int i = 0; i < totalChildren; i++) {
             JexlNode child = conjunction.jjtGetChild(i);
             if (isEquivalent(child, script)) {
