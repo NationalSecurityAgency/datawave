@@ -329,6 +329,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<String> contentFieldNames = Collections.emptyList();
     
     /**
+     * Remove redundant AND'd terms within ORs. False by default.
+     */
+    private boolean enforceUniqueConjunctionsWithinExpression = false;
+    
+    /**
+     * Remove redundant OR'd terms within ANDs. False by default.
+     */
+    private boolean enforceUniqueDisjunctionsWithinExpression = false;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -502,6 +512,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
+        this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
+        this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
+        
     }
     
     /**
@@ -2055,5 +2068,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public Set<String> getEvaluationOnlyFields() {
         return this.evaluationOnlyFields;
+    }
+    
+    public boolean getEnforceUniqueConjunctionsWithinExpression() {
+        return enforceUniqueConjunctionsWithinExpression;
+    }
+    
+    public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        this.enforceUniqueConjunctionsWithinExpression = enforceUniqueConjunctionsWithinExpression;
+    }
+    
+    public boolean getEnforceUniqueDisjunctionsWithinExpression() {
+        return enforceUniqueDisjunctionsWithinExpression;
+    }
+    
+    public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueDisjunctionsWithinExpression) {
+        this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
     }
 }
