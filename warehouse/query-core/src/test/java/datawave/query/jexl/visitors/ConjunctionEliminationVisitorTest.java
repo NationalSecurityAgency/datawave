@@ -90,7 +90,7 @@ public class ConjunctionEliminationVisitorTest {
     private void visitAndValidate(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-    
+        
         // Remove duplicate terms from within expressions.
         ASTJexlScript visitedScript = ConjunctionEliminationVisitor.optimize(originalScript);
         

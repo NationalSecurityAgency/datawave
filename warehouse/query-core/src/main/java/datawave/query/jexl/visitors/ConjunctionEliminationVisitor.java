@@ -19,7 +19,8 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
     /**
      * Given a JexlNode, determine if any duplicate conjunctions in the node can be removed.
      *
-     * @param node a query node
+     * @param node
+     *            a query node
      * @return a re-written query tree for the node
      */
     public static <T extends JexlNode> T optimize(T node) {
@@ -29,7 +30,7 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
         
         // Operate on copy of query tree.
         T copy = (T) copy(node);
-    
+        
         // Visit and enforce collapsing redundant nodes within expression.
         ConjunctionEliminationVisitor visitor = new ConjunctionEliminationVisitor();
         copy.jjtAccept(visitor, null);

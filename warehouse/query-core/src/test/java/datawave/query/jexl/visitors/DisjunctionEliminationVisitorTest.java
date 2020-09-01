@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(JUnit4.class)
 public class DisjunctionEliminationVisitorTest {
-
+    
     @Test
     public void testSingleTerm() throws ParseException {
         String original = "FOO == 'bar'";
