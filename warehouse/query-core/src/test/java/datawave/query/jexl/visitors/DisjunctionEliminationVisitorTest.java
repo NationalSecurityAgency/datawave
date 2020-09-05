@@ -10,77 +10,104 @@ import static org.junit.Assert.assertTrue;
 
 public class DisjunctionEliminationVisitorTest {
     
+    // A is not reducible.
     @Test
     public void testSingleTerm() throws ParseException {
         String original = "FOO == 'bar'";
         visitAndValidate(original, original);
     }
     
+    // (A || B) && C is not reducible.
     @Test
-    public void testUniqueDisjunctionInTopLevelConjunction() throws ParseException {
+    public void testRelevantDisjunctionInTopLevelConjunction() throws ParseException {
         String original = "(FOO == 'bar' || FOO == 'baz') && FOO == 'zoo'";
         visitAndValidate(original, original);
     }
     
+    // ((A && C) || B) && A is not reducible.
     @Test
-    public void testDuplicateInNestedDisjunction() throws ParseException {
+    public void testRelevantDisjunctionWithUniqueNestedConjunctionTerm() throws ParseException {
+        String original = "((FOO == 'bar' && PET == 'fluffy') || VET == 'amy') && FOO == 'bar'";
+        visitAndValidate(original, original);
+    }
+    
+    // (A || B) && A reduces to A
+    @Test
+    public void testRedundantNestedDisjunction() throws ParseException {
         String original = "(FOO == 'bar' || FOO == 'baz') && FOO == 'bar'";
         String expected = "FOO == 'bar'";
         visitAndValidate(original, expected);
     }
     
+    // ((A || B) && A) reduces to (A).
     @Test
-    public void testDuplicateDisjunctionInWrappedTopLevelConjunction() throws ParseException {
+    public void testRedundantDisjunctionInWrappedTopLevelConjunction() throws ParseException {
         String original = "((FOO == 'bar' || FOO == 'baz') && FOO == 'bar')";
         String expected = "(FOO == 'bar')";
         visitAndValidate(original, expected);
     }
     
+    // ((A || C) || B) && A reduces to A.
     @Test
-    public void testDuplicateNestedDisjunction() throws ParseException {
+    public void testRedundantDisjunctionWithThreeTerms() throws ParseException {
+        String original = "((FOO == 'bar' || PET == 'fluffy') || VET == 'amy') && FOO == 'bar'";
+        String expected = "FOO == 'bar'";
+        visitAndValidate(original, expected);
+    }
+    
+    // ((A && B) || C) && (A && B) reduces to A && B.
+    @Test
+    public void testRedundantNestedDisjunctionWithMatchingConjunction() throws ParseException {
         String original = "((FOO == 'baz' && FOO == 'zoo') || FOO == 'bar') && (FOO == 'baz' && FOO == 'zoo')";
         String expected = "FOO == 'baz' && FOO == 'zoo'";
         visitAndValidate(original, expected);
     }
     
+    // ((A || B) || (C || D)) && (A || B) reduces to (A || B).
     @Test
-    public void testDuplicateNestedDisjunctionInWrappedTopLevelConjunction() throws ParseException {
-        String original = "((FOO == 'baz' && FOO == 'zoo') || FOO == 'bar') && (FOO == 'baz' && FOO == 'zoo')";
-        String expected = "FOO == 'baz' && FOO == 'zoo'";
-        visitAndValidate(original, expected);
-    }
-    
-    @Test
-    public void testMultipleNestedDisjunctionsWithDuplicate() throws ParseException {
+    public void testMultipleNestedRedundantDisjunctions() throws ParseException {
         String original = "((FOO == 'baz' || FOO == 'zoo') || (FOO == 'bar' || FOO == 'dab')) && (FOO == 'baz' || FOO == 'zoo')";
-        String expected = "FOO == 'baz' || FOO == 'zoo'";
+        String expected = "(FOO == 'baz' || FOO == 'zoo')";
         visitAndValidate(original, expected);
     }
     
+    // ((A || B) || (C || D)) && (B || A) reduces to (B || A).
     @Test
-    public void testMultipleNestedDisjunctionsWithDifferentlyOrderedDuplicate() throws ParseException {
+    public void testRedundantDisjunctionsWithDifferentlyOrderedTerms() throws ParseException {
         String original = "((FOO == 'baz' || FOO == 'zoo') || (FOO == 'bar' || FOO == 'dab')) && (FOO == 'zoo' || FOO == 'baz')";
-        String expected = "FOO == 'zoo' || FOO == 'baz'";
+        String expected = "(FOO == 'zoo' || FOO == 'baz')";
         visitAndValidate(original, expected);
     }
     
+    // (A || (B && C)) && A reduces to A
     @Test
-    public void testDuplicateDisjunctionWithUniqueNestedConjunction() throws ParseException {
-        String original = "((FOO == 'bar' && FOO == 'baz') || FOO == 'zoo') || FOO == 'bar'";
-        visitAndValidate(original, original);
-    }
-    
-    @Test
-    public void testDuplicateDisjunctionWithWrappedUniqueNestedConjunction() throws ParseException {
+    public void testRedundantDisjunctionWithWrappedUniqueNestedConjunction() throws ParseException {
         String original = "(FOO == 'bar' || (FOO == 'baz' && FOO == 'zoo')) && FOO == 'bar'";
         String expected = "FOO == 'bar'";
         visitAndValidate(original, expected);
     }
     
+    // ((A || B) && A) || (C || D) reduces to (A) || (C || D)
     @Test
-    public void testDuplicateConjunctionWithinNestedDisjunction() throws ParseException {
-        String original = "((FOO == 'bar' && FOO == 'baz') || FOO == 'zoo') && (FOO == 'bar' && FOO == 'baz')";
-        String expected = "FOO == 'bar' && FOO == 'baz'";
+    public void testRedundantDisjunctionWithinTopLevelDisjunction() throws ParseException {
+        String original = "((FOO == 'bar' || PET == 'fluffy') && FOO == 'bar') || (PET == 'short' || FOO == 'zoo')";
+        String expected = "(FOO == 'bar') || PET == 'short' || FOO == 'zoo'";
+        visitAndValidate(original, expected);
+    }
+    
+    // (A || B) && A && C reduces to A && C
+    @Test
+    public void testRedundantDisjunctionWithThreeTopLevelTerms() throws ParseException {
+        String original = "(FOO == 'bar' || PET == 'fluffy') && FOO == 'bar' && VET == 'amy'";
+        String expected = "FOO == 'bar' && VET == 'amy'";
+        visitAndValidate(original, expected);
+    }
+    
+    // ((A && B) || D) && (A && B && C) reduces to (A && B && C).
+    @Test
+    public void testRedundantDisjunctionWithSubsetConjunctionTerms() throws ParseException {
+        String original = "((FOO == 'bar' && PET == 'fluffy') || VET == 'amy') && (FOO == 'bar' && PET == 'fluffy' && FOO == 'zoo')";
+        String expected = "FOO == 'bar' && PET == 'fluffy' && FOO == 'zoo'";
         visitAndValidate(original, expected);
     }
     
