@@ -139,7 +139,7 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
                     FIELD_APPEND_BYTES.length // length
             );
             // @formatter:on
-
+            
             return cmp == 0;
         }
         return false;

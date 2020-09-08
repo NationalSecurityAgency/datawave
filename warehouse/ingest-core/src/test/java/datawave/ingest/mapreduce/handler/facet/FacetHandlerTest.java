@@ -198,7 +198,7 @@ public class FacetHandlerTest {
         setupTaskAttemptContext();
         items.forEach(f -> processEvent(event, f, handler));
         Multimap<String,FacetResult> keysByTable = collectResults();
-
+        
         Object2IntMap<String> expectedFacetKeyCounts = TestData.getExpectedHashedFacetCounts();
         evaluateMultiValueResults(keysByTable, TestData.getExpectedFacetHashes(), expectedFacetKeyCounts);
     }
@@ -269,7 +269,8 @@ public class FacetHandlerTest {
     }
     
     /** evaluate for the multi value hashing test */
-    protected void evaluateMultiValueResults(final Multimap<String,FacetResult> keysByTable, Set<String> expectedFacetHashes, Object2IntMap<String> expectedFacetKeyCounts) {
+    protected void evaluateMultiValueResults(final Multimap<String,FacetResult> keysByTable, Set<String> expectedFacetHashes,
+                    Object2IntMap<String> expectedFacetKeyCounts) {
         evaluateResults(keysByTable, null, null, expectedFacetHashes, 0, expectedFacetKeyCounts);
     }
     
@@ -587,13 +588,13 @@ public class FacetHandlerTest {
         static String[] getExpectedFacetMetadataData(int index) {
             return expectedFacetMetadata[index];
         }
-
+        
         static Object2IntMap<String> getExpectedHashedFacetCounts() {
             Object2IntMap<String> countMap = new Object2IntOpenHashMap<>();
             Stream.of(expectedHashedFacets).forEach(k -> countMap.put(k[0], Integer.parseInt(k[1])));
             return countMap;
         }
-
+        
         static Set<String> getExpectedFacetHashes() {
             return Stream.of(expectedFacetHashes).collect(Collectors.toSet());
         }

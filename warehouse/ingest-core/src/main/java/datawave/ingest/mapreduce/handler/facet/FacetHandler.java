@@ -202,21 +202,21 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         
         Text cv = new Text(flatten(event.getVisibility()));
         
+        // filter out event fields that are generated as the result of tokenization.
+        Stream<String> fieldKeyStream = fields.keySet().stream().filter(fieldSelectionPredicate);
+        if (fieldFilterPredicate != null) {
+            fieldKeyStream = fieldKeyStream.filter(fieldFilterPredicate);
+        }
+        final Set<String> filteredFieldSet = fieldKeyStream.collect(Collectors.toSet());
+        Set<String> pivotFieldSet = new HashSet<>(filteredFieldSet);
+        Set<String> facetFieldSet = new HashSet<>(filteredFieldSet);
+        
         // fields with a large number of values are hashed. See HashTableFunction for details
         // @formatter:off
         final HashTableFunction<KEYIN,KEYOUT,VALUEOUT> func = new HashTableFunction<>(
                 contextWriter, context, facetHashTableName, facetHashThreshold, event.getDate());
-        final Multimap<String,NormalizedContentInterface> eventFields = hashEventFields(fields, func);
+        final Multimap<String,NormalizedContentInterface> eventFields = filterAndHashEventFields(fields, filteredFieldSet, func);
         // @formatter:on
-        
-        // filter out event fields that are generated as the result of tokenization.
-        Stream<String> eventFieldKeyStream = eventFields.keySet().stream().filter(fieldSelectionPredicate);
-        if (fieldFilterPredicate != null) {
-            eventFieldKeyStream = eventFieldKeyStream.filter(fieldFilterPredicate);
-        }
-        final Set<String> keySet = eventFieldKeyStream.collect(Collectors.toSet());
-        Set<String> pivotFieldSet = new HashSet<>(keySet);
-        Set<String> facetFieldSet = new HashSet<>(keySet);
         
         long countWritten = 0;
         
@@ -235,7 +235,8 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         // compute the cardinality based on the uid, this becomes the value shared
         // across each facet row generated.
         final HyperLogLogPlus cardinality = new HyperLogLogPlus(10);
-        cardinality.offer(event.getId().toString());
+        final String id = shardId + "/" + event.getDataType().typeName() + "/" + event.getId().toString();
+        cardinality.offer(id);
         final Value sharedValue = new Value(cardinality.getBytes());
         
         final Multimap<BulkIngestKey,Value> results = ArrayListMultimap.create();
@@ -334,22 +335,26 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     }
     
     /**
-     * Apply the supplied HashTableFunction to the fields provided. The results are collected and returned. This is commonly used where there are a large number
-     * of values for a field.
+     * Filter the source data and apply the supplied HashTableFunction to the fields provided. The results are collected and returned. This is commonly used
+     * where there are a large number of values for a field.
      *
      * @param fields
-     *            The fields to process
+     *            The source data to process.
+     * @param filteredFieldSet
+     *            The names of fields to keep.
      * @param func
-     *            The function to apply
+     *            The function to apply to hash fields if necessary.
      * @return The modified set of fields after hashing.
      */
-    private Multimap<String,NormalizedContentInterface> hashEventFields(Multimap<String,NormalizedContentInterface> fields,
-                    HashTableFunction<KEYIN,KEYOUT,VALUEOUT> func) {
+    private Multimap<String,NormalizedContentInterface> filterAndHashEventFields(Multimap<String,NormalizedContentInterface> fields,
+                    Set<String> filteredFieldSet, HashTableFunction<KEYIN,KEYOUT,VALUEOUT> func) {
         Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
         for (Map.Entry<String,Collection<NormalizedContentInterface>> entry : fields.asMap().entrySet()) {
-            Collection<NormalizedContentInterface> coll = func.apply(entry.getValue());
-            if (coll != null && !coll.isEmpty()) {
-                eventFields.putAll(entry.getKey(), coll);
+            if (filteredFieldSet.contains(entry.getKey())) {
+                Collection<NormalizedContentInterface> coll = func.apply(entry.getValue());
+                if (coll != null && !coll.isEmpty()) {
+                    eventFields.putAll(entry.getKey(), coll);
+                }
             }
         }
         return eventFields;
@@ -478,8 +483,9 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     @Override
     public FacetValue estimate(RawRecordContainer input) {
         // precision value: 10, sparse set disabled.
-        HyperLogLogPlus card = new HyperLogLogPlus(10);
-        card.offer(input.getId().toString());
+        final HyperLogLogPlus card = new HyperLogLogPlus(10);
+        final String id = shardIdFactory.getShardId(input) + "/" + input.getDataType() + "/" + input.getId().toString();
+        card.offer(id);
         
         return new FacetValue(card, new CountMinSketch(10, 1, 1));
     }
