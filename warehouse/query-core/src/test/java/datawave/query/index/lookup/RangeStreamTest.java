@@ -23,10 +23,12 @@ import datawave.query.util.Tuple2;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
@@ -39,6 +41,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -60,20 +63,49 @@ public class RangeStreamTest {
     @BeforeClass
     public static void setupAccumulo() throws Exception {
         
+        // just like this shard index i am going to need to
+        // create a metadata table
+        
+        final String METADATA_TABLE = "metadataTable";
         final String SHARD_INDEX = "shardIndex";
         
         // Zero byte password, so secure it hurts.
         connector = instance.getConnector("", new PasswordToken(new byte[0]));
         connector.tableOperations().create(SHARD_INDEX);
+        connector.tableOperations().create(METADATA_TABLE);
         
         BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
                         .setMaxWriteThreads(1));
         
+        BatchWriter bmw = connector.createBatchWriter(METADATA_TABLE, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
+                        .setMaxWriteThreads(1));
+        
+        // --------- start of date metadata
+        
         Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        Uid.List list = builder.build();
+        
+        Mutation start = new Mutation("z");
+        start.put(new Text("BEGIN"), new Text("20200201\0" + "datatype1"), new Value(list.toByteArray()));
+        
+        Mutation end = new Mutation("z");
+        end.put(new Text("END"), new Text("20200204\0" + "datatype1"), new Value(list.toByteArray()));
+        
+        bmw.addMutation(start);
+        bmw.addMutation(end);
+        
+        bmw.flush();
+        bmw.close();
+        
+        // --------- end of date metadata
+        
+        // Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addUID("123");
         builder.setIGNORE(false);
         builder.setCOUNT(1);
-        Uid.List list = builder.build();
+        // Uid.List list = builder.build();
         
         Mutation m = new Mutation("ba");
         m.put(new Text("FOO"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
@@ -1071,13 +1103,36 @@ public class RangeStreamTest {
     }
     
     @Test
-    public void whatDayIsItAnywayTest() throws ParseException {
+    public void whatDayIsItAnywayTest() throws ParseException, TableNotFoundException {
+        MockMetadataHelper helper = new MockMetadataHelper();
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HHmmss");
         config.setBeginDate(sdf.parse("20200201 060000"));
         config.setEndDate(sdf.parse("20200202 040000"));
-        List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = RangeStream.createFullFieldIndexScanList(config, null);
+        List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = rangeStream.createFullFieldIndexScanList(config, null);
         
         Assert.assertEquals(2, fullFieldIndexScanList.size());
+    }
+    
+    @Test
+    public void testRangeCap() throws Exception {
+        
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations("TEST"));
+        
+        // RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        
+        // dates we have
+        Range range1 = makeTestRange("20200101", "datatype1\u0000345");
+        Range range2 = makeTestRange("20200203", "datatype1\u0000456");
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HHmmss");
+        
+        // dates we want
+        config.setBeginDate(sdf.parse("20200201 060000"));
+        config.setEndDate(sdf.parse("20200205 040000"));
+        
+        // List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = rangeStream.createFullFieldIndexScanList(config, null);
     }
 }

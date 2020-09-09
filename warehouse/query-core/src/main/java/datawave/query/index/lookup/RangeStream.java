@@ -790,12 +790,20 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      * @param node
      * @return The list of index info ranges
      */
-    public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
+    public List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
         
         Calendar start = getCalendarStartOfDay(config.getBeginDate());
         Calendar end = getCalendarStartOfDay(config.getEndDate());
         
+        try {
+            // should return new end date
+            Date endDate = metadataHelper.getEndDateCap(start.getTime(), end.getTime());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        // change to compare new end date if necessary
         while (start.compareTo(end) <= 0) {
             String day = DateHelper.format(start.getTime());
             IndexInfo info = new IndexInfo(-1);
