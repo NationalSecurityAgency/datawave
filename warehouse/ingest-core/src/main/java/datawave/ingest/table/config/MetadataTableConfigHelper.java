@@ -69,7 +69,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         setPropertyIfNecessary(tableName, stem, "25,datawave.iterators.FrequencyColumnIterator", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.ageOffDate", "20160427", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.ageOffDate", "19880101", tops, log);
         return stem;
     }
     

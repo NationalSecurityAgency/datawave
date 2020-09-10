@@ -5,14 +5,22 @@ import datawave.query.util.Frequency;
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.YearMonthDay;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.TransformingIterator;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.VisibilityEvaluator;
+import org.apache.commons.collections.map.LRUMap;
 import org.apache.hadoop.io.Text;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,31 +33,18 @@ public class FrequencyColumnIterator extends TransformingIterator {
     private HashMap<String,FrequencyFamilyCounter> rowIdToCompressedFreqCQMap = new HashMap<>();
     private String ageOffDate = "20100101";
     
-    public FrequencyColumnIterator() {
-        setAgeOffDate();
-    }
+    public FrequencyColumnIterator() {}
     
     public FrequencyColumnIterator(FrequencyColumnIterator aThis, IteratorEnvironment environment) {
         super();
         setSource(aThis.getSource().deepCopy(environment));
-        setAgeOffDate();
     }
     
-    private void setAgeOffDate() {
-        // TODO Get this function to actually set the AgeOffDate by using the Accumulo framework
-        // tried strings: table.iterator.FrequencyColumnIterator.opt.ageOffDate , ageOffDate
-        List<String> unamedOptions = describeOptions().getUnnamedOptionDescriptions();
-        if (unamedOptions == null) {
-            if (log.isTraceEnabled())
-                log.trace("The base class unnamed options are null");
-        }
-        String configuredAgeOffDate = describeOptions().getNamedOptions().get("table.iterator.majc.FrequencyColumnIterator.opt.ageOffDate");
-        if (configuredAgeOffDate == null || configuredAgeOffDate.isEmpty()) {
-            if (log.isTraceEnabled())
-                log.trace("Couldn't find age off date in describeOptions().getNamedOptions().  Using default ageOffDate");
-        }
-        
-        ageOffDate = configuredAgeOffDate != null ? configuredAgeOffDate : this.ageOffDate;
+    @Override
+    public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
+        super.init(source, options, env);
+        if (options.get("ageOffDate") != null)
+            ageOffDate = options.get("ageOffDate");
     }
     
     @Override
@@ -62,7 +57,6 @@ public class FrequencyColumnIterator extends TransformingIterator {
         Key newKey = null;
         Long numRecords = 0L;
         frequencyFamilyCounter = new FrequencyFamilyCounter();
-        log.info("ageOffDate is: " + ageOffDate);
         
         if (log.isTraceEnabled())
             log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
@@ -164,6 +158,29 @@ public class FrequencyColumnIterator extends TransformingIterator {
         
         log.trace(" Number of key values iterated is " + numRecords);
         
+    }
+    
+    @Override
+    public IteratorOptions describeOptions() {
+        IteratorOptions io = super.describeOptions();
+        io.addNamedOption("ageOffDate", "Frequencies before this date are not aggregated.");
+        io.setName("ageOffDate");
+        io.setDescription("TransformColumnIterator removes entries with dates that occurred before <ageOffDate>");
+        return io;
+    }
+    
+    @Override
+    public boolean validateOptions(Map<String,String> options) {
+        boolean valid = super.validateOptions(options);
+        if (valid) {
+            try {
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
+                simpleDateFormat.parse(options.get("ageOffDate"));
+            } catch (Exception e) {
+                valid = false;
+            }
+        }
+        return valid;
     }
     
 }

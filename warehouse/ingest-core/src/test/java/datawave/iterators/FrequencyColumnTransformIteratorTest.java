@@ -56,7 +56,7 @@ public class FrequencyColumnTransformIteratorTest {
         newTableConfiguration.setProperties(properties);
         connector.tableOperations().create(METADATA_TABLE_NAME, newTableConfiguration);
         HashMap<String,String> propertiesIt = new HashMap<>();
-        propertiesIt.put("ageOffDate", "20160427");
+        propertiesIt.put("ageOffDate", "20100101");
         propertiesIt.put("type", "VARLEN");
         IteratorSetting settings = new IteratorSetting(19, FrequencyColumnIterator.class, propertiesIt);
         EnumSet<IteratorUtil.IteratorScope> scopes = EnumSet.allOf(IteratorUtil.IteratorScope.class);
@@ -174,7 +174,7 @@ public class FrequencyColumnTransformIteratorTest {
     
     @Test
     public void testFrequencyTransformIteratorAtMincScope() throws Throwable {
-        //TODO  I have verified minimum compaction in the Accumlo Shell  - I am sceptical that this test really
+        // TODO I have verified minimum compaction in the Accumlo Shell - I am sceptical that this test really
         // tests minimum compaction although it should work.
         loadData();
         // Sleep long enough to perform a minimum compaction.
