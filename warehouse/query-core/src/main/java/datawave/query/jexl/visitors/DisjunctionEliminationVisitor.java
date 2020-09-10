@@ -19,17 +19,21 @@ import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
 
 /**
  * Visitor that removes disjunction children of AND nodes that are made redundant by virtue of distributed equivalency. For example:
- * <ul>
- * <li>{@code (A || B) && A => A}</li>
- * <li>{@code ((A || B) || C) && (A || B) => (A || B)}</li>
- * <li>{@code ((A && B) || D) && (A && B && C) => (A && B && C)}</li>
- * <li>{@code ((A || B) && A) || (C || D) => (A) || (C || D)}</li>
- * </ul>
+ * 
+ * <pre>
+ * {@code (A || B) && A --> A}
+ * {@code ((A || B) || C) && (A || B) --> (A || B)}
+ * {@code ((A && B) || D) && (A && B && C) --> (A && B && C)}
+ * {@code ((A || B) && A) || (C || D) --> (A) || (C || D)}
+ * </pre>
+ * 
  * The following cases will not be affected:
- * <ul>
- * <li>(A || B) && C</li>
- * <li>((A && C) || B) && A</li>
- * </ul>
+ * 
+ * <pre>
+ * {@code (A || B) && C}
+ * {@code ((A && C) || B) && A}
+ * </pre>
+ * 
  * This visitor returns a copy of the original query tree, and flattens the copy via {@link TreeFlatteningRebuildingVisitor}.
  * <p>
  * Node traversal is post-order.

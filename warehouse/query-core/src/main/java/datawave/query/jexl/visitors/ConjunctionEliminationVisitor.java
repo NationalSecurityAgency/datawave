@@ -19,17 +19,21 @@ import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
 
 /**
  * Visitor that removes conjunction children of OR nodes that are made redundant by virtue of distributed equivalency. For example:
- * <ul>
- * <li>{@code (A && B) || A => A}</li>
- * <li>{@code ((A && C) && B) || (A && C) => (A && C)}</li>
- * <li>{@code ((A || B) && C) || A || B => A || B}</li>
- * <li>{@code (A && B && C) || A => A}</li>
- * </ul>
+ * 
+ * <pre>
+ * {@code (A && B) || A --> A}
+ * {@code ((A && C) && B) || (A && C) --> (A && C)}
+ * {@code ((A || B) && C) || A || B --> A || B}
+ * {@code (A && B && C) || A --> A}
+ * </pre>
+ * 
  * The following cases will not be affected:
- * <ul>
- * <li>(A && B) || C</li>
- * <li>((A || B) && C) || A</li>
- * </ul>
+ * 
+ * <pre>
+ * {@code (A && B) || C}
+ * {@code ((A || B) && C) || A}
+ * </pre>
+ * 
  * This visitor returns a copy of the original query tree, and flattens the copy via {@link TreeFlatteningRebuildingVisitor}.
  * <p>
  * Node traversal is post-order.
