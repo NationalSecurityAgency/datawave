@@ -5,24 +5,16 @@ import datawave.query.util.Frequency;
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.YearMonthDay;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.TransformingIterator;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.VisibilityEvaluator;
-import org.apache.commons.collections.map.LRUMap;
 import org.apache.hadoop.io.Text;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.HashMap;;
 import java.util.Map;
 
 public class FrequencyColumnIterator extends TransformingIterator {
@@ -31,7 +23,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
     // TODO Figure out how to keep the rowIdToCompressedFreqCQMap from getting too large
     // TODO maybe we do not have to worry about that from happening.
     private HashMap<String,FrequencyFamilyCounter> rowIdToCompressedFreqCQMap = new HashMap<>();
-    private String ageOffDate = "20100101";
+    private String ageOffDate = "19880101";
     
     public FrequencyColumnIterator() {}
     
