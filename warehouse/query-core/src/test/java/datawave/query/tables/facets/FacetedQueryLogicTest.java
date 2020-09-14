@@ -123,23 +123,23 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         
         Set<String> expected = new TreeSet<>();
         expected.add("CITY; florance -- florance//1");
-        expected.add("CITY; london -- london//2"); // although london/europe appears 3 times, only 2 doc ids are unique in the test data.
+        expected.add("CITY; london -- london//3");
         expected.add("CITY; milan -- milan//1");
         expected.add("CITY; naples -- naples//1");
         expected.add("CITY; palermo -- palermo//1");
         expected.add("CITY; paris -- paris//9");
-        expected.add("CITY; rome -- rome//7"); // although there are 8 entries for rome, only 7 doc ids are unique in the test data.
+        expected.add("CITY; rome -- rome//8"); // although there are 8 entries for rome, only 7 doc ids are unique in the test data.
         expected.add("CITY; turin -- turin//1");
         expected.add("CITY; venice -- venice//1");
-        expected.add("CONTINENT; europe -- europe//24"); // although there are 26 entries for europe, only 24 doc ids are unique in the test data.
+        expected.add("CONTINENT; europe -- europe//26");
         expected.add("STATE; campania -- campania//1");
         expected.add("STATE; castilla y leon -- castilla y leon//1");
         expected.add("STATE; gelderland -- gelderland//1");
         expected.add("STATE; hainaut -- hainaut//3");
-        expected.add("STATE; lazio -- lazio//4");
+        expected.add("STATE; lazio -- lazio//5");
         expected.add("STATE; lle-de-france -- lle-de-france//3");
         expected.add("STATE; lombardia -- lombardia//1");
-        expected.add("STATE; london -- london//1");
+        expected.add("STATE; london -- london//2");
         expected.add("STATE; madrid -- madrid//2");
         expected.add("STATE; piemonte -- piemonte//1");
         expected.add("STATE; rhone-alps -- rhone-alps//2");
