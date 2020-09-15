@@ -2,6 +2,7 @@ package datawave.formatters;
 
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
@@ -15,8 +16,7 @@ import java.util.Map;
 public class FrequencyColumnValueFormatter implements Formatter {
     
     private Iterator<Map.Entry<Key,Value>> iter;
-    private FormatterConfig config;
-    
+
     @Override
     public boolean hasNext() {
         return iter.hasNext();
@@ -26,23 +26,28 @@ public class FrequencyColumnValueFormatter implements Formatter {
     public String next() {
         StringBuilder sb = new StringBuilder();
         Map.Entry<Key,Value> entry = iter.next();
-        
-        if (entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
-            FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
-            frequencyFamilyCounter.deserializeCompressedValue(entry.getValue());
-            frequencyFamilyCounter
-                            .getDateToFrequencyValueMap()
-                            .entrySet()
-                            .stream()
-                            .sorted(Comparator.comparing(Map.Entry::getKey))
-                            .forEach(sorted -> sb.append(entry.getKey().getRow()).append(" " + entry.getKey().getColumnFamily().toString())
-                                            .append(" " + entry.getKey().getColumnQualifier().toString().replaceAll(MetadataHelper.COL_QUAL_PREFIX, ""))
-                                            .append(" Date: " + sorted.getKey().getYyyymmdd()).append(" Frequency: " + sorted.getValue().getValue() + "\n"));
-            return sb.toString();
-        } else {
+
+        try {
+
+            if (entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
+                FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
+                frequencyFamilyCounter.deserializeCompressedValue(entry.getValue());
+                frequencyFamilyCounter
+                        .getDateToFrequencyValueMap()
+                        .entrySet()
+                        .stream()
+                        .sorted(Comparator.comparing(Map.Entry::getKey))
+                        .forEach(sorted -> sb.append(entry.getKey().getRow()).append(" " + entry.getKey().getColumnFamily().toString())
+                                .append(" " + entry.getKey().getColumnQualifier().toString().replaceAll(MetadataHelper.COL_QUAL_PREFIX, ""))
+                                .append(" Date: " + sorted.getKey().getYyyymmdd()).append(" Frequency: " + sorted.getValue().getValue() + "\n"));
+                return sb.toString();
+            }
+
+        } finally
+        {
             return DefaultFormatter.formatEntry(entry, false);
         }
-        
+
     }
     
     @Override

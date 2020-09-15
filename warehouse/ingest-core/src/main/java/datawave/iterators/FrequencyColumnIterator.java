@@ -23,7 +23,7 @@ public class FrequencyColumnIterator extends TransformingIterator {
     // TODO Figure out how to keep the rowIdToCompressedFreqCQMap from getting too large
     // TODO maybe we do not have to worry about that from happening.
     private HashMap<String,FrequencyFamilyCounter> rowIdToCompressedFreqCQMap = new HashMap<>();
-    private String ageOffDate = "19880101";
+    private String ageOffDate = "19000101";
     
     public FrequencyColumnIterator() {}
     
@@ -81,8 +81,9 @@ public class FrequencyColumnIterator extends TransformingIterator {
                     log.error("Compressed value was not deserialized properly");
                 aggregatedValue = topValue;
                 aggregatedKey = topKey;
-                
-                log.trace("Aggregate Key: " + aggregatedKey.toStringNoTime());
+
+                if (log.isTraceEnabled())
+                    log.trace("Aggregate Key: " + aggregatedKey.toStringNoTime());
                 
                 if (!rowIdToCompressedFreqCQMap.containsKey(aggregatedKey.getRow() + cq.toString()))
                     rowIdToCompressedFreqCQMap.put(aggregatedKey.getRow().toString() + cq.toString(), frequencyFamilyCounter);
