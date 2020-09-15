@@ -7,6 +7,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.accumulo.core.util.format.Formatter;
 import org.apache.accumulo.core.util.format.FormatterConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -15,6 +17,7 @@ import java.util.Map;
 public class FrequencyColumnValueFormatter implements Formatter {
     
     private Iterator<Map.Entry<Key,Value>> iter;
+    Logger log = LoggerFactory.getLogger(this.getClass());
     
     @Override
     public boolean hasNext() {
@@ -42,9 +45,12 @@ public class FrequencyColumnValueFormatter implements Formatter {
                 return sb.toString();
             }
             
-        } finally {
-            return DefaultFormatter.formatEntry(entry, false);
+        } catch (Exception e) {
+            if (log.isTraceEnabled())
+                log.info("Using the default formatter for compressed ");
         }
+        
+        return DefaultFormatter.formatEntry(entry, false);
         
     }
     
