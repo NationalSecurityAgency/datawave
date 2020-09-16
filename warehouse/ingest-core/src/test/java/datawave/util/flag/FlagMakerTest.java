@@ -327,8 +327,8 @@ public class FlagMakerTest extends AbstractFlagConfig {
         final List<Collection<InputFile>> flagFileLists = new ArrayList<>();
         FlagMaker instance = new TestWrappedFlagMaker(fmc) {
             @Override
-            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
-                flagFileLists.add(inFiles);
+            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inputFiles) throws IOException {
+                flagFileLists.add(inputFiles);
             }
         };
         instance.processFlags();
@@ -358,8 +358,8 @@ public class FlagMakerTest extends AbstractFlagConfig {
         fmc.getFlagConfigs().get(0).setLifo(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc) {
             @Override
-            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
-                flagFileLists.add(inFiles);
+            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inputFiles) throws IOException {
+                flagFileLists.add(inputFiles);
             }
         };
         instance.processFlags();
@@ -497,8 +497,8 @@ public class FlagMakerTest extends AbstractFlagConfig {
         cfg.setFileListMarker(FLAG_MARKER);
         
         assertTrue("Should be 10 InputFiles", inFiles != null && inFiles.size() == 10);
-        FlagMetrics metrics = new FlagMetrics(instance.getHadoopFS(), fc.isCollectMetrics());
-        File flag = instance.write(inFiles, fc, FLAG_DIR + "/testflagwriter", metrics);
+        FlagMetrics metrics = new FlagMetrics();
+        File flag = instance.write(inFiles, fc, FLAG_DIR, "/testflagwriter", metrics);
         flag.deleteOnExit();
         String b;
         try (BufferedReader br = new BufferedReader(new FileReader(flag))) {
@@ -518,7 +518,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
     }
     
     static class TestWrappedFlagMaker extends FlagMaker {
-        TestWrappedFlagMaker(FlagMakerConfig fmc) {
+        TestWrappedFlagMaker(FlagMakerConfig fmc) throws IOException {
             super(fmc);
             Configuration conf = new Configuration();
             conf.set("mapreduce.job.counters.max", Integer.toString(COUNTER_LIMIT));

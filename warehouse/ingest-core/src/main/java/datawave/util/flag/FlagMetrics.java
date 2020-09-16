@@ -2,6 +2,7 @@ package datawave.util.flag;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
@@ -27,34 +28,25 @@ public class FlagMetrics {
     private static final SequenceFile.CompressionType ct = SequenceFile.CompressionType.BLOCK;
     
     private final StandaloneTaskAttemptContext<?,?,?,?> ctx;
+    private final boolean compressionEnabled;
     
-    private final FileSystem fs;
+    FlagMetrics() {
+        this(true);
+    }
     
-    private final boolean enabled;
-    
-    /**
-     *
-     * @param hadoopFS
-     *            HDFS file system object
-     * @param enableMetrics
-     *            enable write of metrics
-     */
-    FlagMetrics(FileSystem hadoopFS, boolean enableMetrics) {
-        this.fs = hadoopFS;
-        this.enabled = enableMetrics;
+    FlagMetrics(boolean compressionEnabled) {
         this.ctx = new StandaloneTaskAttemptContext<>(new Configuration(), new StandaloneStatusReporter());
         ctx.putIfAbsent(datawave.metrics.util.flag.InputFile.FLAGMAKER_START_TIME, System.currentTimeMillis());
+        
+        // compression requires hadoop-native which won't be available for unit tests.
+        this.compressionEnabled = compressionEnabled;
     }
     
     protected void updateCounter(String groupName, String counterName, long val) {
         ctx.getCounter(groupName, counterName).setValue(val);
     }
     
-    protected void writeMetrics(final String metricsDirectory, final String baseName) throws IOException {
-        if (!this.enabled) {
-            return;
-        }
-        
+    protected void write(final FileSystem fs, final String metricsDirectory, final String baseName) throws IOException {
         ctx.getCounter(datawave.metrics.util.flag.InputFile.FLAGMAKER_END_TIME).setValue(System.currentTimeMillis());
         final StandaloneStatusReporter reporter = ctx.getReporter();
         if (reporter == null)
@@ -104,12 +96,23 @@ public class FlagMetrics {
             }
         }
         
-        try (final SequenceFile.Writer writer = SequenceFile.createWriter(new Configuration(), SequenceFile.Writer.file(src),
-                        SequenceFile.Writer.keyClass(Text.class), SequenceFile.Writer.valueClass(Counters.class), SequenceFile.Writer.compression(ct, cc))) {
+        try (final SequenceFile.Writer writer = SequenceFile.createWriter(new Configuration(), getWriterOptions(src))) {
             writer.append(new Text(baseName), counters);
         }
         
-        if (!fs.rename(src, finishedMetricsFile))
+        if (!fs.rename(src, finishedMetricsFile)) {
             log.error("Could not rename metrics file to completed name. Failed file will persist until manually removed.");
+        }
+    }
+    
+    protected SequenceFile.Writer.Option[] getWriterOptions(Path file) {
+        ArrayList<SequenceFile.Writer.Option> optionList = new ArrayList<>();
+        optionList.add(SequenceFile.Writer.file(file));
+        optionList.add(SequenceFile.Writer.keyClass(Text.class));
+        optionList.add(SequenceFile.Writer.valueClass(Counters.class));
+        if (compressionEnabled) {
+            optionList.add(SequenceFile.Writer.compression(ct, cc));
+        }
+        return optionList.toArray(new SequenceFile.Writer.Option[0]);
     }
 }
