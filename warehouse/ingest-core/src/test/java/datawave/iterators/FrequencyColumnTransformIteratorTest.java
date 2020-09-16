@@ -336,7 +336,7 @@ public class FrequencyColumnTransformIteratorTest {
     
     @Test
     public void testMetadataHelper() throws Exception {
-        
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
         loadData();
         HashSet<Authorizations> authorizations = new HashSet<>();
         authorizations.add(auths);
@@ -376,7 +376,8 @@ public class FrequencyColumnTransformIteratorTest {
         Assert.assertTrue(count == 57l);
         count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160801", dataTypes);
         Assert.assertTrue(count == 58l);
-        
+        count = metadataHelper.getCardinalityForField("PUB_FIELD", "csv", formatter.parse("20160725"), formatter.parse("20160802"));
+        Assert.assertTrue(count == 280);
     }
     
 }
