@@ -87,7 +87,7 @@
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
         <version.microservice.type-utils>1.7</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
-        <version.mysql-connector>8.0.15</version.mysql-connector>
+        <version.mysql-connector>8.0.16</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
