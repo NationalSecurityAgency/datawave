@@ -62,6 +62,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -328,12 +330,12 @@ public class CompositeIndexTest {
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "((" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d')" + JEXL_OR_OP +
-                "(" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335')" + JEXL_OR_OP +
-                "(" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483')" + JEXL_OR_OP +
-                "(" + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355')" + JEXL_OR_OP +
-                "(" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7'))" + JEXL_AND_OP +
-                "(" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80)";
+        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
+                "((BoundedRange = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
+                "((BoundedRange = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
+                "(((BoundedRange = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
+                "((BoundedRange = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
+                "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, false);
@@ -378,12 +380,12 @@ public class CompositeIndexTest {
     @Test
     public void compositeWithIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "((" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d')" + JEXL_OR_OP +
-                "(" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335')" + JEXL_OR_OP +
-                "(" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483')" + JEXL_OR_OP +
-                "(" + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355')" + JEXL_OR_OP +
-                "(" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7'))" + JEXL_AND_OP +
-                "(" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80)";
+        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
+                "((BoundedRange = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
+                "((BoundedRange = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
+                "(((BoundedRange = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
+                "((BoundedRange = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
+                "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, true);

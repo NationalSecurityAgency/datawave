@@ -212,8 +212,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                             String normalizedUpper = type.normalize(range.getUpper().toString());
                             
                             if (normalizedLower != null && normalizedUpper != null) {
-                                normalizedRange.updateLower(normalizedLower, range.isLowerInclusive());
-                                normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive());
+                                normalizedRange.updateLower(normalizedLower, range.isLowerInclusive(), range.getLowerNode());
+                                normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive(), range.getUpperNode());
                                 
                                 normalizedRanges.add(normalizedRange);
                             } else {
@@ -378,9 +378,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         List<JexlNode> otherNodes = new ArrayList<>();
-        Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, true);
-        if (ranges.size() == 1 && otherNodes.isEmpty()) {
-            LiteralRange<?> range = ranges.keySet().iterator().next();
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
             simpleRangeFilter(range);
         } else {
             super.visit(node, data);

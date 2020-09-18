@@ -37,14 +37,12 @@ public class TermCountingVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         List<JexlNode> otherNodes = new ArrayList<>();
-        Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, true);
-        
-        // count each bounded range as 1
-        ((MutableInt) data).add(ranges.size());
-        
-        // and recurse on the other nodes
-        for (JexlNode otherNode : otherNodes) {
-            otherNode.jjtAccept(this, data);
+        if (JexlASTHelper.findRange().isRange(node)) {
+            // count each bounded range as 1
+            ((MutableInt) data).increment();
+        } else {
+            // otherwise recurse on the children
+            super.visit(node, data);
         }
         
         return data;

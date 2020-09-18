@@ -132,15 +132,15 @@ public class QueryModelVisitorTest {
     
     @Test
     public void multipleMappingsWithBounds() throws ParseException {
-        String original = "FOO > 'a' && FOO < 'z'";
-        String expected = "(BAR1 > 'a' && BAR1 < 'z') || (BAR2 > 'a' && BAR2 < 'z')";
+        String original = "((BoundedRange = true) && (FOO > 'a' && FOO < 'z'))";
+        String expected = "((BoundedRange = true) && (BAR1 > 'a' && BAR1 < 'z')) || ((BoundedRange = true) && (BAR2 > 'a' && BAR2 < 'z'))";
         assertResult(original, expected);
     }
     
     @Test
     public void multipleMappingsWithBoundsIdentity() throws ParseException {
-        String original = "CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z'";
-        String expected = "(CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z') || (CYCLIC_FIELD_ > 'a' && CYCLIC_FIELD_ < 'z')";
+        String original = "((BoundedRange = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z'))";
+        String expected = "(((BoundedRange = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z')) || ((BoundedRange = true) && (CYCLIC_FIELD_ > 'a' && CYCLIC_FIELD_ < 'z')))";
         assertResult(original, expected);
     }
     
@@ -362,8 +362,10 @@ public class QueryModelVisitorTest {
         Reason reason = new Reason();
         boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
         if (!equal) {
+            log.error("Expected " + JexlStringBuildingVisitor.buildQuery(expectedScript));
+            log.error("Actual   " + JexlStringBuildingVisitor.buildQuery(actualScript));
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
+            log.error("Actual   " + PrintingVisitor.formattedQueryString(actualScript));
         }
         assertTrue(reason.reason, equal);
     }

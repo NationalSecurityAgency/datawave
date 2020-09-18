@@ -119,7 +119,8 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
         log.info("------  testFoundedRange  ------");
         String start = "1840";
         String end = "1860";
-        String query = GroupedNormalField.LARGE_FOUNDED.name() + GT_OP + start + AND_OP + GroupedNormalField.LARGE_FOUNDED.name() + LT_OP + end;
+        String query = "((BoundedRange = true) && (" + GroupedNormalField.LARGE_FOUNDED.name() + GT_OP + start + AND_OP
+                        + GroupedNormalField.LARGE_FOUNDED.name() + LT_OP + end + "))";
         runTest(query, query);
     }
     
