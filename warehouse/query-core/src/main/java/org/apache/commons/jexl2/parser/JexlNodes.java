@@ -1,11 +1,10 @@
 package org.apache.commons.jexl2.parser;
 
+import com.google.common.base.Preconditions;
+
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import com.google.common.base.Preconditions;
 
 /**
  * A utility class that can introspect JexlNodes for useful things like raw access to the children array and type ID. This makes cloning and mutation easier.
@@ -241,5 +240,17 @@ public class JexlNodes {
         }
         
         return found;
+    }
+    
+    public static boolean isAnd(JexlNode node) {
+        return node instanceof ASTAndNode;
+    }
+    
+    public static boolean isOr(JexlNode node) {
+        return node instanceof ASTOrNode;
+    }
+    
+    public static boolean isNotChildless(JexlNode node) {
+        return node != null && node.jjtGetNumChildren() > 0;
     }
 }

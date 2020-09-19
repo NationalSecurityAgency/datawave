@@ -6,11 +6,14 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Set;
+
+import static org.junit.Assert.assertTrue;
 
 public class AllTermsIndexedVisitorTest {
     
@@ -167,6 +170,7 @@ public class AllTermsIndexedVisitorTest {
     
     private void testIsIndexed(String query) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        AllTermsIndexedVisitor.isIndexed(script, config, helper);
+        JexlNode result = AllTermsIndexedVisitor.isIndexed(script, config, helper);
+        assertTrue(JexlASTHelper.validateLineage(result, true));
     }
 }

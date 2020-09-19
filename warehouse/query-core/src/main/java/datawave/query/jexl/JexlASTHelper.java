@@ -1609,14 +1609,14 @@ public class JexlASTHelper {
                     if (child != null) {
                         if (child.jjtGetParent() == null) {
                             if (failHard)
-                                throw new RuntimeException("Failed to validate lineage: Tree included a child with a null parent.");
+                                throw new RuntimeException("Failed to validate lineage: Tree included a child with a null parent. " + child );
                             else
                                 log.error("Failed to validate lineage: Tree included a child with a null parent.");
                             
                             result = false;
                         } else if (child.jjtGetParent() != node) {
                             if (failHard)
-                                throw new RuntimeException("Failed to validate lineage:  Included a child with a conflicting parent.");
+                                throw new RuntimeException("Failed to validate lineage:  Included a child with a conflicting parent. " + child);
                             else
                                 log.error("Failed to validate lineage:  Included a child with a conflicting parent.");
                             
@@ -1625,7 +1625,7 @@ public class JexlASTHelper {
                         workingStack.push(child);
                     } else {
                         if (failHard)
-                            throw new RuntimeException("Failed to validate lineage: Included a null child.");
+                            throw new RuntimeException("Failed to validate lineage: Included a null child. " + child);
                         else
                             log.error("Failed to validate lineage: Included a null child.");
                         
