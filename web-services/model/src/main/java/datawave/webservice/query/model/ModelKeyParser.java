@@ -9,8 +9,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import java.util.Arrays;
-
 public class ModelKeyParser {
     
     public static final String NULL_BYTE = "\0";
@@ -21,7 +19,7 @@ public class ModelKeyParser {
     public static FieldMapping parseKey(Key key) {
         String row = key.getRow().toString();
         String[] colq = key.getColumnQualifier().toString().split(NULL_BYTE);
-        String visbility = key.getColumnVisibility().toString();
+        String visibility = key.getColumnVisibility().toString();
         String[] colf = key.getColumnFamily().toString().split(NULL_BYTE);
         
         String datatype = null;
@@ -55,7 +53,7 @@ public class ModelKeyParser {
         }
         
         FieldMapping mapping = new FieldMapping();
-        mapping.setColumnVisibility(visbility);
+        mapping.setColumnVisibility(visibility);
         mapping.setDatatype(datatype);
         mapping.setDirection(direction);
         mapping.setFieldName(dataField);
