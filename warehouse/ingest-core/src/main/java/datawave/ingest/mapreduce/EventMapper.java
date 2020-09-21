@@ -339,7 +339,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                             // is a subclass of TaskInputOutputContext and TaskAttemptContext is not. We are using this to record the counters during
                             // processing. We will need to add the counters in the StandaloneReporter to the Map.Context in the close call.
                             // TaskAttemptContext newContext = new TaskAttemptContext(clone, context.getTaskAttemptID());
-                            StandaloneTaskAttemptContext<K1,V1,K2,V2> newContext = new StandaloneTaskAttemptContext<>(clone, reporter);
+                            StandaloneTaskAttemptContext<K1,V1,K2,V2> newContext = new StandaloneTaskAttemptContext<>(clone, context.getTaskAttemptID(),
+                                            reporter);
                             h.setup(newContext);
                             typeMap.get(typeStr).add(h);
                         } catch (ClassNotFoundException e) {
