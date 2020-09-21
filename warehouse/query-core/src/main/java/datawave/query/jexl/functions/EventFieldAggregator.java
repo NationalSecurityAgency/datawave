@@ -57,7 +57,7 @@ public class EventFieldAggregator extends IdentityAggregator {
         
         int dataTypeEnd = -1;
         ByteSequence cf = topKey.getColumnFamilyData();
-        for (int i = 0; i < cf.getBackingArray().length; i++) {
+        for (int i = 0; i < cf.length(); i++) {
             if (cf.byteAt(i) == '\u0000') {
                 dataTypeEnd = i;
             }
@@ -80,15 +80,7 @@ public class EventFieldAggregator extends IdentityAggregator {
     
     @Override
     protected ByteSequence parseFieldNameValue(ByteSequence cf, ByteSequence cq) {
-        ArrayList<Integer> nulls = TLD.instancesOf(0, cq, 1);
-        final int startFv = nulls.get(0) + 1;
-        final int stopFn = nulls.get(0);
-        
-        byte[] fnFv = new byte[cq.length()];
-        System.arraycopy(cq.getBackingArray(), 0, fnFv, 0, stopFn);
-        System.arraycopy(cq.getBackingArray(), startFv, fnFv, stopFn + 1, cq.length() - startFv);
-        
-        return new ArrayByteSequence(fnFv);
+        return cq;
     }
     
     @Override
@@ -127,7 +119,7 @@ public class EventFieldAggregator extends IdentityAggregator {
             typeClasses.add(defaultTypeClass);
         }
         
-        // transform the key for each type and add it to sorted
+        // transform the key for each type and add it to the normalized set
         for (String typeClass : typeClasses) {
             try {
                 Type<?> type = typeCache.get(typeClass);

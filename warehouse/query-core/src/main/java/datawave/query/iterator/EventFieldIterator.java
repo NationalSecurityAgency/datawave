@@ -104,7 +104,7 @@ public class EventFieldIterator implements NestedIterator<Key> {
     
     @Override
     public boolean hasNext() {
-        // do the actual seeking now if it hasn't be done yet
+        // do the actual seeking now if it hasn't been done yet
         try {
             if (!initialized) {
                 init(range);
