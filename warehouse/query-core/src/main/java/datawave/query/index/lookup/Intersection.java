@@ -389,7 +389,8 @@ public class Intersection extends BaseIndexStream {
     }
     
     /**
-     * For each IndexStream not already mapped to the high key, advance the stream to the specified high key.
+     * For each IndexStream not already mapped to the high key, advance the stream to the specified high key. This method will dynamically update the high key
+     * if a new high key is found.
      *
      * If an IndexStream is exhausted by the seek call, an empty multi-map is returned to signify the end of this intersection.
      *
@@ -416,6 +417,11 @@ public class Intersection extends BaseIndexStream {
             } else {
                 // add the item into our map
                 newChildren.put(dayOrShard, stream);
+                
+                // Adaptive max.
+                if (dayOrShard.compareTo(max) > 0) {
+                    max = dayOrShard;
+                }
             }
         }
         return newChildren;

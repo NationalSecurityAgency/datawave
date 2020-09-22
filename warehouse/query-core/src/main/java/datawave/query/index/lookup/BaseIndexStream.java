@@ -70,7 +70,7 @@ public abstract class BaseIndexStream implements IndexStream {
     
     @Override
     public boolean hasNext() {
-        return hasPeeked || backingIter.hasNext();
+        return (hasPeeked && peekedElement != null) || backingIter.hasNext();
     }
     
     @Override
