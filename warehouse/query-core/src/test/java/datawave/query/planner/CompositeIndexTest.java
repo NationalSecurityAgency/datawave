@@ -512,6 +512,9 @@ public class CompositeIndexTest {
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
         
+        // lets avoid condensing uids to ensure that shard ranges are not collapsed into day ranges
+        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setCondenseUidsInRangeStream(false);
+        
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
         

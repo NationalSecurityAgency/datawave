@@ -201,6 +201,11 @@ public class ScannerFactory {
         return newLimitedScanner(RangeStreamScanner.class, tableName, auths, settings).setShardsPerDayThreshold(shardsPerDayThreshold).setScannerFactory(this);
     }
     
+    public RangeStreamScanner newCondensedRangeScanner(String tableName, Set<Authorizations> auths, Query query, int shardsPerDayThreshold) throws Exception {
+        return newLimitedScanner(CondensedRangeStreamScanner.class, tableName, auths, settings).setShardsPerDayThreshold(shardsPerDayThreshold)
+                        .setScannerFactory(this);
+    }
+    
     public synchronized boolean close(ScannerBase bs) {
         boolean removed = instances.remove(bs);
         if (removed) {
