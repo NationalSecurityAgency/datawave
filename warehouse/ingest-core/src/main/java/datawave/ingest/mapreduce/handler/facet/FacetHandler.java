@@ -22,6 +22,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -31,11 +32,13 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
+import org.geotools.feature.type.DateUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -197,8 +200,10 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                     throws IOException, InterruptedException {
         
         final String shardId = shardIdFactory.getShardId(event);
-        final String shardDate = ShardIdFactory.getDateString(shardId);
-        Text dateColumnQualifier = new Text(shardDate);
+        final String shardDateString = ShardIdFactory.getDateString(shardId);
+        final Text dateColumnQualifier = new Text(shardDateString);
+        final Date shardDate = DateHelper.parse(shardDateString);
+        final long timestamp = shardDate.getTime();
         
         Text cv = new Text(flatten(event.getVisibility()));
         
@@ -214,17 +219,17 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         // fields with a large number of values are hashed. See HashTableFunction for details
         // @formatter:off
         final HashTableFunction<KEYIN,KEYOUT,VALUEOUT> func = new HashTableFunction<>(
-                contextWriter, context, facetHashTableName, facetHashThreshold, event.getDate());
+                contextWriter, context, facetHashTableName, facetHashThreshold, timestamp);
         final Multimap<String,NormalizedContentInterface> eventFields = filterAndHashEventFields(fields, filteredFieldSet, func);
         // @formatter:on
         
         long countWritten = 0;
         
         // the event id offered to the cardinality is a uid based on the 'EVENT_ID',
-        // so it's helpful to have that around for debugging when logging about the
+        // so it's helpful to have that around for tracing when logging about the
         // facet keys that are created.
         String eventId = null;
-        if (log.isDebugEnabled()) {
+        if (log.isTraceEnabled()) {
             StringBuilder b = new StringBuilder();
             for (NormalizedContentInterface f : eventFields.get("EVENT_ID")) {
                 b.append(f.getEventFieldValue());
@@ -260,12 +265,12 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                         reflexiveCf,
                         dateColumnQualifier,
                         cv,
-                        event.getDate());
+                        timestamp);
 
                 results.put(pivotIngestKey, sharedValue);
 
-                if (log.isDebugEnabled()) {
-                    log.debug("created BulkIngestKey (pivot): " + pivotIngestKey.getKey() +
+                if (log.isTraceEnabled()) {
+                    log.trace("created BulkIngestKey (pivot): " + pivotIngestKey.getKey() +
                             " for " + event.getId().toString() +
                             " in " + event.getRawFileName() +
                             " event " + eventId);
@@ -296,7 +301,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                                 facetCf,
                                 dateColumnQualifier,
                                 cv,
-                                event.getDate());
+                                timestamp);
 
                         results.put(facetIngestKey, sharedValue);
 
@@ -318,7 +323,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         for (String pivot : pivotMap.keySet()) {
             if (!pivotFieldSet.contains(pivot))
                 continue;
-            results.put(generateFacetMetadataIngestKey(pivot, pivot), EMPTY_VALUE);
+            results.put(generateFacetMetadataIngestKey(pivot, pivot, timestamp), EMPTY_VALUE);
             countWritten++;
         }
         
@@ -326,7 +331,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         for (Map.Entry<String,String> facet : pivotMap.entries()) {
             if (!pivotFieldSet.contains(facet.getKey()) || !facetFieldSet.contains(facet.getValue()))
                 continue;
-            results.put(generateFacetMetadataIngestKey(facet.getKey(), facet.getValue()), EMPTY_VALUE);
+            results.put(generateFacetMetadataIngestKey(facet.getKey(), facet.getValue(), timestamp), EMPTY_VALUE);
             countWritten++;
         }
         
@@ -386,8 +391,8 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
         return new BulkIngestKey(facetTableName, facetResult);
     }
     
-    public BulkIngestKey generateFacetMetadataIngestKey(String from, String to) {
-        final Key facetMetadataResult = new Key(new Text(from + NULL + to), PV);
+    public BulkIngestKey generateFacetMetadataIngestKey(String from, String to, long ts) {
+        final Key facetMetadataResult = new Key(new Text(from + NULL + to), PV, new Text(""), ts);
         return new BulkIngestKey(facetMetadataTableName, facetMetadataResult);
     }
     
