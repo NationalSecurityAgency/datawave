@@ -95,5 +95,6 @@ public class RegexFunctionVisitorTest {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
+        assertTrue(reason.reason, equal);
     }
 }
