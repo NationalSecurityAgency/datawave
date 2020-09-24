@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.util.Tuple2;
-
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -31,18 +30,15 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         if (hasChildOr(node)) {
-            ASTOrNode orNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            orNode.image = node.image;
-            
-            return optimizeTree(node, orNode, data);
+            return optimizeTree(node, data);
         } else {
             log.trace("nothing to optimize");
             return super.visit(node, data);
         }
     }
     
-    protected JexlNode optimizeTree(JexlNode currentNode, JexlNode newNode, Object data) {
-        if ((currentNode instanceof ASTAndNode) && hasChildOr(currentNode)) {
+    protected JexlNode optimizeTree(JexlNode currentNode, Object data) {
+        if (currentNode instanceof ASTAndNode) {
             ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
             andNode.image = currentNode.image;
             andNode.jjtSetParent(currentNode.jjtGetParent());
@@ -54,27 +50,22 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
             Tuple2<JexlNode,JexlNode> nodes = prune(currentNode, andNode, orNode);
             
             JexlNode prunedNode = nodes.first();
-            
             JexlNode toAttach = nodes.second();
             toAttach = TreeFlatteningRebuildingVisitor.flatten(toAttach);
+            ASTOrNode newNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+            newNode.image = currentNode.image;
             
             for (int i = 0; i < toAttach.jjtGetNumChildren(); i++) {
                 JexlNode node = copy(prunedNode);
                 JexlNode attach = (JexlNode) toAttach.jjtGetChild(i).jjtAccept(this, data);
+                attach.jjtSetParent(node);
                 node.jjtAddChild(attach, node.jjtGetNumChildren());
                 newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
                 node.jjtSetParent(newNode);
             }
-        } else {
-            return currentNode;
-        }
-        
-        if (newNode.jjtGetNumChildren() > 0) {
             return newNode;
-        } else {
-            log.trace("Optimization failed somewhere ... returning currentNode!");
-            return currentNode;
         }
+        return currentNode;
     }
     
     /**
@@ -94,8 +85,7 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
                     prunedNode.jjtSetParent(newNode);
                 }
                 prunedNode = child;
-            } else if (((child instanceof ASTReference) || (child instanceof ASTReferenceExpression) || child.getClass().equals(currentNode.getClass()))
-                            && hasChildOr(child)) {
+            } else if (isWrapperNodeOrSameClass(child, currentNode) && hasChildOr(child)) {
                 Tuple2<JexlNode,JexlNode> nodes = prune(child, newNode, prunedNode);
                 newNode = nodes.first();
                 prunedNode = nodes.second();
@@ -108,26 +98,21 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
         return new Tuple2<>(newNode, prunedNode);
     }
     
-    /**
-     * Returns true if there is a child OR (or OR directly inside ASTReference or ASTReferenceException).
-     * 
-     * @param currentNode
-     * @return
-     */
-    protected boolean hasChildOr(JexlNode currentNode) {
-        boolean foundChildOr = false;
+    // Return whether or not if the provided node has a child OR, wrapped or otherwise.
+    private boolean hasChildOr(JexlNode currentNode) {
         for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
             JexlNode child = currentNode.jjtGetChild(i);
-            
             if (child instanceof ASTOrNode) {
                 return true;
-            } else if ((child instanceof ASTReference) || (child instanceof ASTReferenceExpression)) {
-                foundChildOr = foundChildOr || hasChildOr(child);
-            } else if (child.getClass().equals(currentNode.getClass())) {
-                foundChildOr = foundChildOr || hasChildOr(child);
+            } else if (isWrapperNodeOrSameClass(child, currentNode) && hasChildOr(child)) {
+                return true;
             }
         }
-        
-        return foundChildOr;
+        return false;
+    }
+    
+    // Return true if the node is a reference, reference expression, or the same class as other.
+    private boolean isWrapperNodeOrSameClass(JexlNode node, JexlNode other) {
+        return node instanceof ASTReference || node instanceof ASTReferenceExpression || node.getClass().equals(other.getClass());
     }
 }
