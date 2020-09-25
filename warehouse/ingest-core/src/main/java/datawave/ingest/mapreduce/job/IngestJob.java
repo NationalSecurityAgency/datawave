@@ -101,6 +101,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Observer;
 import java.util.Set;
 
 /**
@@ -189,6 +190,8 @@ public class IngestJob implements Tool {
     protected boolean writeDirectlyToDest = false;
     
     private Configuration hadoopConfiguration;
+    private List<Observer> jobObservers = new ArrayList<>();
+    private JobObservable jobObservable;
     
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
@@ -234,6 +237,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-compressionTableBlackList table,table,...");
         System.out.println("                     [-maxRFileUndeduppedEntries maxEntries]");
         System.out.println("                     [-maxRFileUncompressedSize maxSize]");
+        System.out.println("                     [-jobObservers jobObserverClasses]");
         System.out.println("                     [-shardedMapFiles table1=/hdfs/path/table1splits.seq[,table2=/hdfs/path/table2splits.seq] ]");
     }
     
@@ -259,6 +263,16 @@ public class IngestJob implements Tool {
         }
         
         updateConfWithOverrides(conf);
+        
+        jobObservable = new JobObservable(srcHdfs != null ? getFileSystem(conf, srcHdfs) : null);
+        for (Observer observer : jobObservers) {
+            this.jobObservable.addObserver(observer);
+            if (observer instanceof Configurable) {
+                log.info("Applying configuration to observer");
+                ((Configurable) observer).setConf(conf);
+            }
+        }
+        
         AccumuloHelper cbHelper = new AccumuloHelper();
         cbHelper.setup(conf);
         
@@ -434,7 +448,7 @@ public class IngestJob implements Tool {
         // write out a marker file to indicate that the job is complete and a
         // separate process will bulk import the map files.
         if (outputMutations) {
-            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job));
+            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job), job.getJobID());
             boolean deleted = outputFs.delete(workDirPath, true);
             if (!deleted) {
                 log.error("Unable to remove job working directory: " + workDirPath);
@@ -659,6 +673,27 @@ public class IngestJob implements Tool {
                 } catch (NumberFormatException e) {
                     log.error("ERROR: mapred.reduce.tasks must be set to an integer (" + REDUCE_TASKS_ARG_PREFIX + "#)");
                     return null;
+                }
+            } else if (args[i].equals("-jobObservers")) {
+                if (i + 2 > args.length) {
+                    log.error("-jobObservers must be followed by a class name");
+                    System.exit(-2);
+                }
+                String jobObserverClasses = args[++i];
+                try {
+                    String[] classes = jobObserverClasses.split(",");
+                    for (String jobObserverClass : classes) {
+                        log.info("Adding job observer: " + jobObserverClass);
+                        Class clazz = Class.forName(jobObserverClass);
+                        Observer o = (Observer) clazz.newInstance();
+                        jobObservers.add(o);
+                    }
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
+                    System.exit(-2);
+                } catch (ClassCastException e) {
+                    log.error("cannot cast '" + jobObserverClasses + "' to Observer", e);
+                    System.exit(-2);
                 }
             } else if (args[i].startsWith("-")) {
                 // Configuration key/value entries can be overridden via the command line
@@ -1132,7 +1167,7 @@ public class IngestJob implements Tool {
     /**
      * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory.
      */
-    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths) throws IOException {
+    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
         for (Path src : inputPaths) {
             String ssrc = src.toString();
             if (ssrc.contains("/flagged/")) {
@@ -1148,6 +1183,9 @@ public class IngestJob implements Tool {
                 }
             }
         }
+        
+        // notify observers
+        jobObservable.setJobId(jobID.toString());
     }
     
     /**
