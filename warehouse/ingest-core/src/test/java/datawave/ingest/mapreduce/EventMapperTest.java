@@ -16,6 +16,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.easymock.EasyMockRule;
 import org.easymock.Mock;
 import org.junit.After;
@@ -93,6 +94,9 @@ public class EventMapperTest {
         
         expect(mapContext.getInputSplit()).andReturn(null);
         expect(mapContext.getMapOutputValueClass()).andReturn(null);
+        
+        TaskAttemptID id = new TaskAttemptID();
+        expect(mapContext.getTaskAttemptID()).andReturn(id).anyTimes();
         
         StandaloneTaskAttemptContext standaloneContext = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
         expect(mapContext.getCounter(anyObject())).andDelegateTo(standaloneContext).anyTimes();
