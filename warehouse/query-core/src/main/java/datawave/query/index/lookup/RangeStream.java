@@ -37,6 +37,8 @@ import datawave.query.util.Tuples;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -792,24 +794,28 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      */
     public List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
+        QueryParametersImpl qp = new QueryParametersImpl();
         
         Calendar start = getCalendarStartOfDay(config.getBeginDate());
         Calendar end = getCalendarStartOfDay(config.getEndDate());
         
         try {
             // should return new end date
-            Date endDate = metadataHelper.getEndDateCap(start.getTime(), end.getTime());
+            Date qpDate = qp.getEndDate();
+            Date endDate = metadataHelper.getEndDateCap(start.getTime(), end.getTime(), qp.getEndDate());
+            
+            // change to compare new end date if necessary
+            while (start.compareTo(end) <= 0) {
+                String day = DateHelper.format(start.getTime());
+                IndexInfo info = new IndexInfo(-1);
+                info.setNode(node);
+                list.add(Tuples.tuple(day, info));
+                start.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            return list;
+            
         } catch (Exception e) {
             e.printStackTrace();
-        }
-        
-        // change to compare new end date if necessary
-        while (start.compareTo(end) <= 0) {
-            String day = DateHelper.format(start.getTime());
-            IndexInfo info = new IndexInfo(-1);
-            info.setNode(node);
-            list.add(Tuples.tuple(day, info));
-            start.add(Calendar.DAY_OF_YEAR, 1);
         }
         return list;
     }
