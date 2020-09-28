@@ -62,13 +62,17 @@ public class MockMetadataHelper extends MetadataHelper {
     };
     
     public MockMetadataHelper() {
-        super(createAllFieldMetadataHelper(getConnector()), Collections.emptySet(), getConnector(), TableName.METADATA, Collections.emptySet(), Collections
-                        .emptySet());
+        this(getConnector(), Collections.EMPTY_SET, TableName.METADATA);
     }
     
-    private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector) {
-        final Set<Authorizations> allMetadataAuths = Collections.emptySet();
-        final Set<Authorizations> auths = Collections.emptySet();
+    public MockMetadataHelper(Connector connector, Set<Authorizations> someAuths, String tableName) {
+        super(createAllFieldMetadataHelper(connector, someAuths), someAuths, connector, tableName, someAuths, someAuths);
+    }
+    
+    private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector, Set<Authorizations> someAuths) {
+        final Set<Authorizations> allMetadataAuths = someAuths;
+        final Set<Authorizations> auths = someAuths;
+        
         TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, connector, TableName.METADATA, auths, false);
         CompositeMetadataHelper cmh = new CompositeMetadataHelper(connector, TableName.METADATA, auths);
         return new AllFieldMetadataHelper(tmh, cmh, connector, TableName.METADATA, auths, allMetadataAuths);
