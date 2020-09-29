@@ -34,7 +34,7 @@ import java.util.Set;
 
 public class TableConfigurationUtil {
     
-    protected static Logger log = Logger.getLogger(TableConfigurationUtil.class.getName());
+    protected static final Logger log = Logger.getLogger(TableConfigurationUtil.class.getName());
     private String[] tableNames;
     private AccumuloHelper accumuloHelper;
     
