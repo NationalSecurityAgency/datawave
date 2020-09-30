@@ -362,7 +362,7 @@ public class QueryPruningVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAssignment node, Object data) {
-        return TruthState.TRUE;
+        return TruthState.UNKNOWN;
     }
     
     @Override
