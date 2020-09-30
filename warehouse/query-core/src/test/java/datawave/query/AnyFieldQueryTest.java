@@ -283,14 +283,15 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             anyQuery += JEXL_OR_OP + CityField.STATE.name() + statePhrase;
             anyQuery += JEXL_OR_OP + "_NOFIELD_" + contPhrase;
             String plan = getPlan(query, true, true);
-            assertPlanEquals(anyQuery, plan);
+            String expected = anyQuery.replace(JEXL_OR_OP + "_NOFIELD_" + contPhrase, "");
+            assertPlanEquals(expected, plan);
             
             // Test the plan sans value expansion
             plan = getPlan(query, true, false);
-            assertPlanEquals(anyQuery, plan);
+            assertPlanEquals(expected, plan);
             
             // Test the plan sans field expansion
-            anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + Constants.ANY_FIELD + statePhrase + JEXL_OR_OP + Constants.NO_FIELD + contPhrase;
+            anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + Constants.ANY_FIELD + statePhrase;
             plan = getPlan(query, false, true);
             assertPlanEquals(anyQuery, plan);
             
@@ -472,16 +473,16 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         // Test the plan with all expansions
         String expect = '(' + CityField.ACCESS.name() + EQ_OP + "'na'" + JEXL_OR_OP + first + ")" + JEXL_AND_OP + Constants.NO_FIELD + phrase;
         String plan = getPlan(query, true, true);
-        assertPlanEquals(expect, plan);
+        assertPlanEquals("false", plan);
         
         // Test the plan sans value expansion
         plan = getPlan(query, true, false);
-        assertPlanEquals(expect, plan);
+        assertPlanEquals("false", plan);
         
         // Test the plan sans field expansion
         expect = '(' + CityField.ACCESS.name() + EQ_OP + "'na'" + JEXL_OR_OP + first + ")" + JEXL_AND_OP + Constants.NO_FIELD + phrase;
         plan = getPlan(query, false, true);
-        assertPlanEquals(expect, plan);
+        assertPlanEquals("false", plan);
         
         // test running the query
         expect = first + AND_OP + this.dataManager.convertAnyField(phrase);
@@ -550,15 +551,15 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             // Test the plan with all expansions
             String expect = qCity + JEXL_AND_OP + Constants.NO_FIELD + phrase;
             String plan = getPlan(query, true, true);
-            assertPlanEquals(expect, plan);
+            assertPlanEquals("false", plan);
             
             // Test the plan sans value expansion
             plan = getPlan(query, true, false);
-            assertPlanEquals(expect, plan);
+            assertPlanEquals("false", plan);
             
             // Test the plan sans field expansion
             plan = getPlan(query, false, true);
-            assertPlanEquals(expect, plan);
+            assertPlanEquals("false", plan);
             
             // test running the query
             expect = qCity + AND_OP + this.dataManager.convertAnyField(phrase);
