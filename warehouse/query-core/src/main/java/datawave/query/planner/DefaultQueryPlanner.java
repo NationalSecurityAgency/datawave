@@ -276,7 +276,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     /**
      * Control if automated logical query reduction should be done
      */
-    protected boolean reduceQuery = false;
+    protected boolean reduceQuery = true;
     
     /**
      * Control if when applying logical query reduction the pruned query should be shown via an assignment node in the resulting query. There may be a
