@@ -404,6 +404,54 @@ public class QueryPruningVisitorTest {
         Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
     }
     
+    @Test
+    public void markerTest() throws ParseException {
+        String query = "(Assignment = true) && false";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        
+        Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
+        Assert.assertEquals("false", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+    }
+    
+    @Test
+    public void markerBoundedRangeTest() throws ParseException {
+        String query = "((Assignment = true) && (FIELD > 'x' && FIELD < 'z'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        
+        Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
+        Assert.assertEquals(query, JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+    }
+    
+    @Test
+    public void nestedMarkerBoundedRangeTest() throws ParseException {
+        String query = "FIELD == 'b' || ((Assignment = true) && (FIELD > 'x' && FIELD < 'z'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        
+        Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
+        Assert.assertEquals(query, JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+    }
+    
+    @Test
+    public void dualStatementQueryTest() throws ParseException {
+        String query = "(Expression = 'somevalue'); FIELD == 'x'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        
+        Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
+        Assert.assertEquals(query, JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+        
+        query = "(Expression = 'somevalue'); FIELD == 'x' || true";
+        script = JexlASTHelper.parseJexlQuery(query);
+        
+        Assert.assertEquals(QueryPruningVisitor.TruthState.TRUE, QueryPruningVisitor.getState(script));
+        Assert.assertEquals("(Expression = 'somevalue'); true", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+        
+        query = "(Expression = 'somevalue'); FIELD == 'x' && false";
+        script = JexlASTHelper.parseJexlQuery(query);
+        
+        Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
+        Assert.assertEquals("(Expression = 'somevalue'); false", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
+    }
+    
     private static class TestLogAppender extends AppenderSkeleton {
         private List<String> messages = new ArrayList<>();
         

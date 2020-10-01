@@ -265,10 +265,20 @@ public class QueryPruningVisitor extends BaseVisitor {
     // deal with wrappers
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        if (node.jjtGetNumChildren() != 1) {
-            throw new IllegalStateException("ASTJexlScript must only have one child: " + node);
+        // if there are multiple children here there are multiple statements/queries process this as an implicit OR do not reduce across them, but reduce each
+        // individually
+        Set<TruthState> states = new HashSet<>();
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            states.add((TruthState) node.jjtGetChild(i).jjtAccept(this, data));
         }
-        return node.jjtGetChild(0).jjtAccept(this, data);
+        
+        if (states.contains(TruthState.TRUE)) {
+            return TruthState.TRUE;
+        } else if (states.contains(TruthState.UNKNOWN)) {
+            return TruthState.UNKNOWN;
+        } else {
+            return TruthState.FALSE;
+        }
     }
     
     @Override
@@ -338,7 +348,7 @@ public class QueryPruningVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAssignment node, Object data) {
-        return TruthState.TRUE;
+        return TruthState.UNKNOWN;
     }
     
     @Override
