@@ -121,6 +121,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -973,7 +974,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             } catch (TableNotFoundException e) {
                 throw new DatawaveQueryException("Unable get get data dictionary", e);
             }
-            if (!allFields.containsAll(config.getUniqueFields())) {
+            
+            // Fields in the data dictionary is always uppercase. Convert the unique fields to uppercase
+            // so the comparisons are case insensitive
+            List<String> fields = config.getUniqueFields().stream().map(field -> field.toUpperCase()).collect(Collectors.toList());
+            if (!allFields.containsAll(fields)) {
                 Set<String> missingFields = Sets.newHashSet(config.getUniqueFields());
                 missingFields.removeAll(allFields);
                 nonexistentFields.addAll(missingFields);
