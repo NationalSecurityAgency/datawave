@@ -175,16 +175,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     break;
                 }
                 
-                if (highestCompare < 0) {
-                    // the highest value is less than evaluation context, its safe to move both lowest and highest and try again
-                    includeHeads = moveIterators(lowest, evaluationContext);
-                    includeHeads = moveIterators(highest, evaluationContext);
-                    continue;
-                }
-                
-                if (lowestCompare < 0) {
-                    // lowest value is less but highest value is more so just move the lowest and try again
-                    includeHeads = moveIterators(lowest, evaluationContext);
+                // advance anything less than the evaluation context to the evaluation context
+                SortedSet<T> toMove = topKeys.headSet(evaluationContext);
+                if (!toMove.isEmpty()) {
+                    includeHeads = moveIterators(toMove, evaluationContext);
                     continue;
                 }
             }
@@ -202,12 +196,13 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                         break;
                     }
                 } else {
-                    // filtered, advance the lowest and start again
+                    // filtered, advance the iterators (which are all currently pointing at the same point)
                     includeHeads = advanceIterators(lowest);
                 }
             } else {
-                // move the lowest to its first position at or beyond highest
-                includeHeads = moveIterators(lowest, highest);
+                // haven't converted yet, take the next highest and move it
+                T nextHighest = topKeys.headSet(highest).last();
+                includeHeads = moveIterators(nextHighest, highest);
             }
         }
         
@@ -266,14 +261,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             return next();
         }
         
-        Set<T> headSet = includeHeads.keySet().headSet(minimum);
-        
-        // some iterators need to be moved into the target range before recalculating the next
-        Iterator<T> topKeys = new LinkedList<>(headSet).iterator();
-        while (!includeHeads.isEmpty() && topKeys.hasNext()) {
-            // advance each iterator that is under the threshold
-            includeHeads = moveIterators(topKeys.next(), minimum);
-        }
+        SortedSet<T> headSet = includeHeads.keySet().headSet(minimum);
+        includeHeads = moveIterators(headSet, minimum);
         
         // next < minimum, so advance throwing next away and re-populating next with what should be >= minimum
         next();
@@ -318,15 +307,30 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @return
      */
     protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
+        T highest = null;
         transforms.remove(key);
         for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
-            if (itr.hasNext()) {
-                T next = itr.next();
-                T transform = transformer.transform(next);
-                transforms.put(transform, next);
-                includeHeads.put(transform, itr);
+            T next;
+            // if there is already a known highest go straight there instead of next
+            if (highest != null) {
+                next = itr.move(highest);
+            } else if (itr.hasNext()) {
+                next = itr.next();
             } else {
                 return Util.getEmpty();
+            }
+            
+            if (next == null) {
+                return Util.getEmpty();
+            }
+            
+            T transform = transformer.transform(next);
+            transforms.put(transform, next);
+            includeHeads.put(transform, itr);
+            
+            // move the highest if the new key is higher than the current key and the highest seen so far
+            if ((highest == null && transform.compareTo(key) > 0) || (highest != null && transform.compareTo(highest) > 0)) {
+                highest = transform;
             }
         }
         return includeHeads;
@@ -350,8 +354,43 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 T transform = transformer.transform(next);
                 transforms.put(transform, next);
                 includeHeads.put(transform, itr);
+                
+                if (transform.compareTo(to) > 0) {
+                    to = transform;
+                }
             }
         }
+        return includeHeads;
+    }
+    
+    protected TreeMultimap<T,NestedIterator<T>> moveIterators(SortedSet<T> toMove, T to) {
+        T highest = null;
+        
+        // get the highest key of toMove since it is likely to be the lowest cardinality
+        if (!toMove.isEmpty()) {
+            highest = toMove.last();
+        }
+        
+        while (highest != null && !includeHeads.isEmpty()) {
+            // if include heads is higher than the target key, adjust the target key to the highest since an intersection is not possible at anything but the
+            // highest
+            T highestInternal = includeHeads.keySet().last();
+            if (highestInternal.compareTo(to) > 0) {
+                to = highestInternal;
+            }
+            
+            // advance the iterators
+            includeHeads = moveIterators(highest, to);
+            
+            // get the next highest key in the set to move
+            toMove = toMove.headSet(highest);
+            if (!toMove.isEmpty()) {
+                highest = toMove.last();
+            } else {
+                highest = null;
+            }
+        }
+        
         return includeHeads;
     }
     
