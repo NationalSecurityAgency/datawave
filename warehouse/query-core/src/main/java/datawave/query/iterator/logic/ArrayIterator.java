@@ -41,7 +41,7 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
         if (offset == -1) {
             offset = 0;
         }
-        if (values != null && values.length > offset && values[offset].compareTo(minimum) < 0) {
+        if (values[offset].compareTo(minimum) < 0) {
             while (offset < values.length && values[offset].compareTo(minimum) < 0) {
                 ++offset;
             }
@@ -50,7 +50,7 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
             } else {
                 return values[offset];
             }
-        } else if (values != null && offset < values.length) {
+        } else if (offset < values.length) {
             return values[offset];
         } else {
             return null;
@@ -71,15 +71,5 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
     
     public Document document() {
         return doc;
-    }
-    
-    @Override
-    public boolean isContextRequired() {
-        return false;
-    }
-    
-    @Override
-    public void setContext(T context) {
-        // no-op
     }
 }

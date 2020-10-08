@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
@@ -17,7 +16,6 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -40,9 +38,6 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     
     private boolean identifierFound = false;
     
-    protected Set<String> rejectedIdentifiers = new HashSet<>();
-    private boolean rejectedIdentifiersFound = false;
-    
     static {
         TYPE_IDENTIFIERS = new HashSet<>();
         TYPE_IDENTIFIERS.add(IndexHoleMarkerJexlNode.class.getSimpleName());
@@ -56,55 +51,21 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     private QueryPropertyMarkerVisitor() {}
     
     public static boolean instanceOfAny(JexlNode node) {
-        return instanceOfAny(node, (List) null);
+        return instanceOfAny(node, null);
     }
     
     public static boolean instanceOfAny(JexlNode node, List<JexlNode> sourceNodes) {
-        return instanceOf(node, (Set) null, sourceNodes);
-    }
-    
-    public static boolean instanceOf(JexlNode node, Set<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
-        return instanceOf(node, types != null ? Lists.newArrayList(types) : null, sourceNodes);
-    }
-    
-    public static boolean instanceOfAnyExcept(JexlNode node, List<Class<? extends QueryPropertyMarker>> except) {
-        return instanceOfAnyExcept(node, except, null);
-    }
-    
-    public static boolean instanceOfAnyExcept(JexlNode node, List<Class<? extends QueryPropertyMarker>> except, List<JexlNode> sourceNodes) {
-        return instanceOf(node, null, except, sourceNodes);
+        return instanceOf(node, null, sourceNodes);
     }
     
     public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, List<JexlNode> sourceNodes) {
-        return instanceOf(node, type == null ? null : Collections.singletonList(type), null, sourceNodes);
-    }
-    
-    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
-        return instanceOf(node, types, null, sourceNodes);
-    }
-    
-    /**
-     * Check a node for any QueryPropertyMarker in types as long as it doesn't have any QueryPropertyMarkers in except
-     * 
-     * @param node
-     * @param types
-     * @param except
-     * @param sourceNodes
-     * @return true if at least one of the types QueryPropertyMarkers exists and there are no QueryPropertyMarkers from except, false otherwise
-     */
-    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, List<Class<? extends QueryPropertyMarker>> except,
-                    List<JexlNode> sourceNodes) {
         QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor();
         
         if (node != null) {
-            if (types != null)
-                types.stream().forEach(type -> visitor.typeIdentifiers.add(type.getSimpleName()));
+            if (type != null)
+                visitor.typeIdentifiers.add(type.getSimpleName());
             else
                 visitor.typeIdentifiers.addAll(TYPE_IDENTIFIERS);
-            
-            if (except != null) {
-                except.stream().forEach(e -> visitor.rejectedIdentifiers.add(e.getSimpleName()));
-            }
             
             node.jjtAccept(visitor, null);
             
@@ -112,7 +73,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                 if (sourceNodes != null)
                     for (JexlNode sourceNode : visitor.sourceNodes)
                         sourceNodes.add(trimReferenceNodes(sourceNode));
-                return !visitor.rejectedIdentifiersFound;
+                return true;
             }
         }
         
@@ -133,10 +94,6 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             String identifier = JexlASTHelper.getIdentifier(node);
             if (identifier != null) {
                 foundIdentifiers.add(identifier);
-            }
-            
-            if (rejectedIdentifiers.contains(identifier)) {
-                rejectedIdentifiersFound = true;
             }
         }
         return null;

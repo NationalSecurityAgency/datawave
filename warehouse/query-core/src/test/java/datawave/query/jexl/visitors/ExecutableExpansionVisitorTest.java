@@ -153,7 +153,7 @@ public abstract class ExecutableExpansionVisitorTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(false);
-        logic.setMaxDepthThreshold(11);
+        logic.setMaxDepthThreshold(10);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -341,7 +341,7 @@ public abstract class ExecutableExpansionVisitorTest {
         }
     }
     
-    @Test
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testDisableExpansion() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -354,14 +354,14 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         String[] queryStrings = {"UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE")};
+        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
     
-    @Test
-    public void testDelayedBridgeExpansion() throws Exception {
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void testFailedForInvalidBridgeExpansion() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -369,10 +369,9 @@ public abstract class ExecutableExpansionVisitorTest {
         if (log.isDebugEnabled()) {
             log.debug("testMatchesAtLeastCountOf");
         }
-        String[] queryStrings = {"UUID == 'capone' && ( LOCATION == 'newyork' || !(filter:isNull(MAGIC) || LOCATION == 'chicago'))",
-                "UUID == 'capone' && ( LOCATION == 'newyork' || !filter:isNull(MAGIC) || LOCATION == 'chicago')"};
+        String[] queryStrings = {"UUID == 'capone' && ( LOCATION == 'newyork' || !(filter:isNull(MAGIC) || LOCATION == 'chicago'))"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList("CAPONE")};
+        List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -771,9 +770,9 @@ public abstract class ExecutableExpansionVisitorTest {
                                         + "((ASTDelayedPredicate = true) && BIRTH_DATE == '123'))"));
         
         // starts off executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
         // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
         // the visitor changed nothing
         Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
                         JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));

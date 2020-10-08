@@ -62,8 +62,7 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(field, (values != null ? values : fst), negated, source, datatypeFilter, timeFilter, keyTform, ivaratorCacheDirURI, hdfsFileSystem,
-                        getField(), getNode())) {
+        if (notNull(field, (values != null ? values : fst), negated, source, datatypeFilter, timeFilter, keyTform, ivaratorCacheDirURI, hdfsFileSystem)) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + field + (negated ? "!~" : "=~") + value);
             }
@@ -127,7 +126,7 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                 throw new IllegalStateException("Unable to initialize list iterator stack", e);
             }
             
-            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, getNode(), getField());
+            IndexIteratorBridge itr = new IndexIteratorBridge(docIterator);
             field = null;
             value = null;
             negated = null;
@@ -138,8 +137,6 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
             timeFilter = null;
             hdfsFileSystem = null;
             ivaratorCacheDirURI = null;
-            node = null;
-            field = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

@@ -1,6 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
 import org.apache.log4j.Logger;
@@ -128,31 +127,30 @@ public abstract class AbstractDataManager implements RawDataManager {
         for (String field : fieldIndexes) {
             // assume field is added
             try {
-                if (!(getNormalizer(field) instanceof GeoNormalizer)) {
-                    if (getNormalizer(field) instanceof NumberNormalizer) {
-                        // remove quotes from phrase
-                        String num = "";
-                        String numPhrase = phrase;
-                        int start = phrase.indexOf('\'');
-                        if (0 <= start) {
-                            num = phrase.substring(start + 1);
-                            if (num.endsWith("'")) {
-                                num = num.substring(0, num.length() - 1);
-                            }
-                            numPhrase = phrase.substring(0, start) + num;
-                        } else {
-                            String[] split = phrase.split(" ");
-                            num = split[split.length - 1];
+                if (getNormalizer(field) instanceof NumberNormalizer) {
+                    // remove quotes from phrase
+                    String num = "";
+                    String numPhrase = phrase;
+                    int start = phrase.indexOf('\'');
+                    if (0 <= start) {
+                        num = phrase.substring(start + 1);
+                        if (num.endsWith("'")) {
+                            num = num.substring(0, num.length() - 1);
                         }
-                        
-                        // if it can't be parsed as an int then ignore it
-                        Integer.parseInt(num);
-                        buf.append(opStr).append(field).append(" ").append(numPhrase);
+                        numPhrase = phrase.substring(0, start) + num;
                     } else {
-                        buf.append(opStr).append(field).append(" ").append(phrase);
+                        String[] split = phrase.split(" ");
+                        num = split[split.length - 1];
                     }
-                    opStr = " " + op + " ";
+                    
+                    // if it can't be parsed as an int then ignore it
+                    Integer.parseInt(num);
+                    buf.append(opStr).append(field).append(" ").append(numPhrase);
+                } else {
+                    buf.append(opStr).append(field).append(" ").append(phrase);
                 }
+                opStr = " " + op + " ";
+                
             } catch (NumberFormatException nfe) {
                 // don't add numeric field if it is not a valid numeric
             }

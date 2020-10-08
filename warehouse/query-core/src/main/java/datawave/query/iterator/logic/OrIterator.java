@@ -15,53 +15,53 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * Performs a deduping merge of iterators.
  *
+ * NOTE***** if however sortedUIDs is false, then deduping is not performed and filters cannot be applied *****NOTE
  * 
  * @param <T>
  */
 public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     // temporary stores of uninitialized streams of iterators
-    private List<NestedIterator<T>> includes, contextIncludes, contextExcludes;
+    private List<NestedIterator<T>> includes, excludes;
     
     private Map<T,T> transforms;
     private Util.Transformer<T> transformer;
     
-    private TreeMultimap<T,NestedIterator<T>> includeHeads, contextIncludeHeads, contextIncludeNullHeads, contextExcludeHeads, contextExcludeNullHeads;
+    private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads;
+    
+    // sortedUIDs is normally true, however in some circumstances it may not in which case we cannot assume the underlying iterators are returning sorted
+    // UIDs. When this is true, we cannot advance iterators based on returned keys.
+    private final boolean sortedUIDs;
     
     private T prev;
     private T next;
     
     private Document prevDocument, document;
     
-    private T evaluationContext;
-    
-    public OrIterator(Iterable<NestedIterator<T>> sources) {
-        this(sources, null);
+    public OrIterator(Iterable<NestedIterator<T>> sources, boolean sortedUIDs) {
+        this(sources, null, sortedUIDs);
     }
     
-    public OrIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters) {
+    public OrIterator(Iterable<NestedIterator<T>> sources, Iterable<NestedIterator<T>> filters, boolean sortedUIDs) {
+        this.sortedUIDs = sortedUIDs;
         includes = new LinkedList<>();
-        contextIncludes = new LinkedList<>();
         for (NestedIterator<T> src : sources) {
-            if (src.isContextRequired()) {
-                contextIncludes.add(src);
-            } else {
-                includes.add(src);
-            }
+            includes.add(src);
         }
         
         if (filters == null) {
-            contextExcludes = Collections.emptyList();
+            excludes = Collections.emptyList();
         } else {
-            contextExcludes = new LinkedList<>();
+            excludes = new LinkedList<>();
             for (NestedIterator<T> filter : filters) {
-                contextExcludes.add(filter);
+                excludes.add(filter);
             }
+        }
+        if (!excludes.isEmpty() && !sortedUIDs) {
+            throw new UnsupportedOperationException("Cannot apply filters if sortedUIDs is false");
         }
     }
     
@@ -80,14 +80,12 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         includeHeads = TreeMultimap.create(keyComp, itrComp);
         initSubtree(includeHeads, includes, transformer, transforms, false);
         
-        if (contextIncludes.size() > 0) {
-            contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
-            contextIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
-        }
-        
-        if (contextExcludes.size() > 0) {
-            contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
-            contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
+        if (excludes.isEmpty()) {
+            excludeHeads = Util.getEmpty();
+        } else {
+            excludeHeads = TreeMultimap.create(keyComp, itrComp);
+            // pass null in for transforms as excludes are not returned
+            initSubtree(excludeHeads, excludes, transformer, null, false);
         }
         
         next();
@@ -102,69 +100,23 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     }
     
     /**
-     * return the previously found next and set its document. If there are more head references, get the lowest, advancing all iterators tied to lowest and set
-     * next/document for the next call
+     * return the previously found next and set its document. If there are more head references, get the lowest that is not filtered, advancing all iterators
+     * tied to lowest and set next/document for the next call
      * 
      * @return the previously found next
      */
     public T next() {
-        if (isContextRequired() && evaluationContext == null) {
-            throw new IllegalStateException("evaluationContext must be set prior to calling next");
-        }
-        
         prev = next;
         prevDocument = document;
         
-        SortedSet<T> candidateSet = new TreeSet<>(Util.keyComparator());
-        T lowest;
-        if (includeHeads.keySet().size() > 0) {
-            lowest = includeHeads.keySet().first();
-            candidateSet.add(lowest);
-        }
-        
-        T lowestContextInclude = null;
-        if (evaluationContext != null) {
-            if (contextIncludes.size() > 0) {
-                // get the lowest union and add it for contextRequiredIncludes
-                lowestContextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
-                                transformer);
-                if (lowestContextInclude != null) {
-                    candidateSet.add(lowestContextInclude);
-                }
-            }
-            
-            if (contextExcludes.size() > 0) {
-                // DeMorgan's Law: (~A) OR (~B) == ~(A AND B)
-                // for an exclude intersect the evaluation context with the set and then as long as the result doesn't match it is a candidate
-                T intersectExclude = NestedIteratorContextUtil.intersect(evaluationContext, contextExcludes, contextExcludeHeads, contextExcludeNullHeads,
-                                transformer);
-                if (!evaluationContext.equals(intersectExclude)) {
-                    candidateSet.add(evaluationContext);
-                }
-            }
-        }
-        
-        // take the lowest of the candidates
-        if (candidateSet.size() > 0) {
-            lowest = candidateSet.first();
-            
-            // decide how to construct the document
-            if (lowest.equals(lowestContextInclude)) {
-                // build it from the contextIncludeHeads
-                next = lowestContextInclude;
-                document = Util.buildNewDocument(contextIncludeHeads.get(next));
-            } else if (includeHeads.keySet().size() > 0 && lowest.equals(includeHeads.keySet().first())) {
-                // build it from the includeHeads
+        while (!includeHeads.isEmpty()) {
+            T lowest = includeHeads.keySet().first();
+            if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
                 next = transforms.get(lowest);
                 document = Util.buildNewDocument(includeHeads.get(lowest));
+                includeHeads = advanceIterators(lowest);
+                break;
             } else {
-                // nothing to build it from all we know is that it wasn't in the exclude set
-                next = evaluationContext;
-                document = Util.buildNewDocument(Collections.emptyList());
-            }
-            
-            // regardless of where we hit make sure to advance includeHeads if it matches there
-            if (includeHeads.get(lowest) != null) {
                 includeHeads = advanceIterators(lowest);
             }
         }
@@ -269,9 +221,9 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         for (NestedIterator<T> itr : includes) {
             leaves.addAll(itr.leaves());
         }
-        
-        // these do not include contextIncludes/contextExcludes because they will be initialized on demand
-        
+        for (NestedIterator<T> itr : excludes) {
+            leaves.addAll(itr.leaves());
+        }
         return leaves;
     }
     
@@ -285,12 +237,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     @Override
     public Collection<NestedIterator<T>> children() {
-        ArrayList<NestedIterator<T>> children = new ArrayList<>(includes.size() + contextIncludes.size() + contextExcludes.size());
+        ArrayList<NestedIterator<T>> children = new ArrayList<>(includes.size() + excludes.size());
         
         children.addAll(includes);
-        
-        children.addAll(contextIncludes);
-        children.addAll(contextExcludes);
+        children.addAll(excludes);
         
         return children;
     }
@@ -321,31 +271,9 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         
         sb.append("Includes: ");
         sb.append(includes);
-        sb.append(", Deferred Includes: ");
-        sb.append(contextIncludes);
-        sb.append(", Deferred Excludes: ");
-        sb.append(contextExcludes);
+        sb.append(", Excludes: ");
+        sb.append(excludes);
         
         return sb.toString();
-    }
-    
-    /**
-     * If there are contextIncludes or contextExcludes this iterator requires context
-     * 
-     * @return
-     */
-    @Override
-    public boolean isContextRequired() {
-        return !contextExcludes.isEmpty() || !contextIncludes.isEmpty();
-    }
-    
-    /**
-     * Context will be considered when evaluating contextIncludes and contextExcludes if it is lower than the lowest includes value
-     * 
-     * @param context
-     */
-    @Override
-    public void setContext(T context) {
-        this.evaluationContext = context;
     }
 }

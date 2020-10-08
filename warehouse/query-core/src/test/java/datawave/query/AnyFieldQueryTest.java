@@ -164,13 +164,13 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             this.logic.setFullTableScanEnabled(true);
             try {
                 // Test the plan with all expansions
-                anyCity = "!(CITY == '" + city.name() + "'";
+                anyCity = "(CITY == '" + city.name() + "'";
                 if (city.name().equals("london")) {
-                    anyCity += ")" + JEXL_AND_OP + "!(STATE == '" + city.name() + "')";
+                    anyCity = '(' + anyCity + JEXL_OR_OP + "STATE == '" + city.name() + "'))";
                 } else {
                     anyCity = anyCity + ')';
                 }
-                anyCity = "(((" + anyCity + ")))";
+                anyCity = '!' + anyCity;
                 String plan = getPlan(query, true, true);
                 assertPlanEquals(anyCity, plan);
                 
@@ -283,15 +283,14 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             anyQuery += JEXL_OR_OP + CityField.STATE.name() + statePhrase;
             anyQuery += JEXL_OR_OP + "_NOFIELD_" + contPhrase;
             String plan = getPlan(query, true, true);
-            String expected = anyQuery.replace(JEXL_OR_OP + "_NOFIELD_" + contPhrase, "");
-            assertPlanEquals(expected, plan);
+            assertPlanEquals(anyQuery, plan);
             
             // Test the plan sans value expansion
             plan = getPlan(query, true, false);
-            assertPlanEquals(expected, plan);
+            assertPlanEquals(anyQuery, plan);
             
             // Test the plan sans field expansion
-            anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + Constants.ANY_FIELD + statePhrase;
+            anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + Constants.ANY_FIELD + statePhrase + JEXL_OR_OP + Constants.NO_FIELD + contPhrase;
             plan = getPlan(query, false, true);
             assertPlanEquals(anyQuery, plan);
             
@@ -473,16 +472,16 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         // Test the plan with all expansions
         String expect = '(' + CityField.ACCESS.name() + EQ_OP + "'na'" + JEXL_OR_OP + first + ")" + JEXL_AND_OP + Constants.NO_FIELD + phrase;
         String plan = getPlan(query, true, true);
-        assertPlanEquals("false", plan);
+        assertPlanEquals(expect, plan);
         
         // Test the plan sans value expansion
         plan = getPlan(query, true, false);
-        assertPlanEquals("false", plan);
+        assertPlanEquals(expect, plan);
         
         // Test the plan sans field expansion
         expect = '(' + CityField.ACCESS.name() + EQ_OP + "'na'" + JEXL_OR_OP + first + ")" + JEXL_AND_OP + Constants.NO_FIELD + phrase;
         plan = getPlan(query, false, true);
-        assertPlanEquals("false", plan);
+        assertPlanEquals(expect, plan);
         
         // test running the query
         expect = first + AND_OP + this.dataManager.convertAnyField(phrase);
@@ -549,17 +548,17 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             String query = qCity + AND_OP + Constants.ANY_FIELD + phrase;
             
             // Test the plan with all expansions
-            String expect = qCity + JEXL_AND_OP + Constants.NO_FIELD + phrase;
+            String expect = qCity + JEXL_AND_OP + "((ASTDelayedPredicate = true)" + JEXL_AND_OP + "(" + Constants.NO_FIELD + phrase + "))";
             String plan = getPlan(query, true, true);
-            assertPlanEquals("false", plan);
+            assertPlanEquals(expect, plan);
             
             // Test the plan sans value expansion
             plan = getPlan(query, true, false);
-            assertPlanEquals("false", plan);
+            assertPlanEquals(expect, plan);
             
             // Test the plan sans field expansion
             plan = getPlan(query, false, true);
-            assertPlanEquals("false", plan);
+            assertPlanEquals(expect, plan);
             
             // test running the query
             expect = qCity + AND_OP + this.dataManager.convertAnyField(phrase);

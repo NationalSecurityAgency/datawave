@@ -2,15 +2,10 @@ package datawave.query.jexl.nodes;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Arrays;
 
 public class QueryPropertyMarkerTest {
     
@@ -30,14 +25,5 @@ public class QueryPropertyMarkerTest {
         
         sourceNode = ASTDelayedPredicate.getDelayedPredicateSource(delayedNode);
         Assert.assertEquals(baseQuery, JexlStringBuildingVisitor.buildQuery(sourceNode));
-    }
-    
-    @Test
-    public void instanceOfAnyExceptTest() throws Exception {
-        String query = "FIELD == 'value'";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        JexlNode evalOnly = ASTEvaluationOnly.create(script);
-        Assert.assertFalse(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, Arrays.asList(ASTEvaluationOnly.class)));
-        Assert.assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, Arrays.asList(ASTDelayedPredicate.class)));
     }
 }

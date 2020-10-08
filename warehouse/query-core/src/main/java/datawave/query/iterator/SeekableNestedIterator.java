@@ -78,14 +78,4 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
     public void remove() {
         source.remove();
     }
-    
-    @Override
-    public boolean isContextRequired() {
-        return source.isContextRequired();
-    }
-    
-    @Override
-    public void setContext(T context) {
-        source.setContext(context);
-    }
 }

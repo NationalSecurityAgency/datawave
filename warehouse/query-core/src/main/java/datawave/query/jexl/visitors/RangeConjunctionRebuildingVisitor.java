@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -17,7 +16,6 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
@@ -28,6 +26,7 @@ import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -113,9 +112,10 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        List<Class<? extends QueryPropertyMarker>> markers = Lists.newArrayList(new Class[] {IndexHoleMarkerJexlNode.class, ASTEvaluationOnly.class,
-                ExceededValueThresholdMarkerJexlNode.class, ExceededTermThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class});
-        if (QueryPropertyMarkerVisitor.instanceOf(node, markers, null)) {
+        if (ASTDelayedPredicate.instanceOf(node) || IndexHoleMarkerJexlNode.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
+            return node;
+        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
+                        || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
             return node;
         } else
             return super.visit(node, data);

@@ -216,8 +216,6 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                     log.trace("Do we have next? " + iter.hasNext());
                     
                 }
-                // track how many fields have exceeded value limits
-                int valueExceededCount = 0;
                 while (iter.hasNext()) {
                     
                     Entry<Key,Value> entry = iter.next();
@@ -258,25 +256,15 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                             topKey.getColumnFamily(holder);
                             String field = holder.toString();
                             
-                            // if the limits haven't already been surpassed
-                            if (!fieldsToValues.isKeyThresholdExceeded()
-                                            && (fieldsToValues.get(field) == null || !fieldsToValues.get(field).isThresholdExceeded())) {
-                                // We are only returning a mapping of field value to field name, no need to
-                                // determine cardinality and such at this point.
-                                boolean added = fieldsToValues.put(field, term);
-                                
-                                // if there was a failure to add, and the key threshold isn't exceeded, increment the value exceeded count
-                                if (!added && !fieldsToValues.isKeyThresholdExceeded() && fieldsToValues.get(field).isThresholdExceeded()) {
-                                    valueExceededCount++;
-                                }
-                                
-                                // conditional states that if we exceed the key threshold OR field name is not null and we've exceeded
-                                // the value threshold for that field name ( in the case where we have a fielded lookup ).
-                                if (fieldsToValues.isKeyThresholdExceeded() || (fields.size() == valueExceededCount)) {
-                                    if (log.isTraceEnabled())
-                                        log.trace("We've passed term expansion threshold");
-                                    return true;
-                                }
+                            // We are only returning a mapping of field value to field name, no need to
+                            // determine cardinality and such at this point.
+                            fieldsToValues.put(field, term);
+                            // conditional states that if we exceed the key threshold OR field name is not null and we've exceeded
+                            // the value threshold for that field name ( in the case where we have a fielded lookup ).
+                            if (fieldsToValues.isKeyThresholdExceeded() || (fields.size() == 1 && fieldsToValues.get(field).isThresholdExceeded())) {
+                                if (log.isTraceEnabled())
+                                    log.trace("We've passed term expansion threshold");
+                                return true;
                             }
                         }
                     }

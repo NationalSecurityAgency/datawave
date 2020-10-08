@@ -9,7 +9,6 @@ import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.util.Tuple2;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IterationInterruptedException;
@@ -18,7 +17,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.log4j.Logger;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
@@ -47,12 +45,10 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     protected final QuerySpan querySpan;
     protected boolean collectTimingDetails = false;
     protected IteratorEnvironment env;
-    protected Collection<ByteSequence> columnFamilies;
-    protected boolean inclusive;
     
     public PipelineIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, QuerySpanCollector querySpanCollector, QuerySpan querySpan,
                     QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env,
-                    YieldCallback<Key> yieldCallback, long yieldThresholdMs, Collection<ByteSequence> columnFamilies, boolean inclusive) {
+                    YieldCallback<Key> yieldCallback, long yieldThresholdMs) {
         this.docSource = documents;
         this.pipelines = new PipelinePool(maxPipelines, querySpanCollector, sourceIterator, sourceForDeepCopy, env);
         this.evaluationQueue = new LinkedList<>();
@@ -63,8 +59,6 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
         this.env = env;
         this.yield = yieldCallback;
         this.yieldThresholdMs = yieldThresholdMs;
-        this.columnFamilies = columnFamilies;
-        this.inclusive = inclusive;
     }
     
     public void setCollectTimingDetails(boolean collectTimingDetails) {
@@ -279,7 +273,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
                 nestedQuery = ((NestedQueryIterator) this.docSource).getNestedQuery();
             }
             
-            evaluate(keySource, docSource.document(), nestedQuery, columnFamilies, inclusive);
+            evaluate(keySource, docSource.document(), nestedQuery);
             if (collectTimingDetails) {
                 querySpanCollector.addQuerySpan(querySpan);
             }
@@ -326,15 +320,15 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
             if (log.isTraceEnabled()) {
                 log.trace("evaluating nested " + nestedQuery);
             }
-            evaluate(keySource, this.docSource.document(), nestedQuery, columnFamilies, inclusive);
+            evaluate(keySource, this.docSource.document(), nestedQuery);
         }
     }
     
-    private void evaluate(Key key, Document document, NestedQuery<Key> nestedQuery, Collection<ByteSequence> columnFamilies, boolean inclusive) {
+    private void evaluate(Key key, Document document, NestedQuery<Key> nestedQuery) {
         if (log.isTraceEnabled()) {
             log.trace("Adding evaluation of " + key + " to pipeline");
         }
-        Pipeline pipeline = pipelines.checkOut(key, document, nestedQuery, columnFamilies, inclusive);
+        Pipeline pipeline = pipelines.checkOut(key, document, nestedQuery);
         
         evaluationQueue.add(new Tuple2<>(IteratorThreadPoolManager.executeEvaluation(pipeline, pipeline.toString()), pipeline));
     }
