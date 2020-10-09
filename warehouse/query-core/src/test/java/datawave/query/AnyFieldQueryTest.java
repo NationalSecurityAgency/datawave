@@ -283,15 +283,15 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             anyQuery += JEXL_OR_OP + CityField.STATE.name() + statePhrase;
             anyQuery += JEXL_OR_OP + "_NOFIELD_" + contPhrase;
             String plan = getPlan(query, true, true);
-            String expected = anyQuery.replace(JEXL_OR_OP + "_NOFIELD_" + contPhrase, "");
-            assertPlanEquals(expected, plan);
+            assertPlanEquals(anyQuery, plan);
             
             // Test the plan sans value expansion
             plan = getPlan(query, true, false);
-            assertPlanEquals(expected, plan);
+            assertPlanEquals(anyQuery, plan);
             
             // Test the plan sans field expansion
             anyQuery = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + Constants.ANY_FIELD + statePhrase;
+            anyQuery += JEXL_OR_OP + "_NOFIELD_" + contPhrase;
             plan = getPlan(query, false, true);
             assertPlanEquals(anyQuery, plan);
             
