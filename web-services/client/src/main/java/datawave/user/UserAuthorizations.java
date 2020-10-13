@@ -48,11 +48,13 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+
         for (String auth : auths) {
             if (sb.length() > 0)
                 sb.append(',');
             sb.append(auth);
         }
+
         return sb.toString();
     }
     
@@ -67,6 +69,7 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
     
     @XmlTransient
     private static final Schema<UserAuthorizations> SCHEMA = new Schema<UserAuthorizations>() {
+
         public UserAuthorizations newMessage() {
             return new UserAuthorizations();
         }
@@ -88,17 +91,21 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
         }
         
         public void writeTo(Output output, UserAuthorizations message) throws IOException {
+
             if (message.auths != null) {
                 for (String auths : message.auths) {
                     if (auths != null)
                         output.writeString(1, auths, true);
                 }
+
             }
         }
         
         public void mergeFrom(Input input, UserAuthorizations message) throws IOException {
             int number;
+
             while ((number = input.readFieldNumber(this)) != 0) {
+
                 switch (number) {
                     case 1:
                         if (message.auths == null || message.auths == Collections.EMPTY_SET)
@@ -108,21 +115,26 @@ public class UserAuthorizations implements Message<UserAuthorizations>, Serializ
                     default:
                         input.handleUnknownField(number, this);
                         break;
+
                 }
+
             }
         }
         
         public String getFieldName(int number) {
+
             switch (number) {
                 case 1:
                     return "auths";
                 default:
                     return null;
             }
+
         }
         
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
+
             return number == null ? 0 : number.intValue();
         }
         
