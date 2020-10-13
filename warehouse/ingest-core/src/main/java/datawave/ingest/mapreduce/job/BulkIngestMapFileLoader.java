@@ -20,12 +20,15 @@ import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.master.thrift.MasterClientService.Iface;
 import org.apache.accumulo.core.master.thrift.MasterMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
@@ -52,9 +55,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Observer;
 import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -100,6 +105,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private StandaloneStatusReporter reporter = new StandaloneStatusReporter();
     private volatile boolean running;
     private ExecutorService executor;
+    private JobObservable jobObservable;
     
     public static void main(String[] args) throws AccumuloSecurityException, IOException {
         
@@ -114,12 +120,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
             log.error("usage: BulkIngestMapFileLoader hdfsWorkDir jobDirPattern instanceName zooKeepers username password "
                             + "[-sleepTime sleepTime] [-majcThreshold threshold] [-majcCheckInterval count] [-majcDelay majcDelay] "
                             + " [-seqFileHdfs seqFileSystemUri] [-srcHdfs srcFileSystemURI] [-destHdfs destFileSystemURI] [-jt jobTracker] "
-                            + "[-ingestMetricsDisabled] [-shutdownPort portNum] confFile [{confFile}]");
+                            + "[-ingestMetricsDisabled] [-jobObservers jobObserverClasses] [-shutdownPort portNum] confFile [{confFile}]");
             System.exit(-1);
         }
         
         int numBulkThreads = 8;
         int numBulkAssignThreads = 4;
+        List<Observer> jobObservers = new ArrayList<>();
         // default the number of HDFS threads to 1
         int numHdfsThreads = 1;
         if (args.length > 6) {
@@ -279,6 +286,27 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 } else if ("-fifo".equalsIgnoreCase(args[i])) {
                     FIFO = true;
                     log.info("Changing processing order to FIFO");
+                } else if ("-jobObservers".equalsIgnoreCase(args[i])) {
+                    if (i + 2 > args.length) {
+                        log.error("-jobObservers must be followed by a class name");
+                        System.exit(-2);
+                    }
+                    String jobObserverClasses = args[++i];
+                    try {
+                        String[] classes = jobObserverClasses.split(",");
+                        for (String jobObserverClass : classes) {
+                            log.info("Adding job observer: " + jobObserverClass);
+                            Class clazz = Class.forName(jobObserverClass);
+                            Observer o = (Observer) clazz.newInstance();
+                            jobObservers.add(o);
+                        }
+                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                        log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
+                        System.exit(-2);
+                    } catch (ClassCastException e) {
+                        log.error("cannot cast '" + jobObserverClasses + "' to Observer", e);
+                        System.exit(-2);
+                    }
                 } else if (args[i].startsWith("-")) {
                     int index = args[i].indexOf('=', 1);
                     if (index < 0) {
@@ -336,23 +364,26 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         Credentials credentials = new Credentials(args[4], new PasswordToken(passwordStr));
         BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
-                        destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads);
+                        destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, numHdfsThreads, jobObservers);
         Thread t = new Thread(processor, "map-file-watcher");
         t.start();
     }
     
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
                     URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT, 1);
+        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, SHUTDOWN_PORT,
+                        1, Collections.emptyList());
     }
     
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
                     URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, shutdownPort, 1);
+        this(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, shutdownPort, 1,
+                        Collections.emptyList());
     }
     
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, Credentials credentials, URI seqFileHdfs,
-                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort, int numHdfsThreads) {
+                    URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort,
+                    int numHdfsThreads, List<Observer> jobObservers) {
         this.conf = conf;
         this.tablePriorities = tablePriorities;
         this.workDir = new Path(workDir);
@@ -366,6 +397,20 @@ public final class BulkIngestMapFileLoader implements Runnable {
         this.jobtracker = jobtracker;
         this.running = true;
         this.executor = Executors.newFixedThreadPool(numHdfsThreads > 0 ? numHdfsThreads : 1);
+        try {
+            this.jobObservable = new JobObservable(seqFileHdfs != null ? getFileSystem(seqFileHdfs) : null);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot create FileSystem", e);
+        }
+        
+        for (Observer observer : jobObservers) {
+            this.jobObservable.addObserver(observer);
+            if (observer instanceof Configurable) {
+                log.info("Applying configuration to observer");
+                ((Configurable) observer).setConf(conf);
+            }
+        }
+        
         try {
             if (shutdownPort > 0) {
                 final ServerSocket serverSocket = new ServerSocket(shutdownPort);
@@ -1110,6 +1155,29 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 for (Future<Boolean> future : execResults) {
                     if (future.get() == null)
                         throw new IOException("Error while attempting to mark job as loaded");
+                }
+                
+                // if there are job observers do the work to notify them
+                if (jobObservable.countObservers() > 0) {
+                    // update job observers
+                    if (destFs.getConf() == null) {
+                        destFs.setConf(conf);
+                    }
+                    RemoteIterator<LocatedFileStatus> statuses = destFs.listFiles(jobDirectory, false);
+                    Path jobFile = null;
+                    while (jobFile == null && statuses.hasNext()) {
+                        LocatedFileStatus status = statuses.next();
+                        if (status.getPath().getName().startsWith("job_")) {
+                            jobFile = status.getPath();
+                        }
+                    }
+                    
+                    if (jobFile != null) {
+                        log.info("Notifying observers for job: " + jobFile.getName() + " from work dir: " + jobDirectory);
+                        jobObservable.setJobId(jobFile.getName());
+                    } else {
+                        log.warn("no job file found for: " + jobDirectory);
+                    }
                 }
             }
             
