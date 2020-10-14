@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EvaluationOnly extends LuceneQueryFunction {
-    private LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
+    private LuceneToJexlQueryParser parser;
     
     public EvaluationOnly() {
-        super("evaluation_only", new ArrayList<>());
+        this(new LuceneToJexlQueryParser());
     }
     
     public EvaluationOnly(LuceneToJexlQueryParser parser) {
