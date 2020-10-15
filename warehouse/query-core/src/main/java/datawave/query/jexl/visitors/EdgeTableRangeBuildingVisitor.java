@@ -232,6 +232,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                         }
                     }
                     mergedContext = childContext;
+                    continue;
                 } else if (((List<QueryContext>) mergedContext).get(0).getRowContext() != null) {
                     for (QueryContext qContext : ((List<QueryContext>) mergedContext)) {
                         if (!(qContext.combineQueryContexts(((List<QueryContext>) childContext), false))) {
