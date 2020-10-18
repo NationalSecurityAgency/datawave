@@ -26,11 +26,6 @@ import java.util.Set;
 
 public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(RegexFunctionVisitor.class);
-    private static final String INCLUDE_REGEX = "includeRegex";
-    private static final String EXCLUDE_REGEX = "excludeRegex";
-    private static final String IS_NULL = "isNull";
-    private static final String IS_NOT_NULL = "isNotNull";
-    
     protected Set<String> nonEventFields;
     
     public RegexFunctionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> nonEventFields) {
@@ -50,59 +45,55 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
         JexlNode returnNode = node;
         FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
         node.jjtAccept(functionMetadata, null);
-    
-        switch (functionMetadata.name()) {
-            case INCLUDE_REGEX:
-            case EXCLUDE_REGEX: {
-                List<JexlNode> arguments = functionMetadata.args();
-                JexlNode firstArg = arguments.get(0);
-                if (firstArg instanceof ASTIdentifier) {
-                    JexlNode regexNode = buildRegexNode((ASTIdentifier) firstArg, functionMetadata.name(), arguments.get(1).image);
-                    if (regexNode != null) {
-                        returnNode = regexNode;
-                    }
+        
+        if (functionMetadata.name().equals("includeRegex") || functionMetadata.name().equals("excludeRegex")) {
+            List<JexlNode> arguments = functionMetadata.args();
+            JexlNode node0 = arguments.get(0);
+            if (node0 instanceof ASTIdentifier) {
+                JexlNode regexNode = buildRegexNode((ASTIdentifier) node0, functionMetadata.name(), arguments.get(1).image);
+                if (regexNode != null) {
+                    returnNode = regexNode;
+                }
+            } else {
+                JexlNode newParent = null;
+                if (functionMetadata.name().equals("excludeRegex")) {
+                    newParent = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
                 } else {
-                    JexlNode newParent;
-                    if (functionMetadata.name().equals(EXCLUDE_REGEX)) {
-                        newParent = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-                    } else {
-                        // it is likely an 'or' node...
-                        newParent = JexlNodeFactory.shallowCopy(firstArg);
-                    }
-                    for (int i = 0; i < firstArg.jjtGetNumChildren(); i++) {
-                        JexlNode child = firstArg.jjtGetChild(i);
-                        if (child instanceof ASTIdentifier) {
-                            this.adopt(newParent, buildRegexNode((ASTIdentifier) child, functionMetadata.name(), arguments.get(1).image));
-                        } else { // probably a Reference
-                            for (int j = 0; j < child.jjtGetNumChildren(); j++) {
-                                JexlNode grandChild = child.jjtGetChild(j);
-                                if (grandChild instanceof ASTIdentifier) {
-                                    this.adopt(newParent, buildRegexNode((ASTIdentifier) grandChild, functionMetadata.name(), arguments.get(1).image));
-                                }
+                    // it is likely an 'or' node...
+                    newParent = JexlNodeFactory.shallowCopy(node0);
+                }
+                for (int i = 0; i < node0.jjtGetNumChildren(); i++) {
+                    
+                    JexlNode child = node0.jjtGetChild(i);
+                    
+                    if (child instanceof ASTIdentifier) {
+                        this.adopt(newParent, buildRegexNode((ASTIdentifier) child, functionMetadata.name(), arguments.get(1).image));
+                    } else { // probably a Reference
+                        for (int j = 0; j < child.jjtGetNumChildren(); j++) {
+                            JexlNode maybeIdentifier = child.jjtGetChild(j);
+                            if (maybeIdentifier instanceof ASTIdentifier) {
+                                this.adopt(newParent, buildRegexNode((ASTIdentifier) maybeIdentifier, functionMetadata.name(), arguments.get(1).image));
                             }
                         }
                     }
-                    if (newParent.jjtGetNumChildren() == firstArg.jjtGetNumChildren() && newParent.jjtGetNumChildren() != 0) {
-                        returnNode = newParent;
-                    }
                 }
-                break;
+                if (newParent.jjtGetNumChildren() == node0.jjtGetNumChildren() && newParent.jjtGetNumChildren() != 0) {
+                    returnNode = newParent;
+                }
             }
-            case IS_NULL: {
-                JexlNode firstArg = functionMetadata.args().get(0);
-                if (firstArg instanceof ASTIdentifier) {
-                    returnNode = JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), firstArg.image,
-                                    new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL));
-                }
-                break;
+        } else if (functionMetadata.name().equals("isNull")) {
+            List<JexlNode> arguments = functionMetadata.args();
+            JexlNode node0 = arguments.get(0);
+            if (node0 instanceof ASTIdentifier) {
+                returnNode = JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), node0.image, new ASTNullLiteral(
+                                ParserTreeConstants.JJTNULLLITERAL));
             }
-            case IS_NOT_NULL: {
-                JexlNode firstArg = functionMetadata.args().get(0);
-                if (firstArg instanceof ASTIdentifier) {
-                    returnNode = JexlNodeFactory.buildNode(new ASTNENode(ParserTreeConstants.JJTNENODE), firstArg.image,
-                                    new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL));
-                }
-                break;
+        } else if (functionMetadata.name().equals("isNotNull")) {
+            List<JexlNode> arguments = functionMetadata.args();
+            JexlNode node0 = arguments.get(0);
+            if (node0 instanceof ASTIdentifier) {
+                returnNode = JexlNodeFactory.buildNode(new ASTNENode(ParserTreeConstants.JJTNENODE), node0.image, new ASTNullLiteral(
+                                ParserTreeConstants.JJTNULLLITERAL));
             }
         }
         return returnNode;
@@ -121,7 +112,8 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
             try {
                 JavaRegexAnalyzer jra = new JavaRegexAnalyzer(regex);
                 if (!jra.isNgram()) {
-                    if (functionName.equals(INCLUDE_REGEX)) {
+                    JexlNode kid = null;
+                    if (functionName.equals("includeRegex")) {
                         if (log.isDebugEnabled())
                             log.debug("Building new ER Node");
                         return JexlNodeFactory.buildERNode(field, regex);

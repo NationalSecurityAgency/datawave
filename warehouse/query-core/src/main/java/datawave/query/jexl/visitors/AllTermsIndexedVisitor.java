@@ -34,7 +34,6 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.BiFunction;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.promote;
 
@@ -119,12 +118,12 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return visitEqualityNode(node, data);
+        return equalityVisitor(node, data);
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return visitEqualityNode(node, data);
+        return equalityVisitor(node, data);
     }
     
     /**
@@ -136,14 +135,15 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      *            the node data
      * @return a copy of the
      */
-    protected JexlNode visitEqualityNode(JexlNode node, Object data) {
+    protected JexlNode equalityVisitor(JexlNode node, Object data) {
         String fieldName;
         try {
             fieldName = JexlASTHelper.getIdentifier(node);
         } catch (NoSuchElementException e) {
-            // We only have literals.
-            throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.EQUALS_NODE_TWO_LITERALS,
-                            PreConditionFailedQueryException::new));
+            // We only have literals
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.EQUALS_NODE_TWO_LITERALS, e, MessageFormat.format(
+                            "Node: {0}", PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
+            throw new InvalidFieldIndexQueryFatalQueryException(qe);
         }
         try {
             // In the case of an ANY_FIELD or NO_FIELD, the query could not be expanded against the index and hence this
@@ -176,8 +176,9 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTERNode node, Object data) {
-        throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.EQUALS_REGEX_NODE_PROCESSING_ERROR,
-                        QueryException::new));
+        QueryException qe = new QueryException(DatawaveErrorCode.EQUALS_REGEX_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
+                        .formattedQueryString(node).replace('\n', ' ')));
+        throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
     /**
@@ -191,8 +192,9 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.NOT_EQUALS_REGEX_NODE_PROCESSING_ERROR,
-                        QueryException::new));
+        QueryException qe = new QueryException(DatawaveErrorCode.NOT_EQUALS_REGEX_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
+                        .formattedQueryString(node).replace('\n', ' ')));
+        throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
     /**
@@ -206,7 +208,9 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.LT_NODE_PROCESSING_ERROR, QueryException::new));
+        QueryException qe = new QueryException(DatawaveErrorCode.LT_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
+                        .formattedQueryString(node).replace('\n', ' ')));
+        throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
     /**
@@ -220,7 +224,9 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.GT_NODE_PROCESSING_ERROR, QueryException::new));
+        QueryException qe = new QueryException(DatawaveErrorCode.GT_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
+                        .formattedQueryString(node).replace('\n', ' ')));
+        throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
     /**
@@ -234,7 +240,9 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTLENode node, Object data) {
-        throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.LTE_NODE_PROCESSING_ERROR, QueryException::new));
+        QueryException qe = new QueryException(DatawaveErrorCode.LTE_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
+                        .formattedQueryString(node).replace('\n', ' ')));
+        throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
     /**
@@ -248,7 +256,9 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTGENode node, Object data) {
-        throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.GTE_NODE_PROCESSING_ERROR, QueryException::new));
+        QueryException qe = new QueryException(DatawaveErrorCode.GTE_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
+                        .formattedQueryString(node).replace('\n', ' ')));
+        throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
     /**
@@ -262,8 +272,9 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTAssignment node, Object data) {
-        throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.ASSIGNMENT_NODE_PROCESSING_ERROR,
-                        QueryException::new));
+        QueryException qe = new QueryException(DatawaveErrorCode.ASSIGNMENT_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
+                        .formattedQueryString(node).replace('\n', ' ')));
+        throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
     /**
@@ -277,13 +288,8 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        throw new InvalidFieldIndexQueryFatalQueryException(getExceptionWithPrintedNode(node, DatawaveErrorCode.FUNCTION_NODE_PROCESSING_ERROR,
-                        QueryException::new));
-    }
-    
-    private <T extends Throwable> T getExceptionWithPrintedNode(JexlNode node, DatawaveErrorCode errorCode,
-                    BiFunction<DatawaveErrorCode,String,T> throwableConstructor) {
-        String debugMessage = MessageFormat.format("Node: {0}", PrintingVisitor.formattedQueryString(node).replace('\n', ' '));
-        return throwableConstructor.apply(errorCode, debugMessage);
+        QueryException qe = new QueryException(DatawaveErrorCode.FUNCTION_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
+                        .formattedQueryString(node).replace('\n', ' ')));
+        throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
 }

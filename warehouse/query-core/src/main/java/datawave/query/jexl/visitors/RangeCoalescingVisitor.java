@@ -50,6 +50,7 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
             JexlNodes.ensureCapacity(andNode, node.jjtGetNumChildren());
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode newChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, data);
+                
                 andNode.jjtAddChild(newChild, i);
                 newChild.jjtSetParent(andNode);
             }
