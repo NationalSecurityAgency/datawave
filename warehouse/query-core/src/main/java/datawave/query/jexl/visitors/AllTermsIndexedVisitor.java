@@ -113,8 +113,6 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         // @formatter:on
         JexlNode copy = JexlNodes.newInstanceOfType(node);
         copy.image = node.image;
-        System.out.println("Copy: " + copy);
-        System.out.println("Children: " + Arrays.toString(children));
         JexlNodes.children(copy, children);
         return copy;
     }
