@@ -233,6 +233,13 @@ public class PushdownNegationVisitorTest {
     }
     
     @Test
+    public void testExpandedFunction() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!filter:includeRegex(F1 || F2, '.*')");
+        JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
+        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(query), JexlStringBuildingVisitor.buildQuery(result));
+    }
+    
+    @Test
     public void testNENotNegated() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 == 'v1') && F2 != 'v2'");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);

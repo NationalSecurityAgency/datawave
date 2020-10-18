@@ -62,7 +62,7 @@ public class FacetHandlerTest {
     
     private TaskAttemptContext ctx = null;
     
-    private RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
+    private final RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
     private ContentBaseIngestHelper helper;
     private ColumnVisibility colVis;
     
@@ -107,6 +107,7 @@ public class FacetHandlerTest {
             EasyMock.expect(event.getDataType()).andReturn(TypeRegistry.getType(TEST_TYPE)).anyTimes();
             EasyMock.expect(event.getId()).andReturn(TEST_UID).anyTimes();
             EasyMock.expect(event.getDate()).andReturn(timestamp).anyTimes();
+            EasyMock.expect(event.getRawFileName()).andReturn("dummy_filename.txt").anyTimes();
             EasyMock.replay(event);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -114,9 +115,9 @@ public class FacetHandlerTest {
     }
     
     public void configureFacets(Configuration conf) {
-        conf.set("test.facet.category.name.manufacturer", "MAKE;STYLE,MODEL,COLOR");
-        conf.set("test.facet.category.name.style", "STYLE;MANUFACTURER,MODEL,COLOR");
-        conf.set("test.facet.category.name.color", "COLOR;MANUFACTURER,MODEL,STYLE");
+        conf.set("test.facet.category.name.make", "MAKE;STYLE,MODEL,COLOR");
+        conf.set("test.facet.category.name.style", "STYLE;MODEL,COLOR");
+        conf.set("test.facet.category.name.color", "COLOR;MODEL,STYLE,THISFIELDDOESNTEXIST");
     }
     
     @Test
@@ -133,6 +134,35 @@ public class FacetHandlerTest {
         
         Set<String> expectedFacets = Stream.of(TestData.getExpectedFacetData(1)).collect(Collectors.toSet());
         Set<String> expectedFacetMetadata = Stream.of(TestData.getExpectedFacetMetadataData(1)).collect(Collectors.toSet());
+        
+        evaluateSingleEventResults(keysByTable, expectedFacets, expectedFacetMetadata);
+    }
+    
+    @Test
+    public void testSingleEventWithPivotPredicate() {
+        testSingleEventWithPredicate("STYLE");
+    }
+    
+    @Test
+    public void testSingleEventWithFacetPredicate() {
+        testSingleEventWithPredicate("MODEL");
+    }
+    
+    public void testSingleEventWithPredicate(final String filterField) {
+        FacetHandler<Text,BulkIngestKey,Value> handler = new FacetHandler<>();
+        handler.setup(ctx);
+        handler.setFieldSelectionPredicate(s -> !filterField.equalsIgnoreCase(s));
+        
+        helper.setup(ctx.getConfiguration());
+        
+        Multimap<String,NormalizedContentInterface> fields = TestData.getDataItem(1);
+        setupTaskAttemptContext();
+        processEvent(event, fields, handler);
+        Multimap<String,FacetResult> keysByTable = collectResults();
+        
+        Set<String> expectedFacets = Stream.of(TestData.getExpectedFacetData(1)).filter(s -> !s.contains(filterField)).collect(Collectors.toSet());
+        Set<String> expectedFacetMetadata = Stream.of(TestData.getExpectedFacetMetadataData(1)).filter(s -> !s.contains(filterField))
+                        .collect(Collectors.toSet());
         
         evaluateSingleEventResults(keysByTable, expectedFacets, expectedFacetMetadata);
     }
@@ -169,17 +199,18 @@ public class FacetHandlerTest {
         items.forEach(f -> processEvent(event, f, handler));
         Multimap<String,FacetResult> keysByTable = collectResults();
         
-        evaluateMultiValueResults(keysByTable, TestData.getExpectedFacetHashes());
+        Object2IntMap<String> expectedFacetKeyCounts = TestData.getExpectedHashedFacetCounts();
+        evaluateMultiValueResults(keysByTable, TestData.getExpectedFacetHashes(), expectedFacetKeyCounts);
     }
     
-    StandaloneTaskAttemptContext<Text,RawRecordContainerImpl,BulkIngestKey,Value> sctx;
+    StandaloneTaskAttemptContext<Text,RawRecordContainerImpl,BulkIngestKey,Value> context;
     CachingContextWriter contextWriter;
     
     private void setupTaskAttemptContext() {
-        sctx = new StandaloneTaskAttemptContext<>(ctx.getConfiguration(), new StandaloneStatusReporter());
+        context = new StandaloneTaskAttemptContext<>(ctx.getConfiguration(), new StandaloneStatusReporter());
         contextWriter = new CachingContextWriter();
         try {
-            contextWriter.setup(sctx.getConfiguration(), false);
+            contextWriter.setup(context.getConfiguration(), false);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error setting up context writer", e);
         }
@@ -193,7 +224,7 @@ public class FacetHandlerTest {
      * @param eventFields
      *            the fields from the event to process
      * @param handler
-     *            the handler to do the procesing
+     *            the handler to do the processing
      */
     private void processEvent(RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields,
                     ExtendedDataTypeHandler<Text,BulkIngestKey,Value> handler) {
@@ -201,7 +232,7 @@ public class FacetHandlerTest {
         assertNotNull("Event was null", event);
         
         try {
-            handler.process(null, event, eventFields, sctx, contextWriter);
+            handler.process(null, event, eventFields, context, contextWriter);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error processing event data", e);
         }
@@ -212,7 +243,7 @@ public class FacetHandlerTest {
      */
     private Multimap<String,FacetResult> collectResults() {
         try {
-            contextWriter.commit(sctx);
+            contextWriter.commit(context);
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
@@ -238,8 +269,9 @@ public class FacetHandlerTest {
     }
     
     /** evaluate for the multi value hashing test */
-    protected void evaluateMultiValueResults(final Multimap<String,FacetResult> keysByTable, Set<String> expectedFacetHashes) {
-        evaluateResults(keysByTable, null, null, expectedFacetHashes, 0, null);
+    protected void evaluateMultiValueResults(final Multimap<String,FacetResult> keysByTable, Set<String> expectedFacetHashes,
+                    Object2IntMap<String> expectedFacetKeyCounts) {
+        evaluateResults(keysByTable, null, null, expectedFacetHashes, 0, expectedFacetKeyCounts);
     }
     
     protected void evaluateResults(final Multimap<String,FacetResult> keysByTable, Set<String> expectedFacets, Set<String> expectedFacetMetadata,
@@ -348,13 +380,16 @@ public class FacetHandlerTest {
                     fail("Neither found or expected key count should be zero for: " + k + "; expected: " + expected + ", found: " + found);
                 }
                 assertEquals("Facet key count mismatch: expected for: " + k + "; expected: " + expected + ", found: " + found, expected, found);
+                finalExpectedFacetKeyCounts.remove(k, expected);
             }
         });
+        
+        assertEquals("Did not observe expected facets: " + finalExpectedFacetKeyCounts, 0, finalExpectedFacetKeyCounts.size());
         
     }
     
     private static class CachingContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
-        private Multimap<BulkIngestKey,Value> cache = LinkedListMultimap.create();
+        private final Multimap<BulkIngestKey,Value> cache = LinkedListMultimap.create();
         
         @Override
         protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) {
@@ -396,128 +431,153 @@ public class FacetHandlerTest {
         private static final String[][] expectedFacets = {
                 {},
                 {
-                    "silver%00;silver%00;test COLOR%00;COLOR:20200401 [] 1585728000000 false 1",
-                    "nissan%00;silver%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1",
-                    "silver%00;skyline%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1",
-                    "silver%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1",
-                    "sports%00;skyline%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1",
-                    "nissan%00;skyline%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1",
-                    "sports%00;sports%00;test STYLE%00;STYLE:20200401 [] 1585728000000 false 1",
-                    "nissan%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1",
-                    "nissan%00;nissan%00;test MAKE%00;MAKE:20200401 [] 1585728000000 false 1",
-                    "sports%00;silver%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1"
+                    "silver%00;silver%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1",
+                    "nissan%00;silver%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1",
+                    "silver%00;skyline%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1",
+                    "silver%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1",
+                    "sports%00;skyline%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1",
+                    "nissan%00;skyline%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1",
+                    "sports%00;sports%00;test STYLE%00;STYLE:20200401 [] 1585699200000 false 1",
+                    "nissan%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1",
+                    "nissan%00;nissan%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1",
+                    "sports%00;silver%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1"
                 }
         };
         
         private static final String[][] expectedFacetMetadata = {
                 {},
                 {
-                    "COLOR%00;STYLE pv: [] 9223372036854775807 false",
-                    "MAKE%00;STYLE pv: [] 9223372036854775807 false",
-                    "COLOR%00;MANUFACTURER pv: [] 9223372036854775807 false",
-                    "STYLE%00;COLOR pv: [] 9223372036854775807 false",
-                    "MAKE%00;MODEL pv: [] 9223372036854775807 false",
-                    "STYLE%00;MODEL pv: [] 9223372036854775807 false",
-                    "MAKE%00;COLOR pv: [] 9223372036854775807 false",
-                    "COLOR%00;MODEL pv: [] 9223372036854775807 false",
-                    "STYLE%00;MANUFACTURER pv: [] 9223372036854775807 false"
+                        "MAKE%00;MAKE pv: [] 1585699200000 false",
+                        "MAKE%00;STYLE pv: [] 1585699200000 false",
+                        "MAKE%00;MODEL pv: [] 1585699200000 false",
+                        "MAKE%00;COLOR pv: [] 1585699200000 false",
+                        "STYLE%00;STYLE pv: [] 1585699200000 false",
+                        "STYLE%00;MODEL pv: [] 1585699200000 false",
+                        "STYLE%00;COLOR pv: [] 1585699200000 false",
+                        "COLOR%00;COLOR pv: [] 1585699200000 false",
+                        "COLOR%00;MODEL pv: [] 1585699200000 false",
+                        "COLOR%00;STYLE pv: [] 1585699200000 false",
                 }
         };
         
         
         private static final String[][] expectedUniqueFacets = {
-                {"black%00;black%00;test COLOR%00;COLOR:20200401 [] 1585728000000 false 1","4"},
-                {"black%00;skyline%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","4"},
-                {"black%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1","4"},
-                {"blue%00;az-1%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"blue%00;blue%00;test COLOR%00;COLOR:20200401 [] 1585728000000 false 1","4"},
-                {"blue%00;impreza%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"blue%00;rx7%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"blue%00;skyline%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"blue%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1","4"},
-                {"hatchback%00;delta%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","2"},
-                {"hatchback%00;hatchback%00;test STYLE%00;STYLE:20200401 [] 1585728000000 false 1","2"},
-                {"hatchback%00;red%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"hatchback%00;yellow%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"honda%00;civic%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"honda%00;honda%00;test MAKE%00;MAKE:20200401 [] 1585728000000 false 1","1"},
-                {"honda%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1","1"},
-                {"honda%00;white%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"lancia%00;delta%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","2"},
-                {"lancia%00;hatchback%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1","2"},
-                {"lancia%00;lancia%00;test MAKE%00;MAKE:20200401 [] 1585728000000 false 1","2"},
-                {"lancia%00;red%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"lancia%00;yellow%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"mazda%00;az-1%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"mazda%00;blue%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","2"},
-                {"mazda%00;mazda%00;test MAKE%00;MAKE:20200401 [] 1585728000000 false 1","2"},
-                {"mazda%00;rx7%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"mazda%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1","2"},
-                {"mitsubishi%00;lancer%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"mitsubishi%00;mitsubishi%00;test MAKE%00;MAKE:20200401 [] 1585728000000 false 1","1"},
-                {"mitsubishi%00;red%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"mitsubishi%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1","1"},
-                {"nissan%00;black%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","4"},
-                {"nissan%00;blue%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"nissan%00;nissan%00;test MAKE%00;MAKE:20200401 [] 1585728000000 false 1","7"},
-                {"nissan%00;silver%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","2"},
-                {"nissan%00;skyline%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","7"},
-                {"nissan%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1","7"},
-                {"red%00;delta%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"red%00;hatchback%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1","1"},
-                {"red%00;lancer%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"red%00;red%00;test COLOR%00;COLOR:20200401 [] 1585728000000 false 1","3"},
-                {"red%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1","2"},
-                {"red%00;supra%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"silver%00;silver%00;test COLOR%00;COLOR:20200401 [] 1585728000000 false 1","2"},
-                {"silver%00;skyline%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","2"},
-                {"silver%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1","2"},
-                {"sports%00;az-1%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"sports%00;black%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1","4"},
-                {"sports%00;blue%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1","4"},
-                {"sports%00;civic%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"sports%00;impreza%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"sports%00;lancer%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"sports%00;mr2%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"sports%00;red%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1","2"},
-                {"sports%00;rx7%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"sports%00;silver%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1","2"},
-                {"sports%00;skyline%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","7"},
-                {"sports%00;sports%00;test STYLE%00;STYLE:20200401 [] 1585728000000 false 1","16"},
-                {"sports%00;supra%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","3"},
-                {"sports%00;white%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1","4"},
-                {"subaru%00;blue%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"subaru%00;forester%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"subaru%00;impreza%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"subaru%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1","1"},
-                {"subaru%00;subaru%00;test MAKE%00;MAKE:20200401 [] 1585728000000 false 1","2"},
-                {"subaru%00;wagon%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1","1"},
-                {"subaru%00;white%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"toyota%00;mr2%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"toyota%00;red%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"toyota%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585728000000 false 1","4"},
-                {"toyota%00;supra%00;test MAKE%00;MODEL:20200401 [] 1585728000000 false 1","3"},
-                {"toyota%00;toyota%00;test MAKE%00;MAKE:20200401 [] 1585728000000 false 1","4"},
-                {"toyota%00;white%00;test MAKE%00;COLOR:20200401 [] 1585728000000 false 1","3"},
-                {"wagon%00;forester%00;test STYLE%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"wagon%00;wagon%00;test STYLE%00;STYLE:20200401 [] 1585728000000 false 1","1"},
-                {"wagon%00;white%00;test STYLE%00;COLOR:20200401 [] 1585728000000 false 1","1"},
-                {"white%00;civic%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"white%00;forester%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"white%00;mr2%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"white%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1","4"},
-                {"white%00;supra%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","2"},
-                {"white%00;wagon%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1","1"},
-                {"white%00;white%00;test COLOR%00;COLOR:20200401 [] 1585728000000 false 1","5"},
-                {"yellow%00;delta%00;test COLOR%00;MODEL:20200401 [] 1585728000000 false 1","1"},
-                {"yellow%00;hatchback%00;test COLOR%00;STYLE:20200401 [] 1585728000000 false 1","1"},
-                {"yellow%00;yellow%00;test COLOR%00;COLOR:20200401 [] 1585728000000 false 1","1"},
+                {"black%00;black%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","4"},
+                {"black%00;skyline%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","4"},
+                {"black%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1","4"},
+                {"blue%00;az-1%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"blue%00;blue%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","4"},
+                {"blue%00;impreza%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"blue%00;rx7%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"blue%00;skyline%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"blue%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1","4"},
+                {"hatchback%00;delta%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","2"},
+                {"hatchback%00;hatchback%00;test STYLE%00;STYLE:20200401 [] 1585699200000 false 1","2"},
+                {"hatchback%00;red%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"hatchback%00;yellow%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"honda%00;civic%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"honda%00;honda%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+                {"honda%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1","1"},
+                {"honda%00;white%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"lancia%00;delta%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","2"},
+                {"lancia%00;hatchback%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1","2"},
+                {"lancia%00;lancia%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","2"},
+                {"lancia%00;red%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"lancia%00;yellow%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"mazda%00;az-1%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"mazda%00;blue%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","2"},
+                {"mazda%00;mazda%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","2"},
+                {"mazda%00;rx7%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"mazda%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1","2"},
+                {"mitsubishi%00;lancer%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"mitsubishi%00;mitsubishi%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+                {"mitsubishi%00;red%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"mitsubishi%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1","1"},
+                {"nissan%00;black%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","4"},
+                {"nissan%00;blue%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"nissan%00;nissan%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","7"},
+                {"nissan%00;silver%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","2"},
+                {"nissan%00;skyline%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","7"},
+                {"nissan%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1","7"},
+                {"red%00;delta%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"red%00;hatchback%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1","1"},
+                {"red%00;lancer%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"red%00;red%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","3"},
+                {"red%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1","2"},
+                {"red%00;supra%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"silver%00;silver%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","2"},
+                {"silver%00;skyline%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","2"},
+                {"silver%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1","2"},
+                {"sports%00;az-1%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"sports%00;black%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1","4"},
+                {"sports%00;blue%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1","4"},
+                {"sports%00;civic%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"sports%00;impreza%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"sports%00;lancer%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"sports%00;mr2%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"sports%00;red%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1","2"},
+                {"sports%00;rx7%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"sports%00;silver%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1","2"},
+                {"sports%00;skyline%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","7"},
+                {"sports%00;sports%00;test STYLE%00;STYLE:20200401 [] 1585699200000 false 1","16"},
+                {"sports%00;supra%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","3"},
+                {"sports%00;white%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1","4"},
+                {"subaru%00;blue%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"subaru%00;forester%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"subaru%00;impreza%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"subaru%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1","1"},
+                {"subaru%00;subaru%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","2"},
+                {"subaru%00;wagon%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1","1"},
+                {"subaru%00;white%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"toyota%00;mr2%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"toyota%00;red%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"toyota%00;sports%00;test MAKE%00;STYLE:20200401 [] 1585699200000 false 1","4"},
+                {"toyota%00;supra%00;test MAKE%00;MODEL:20200401 [] 1585699200000 false 1","3"},
+                {"toyota%00;toyota%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","4"},
+                {"toyota%00;white%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","3"},
+                {"wagon%00;forester%00;test STYLE%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"wagon%00;wagon%00;test STYLE%00;STYLE:20200401 [] 1585699200000 false 1","1"},
+                {"wagon%00;white%00;test STYLE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+                {"white%00;civic%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"white%00;forester%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"white%00;mr2%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"white%00;sports%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1","4"},
+                {"white%00;supra%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","2"},
+                {"white%00;wagon%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1","1"},
+                {"white%00;white%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","5"},
+                {"yellow%00;delta%00;test COLOR%00;MODEL:20200401 [] 1585699200000 false 1","1"},
+                {"yellow%00;hatchback%00;test COLOR%00;STYLE:20200401 [] 1585699200000 false 1","1"},
+                {"yellow%00;yellow%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+        };
+
+        public static String[][] expectedHashedFacets = {
+            {"blue%00;blue%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","2"},
+            {"honda%00;honda%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+            {"honda%00;white%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"lancia%00;lancia%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+            {"lancia%00;red%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"lancia%00;yellow%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"mazda%00;blue%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"mazda%00;mazda%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+            {"mitsubishi%00;mitsubishi%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+            {"mitsubishi%00;red%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"nissan%00;b65828a2da1e34d09c9ebe3506a017c9a8b6605a%00;test MAKE%00;COLOR.hash:20200401 [] 1585699200000 false 1","1"},
+            {"nissan%00;nissan%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+            {"red%00;red%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","3"},
+            {"subaru%00;blue%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"subaru%00;subaru%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+            {"subaru%00;white%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"toyota%00;red%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"toyota%00;toyota%00;test MAKE%00;MAKE:20200401 [] 1585699200000 false 1","1"},
+            {"toyota%00;white%00;test MAKE%00;COLOR:20200401 [] 1585699200000 false 1","1"},
+            {"white%00;white%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","3"},
+            {"yellow%00;yellow%00;test COLOR%00;COLOR:20200401 [] 1585699200000 false 1","1"}
         };
 
         public static String[] expectedFacetHashes = {
-            "b65828a2da1e34d09c9e black: [] 1585728000000 false",
-            "b65828a2da1e34d09c9e blue: [] 1585728000000 false",
-            "b65828a2da1e34d09c9e silver: [] 1585728000000 false"
+            "b65828a2da1e34d09c9e black: [] 1585699200000 false",
+            "b65828a2da1e34d09c9e blue: [] 1585699200000 false",
+            "b65828a2da1e34d09c9e silver: [] 1585699200000 false"
         };
         // @formatter:on
         
@@ -527,6 +587,12 @@ public class FacetHandlerTest {
         
         static String[] getExpectedFacetMetadataData(int index) {
             return expectedFacetMetadata[index];
+        }
+        
+        static Object2IntMap<String> getExpectedHashedFacetCounts() {
+            Object2IntMap<String> countMap = new Object2IntOpenHashMap<>();
+            Stream.of(expectedHashedFacets).forEach(k -> countMap.put(k[0], Integer.parseInt(k[1])));
+            return countMap;
         }
         
         static Set<String> getExpectedFacetHashes() {
@@ -570,9 +636,7 @@ public class FacetHandlerTest {
         public static Collection<Multimap<String,NormalizedContentInterface>> generateMultivaluedColorData() {
             // index 1 == MAKE, index 5 == COLOR
             Multimap<String,String> makeColors = HashMultimap.create();
-            Stream.of(data).forEach(item -> {
-                makeColors.put(item[1], item[5]);
-            });
+            Stream.of(data).forEach(item -> makeColors.put(item[1], item[5]));
             return makeColors.keySet().stream().map(make -> {
                 Multimap<String,NormalizedContentInterface> singleMakeColor = HashMultimap.create();
                 singleMakeColor.put(schema[1], new NormalizedFieldAndValue(schema[1], make));

@@ -1,5 +1,7 @@
 package datawave.query.language.parser.jexl;
 
+import datawave.query.language.functions.jexl.EvaluationOnly;
+import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.tree.QueryNode;
 
 import org.junit.Assert;
@@ -10,7 +12,7 @@ public class TestLuceneToJexlParser {
     @Test
     public void test1() throws Exception {
         
-        LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
+        LuceneToJexlQueryParser parser = getQueryParser();
         
         QueryNode node = parser.parse("FIELD:SELECTOR AND #EXCLUDE(AND, F1, GB.*, F2, GB.*)");
         Assert.assertEquals("FIELD == 'SELECTOR' && (not(filter:includeRegex(F1, 'GB.*')) || not(filter:includeRegex(F2, 'GB.*')))", node.getOriginalQuery());
@@ -49,7 +51,7 @@ public class TestLuceneToJexlParser {
     @Test
     public void test2() throws Exception {
         
-        LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
+        LuceneToJexlQueryParser parser = getQueryParser();
         
         QueryNode node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB.*)");
         Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB.*'))", node.getOriginalQuery());
@@ -65,5 +67,18 @@ public class TestLuceneToJexlParser {
         
         node = parser.parse("FIELD:SOMETHING AND #EVALUATION_ONLY('#INCLUDE(F1, GB\\.{3\\,1})')");
         Assert.assertEquals("FIELD == 'SOMETHING' && ((ASTEvaluationOnly = true) && (filter:includeRegex(F1, 'GB\\\\.{3,1}')))", node.getOriginalQuery());
+    }
+    
+    public static LuceneToJexlQueryParser getQueryParser() {
+        LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
+        
+        for (JexlQueryFunction queryFunction : parser.getAllowedFunctions()) {
+            if (queryFunction instanceof EvaluationOnly) {
+                ((EvaluationOnly) queryFunction).setParser(parser);
+                break;
+            }
+        }
+        
+        return parser;
     }
 }
