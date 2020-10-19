@@ -18,6 +18,7 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.RawDataManager;
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
+import static datawave.query.testframework.RawDataManager.NE_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
@@ -170,7 +172,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
                 } else {
                     anyCity = anyCity + ')';
                 }
-                anyCity = "(((" + anyCity + ")))";
+                anyCity = "(((!(" + Constants.ANY_FIELD + EQ_OP + "'" + city.name() + "') && " + anyCity + ")))";
                 String plan = getPlan(query, true, true);
                 assertPlanEquals(anyCity, plan);
                 
@@ -801,17 +803,17 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             this.logic.setFullTableScanEnabled(true);
             
             // Test the plan with all expansions
-            expect = "!(" + CityField.CONTINENT.name() + EQ_OP + "'north america')";
+            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + EQ_OP + "'north america'))))";
             String plan = getPlan(query, true, true);
             assertPlanEquals(expect, plan);
             
             // Test the plan sans value expansion
-            expect = "!(" + CityField.CONTINENT.name() + RE_OP + "'.*ica')";
+            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + RE_OP + "'.*ica'))))";
             plan = getPlan(query, true, false);
             assertPlanEquals(expect, plan);
             
             // Test the plan sans field expansion
-            expect = "!(" + Constants.ANY_FIELD + EQ_OP + "'north america')";
+            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america'))))";
             plan = getPlan(query, false, true);
             assertPlanEquals(expect, plan);
             
@@ -839,7 +841,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
                 if (city.name().equals("london")) {
                     expect = "(" + expect + JEXL_OR_OP + CityField.STATE.name() + cityPhrase + ")";
                 }
-                expect += JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + EQ_OP + "'north america')";
+                expect += JEXL_AND_OP + "!((" + Constants.ANY_FIELD + RE_OP + "'.*ica'" + JEXL_OR_OP + CityField.CONTINENT.name() + EQ_OP + "'north america'))";
                 String plan = getPlan(query, true, true);
                 assertPlanEquals(expect, plan);
                 
@@ -848,12 +850,13 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
                 if (city.name().equals("london")) {
                     expect = "(" + expect + JEXL_OR_OP + CityField.STATE.name() + cityPhrase + ")";
                 }
-                expect += JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + RE_OP + "'.*ica'" + ")";
+                expect += JEXL_AND_OP + "!((" + Constants.ANY_FIELD + RE_OP + "'.*ica'" + JEXL_OR_OP + CityField.CONTINENT.name() + RE_OP + "'.*ica'))";
                 plan = getPlan(query, true, false);
                 assertPlanEquals(expect, plan);
                 
                 // Test the plan sans field expansion
-                expect = Constants.ANY_FIELD + cityPhrase + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america')";
+                expect = Constants.ANY_FIELD + cityPhrase + JEXL_AND_OP + "!((" + Constants.ANY_FIELD + RE_OP + "'.*ica'" + JEXL_OR_OP + Constants.ANY_FIELD
+                                + EQ_OP + "'north america'))";
                 plan = getPlan(query, false, true);
                 assertPlanEquals(expect, plan);
                 
@@ -882,7 +885,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
                 if (city.name().equals("london")) {
                     expect += JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
                 }
-                expect += JEXL_OR_OP + "!(" + CityField.CONTINENT + EQ_OP + "'north america')";
+                expect += JEXL_OR_OP + "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + EQ_OP
+                                + "'north america'))))";
                 String plan = getPlan(query, true, true);
                 assertPlanEquals(expect, plan);
                 
@@ -891,12 +895,14 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
                 if (city.name().equals("london")) {
                     expect += JEXL_OR_OP + CityField.STATE.name() + cityPhrase;
                 }
-                expect += JEXL_OR_OP + "!(" + CityField.CONTINENT + RE_OP + "'.*ica')";
+                expect += JEXL_OR_OP + "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + RE_OP
+                                + "'.*ica'))))";
                 plan = getPlan(query, true, false);
                 assertPlanEquals(expect, plan);
                 
                 // Test the plan sans field expansion
-                expect = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america')";
+                expect = Constants.ANY_FIELD + cityPhrase + JEXL_OR_OP + "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!("
+                                + Constants.ANY_FIELD + EQ_OP + "'north america'))))";
                 plan = getPlan(query, false, true);
                 assertPlanEquals(expect, plan);
                 
