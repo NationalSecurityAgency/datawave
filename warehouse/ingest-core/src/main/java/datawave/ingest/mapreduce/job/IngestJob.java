@@ -424,24 +424,25 @@ public class IngestJob implements Tool {
         // output the counters to the log
         Counters counters = job.getCounters();
         log.info(counters);
-        JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration());
-        RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
-        
-        // If the job failed, then don't bring the map files online.
-        if (!job.isSuccessful()) {
-            return jobFailed(job, runningJob, outputFs, workDirPath);
-        }
-        
-        // determine if we had processing errors
-        if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
-            eventProcessingError = true;
-            log.error("Found Runtime Exceptions in the counters");
-            long numExceptions = counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue();
-            long numRecords = counters.findCounter(IngestOutput.EVENTS_PROCESSED).getValue();
-            long percentError = (numExceptions / (numRecords + numExceptions)) * 100;
-            log.info("Percent Error: " + percentError);
-            if (conf.getInt("job.percent.error.threshold", 101) <= percentError) {
+        try (JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration())) {
+            RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
+            
+            // If the job failed, then don't bring the map files online.
+            if (!job.isSuccessful()) {
                 return jobFailed(job, runningJob, outputFs, workDirPath);
+            }
+            
+            // determine if we had processing errors
+            if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
+                eventProcessingError = true;
+                log.error("Found Runtime Exceptions in the counters");
+                long numExceptions = counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue();
+                long numRecords = counters.findCounter(IngestOutput.EVENTS_PROCESSED).getValue();
+                long percentError = (numExceptions / (numRecords + numExceptions)) * 100;
+                log.info("Percent Error: " + percentError);
+                if (conf.getInt("job.percent.error.threshold", 101) <= percentError) {
+                    return jobFailed(job, runningJob, outputFs, workDirPath);
+                }
             }
         }
         if (counters.findCounter(IngestInput.EVENT_FATAL_ERROR).getValue() > 0) {
