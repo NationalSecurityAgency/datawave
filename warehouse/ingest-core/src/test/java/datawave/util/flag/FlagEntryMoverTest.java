@@ -43,9 +43,10 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
     public void testWrite() throws IOException {
         final String METRICS_DIR = "target/test/metrics";
         
-        FlagMetrics metrics = new FlagMetrics(this.fs, false);
+        // disable compression, the default requires hadoop-native which is not availabe in the unit test context.
+        FlagMetrics metrics = new FlagMetrics(false);
         metrics.updateCounter(this.getClass().getSimpleName(), "COUNTER_ONE", System.currentTimeMillis());
-        metrics.writeMetrics(METRICS_DIR, "base");
+        metrics.write(this.fs, METRICS_DIR, "base");
         
     }
     
