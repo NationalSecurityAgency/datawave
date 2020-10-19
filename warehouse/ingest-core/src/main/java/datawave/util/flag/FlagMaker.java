@@ -468,8 +468,15 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             
             // after we write a file, set the timeout to the forceInterval
             fc.setLast(now + fc.getTimeoutMilliSecs());
-            if (fc.isCollectMetrics())
-                metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
+            
+            if (fc.isCollectMetrics()) {
+                try {
+                    metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
+                } catch (Exception ex) {
+                    log.warn("Non-fatal Exception encountered when writing metrics.", ex);
+                }
+            }
+            
         } catch (IOException ex) {
             log.error("Unable to complete flag file ", ex);
             moveFilesBack(inFiles, futures, fs);
