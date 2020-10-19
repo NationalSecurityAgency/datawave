@@ -20,6 +20,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileFilter;
@@ -46,13 +47,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 
  */
-@SuppressWarnings("deprecation")
 public class FlagMaker implements Runnable, Observer, SizeValidator {
     
     private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
@@ -67,9 +71,15 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     @SuppressWarnings("UnstableApiUsage")
     private final Cache<Path,Path> directoryCache;
     
-    /** ExecutorService used for directory lookups */
-    private final ExecutorService executor;
     private final FlagMakerConfig fmc;
+
+    /** ScheduledExecutorService used for calling processFlags() */
+    private final ScheduledExecutorService flagMakerExecutor;
+    private ScheduledFuture<?> flagMakerSchedule;
+
+    /** ExecutorService used for directory lookups */
+    private final ExecutorService taskExecutor;
+
     private final DecimalFormat df = new DecimalFormat("#0.00");
     
     private final FileSystem hdfs;
@@ -80,7 +90,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     final FlagDistributor fd;
     
     protected JobConf config;
-    
+
+    @SuppressWarnings("UnstableApiUsage")
     public FlagMaker(FlagMakerConfig fmconfig) throws IOException {
         fmc = fmconfig;
         fmc.validate();
@@ -88,10 +99,26 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         
         config = new JobConf(new Configuration());
         hdfs = getHadoopFS();
-        
+
+        // the core executor which executes the processFlags method periodically.
+        flagMakerExecutor = Executors.newScheduledThreadPool(1,
+                new ThreadFactory() {
+                    final AtomicInteger count = new AtomicInteger(0);
+                    @Override
+                    public Thread newThread(@Nonnull Runnable r) {
+                        return new Thread(r, "FlagMakerThread-" + count.incrementAndGet());
+                    }
+                });
+
         // configure the executor per the FlagMakerConfig input
-        executor = Executors.newFixedThreadPool(fmc.getMaxHdfsThreads());
-        
+        taskExecutor = Executors.newFixedThreadPool(fmc.getMaxHdfsThreads(), new ThreadFactory() {
+            final AtomicInteger count = new AtomicInteger(0);
+            @Override
+            public Thread newThread(@Nonnull Runnable r) {
+                return new Thread(r, "FlagMakerTask-" + count.incrementAndGet());
+            }
+        });
+
         // build the cache per the default configuration.
         // @formatter:off
         directoryCache = CacheBuilder.newBuilder()
@@ -114,17 +141,35 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         
         try {
             FlagMaker m = createFlagMaker(flagMakerConfig);
-            m.run();
+            m.startAndWaitForTermination();
         } catch (IllegalArgumentException ex) {
             System.err.println("" + ex.getMessage());
             printUsage();
             System.exit(1);
         }
     }
-    
+
+    /** Schedule the flag maker `processFlags()` method to run with a delay between intervals. This method blocks
+     *  until the scheduler is terminated.
+     */
+    public void startAndWaitForTermination() {
+        startSocket();
+        flagMakerSchedule = flagMakerExecutor.scheduleWithFixedDelay(this, 0, fmc.getSleepMilliSecs(), TimeUnit.MILLISECONDS);
+        try {
+            while (!flagMakerExecutor.awaitTermination(1, TimeUnit.MINUTES)) {
+                log.trace("Flag maker running, not termination signal received");
+            }
+        }
+        catch (InterruptedException e) {
+            if (Thread.interrupted()) {
+                log.info("Flag maker terminated, shutting down");
+            }
+        }
+    }
+
     private static FlagMaker createFlagMaker(FlagMakerConfig fc) {
         try {
-            Class<? extends FlagMaker> c = (Class<? extends FlagMaker>) Class.forName(fc.getFlagMakerClass());
+            Class<? extends FlagMaker> c = Class.forName(fc.getFlagMakerClass()).asSubclass(FlagMaker.class);
             Constructor<? extends FlagMaker> constructor = c.getConstructor(FlagMakerConfig.class);
             return constructor.newInstance(fc);
         } catch (NoSuchMethodException e) {
@@ -140,6 +185,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         String extraIngestArgsOverride = null;
         String flagFileDirectoryOverride = null;
         String flagMakerClass = null;
+        
         for (int i = 0; i < args.length; i++) {
             if ("-flagConfig".equals(args[i])) {
                 flagConfig = args[++i];
@@ -202,22 +248,13 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     
     @Override
     public void run() {
-        log.trace(this.getClass().getSimpleName() + " run() starting");
-        startSocket();
+        log.trace(getClass().getSimpleName() + " run() starting.");
         try {
-            while (running) {
-                try {
-                    processFlags();
-                    Thread.sleep(fmc.getSleepMilliSecs());
-                } catch (Exception ex) {
-                    log.error("An unexpected exception occurred. Exiting", ex);
-                    running = false;
-                }
-            }
-        } finally {
-            executor.shutdown();
+            processFlags();
+        } catch (Exception ex) {
+            log.error("An unexpected exception occurred. Exiting", ex);
         }
-        log.trace(this.getClass().getSimpleName() + " Exiting.");
+        log.trace(getClass().getSimpleName() + " run() finishing.");
     }
     
     /**
@@ -279,7 +316,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                     log.warn("Skipping subdirectory " + status.getPath());
                 } else {
                     try {
-                        this.fd.addInputFile(new InputFile(folder, status, fmc.getBaseHDFSDir(), fmc.isUseFolderTimestamp()));
+                        fd.addInputFile(new InputFile(folder, status, fmc.getBaseHDFSDir(), fmc.isUseFolderTimestamp()));
                         logFileInfo(fc, status);
                     } catch (UnusableFileException e) {
                         log.warn("Skipping unusable file " + status.getPath(), e);
@@ -388,7 +425,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             for (final InputFile e : inputFiles) {
                 // Create directories and move to flagging
                 final FlagEntryMover mover = new FlagEntryMover(directoryCache, hdfs, e);
-                final Future<InputFile> exec = executor.submit(mover);
+                final Future<InputFile> exec = taskExecutor.submit(mover);
                 futures.add(exec);
             }
             
@@ -425,7 +462,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             // move the files to the flagged directory
             for (InputFile entry : flagging) {
                 final SimpleMover mover = new SimpleMover(directoryCache, entry, InputFile.TrackedDir.FLAGGED_DIR, hdfs);
-                final Future<InputFile> exec = executor.submit(mover);
+                final Future<InputFile> exec = taskExecutor.submit(mover);
                 futures.add(exec);
             }
             
@@ -601,7 +638,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         // Queue up the move operations
         for (InputFile flagEntry : files) {
             final SimpleMover mover = new SimpleMover(directoryCache, flagEntry, InputFile.TrackedDir.PATH_DIR, hdfs);
-            final Future<InputFile> exec = executor.submit(mover);
+            final Future<InputFile> exec = taskExecutor.submit(mover);
             futures.add(exec);
         }
         
@@ -657,7 +694,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         }
         String s = arg.toString();
         if ("shutdown".equals(s)) {
-            running = false;
+            flagMakerSchedule.cancel(false);
+            flagMakerExecutor.shutdownNow();
         }
         if (s.startsWith("kick")) {
             String dtype = s.substring(4).trim();
@@ -677,7 +715,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         try {
             flagSocket = new FlagSocket(fmc.getSocketPort());
             flagSocket.addObserver(this);
-            Thread socketThread = new Thread(flagSocket, "Flag_Socket_Thread");
+            Thread socketThread = new Thread(flagSocket, "FlagMakerSocket-1");
             socketThread.setDaemon(true);
             socketThread.start();
         } catch (IOException ex) {
@@ -721,10 +759,10 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         int maxCounters = Integer.MAX_VALUE;
         
         // Check Hadoop 2 variable, if null check Hadoop 1 variable
-        if (this.config.get(COUNTER_LIMIT_HADOOP_2) != null) {
-            maxCounters = Integer.parseInt(this.config.get(COUNTER_LIMIT_HADOOP_2));
-        } else if (this.config.get(COUNTER_LIMIT_HADOOP_1) != null) {
-            maxCounters = Integer.parseInt(this.config.get(COUNTER_LIMIT_HADOOP_1));
+        if (config.get(COUNTER_LIMIT_HADOOP_2) != null) {
+            maxCounters = Integer.parseInt(config.get(COUNTER_LIMIT_HADOOP_2));
+        } else if (config.get(COUNTER_LIMIT_HADOOP_1) != null) {
+            maxCounters = Integer.parseInt(config.get(COUNTER_LIMIT_HADOOP_1));
         }
         if (calculateCounters(files.size()) > maxCounters) {
             log.warn("Check hadoop configuration. Counter limit ({}) exceeded for {}. Restricting to {} files per flag file.", maxCounters, fc.getDataName(),
