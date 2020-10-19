@@ -88,6 +88,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -743,6 +744,10 @@ public class JexlASTHelper {
                 getERNodes(node.jjtGetChild(i), erNodes);
             }
         }
+    }
+    
+    public static List<Object> getLiteralValues(JexlNode node) {
+        return getLiterals(node).stream().map(n -> getLiteralValue(n)).collect(Collectors.toList());
     }
     
     public static List<JexlNode> getLiterals(JexlNode node) {
