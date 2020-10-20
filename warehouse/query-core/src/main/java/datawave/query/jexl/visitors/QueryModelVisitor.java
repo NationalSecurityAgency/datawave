@@ -2,15 +2,14 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import datawave.query.model.QueryModel;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
+import datawave.query.model.QueryModel;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -45,6 +44,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
@@ -54,10 +54,10 @@ import static org.apache.commons.jexl2.parser.JexlNodes.id;
 public class QueryModelVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(QueryModelVisitor.class);
     
-    private QueryModel queryModel;
-    private HashSet<ASTAndNode> expandedNodes;
-    private Set<String> validFields;
-    private SimpleQueryModelVisitor simpleQueryModelVisitor;
+    private final QueryModel queryModel;
+    private final HashSet<ASTAndNode> expandedNodes;
+    private final Set<String> validFields;
+    private final SimpleQueryModelVisitor simpleQueryModelVisitor;
     
     public QueryModelVisitor(QueryModel queryModel, Set<String> validFields) {
         this.queryModel = queryModel;
@@ -133,7 +133,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
     public Object visit(ASTReference node, Object data) {
         if (JexlASTHelper.HasMethodVisitor.hasMethod(node)) {
             // this reference has a child that is a method
-            return (ASTReference) node.jjtAccept(this.simpleQueryModelVisitor, null);
+            return node.jjtAccept(this.simpleQueryModelVisitor, null);
         } else {
             return super.visit(node, data);
         }
@@ -212,7 +212,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
                     }
                 }
                 // we don't need the original, unexpanded nodes any more
-                if (aliasedBounds.isEmpty() == false) {
+                if (!aliasedBounds.isEmpty()) {
                     lowerBounds.removeAll(field);
                     upperBounds.removeAll(field);
                     this.expandedNodes.addAll(aliasedBounds);
@@ -242,7 +242,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
          * The rebuilding visitor adds whatever {visit()} returns to the parent's child list, so we shouldn't have some weird object graph that means old nodes
          * never get GC'd because {super.visit()} will reset the parent in the call to {copy()}
          */
-        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[others.size()])), data);
+        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[0])), data);
     }
     
     /**
@@ -310,7 +310,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
             return toReturn;
         }
         
-        Object leftSeed = null, rightSeed = null;
+        Object leftSeed, rightSeed;
         Set<Object> left = Sets.newHashSet(), right = Sets.newHashSet();
         boolean isNullEquality = false;
         
@@ -379,13 +379,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
         }
         boolean requiresAnd = isNullEquality || node instanceof ASTNENode;
         
-        if (leftSeed == null) {
-            leftSeed = leftNode;
-        }
-        if (rightSeed == null) {
-            rightSeed = rightNode;
-        }
-        
         @SuppressWarnings("unchecked")
         // retrieve the cartesian product
         Set<List<Object>> product = Sets.cartesianProduct(left, right);
@@ -395,20 +388,18 @@ public class QueryModelVisitor extends RebuildingVisitor {
          * need to ensure that if we create a logical structure ( such as an or ) -- each literal references a unique identifier from the right. Otherwise,
          * subsequent visitors will reference incorrection sub trees, and potentially negate the activity of the query model visitor
          */
-        Set<List<Object>> newSet = Sets.newHashSet(FluentIterable.from(product).transform(new ProductTransformer()));
+        Set<List<Object>> newSet = product.stream().map(new ProductTransformer()::apply).collect(Collectors.toSet());
         
         if (product.size() > 1) {
+            JexlNode expanded;
             if (requiresAnd) {
-                JexlNode expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.AND_NODE, node, newSet);
-                if (log.isTraceEnabled())
-                    log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
-                return expanded;
+                expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.AND_NODE, node, newSet);
             } else {
-                JexlNode expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.OR_NODE, node, newSet);
-                if (log.isTraceEnabled())
-                    log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
-                return expanded;
+                expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.OR_NODE, node, newSet);
             }
+            if (log.isTraceEnabled())
+                log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
+            return expanded;
         } else if (1 == product.size()) {
             List<Object> pair = product.iterator().next();
             JexlNode expanded = JexlNodeFactory.buildUntypedBinaryNode(node, pair.get(0), pair.get(1));
@@ -430,16 +421,13 @@ public class QueryModelVisitor extends RebuildingVisitor {
     protected static class ProductTransformer implements Function<List<Object>,List<Object>> {
         @Override
         public List<Object> apply(List<Object> objects) {
-            List<Object> newObjectList = Lists.newArrayListWithCapacity(objects.size());
-            for (Object obj : objects) {
-                Object newObj = obj;
-                if (obj instanceof JexlNode) {
-                    newObj = RebuildingVisitor.copy((JexlNode) obj);
+            return objects.stream().map(o -> {
+                if (o instanceof JexlNode) {
+                    return copy((JexlNode) o);
+                } else {
+                    return o;
                 }
-                newObjectList.add(newObj);
-            }
-            return newObjectList;
-            
+            }).collect(Collectors.toList());
         }
     }
     
@@ -449,9 +437,8 @@ public class QueryModelVisitor extends RebuildingVisitor {
      */
     protected static class SimpleQueryModelVisitor extends RebuildingVisitor {
         
-        private static final Logger log = ThreadConfigurableLogger.getLogger(SimpleQueryModelVisitor.class);
-        private QueryModel queryModel;
-        private Set<String> validFields;
+        private final QueryModel queryModel;
+        private final Set<String> validFields;
         
         public SimpleQueryModelVisitor(QueryModel queryModel, Set<String> validFields) {
             this.queryModel = queryModel;
