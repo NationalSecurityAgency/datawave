@@ -76,11 +76,13 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                     // Only add that node if it actually has children
                     if (0 < newChild.jjtGetNumChildren()) {
                         newNode.jjtAddChild(newChild, newIndex);
+                        newChild.jjtSetParent(newNode);
                         newIndex++;
                     }
                 } else {
                     // Otherwise, we want to add the child regardless
                     newNode.jjtAddChild(newChild, newIndex);
+                    newChild.jjtSetParent(newNode);
                     newIndex++;
                 }
             }
@@ -110,11 +112,13 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                     // Only add that node if it actually has children
                     if (0 < newChild.jjtGetNumChildren()) {
                         newNode.jjtAddChild(newChild, newIndex);
+                        newChild.jjtSetParent(newNode);
                         newIndex++;
                     }
                 } else {
                     // Otherwise, we want to add the child regardless
                     newNode.jjtAddChild(newChild, newIndex);
+                    newChild.jjtSetParent(newNode);
                     newIndex++;
                 }
             }
@@ -147,11 +151,13 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                     // Only add that node if it actually has children
                     if (0 < newChild.jjtGetNumChildren()) {
                         newNode.jjtAddChild(newChild, newIndex);
+                        newChild.jjtSetParent(newNode);
                         newIndex++;
                     }
                 } else {
                     // Otherwise, we want to add the child regardless
                     newNode.jjtAddChild(newChild, newIndex);
+                    newChild.jjtSetParent(newNode);
                     newIndex++;
                 }
             }
