@@ -69,8 +69,6 @@ public class FacetCheck extends AllTermsIndexedVisitor {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_NOT_INDEXED, MessageFormat.format(
                             "Fieldname: {0}", fieldName));
             throw new InvalidFieldIndexQueryFatalQueryException(qe);
-        } else {
-            System.out.println("Facet found");
         }
         
         return copy(node);
