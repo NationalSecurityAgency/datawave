@@ -329,7 +329,8 @@ public class Union extends BaseIndexStream {
         String topShard = isTopElementAMatch(seekShard);
         if (topShard != null) {
             // If the top element is a day and we are seeking to a shard range within the day, re-map the top element to the shard range.
-            // This allows us to actually intersect.
+            // Take (A_shard && (B_day || C_day)) for example. The union's top shard is a day, but must be mapped to the same shard as the A term in order for
+            // the intersection to recognize that an intersection is possible.
             if (!isDay(seekShard) && ShardEquality.matches(this.next.first(), seekShard)) {
                 this.next = new Tuple2<>(seekShard, this.next.second());
             }

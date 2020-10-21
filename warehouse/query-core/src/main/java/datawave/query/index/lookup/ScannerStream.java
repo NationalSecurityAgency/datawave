@@ -13,7 +13,7 @@ import java.util.Iterator;
 /**
  * Basic implementation of an IndexStream for a single term.
  *
- * Note that certain delayed terms may create a ScannerStream without an underlying RangeStreamScanner.
+ * Note that certain cases may create a ScannerStream without an underlying RangeStreamScanner such as the SHARDS_AND_DAYS hint.
  */
 public class ScannerStream extends BaseIndexStream {
     
