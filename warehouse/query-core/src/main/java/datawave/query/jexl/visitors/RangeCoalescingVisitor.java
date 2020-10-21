@@ -55,7 +55,6 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
             }
         }
         
-        JexlNodes.replaceChild(node.jjtGetParent(), node, andNode);
         return andNode;
     }
     
@@ -99,9 +98,7 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
         
         // If we had no other nodes than this bounded range, we can strip out the original parent
         if (newNode.jjtGetNumChildren() == 1) {
-            JexlNode child = newNode.jjtGetChild(0);
-            JexlNodes.replaceChild(newNode.jjtGetParent(), newNode, child);
-            return child;
+            return newNode.jjtGetChild(0);
         }
         
         return newNode;
