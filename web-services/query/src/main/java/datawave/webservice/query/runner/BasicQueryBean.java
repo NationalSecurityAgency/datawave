@@ -8,6 +8,7 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
@@ -15,12 +16,7 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.QueryWizardResultResponse;
-import datawave.webservice.result.QueryWizardStep1Response;
-import datawave.webservice.result.QueryWizardStep2Response;
-import datawave.webservice.result.QueryWizardStep3Response;
+import datawave.webservice.result.*;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
@@ -314,10 +310,12 @@ public class BasicQueryBean {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         GenericResponse<String> createResponse;
         QueryWizardStep3Response queryWizardStep3Response = new QueryWizardStep3Response();
+        
         try {
             createResponse = queryExecutor.createQuery(logicName, queryParameters, httpHeaders);
-        } catch (Exception e) {
+        } catch (DatawaveWebApplicationException e) {
             queryWizardStep3Response.setErrorMessage(e.getMessage());
+            queryWizardStep3Response.setQueryId(e.getDatawaveBaseResponse().getQueryId());
             return queryWizardStep3Response;
         }
         String queryId = createResponse.getResult();
