@@ -1,5 +1,4 @@
-This product includes software developed at
-The Apache Software Foundation (http://www.apache.org/).
-
-The Initial Developer of datawave-core/datawave/iterators/IteratorUtils.java is Apache Accumulo
+This project reuses or contains code derived from the
+Apache Accumulo project (Apache 2.0)
+https://github.com/apache/accumulo
 Copyright 2011-2020 The Apache Software Foundation. All Rights Reserved.
