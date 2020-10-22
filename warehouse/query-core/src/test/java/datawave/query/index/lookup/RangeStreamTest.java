@@ -6,6 +6,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.query.QueryParameters;
+import datawave.util.TableName;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
@@ -20,13 +22,16 @@ import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.Tuple2;
+import datawave.webservice.query.QueryParametersImpl;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
@@ -39,6 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -57,23 +63,49 @@ public class RangeStreamTest {
     private static Connector connector;
     private ShardQueryConfiguration config;
     
+    final static String METADATA_TABLE = "metadataTable";
+    final static String SHARD_INDEX = "shardIndex";
+    
     @BeforeClass
     public static void setupAccumulo() throws Exception {
-        
-        final String SHARD_INDEX = "shardIndex";
         
         // Zero byte password, so secure it hurts.
         connector = instance.getConnector("", new PasswordToken(new byte[0]));
         connector.tableOperations().create(SHARD_INDEX);
+        connector.tableOperations().create(METADATA_TABLE);
         
         BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
                         .setMaxWriteThreads(1));
         
+        BatchWriter mbw = connector.createBatchWriter(METADATA_TABLE, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
+                        .setMaxWriteThreads(1));
+        
+        // --------- start of date metadata
+        
         Uid.List.Builder builder = Uid.List.newBuilder();
+        builder.setIGNORE(false);
+        builder.setCOUNT(2);
+        Uid.List list = builder.build();
+        
+        Mutation start = new Mutation("z");
+        start.put(new Text("BEGIN"), new Text("20200107\0" + "datatype1"), new Value(list.toByteArray()));
+        
+        Mutation end = new Mutation("z");
+        end.put(new Text("END"), new Text("20200207\0" + "datatype1"), new Value(list.toByteArray()));
+        
+        mbw.addMutation(start);
+        mbw.addMutation(end);
+        
+        mbw.flush();
+        mbw.close();
+        
+        // --------- end of date metadata
+        
+        // Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addUID("123");
         builder.setIGNORE(false);
         builder.setCOUNT(1);
-        Uid.List list = builder.build();
+        // Uid.List list = builder.build();
         
         Mutation m = new Mutation("ba");
         m.put(new Text("FOO"), new Text("20190314\0" + "datatype1"), new Value(list.toByteArray()));
@@ -1072,12 +1104,42 @@ public class RangeStreamTest {
     
     @Test
     public void whatDayIsItAnywayTest() throws ParseException {
+        MockMetadataHelper helper = new MockMetadataHelper();
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HHmmss");
         config.setBeginDate(sdf.parse("20200201 060000"));
         config.setEndDate(sdf.parse("20200202 040000"));
-        List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = RangeStream.createFullFieldIndexScanList(config, null);
+        List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = rangeStream.createFullFieldIndexScanList(config, null);
         
         Assert.assertEquals(2, fullFieldIndexScanList.size());
+    }
+    
+    @Test
+    public void testRangeCap() throws Exception {
+        
+        QueryParametersImpl qp = new QueryParametersImpl();
+        
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations("TEST"));
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd HHmmss");
+        
+        qp.setEndDate(sdf.parse("20200303 040000"));
+        
+        // dates we HAVE
+        config.setBeginDate(sdf.parse("20200201 060000"));
+        config.setEndDate(sdf.parse("20200209 040000"));
+        
+        MockMetadataHelper helper = new MockMetadataHelper(connector, Collections.singleton(new Authorizations("AUTH1")), METADATA_TABLE);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(connector, 1), helper);
+        
+        List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = rangeStream.createFullFieldIndexScanList(config, null);
+        
+        Set<String> s = helper.getMetadata().getTermFrequencyFields();
+        
+        Assert.assertEquals(9, fullFieldIndexScanList.size());
+        
+        // Assert.assertEquals(config.getEndDate(), sdf.format(qp.getEndDate()));
     }
 }
