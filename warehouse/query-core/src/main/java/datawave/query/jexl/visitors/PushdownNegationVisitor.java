@@ -5,6 +5,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
@@ -69,6 +70,12 @@ public class PushdownNegationVisitor extends BaseVisitor {
             // any down-tree state manipulation is a result of this NOT so do not back propagate that
             return data;
         }
+    }
+    
+    // never push a negation inside of a function
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return data;
     }
     
     @Override

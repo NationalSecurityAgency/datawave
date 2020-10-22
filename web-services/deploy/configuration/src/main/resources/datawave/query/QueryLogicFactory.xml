@@ -44,6 +44,9 @@
         <bean class="datawave.query.language.functions.jexl.Geowave.Intersects"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Overlaps"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Within"/>
+        <bean class="datawave.query.language.functions.jexl.EvaluationOnly">
+            <property name="parser" ref="LuceneToJexlQueryParser"/>
+        </bean>
     </util:list>
 
     <!-- Fields we should not tokenize in a tokenized query. In non-tokenized 
@@ -459,6 +462,9 @@
         <property name="tableName" value="${shard.table.name}" />
         <property name="metadataTableName" value="${metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
+        <property name="dateIndexTableName" value="${date.index.table.name}" />
+        <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
+        <property name="defaultDateTypeName" value="${default.date.type.name}"/>
         <property name="indexTableName" value="${index.table.name}" />
         <property name="reverseIndexTableName" value="${rindex.table.name}" />
         <property name="queryThreads" value="${index.query.threads}" />

@@ -21,6 +21,7 @@ import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.metric.IngestInput;
+import datawave.ingest.metric.IngestOutput;
 import datawave.ingest.metric.IngestProcess;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
@@ -101,6 +102,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Observer;
 import java.util.Set;
 
 /**
@@ -189,6 +192,8 @@ public class IngestJob implements Tool {
     protected boolean writeDirectlyToDest = false;
     
     private Configuration hadoopConfiguration;
+    private List<Observer> jobObservers = new ArrayList<>();
+    private JobObservable jobObservable;
     
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
@@ -234,6 +239,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-compressionTableBlackList table,table,...");
         System.out.println("                     [-maxRFileUndeduppedEntries maxEntries]");
         System.out.println("                     [-maxRFileUncompressedSize maxSize]");
+        System.out.println("                     [-jobObservers jobObserverClasses]");
         System.out.println("                     [-shardedMapFiles table1=/hdfs/path/table1splits.seq[,table2=/hdfs/path/table2splits.seq] ]");
     }
     
@@ -259,6 +265,16 @@ public class IngestJob implements Tool {
         }
         
         updateConfWithOverrides(conf);
+        
+        jobObservable = new JobObservable(srcHdfs != null ? getFileSystem(conf, srcHdfs) : null);
+        for (Observer observer : jobObservers) {
+            this.jobObservable.addObserver(observer);
+            if (observer instanceof Configurable) {
+                log.info("Applying configuration to observer");
+                ((Configurable) observer).setConf(conf);
+            }
+        }
+        
         AccumuloHelper cbHelper = new AccumuloHelper();
         cbHelper.setup(conf);
         
@@ -408,7 +424,6 @@ public class IngestJob implements Tool {
         // output the counters to the log
         Counters counters = job.getCounters();
         log.info(counters);
-        
         try (JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration())) {
             RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
             
@@ -416,12 +431,19 @@ public class IngestJob implements Tool {
             if (!job.isSuccessful()) {
                 return jobFailed(job, runningJob, outputFs, workDirPath);
             }
-        }
-        
-        // determine if we had processing errors
-        if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
-            eventProcessingError = true;
-            log.error("Found Runtime Exceptions in the counters");
+            
+            // determine if we had processing errors
+            if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
+                eventProcessingError = true;
+                log.error("Found Runtime Exceptions in the counters");
+                long numExceptions = counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue();
+                long numRecords = counters.findCounter(IngestOutput.EVENTS_PROCESSED).getValue();
+                long percentError = (numExceptions / (numRecords + numExceptions)) * 100;
+                log.info("Percent Error: " + percentError);
+                if (conf.getInt("job.percent.error.threshold", 101) <= percentError) {
+                    return jobFailed(job, runningJob, outputFs, workDirPath);
+                }
+            }
         }
         if (counters.findCounter(IngestInput.EVENT_FATAL_ERROR).getValue() > 0) {
             eventProcessingError = true;
@@ -434,7 +456,7 @@ public class IngestJob implements Tool {
         // write out a marker file to indicate that the job is complete and a
         // separate process will bulk import the map files.
         if (outputMutations) {
-            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job));
+            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job), job.getJobID());
             boolean deleted = outputFs.delete(workDirPath, true);
             if (!deleted) {
                 log.error("Unable to remove job working directory: " + workDirPath);
@@ -659,6 +681,27 @@ public class IngestJob implements Tool {
                 } catch (NumberFormatException e) {
                     log.error("ERROR: mapred.reduce.tasks must be set to an integer (" + REDUCE_TASKS_ARG_PREFIX + "#)");
                     return null;
+                }
+            } else if (args[i].equals("-jobObservers")) {
+                if (i + 2 > args.length) {
+                    log.error("-jobObservers must be followed by a class name");
+                    System.exit(-2);
+                }
+                String jobObserverClasses = args[++i];
+                try {
+                    String[] classes = jobObserverClasses.split(",");
+                    for (String jobObserverClass : classes) {
+                        log.info("Adding job observer: " + jobObserverClass);
+                        Class clazz = Class.forName(jobObserverClass);
+                        Observer o = (Observer) clazz.newInstance();
+                        jobObservers.add(o);
+                    }
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
+                    System.exit(-2);
+                } catch (ClassCastException e) {
+                    log.error("cannot cast '" + jobObserverClasses + "' to Observer", e);
+                    System.exit(-2);
                 }
             } else if (args[i].startsWith("-")) {
                 // Configuration key/value entries can be overridden via the command line
@@ -1132,7 +1175,7 @@ public class IngestJob implements Tool {
     /**
      * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory.
      */
-    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths) throws IOException {
+    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
         for (Path src : inputPaths) {
             String ssrc = src.toString();
             if (ssrc.contains("/flagged/")) {
@@ -1148,6 +1191,9 @@ public class IngestJob implements Tool {
                 }
             }
         }
+        
+        // notify observers
+        jobObservable.setJobId(jobID.toString());
     }
     
     /**
