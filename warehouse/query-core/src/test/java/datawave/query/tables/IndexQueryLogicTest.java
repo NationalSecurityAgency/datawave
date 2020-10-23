@@ -87,10 +87,6 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
         this.principal = new DatawavePrincipal(Collections.singleton(user));
         
-        QueryLogicTestHarness.TestResultParser resp = (key, document) -> {
-            return this.parse(key, document);
-        };
-        
         this.testHarness = new QueryLogicTestHarness(this);
     }
     

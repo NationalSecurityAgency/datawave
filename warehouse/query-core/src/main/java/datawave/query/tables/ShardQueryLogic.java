@@ -1330,11 +1330,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public void setMaxOrRangeThreshold(int maxOrRangeThreshold) {
-        this.config.setMaxOrRangeThreshold(maxOrRangeThreshold);
+        getConfig().setMaxOrRangeThreshold(maxOrRangeThreshold);
     }
     
     public int getMaxOrRangeThreshold() {
-        return this.config.getMaxOrRangeThreshold();
+        return getConfig().getMaxOrRangeThreshold();
     }
     
     public void setMaxOrExpansionFstThreshold(int maxOrExpansionFstThreshold) {
@@ -1346,15 +1346,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public void setMaxRangesPerRangeIvarator(int maxRangesPerRangeIvarator) {
-        this.config.setMaxRangesPerRangeIvarator(maxRangesPerRangeIvarator);
+        getConfig().setMaxRangesPerRangeIvarator(maxRangesPerRangeIvarator);
     }
     
     public int getMaxOrRangeIvarators() {
-        return this.config.getMaxOrRangeIvarators();
+        return getConfig().getMaxOrRangeIvarators();
     }
     
     public void setMaxOrRangeIvarators(int maxOrRangeIvarators) {
-        this.config.setMaxOrRangeIvarators(maxOrRangeIvarators);
+        getConfig().setMaxOrRangeIvarators(maxOrRangeIvarators);
     }
     
     public long getYieldThresholdMs() {
@@ -1962,11 +1962,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public int getCollapseUidsThreshold() {
-        return this.config.getCollapseUidsThreshold();
+        return getConfig().getCollapseUidsThreshold();
     }
     
     public void setCollapseUidsThreshold(int collapseUidsThreshold) {
-        this.config.setCollapseUidsThreshold(collapseUidsThreshold);
+        getConfig().setCollapseUidsThreshold(collapseUidsThreshold);
     }
     
     public boolean getEnforceUniqueTermsWithinExpressions() {

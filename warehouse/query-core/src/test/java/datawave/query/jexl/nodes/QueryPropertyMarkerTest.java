@@ -2,13 +2,19 @@ package datawave.query.jexl.nodes;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.Assert;
+
+import java.util.Arrays;
 
 public class QueryPropertyMarkerTest {
     
@@ -41,5 +47,14 @@ public class QueryPropertyMarkerTest {
         
         JexlNode parsedSource = QueryPropertyMarker.getQueryPropertySource(delayedNode, ASTDelayedPredicate.class);
         assertEquals(sourceNode, parsedSource);
+    }
+    
+    @Test
+    public void instanceOfAnyExceptTest() throws Exception {
+        String query = "FIELD == 'value'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode evalOnly = ASTEvaluationOnly.create(script);
+        Assert.assertFalse(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, Arrays.asList(ASTEvaluationOnly.class)));
+        Assert.assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(evalOnly, Arrays.asList(ASTDelayedPredicate.class)));
     }
 }

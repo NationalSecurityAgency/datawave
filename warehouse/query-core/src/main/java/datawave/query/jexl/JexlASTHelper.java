@@ -20,8 +20,10 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.postprocessing.tf.Function;
@@ -86,6 +88,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -113,6 +116,9 @@ public class JexlASTHelper {
     public static final Set<Class<?>> EXCLUSIVE_RANGE_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTGTNode.class, ASTLTNode.class);
     
     public static final Set<Class<?>> LESS_THAN_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTLTNode.class, ASTLENode.class);
+    
+    public static final Set<Class<? extends QueryPropertyMarker>> IVARATOR_PROPERTY_MARKER_CLASSES = Sets.newHashSet(ExceededTermThresholdMarkerJexlNode.class,
+                    ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class);
     
     public static final Set<Class<?>> GREATER_THAN_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTGTNode.class, ASTLENode.class);
     
@@ -738,6 +744,10 @@ public class JexlASTHelper {
                 getERNodes(node.jjtGetChild(i), erNodes);
             }
         }
+    }
+    
+    public static List<Object> getLiteralValues(JexlNode node) {
+        return getLiterals(node).stream().map(n -> getLiteralValue(n)).collect(Collectors.toList());
     }
     
     public static List<JexlNode> getLiterals(JexlNode node) {
@@ -1630,6 +1640,16 @@ public class JexlASTHelper {
             }
         }
         return result;
+    }
+    
+    /**
+     * Determine if an AND node is an ivarator marked node or not
+     * 
+     * @param node
+     * @return true if an instanceof an ivarator typed QueryPropertyMarker, false otherwise
+     */
+    public static boolean isIvaratorMarker(ASTAndNode node) {
+        return QueryPropertyMarkerVisitor.instanceOf(node, IVARATOR_PROPERTY_MARKER_CLASSES, null);
     }
     
     private JexlASTHelper() {}

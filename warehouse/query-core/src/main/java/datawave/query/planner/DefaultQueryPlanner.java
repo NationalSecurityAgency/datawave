@@ -52,6 +52,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
+import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -265,7 +266,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /**
      * Control if automated logical query reduction should be done
      */
-    protected boolean reduceQuery = false;
+    protected boolean reduceQuery = true;
     
     /**
      * Control if when applying logical query reduction the pruned query should be shown via an assignment node in the resulting query. There may be a
@@ -1137,7 +1138,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 debugOutput = new ArrayList<>(32);
             }
             if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
                                 nonEventFields, metadataHelper);
                 if (log.isDebugEnabled()) {
                     logDebug(debugOutput, "Executable state after pushing low-selective terms:");
@@ -1166,25 +1167,45 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         if (!disableBoundedLookup) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges");
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
+            TraceStopwatch innerStopwatch = null;
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
                                 config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding regex:");
                 }
+                innerStopwatch.stop();
+                
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
                 queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
                                 config.isExpandValues());
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding ranges:");
                 }
+                innerStopwatch.stop();
+                
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Prune GeoWave terms");
+                Multimap<String,String> prunedTerms = HashMultimap.create();
+                queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
+                if (log.isDebugEnabled()) {
+                    log.debug("Pruned the following GeoWave terms: ["
+                                    + prunedTerms.entries().stream().map(x -> x.getKey() + "==" + x.getValue()).collect(Collectors.joining(",")) + "]");
+                }
+                innerStopwatch.stop();
+                
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand pushing functions into exceeded value ranges");
                 queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
                 }
+                innerStopwatch.stop();
+                
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Remove delayed predicates");
                 // if we now have an unexecutable tree because of delayed
                 // predicates, then remove delayed predicates as needed and
                 // reexpand
@@ -1197,8 +1218,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 // the terms to be delayed.
                 if (!ExecutableDeterminationVisitor
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, indexOnlyFields,
-                                    nonEventFields, metadataHelper);
+                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, false, config, indexedFields,
+                                    indexOnlyFields, nonEventFields, metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges:");
                         logQuery(queryTree, "Query after delayed pullup:");
@@ -1224,22 +1245,25 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
                     }
                 }
+                innerStopwatch.stop();
                 
                 // if we now have an unexecutable tree because of missing
                 // delayed predicates, then add delayed predicates where
                 // possible
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Add delayed predicates");
                 if (log.isDebugEnabled()) {
                     debugOutput.clear();
                 }
                 if (!ExecutableDeterminationVisitor
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
                                     nonEventFields, metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
                         logQuery(queryTree, "Query after partially executable pushdown:");
                     }
                 }
+                innerStopwatch.stop();
                 
             } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
                 stopwatch.stop();
@@ -1252,6 +1276,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 throw new DatawaveFatalQueryException(qe);
             } catch (ExecutionException e) {
                 log.error("Exception while expanding ranges", e);
+            } finally {
+                // Ensure the inner stopwatch is stopped.
+                if (innerStopwatch != null && innerStopwatch.isRunning()) {
+                    innerStopwatch.stop();
+                }
             }
             stopwatch.stop();
         } else {

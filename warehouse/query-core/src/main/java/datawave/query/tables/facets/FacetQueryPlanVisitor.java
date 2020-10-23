@@ -27,14 +27,14 @@ public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableItera
     protected Set<QueryPlan> queryPlans;
     protected Set<String> facetedFields;
     
-    public FacetQueryPlanVisitor(ShardQueryConfiguration config, MetadataHelper helper, Set<String> facetedFields) {
+    public FacetQueryPlanVisitor(ShardQueryConfiguration config, FacetedConfiguration facetedConfig, MetadataHelper helper, Set<String> facetedFields) {
         
         this.config = config;
         queryPlans = new HashSet<>();
         this.facetedFields = new HashSet<>();
         this.facetedFields.addAll(facetedFields);
         try {
-            facetMultimap = helper.getFacets("FacetsNatingMetadata");
+            facetMultimap = helper.getFacets(facetedConfig.getFacetMetadataTableName());
         } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
             throw new RuntimeException(e);
         }

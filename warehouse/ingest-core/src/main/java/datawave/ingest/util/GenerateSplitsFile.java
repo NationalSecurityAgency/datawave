@@ -1,6 +1,6 @@
 package datawave.ingest.util;
 
-import datawave.ingest.mapreduce.job.MetadataTableSplits;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -39,8 +39,8 @@ public class GenerateSplitsFile {
                 System.exit(1);
             }
             if (cl.hasOption("sp")) {
-                conf.set(MetadataTableSplits.SPLITS_CACHE_DIR, cl.getOptionValue("sp"));
-                log.info("Set " + MetadataTableSplits.SPLITS_CACHE_DIR + " to " + cl.getOptionValue("sp"));
+                conf.set(TableSplitsCache.SPLITS_CACHE_DIR, cl.getOptionValue("sp"));
+                log.info("Set " + TableSplitsCache.SPLITS_CACHE_DIR + " to " + cl.getOptionValue("sp"));
             }
             if (cl.hasOption("cs")) {
                 configSuffix = cl.getOptionValue("cs");
@@ -50,7 +50,7 @@ public class GenerateSplitsFile {
             log.info("Set configSuffix to " + configSuffix);
             
             ConfigurationFileHelper.setConfigurationFromFiles(conf, configDirectory, configSuffix);
-            MetadataTableSplits splitsFile = new MetadataTableSplits(conf);
+            TableSplitsCache splitsFile = new TableSplitsCache(conf);
             splitsFile.update();
         } catch (ParseException ex) {
             log.error(GenerateSplitsFile.class.getName(), ex);

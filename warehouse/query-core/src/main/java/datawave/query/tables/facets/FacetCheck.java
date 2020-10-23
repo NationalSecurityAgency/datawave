@@ -22,10 +22,10 @@ public class FacetCheck extends AllTermsIndexedVisitor {
     
     Multimap<String,String> facetMultimap;
     
-    public FacetCheck(ShardQueryConfiguration config, MetadataHelper helper) {
+    public FacetCheck(ShardQueryConfiguration config, FacetedConfiguration facetConfig, MetadataHelper helper) {
         super(config, helper);
         try {
-            facetMultimap = helper.getFacets("FacetsNatingMetadata");
+            facetMultimap = helper.getFacets(facetConfig.getFacetMetadataTableName());
         } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
             throw new RuntimeException(e);
         }
