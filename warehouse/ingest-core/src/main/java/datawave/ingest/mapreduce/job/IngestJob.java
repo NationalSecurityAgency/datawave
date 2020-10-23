@@ -65,6 +65,8 @@ import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobStatus;
 import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
@@ -443,10 +445,19 @@ public class IngestJob implements Tool {
             if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
                 eventProcessingError = true;
                 log.error("Found Runtime Exceptions in the counters");
-                long numExceptions = counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue();
-                long numRecords = counters.findCounter(IngestOutput.EVENTS_PROCESSED).getValue();
-                long percentError = (numExceptions / (numRecords + numExceptions)) * 100;
-                log.info("Percent Error: " + percentError);
+                long numExceptions = 0;
+                long numRecords = 0;
+                CounterGroup exceptionCounterGroup = counters.getGroup(IngestProcess.RUNTIME_EXCEPTION.name());
+                for (Counter exceptionC : exceptionCounterGroup) {
+                    numExceptions += exceptionC.getValue();
+                }
+                CounterGroup recordCounterGroup = counters.getGroup(IngestOutput.EVENTS_PROCESSED.name());
+                for (Counter recordC : recordCounterGroup) {
+                    numRecords += recordC.getValue();
+                }
+                // records that throw runtime exceptions are still counted as processed
+                float percentError = 100 * ((float) numExceptions / numRecords);
+                log.info(String.format("Percent Error: %.2f", percentError));
                 if (conf.getInt("job.percent.error.threshold", 101) <= percentError) {
                     return jobFailed(job, runningJob, outputFs, workDirPath);
                 }
