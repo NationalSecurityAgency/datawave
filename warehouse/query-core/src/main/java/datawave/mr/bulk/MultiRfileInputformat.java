@@ -65,8 +65,8 @@ public class MultiRfileInputformat extends RFileInputFormat {
     
     private static LoadingCache<Range,Set<Tuple2<String,Set<String>>>> locationMap = null;
     
-    protected static Map<String,String> dfsUriMap = new ConcurrentHashMap<>();
-    protected static Map<String,String> dfsDirMap = new ConcurrentHashMap<>();
+    protected static final Map<String,String> dfsUriMap = new ConcurrentHashMap<>();
+    protected static final Map<String,String> dfsDirMap = new ConcurrentHashMap<>();
     
     @Override
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {

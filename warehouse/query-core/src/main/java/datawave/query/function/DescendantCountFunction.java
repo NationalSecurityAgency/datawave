@@ -480,7 +480,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         if (options.containsKey(QueryOptions.CHILD_COUNT_INDEX_SKIP_THRESHOLD)) {
                             final String value = options.get(QueryOptions.CHILD_COUNT_INDEX_SKIP_THRESHOLD);
                             try {
-                                int threshold = Integer.valueOf(value);
+                                int threshold = Integer.parseInt(value);
                                 this.skipThreshold = (threshold > 1) ? threshold : this.skipThreshold;
                             } catch (NumberFormatException e) {
                                 final String message = "Unable to configure " + QueryOptions.CHILD_COUNT_INDEX_SKIP_THRESHOLD;

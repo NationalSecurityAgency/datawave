@@ -44,6 +44,10 @@ public abstract class MockTableTest {
                         .setMaxWriteThreads(4));
     }
     
+    protected BatchWriter getWriter() {
+        return this.writer;
+    }
+    
     public BatchScanner createBatchScanner(Authorizations authorizations, int threads) throws TableNotFoundException {
         return client.createBatchScanner(TABLE_NAME, authorizations, threads);
     }

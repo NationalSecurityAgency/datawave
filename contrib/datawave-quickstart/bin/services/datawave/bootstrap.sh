@@ -402,3 +402,8 @@ function datawaveBuild() {
    rm -f "${DW_DATAWAVE_SERVICE_DIR}"/datawave*.tar.gz
    resetQuickstartEnvironment
 }
+
+function datawaveDisplayBinaryInfo() {
+   datawaveIngestDisplayBinaryInfo
+   datawaveWebDisplayBinaryInfo
+}

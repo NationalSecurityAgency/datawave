@@ -24,7 +24,7 @@ import java.util.Map.Entry;
  */
 public class PrintUtility {
     
-    private static Logger logger = Logger.getLogger(PrintUtility.class);
+    private static final Logger logger = Logger.getLogger(PrintUtility.class);
     
     /**
      * Hide default constructor
@@ -49,7 +49,7 @@ public class PrintUtility {
         if (logger.isDebugEnabled()) {
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HHmmss");
             
-            final StringBuilder sb = new StringBuilder("--Begin entire " + tableName + " table--");
+            final StringBuilder sb = new StringBuilder("\n--Begin entire " + tableName + " table--");
             
             sb.append("\n");
             
@@ -59,7 +59,7 @@ public class PrintUtility {
                 sb.append(' ');
                 sb.append(dateFormat.format(new Date(e.getKey().getTimestamp())));
                 sb.append('\t');
-                sb.append(getPrintableValue(e.getValue()));
+                sb.append(getPrintableValue(tableName, e.getKey(), e.getValue()));
                 sb.append("\n");
             }
             
@@ -83,7 +83,7 @@ public class PrintUtility {
             sb.append(' ');
             sb.append(dateFormat.format(new Date(e.getKey().getTimestamp())));
             sb.append('\t');
-            sb.append(getPrintableValue(e.getValue()));
+            sb.append(getPrintableValue(tableName, e.getKey(), e.getValue()));
             sb.append("\n");
         }
         
@@ -110,27 +110,40 @@ public class PrintUtility {
         logger.debug(sb.toString());
     }
     
-    public static String getPrintableValue(final Value value) {
-        if ((value != null) && (value.getSize() > 0)) {
-            try {
-                final Uid.List uidList = Uid.List.parseFrom(value.get());
-                
-                return (uidList.getUIDList().toString());
-            } catch (final InvalidProtocolBufferException e1) {
-                try {
-                    return (ReflectionToStringBuilder.toString(EdgeValue.decode(value), ToStringStyle.SHORT_PREFIX_STYLE));
-                } catch (final Exception e2) {
-                    try {
-                        final ExtendedHyperLogLogPlus ehllp = new ExtendedHyperLogLogPlus(value);
-                        
-                        return (String.valueOf(ehllp.getCardinality()));
-                    } catch (final Exception e3) {
-                        logger.error("Could not deserialize protobuff" + e2);
-                    }
-                }
-            }
+    public static String getPrintableValue(final String tableName, final Key key, final Value value) {
+        if ((value == null) || value.getSize() < 1) {
+            return "";
         }
         
-        return ("");
+        String lastError = "";
+        
+        try {
+            final Uid.List uidList = Uid.List.parseFrom(value.get());
+            return (uidList.getUIDList().toString());
+        } catch (final InvalidProtocolBufferException e) {
+            logger.trace("Deserialization as Uid.List, trying other methods", e);
+            lastError = e.getMessage();
+        }
+        
+        try {
+            return (ReflectionToStringBuilder.toString(EdgeValue.decode(value), ToStringStyle.SHORT_PREFIX_STYLE));
+        } catch (final Exception e) {
+            logger.trace("Deserialization as decodedEdgeValue failed, trying other methods", e);
+            lastError = e.getMessage();
+        }
+        
+        try {
+            final ExtendedHyperLogLogPlus ehllp = new ExtendedHyperLogLogPlus(value);
+            return (String.valueOf(ehllp.getCardinality()));
+        } catch (final Exception e) {
+            logger.trace("Deserialization as ExtendedHyperLogLogPlus failed", e);
+            lastError = e.getMessage();
+        }
+        
+        // TODO: Metadata table?
+        
+        logger.warn("Could not deserialize protobuff for table '" + tableName + "'; key: '" + key.toString() + "' error: '" + lastError + "'");
+        
+        return "(unable to deserialize value)";
     }
 }

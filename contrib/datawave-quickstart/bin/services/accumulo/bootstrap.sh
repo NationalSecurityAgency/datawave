@@ -283,3 +283,20 @@ function accumuloPidList() {
       echo "${DW_ACCUMULO_PID_LIST} ${DW_ZOOKEEPER_PID_LIST}"
    fi
 }
+
+function accumuloDisplayBinaryInfo() {
+  echo "Source: ${DW_ACCUMULO_DIST_URI}"
+  local tarballName="$(basename "$DW_ACCUMULO_DIST_URI")"
+  if [[ -f "${DW_ACCUMULO_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_ACCUMULO_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
+  echo "Source: ${DW_ZOOKEEPER_DIST_URI}"
+  tarballName="$(basename "$DW_ZOOKEEPER_DIST_URI")"
+  if [[ -f "${DW_ACCUMULO_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_ACCUMULO_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
+}

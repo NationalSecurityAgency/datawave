@@ -457,13 +457,15 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     values.putAll(createStats(helper, event, fields, value, visibility, maskedVisibility, maskedFieldHelper, shardId, indexedValue, reporter));
                 
                 if (getShardDictionaryIndexTableName() != null) {
-                    if (dCache.getIfPresent(value.getIndexedFieldName() + value.getIndexedFieldValue() + visibility + maskedVisibility) == null) {
+                    final String cacheKey = value.getIndexedFieldName() + value.getIndexedFieldValue() + Arrays.toString(visibility)
+                                    + Arrays.toString(maskedVisibility);
+                    if (dCache.getIfPresent(cacheKey) == null) {
                         createDictionaryColumn(event, values, value.getIndexedFieldName(), value.getIndexedFieldValue(), visibility, maskedVisibility,
                                         maskedFieldHelper, this.SHARD_DINDX_FLABEL, this.getShardDictionaryIndexTableName());
                         createDictionaryColumn(event, values, value.getIndexedFieldName(), StringUtils.reverse(value.getIndexedFieldValue()), visibility,
                                         maskedVisibility, maskedFieldHelper, this.SHARD_DINDX_RLABEL, this.getShardDictionaryIndexTableName());
                     }
-                    dCache.put(value.getIndexedFieldName() + value.getIndexedFieldValue() + visibility + maskedVisibility, e.getValue().getIndexedFieldValue());
+                    dCache.put(cacheKey, e.getValue().getIndexedFieldValue());
                 }
                 
             }

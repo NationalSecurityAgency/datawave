@@ -244,8 +244,6 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         
     }
     
-    // public ScannerSession fetchColumnFamily(Text familY)
-    
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ScannerSession) {
@@ -257,6 +255,14 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         }
         
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = ranges != null ? ranges.hashCode() : 0;
+        result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
+        result = 31 * result + (auths != null ? auths.hashCode() : 0);
+        return result;
     }
     
     /*
@@ -522,27 +528,29 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         int retrievalCount = 0;
         
         Entry<Key,Value> myEntry = null;
-        
+        Key highest = null;
         while (iter.hasNext()) {
             myEntry = iter.next();
             
-            try {
-                if (!resultQueue.offer(myEntry, 200, TimeUnit.MILLISECONDS))
-                    break;
-            } catch (InterruptedException exception) {
-                break;
+            // different underlying scanners may not always guarantee ordered results
+            if (highest == null || highest.compareTo(myEntry.getKey()) < 0) {
+                highest = myEntry.getKey();
             }
             
-            lastSeenKey = myEntry.getKey();
-            // do not continue if we have reached the capacity of the queue
-            // or we are 1.5x the maxResults ( to ensure fairness to other threads
-            if (resultQueue.remainingCapacity() == 0 || (isFair && retrievalCount >= Math.ceil(maxResults * 1.5))) {
-                if (log.isTraceEnabled())
-                    log.trace("stopping because we're full after adding " + resultQueue.remainingCapacity() + " " + retrievalCount + " " + maxResults);
-                break;
+            // this creates a bottleneck on the resultQueue size, but guarantees no results will be lost
+            boolean accepted = false;
+            while (!accepted) {
+                try {
+                    accepted = resultQueue.offer(myEntry, 200, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    // keep trying
+                }
             }
+            
             retrievalCount++;
         }
+        
+        lastSeenKey = highest;
         
         return retrievalCount;
     }

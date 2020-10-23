@@ -330,14 +330,10 @@ public class QueryModelVisitor extends RebuildingVisitor {
             if (rightSeed instanceof ASTNullLiteral && node instanceof ASTEQNode) {
                 isNullEquality = true;
             }
-        } else if (1 <= childCount && childCount <= 2) {
-            // I could have a reference on both sides of the expression
+        } else {
+            // We know from above that childCount == 2. We may have a reference on both sides of the expression
             leftSeed = node.jjtGetChild(0);
             rightSeed = node.jjtGetChild(1);
-        } else {
-            QueryException qe = new QueryException(DatawaveErrorCode.BINARY_NODE_TOO_MANY_CHILDREN, MessageFormat.format("Node: {0}",
-                            PrintingVisitor.formattedQueryString(node)));
-            throw new DatawaveFatalQueryException(qe);
         }
         
         if (leftSeed instanceof ASTReference) {

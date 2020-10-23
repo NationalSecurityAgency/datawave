@@ -7,12 +7,31 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.ShardQueryLogic;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.clientImpl.Credentials;
+import org.apache.accumulo.core.clientImpl.Tables;
+import org.apache.accumulo.core.clientImpl.TabletLocator;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.dataImpl.TabletIdImpl;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -23,7 +42,6 @@ import com.google.common.collect.Lists;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -57,7 +75,14 @@ public class PushdownScheduler extends Scheduler {
      */
     protected BatchScannerSession session = null;
     
+    protected Iterator<Entry<Key,Value>> currentIterator = null;
+    
     protected List<Function<IteratorSetting,IteratorSetting>> customizedFunctionList;
+    
+    /**
+     * Local instance of the table ID
+     */
+    protected TableId tableId;
     
     protected MetadataHelper metadataHelper;
     
@@ -88,19 +113,40 @@ public class PushdownScheduler extends Scheduler {
             throw new IllegalArgumentException("Null configuration provided");
         }
         
-        return concatIterators();
+        try {
+            
+            return concatIterators();
+        } catch (AccumuloException | ParseException | TableNotFoundException | AccumuloSecurityException e) {
+            throw new RuntimeException(e);
+        }
+        
     }
     
     /**
      * @return
+     * @throws ParseException
+     * @throws TableNotFoundException
+     * @throws AccumuloSecurityException
+     * @throws AccumuloException
      */
-    protected Iterator<Entry<Key,Value>> concatIterators() {
+    protected Iterator<Entry<Key,Value>> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
         
         String tableName = config.getShardTableName();
         
         Set<Authorizations> auths = config.getAuthorizations();
         
-        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(config, settings, tableName));
+        TabletLocator tl;
+        
+        AccumuloClient client = config.getClient();
+        if (client instanceof InMemoryAccumuloClient) {
+            tl = new InMemoryTabletLocator();
+            tableId = TableId.of(config.getTableName());
+        } else {
+            tableId = Tables.getTableId((ClientContext) client, tableName);
+            Credentials credentials = new Credentials(client.whoami(), new PasswordToken(config.getAccumuloPassword()));
+            tl = TabletLocator.getLocator((ClientContext) client, tableId);
+        }
+        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
         
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery());
@@ -121,6 +167,8 @@ public class PushdownScheduler extends Scheduler {
         }
         
         session.setChunkIter(chunkIter);
+        
+        session.setTabletLocator(tl);
         
         session.updateIdentifier(config.getQuery().getId().toString());
         

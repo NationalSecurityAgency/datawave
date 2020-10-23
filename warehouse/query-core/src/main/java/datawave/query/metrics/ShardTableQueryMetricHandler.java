@@ -709,16 +709,16 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         String[] parts = StringUtils.split(fieldValue, "/");
                         PageMetric pageMetric = null;
                         if (parts.length == 8) {
-                            pageMetric = new PageMetric(Long.valueOf(parts[0]), Long.valueOf(parts[1]), Long.valueOf(parts[2]), Long.valueOf(parts[3]),
-                                            Long.valueOf(parts[4]), Long.valueOf(parts[5]), Long.valueOf(parts[6]), Long.valueOf(parts[7]));
+                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
+                                            Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]), Long.parseLong(parts[7]));
                         } else if (parts.length == 7) {
-                            pageMetric = new PageMetric(Long.valueOf(parts[0]), Long.valueOf(parts[1]), Long.valueOf(parts[2]), Long.valueOf(parts[3]),
-                                            Long.valueOf(parts[4]), Long.valueOf(parts[5]), Long.valueOf(parts[6]));
+                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
+                                            Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]));
                         } else if (parts.length == 5) {
-                            pageMetric = new PageMetric(Long.valueOf(parts[0]), Long.valueOf(parts[1]), Long.valueOf(parts[2]), Long.valueOf(parts[3]),
-                                            Long.valueOf(parts[4]), 0l, 0l);
+                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
+                                            Long.parseLong(parts[4]), 0l, 0l);
                         } else if (parts.length == 2) {
-                            pageMetric = new PageMetric(Long.valueOf(parts[0]), Long.valueOf(parts[1]), 0l, 0l);
+                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), 0l, 0l);
                         }
                         
                         if (pageMetric != null)
@@ -798,6 +798,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             
             return m;
         } catch (Exception e) {
+            log.warn("Unexpected error creating query metric. Returning null", e);
             return null;
         }
     }

@@ -10,7 +10,6 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.GenericCityFields;
-import joptsimple.internal.Strings;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -170,7 +169,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         
         final Map<String,String> qOptions = new HashMap<>();
         String dtFilter = CityEntry.generic.getDataType() + ShardQueryConfiguration.PARAM_VALUE_SEP_STR
-                        + Strings.join(INVALID_DATATYPES, ShardQueryConfiguration.PARAM_VALUE_SEP_STR);
+                        + String.join(ShardQueryConfiguration.PARAM_VALUE_SEP_STR, INVALID_DATATYPES);
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
         
         for (String num : TEST_NUMS) {
@@ -189,7 +188,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         for (CityEntry dt : TEST_DATATYPES) {
             dtEntries.add(dt.getDataType());
         }
-        String dtFilter = Strings.join(dtEntries, ShardQueryConfiguration.PARAM_VALUE_SEP_STR);
+        String dtFilter = String.join(ShardQueryConfiguration.PARAM_VALUE_SEP_STR, dtEntries);
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
         
         final String phrase = EQ_OP + "'ohio'";
@@ -213,7 +212,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         log.info("------  testAnyFieldInvalidDatatypes  ------");
         
         final Map<String,String> qOptions = new HashMap<>();
-        String dtFilter = Strings.join(INVALID_DATATYPES, ShardQueryConfiguration.PARAM_VALUE_SEP_STR);
+        String dtFilter = String.join(ShardQueryConfiguration.PARAM_VALUE_SEP_STR, INVALID_DATATYPES);
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
         
         final String phrase = EQ_OP + "'ohio'";

@@ -291,4 +291,11 @@ public class JexlNodeSet implements Set<JexlNode> {
         }
         return false;
     }
+    
+    @Override
+    public int hashCode() {
+        int result = (useSourceNodeForKeys ? 1 : 0);
+        result = 31 * result + (nodeMap != null ? nodeMap.hashCode() : 0);
+        return result;
+    }
 }

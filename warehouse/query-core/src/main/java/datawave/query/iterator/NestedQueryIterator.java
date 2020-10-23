@@ -147,4 +147,13 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
             return currentQuery.getQuery();
     }
     
+    @Override
+    public boolean isContextRequired() {
+        return false;
+    }
+    
+    @Override
+    public void setContext(T context) {
+        // no-op
+    }
 }

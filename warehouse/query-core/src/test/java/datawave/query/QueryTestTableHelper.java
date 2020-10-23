@@ -1,7 +1,9 @@
 package datawave.query;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.ingest.mapreduce.handler.facet.FacetHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.config.FacetTableConfigHelper;
 import datawave.ingest.table.config.MetadataTableConfigHelper;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
@@ -43,6 +45,11 @@ public final class QueryTestTableHelper {
     public static final String SHARD_DICT_INDEX_NAME = "shardTermDictionary";
     public static final String MODEL_TABLE_NAME = "DatawaveMetadata";
     
+    // TODO: elsewhere?
+    public static final String FACET_TABLE_NAME = "facet";
+    public static final String FACET_HASH_TABLE_NAME = "facetHash";
+    public static final String FACET_METADATA_TABLE_NAME = "facetMetadata";
+    
     private static final BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
     
     public final AccumuloClient client;
@@ -81,6 +88,12 @@ public final class QueryTestTableHelper {
             dumpTable(SHARD_RINDEX_TABLE_NAME, auths);
             dumpTable(SHARD_DICT_INDEX_NAME, auths);
             dumpTable(MODEL_TABLE_NAME, auths);
+            
+            // TODO: elsewhere?
+            dumpTable(FACET_TABLE_NAME, auths);
+            dumpTable(FACET_HASH_TABLE_NAME, auths);
+            dumpTable(FACET_METADATA_TABLE_NAME, auths);
+            
         } catch (TableNotFoundException e) {
             // should not happen
             throw new IllegalArgumentException(e);
@@ -109,6 +122,12 @@ public final class QueryTestTableHelper {
         deleteAndCreateTable(tops, SHARD_RINDEX_TABLE_NAME);
         deleteAndCreateTable(tops, SHARD_DICT_INDEX_NAME);
         deleteAndCreateTable(tops, MODEL_TABLE_NAME);
+        
+        // TODO: move these elsewhere?
+        deleteAndCreateTable(tops, FACET_TABLE_NAME);
+        deleteAndCreateTable(tops, FACET_HASH_TABLE_NAME);
+        deleteAndCreateTable(tops, FACET_METADATA_TABLE_NAME);
+        
     }
     
     private void deleteAndCreateTable(TableOperations tops, String tableName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
@@ -132,8 +151,12 @@ public final class QueryTestTableHelper {
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_TNAME, SHARD_TABLE_NAME);
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GIDX_TNAME, SHARD_INDEX_TABLE_NAME);
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GRIDX_TNAME, SHARD_RINDEX_TABLE_NAME);
+        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_DINDX_NAME, SHARD_DICT_INDEX_NAME);
         
-        writer.addWriter(new Text(SHARD_DICT_INDEX_NAME), client.createBatchWriter(SHARD_DICT_INDEX_NAME, bwCfg));
+        // TODO: move this elsewhere?
+        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_TABLE_NAME, FACET_TABLE_NAME);
+        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_METADATA_TABLE_NAME, FACET_METADATA_TABLE_NAME);
+        configureAShardRelatedTable(writer, new FacetTableConfigHelper(), FacetHandler.FACET_HASH_TABLE_NAME, FACET_HASH_TABLE_NAME);
         
         // todo - configure the other tables...
     }

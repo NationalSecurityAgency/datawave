@@ -41,7 +41,7 @@ public class BaseTableCache implements Serializable, TableCache {
     
     private static final long serialVersionUID = 1L;
     
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final transient Logger log = Logger.getLogger(this.getClass());
     
     /** should be set by configuration **/
     private String tableName = null;
@@ -53,7 +53,7 @@ public class BaseTableCache implements Serializable, TableCache {
     /** set programatically **/
     private Date lastRefresh = new Date(0);
     private AccumuloConnectionFactory connectionFactory = null;
-    private InMemoryInstance instance = null;
+    private transient InMemoryInstance instance = null;
     private SharedCacheCoordinator watcher = null;
     private Future<Boolean> reference = null;
     

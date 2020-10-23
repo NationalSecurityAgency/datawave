@@ -64,8 +64,9 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
  * 
  */
 public class JexlNodeFactory {
-    public static final Set<Class<?>> REAL_NUMBERS = Sets.<Class<?>> newHashSet(BigDecimal.class, Double.class, Float.class);
-    public static final Set<Class<?>> NATURAL_NUMBERS = Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class, Short.class, Byte.class);
+    public static final Set<Class<?>> REAL_NUMBERS = Collections.unmodifiableSet(Sets.<Class<?>> newHashSet(BigDecimal.class, Double.class, Float.class));
+    public static final Set<Class<?>> NATURAL_NUMBERS = Collections.unmodifiableSet(Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class,
+                    Short.class, Byte.class));
     
     public enum ContainerType {
         OR_NODE, AND_NODE
@@ -79,10 +80,16 @@ public class JexlNodeFactory {
      * @param node
      * @param fieldsToValues
      *            A mapping of fields to values. If the values for a field is empty, then the original regex should be used.
+     * @param expandFields
+     *            Expand fields if true
+     * @param expandValues
+     *            Expand values if true
+     * @param keepOriginalNode
+     *            Keep the original node along with any expansions
      * @return A new sub query
      */
     public static JexlNode createNodeTreeFromFieldsToValues(ContainerType containerType, JexlNode node, JexlNode orgNode, IndexLookupMap fieldsToValues,
-                    boolean expandFields, boolean expandValues) {
+                    boolean expandFields, boolean expandValues, boolean keepOriginalNode) {
         // do nothing if not expanding fields or values
         if (!expandFields && !expandValues) {
             return orgNode;
@@ -111,7 +118,22 @@ public class JexlNodeFactory {
                         ParserTreeConstants.JJTANDNODE));
         int parentNodeChildCount = 0;
         
-        JexlNodes.ensureCapacity(parentNode, fields.size());
+        if (keepOriginalNode) {
+            JexlNodes.ensureCapacity(parentNode, fields.size() + 1);
+            JexlNode child = RebuildingVisitor.copy(orgNode);
+            parentNode.jjtAddChild(child, parentNodeChildCount);
+            child.jjtSetParent(parentNode);
+            parentNodeChildCount++;
+            // remove this entry from the fieldsToValues to avoid duplication
+            for (String identifier : JexlASTHelper.getIdentifierNames(orgNode)) {
+                for (Object value : JexlASTHelper.getLiteralValues(orgNode)) {
+                    fieldsToValues.remove(identifier, value);
+                }
+            }
+        } else {
+            JexlNodes.ensureCapacity(parentNode, fields.size());
+        }
+        
         for (String field : fields) {
             ValueSet valuesForField = fieldsToValues.get(field);
             
@@ -185,6 +207,7 @@ public class JexlNodeFactory {
                 JexlNode childNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
                                 ParserTreeConstants.JJTANDNODE));
                 JexlNodes.ensureCapacity(childNode, valuesForField.size());
+                
                 for (String value : valuesForField) {
                     JexlNode child = buildUntypedNode(node, field, value);
                     

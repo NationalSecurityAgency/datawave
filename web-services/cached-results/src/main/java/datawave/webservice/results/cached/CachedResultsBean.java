@@ -206,7 +206,7 @@ public class CachedResultsBean {
     @Inject
     private QueryPredictor predictor;
     
-    protected static String BASE_COLUMNS = null;
+    protected static final String BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");
     
     @Inject
     private ResponseObjectFactory responseObjectFactory;
@@ -231,10 +231,6 @@ public class CachedResultsBean {
     
     @Inject
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
-    
-    static {
-        BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");
-    }
     
     protected static final String COMMA = ",";
     protected static final String TABLE = "$table";

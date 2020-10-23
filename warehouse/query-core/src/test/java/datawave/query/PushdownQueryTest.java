@@ -111,28 +111,17 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
         }
     }
     
-    // ============================================
-    // error conditions
-    @Test(expected = InvalidQueryException.class)
-    public void testErrorIndexOnly() throws Exception {
+    @Test
+    public void testDelayedIndexOnly() throws Exception {
         log.info("------  testErrorIndexOnly  ------");
         String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
                         + LT_OP + "104)";
         ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
         runTest(query, query);
-        Assert.fail("exception condition expected");
     }
     
     @Test
-    public void testErrorIndexOnlyExpansion() throws Exception {
-        log.info("------  testErrorIndexOnly  ------");
-        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
-                        + LT_OP + "104)";
-        runTest(query, query);
-    }
-    
-    @Test(expected = InvalidQueryException.class)
-    public void testErrorFilterIncludeRegex() throws Exception {
+    public void testDelayedFilterIncludeRegex() throws Exception {
         log.info("------  testErrorFilterIncludeRegex  ------");
         String state = "'ohio'";
         String code = "'itA'";
@@ -144,6 +133,16 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
             runTest(query, expectQuery);
         }
+    }
+    
+    // ============================================
+    // error conditions
+    @Test
+    public void testErrorIndexOnlyExpansion() throws Exception {
+        log.info("------  testErrorIndexOnly  ------");
+        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
+                        + LT_OP + "104)";
+        runTest(query, query);
     }
     
     @Test

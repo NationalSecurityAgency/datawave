@@ -1,6 +1,8 @@
 package datawave.query;
 
 import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.query.language.functions.jexl.EvaluationOnly;
+import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
@@ -224,6 +226,15 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         this.auths = CitiesDataType.getTestAuths();
         this.documentKey = CityField.EVENT_ID.name();
         
-        this.logic.setParser(new LuceneToJexlQueryParser());
+        LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
+        
+        for (JexlQueryFunction queryFunction : parser.getAllowedFunctions()) {
+            if (queryFunction instanceof EvaluationOnly) {
+                ((EvaluationOnly) queryFunction).setParser(parser);
+                break;
+            }
+        }
+        
+        this.logic.setParser(parser);
     }
 }
