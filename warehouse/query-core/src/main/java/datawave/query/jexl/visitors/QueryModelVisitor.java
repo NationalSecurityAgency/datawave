@@ -81,6 +81,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
     public static ASTJexlScript applyModel(ASTJexlScript script, QueryModel queryModel, Set<String> validFields) {
         QueryModelVisitor visitor = new QueryModelVisitor(queryModel, validFields);
         
+        script = TreeFlatteningRebuildingVisitor.flatten(script);
         return (ASTJexlScript) script.jjtAccept(visitor, null);
     }
     
@@ -155,7 +156,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
             return node;
         }
         
-        ASTAndNode smashed = TreeFlatteningRebuildingVisitor.flatten(node);
         Multimap<String,JexlNode> lowerBounds = ArrayListMultimap.create(), upperBounds = ArrayListMultimap.create();
         List<JexlNode> others = Lists.newArrayList();
         for (JexlNode child : JexlNodes.children(node)) {
@@ -242,7 +242,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
          * The rebuilding visitor adds whatever {visit()} returns to the parent's child list, so we shouldn't have some weird object graph that means old nodes
          * never get GC'd because {super.visit()} will reset the parent in the call to {copy()}
          */
-        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[others.size()])), data);
+        return super.visit(JexlNodes.children(node, others.toArray(new JexlNode[others.size()])), data);
     }
     
     /**
