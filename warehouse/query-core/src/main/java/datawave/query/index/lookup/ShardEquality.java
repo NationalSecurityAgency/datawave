@@ -53,26 +53,45 @@ public class ShardEquality {
         return a.compareTo(b) >= 0;
     }
     
-    // Days are the yyyymmdd, shards are yyyymmdd_shardnum.
+    // Days are yyyymmdd, shards are yyyymmdd_shardnum.
     public static boolean isDay(String shard) {
-        return shard.indexOf('_') == -1;
+        return shard.lastIndexOf('_') == -1;
     }
     
+    /**
+     * Given the YYYYMMDD_shardNum construct it is faster to determine shard identity with a search that starts from the end of the string
+     * 
+     * @param shard
+     *            a shard
+     * @return true if the shard is not a day
+     */
     public static boolean isShard(String shard) {
-        return shard.indexOf('_') != -1;
+        return shard.lastIndexOf('_') != -1;
     }
     
     /**
      * A faster method of determining "a.startsWith(b)" given the YYYYMMDD structure of a shard.
      *
      * @param a
-     *            shard A
+     *            shard A that is a day
      * @param b
-     *            shard B
-     * @return true if shard A matches shard B
+     *            shard B that could be a day or shard
+     * @return true if shard B starts with shard A
      */
     public static boolean daysMatch(String a, String b) {
-        for (int ii = 7; ii >= 0; ii--) {
+        int bIndex = b.lastIndexOf('_');
+        // Check for case where shard B is a day, thus returning -1 for an underscore index
+        if (bIndex == -1) {
+            bIndex = b.length();
+        }
+        
+        // Check for case where A is a day range for a shorter year string than B
+        // i.e., 867 vs. 1776
+        if (bIndex > a.length()) {
+            return false;
+        }
+        
+        for (int ii = bIndex - 1; ii >= 0; ii--) {
             if (a.charAt(ii) != b.charAt(ii)) {
                 return false;
             }

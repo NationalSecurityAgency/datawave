@@ -87,5 +87,16 @@ public class ShardEqualityTest {
         assertTrue(ShardEquality.daysMatch("20190314", "20190314_11"));
         assertFalse(ShardEquality.daysMatch("20190314", "20191224"));
         assertFalse(ShardEquality.daysMatch("20190314", "20190307_117"));
+        
+        // Test 'non-standard' years, i.e., greater and less than 4 digits
+        // 40k != 2019
+        assertFalse(ShardEquality.daysMatch("400001225", "20190307_117"));
+        assertFalse(ShardEquality.daysMatch("400001225", "20190307"));
+        // 867 A.D. != 2019
+        assertFalse(ShardEquality.daysMatch("8671225", "20190307_117"));
+        assertFalse(ShardEquality.daysMatch("8671225", "20190307"));
+        // 40K != 876 A.D.
+        assertFalse(ShardEquality.daysMatch("8671225", "400001225"));
+        assertFalse(ShardEquality.daysMatch("400001225", "8671225"));
     }
 }
