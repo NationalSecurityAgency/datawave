@@ -8,6 +8,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -288,6 +289,10 @@ public class MapReduceBean {
                     List<String> selectors = job.getSelectors(queryParameters, oozieConf);
                     if (selectors != null && !selectors.isEmpty()) {
                         queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                    }
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                     }
                     auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {
