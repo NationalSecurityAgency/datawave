@@ -670,6 +670,10 @@ public class QueryExecutorBean implements QueryExecutor {
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
                         }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                        }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
                         log.error("Error validating audit parameters", e);
@@ -851,6 +855,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1204,6 +1212,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -2835,7 +2847,12 @@ public class QueryExecutorBean implements QueryExecutor {
             AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    auditor.audit(duplicate.toMap());
+                    MultivaluedMap<String,String> queryParameters = duplicate.toMap();
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                    }
+                    auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {
                     log.error("Error validating audit parameters", e);
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
