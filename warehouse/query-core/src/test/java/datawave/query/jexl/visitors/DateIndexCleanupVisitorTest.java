@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import static datawave.query.Constants.SHARD_DAY_HINT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DateIndexCleanupVisitorTest {
     
@@ -50,5 +51,6 @@ public class DateIndexCleanupVisitorTest {
         ASTJexlScript cleaned = DateIndexCleanupVisitor.cleanup(script);
         String builtQuery = JexlStringBuildingVisitor.buildQuery(cleaned);
         assertEquals(expected, builtQuery);
+        assertTrue(JexlASTHelper.validateLineage(cleaned, true));
     }
 }
