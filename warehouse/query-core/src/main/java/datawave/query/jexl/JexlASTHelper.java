@@ -19,7 +19,6 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -35,10 +34,8 @@ import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -1204,13 +1201,15 @@ public class JexlASTHelper {
         return nodes;
     }
     
-    protected static boolean isDelayedPredicate(JexlNode currNode) {
-        if (ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
-                        || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode))
-            return true;
-        else
-            return false;
+    /**
+     * Return whether to not the provided node is an instance of a delayed predicate.
+     * 
+     * @param node
+     *            the node
+     * @return true if the node is an instance of a delayed predicate, or false otherwise
+     */
+    public static boolean isDelayedPredicate(JexlNode node) {
+        return QueryPropertyMarkerVisitor.instanceOfAny(node);
     }
     
     /**

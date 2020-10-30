@@ -13,19 +13,13 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -141,24 +135,12 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         /**
          * If we have a delayed predicate we can safely assume that expansion has occurred in the unfieldex expansion along with all types
          */
-        if (isDelayedPredicate(node)) {
+        if (JexlASTHelper.isDelayedPredicate(node)) {
             return node;
         } else {
             return super.visit(node, data);
         }
         
-    }
-    
-    /**
-     * method to return if the current node is an instance of a delayed predicate
-     * 
-     * @param currNode
-     * @return
-     */
-    protected boolean isDelayedPredicate(JexlNode currNode) {
-        return ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
-                        || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode);
     }
     
     @Override

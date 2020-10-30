@@ -56,7 +56,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     private QueryPropertyMarkerVisitor() {}
     
     public static boolean instanceOfAny(JexlNode node) {
-        return instanceOfAny(node, (List) null);
+        return instanceOfAny(node, null);
     }
     
     public static boolean instanceOfAny(JexlNode node, List<JexlNode> sourceNodes) {
@@ -98,12 +98,12 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         
         if (node != null) {
             if (types != null)
-                types.stream().forEach(type -> visitor.typeIdentifiers.add(type.getSimpleName()));
+                types.forEach(type -> visitor.typeIdentifiers.add(type.getSimpleName()));
             else
                 visitor.typeIdentifiers.addAll(TYPE_IDENTIFIERS);
             
             if (except != null) {
-                except.stream().forEach(e -> visitor.rejectedIdentifiers.add(e.getSimpleName()));
+                except.forEach(e -> visitor.rejectedIdentifiers.add(e.getSimpleName()));
             }
             
             node.jjtAccept(visitor, null);
