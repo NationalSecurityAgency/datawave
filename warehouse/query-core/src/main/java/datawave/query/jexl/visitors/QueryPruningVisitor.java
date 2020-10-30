@@ -104,6 +104,10 @@ public class QueryPruningVisitor extends BaseVisitor {
         
         copy.jjtAccept(visitor, null);
         
+        // Now since we could have removed children within AND/OR nodes,
+        // reflatten to remove boolean operators with single children
+        copy = TreeFlatteningRebuildingVisitor.flatten(copy);
+        
         if (showPrune) {
             after = JexlStringBuildingVisitor.buildQuery(copy);
             if (StringUtils.equals(before, after)) {
