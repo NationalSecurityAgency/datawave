@@ -92,6 +92,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         
+        script = TreeFlatteningRebuildingVisitor.flatten(script);
         return (T) script.jjtAccept(visitor, null);
     }
     
@@ -166,10 +167,9 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             return node;
         }
         
-        ASTAndNode smashed = TreeFlatteningRebuildingVisitor.flatten(node);
         HashMap<String,JexlNode> lowerBounds = Maps.newHashMap(), upperBounds = Maps.newHashMap();
         List<JexlNode> others = Lists.newArrayList();
-        for (JexlNode child : JexlNodes.children(smashed)) {
+        for (JexlNode child : JexlNodes.children(node)) {
             // if the child has a method attached, it is not eligible for ranges
             if (JexlASTHelper.HasMethodVisitor.hasMethod(child)) {
                 others.add(child);
@@ -266,7 +266,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
          * The rebuilding visitor adds whatever {visit()} returns to the parent's child list, so we shouldn't have some weird object graph that means old nodes
          * never get GC'd because {super.visit()} will reset the parent in the call to {copy()}
          */
-        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[0])), data);
+        return super.visit(JexlNodes.children(node, others.toArray(new JexlNode[0])), data);
     }
     
     @Override
