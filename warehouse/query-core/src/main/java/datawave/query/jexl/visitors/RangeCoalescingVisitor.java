@@ -40,7 +40,6 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
         
         JexlNode andNode = JexlNodes.newInstanceOfType(node);
         andNode.image = node.image;
-        andNode.jjtSetParent(node.jjtGetParent());
         
         // We have a bounded range completely inside of an AND/OR
         if (!ranges.isEmpty()) {
