@@ -5,12 +5,6 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
@@ -22,9 +16,6 @@ import java.util.Map;
 
 /**
  * Visits an JexlNode tree, and coalesces bounded ranges into separate AND expressions.
- *
- * 
- *
  */
 public class RangeCoalescingVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(RangeCoalescingVisitor.class);
@@ -43,43 +34,12 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
     }
     
     @Override
-    public Object visit(ASTERNode node, Object data) {
-        return node;
-    }
-    
-    @Override
-    public Object visit(ASTNRNode node, Object data) {
-        return node;
-    }
-    
-    @Override
-    public Object visit(ASTLTNode node, Object data) {
-        return node;
-    }
-    
-    @Override
-    public Object visit(ASTGTNode node, Object data) {
-        return node;
-    }
-    
-    @Override
-    public Object visit(ASTLENode node, Object data) {
-        return node;
-    }
-    
-    @Override
-    public Object visit(ASTGENode node, Object data) {
-        return node;
-    }
-    
-    @Override
     public Object visit(ASTAndNode node, Object data) {
         List<JexlNode> leaves = new ArrayList<>();
         Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, leaves, false);
         
         JexlNode andNode = JexlNodes.newInstanceOfType(node);
         andNode.image = node.image;
-        andNode.jjtSetParent(node.jjtGetParent());
         
         // We have a bounded range completely inside of an AND/OR
         if (!ranges.isEmpty()) {
@@ -89,7 +49,6 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
             JexlNodes.ensureCapacity(andNode, node.jjtGetNumChildren());
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode newChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, data);
-                
                 andNode.jjtAddChild(newChild, i);
                 newChild.jjtSetParent(andNode);
             }
@@ -124,7 +83,9 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
             
             JexlNodes.ensureCapacity(onlyRangeNodes, range.getValue().size());
             for (int i = 0; i < range.getValue().size(); i++) {
-                onlyRangeNodes.jjtAddChild(range.getValue().get(i), i);
+                JexlNode node = range.getValue().get(i);
+                onlyRangeNodes.jjtAddChild(node, i);
+                node.jjtSetParent(onlyRangeNodes);
             }
             
             JexlNode wrappedNode = JexlNodeFactory.wrap(onlyRangeNodes);
@@ -136,7 +97,6 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
         
         // If we had no other nodes than this bounded range, we can strip out the original parent
         if (newNode.jjtGetNumChildren() == 1) {
-            newNode.jjtGetChild(0).jjtSetParent(newNode.jjtGetParent());
             return newNode.jjtGetChild(0);
         }
         
