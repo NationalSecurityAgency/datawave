@@ -1,22 +1,20 @@
 package datawave.query.tables.facets;
 
-import java.text.MessageFormat;
-import java.util.NoSuchElementException;
-
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.PrintingVisitor;
+import com.google.common.collect.Multimap;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.AllTermsIndexedVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import com.google.common.collect.Multimap;
+import java.text.MessageFormat;
+import java.util.NoSuchElementException;
 
 public class FacetCheck extends AllTermsIndexedVisitor {
     
