@@ -61,6 +61,7 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
             for (int i = 0; i < toAttach.jjtGetNumChildren(); i++) {
                 JexlNode node = copy(prunedNode);
                 JexlNode attach = (JexlNode) toAttach.jjtGetChild(i).jjtAccept(this, data);
+                attach.jjtSetParent(node);
                 node.jjtAddChild(attach, node.jjtGetNumChildren());
                 newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
                 node.jjtSetParent(newNode);
