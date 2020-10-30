@@ -787,7 +787,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
         cache.put(eq(queryId.toString()), isA(RunningQuery.class));
-        expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
+        expect(this.queryLogic1.getQueryPlan()).andReturn(queryName).once();
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
         
         // Set expectations of the next logic
@@ -958,7 +958,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
-        expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
+        expect(this.queryLogic1.getQueryPlan()).andReturn(queryName).once();
         cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
         
@@ -1241,7 +1241,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
-        expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
+        expect(this.queryLogic1.getQueryPlan()).andReturn(queryName).once();
         this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
         
@@ -2798,7 +2798,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
-        expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
+        expect(this.queryLogic1.getQueryPlan()).andReturn(queryName).once();
         this.connectionFactory.returnConnection(null); // These 2 lines prevent the bean's exception-handling logic (in combination
         PowerMock.expectLastCall().anyTimes(); // with PowerMock) from masking an actual problem if one occurs.
         cache.unlock(queryName);
@@ -3351,7 +3351,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations of the cleanup
         this.connectionFactory.returnConnection(this.connector);
-        EasyMock.expectLastCall().times(2);
+        EasyMock.expectLastCall();
         queryLogic1.close();
         EasyMock.expectLastCall();
         
@@ -3491,7 +3491,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations of the cleanup
         this.connectionFactory.returnConnection(this.connector);
-        EasyMock.expectLastCall().times(2);
+        EasyMock.expectLastCall();
         queryLogic1.close();
         EasyMock.expectLastCall();
         

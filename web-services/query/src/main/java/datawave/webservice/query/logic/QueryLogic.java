@@ -297,4 +297,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     Set<String> getExampleQueries();
     
+    String getQueryPlan();
+    
 }

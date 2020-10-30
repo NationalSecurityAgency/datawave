@@ -109,17 +109,17 @@ import java.util.concurrent.TimeUnit;
  * </pre>
  *
  * We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
- * 
+ *
  * <pre>
  *  ==, !=, &gt;, &ge;, &lt;, &le;, =~, !~, and the reserved word 'null'
  * </pre>
  *
  * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
  * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
- * 
+ *
  * <h1>Constraints on Query Structure</h1> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
  * We are rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
- * 
+ *
  * <h1>Notes on Optimization</h1> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
  *
  * <pre>
@@ -149,9 +149,9 @@ import java.util.concurrent.TimeUnit;
  *     Filtering must be enabled by setting {@link ShardQueryConfiguration#useFilters} to true and providing a list of {@link datawave.query.index.lookup.DataTypeFilter} class
  *     names in {@link ShardQueryConfiguration#filterClassNames}.
  *  6. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
- * 
+ *
  * </pre>
- * 
+ *
  * @see datawave.query.enrich
  */
 public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
@@ -1840,7 +1840,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * Returns a value indicating whether index-only filter functions (e.g., #INCLUDE, #EXCLUDE) should be enabled. If true, the use of such filters can
      * potentially consume a LOT of memory.
-     * 
+     *
      * @return true, if index-only filter functions should be enabled.
      */
     public boolean isIndexOnlyFilterFunctionsEnabled() {
@@ -1850,7 +1850,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * Sets a value indicating whether index-only filter functions (e.g., #INCLUDE and #EXCLUDE) should be enabled. If true, the use of such filters can
      * potentially consume a LOT of memory.
-     * 
+     *
      * @param enabled
      *            indicates whether index-only filter functions (e.g., <i>filter:includeRegex()</i> and <i>not(filter:includeRegex())</i>) should be enabled
      */

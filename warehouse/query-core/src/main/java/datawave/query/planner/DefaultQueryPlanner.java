@@ -403,6 +403,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         final QueryStopwatch timers = config.getTimers();
+        
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rebuild JEXL String from AST");
+        
+        // Saving state of query string prior to global index lookup
+        String newQueryString = JexlStringBuildingVisitor.buildQuery(queryTree);
+        if (log.isTraceEnabled())
+            log.trace("newQueryString is " + newQueryString);
+        if (StringUtils.isBlank(newQueryString)) {
+            stopwatch.stop();
+            QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_QUERY_STRING_AFTER_MODIFICATION);
+            throw new DatawaveFatalQueryException(qe);
+        }
+        
+        stopwatch.stop();
+        this.plannedScript = newQueryString;
+        config.setQueryString(this.plannedScript);
+        
         Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
         
         // a full table scan is required if
@@ -414,19 +431,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new FullTableScansDisallowedException(qe);
         }
         
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rebuild JEXL String from AST");
-        
-        // Set the final query after we're done mucking with it
-        String newQueryString = JexlStringBuildingVisitor.buildQuery(queryTree);
-        if (log.isTraceEnabled())
-            log.trace("newQueryString is " + newQueryString);
-        if (StringUtils.isBlank(newQueryString)) {
-            stopwatch.stop();
-            QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_QUERY_STRING_AFTER_MODIFICATION);
-            throw new DatawaveFatalQueryException(qe);
-        }
-        
-        stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
         
         queryData.setQuery(newQueryString);
@@ -441,7 +445,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
-        this.plannedScript = newQueryString;
         // docsToCombineForEvaluation is only enabled when threading is used
         if (config.getMaxEvaluationPipelines() == 1)
             docsToCombineForEvaluation = -1;

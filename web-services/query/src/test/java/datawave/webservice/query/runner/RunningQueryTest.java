@@ -110,6 +110,7 @@ public class RunningQueryTest {
         TransformIterator iter = new TransformIterator();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         expect(logic.getTransformIterator(settings)).andReturn(iter);
+        expect(logic.getQueryPlan()).andReturn("query").once();
         replay(logic);
         
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());

@@ -322,4 +322,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public SelectorExtractor getSelectorExtractor() {
         return selectorExtractor;
     }
+    
+    public String getQueryPlan() {
+        return getConfig().getQueryString();
+    }
 }

@@ -160,8 +160,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
-            // the configuration query string should now hold the planned query
-            this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
             this.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);
             testForUncaughtException(0);
@@ -171,6 +169,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.getMetric().setError(e);
             throw e;
         } finally {
+            // set metric query plan from the query logic
+            this.getMetric().setPlan(this.logic.getQueryPlan());
+            
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
             touch();
             removeNDC();
