@@ -1,14 +1,9 @@
 package datawave.query.jexl.visitors;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -20,6 +15,10 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Visits an JexlNode tree, and coalesces bounded ranges into separate AND expressions.

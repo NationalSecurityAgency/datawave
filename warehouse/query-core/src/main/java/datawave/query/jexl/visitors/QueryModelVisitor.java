@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -310,8 +309,8 @@ public class QueryModelVisitor extends RebuildingVisitor {
             return toReturn;
         }
         
-        Object leftSeed, rightSeed;
-        Set<Object> left = Sets.newHashSet(), right = Sets.newHashSet();
+        JexlNode leftSeed, rightSeed;
+        Set<JexlNode> left = Sets.newHashSet(), right = Sets.newHashSet();
         boolean isNullEquality = false;
         
         if (node instanceof ASTEQNode && (leftNode instanceof ASTNullLiteral || rightNode instanceof ASTNullLiteral)) {
@@ -338,10 +337,10 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         if (leftSeed instanceof ASTReference) {
             // String fieldName = JexlASTHelper.getIdentifier((JexlNode)leftSeed);
-            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers((ASTReference) leftSeed);
+            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(leftSeed);
             if (identifiers.size() > 1) {
-                log.warn("I did not expect to see more than one Identifier here for " + JexlStringBuildingVisitor.buildQuery((ASTReference) leftSeed)
-                                + " from " + JexlStringBuildingVisitor.buildQuery(leftNode));
+                log.warn("I did not expect to see more than one Identifier here for " + JexlStringBuildingVisitor.buildQuery(leftSeed) + " from "
+                                + JexlStringBuildingVisitor.buildQuery(leftNode));
             }
             for (ASTIdentifier identifier : identifiers) {
                 for (String fieldName : getAliasesForField(JexlASTHelper.deconstructIdentifier(identifier))) {
@@ -358,10 +357,10 @@ public class QueryModelVisitor extends RebuildingVisitor {
         }
         
         if (rightSeed instanceof ASTReference) {
-            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers((ASTReference) rightSeed);
+            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(rightSeed);
             if (identifiers.size() > 1) {
-                log.warn("I did not expect to see more than one Identifier here for " + JexlStringBuildingVisitor.buildQuery((ASTReference) rightSeed)
-                                + " from " + JexlStringBuildingVisitor.buildQuery(rightNode));
+                log.warn("I did not expect to see more than one Identifier here for " + JexlStringBuildingVisitor.buildQuery(rightSeed) + " from "
+                                + JexlStringBuildingVisitor.buildQuery(rightNode));
             }
             for (ASTIdentifier identifier : identifiers) {
                 for (String fieldName : getAliasesForField(JexlASTHelper.deconstructIdentifier(identifier))) {
@@ -381,14 +380,15 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         @SuppressWarnings("unchecked")
         // retrieve the cartesian product
-        Set<List<Object>> product = Sets.cartesianProduct(left, right);
+        Set<List<JexlNode>> product = Sets.cartesianProduct(left, right);
         
         /**
          * use the product transformer to shallow copy the jexl nodes. We've created new nodes that will be embedded within an ast reference. As a result, we
          * need to ensure that if we create a logical structure ( such as an or ) -- each literal references a unique identifier from the right. Otherwise,
          * subsequent visitors will reference incorrection sub trees, and potentially negate the activity of the query model visitor
          */
-        Set<List<Object>> newSet = product.stream().map(new ProductTransformer()::apply).collect(Collectors.toSet());
+        Set<List<JexlNode>> newSet = product.stream().map(list -> list.stream().map(RebuildingVisitor::copy).collect(Collectors.toList()))
+                        .collect(Collectors.toSet());
         
         if (product.size() > 1) {
             JexlNode expanded;
@@ -401,7 +401,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
             return expanded;
         } else if (1 == product.size()) {
-            List<Object> pair = product.iterator().next();
+            List<JexlNode> pair = product.iterator().next();
             JexlNode expanded = JexlNodeFactory.buildUntypedBinaryNode(node, pair.get(0), pair.get(1));
             if (log.isTraceEnabled())
                 log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
@@ -412,23 +412,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
         if (log.isTraceEnabled())
             log.trace("just returning the original:" + PrintingVisitor.formattedQueryString(node));
         return node;
-    }
-    
-    /**
-     * Ensures that each object created as a result of the cartesian product of the literal and identifiers gives us unique references within the tree. Without
-     * this functional transformation you may have subsequent methods that use your objects to create nodes, referencing the embedded literals
-     */
-    protected static class ProductTransformer implements Function<List<Object>,List<Object>> {
-        @Override
-        public List<Object> apply(List<Object> objects) {
-            return objects.stream().map(o -> {
-                if (o instanceof JexlNode) {
-                    return copy((JexlNode) o);
-                } else {
-                    return o;
-                }
-            }).collect(Collectors.toList());
-        }
     }
     
     /**
