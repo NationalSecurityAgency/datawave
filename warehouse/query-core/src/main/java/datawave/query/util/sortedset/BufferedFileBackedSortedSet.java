@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
@@ -403,15 +404,23 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
                 if (fileSet.isPersisted()) {
                     try {
                         fileSet.load();
-                        fileSet.remove(o);
-                        fileSet.persist();
-                        removed = true;
+                        if (fileSet.remove(o)) {
+                            removed = true;
+                            fileSet.persist();
+                        } else {
+                            fileSet.unload();
+                            // since we checked for containership first, remove should have returned true
+                            throw new IllegalStateException("FileSet contains object but failed to remove it from persisted set");
+                        }
                     } catch (Exception e) {
                         throw new IllegalStateException("Unable to remove item from underlying files", e);
                     }
                 } else {
                     if (fileSet.remove(o)) {
                         removed = true;
+                    } else {
+                        // since we checked for containership first, remove should have returned true
+                        throw new IllegalStateException("FileSet contains object but failed to remove it");
                     }
                 }
             }
@@ -432,8 +441,10 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
                     fileSet.load();
                     if (fileSet.retainAll(c)) {
                         modified = true;
+                        fileSet.persist();
+                    } else {
+                        fileSet.unload();
                     }
-                    fileSet.persist();
                 } catch (Exception e) {
                     throw new IllegalStateException("Unable to remove item from underlying files", e);
                 }
@@ -459,8 +470,10 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
                     fileSet.load();
                     if (fileSet.removeAll(c)) {
                         modified = true;
+                        fileSet.persist();
+                    } else {
+                        fileSet.unload();
                     }
-                    fileSet.persist();
                 } catch (Exception e) {
                     throw new IllegalStateException("Unable to remove item from underlying files", e);
                 }
@@ -474,6 +487,35 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
             this.sizeModified = true;
         }
         return modified;
+    }
+    
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        boolean removed = false;
+        for (SortedSet<E> subSet : set.getSets()) {
+            FileSortedSet<E> fileSet = (FileSortedSet<E>) subSet;
+            if (fileSet.isPersisted()) {
+                try {
+                    fileSet.load();
+                    if (fileSet.removeIf(filter)) {
+                        removed = true;
+                        fileSet.persist();
+                    } else {
+                        fileSet.unload();
+                    }
+                } catch (Exception e) {
+                    throw new IllegalStateException("Unable to remove item from underlying files", e);
+                }
+            } else {
+                if (fileSet.removeIf(filter)) {
+                    removed = true;
+                }
+            }
+        }
+        if (removed) {
+            this.sizeModified = true;
+        }
+        return removed;
     }
     
     @Override

@@ -232,6 +232,12 @@ public abstract class UniqueTest {
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "death_date,birth_date");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
     
     @Test
@@ -248,6 +254,12 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
         
         queryString = "UUID =~ '^[CS].*' && f:unique('DEATH_DATE','$BIRTH_DATE')";
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID =~ '^[CS].*' && f:unique('death_date','$birth_date')";
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -273,6 +285,12 @@ public abstract class UniqueTest {
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID:/^[CS].*/ AND #UNIQUE(death_date,birth_date)";
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
     
     @Test(expected = InvalidQueryException.class)
@@ -285,6 +303,9 @@ public abstract class UniqueTest {
         Date endDate = format.parse("20150101");
         
         String queryString = "UUID:/^[CS].*/ AND #UNIQUE(FOO_BAR,$MAGIC)";
+        runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID:/^[CS].*/ AND #UNIQUE(foo_bar,$magic)";
         runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
     }
     

@@ -362,7 +362,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private String getUniqueField(String documentField) {
         String baseDocumentField = getBaseFieldname(documentField);
         for (String field : fields) {
-            if (isMatchingField(baseDocumentField, field)) {
+            // Match should be case insensitive
+            if (isMatchingField(baseDocumentField.toUpperCase(), field.toUpperCase())) {
                 return field;
             }
         }
