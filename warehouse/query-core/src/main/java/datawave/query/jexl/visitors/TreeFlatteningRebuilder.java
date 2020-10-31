@@ -148,8 +148,9 @@ public class TreeFlatteningRebuilder {
      *            the node to be copied
      * @param postOrderDeque
      *            the post order traversal of the copied tree
+     * @return the copied tree
      */
-    private void copyTree(JexlNode node, Deque<JexlNode> postOrderDeque) {
+    private JexlNode copyTree(JexlNode node, Deque<JexlNode> postOrderDeque) {
         // add all the nodes to the stack and iterate...
         Deque<JexlNode> workingStack = new LinkedList<>();
         
@@ -183,6 +184,8 @@ public class TreeFlatteningRebuilder {
                 JexlNodes.children(poppedNode, copiedChildren.toArray(new JexlNode[0]));
             }
         }
+        
+        return copiedNode;
     }
     
     private List<JexlNode> getAndOrLeaves(JexlNode node) {
