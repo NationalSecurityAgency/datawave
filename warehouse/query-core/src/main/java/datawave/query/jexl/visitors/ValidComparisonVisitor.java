@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDivNode;
@@ -23,9 +22,7 @@ import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
  * Validates all expressions in a query tree (e.g. literal == literal is considered invalid)
@@ -40,172 +37,128 @@ public class ValidComparisonVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         // not concerned with literals for function nodes
-        return null;
+        return data;
     }
     
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         // not concerned with literals for method nodes
-        return null;
+        return data;
     }
     
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
         // not concerned with literals for additive nodes
-        return null;
+        return data;
     }
     
     @Override
     public Object visit(ASTMulNode node, Object data) {
         // not concerned with literals for mul nodes
-        return null;
+        return data;
     }
     
     @Override
     public Object visit(ASTDivNode node, Object data) {
         // not concerned with literals for div nodes
-        return null;
+        return data;
     }
     
     @Override
     public Object visit(ASTModNode node, Object data) {
         // not concerned with literals for mod nodes
-        return null;
+        return data;
     }
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     @Override
     public Object visit(ASTAssignment node, Object data) {
-        List<Object> literals = new ArrayList<>();
-        super.visit(node, literals);
-        
-        validateExpression(node, data, literals);
-        
+        validateExpression(node, super.visit(node, new MutableInt()));
         return data;
     }
     
     /* literal visitors */
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
-        visitLiteral(node, data);
-        return null;
+        return visitLiteral(data);
     }
     
     @Override
     public Object visit(ASTTrueNode node, Object data) {
-        visitLiteral(node, data);
-        return null;
+        return visitLiteral(data);
     }
     
     @Override
     public Object visit(ASTFalseNode node, Object data) {
-        visitLiteral(node, data);
-        return null;
+        return visitLiteral(data);
     }
     
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
-        visitLiteral(node, data);
-        return null;
+        return visitLiteral(data);
     }
     
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
-        visitLiteral(node, data);
-        return null;
+        return visitLiteral(data);
     }
     
-    private void visitLiteral(JexlNode node, Object data) {
-        List<Object> literals = (List<Object>) data;
-        literals.add(JexlASTHelper.getLiteralValue(node));
-    }
-    
-    private void validateExpression(JexlNode node, Object data, List<Object> literals) {
-        // add the found literals to the parent list if necessary
-        if (data instanceof List) {
-            ((List<Object>) data).addAll(literals);
+    private Object visitLiteral(Object data) {
+        if (data instanceof MutableInt) {
+            ((MutableInt) data).increment();
         }
-        
-        if (literals.size() > 1) {
+        return data;
+    }
+    
+    private void validateExpression(JexlNode node, Object data) {
+        if ((data instanceof MutableInt) && (((MutableInt) data).intValue() > 1)) {
             throw new DatawaveFatalQueryException("Cannot compare two literals.  Invalid expression: " + JexlStringBuildingVisitor.buildQuery(node));
         }
     }
