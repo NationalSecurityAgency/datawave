@@ -75,7 +75,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1204,10 +1206,19 @@ public class JexlASTHelper {
         return nodes;
     }
     
-    public static boolean isDelayedPredicate(JexlNode currNode) {
-        return ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
-                        || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode);
+    private static final List<Class<? extends QueryPropertyMarker>> DELAYED_PREDICATE_TYPES = Collections.unmodifiableList(Arrays.asList(
+                    ASTDelayedPredicate.class, ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class,
+                    ExceededTermThresholdMarkerJexlNode.class, IndexHoleMarkerJexlNode.class, ASTEvaluationOnly.class));
+    
+    /**
+     * Return whether or not the provided node is a delayed predicate type.
+     * 
+     * @param node
+     *            the node
+     * @return true if the node is a delayed predicate, or false otherwise
+     */
+    public static boolean isDelayedPredicate(JexlNode node) {
+        return QueryPropertyMarkerVisitor.instanceOf(node, DELAYED_PREDICATE_TYPES, null);
     }
     
     /**
