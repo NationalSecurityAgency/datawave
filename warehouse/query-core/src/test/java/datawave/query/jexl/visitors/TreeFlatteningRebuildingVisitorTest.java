@@ -1,8 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
@@ -13,7 +10,6 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -150,6 +146,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         assertEquals(expectedQueryString, originalQueryString);
         
         assertTrue(TreeEqualityVisitor.isEqual(expectedScript, flattened, new TreeEqualityVisitor.Reason()));
+        assertTrue(JexlASTHelper.validateLineage(flattened, true));
     }
     
     @Test
@@ -158,15 +155,16 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expected = "(ASTDelayedPredicate = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8')) || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
         Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
     
     @Test
     public void depthNoStackTraceOrTest() throws Exception {
         final int numTerms = 10000;
         final StringBuilder sb = new StringBuilder(13 * numTerms); // 13 == "abc_" + 5 + " OR "
-        sb.append("abc_" + StringUtils.leftPad(Integer.toString(numTerms, 10), 5, '0'));
+        sb.append("abc_").append(StringUtils.leftPad(Integer.toString(numTerms, 10), 5, '0'));
         for (int i = 2; i <= numTerms; i++) {
-            sb.append(" OR " + i);
+            sb.append(" OR ").append(i);
         }
         Assert.assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringReader(";")).parse(new StringReader(new LuceneToJexlQueryParser()
                         .parse(sb.toString()).toString()), null)));
@@ -178,6 +176,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expected = "((a && b && c && d) || b || c || d || e || f || g || h || i || j || k)";
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
         Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
     
     @Test
@@ -186,6 +185,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expected = "((a && b && (c1 || c2 || c3) && d) || b || c || d || e || f || g || (h1 && h2 && h3) || i || j || k)";
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
         Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(node));
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
     
     @Test
@@ -200,6 +200,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         Assert.assertEquals(1, flattened.jjtGetNumChildren());
         Assert.assertEquals(ASTEQNode.class, flattened.jjtGetChild(0).getClass());
         Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(eqNode), JexlStringBuildingVisitor.buildQuery(flattened));
+        assertTrue(JexlASTHelper.validateLineage(flattened, true));
     }
     
 }
