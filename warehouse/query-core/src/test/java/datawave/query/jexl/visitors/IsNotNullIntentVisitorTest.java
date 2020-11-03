@@ -40,7 +40,7 @@ public class IsNotNullIntentVisitorTest {
     private void assertResult(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         ASTJexlScript actual = IsNotNullIntentVisitor.fixNotNullIntent(originalScript);
-     
+        
         // Verify the resulting script is as expected and has a valid lineage.
         assertScriptEquality(actual, expected);
         assertLineage(actual);
