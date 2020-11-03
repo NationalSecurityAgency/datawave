@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.util.Map;
 
 import static datawave.query.jexl.functions.GeoWaveFunctionsDescriptorTest.convertFunctionToIndexQuery;
+import static org.junit.Assert.assertTrue;
 
 public class GeoWavePruningVisitorTest {
     
@@ -35,7 +36,7 @@ public class GeoWavePruningVisitorTest {
         Assert.assertEquals("0100", term.getValue());
         
         Assert.assertEquals(query + " && (" + convertFunctionToIndexQuery(query, config) + ")", JexlStringBuildingVisitor.buildQuery(prunedTree));
-        
+        assertTrue(JexlASTHelper.validateLineage(prunedTree, true));
     }
     
     @Test
@@ -55,6 +56,7 @@ public class GeoWavePruningVisitorTest {
         prunedTree.jjtAccept(refExpVisitor, null);
         
         Assert.assertFalse(refExpVisitor.hasChildlessNode);
+        assertTrue(JexlASTHelper.validateLineage(prunedTree, true));
     }
     
     private static class RefExpVisitor extends BaseVisitor {
