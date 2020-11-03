@@ -27,13 +27,10 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.promote;
 
@@ -73,7 +70,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        JexlNode copy = getCopyWithVisitedChildren(node, data);
+        JexlNode copy = (JexlNode) super.visit(node, data);
         
         if (copy.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_ANYFIELD_EXPANSION_MATCH);
@@ -86,17 +83,17 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        return visitJunctionNode(node, data);
+        JexlNode copy = (JexlNode) super.visit(node, data);
+        return visitJunctionNode(copy);
     }
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        return visitJunctionNode(node, data);
+        JexlNode copy = (JexlNode) super.visit(node, data);
+        return visitJunctionNode(copy);
     }
     
-    private Object visitJunctionNode(JexlNode node, Object data) {
-        JexlNode copy = getCopyWithVisitedChildren(node, data);
-        
+    private Object visitJunctionNode(JexlNode copy) {
         switch (copy.jjtGetNumChildren()) {
             case 0:
                 return null;
@@ -107,20 +104,6 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
             default:
                 return copy;
         }
-    }
-    
-    private JexlNode getCopyWithVisitedChildren(JexlNode node, Object data) {
-        // @formatter:off
-        JexlNode[] children = Arrays.stream(JexlNodes.children(node))
-                        .map(n -> (JexlNode) n.jjtAccept(this, data)) // Visit the node.
-                        .filter(Objects::nonNull) // Remove null nodes.
-                        .filter(n -> (!(n instanceof ASTAndNode) && !(n instanceof ASTOrNode)) || JexlNodes.isNotChildless(n)) // Remove empty junction nodes.
-                        .toArray(JexlNode[]::new);
-        // @formatter:on
-        JexlNode copy = JexlNodes.newInstanceOfType(node);
-        copy.image = node.image;
-        JexlNodes.children(copy, children);
-        return copy;
     }
     
     @Override
