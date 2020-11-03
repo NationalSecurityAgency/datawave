@@ -135,7 +135,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         /**
          * If we have a delayed predicate we can safely assume that expansion has occurred in the unfieldex expansion along with all types
          */
-        if (JexlASTHelper.isDelayedPredicate(node)) {
+        if (QueryPropertyMarkerVisitor.isDelayedPredicate(node)) {
             return node;
         } else {
             return super.visit(node, data);

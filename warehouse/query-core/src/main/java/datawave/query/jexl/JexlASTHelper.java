@@ -1211,17 +1211,6 @@ public class JexlASTHelper {
                     ExceededTermThresholdMarkerJexlNode.class, IndexHoleMarkerJexlNode.class, ASTEvaluationOnly.class));
     
     /**
-     * Return whether or not the provided node is a delayed predicate type.
-     * 
-     * @param node
-     *            the node
-     * @return true if the node is a delayed predicate, or false otherwise
-     */
-    public static boolean isDelayedPredicate(JexlNode node) {
-        return QueryPropertyMarkerVisitor.instanceOf(node, DELAYED_PREDICATE_TYPES, null);
-    }
-    
-    /**
      * Get the range operator nodes. If "mustBeIndexed" is true, then a config and helper must be supplied to check if the fields are indexed.
      * 
      * @param root
@@ -1239,7 +1228,7 @@ public class JexlASTHelper {
      */
     protected static void getRangeOperatorNodes(JexlNode root, Class<?> clz, List<JexlNode> nodes, List<JexlNode> otherNodes, Set<String> datatypeFilterSet,
                     MetadataHelper helper, List<JexlNode> nonIndexedRangeNodes, boolean includeDelayed, int maxDepth) {
-        if ((!includeDelayed && isDelayedPredicate(root)) || maxDepth == 0) {
+        if ((!includeDelayed && QueryPropertyMarkerVisitor.isDelayedPredicate(root)) || maxDepth == 0) {
             return;
         }
         for (int i = 0; i < root.jjtGetNumChildren(); i++) {
@@ -1248,7 +1237,7 @@ public class JexlASTHelper {
             // as the root, reference expression nodes, and reference nodes
             if (child.getClass().equals(clz) || child.getClass().equals(ASTReferenceExpression.class) || child.getClass().equals(ASTReference.class)) {
                 // ignore getting range nodes out of delayed expressions as they have already been processed
-                if (includeDelayed || !isDelayedPredicate(child)) {
+                if (includeDelayed || !QueryPropertyMarkerVisitor.isDelayedPredicate(child)) {
                     getRangeOperatorNodes(child, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed, maxDepth - 1);
                 } else if (otherNodes != null) {
                     otherNodes.add(JexlASTHelper.rereference(child));
