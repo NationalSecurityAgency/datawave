@@ -42,7 +42,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        JexlNode returnNode = node;
+        JexlNode returnNode = copy(node);
         FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
         node.jjtAccept(functionMetadata, null);
         
