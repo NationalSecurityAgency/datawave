@@ -54,5 +54,4 @@ deploy_and_test:
       fi
   tags:
     - datawave
-    - shell-executor
-
+    - hadoop3-executor
