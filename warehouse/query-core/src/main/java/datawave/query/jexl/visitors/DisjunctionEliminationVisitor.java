@@ -62,9 +62,8 @@ public class DisjunctionEliminationVisitor extends RebuildingVisitor {
         
         // Visit and enforce collapsing redundant nodes within expression.
         DisjunctionEliminationVisitor visitor = new DisjunctionEliminationVisitor();
-        copy.jjtAccept(visitor, null);
+        return (T) copy.jjtAccept(visitor, null);
         
-        return copy;
     }
     
     @Override
@@ -79,19 +78,17 @@ public class DisjunctionEliminationVisitor extends RebuildingVisitor {
         try {
             List<JexlNode> children = getNonRedundantChildren(node);
             if (children.size() == 1) {
-                // If only one child remains, swap the child node for the current node.
-                JexlNode child = children.get(0);
-                JexlNodes.swap(node.jjtGetParent(), node, child);
-                return child;
-            } else {
-                // If two or more children remain, replace the current children with new children.
+                // If only one child remains, return it.
+                return children.get(0);
+            } else if (children.size() < node.jjtGetNumChildren()) {
+                // If there were some redundant children, but more than one relevant child, return a new AND node with the relevant children.
                 JexlNode copy = new ASTAndNode(JJTANDNODE);
                 copy.image = node.image;
-                for (int i = 0; i < children.size(); i++) {
-                    copy.jjtAddChild(children.get(i), i);
-                }
-                JexlNodes.replaceChild(node.jjtGetParent(), node, copy);
+                JexlNodes.children(copy, children.toArray(new JexlNode[0]));
                 return copy;
+            } else {
+                // If no children are redundant, return a copy of the original node.
+                return copy(node);
             }
         } catch (ParseException e) {
             if (log.isDebugEnabled()) {

@@ -2,13 +2,16 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ConjunctionEliminationVisitorTest {
+    
+    private static final Logger log = Logger.getLogger(ConjunctionEliminationVisitorTest.class);
     
     // A is not reducible.
     @Test
@@ -122,13 +125,33 @@ public class ConjunctionEliminationVisitorTest {
     
     private void visitAndValidate(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         
         // Remove duplicate terms from within expressions.
         ASTJexlScript visitedScript = ConjunctionEliminationVisitor.optimize(originalScript);
         
-        // Visited query should match expected
-        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(visitedScript));
-        assertTrue(TreeEqualityVisitor.isEqual(expectedScript, visitedScript, new TreeEqualityVisitor.Reason()));
+        // Verify the script is as expected, and has a valid lineage.
+        assertScriptEquality(visitedScript, expected);
+        assertLineage(visitedScript);
+        
+        // Verify the original script was not modified, and still has a valid lineage.
+        assertScriptEquality(originalScript, original);
+        assertLineage(originalScript);
+    }
+    
+    private void assertScriptEquality(ASTJexlScript actualScript, String expected) throws ParseException {
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
+        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
+        if (!equal) {
+            log.error("Expected: " + expected);
+            log.error("Actual: " + JexlStringBuildingVisitor.buildQuery(actualScript));
+            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
+            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
+        }
+        assertTrue(reason.reason, equal);
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
 }
