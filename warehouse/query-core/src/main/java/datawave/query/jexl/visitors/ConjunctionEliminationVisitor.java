@@ -67,8 +67,6 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        // Post-order traversal.
-        node.childrenAccept(this, data);
         return removeRedundantConjunctions(node);
     }
     

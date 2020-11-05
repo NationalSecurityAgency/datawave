@@ -68,8 +68,6 @@ public class DisjunctionEliminationVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        // Post-order traversal.
-        node.childrenAccept(this, data);
         return removeRedundantDisjunctions(node);
     }
     
