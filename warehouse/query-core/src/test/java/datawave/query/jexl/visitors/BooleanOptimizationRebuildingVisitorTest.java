@@ -85,7 +85,7 @@ public class BooleanOptimizationRebuildingVisitorTest {
         }
         
         ASTJexlScript resultScript = BooleanOptimizationRebuildingVisitor.optimize(originalScript);
-    
+        
         // Verify the resulting script is as expected, and has a valid lineage.
         assertScriptEquality(resultScript, expected);
         assertLineage(resultScript);
