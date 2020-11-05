@@ -79,7 +79,7 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
             if (children.size() == 1) {
                 // If only one child remains, return it.
                 return children.get(0);
-            } else if(children.size() < node.jjtGetNumChildren()) {
+            } else if (children.size() < node.jjtGetNumChildren()) {
                 // If there were some redundant children, but more than one relevant child, return a new OR node with the relevant children.
                 JexlNode copy = new ASTOrNode(JJTORNODE);
                 copy.image = node.image;
