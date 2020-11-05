@@ -97,7 +97,7 @@ public class RangeCoalescingVisitorTest {
         // Verify that the resulting script is as expected with a valid lineage.
         assertScriptEquality(actualScript, expected);
         assertLineage(actualScript);
-    
+        
         // Verify the original script was not modified and has a valid lineage.
         assertScriptEquality(originalScript, original);
         assertLineage(originalScript);
@@ -107,11 +107,11 @@ public class RangeCoalescingVisitorTest {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         
         ASTJexlScript actualScript = RangeCoalescingVisitor.coalesceRanges(originalScript);
-    
+        
         // Verify that the resulting script is as expected with a valid lineage.
         assertScriptEquality(actualScript, expected, altExpected);
         assertLineage(actualScript);
-    
+        
         // Verify the original script was not modified and has a valid lineage.
         assertScriptEquality(originalScript, original);
         assertLineage(originalScript);
