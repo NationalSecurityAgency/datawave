@@ -14,11 +14,10 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,24 +32,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class ExpandCompositeTermsTest {
     
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandCompositeTermsTest.class);
+    private static final Logger log = Logger.getLogger(ExpandCompositeTermsTest.class);
     
     private static final Set<String> INDEX_FIELDS = Sets.newHashSet("MAKE", "COLOR", "WHEELS", "TEAM", "NAME", "POINTS");
     
-    ShardQueryConfiguration conf;
-    
     private static Multimap<String,String> compositeToFieldMap;
+    
     private static Map<String,String> compositeFieldSeparators;
     
-    String[] originalQueries = {"MAKE == 'Ford' && COLOR == 'red'", "MAKE == 'Ford' && COLOR == 'red' && MAKE_COLOR == 'Fordred'",
-            "(MAKE == 'Ford' && WHEELS == 3) && COLOR == 'red'"};
+    private ShardQueryConfiguration conf;
     
     @BeforeClass
     public static void beforeClass() {
         Multimap<String,String> multimap = LinkedListMultimap.create();
-        multimap.clear();
         multimap.put("MAKE_COLOR", "MAKE");
         multimap.put("MAKE_COLOR", "COLOR");
         multimap.put("COLOR_WHEELS", "COLOR");
@@ -79,9 +78,9 @@ public class ExpandCompositeTermsTest {
     
     @Test
     public void test() throws Exception {
-        for (String query : originalQueries) {
-            workIt(query);
-        }
+        workIt("MAKE == 'Ford' && COLOR == 'red'");
+        workIt("MAKE == 'Ford' && COLOR == 'red' && MAKE_COLOR == 'Fordred'");
+        workIt("(MAKE == 'Ford' && WHEELS == 3) && COLOR == 'red'");
     }
     
     @Test
@@ -1221,31 +1220,27 @@ public class ExpandCompositeTermsTest {
         runTestQuery(query, expected, INDEX_FIELDS, conf);
     }
     
-    void runTestQuery(String query, String expected, ShardQueryConfiguration conf) throws ParseException {
-        runTestQuery(query, expected, INDEX_FIELDS, conf);
-    }
-    
     void runTestQuery(String query, String expected, Set<String> indexedFields, ShardQueryConfiguration conf) throws ParseException {
         ASTJexlScript original = JexlASTHelper.parseJexlQuery(query);
-        ASTJexlScript expand = JexlASTHelper.parseJexlQuery(query);
+        
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(indexedFields);
         
-        expand = FunctionIndexQueryExpansionVisitor.expandFunctions(conf, helper, DateIndexHelper.getInstance(), expand);
-        expand = ExpandCompositeTerms.expandTerms(conf, helper, expand);
+        ASTJexlScript expand = FunctionIndexQueryExpansionVisitor.expandFunctions(conf, helper, DateIndexHelper.getInstance(), original);
+        expand = ExpandCompositeTerms.expandTerms(conf, expand);
         
-        System.err.println(JexlStringBuildingVisitor.buildQuery(original));
-        System.err.println(JexlStringBuildingVisitor.buildQuery(expand));
+        assertQueryStringEquality(expand, expected);
+        assertLineage(expand);
         
-        String result = JexlStringBuildingVisitor.buildQuery(expand);
-        Assert.assertEquals(result + " not equal to " + expected, expected, result);
+        assertScriptEquality(original, query);
+        assertLineage(original);
     }
     
     void workIt(String query) throws Exception {
         System.err.println("incoming:" + query);
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         showIt("original", script);
-        script = ExpandCompositeTerms.expandTerms(conf, null, script);
+        script = ExpandCompositeTerms.expandTerms(conf, script);
         showIt("expanded composites", script);
     }
     
@@ -1258,6 +1253,26 @@ public class ExpandCompositeTermsTest {
         PrintingVisitor.printQuery(script);
         System.err.println(JexlStringBuildingVisitor.buildQuery(script));
         System.err.println();
+    }
+    
+    private void assertQueryStringEquality(ASTJexlScript actualScript, String expected) {
+        String actual = JexlStringBuildingVisitor.buildQuery(actualScript);
+        assertEquals(expected, actual);
+    }
+    
+    private void assertScriptEquality(ASTJexlScript actualScript, String expected) throws ParseException {
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
+        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
+        if (!equal) {
+            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
+            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
+        }
+        assertTrue(reason.reason, equal);
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
     
     private static class MockDiscreteIndexType extends BaseType<String> implements DiscreteIndexType<String> {

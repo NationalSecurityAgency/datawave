@@ -9,22 +9,21 @@ import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.composite.Composite;
-import datawave.query.composite.CompositeTerm;
 import datawave.query.composite.CompositeRange;
+import datawave.query.composite.CompositeTerm;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -37,9 +36,7 @@ import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,7 +65,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     
     private final ShardQueryConfiguration config;
     
-    private HashMap<JexlNode,Composite> jexlNodeToCompMap = new HashMap<>();
+    private final HashMap<JexlNode,Composite> jexlNodeToCompMap = new HashMap<>();
     
     private static class ExpandData {
         public boolean foundComposite = false;
@@ -91,7 +88,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * @return An expanded version of the passed-in script containing composite nodes
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
+    public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, T script) {
         
         ExpandCompositeTerms visitor = new ExpandCompositeTerms(config);
         
@@ -155,7 +152,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         if (parentData.foundComposite) {
             return createUnwrappedOrNode(processedNodes);
         } else
-            return node;
+            return copy(node);
     }
     
     /**
@@ -175,8 +172,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         ExpandData parentData = (ExpandData) data;
         
         // only process delayed predicates
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Arrays.asList(ASTDelayedPredicate.class))) {
-            return node;
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(ASTDelayedPredicate.class))) {
+            return copy(node);
         }
         
         // if we only have one child, just pass through
@@ -233,7 +230,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 return rebuiltNode;
             }
             
-            return node;
+            return copy(node);
         }
     }
     
@@ -293,8 +290,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     // only descend into delayed predicates
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Arrays.asList(ASTDelayedPredicate.class))) {
-            return node;
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(ASTDelayedPredicate.class))) {
+            return copy(node);
         }
         
         return super.visit(node, data);
@@ -303,8 +300,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     // only descend into delayed predicates
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Arrays.asList(ASTDelayedPredicate.class))) {
-            return node;
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(ASTDelayedPredicate.class))) {
+            return copy(node);
         }
         
         return super.visit(node, data);
@@ -467,7 +464,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         boolean expandRangeForBaseTerm = CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), composite.getCompositeName())
                         && composite.getJexlNodeList().size() == 1;
         
-        DiscreteIndexType baseTermDiscreteIndexType = config.getFieldToDiscreteIndexTypes().get(composite.getFieldNameList().get(0));
+        DiscreteIndexType<?> baseTermDiscreteIndexType = config.getFieldToDiscreteIndexTypes().get(composite.getFieldNameList().get(0));
         
         List<JexlNode> finalNodes = new ArrayList<>();
         for (int i = 0; i < nodeClasses.size(); i++) {
@@ -639,7 +636,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             Collection<String> componentFields = new ArrayList<>(config.getCompositeToFieldMap().get(compositeField));
             
             // determine whether one of our required fields is present
-            boolean requiredFieldPresent = componentFields.stream().filter(fieldName -> requiredFields.contains(fieldName)).findAny().isPresent();
+            boolean requiredFieldPresent = componentFields.stream().anyMatch(requiredFields::contains);
             
             // if a required field is present, and we have all of the
             // fields needed to make the composite, add it to our list
@@ -700,8 +697,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 continue;
             
             // @formatter:off
-            boolean allRequiredFieldsPresent = !componentFields.stream().
-                    anyMatch(componentField -> !(remainingLeafNodes.keySet().contains(componentField) || remainingAndedNodes.keySet().contains(componentField)));
+            boolean allRequiredFieldsPresent = componentFields.stream().
+                    allMatch(componentField -> remainingLeafNodes.keySet().contains(componentField) || remainingAndedNodes.keySet().contains(componentField));
             // @formatter:on
             
             // only build this composite if we have all of the required component fields
@@ -709,7 +706,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 continue;
             
             // we have what we need to make a composite
-            List tempComposites = new ArrayList<>();
+            List<Composite> tempComposites = new ArrayList<>();
             Composite baseComp = new CompositeTerm(compositeField, config.getCompositeFieldSeparators().get(compositeField));
             tempComposites.add(baseComp);
             
@@ -721,7 +718,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             // composite, creating additional nodes when necessary
             for (int i = 0; i < componentFields.size(); i++) {
                 String componentField = componentFields.get(i);
-                Collection nodes = Lists.newArrayList();
+                Collection<JexlNode> nodes = Lists.newArrayList();
                 
                 // add any required leaf nodes
                 for (JexlNode node : remainingLeafNodes.get(componentField)) {
@@ -802,11 +799,10 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             return true;
         }
         // if this is an unbounded range, or a regex node in the last position
-        else if (node instanceof ASTGTNode || node instanceof ASTGENode || node instanceof ASTLTNode || node instanceof ASTLENode
-                        || (node instanceof ASTERNode && position == (numCompFields - 1))) {
-            return true;
+        else {
+            return node instanceof ASTGTNode || node instanceof ASTGENode || node instanceof ASTLTNode || node instanceof ASTLENode
+                            || (node instanceof ASTERNode && position == (numCompFields - 1));
         }
-        return false;
     }
     
     /**
@@ -877,7 +873,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private <K,V> LinkedHashMultimap<K,V> orderByCollectionSize(Multimap<K,V> mm) {
         List<Entry<K,Collection<V>>> orderedCompositeToFieldMap = new ArrayList<>(mm.asMap().entrySet());
-        Collections.sort(orderedCompositeToFieldMap, (o1, o2) -> Integer.compare(o2.getValue().size(), o1.getValue().size()));
+        orderedCompositeToFieldMap.sort((o1, o2) -> Integer.compare(o2.getValue().size(), o1.getValue().size()));
         
         LinkedHashMultimap<K,V> orderedMm = LinkedHashMultimap.create();
         for (Map.Entry<K,Collection<V>> foundEntry : orderedCompositeToFieldMap) {
@@ -1075,36 +1071,6 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     }
     
     /**
-     * Print Jexl node message /n node
-     * 
-     * @param queryTree
-     * @param message
-     */
-    private void printJexlNode(JexlNode queryTree, String message) {
-        printJexlNode(queryTree, message, Priority.toPriority(Level.TRACE_INT));
-    }
-    
-    private void printJexlNode(JexlNode queryTree, String message, Priority priority) {
-        if (log.isEnabledFor(priority)) {
-            log.log(priority, message);
-            for (String line : PrintingVisitor.formattedQueryStringList(queryTree)) {
-                log.log(priority, line);
-            }
-        }
-    }
-    
-    private void printWithMessage(String message, JexlNode node) {
-        printWithMessage(message, node, Priority.toPriority(Level.TRACE_INT));
-    }
-    
-    private void printWithMessage(String message, JexlNode node, Priority priority) {
-        if (log.isEnabledFor(priority)) {
-            log.log(priority, message + ":" + PrintingVisitor.formattedQueryString(node));
-            log.log(priority, JexlStringBuildingVisitor.buildQuery(node));
-        }
-    }
-    
-    /**
      * Determines whether a field is a fixed length, discrete index field. That is to say, whether or not ranges generated against the term contain values of a
      * fixed string length. This has certain implications for composite ranges.
      *
@@ -1125,8 +1091,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private static class DistributeAndedNodes extends RebuildingVisitor {
         private JexlNode initialNode = null;
-        private List<JexlNode> andedNodes;
-        private Map<JexlNode,Composite> compositeNodes;
+        private final List<JexlNode> andedNodes;
+        private final Map<JexlNode,Composite> compositeNodes;
         
         private static class DistAndData {
             Set<JexlNode> usedAndedNodes = new HashSet<>();
@@ -1150,16 +1116,14 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
          *            A map of generated composite jexl nodes to the composite object used to create that node
          * @return An updated script with the anded nodes distributed throughout
          */
-        @SuppressWarnings("unchecked")
         public static JexlNode distributeAndedNode(JexlNode script, List<JexlNode> andedNodes, Map<JexlNode,Composite> compositeNodes) {
             DistributeAndedNodes visitor = new DistributeAndedNodes(andedNodes, compositeNodes);
             DistAndData foundData = new DistAndData();
             JexlNode resultNode = (JexlNode) script.jjtAccept(visitor, foundData);
             
             if (!foundData.usedAndedNodes.containsAll(andedNodes)) {
-                List<JexlNode> nodes = new ArrayList<>();
-                nodes.addAll(andedNodes.stream().filter(node -> !foundData.usedAndedNodes.contains(node)).map(RebuildingVisitor::copy)
-                                .collect(Collectors.toList()));
+                List<JexlNode> nodes = andedNodes.stream().filter(node -> !foundData.usedAndedNodes.contains(node)).map(RebuildingVisitor::copy)
+                                .collect(Collectors.toList());
                 nodes.add(resultNode);
                 
                 return createUnwrappedAndNode(nodes);
@@ -1214,8 +1178,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 if (foundData.usedAndedNodes.isEmpty())
                     nodesMissingEverything.add(processedChild);
                 else if (!foundData.usedAndedNodes.containsAll(andedNodes)) {
-                    List<JexlNode> missingAndedNodes = new ArrayList<>();
-                    missingAndedNodes.addAll(andedNodes);
+                    List<JexlNode> missingAndedNodes = new ArrayList<>(andedNodes);
                     missingAndedNodes.removeAll(foundData.usedAndedNodes);
                     nodesMissingSomething.put(processedChild, missingAndedNodes);
                 } else
@@ -1302,9 +1265,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             // are some anded nodes missing, and is this the initial node?
             if (!parentData.usedAndedNodes.containsAll(andedNodes) && node.equals(initialNode)) {
                 // 'and' with the missing anded nodes, and return
-                List<JexlNode> nodes = new ArrayList<>();
-                nodes.addAll(andedNodes.stream().filter(andedNode -> !parentData.usedAndedNodes.contains(andedNode)).map(RebuildingVisitor::copy)
-                                .collect(Collectors.toList()));
+                List<JexlNode> nodes = andedNodes.stream().filter(andedNode -> !parentData.usedAndedNodes.contains(andedNode)).map(RebuildingVisitor::copy)
+                                .collect(Collectors.toList());
                 nodes.add(node);
                 
                 // this is probably unnecessary, but to be safe, let's set it
