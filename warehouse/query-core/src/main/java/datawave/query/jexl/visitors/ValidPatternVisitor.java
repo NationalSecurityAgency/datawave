@@ -111,7 +111,7 @@ public class ValidPatternVisitor extends BaseVisitor {
             // in this case there was no literal (e.g. FIELD1 !~ FIELD2)
             return;
         }
-
+        
         if (literalValue != null && String.class.equals(literalValue.getClass())) {
             String literalString = (String) literalValue;
             try {
