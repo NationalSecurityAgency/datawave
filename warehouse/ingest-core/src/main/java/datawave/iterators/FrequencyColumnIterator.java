@@ -1,29 +1,25 @@
 package datawave.iterators;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.query.util.Frequency;
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
-import datawave.query.util.YearMonthDay;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.iterators.user.TransformingIterator;
 import org.apache.hadoop.io.Text;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class FrequencyColumnIterator extends TransformingIterator {
     
-    private FrequencyFamilyCounter frequencyFamilyCounter;
-    // TODO Figure out how to keep the rowIdToCompressedFreqCQMap from getting too large
-    // TODO maybe we do not have to worry about that from happening.
-    private HashMap<String,FrequencyFamilyCounter> rowIdToCompressedFreqCQMap = new HashMap<>();
-    private String ageOffDate = "19000101";
+    private String ageOffDate = null;
     
     public FrequencyColumnIterator() {}
     
@@ -46,76 +42,54 @@ public class FrequencyColumnIterator extends TransformingIterator {
     
     @Override
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
-        Key newKey = null;
-        Long numRecords = 0L;
-        frequencyFamilyCounter = new FrequencyFamilyCounter();
-        
         if (log.isTraceEnabled())
             log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
         
-        Key topKey = null, aggregatedKey = null;
+        Key topKey = null;
         Value topValue = null;
-        Value aggregatedValue = null;
-        boolean isFrequencyRange = false;
+        
+        boolean isFrequencyRange = true;
+        final Map<String,FrequencyFamilyCounter> frequencyCounterByDatatype = new TreeMap<>();
         
         while (sortedKeyValueIterator.hasTop()) {
-            numRecords++;
-            Text cq = sortedKeyValueIterator.getTopKey().getColumnQualifier();
             topKey = sortedKeyValueIterator.getTopKey();
             topValue = sortedKeyValueIterator.getTopValue();
             
             // Just do an identity transform if there it is not a Frequency Column
-            if (!topKey.getColumnFamily().toString().equals(ColumnFamilyConstants.COLF_F.toString())) {
+            if (!isFrequencyRange || !topKey.getColumnFamily().equals(ColumnFamilyConstants.COLF_F)) {
                 kvBuffer.append(sortedKeyValueIterator.getTopKey(), sortedKeyValueIterator.getTopValue());
                 sortedKeyValueIterator.next();
                 isFrequencyRange = false;
                 continue;
-            } else {
-                isFrequencyRange = true;
             }
             
-            if (cq.toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
-                newKey = topKey;
-                frequencyFamilyCounter.deserializeCompressedValue(topValue);
-                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() == 0)
-                    log.error("Compressed value was not deserialized properly");
-                aggregatedValue = topValue;
-                aggregatedKey = topKey;
-
-                if (log.isTraceEnabled())
-                    log.trace("Aggregate Key: " + aggregatedKey.toStringNoTime());
-                
-                if (!rowIdToCompressedFreqCQMap.containsKey(aggregatedKey.getRow() + cq.toString()))
-                    rowIdToCompressedFreqCQMap.put(aggregatedKey.getRow().toString() + cq.toString(), frequencyFamilyCounter);
-                else {
-                    FrequencyFamilyCounter previousCounter = rowIdToCompressedFreqCQMap.get(aggregatedKey.getRow() + cq.toString());
-                    for (Map.Entry<YearMonthDay,Frequency> entry : previousCounter.getDateToFrequencyValueMap().entrySet()) {
-                        if (ageOffDate.compareTo(entry.getKey().getYyyymmdd()) < 0)
-                            frequencyFamilyCounter.aggregateRecord(entry.getKey().getYyyymmdd(), String.valueOf(entry.getValue().getValue()));
-                    }
-                    rowIdToCompressedFreqCQMap.remove(aggregatedKey.getRow() + cq.toString());
-                    rowIdToCompressedFreqCQMap.put(aggregatedKey.getRow() + cq.toString(), frequencyFamilyCounter);
-                    
+            if (MetadataHelper.isAggregatedFreqKey(topKey)) {
+                String datatype = MetadataHelper.getDataTypeFromAggregatedFreqCQ(topKey.getColumnQualifier());
+                if (!frequencyCounterByDatatype.containsKey(datatype)) {
+                    FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
+                    frequencyFamilyCounter.deserializeCompressedValue(topValue, ageOffDate);
+                    frequencyCounterByDatatype.put(datatype, frequencyFamilyCounter);
+                } else {
+                    FrequencyFamilyCounter previousCounter = frequencyCounterByDatatype.get(datatype);
+                    previousCounter.aggregateCompressedValue(topValue, ageOffDate);
                 }
-                
             } else {
-                
-                if (ageOffDate.compareTo(cq.toString().substring(cq.getLength() - 8)) < 0)
-                    frequencyFamilyCounter.aggregateRecord(cq.toString(), topValue.toString());
-                else {
-                    if (log.isTraceEnabled())
-                        log.trace("Aged off the date " + cq.toString().substring(cq.getLength() - 8));
+                String cq = topKey.getColumnQualifier().toString();
+                int index = cq.indexOf('\0');
+                String date = cq.substring(index + 1);
+                if (ageOffDate == null || ageOffDate.compareTo(date) < 0) {
+                    String datatype = cq.substring(0, index);
+                    FrequencyFamilyCounter frequencyFamilyCounter = frequencyCounterByDatatype.get(datatype);
+                    if (frequencyFamilyCounter == null) {
+                        frequencyFamilyCounter = new FrequencyFamilyCounter();
+                        frequencyCounterByDatatype.put(datatype, frequencyFamilyCounter);
+                    }
+                    frequencyFamilyCounter.aggregateRecord(date, SummingCombiner.VAR_LEN_ENCODER.decode(topValue.get()).intValue());
+                } else {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Aged off the date " + date);
+                    }
                 }
-                
-                String newColumnQualifier = MetadataHelper.COL_QUAL_PREFIX + cq.toString().substring(0, 3);
-                
-                if (newKey == null) {
-                    newKey = new Key(topKey.getRow(), topKey.getColumnFamily(), new Text(newColumnQualifier));
-                    log.trace("Creating new key for aggregated frequency records " + newKey.toStringNoTime());
-                }
-                
-                log.trace("Non-compressed Key: " + topKey.toStringNoTime());
-                
             }
             
             sortedKeyValueIterator.next();
@@ -124,33 +98,13 @@ public class FrequencyColumnIterator extends TransformingIterator {
         if (!isFrequencyRange)
             return;
         
-        if (numRecords > 1) {
-            try {
-                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() > 0) {
-                    kvBuffer.append(newKey, frequencyFamilyCounter.serialize());
-                    log.trace(numRecords + " frequency records for " + newKey.toStringNoTime().replaceAll("false", "") + " were serialized");
-                }
-                
-            } catch (Exception e) {
-                log.error("Could not serialize frequency range properly for key " + newKey.toString(), e);
-                if (aggregatedValue != null && aggregatedKey != null) {
-                    kvBuffer.append(aggregatedKey, aggregatedValue);
-                    log.error("Number of records " + numRecords + " " + "Should not have insert aggregate record like this");
-                }
-            }
-        } else if (numRecords == 1) {
-            if (aggregatedValue != null && aggregatedKey != null) {
-                kvBuffer.append(aggregatedKey, frequencyFamilyCounter.serialize());
-                log.trace("Number of records is 1 Key is: " + aggregatedKey.toStringNoTime() + " - Range tranformed a single aggregated range.");
-            } else {
-                kvBuffer.append(topKey, topValue);
-                log.trace("Number of records is 1 Key is: " + topKey.toStringNoTime() + " - Range did not need to be transformed  (ran identity transform)",
-                                new Exception());
+        for (Map.Entry<String,FrequencyFamilyCounter> entry : frequencyCounterByDatatype.entrySet()) {
+            if (!entry.getValue().getDateToFrequencyValueMap().isEmpty()) {
+                Key key = new Key(topKey.getRow(), topKey.getColumnFamily(), new Text(entry.getKey() + '\0' + MetadataHelper.AGGREGATED_FREQ_COL_QUAL),
+                                topKey.getColumnVisibility(), topKey.getTimestamp());
+                kvBuffer.append(key, entry.getValue().serialize());
             }
         }
-        
-        log.trace(" Number of key values iterated is " + numRecords);
-        
     }
     
     @Override
@@ -166,11 +120,13 @@ public class FrequencyColumnIterator extends TransformingIterator {
     public boolean validateOptions(Map<String,String> options) {
         boolean valid = super.validateOptions(options);
         if (valid) {
-            try {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
-                simpleDateFormat.parse(options.get("ageOffDate"));
-            } catch (Exception e) {
-                valid = false;
+            if (options.containsKey("ageOffDate")) {
+                try {
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
+                    simpleDateFormat.parse(options.get("ageOffDate"));
+                } catch (Exception e) {
+                    valid = false;
+                }
             }
         }
         return valid;

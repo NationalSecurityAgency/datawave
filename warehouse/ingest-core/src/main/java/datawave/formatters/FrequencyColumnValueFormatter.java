@@ -31,7 +31,7 @@ public class FrequencyColumnValueFormatter implements Formatter {
         
         try {
             
-            if (entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX)) {
+            if (MetadataHelper.isAggregatedFreqKey(entry.getKey())) {
                 FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
                 frequencyFamilyCounter.deserializeCompressedValue(entry.getValue());
                 frequencyFamilyCounter
@@ -40,7 +40,7 @@ public class FrequencyColumnValueFormatter implements Formatter {
                                 .stream()
                                 .sorted(Comparator.comparing(Map.Entry::getKey))
                                 .forEach(sorted -> sb.append(entry.getKey().getRow()).append(" " + entry.getKey().getColumnFamily().toString())
-                                                .append(" " + entry.getKey().getColumnQualifier().toString().replaceAll(MetadataHelper.COL_QUAL_PREFIX, ""))
+                                                .append(" " + MetadataHelper.getDataTypeFromAggregatedFreqCQ(entry.getKey().getColumnQualifier()))
                                                 .append(" Date: " + sorted.getKey().getYyyymmdd()).append(" Frequency: " + sorted.getValue().getValue() + "\n"));
                 return sb.toString();
             }
