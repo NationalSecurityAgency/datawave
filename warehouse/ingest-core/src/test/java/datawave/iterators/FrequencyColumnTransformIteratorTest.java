@@ -4,26 +4,44 @@ import com.google.common.collect.Maps;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.ColumnFamilyConstants;
 import datawave.query.composite.CompositeMetadataHelper;
-import datawave.query.util.*;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.util.TableName;
-import org.apache.accumulo.core.client.*;
+import datawave.query.util.AllFieldMetadataHelper;
+import datawave.query.util.Frequency;
+import datawave.query.util.FrequencyFamilyCounter;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeMetadataHelper;
+import datawave.query.util.YearMonthDay;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
+import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.junit.*;
-import org.powermock.api.extension.listener.MockMetadata;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 public class FrequencyColumnTransformIteratorTest {
@@ -49,10 +67,7 @@ public class FrequencyColumnTransformIteratorTest {
         timestamp = date.getTime();
         NewTableConfiguration newTableConfiguration = new NewTableConfiguration();
         HashMap<String,String> properties = new HashMap<>();
-        properties.put("table.iterator.majc.vers.opt.maxVersions", "10");
-        properties.put("table.iterator.minc.vers.opt.maxVersions", "10");
-        properties.put("table.iterator.scan.vers.opt.maxVersions", "10");
-        properties.put("table.compaction.minor.idle", "10s");
+        properties.put("table.compaction.minor.idle", "5s");
         newTableConfiguration.setProperties(properties);
         connector.tableOperations().create(METADATA_TABLE_NAME, newTableConfiguration);
         HashMap<String,String> propertiesIt = new HashMap<>();
@@ -75,70 +90,93 @@ public class FrequencyColumnTransformIteratorTest {
         BatchWriter bw = connector.createBatchWriter(METADATA_TABLE_NAME, bwConfig);
         
         Mutation m = new Mutation("BAR_FIELD");
-        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value("1"));
-        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value("1"));
-        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value("0x10"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value("1"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value("1"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value("0x10"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160427"), nextTimeStamp(), new Value("1"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160427"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160427"), nextTimeStamp(), new Value("0x10"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160428"), nextTimeStamp(), new Value("1"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160428"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160428"), nextTimeStamp(), new Value("0x10"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160429"), nextTimeStamp(), new Value("1"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160429"), nextTimeStamp(), new Value("4"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160429"), nextTimeStamp(), new Value("0x10"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160501"), nextTimeStamp(), new Value("1"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160501"), nextTimeStamp(), new Value("5"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160501"), nextTimeStamp(), new Value("0x10"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20090426"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x10L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160426"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x10L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160427"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160427"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160427"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x10L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160428"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160428"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160428"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x10L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160429"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160429"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160429"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x10L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160501"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160501"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(5L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160501"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x10L)));
         
         bw.addMutation(m);
         
         m = new Mutation("NAME_FIELD");
-        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value("0x20"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value("0x20"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160527"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160527"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160527"), nextTimeStamp(), new Value("0x20"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160528"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160528"), nextTimeStamp(), new Value("4"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160528"), nextTimeStamp(), new Value("0x20"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160529"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160529"), nextTimeStamp(), new Value("5"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160529"), nextTimeStamp(), new Value("0x20"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160601"), nextTimeStamp(), new Value("2"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160601"), nextTimeStamp(), new Value("6"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160601"), nextTimeStamp(), new Value("0x20"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20090526"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x20L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160526"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x20L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160527"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160527"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160527"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x20L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160528"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160528"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160528"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x20L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160529"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160529"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(5L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160529"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x20L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160601"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(2L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160601"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(6L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160601"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x20L)));
         bw.addMutation(m);
         
         m = new Mutation("PUB_FIELD");
-        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value("0x30"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value("0x30"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160727"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160727"), nextTimeStamp(), new Value("4"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160727"), nextTimeStamp(), new Value("0x30"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160728"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160728"), nextTimeStamp(), new Value("5"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160728"), nextTimeStamp(), new Value("0x30"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160729"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160729"), nextTimeStamp(), new Value("6"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160729"), nextTimeStamp(), new Value("0x30"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160801"), nextTimeStamp(), new Value("3"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160801"), nextTimeStamp(), new Value("7"));
-        m.put(new Text("f"), new Text(colqPrefix + "20160801"), nextTimeStamp(), new Value("0x30"));
+        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20090726"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x30L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160726"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x30L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160727"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160727"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160727"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x30L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160728"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160728"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(5L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160728"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x30L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160729"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160729"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(6L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160729"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x30L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160801"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160801"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(7L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160801"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x30L)));
         bw.addMutation(m);
         bw.close();
         
+        colqPrefix = new Text("json\u0000");
+        
+        m = new Mutation("AGE_FIELD");
+        m.put(new Text("f"), new Text(colqPrefix + "20090826"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20090826"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20090826"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x40L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160826"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160826"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160826"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x40L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160827"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160827"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(5L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160827"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x40L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160828"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160828"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(6L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160828"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x40L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160829"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160829"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(7L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160829"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x40L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160901"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(4L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160901"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(8L)));
+        m.put(new Text("f"), new Text(colqPrefix + "20160901"), nextTimeStamp(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(0x40L)));
+        bw.addMutation(m);
+        bw.close();
     }
     
     private long nextTimeStamp() {
@@ -146,7 +184,7 @@ public class FrequencyColumnTransformIteratorTest {
     }
     
     @Test
-    public void testFrequencyTransformIteratorAtScanScope() throws Throwable {
+    public void testFrequencyTransformIterator() throws Throwable {
         
         loadData();
         
@@ -157,42 +195,13 @@ public class FrequencyColumnTransformIteratorTest {
         HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
         
         for (Map.Entry<Key,Value> entry : scanner) {
-            Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
+            Assert.assertTrue(MetadataHelper.isAggregatedFreqKey(entry.getKey()));
             FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
             counter.deserializeCompressedValue(entry.getValue());
             TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
-                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
-            }
-            counterHashMap.put(entry.getKey().getRow().toString(), counter);
-            numEntries++;
-        }
-        
-        checkFrequencyCompressedData(numEntries, counterHashMap);
-        
-    }
-    
-    @Test
-    public void testFrequencyTransformIteratorAtMincScope() throws Throwable {
-        // TODO I have verified minimum compaction in the Accumlo Shell - I am sceptical that this test really
-        // tests minimum compaction although it should work.
-        loadData();
-        // Sleep long enough to perform a minimum compaction.
-        Thread.sleep(15000);
-        Scanner scanner = connector.createScanner(METADATA_TABLE_NAME, auths);
-        scanner.setBatchSize(200);
-        scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_F));
-        int numEntries = 0;
-        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
-        
-        for (Map.Entry<Key,Value> entry : scanner) {
-            Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
-            FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
-            counter.deserializeCompressedValue(entry.getValue());
-            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
-                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
-            }
+            // for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
+            // System.out.println("key: " + entry.getKey() + " date: " + entry2.getKey() + " frequency: " + entry2.getValue());
+            // }
             counterHashMap.put(entry.getKey().getRow().toString(), counter);
             numEntries++;
         }
@@ -205,8 +214,7 @@ public class FrequencyColumnTransformIteratorTest {
     public void testFrequencyTransformIteratorAgeOff() throws Throwable {
         
         loadData();
-        // Sleep long enough to perform a minimum compaction.
-        Thread.sleep(15000);
+        
         Scanner scanner = connector.createScanner(METADATA_TABLE_NAME, auths);
         scanner.setBatchSize(200);
         scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_F));
@@ -214,13 +222,13 @@ public class FrequencyColumnTransformIteratorTest {
         HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
         
         for (Map.Entry<Key,Value> entry : scanner) {
-            Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
+            Assert.assertTrue(MetadataHelper.isAggregatedFreqKey(entry.getKey()));
             FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
             counter.deserializeCompressedValue(entry.getValue());
             TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
-                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
-            }
+            // for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
+            // System.out.println("key: " + entry.getKey() + " date: " + entry2.getKey() + " frequency: " + entry2.getValue());
+            // }
             counterHashMap.put(entry.getKey().getRow().toString(), counter);
             numEntries++;
         }
@@ -229,99 +237,44 @@ public class FrequencyColumnTransformIteratorTest {
         
     }
     
-    @Test
-    public void testFrequencyTransformIteratorAtMajcScope() throws Throwable {
-        
-        loadData();
-        
-        Scanner scanner = connector.createScanner(METADATA_TABLE_NAME, auths);
-        scanner.setBatchSize(200);
-        scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_F));
-        int numEntries = 0;
-        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
-        
-        for (Map.Entry<Key,Value> entry : scanner) {
-            Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
-            FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
-            counter.deserializeCompressedValue(entry.getValue());
-            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
-                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
-            }
-            counterHashMap.put(entry.getKey().getRow().toString(), counter);
-            numEntries++;
-        }
-        
-        checkFrequencyCompressedData(numEntries, counterHashMap);
-        
-        compactMetadataTable();
-        
-        scanner = connector.createScanner(METADATA_TABLE_NAME, auths);
-        scanner.setBatchSize(200);
-        scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_F));
-        numEntries = 0;
-        counterHashMap = new HashMap<>();
-        
-        for (Map.Entry<Key,Value> entry : scanner) {
-            Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(MetadataHelper.COL_QUAL_PREFIX));
-            FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
-            counter.deserializeCompressedValue(entry.getValue());
-            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
-                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
-            }
-            counterHashMap.put(entry.getKey().getRow().toString(), counter);
-            numEntries++;
-        }
-        
-        checkFrequencyCompressedData(numEntries, counterHashMap);
-        
-    }
-    
-    private void compactMetadataTable() throws AccumuloSecurityException, TableNotFoundException, AccumuloException {
-        
-        connector.tableOperations().compact(METADATA_TABLE_NAME, new Text("A"), new Text("Z"), true, true);
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            Assert.fail("did not sleep for compaction");
-        }
-        
-        // Test for indempotency
-        connector.tableOperations().compact(METADATA_TABLE_NAME, new Text("A"), new Text("Z"), true, true);
-    }
-    
     private void checkFrequencyCompressedData(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
         // Also verifies AgeOff
-        Assert.assertTrue(numEntries == 3);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090426"))) == null);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160426"))).getValue() == 18);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160427"))).getValue() == 19);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160428"))).getValue() == 20);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160429"))).getValue() == 21);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160501"))).getValue() == 22);
+        Assert.assertEquals(4, numEntries);
+        Assert.assertEquals(null, counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090426")));
+        Assert.assertEquals(18, counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160426")).getValue());
+        Assert.assertEquals(19, counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160427")).getValue());
+        Assert.assertEquals(20, counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160428")).getValue());
+        Assert.assertEquals(21, counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160429")).getValue());
+        Assert.assertEquals(22, counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160501")).getValue());
         
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090526"))) == null);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160526"))).getValue() == 36);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160527"))).getValue() == 37);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160528"))).getValue() == 38);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160529"))).getValue() == 39);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160601"))).getValue() == 40);
+        Assert.assertEquals(null, counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090526")));
+        Assert.assertEquals(36, counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160526")).getValue());
+        Assert.assertEquals(37, counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160527")).getValue());
+        Assert.assertEquals(38, counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160528")).getValue());
+        Assert.assertEquals(39, counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160529")).getValue());
+        Assert.assertEquals(40, counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160601")).getValue());
         
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090726"))) == null);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160726"))).getValue() == 54);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160727"))).getValue() == 55);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160728"))).getValue() == 56);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160729"))).getValue() == 57);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160801"))).getValue() == 58);
+        Assert.assertEquals(null, counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090726")));
+        Assert.assertEquals(54, counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160726")).getValue());
+        Assert.assertEquals(55, counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160727")).getValue());
+        Assert.assertEquals(56, counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160728")).getValue());
+        Assert.assertEquals(57, counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160729")).getValue());
+        Assert.assertEquals(58, counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160801")).getValue());
         
+        Assert.assertEquals(null, counterHashMap.get("AGE_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090826")));
+        Assert.assertEquals(72, counterHashMap.get("AGE_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160826")).getValue());
+        Assert.assertEquals(73, counterHashMap.get("AGE_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160827")).getValue());
+        Assert.assertEquals(74, counterHashMap.get("AGE_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160828")).getValue());
+        Assert.assertEquals(75, counterHashMap.get("AGE_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160829")).getValue());
+        Assert.assertEquals(76, counterHashMap.get("AGE_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20160901")).getValue());
     }
     
     private void checkFrequencyCompressedDataForAgeOff(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
-        Assert.assertTrue(numEntries == 3);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090426"))) == null);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090526"))) == null);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090726"))) == null);
+        Assert.assertEquals(4, numEntries);
+        Assert.assertEquals(new YearMonthDay("20160426"), counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().firstKey());
+        Assert.assertEquals(new YearMonthDay("20160526"), counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().firstKey());
+        Assert.assertEquals(new YearMonthDay("20160726"), counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().firstKey());
+        Assert.assertEquals(new YearMonthDay("20160826"), counterHashMap.get("AGE_FIELD").getDateToFrequencyValueMap().firstKey());
         
     }
     
@@ -345,39 +298,44 @@ public class FrequencyColumnTransformIteratorTest {
         HashSet<String> dataTypes = new HashSet<>();
         dataTypes.add("csv");
         long count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160426", dataTypes);
-        Assert.assertTrue(count == 18l);
+        Assert.assertEquals(18, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160427", dataTypes);
-        Assert.assertTrue(count == 19l);
+        Assert.assertEquals(19, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160428", dataTypes);
-        Assert.assertTrue(count == 20l);
+        Assert.assertEquals(20, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160429", dataTypes);
-        Assert.assertTrue(count == 21l);
+        Assert.assertEquals(21, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("BAR_FIELD", "20160501", dataTypes);
-        Assert.assertTrue(count == 22l);
+        Assert.assertEquals(22, count);
         
         count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160526", dataTypes);
-        Assert.assertTrue(count == 36l);
+        Assert.assertEquals(36, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160527", dataTypes);
-        Assert.assertTrue(count == 37l);
+        Assert.assertEquals(37, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160528", dataTypes);
-        Assert.assertTrue(count == 38l);
+        Assert.assertEquals(38, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160529", dataTypes);
-        Assert.assertTrue(count == 39l);
+        Assert.assertEquals(39, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("NAME_FIELD", "20160601", dataTypes);
-        Assert.assertTrue(count == 40l);
+        Assert.assertEquals(40, count);
         
         count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160726", dataTypes);
-        Assert.assertTrue(count == 54l);
+        Assert.assertEquals(54, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160727", dataTypes);
-        Assert.assertTrue(count == 55l);
+        Assert.assertEquals(55, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160728", dataTypes);
-        Assert.assertTrue(count == 56l);
+        Assert.assertEquals(56, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160729", dataTypes);
-        Assert.assertTrue(count == 57l);
+        Assert.assertEquals(57, count);
         count = metadataHelper.getCountsByFieldInDayWithTypes("PUB_FIELD", "20160801", dataTypes);
-        Assert.assertTrue(count == 58l);
+        Assert.assertEquals(58, count);
+        
         count = metadataHelper.getCardinalityForField("PUB_FIELD", "csv", formatter.parse("20160725"), formatter.parse("20160802"));
-        Assert.assertTrue(count == 280);
+        Assert.assertEquals(280, count);
+        count = metadataHelper.getCardinalityForField("PUB_FIELD", "json", formatter.parse("20160725"), formatter.parse("20160802"));
+        Assert.assertEquals(0, count);
+        count = metadataHelper.getCardinalityForField("AGE_FIELD", "json", formatter.parse("20160725"), formatter.parse("20160902"));
+        Assert.assertEquals(370, count);
     }
     
 }
