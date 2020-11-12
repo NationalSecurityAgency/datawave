@@ -99,9 +99,14 @@ public class FrequencyColumnIterator extends TransformingIterator {
                 }
                 
             } else {
-                
-                if (ageOffDate.compareTo(cq.toString().substring(cq.getLength() - 8)) < 0)
-                    frequencyFamilyCounter.aggregateRecord(cq.toString(), topValue.toString());
+
+                if (ageOffDate.compareTo(cq.toString().substring(cq.getLength() - 8)) < 0) {
+                    String cleanValue = topValue.toString().trim();
+                    //TODO figure out a better default value if the cleanvalue is empty or null
+                    if (cleanValue.isEmpty())
+                        cleanValue = "1";
+                    frequencyFamilyCounter.aggregateRecord(cq.toString().substring(cq.getLength() - 8), cleanValue);
+                }
                 else {
                     if (log.isTraceEnabled())
                         log.trace("Aged off the date " + cq.toString().substring(cq.getLength() - 8));
