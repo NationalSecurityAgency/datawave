@@ -9,7 +9,11 @@ import org.apache.hadoop.mapreduce.task.TaskInputOutputContextImpl;
 
 public class StandaloneTaskAttemptContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends TaskInputOutputContextImpl<KEYIN,VALUEIN,KEYOUT,VALUEOUT> {
     public StandaloneTaskAttemptContext(Configuration conf, StatusReporter reporter) {
-        super(conf, new TaskAttemptID(), null, null, reporter);
+        this(conf, new TaskAttemptID(), reporter);
+    }
+    
+    public StandaloneTaskAttemptContext(Configuration conf, TaskAttemptID taskAttemptID, StatusReporter reporter) {
+        super(conf, taskAttemptID, null, null, reporter);
     }
     
     @Override
