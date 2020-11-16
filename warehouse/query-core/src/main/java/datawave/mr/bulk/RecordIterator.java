@@ -37,7 +37,6 @@ import org.apache.accumulo.core.file.blockfile.impl.CachableBlockFile.Reader;
 import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.system.DeletingIterator;
@@ -58,6 +57,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import datawave.iterators.IteratorUtils;
 import datawave.mr.bulk.BulkInputFormat.AccumuloIterator;
 import datawave.mr.bulk.BulkInputFormat.AccumuloIteratorOption;
 import datawave.mr.bulk.split.FileRangeSplit;
@@ -387,8 +387,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             
             SortedKeyValueIterator<Key,Value> visFilter = VisibilityFilter.wrap(topIter, auths, defaultSecurityLabel);
             
-            return IteratorUtil.loadIterators(IteratorScope.scan, visFilter, null, acuTableConf, serverSideIteratorList, serverSideIteratorOptions, iterEnv,
-                            false);
+            return IteratorUtils.loadIterators(IteratorScope.scan, visFilter, null, acuTableConf, serverSideIteratorList, serverSideIteratorOptions, iterEnv);
         }
         
         return topIter;
