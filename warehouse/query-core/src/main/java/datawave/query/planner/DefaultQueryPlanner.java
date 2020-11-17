@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import datawave.query.config.IndexHole;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
@@ -90,10 +91,7 @@ import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.util.DateIndexHelper;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.QueryStopwatch;
-import datawave.query.util.Tuple2;
+import datawave.query.util.*;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -1142,6 +1140,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
+        List<IndexHole> valueIndexHoles;
+        try {
+            valueIndexHoles = calculateIndexHoles(metadataHelper, queryTree, fieldToDatatypeMap, config);
+            if (valueIndexHoles != null && !valueIndexHoles.isEmpty())
+                config.setIndexHoles(valueIndexHoles);
+        } catch (TableNotFoundException e) {
+            log.error("metadata table was not found " + e.getMessage());
+        }
+        
         // if we have any index holes, then mark em
         if (!config.getIndexHoles().isEmpty()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Mark Index Holes");
@@ -1688,6 +1695,34 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
             }
         }
+    }
+    
+    private List<IndexHole> calculateIndexHoles(MetadataHelper metadataHelper, ASTJexlScript queryTree, Multimap<String,Type<?>> fieldToDatatypeMap,
+                    ShardQueryConfiguration config) throws TableNotFoundException {
+        List<IndexHole> valueIndexHoles = new ArrayList<IndexHole>();
+        
+        FrequencyFamilyCounter counter;
+        for (String field : fieldToDatatypeMap.keySet()) {
+            // TODO - This loop must be perfected. Not sure how to set start and end values.
+            // the start and end values in the DataToFrequency map have no relavance in
+            // this context.
+            log.info("Indexed field " + field);
+            counter = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
+            if (counter != null && !counter.getDateToFrequencyValueMap().isEmpty()) {
+                for (Entry<YearMonthDay,Frequency> entry : counter.getDateToFrequencyValueMap().entrySet()) {
+                    if (config.getBeginDate().toString().compareTo(entry.getKey().getYyyymmdd()) < 0) {
+                        IndexHole newHole = new IndexHole();
+                        newHole.setStartDate(entry.getKey().getYyyymmdd());
+                        newHole.setEndDate(entry.getKey().getYyyymmdd()); // TODO maybe this will be based on the next entry in tree?
+                        newHole.setStartValue("1");
+                        newHole.setEndValue("1");
+                        valueIndexHoles.add(newHole);
+                    }
+                }
+            }
+        }
+        
+        return valueIndexHoles;
     }
     
     /**
