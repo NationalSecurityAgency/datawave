@@ -26,12 +26,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class ShardQueryConfigurationTest {
     
@@ -402,7 +397,11 @@ public class ShardQueryConfigurationTest {
         
         config.setIndexedFields(indexedFields);
         config.setQueryFieldsDatatypes(queryFieldsDatatypes);
-        
+        List<FieldIndexHole> fieldIndexHoles = new ArrayList<>();
+        fieldIndexHoles.add(new FieldIndexHole(new String[] {"20190103", "20190107"}));
+        fieldIndexHoles.add(new FieldIndexHole(new String[] {"20190205", "20190209"}));
+        fieldIndexHoles.add(new FieldIndexHole(new String[] {"20190305", "20190309"}));
+        config.setFieldIndexHoles(fieldIndexHoles);
         String expected = "fieldA:datawave.data.type.DateType;fieldB:datawave.data.type.StringType;";
         Assert.assertEquals(expected, config.getIndexedFieldDataTypesAsString());
     }

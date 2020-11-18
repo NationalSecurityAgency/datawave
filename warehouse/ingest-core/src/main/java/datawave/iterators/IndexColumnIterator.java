@@ -5,6 +5,7 @@ import datawave.query.util.Frequency;
 import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.YearMonthDay;
+import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
@@ -133,6 +134,8 @@ public class IndexColumnIterator extends TransformingIterator {
             }
         } else if (numRecords == 1) {
             if (aggregatedValue != null && aggregatedKey != null) {
+                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() == 0)
+                    frequencyFamilyCounter.aggregateRecord(DateHelper.format(aggregatedKey.getTimestamp()), 1);
                 kvBuffer.append(aggregatedKey, frequencyFamilyCounter.serialize());
                 log.trace("Number of records is 1 Key is: " + aggregatedKey.toStringNoTime() + " - Range tranformed a single aggregated range.");
             } else {
