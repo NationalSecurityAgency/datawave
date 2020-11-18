@@ -53,20 +53,11 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         return stem;
     }
     
-    // add the SummingCombiner (FrequencyCombiner) to the frequency column
-    private String setFrequencyCombiner(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyCombiner");
-        setPropertyIfNecessary(tableName, stem, "10," + SummingCombiner.class.getName(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
-        return stem;
-    }
-    
     // add the CountMetadataCombiner to the count column
     private String setFrequencyColumnIterator(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException,
                     TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyColumnIterator");
-        setPropertyIfNecessary(tableName, stem, "25,datawave.iterators.FrequencyColumnIterator", tops, log);
+        setPropertyIfNecessary(tableName, stem, "10,datawave.iterators.FrequencyColumnIterator", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.ageOffDate", "20100101", tops, log);
