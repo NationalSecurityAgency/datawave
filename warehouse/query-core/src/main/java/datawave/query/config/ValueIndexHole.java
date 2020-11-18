@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * This class represents a hole in the global index. Used by the PushdownMissingIndexRangeNodesVisitor.
  */
-public class IndexHole implements Serializable, Comparable<IndexHole> {
+public class ValueIndexHole implements Serializable, Comparable<ValueIndexHole> {
     private static final long serialVersionUID = -6778479621810682281L;
     
     private String startValue;
@@ -13,7 +13,7 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
     private String startDate;
     private String endDate;
     
-    public IndexHole() {}
+    public ValueIndexHole() {}
     
     /**
      * Create an index with a date range and value range.
@@ -23,7 +23,7 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
      * @param valueRange
      *            the start and end values of the known hole
      */
-    public IndexHole(String[] dateRange, String[] valueRange) {
+    public ValueIndexHole(String[] dateRange, String[] valueRange) {
         setStartValue(valueRange[0]);
         setEndValue(valueRange[1]);
         setStartDate(dateRange[0]);
@@ -80,8 +80,8 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
     
     @Override
     public boolean equals(Object o) {
-        if (o instanceof IndexHole) {
-            IndexHole hole = (IndexHole) o;
+        if (o instanceof ValueIndexHole) {
+            ValueIndexHole hole = (ValueIndexHole) o;
             return startValue.equals(hole.startValue) && endValue.equals(hole.endValue) && startDate.equals(hole.startDate) && endDate.equals(hole.endDate);
         }
         return false;
@@ -102,7 +102,7 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
      * @param hole
      * @return the comparison
      */
-    public int compareTo(IndexHole hole) {
+    public int compareTo(ValueIndexHole hole) {
         int comparison = startValue.compareTo(hole.startValue);
         if (comparison == 0) {
             comparison = endValue.compareTo(hole.endValue);

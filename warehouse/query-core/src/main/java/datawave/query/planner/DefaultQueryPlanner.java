@@ -9,7 +9,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
-import datawave.query.config.IndexHole;
+import datawave.query.config.FieldIndexHole;
+import datawave.query.config.ValueIndexHole;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
@@ -1140,17 +1141,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
-        List<IndexHole> valueIndexHoles;
+        List<FieldIndexHole> fieldIndexHoles;
         try {
-            valueIndexHoles = calculateIndexHoles(metadataHelper, queryTree, fieldToDatatypeMap, config);
-            if (valueIndexHoles != null && !valueIndexHoles.isEmpty())
-                config.setIndexHoles(valueIndexHoles);
+            fieldIndexHoles = calculateIndexHoles(metadataHelper, queryTree, fieldToDatatypeMap, config);
+            if (fieldIndexHoles != null && !fieldIndexHoles.isEmpty())
+                config.setFieldIndexHoles(fieldIndexHoles);
         } catch (TableNotFoundException e) {
             log.error("metadata table was not found " + e.getMessage());
         }
         
         // if we have any index holes, then mark em
-        if (!config.getIndexHoles().isEmpty()) {
+        if (!config.getValueIndexHoles().isEmpty()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Mark Index Holes");
             
             queryTree = PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(queryTree, config, metadataHelper);
@@ -1697,9 +1698,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
     
-    private List<IndexHole> calculateIndexHoles(MetadataHelper metadataHelper, ASTJexlScript queryTree, Multimap<String,Type<?>> fieldToDatatypeMap,
+    private List<FieldIndexHole> calculateIndexHoles(MetadataHelper metadataHelper, ASTJexlScript queryTree, Multimap<String,Type<?>> fieldToDatatypeMap,
                     ShardQueryConfiguration config) throws TableNotFoundException {
-        List<IndexHole> valueIndexHoles = new ArrayList<IndexHole>();
+        List<FieldIndexHole> fieldIndexHoles = new ArrayList<FieldIndexHole>();
         
         FrequencyFamilyCounter counter;
         for (String field : fieldToDatatypeMap.keySet()) {
@@ -1711,18 +1712,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (counter != null && !counter.getDateToFrequencyValueMap().isEmpty()) {
                 for (Entry<YearMonthDay,Frequency> entry : counter.getDateToFrequencyValueMap().entrySet()) {
                     if (config.getBeginDate().toString().compareTo(entry.getKey().getYyyymmdd()) < 0) {
-                        IndexHole newHole = new IndexHole();
+                        FieldIndexHole newHole = new FieldIndexHole();
                         newHole.setStartDate(entry.getKey().getYyyymmdd());
                         newHole.setEndDate(entry.getKey().getYyyymmdd()); // TODO maybe this will be based on the next entry in tree?
-                        newHole.setStartValue("1");
-                        newHole.setEndValue("1");
-                        valueIndexHoles.add(newHole);
+                        
+                        fieldIndexHoles.add(newHole);
                     }
                 }
             }
         }
         
-        return valueIndexHoles;
+        return fieldIndexHoles;
     }
     
     /**

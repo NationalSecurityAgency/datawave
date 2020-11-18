@@ -108,7 +108,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Sets.newHashSet("d", "tf"), config.getNonEventKeyPrefixes());
         Assert.assertEquals(Sets.newHashSet(), config.getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet(), config.getDatatypeFilter());
-        Assert.assertEquals(Lists.newArrayList(), config.getIndexHoles());
+        Assert.assertEquals(Lists.newArrayList(), config.getValueIndexHoles());
         Assert.assertEquals(Sets.newHashSet(), config.getProjectFields());
         Assert.assertEquals(Sets.newHashSet(), config.getBlacklistedFields());
         Assert.assertEquals(Sets.newHashSet(), config.getIndexedFields());
@@ -214,8 +214,8 @@ public class ShardQueryConfigurationTest {
         Set<String> nonEventKeyPrefixes = Sets.newHashSet("nonEventKeyPrefixA");
         Set<String> unevaluatedFields = Sets.newHashSet("unevaluatedFieldA");
         Set<String> dataTypeFilter = Sets.newHashSet("dataTypeFilterA");
-        IndexHole indexHole = new IndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
-        List<IndexHole> indexHoles = Lists.newArrayList(indexHole);
+        ValueIndexHole valueIndexHole = new ValueIndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
+        List<ValueIndexHole> valueIndexHoles = Lists.newArrayList(valueIndexHole);
         Set<String> projectFields = Sets.newHashSet("projectFieldA");
         Set<String> blacklistedFields = Sets.newHashSet("blacklistedFieldA");
         Set<String> indexedFields = Sets.newHashSet("indexedFieldA");
@@ -255,7 +255,7 @@ public class ShardQueryConfigurationTest {
         other.setNonEventKeyPrefixes(nonEventKeyPrefixes);
         other.setUnevaluatedFields(unevaluatedFields);
         other.setDatatypeFilter(dataTypeFilter);
-        other.setIndexHoles(indexHoles);
+        other.setValueIndexHoles(valueIndexHoles);
         other.setProjectFields(projectFields);
         other.setBlacklistedFields(blacklistedFields);
         other.setIndexedFields(indexedFields);
@@ -289,8 +289,8 @@ public class ShardQueryConfigurationTest {
         nonEventKeyPrefixes.add("nonEventKeyPrefixB");
         unevaluatedFields.add("unevaluatedFieldB");
         dataTypeFilter.add("dataTypeFilterB");
-        IndexHole otherIndexHole = new IndexHole(new String[] {"4", "5"}, new String[] {"6", "7"});
-        indexHoles.add(otherIndexHole);
+        ValueIndexHole otherValueIndexHole = new ValueIndexHole(new String[] {"4", "5"}, new String[] {"6", "7"});
+        valueIndexHoles.add(otherValueIndexHole);
         projectFields.add("projectFieldB");
         blacklistedFields.add("blacklistedFieldB");
         indexedFields.add("indexedFieldB");
@@ -318,8 +318,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Sets.newHashSet("nonEventKeyPrefixA"), config.getNonEventKeyPrefixes());
         Assert.assertEquals(Sets.newHashSet("unevaluatedFieldA"), config.getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet("dataTypeFilterA"), config.getDatatypeFilter());
-        IndexHole expectedIndexHole = new IndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
-        Assert.assertEquals(Lists.newArrayList(expectedIndexHole), config.getIndexHoles());
+        ValueIndexHole expectedValueIndexHole = new ValueIndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
+        Assert.assertEquals(Lists.newArrayList(expectedValueIndexHole), config.getValueIndexHoles());
         Assert.assertEquals(Sets.newHashSet("projectFieldA"), config.getProjectFields());
         Assert.assertEquals(Sets.newHashSet("blacklistedFieldA"), config.getBlacklistedFields());
         Assert.assertEquals(Sets.newHashSet("indexedFieldA"), config.getIndexedFields());

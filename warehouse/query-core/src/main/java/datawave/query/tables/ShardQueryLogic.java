@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.config.ValueIndexHole;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -16,7 +17,6 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.cardinality.CardinalityConfiguration;
-import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.enrich.DataEnricher;
@@ -2090,12 +2090,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setCacheModel(cacheModel);
     }
     
-    public List<IndexHole> getIndexHoles() {
-        return getConfig().getIndexHoles();
+    public List<ValueIndexHole> getIndexHoles() {
+        return getConfig().getValueIndexHoles();
     }
     
-    public void setIndexHoles(List<IndexHole> indexHoles) {
-        getConfig().setIndexHoles(indexHoles);
+    public void setIndexHoles(List<ValueIndexHole> valueIndexHoles) {
+        getConfig().setValueIndexHoles(valueIndexHoles);
     }
     
     public CardinalityConfiguration getCardinalityConfiguration() {

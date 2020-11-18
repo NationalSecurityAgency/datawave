@@ -26,6 +26,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
                 setFrequencyCombiner(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
+                setIndexColumnIterator(tops, scope.name());
             }
         }
         
@@ -55,6 +56,16 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         setPropertyIfNecessary(tableName, stem, "10," + SummingCombiner.class.getName(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
+        return stem;
+    }
+    
+    // add the IndexColumnIterator to the count column
+    private String setIndexColumnIterator(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "IndexColumnIterator");
+        setPropertyIfNecessary(tableName, stem, "25,datawave.iterators.IndexColumnIterator", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.ageOffDate", "20100101", tops, log);
         return stem;
     }
     

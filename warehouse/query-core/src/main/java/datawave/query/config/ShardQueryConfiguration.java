@@ -197,8 +197,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> unevaluatedFields = Collections.emptySet();
     // Filter results on datatypes. Default to having no filters
     private Set<String> datatypeFilter = UniversalSet.instance();
-    // A set of sorted index holes
-    private List<IndexHole> indexHoles = new ArrayList<>();
+    // A set of sorted value index holes
+    private List<ValueIndexHole> valueIndexHoles = new ArrayList<>();
+    // A set of sorted field index holes
+    private List<FieldIndexHole> fieldIndexHoles = new ArrayList<>();
     // Limit fields returned per event
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> blacklistedFields = new HashSet<>(0);
@@ -435,7 +437,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : Sets.newHashSet(other.getNonEventKeyPrefixes()));
         this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : Sets.newHashSet(other.getDatatypeFilter()));
-        this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
+        this.setValueIndexHoles(null == other.getValueIndexHoles() ? null : Lists.newArrayList(other.getValueIndexHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
         this.setBlacklistedFields(null == other.getBlacklistedFields() ? null : Sets.newHashSet(other.getBlacklistedFields()));
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
@@ -1908,12 +1910,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         
     }
     
-    public List<IndexHole> getIndexHoles() {
-        return indexHoles;
+    public List<ValueIndexHole> getValueIndexHoles() {
+        return valueIndexHoles;
     }
     
-    public void setIndexHoles(List<IndexHole> indexHoles) {
-        this.indexHoles = indexHoles;
+    public void setValueIndexHoles(List<ValueIndexHole> valueIndexHoles) {
+        this.valueIndexHoles = valueIndexHoles;
+    }
+    
+    public List<FieldIndexHole> getFieldIndexHoles() {
+        return fieldIndexHoles;
+    }
+    
+    public void setFieldIndexHoles(List<FieldIndexHole> fieldIndexHoles) {
+        this.fieldIndexHoles = fieldIndexHoles;
     }
     
     public boolean getCollectTimingDetails() {
