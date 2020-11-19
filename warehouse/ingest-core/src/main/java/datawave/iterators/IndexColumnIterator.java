@@ -79,10 +79,14 @@ public class IndexColumnIterator extends TransformingIterator {
             
             if (startingNewRange) {
                 startingNewRange = false;
-                frequencyFamilyCounter.deserializeCompressedValue(topValue);
+                // TODO The two lines below may need some reevaluation
+                if (topValue.toString().isEmpty())
+                    frequencyFamilyCounter.aggregateRecord(DateHelper.format(topKey.getTimestamp()), 1);
+                else
+                    frequencyFamilyCounter.deserializeCompressedValue(topValue);
                 if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() == 0)
                     log.error("Compressed value was not deserialized properly");
-                aggregatedValue = topValue;
+                aggregatedValue = frequencyFamilyCounter.serialize();
                 aggregatedKey = topKey;
                 
                 if (log.isTraceEnabled())
@@ -134,6 +138,7 @@ public class IndexColumnIterator extends TransformingIterator {
             }
         } else if (numRecords == 1) {
             if (aggregatedValue != null && aggregatedKey != null) {
+                // TODO The two lines below may need some reevaluation
                 if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() == 0)
                     frequencyFamilyCounter.aggregateRecord(DateHelper.format(aggregatedKey.getTimestamp()), 1);
                 kvBuffer.append(aggregatedKey, frequencyFamilyCounter.serialize());
