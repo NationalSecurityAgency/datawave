@@ -1000,7 +1000,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     if (location != null)
                         return null;
                     
-                    if (!extent.getTableId().equals(tableId)) {
+                    if (!extent.getTableId().canonical().equals(tableId)) {
                         throw new AccumuloException("Saw unexpected table Id " + tableId + " " + extent);
                     }
                     
