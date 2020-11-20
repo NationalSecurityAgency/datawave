@@ -1141,11 +1141,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
-        List<FieldIndexHole> fieldIndexHoles;
         try {
-            fieldIndexHoles = calculateIndexHoles(metadataHelper, queryTree, fieldToDatatypeMap, config);
-            if (fieldIndexHoles != null && !fieldIndexHoles.isEmpty())
-                config.setFieldIndexHoles(fieldIndexHoles);
+            calculateFieldIndexHoles(metadataHelper, fieldToDatatypeMap, config);
         } catch (TableNotFoundException e) {
             log.error("metadata table was not found " + e.getMessage());
         }
@@ -1698,9 +1695,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
     
-    private List<FieldIndexHole> calculateIndexHoles(MetadataHelper metadataHelper, ASTJexlScript queryTree, Multimap<String,Type<?>> fieldToDatatypeMap,
-                    ShardQueryConfiguration config) throws TableNotFoundException {
-        List<FieldIndexHole> fieldIndexHoles = new ArrayList<FieldIndexHole>();
+    /**
+     * Calculate the FieldIndexHoles and add them to the ShardedQueryConfiguaration
+     *
+     * @param metadataHelper
+     * @param fieldToDatatypeMap
+     * @param config
+     */
+    private void calculateFieldIndexHoles(MetadataHelper metadataHelper, Multimap<String,Type<?>> fieldToDatatypeMap, ShardQueryConfiguration config)
+                    throws TableNotFoundException {
         
         FrequencyFamilyCounter counter;
         for (String field : fieldToDatatypeMap.keySet()) {
@@ -1717,13 +1720,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     newHole.setStartDate(entry.getKey().getYyyymmdd());
                     // TODO maybe this will be based on the next entry in tree?
                     newHole.setEndDate(entry.getKey().getYyyymmdd());
-                    fieldIndexHoles.add(newHole);
+                    config.addFieldIndexHole(newHole);
                     // }
                 }
             }
         }
         
-        return fieldIndexHoles;
     }
     
     /**

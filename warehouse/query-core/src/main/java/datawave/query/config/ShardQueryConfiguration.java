@@ -1926,6 +1926,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fieldIndexHoles = fieldIndexHoles;
     }
     
+    public void addFieldIndexHoles(List<FieldIndexHole> indexHoles) {
+        this.fieldIndexHoles.addAll(indexHoles);
+    }
+    
+    public void addFieldIndexHole(FieldIndexHole indexHole) {
+        this.fieldIndexHoles.add(indexHole);
+    }
+    
     public boolean getCollectTimingDetails() {
         return collectTimingDetails;
     }
