@@ -6,12 +6,15 @@ public class FieldIndexHole implements Serializable, Comparable<FieldIndexHole> 
     
     private static final long serialVersionUID = -6778479621810682281L;
     
+    private String fieldName;
     private String startDate;
     private String endDate;
+    public static int NOT_SAME_FIELD = Integer.MAX_VALUE;
     
     public FieldIndexHole() {}
     
-    public FieldIndexHole(String[] dateRange) {
+    public FieldIndexHole(String field, String[] dateRange) {
+        fieldName = field;
         setStartDate(dateRange[0]);
         setEndDate(dateRange[1]);
     }
@@ -19,12 +22,25 @@ public class FieldIndexHole implements Serializable, Comparable<FieldIndexHole> 
     @Override
     public int compareTo(FieldIndexHole otherHole) {
         
-        int comparison = startDate.compareTo(otherHole.startDate);
+        int comparison = fieldName.compareTo(otherHole.getFieldName());
         if (comparison == 0) {
-            comparison = endDate.compareTo(otherHole.endDate);
+            comparison = startDate.compareTo(otherHole.startDate);
+            if (comparison == 0) {
+                comparison = endDate.compareTo(otherHole.endDate);
+            }
+        } else {
+            return NOT_SAME_FIELD;
         }
         
         return comparison;
+    }
+    
+    public String getFieldName() {
+        return fieldName;
+    }
+    
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
     }
     
     public String getStartDate() {

@@ -398,9 +398,9 @@ public class ShardQueryConfigurationTest {
         config.setIndexedFields(indexedFields);
         config.setQueryFieldsDatatypes(queryFieldsDatatypes);
         List<FieldIndexHole> fieldIndexHoles = new ArrayList<>();
-        fieldIndexHoles.add(new FieldIndexHole(new String[] {"20190103", "20190107"}));
-        fieldIndexHoles.add(new FieldIndexHole(new String[] {"20190205", "20190209"}));
-        fieldIndexHoles.add(new FieldIndexHole(new String[] {"20190305", "20190309"}));
+        fieldIndexHoles.add(new FieldIndexHole("fieldA", new String[] {"20190103", "20190107"}));
+        fieldIndexHoles.add(new FieldIndexHole("fieldA", new String[] {"20190205", "20190209"}));
+        fieldIndexHoles.add(new FieldIndexHole("fieldA", new String[] {"20190305", "20190309"}));
         config.setFieldIndexHoles(fieldIndexHoles);
         String expected = "fieldA:datawave.data.type.DateType;fieldB:datawave.data.type.StringType;";
         Assert.assertEquals(expected, config.getIndexedFieldDataTypesAsString());

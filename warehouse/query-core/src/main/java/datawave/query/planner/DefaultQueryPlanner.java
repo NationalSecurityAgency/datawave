@@ -1711,13 +1711,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             counter = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
             if (counter != null && !counter.getDateToFrequencyValueMap().isEmpty()) {
                 for (Entry<YearMonthDay,Frequency> entry : counter.getDateToFrequencyValueMap().entrySet()) {
-                    if (config.getBeginDate().toString().compareTo(entry.getKey().getYyyymmdd()) < 0) {
-                        FieldIndexHole newHole = new FieldIndexHole();
-                        newHole.setStartDate(entry.getKey().getYyyymmdd());
-                        newHole.setEndDate(entry.getKey().getYyyymmdd()); // TODO maybe this will be based on the next entry in tree?
-                        
-                        fieldIndexHoles.add(newHole);
-                    }
+                    // if (config.getBeginDate().toString().compareTo(entry.getKey().getYyyymmdd()) < 0) {
+                    FieldIndexHole newHole = new FieldIndexHole();
+                    newHole.setFieldName(field);
+                    newHole.setStartDate(entry.getKey().getYyyymmdd());
+                    // TODO maybe this will be based on the next entry in tree?
+                    newHole.setEndDate(entry.getKey().getYyyymmdd());
+                    fieldIndexHoles.add(newHole);
+                    // }
                 }
             }
         }
