@@ -40,6 +40,7 @@ import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
@@ -93,6 +94,7 @@ import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.*;
+import datawave.util.time.DateHelper;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -1706,24 +1708,34 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     throws TableNotFoundException {
         
         FrequencyFamilyCounter counter;
+        String startDate = DateHelper.format(config.getBeginDate().getTime());
+        String endDate = DateHelper.format(config.getEndDate().getTime());
+        String holeStart = startDate;
         for (String field : fieldToDatatypeMap.keySet()) {
             // TODO - This loop must be perfected. Not sure how to set start and end values.
             // the start and end values in the DataToFrequency map have no relavance in
             // this context.
-            log.info("Indexed field " + field);
+            // TODO this loop needs more work
             counter = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
             if (counter != null && !counter.getDateToFrequencyValueMap().isEmpty()) {
                 for (Entry<YearMonthDay,Frequency> entry : counter.getDateToFrequencyValueMap().entrySet()) {
-                    // if (config.getBeginDate().toString().compareTo(entry.getKey().getYyyymmdd()) < 0) {
                     FieldIndexHole newHole = new FieldIndexHole();
                     newHole.setFieldName(field);
-                    newHole.setStartDate(entry.getKey().getYyyymmdd());
-                    // TODO maybe this will be based on the next entry in tree?
-                    newHole.setEndDate(entry.getKey().getYyyymmdd());
+                    newHole.setStartDate(holeStart);
+                    if (endDate.compareTo(entry.getKey().getYyyymmdd()) > 0)
+                        newHole.setEndDate(entry.getKey().getYyyymmdd());
+                    else
+                        newHole.setEndDate(endDate);
                     config.addFieldIndexHole(newHole);
-                    // }
+                    holeStart = entry.getKey().getYyyymmdd(); // TODO might need to write a function to increase this one day
+                    
                 }
             }
+            if (holeStart.compareTo(endDate) < 0) {
+                FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {holeStart, endDate});
+                config.addFieldIndexHole(trailingHole);
+            }
+            
         }
         
     }
