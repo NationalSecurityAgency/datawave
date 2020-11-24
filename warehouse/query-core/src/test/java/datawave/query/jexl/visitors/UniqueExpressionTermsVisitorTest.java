@@ -7,6 +7,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class UniqueExpressionTermsVisitorTest {
@@ -244,6 +245,7 @@ public class UniqueExpressionTermsVisitorTest {
         ASTJexlScript visitedScript = UniqueExpressionTermsVisitor.enforce(originalScript);
         
         // Verify the script is as expected, and has a valid lineage.
+        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(visitedScript));
         assertScriptEquality(visitedScript, expected);
         assertLineage(visitedScript);
         
