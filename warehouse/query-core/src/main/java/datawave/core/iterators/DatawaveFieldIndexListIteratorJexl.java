@@ -1,5 +1,6 @@
 package datawave.core.iterators;
 
+import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.Constants;
 import datawave.query.jexl.DatawaveArithmetic;
 import org.apache.accumulo.core.data.Key;
@@ -204,6 +205,13 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     public static class FSTManager {
         static final Map<Path,FST<Object>> fstCache = new HashMap<>();
         
+        static private FileSystemCache hdfsFileSystem;
+        static private String hdfsFileCompressionCodec;
+        
+        public static synchronized FST<Object> get(Path fstfile) throws IOException {
+            return get(fstfile, hdfsFileCompressionCodec, hdfsFileSystem.getFileSystem(fstfile.toUri()));
+        }
+        
         public static synchronized FST<Object> get(Path fstfile, String compressedCodec, FileSystem fs) throws IOException {
             if (fstfile == null)
                 throw new NullPointerException("input fst key was null");
@@ -254,6 +262,14 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         
         public static synchronized void clear() {
             fstCache.clear();
+        }
+        
+        public static void setHdfsFileSystem(FileSystemCache hdfsFileSystem) {
+            FSTManager.hdfsFileSystem = hdfsFileSystem;
+        }
+        
+        public static void setHdfsFileCompressionCodec(String hdfsFileCompressionCodec) {
+            FSTManager.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
         }
     }
 }

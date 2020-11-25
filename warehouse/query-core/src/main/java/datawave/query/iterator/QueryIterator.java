@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -266,6 +267,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (env != null) {
             ActiveQueryLog.setConfig(env.getConfig());
         }
+        
+        DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());
+        DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec());
     }
     
     @Override
@@ -960,7 +964,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             try {
                 IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
-                iteratorBuildingVisitor.setExceededOrEvaluationCache(exceededOrEvaluationCache);
                 Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor, script,
                                 getNonEventFields());
                 
