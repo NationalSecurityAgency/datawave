@@ -60,7 +60,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private Set<Authorizations> calculatedAuths = null;
     private boolean finished = false;
     private volatile boolean canceled = false;
-    private TraceInfo traceInfo = null;
+    private transient TraceInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
     private RunningQueryTiming timing = null;
     private ExecutorService executor = null;
