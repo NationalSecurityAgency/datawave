@@ -196,6 +196,7 @@ public class CompositeIndexTest {
     
     @BeforeClass
     public static void setupClass() throws Exception {
+        System.setProperty("type.metadata.dir", "type-metadata-dir");
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         
         setupConfiguration(conf);

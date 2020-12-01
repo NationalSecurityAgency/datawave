@@ -189,6 +189,8 @@ public class MixedGeoAndGeoWaveTest {
         recNum = ingestData(conf, GEO_FIELD, geoData, recNum, BEGIN_DATE);
         recNum = ingestData(conf, POINT_FIELD, pointData, recNum, MID_DATE);
         ingestData(conf, POLY_POINT_FIELD, polyData, recNum, MID_DATE);
+        
+        System.setProperty("type.metadata.dir", "type-metadata-dir");
     }
     
     public static int ingestData(Configuration conf, String fieldName, String[] data, int startRecNum, String ingestDate) throws Exception {

@@ -129,7 +129,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     @After
     public void after() {
         TypeRegistry.reset();
-        System.clearProperty("type.metadata.dir");
+        // Set type metadata back to default
+        System.setProperty("type.metadata.dir", "type-metadata-dir");
     }
     
     @Before

@@ -89,7 +89,8 @@ public class TypeMetadataProviderTest {
     
     @After
     public void after() {
-        System.clearProperty("type.metadata.dir");
+        // Reset property back to default
+        System.setProperty("type.metadata.dir", "type-metadata-dir");
     }
     
     public void testThisThing(TypeMetadataProvider typeMetadataProvider, TypeMetadataWriter typeMetadataWriter) throws Exception {

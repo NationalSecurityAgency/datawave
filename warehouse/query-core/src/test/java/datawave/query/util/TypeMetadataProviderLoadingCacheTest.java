@@ -105,7 +105,8 @@ public class TypeMetadataProviderLoadingCacheTest {
     
     @After
     public void after() {
-        System.clearProperty("type.metadata.dir");
+        // Reset property to default
+        System.setProperty("type.metadata.dir", "type-metadata-dir");
     }
     
     @Test

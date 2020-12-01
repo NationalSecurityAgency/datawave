@@ -86,6 +86,7 @@ import java.util.stream.Collectors;
  * <li>file.encoding => UTF-8</li>
  * <li>DATAWAVE_INGEST_HOME => target directory</li>
  * <li>hadoop.home.dir => target directory</li>
+ * <li>type.metadata.dir> => type-metadata-dir</li>
  * </ul>
  */
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
@@ -99,6 +100,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", StandardCharsets.UTF_8.name());
         System.setProperty(DnUtils.NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("type.metadata.dir", "type-metadata-dir");
         try {
             File dir = new File(ClassLoader.getSystemClassLoader().getResource(".").toURI());
             File targetDir = dir.getParentFile();
