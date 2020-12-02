@@ -340,13 +340,26 @@ public class JexlASTHelper {
     }
     
     /**
-     * Fetch the literal off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no literal
+     * Fetch the identifier off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no identifier This
+     * identifier will be deconstructed
      * 
      * @param node
-     * @return
+     * @return the deconstucted identifier
      * @throws NoSuchElementException
      */
     public static String getIdentifier(JexlNode node) throws NoSuchElementException {
+        return getIdentifier(node, true);
+    }
+    
+    /**
+     * Fetch the identifier off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no identifier
+     *
+     * @param node
+     * @param deconstruct
+     * @return the identifier, deconstructed if requested
+     * @throws NoSuchElementException
+     */
+    public static String getIdentifier(JexlNode node, boolean deconstruct) throws NoSuchElementException {
         if (null != node && 2 == node.jjtGetNumChildren()) {
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode child = node.jjtGetChild(i);
@@ -357,7 +370,7 @@ public class JexlASTHelper {
                         
                         // If the grandchild and its image is non-null and equal to the any-field identifier
                         if (null != grandChild && grandChild instanceof ASTIdentifier) {
-                            return deconstructIdentifier(grandChild.image);
+                            return (deconstruct ? deconstructIdentifier(grandChild.image) : grandChild.image);
                         } else if (null != grandChild && grandChild instanceof ASTFunctionNode) {
                             return null;
                         }
@@ -368,7 +381,7 @@ public class JexlASTHelper {
                 }
             }
         } else if (node instanceof ASTIdentifier && node.jjtGetNumChildren() == 0) {
-            return deconstructIdentifier(node.image);
+            return deconstructIdentifier(node.image, deconstruct);
         }
         
         NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.IDENTIFIER_MISSING);
