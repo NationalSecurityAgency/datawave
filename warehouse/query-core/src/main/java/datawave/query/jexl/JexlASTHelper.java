@@ -344,7 +344,7 @@ public class JexlASTHelper {
      * identifier will be deconstructed
      * 
      * @param node
-     * @return the deconstucted identifier
+     * @return the deconstructed identifier
      * @throws NoSuchElementException
      */
     public static String getIdentifier(JexlNode node) throws NoSuchElementException {
