@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import datawave.query.config.FieldIndexHole;
 import datawave.query.config.ValueIndexHole;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -40,6 +41,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     protected Set<String> dataTypeFilter;
     // the set of holes known to exist in the index
     protected SortedSet<ValueIndexHole> valueIndexHoles = new TreeSet<>();
+    protected SortedSet<FieldIndexHole> fieldIndexHoles = new TreeSet<>();
     
     /**
      * Construct the visitor
@@ -56,6 +58,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         this.endDate = format.format(config.getEndDate());
         this.dataTypeFilter = config.getDatatypeFilter();
         this.valueIndexHoles.addAll(config.getValueIndexHoles());
+        this.fieldIndexHoles.addAll(config.getFieldIndexHoles());
     }
     
     /**

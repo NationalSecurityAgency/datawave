@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.config.FieldIndexHole;
 import datawave.query.config.ValueIndexHole;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
@@ -2090,12 +2091,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setCacheModel(cacheModel);
     }
     
-    public List<ValueIndexHole> getIndexHoles() {
+    public List<ValueIndexHole> getValueIndexHoles() {
         return getConfig().getValueIndexHoles();
     }
     
-    public void setIndexHoles(List<ValueIndexHole> valueIndexHoles) {
+    public List<FieldIndexHole> getFieldIndexHoles() {
+        return getConfig().getFieldIndexHoles();
+    }
+    
+    public void setValueIndexHoles(List<ValueIndexHole> valueIndexHoles) {
         getConfig().setValueIndexHoles(valueIndexHoles);
+    }
+    
+    public void setFieldIndexHoles(List<FieldIndexHole> fieldIndexHoles) {
+        getConfig().setFieldIndexHoles(fieldIndexHoles);
     }
     
     public CardinalityConfiguration getCardinalityConfiguration() {
