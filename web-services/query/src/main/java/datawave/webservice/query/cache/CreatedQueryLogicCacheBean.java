@@ -6,7 +6,7 @@ import com.google.common.collect.Maps;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.logic.QueryLogic;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.deltaspike.core.api.exclude.Exclude;
@@ -39,40 +39,40 @@ public class CreatedQueryLogicCacheBean {
     public static class Triple {
         final String userID;
         final QueryLogic<?> logic;
-        final Connector cxn;
+        final AccumuloClient client;
         
-        public Triple(String userID, QueryLogic<?> logic, Connector cxn) {
+        public Triple(String userID, QueryLogic<?> logic, AccumuloClient client) {
             super();
             this.userID = userID;
             this.logic = logic;
-            this.cxn = cxn;
+            this.client = client;
         }
         
         @Override
         public int hashCode() {
-            return ((new HashCodeBuilder()).append(userID).append(logic).append(cxn)).toHashCode();
+            return ((new HashCodeBuilder()).append(userID).append(logic).append(client)).toHashCode();
         }
         
         @Override
         public boolean equals(Object o) {
             if (o instanceof Triple) {
                 Triple other = (Triple) o;
-                return other.userID.equals(this.userID) && other.logic.equals(this.logic) && other.cxn.equals(this.cxn);
+                return other.userID.equals(this.userID) && other.logic.equals(this.logic) && other.client.equals(this.client);
             }
             
             return false;
         }
     }
     
-    private static final Function<Triple,Pair<QueryLogic<?>,Connector>> tripToPair = from -> {
+    private static final Function<Triple,Pair<QueryLogic<?>,AccumuloClient>> tripToPair = from -> {
         if (null == from) {
             return null;
         }
-        return new Pair<>(from.logic, from.cxn);
+        return new Pair<>(from.logic, from.client);
     };
     
     // returns the logic and connection fields in a triple as a pair
-    private static final Function<Entry<Pair<String,Long>,Triple>,Entry<String,Pair<QueryLogic<?>,Connector>>> toPair = from -> {
+    private static final Function<Entry<Pair<String,Long>,Triple>,Entry<String,Pair<QueryLogic<?>,AccumuloClient>>> toPair = from -> {
         if (from == null) {
             return null;
         } else {
@@ -92,31 +92,31 @@ public class CreatedQueryLogicCacheBean {
      * @param queryId
      * @param userId
      * @param logic
-     * @param cxn
+     * @param client
      * @return true if there was no previous mapping for the given queryId in the cache.
      */
-    public boolean add(String queryId, String userId, QueryLogic<?> logic, Connector cxn) {
-        Triple value = new Triple(userId, logic, cxn);
+    public boolean add(String queryId, String userId, QueryLogic<?> logic, AccumuloClient client) {
+        Triple value = new Triple(userId, logic, client);
         long updateTime = System.currentTimeMillis();
         return cache.putIfAbsent(new Pair<>(queryId, updateTime), value) == null;
     }
     
-    public Pair<QueryLogic<?>,Connector> poll(String id) {
+    public Pair<QueryLogic<?>,AccumuloClient> poll(String id) {
         Entry<Pair<String,Long>,Triple> entry = get(id);
         return entry == null ? null : tripToPair.apply(entry.getValue());
     }
     
-    public Map<String,Pair<QueryLogic<?>,Connector>> snapshot() {
+    public Map<String,Pair<QueryLogic<?>,AccumuloClient>> snapshot() {
         HashMap<Pair<String,Long>,Triple> snapshot = Maps.newHashMap(cache);
-        HashMap<String,Pair<QueryLogic<?>,Connector>> tformMap = Maps.newHashMapWithExpectedSize(cache.size());
+        HashMap<String,Pair<QueryLogic<?>,AccumuloClient>> tformMap = Maps.newHashMapWithExpectedSize(cache.size());
         
-        for (Entry<String,Pair<QueryLogic<?>,Connector>> tform : Iterables.transform(snapshot.entrySet(), toPair)) {
+        for (Entry<String,Pair<QueryLogic<?>,AccumuloClient>> tform : Iterables.transform(snapshot.entrySet(), toPair)) {
             tformMap.put(tform.getKey(), tform.getValue());
         }
         return tformMap;
     }
     
-    public Map<String,Pair<QueryLogic<?>,Connector>> entriesOlderThan(final Long now, final Long expiration) {
+    public Map<String,Pair<QueryLogic<?>,AccumuloClient>> entriesOlderThan(final Long now, final Long expiration) {
         Iterable<Entry<Pair<String,Long>,Triple>> iter = Iterables.filter(cache.entrySet(), input -> {
             Long timeInserted = input.getKey().getSecond();
             
@@ -128,7 +128,7 @@ public class CreatedQueryLogicCacheBean {
                         return false;
                     });
         
-        Map<String,Pair<QueryLogic<?>,Connector>> result = Maps.newHashMapWithExpectedSize(32);
+        Map<String,Pair<QueryLogic<?>,AccumuloClient>> result = Maps.newHashMapWithExpectedSize(32);
         for (Entry<Pair<String,Long>,Triple> entry : iter) {
             result.put(entry.getKey().getFirst(), tripToPair.apply(entry.getValue()));
         }
@@ -136,7 +136,7 @@ public class CreatedQueryLogicCacheBean {
         return result;
     }
     
-    public Pair<QueryLogic<?>,Connector> pollIfOwnedBy(String queryId, String userId) {
+    public Pair<QueryLogic<?>,AccumuloClient> pollIfOwnedBy(String queryId, String userId) {
         Entry<Pair<String,Long>,Triple> entry = get(queryId);
         if (entry != null) {
             if (userId.equals(entry.getValue().userID)) {
@@ -150,14 +150,14 @@ public class CreatedQueryLogicCacheBean {
     }
     
     public void clearQueryLogics(long currentTimeMs, long timeToLiveMs) {
-        Set<Entry<String,Pair<QueryLogic<?>,Connector>>> entrySet = entriesOlderThan(currentTimeMs, timeToLiveMs).entrySet();
+        Set<Entry<String,Pair<QueryLogic<?>,AccumuloClient>>> entrySet = entriesOlderThan(currentTimeMs, timeToLiveMs).entrySet();
         clearQueryLogics(entrySet);
     }
     
-    private void clearQueryLogics(Set<Entry<String,Pair<QueryLogic<?>,Connector>>> entrySet) {
+    private void clearQueryLogics(Set<Entry<String,Pair<QueryLogic<?>,AccumuloClient>>> entrySet) {
         int count = 0;
-        for (Entry<String,Pair<QueryLogic<?>,Connector>> entry : entrySet) {
-            Pair<QueryLogic<?>,Connector> activePair = poll(entry.getKey());
+        for (Entry<String,Pair<QueryLogic<?>,AccumuloClient>> entry : entrySet) {
+            Pair<QueryLogic<?>,AccumuloClient> activePair = poll(entry.getKey());
             
             if (activePair == null) {
                 if (log.isDebugEnabled()) {
@@ -173,7 +173,7 @@ public class CreatedQueryLogicCacheBean {
             }
             
             try {
-                connectionFactory.returnConnection(activePair.getSecond());
+                connectionFactory.returnClient(activePair.getSecond());
             } catch (Exception ex) {
                 log.error("Could not return connection from: " + entry.getKey() + " - " + activePair, ex);
             }

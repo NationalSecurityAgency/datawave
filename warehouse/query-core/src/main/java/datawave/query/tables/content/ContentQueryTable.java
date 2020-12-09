@@ -14,8 +14,8 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -88,11 +88,11 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(final Connector connection, final Query settings, final Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(final AccumuloClient client, final Query settings, final Set<Authorizations> auths) throws Exception {
         // Initialize the config and scanner factory
         final ContentQueryConfiguration config = new ContentQueryConfiguration(this, settings);
-        this.scannerFactory = new ScannerFactory(connection);
-        config.setConnector(connection);
+        this.scannerFactory = new ScannerFactory(client);
+        config.setClient(client);
         config.setAuthorizations(auths);
         
         // Re-assign the view name if specified via params

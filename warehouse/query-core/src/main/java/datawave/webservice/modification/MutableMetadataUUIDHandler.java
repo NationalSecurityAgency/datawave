@@ -18,9 +18,9 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.VoidResponse;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
@@ -206,11 +206,11 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
     }
     
     @Override
-    public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths, String user)
-                    throws BadRequestException, AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
+    public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
+                    String user) throws BadRequestException, AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         VoidResponse response = new VoidResponse();
         ArrayList<Exception> exceptions = new ArrayList<>();
-        MetadataHelper mHelper = getMetadataHelper(con);
+        MetadataHelper mHelper = getMetadataHelper(client);
         
         // Receive DefaultUUIDModificationRequest
         DefaultUUIDModificationRequest uuidModReq = DefaultUUIDModificationRequest.class.cast(request);
@@ -325,9 +325,9 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                     if (eventUser == null || eventUser.equals("")) {
                                         if (log != null)
                                             log.trace("No user provided for event. Using caller: " + user);
-                                        super.process(con, modReq, mutableFieldList, userAuths, user);
+                                        super.process(client, modReq, mutableFieldList, userAuths, user);
                                     } else {
-                                        super.process(con, modReq, mutableFieldList, userAuths, event.getUser());
+                                        super.process(client, modReq, mutableFieldList, userAuths, event.getUser());
                                     }
                                 }
                             }

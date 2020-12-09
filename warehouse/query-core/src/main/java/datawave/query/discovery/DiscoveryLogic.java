@@ -38,8 +38,8 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -88,12 +88,12 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         DiscoveryQueryConfiguration config = new DiscoveryQueryConfiguration(this, settings);
         
-        this.scannerFactory = new ScannerFactory(connection);
+        this.scannerFactory = new ScannerFactory(client);
         
-        this.metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        this.metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -140,7 +140,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         }
         
         // Set the connector
-        config.setConnector(connection);
+        config.setClient(client);
         
         // Set the auths
         config.setAuthorizations(auths);
@@ -185,8 +185,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         script = QueryModelVisitor.applyModel(script, getQueryModel(), allFields);
         
         QueryValues literalsAndPatterns = FindLiteralsAndPatternsVisitor.find(script);
-        Stopwatch timer = new Stopwatch();
-        timer.start();
+        Stopwatch timer = Stopwatch.createStarted();
         // no caching for getAllNormalizers, so try some magic with getFields...
         Multimap<String,Type<?>> dataTypeMap = ArrayListMultimap.create(metadataHelper.getFieldsToDatatypes(config.getDatatypeFilter()));
         /*

@@ -57,7 +57,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.ford, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     @Before

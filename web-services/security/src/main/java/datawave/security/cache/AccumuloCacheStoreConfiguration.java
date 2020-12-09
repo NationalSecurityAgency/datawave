@@ -3,7 +3,6 @@ package datawave.security.cache;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.accumulo.core.client.Instance;
 import org.infinispan.commons.configuration.BuiltBy;
 import org.infinispan.commons.configuration.ConfigurationFor;
 import org.infinispan.commons.configuration.attributes.Attribute;
@@ -16,7 +15,6 @@ import org.infinispan.configuration.cache.SingletonStoreConfiguration;
 @BuiltBy(AccumuloCacheStoreConfigurationBuilder.class)
 @ConfigurationFor(AccumuloCacheStore.class)
 public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration {
-    public static final AttributeDefinition<Instance> INSTANCE = AttributeDefinition.builder("instance", null, Instance.class).immutable().build();
     public static final AttributeDefinition<String> INSTANCE_NAME = AttributeDefinition.builder("instanceName", null, String.class).immutable().build();
     public static final AttributeDefinition<String> ZOOKEEPERS = AttributeDefinition.builder("zookeeperHosts", null, String.class).immutable().build();
     public static final AttributeDefinition<String> USERNAME = AttributeDefinition.builder("username", null, String.class).immutable().build();
@@ -31,11 +29,10 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
     public static final AttributeDefinition<Integer> AGEOFF_PRIORITY = AttributeDefinition.builder("ageoffPriority", 19).immutable().build();
     
     public static AttributeSet attributeDefinitionSet() {
-        return new AttributeSet(AccumuloCacheStoreConfiguration.class, AbstractStoreConfiguration.attributeDefinitionSet(), INSTANCE, INSTANCE_NAME,
-                        ZOOKEEPERS, USERNAME, PASSWORD, TABLE_NAME, AUTHORIZATIONS, WRITE_THREADS, MAX_LATENCY, MAX_MEMORY, AGEOFF_TTL, AGEOFF_PRIORITY);
+        return new AttributeSet(AccumuloCacheStoreConfiguration.class, AbstractStoreConfiguration.attributeDefinitionSet(), INSTANCE_NAME, ZOOKEEPERS,
+                        USERNAME, PASSWORD, TABLE_NAME, AUTHORIZATIONS, WRITE_THREADS, MAX_LATENCY, MAX_MEMORY, AGEOFF_TTL, AGEOFF_PRIORITY);
     }
     
-    private Attribute<Instance> instance;
     private Attribute<String> instanceName;
     private Attribute<String> zookeepers;
     private Attribute<String> username;
@@ -50,7 +47,6 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
     
     public AccumuloCacheStoreConfiguration(AttributeSet attributes, AsyncStoreConfiguration async, SingletonStoreConfiguration singletonStore) {
         super(attributes, async, singletonStore);
-        instance = attributes.attribute(INSTANCE);
         instanceName = attributes.attribute(INSTANCE_NAME);
         zookeepers = attributes.attribute(ZOOKEEPERS);
         username = attributes.attribute(USERNAME);
@@ -62,10 +58,6 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
         maxMemory = attributes.attribute(MAX_MEMORY);
         ageoffTTLhours = attributes.attribute(AGEOFF_TTL);
         ageoffPriority = attributes.attribute(AGEOFF_PRIORITY);
-    }
-    
-    public Instance instance() {
-        return instance.get();
     }
     
     public String instanceName() {
@@ -124,8 +116,6 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
         
         AccumuloCacheStoreConfiguration that = (AccumuloCacheStoreConfiguration) o;
         
-        if (instance != null ? !instance.equals(that.instance) : that.instance != null)
-            return false;
         if (instanceName != null ? !instanceName.equals(that.instanceName) : that.instanceName != null)
             return false;
         if (zookeepers != null ? !zookeepers.equals(that.zookeepers) : that.zookeepers != null)
@@ -155,7 +145,6 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (instance != null ? instance.hashCode() : 0);
         result = 31 * result + (instanceName != null ? instanceName.hashCode() : 0);
         result = 31 * result + (zookeepers != null ? zookeepers.hashCode() : 0);
         result = 31 * result + (username != null ? username.hashCode() : 0);

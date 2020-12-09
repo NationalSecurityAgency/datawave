@@ -11,18 +11,15 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.predicate.TimeFilter;
-import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.junit.Assert;
@@ -44,7 +41,7 @@ public class IteratorBuildingVisitorTest {
     
     private IteratorBuildingVisitor getDefault() {
         IteratorBuildingVisitor visitor = new IteratorBuildingVisitor();
-        visitor.setSource(new SourceFactory(Collections.emptyIterator()), new BaseIteratorEnvironment());
+        visitor.setSource(new SourceFactory(Collections.emptyIterator()), new TestIteratorEnvironment());
         visitor.setTypeMetadata(new TypeMetadata());
         visitor.setTimeFilter(TimeFilter.alwaysTrue());
         return visitor;
@@ -883,7 +880,7 @@ public class IteratorBuildingVisitorTest {
         TypeMetadata typeMetadata = new TypeMetadata();
         
         Iterator<Map.Entry<Key,Value>> iterator = source.iterator();
-        IteratorEnvironment env = new BaseIteratorEnvironment();
+        IteratorEnvironment env = new TestIteratorEnvironment();
         visitor.setSource(new SourceFactory(iterator), env);
         
         // configure the visitor for use
@@ -961,6 +958,12 @@ public class IteratorBuildingVisitorTest {
         @Override
         public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
             return new SortedListKeyValueIterator(iterator);
+        }
+    }
+    
+    private static class TestIteratorEnvironment implements IteratorEnvironment {
+        public boolean isSamplingEnabled() {
+            return false;
         }
     }
 }

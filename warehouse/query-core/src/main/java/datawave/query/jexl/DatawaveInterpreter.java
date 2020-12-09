@@ -1,6 +1,7 @@
 package datawave.query.jexl;
 
 import com.google.common.collect.Maps;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.QueryFunctions;
@@ -26,9 +27,13 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -443,6 +448,24 @@ public class DatawaveInterpreter extends Interpreter {
         Set<String> evalValues = null;
         FST evalFst = null;
         SortedSet<Range> evalRanges = null;
+        
+        // if the context isn't cached, load it now
+        if (!getContext().has(id)) {
+            try {
+                ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(node);
+                if (params != null) {
+                    if (params.getRanges() != null && !params.getRanges().isEmpty()) {
+                        getContext().set(id, params.getSortedAccumuloRanges());
+                    } else if (params.getValues() != null && !params.getValues().isEmpty()) {
+                        getContext().set(id, params.getValues());
+                    } else if (params.getFstURI() != null) {
+                        getContext().set(id, DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(new URI(params.getFstURI()))));
+                    }
+                }
+            } catch (IOException | URISyntaxException e) {
+                log.warn("Unable to load ExceededOrThreshold Paramters during evaluation", e);
+            }
+        }
         
         // determine what we're dealing with
         Object contextObj = getContext().get(id);

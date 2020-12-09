@@ -38,7 +38,7 @@ public class TokensQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new GroupsDataType(GroupsEntry.cities, fields));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public TokensQueryTest() {

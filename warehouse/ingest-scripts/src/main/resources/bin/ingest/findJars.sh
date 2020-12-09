@@ -16,7 +16,9 @@ findWebserviceJar (){
 findProvenanceJar (){
   ls -1 ../../lib/$1-[0-9.]*.*.jar |  grep -v with-dependencies | sort | tail -1
 }
-
+findAccumuloJar (){
+  ls -1 $WAREHOUSE_ACCUMULO_LIB/$1-[0-9]*.jar | sort | tail -1
+}
 
 
 CONF_DIR=../../config
@@ -67,11 +69,10 @@ LUCENE_JAR=$(findJar lucene-core)
 LUCENE_JAR=$LUCENE_JAR:$(findJar lucene-queryparser)
 LUCENE_JAR=$LUCENE_JAR:$(findJar lucene-analyzers-common)
 THRIFT_JAR=$(findJar libthrift)
-AC_CORE_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-core.jar
-AC_SERVER_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-server-base.jar
-AC_FATE_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-fate.jar
-AC_START_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-start.jar
-AC_TRACE_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-trace.jar
+AC_CORE_JAR=$(findAccumuloJar accumulo-core)
+AC_SERVER_JAR=$(findAccumuloJar accumulo-server-base)
+AC_START_JAR=$(findAccumuloJar accumulo-start)
+AC_MAPRED_JAR=$(findAccumuloJar accumulo-hadoop-mapreduce)
 AC_HTRACE_JAR=$(findJar htrace-core)
 VFS_JAR=`ls -1 $WAREHOUSE_ACCUMULO_LIB/commons-vfs*.jar | sort | head -1`
 ASM_JAR=$(findJar asm)

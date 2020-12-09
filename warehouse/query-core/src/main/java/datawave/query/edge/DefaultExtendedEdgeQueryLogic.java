@@ -87,7 +87,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         
         String queryString = config.getQueryString();
         
-        MetadataHelper metadataHelper = super.prepareMetadataHelper(config.getConnector(), config.getModelTableName(), config.getAuthorizations());
+        MetadataHelper metadataHelper = super.prepareMetadataHelper(config.getClient(), config.getModelTableName(), config.getAuthorizations());
         
         loadQueryModel(metadataHelper, config);
         

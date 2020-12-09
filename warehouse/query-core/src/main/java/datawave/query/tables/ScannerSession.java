@@ -285,8 +285,15 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             // until we've completed the start process
             if (null != stats)
                 initializeTimers();
-            startAndWait();
             
+            // these two guava methods replaced behavior of startAndWait() from version 15 but
+            // will now throw an exception if another thread closes the session so catch and ignore
+            startAsync();
+            try {
+                awaitRunning();
+            } catch (IllegalStateException e) {
+                log.debug("Session was closed while waiting to start up.");
+            }
         }
         
         // isFlushNeeded is only in the case of when we are finished
@@ -409,7 +416,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 flush();
                 return;
             }
-            stop();
+            stopAsync();
             
             return;
         }
@@ -673,7 +680,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     
     public void close() {
         forceClose = true;
-        stop();
+        stopAsync();
         synchronized (sessionDelegator) {
             if (null != delegatedResource) {
                 try {

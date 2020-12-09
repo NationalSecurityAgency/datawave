@@ -28,11 +28,18 @@ import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.Constants;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.NamespaceOperations;
+import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -967,8 +974,9 @@ public class IngestJob implements Tool {
         // Setup the Output
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
-            CBMutationOutputFormatter.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-            CBMutationOutputFormatter.setOutputInfo(job, userName, password, true, null);
+            CBMutationOutputFormatter.configure()
+                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
+                            .createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));
@@ -1298,18 +1306,21 @@ public class IngestJob implements Tool {
         // not carry block size or replication across. This is especially important because by default the
         // MapReduce jobs produce output with the replication set to 1 and we definitely don't want to preserve
         // that when copying across clusters.
-        DistCpOptions options = new DistCpOptions(Collections.singletonList(srcPath), destPath);
-        options.setLogPath(logPath);
-        options.setMapBandwidth(distCpBandwidth);
-        options.setMaxMaps(distCpMaxMaps);
-        options.setCopyStrategy(distCpStrategy);
-        options.setSyncFolder(true);
-        options.preserve(DistCpOptions.FileAttribute.USER);
-        options.preserve(DistCpOptions.FileAttribute.GROUP);
-        options.preserve(DistCpOptions.FileAttribute.PERMISSION);
-        options.preserve(DistCpOptions.FileAttribute.BLOCKSIZE);
-        options.preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE);
-        options.setBlocking(true);
+        //@formatter:off
+        DistCpOptions options = new DistCpOptions.Builder(Collections.singletonList(srcPath), destPath)
+            .withLogPath(logPath)
+            .withMapBandwidth(distCpBandwidth)
+            .maxMaps(distCpMaxMaps)
+            .withCopyStrategy(distCpStrategy)
+            .withSyncFolder(true)
+            .preserve(DistCpOptions.FileAttribute.USER)
+            .preserve(DistCpOptions.FileAttribute.GROUP)
+            .preserve(DistCpOptions.FileAttribute.PERMISSION)
+            .preserve(DistCpOptions.FileAttribute.BLOCKSIZE)
+            .preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE)
+            .withBlocking(true)
+            .build();
+        //@formatter:on
         
         DistCp cp = new DistCp(distcpConfig, options);
         log.info("Starting distcp from " + srcPath + " to " + destPath + " with configuration: " + options);

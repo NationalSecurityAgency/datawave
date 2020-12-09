@@ -59,7 +59,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log, RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
+        client = helper.loadTables(log, RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
     }
     
     @Before
@@ -108,7 +108,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         runTest(query, expected);
     }
     
-    public static class YieldingQueryIterator implements YieldingKeyValueIterator<Key,Value> {
+    public static class YieldingQueryIterator implements SortedKeyValueIterator<Key,Value> {
         
         private QueryIterator __delegate;
         private YieldCallback<Key> __yield = new YieldCallback<>();

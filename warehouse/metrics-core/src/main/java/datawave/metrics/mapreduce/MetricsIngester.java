@@ -6,24 +6,22 @@ import datawave.metrics.mapreduce.error.ProcessingErrorsMapper;
 import datawave.metrics.mapreduce.error.ProcessingErrorsReducer;
 import datawave.metrics.util.Connections;
 import datawave.util.time.DateHelper;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat;
-import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.Pair;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Option;
@@ -54,6 +52,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -158,16 +157,24 @@ public class MetricsIngester extends Configured implements Tool {
             job.setNumReduceTasks(0);
             
             job.setOutputFormatClass(AccumuloOutputFormat.class);
-            AccumuloOutputFormat.setConnectorInfo(job, conf.get(MetricsConfig.USER), new PasswordToken(conf.get(MetricsConfig.PASS, "").getBytes()));
-            AccumuloOutputFormat.setCreateTables(job, createTables);
-            AccumuloOutputFormat.setDefaultTableName(job, outTable);
-            log.info("zookeepers = " + conf.get(MetricsConfig.ZOOKEEPERS));
-            log.info("instance = " + conf.get(MetricsConfig.INSTANCE));
-            log.info("clientConfuguration = "
-                            + ClientConfiguration.loadDefault().withInstance(conf.get(MetricsConfig.INSTANCE)).withZkHosts(conf.get(MetricsConfig.ZOOKEEPERS)));
-            AccumuloOutputFormat.setZooKeeperInstance(job,
-                            ClientConfiguration.loadDefault().withInstance(conf.get(MetricsConfig.INSTANCE)).withZkHosts(conf.get(MetricsConfig.ZOOKEEPERS)));
-            AccumuloOutputFormat.setBatchWriterOptions(job, new BatchWriterConfig().setMaxLatency(25, TimeUnit.MILLISECONDS));
+            final String instanceName = conf.get(MetricsConfig.INSTANCE);
+            final String zookeepers = conf.get(MetricsConfig.ZOOKEEPERS);
+            final String userName = conf.get(MetricsConfig.USER);
+            final String password = conf.get(MetricsConfig.PASS);
+            // @formatter:off
+            Properties clientProps = Accumulo.newClientProperties()
+                    .to(instanceName, zookeepers).as(userName, password)
+                    .batchWriterConfig(new BatchWriterConfig().setMaxLatency(25, TimeUnit.MILLISECONDS))
+                    .build();
+            AccumuloOutputFormat.configure()
+                    .clientProperties(clientProps)
+                    .createTables(createTables)
+                    .defaultTable(outTable)
+                    .store(job);
+            // @formatter:on
+            log.info("zookeepers = " + zookeepers);
+            log.info("instance = " + instanceName);
+            log.info("clientConfiguration = " + clientProps);
             
             job.submit();
             
@@ -217,8 +224,8 @@ public class MetricsIngester extends Configured implements Tool {
         String date = null;
         Date dateObj;
         
-        try (BatchWriter writer = Connections.warehouseConnection(conf).createBatchWriter(
-                        conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), bwConfig)) {
+        try (AccumuloClient client = Connections.warehouseClient(conf);
+                        BatchWriter writer = client.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), bwConfig)) {
             
             Mutation m = new Mutation("metrics");
             for (Path path : inPaths) {
@@ -245,8 +252,9 @@ public class MetricsIngester extends Configured implements Tool {
         }
         
         Collection<Key> keysToRemove = new ArrayList<>();
-        try (BatchScanner scanner = Connections.metricsConnection(conf).createBatchScanner(
-                        conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), Authorizations.EMPTY, 8)) {
+        try (AccumuloClient client = Connections.metricsClient(conf);
+                        BatchScanner scanner = client.createBatchScanner(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE),
+                                        Authorizations.EMPTY, 8)) {
             scanner.setRanges(Collections.singleton(new Range(new Text("metrics"))));
             
             Iterator<Entry<Key,Value>> iter = scanner.iterator();
@@ -281,13 +289,9 @@ public class MetricsIngester extends Configured implements Tool {
             }
         }
         
-        Collection<Pair<Text,Text>> columns = new ArrayList<>();
-        columns.add(new Pair<>(new Text("e"), null));
-        columns.add(new Pair<>(new Text("info"), null));
-        
-        AccumuloInputFormat.fetchColumns(job, columns);
-        
-        AccumuloInputFormat.setRanges(job, ranges);
+        Collection<IteratorSetting.Column> columns = new ArrayList<>();
+        columns.add(new IteratorSetting.Column("e"));
+        columns.add(new IteratorSetting.Column("info"));
         
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(Text.class);
@@ -297,29 +301,28 @@ public class MetricsIngester extends Configured implements Tool {
         job.setReducerClass(ProcessingErrorsReducer.class);
         job.setNumReduceTasks(1);
         
-        PasswordToken warehousePW = new PasswordToken(conf.get(MetricsConfig.WAREHOUSE_PASSWORD, ""));
-        ClientConfiguration zkConfig = ClientConfiguration.loadDefault().withInstance(conf.get(MetricsConfig.WAREHOUSE_INSTANCE))
-                        .withZkHosts(conf.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS));
-        ZooKeeperInstance instance = new ZooKeeperInstance(zkConfig);
-        Connector connector = instance.getConnector(conf.get(MetricsConfig.WAREHOUSE_USERNAME), warehousePW);
+        Properties clientProps = Accumulo.newClientProperties().to(conf.get(MetricsConfig.WAREHOUSE_INSTANCE), conf.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS))
+                        .as(conf.get(MetricsConfig.WAREHOUSE_USERNAME), conf.get(MetricsConfig.WAREHOUSE_PASSWORD, ""))
+                        .batchWriterConfig(new BatchWriterConfig().setMaxLatency(25, TimeUnit.MILLISECONDS)).build();
         
-        AccumuloInputFormat.setZooKeeperInstance(job, zkConfig);
-        AccumuloInputFormat.setConnectorInfo(job, conf.get(MetricsConfig.WAREHOUSE_USERNAME), warehousePW);
-        AccumuloInputFormat.setInputTableName(job, conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE));
-        AccumuloInputFormat.setScanAuthorizations(job, connector.securityOperations().getUserAuthorizations(conf.get(MetricsConfig.WAREHOUSE_USERNAME)));
         job.setInputFormatClass(AccumuloInputFormat.class);
         job.setOutputFormatClass(AccumuloOutputFormat.class);
-        AccumuloOutputFormat.setZooKeeperInstance(job, zkConfig);
-        AccumuloOutputFormat.setConnectorInfo(job, conf.get(MetricsConfig.WAREHOUSE_USERNAME), warehousePW);
-        AccumuloOutputFormat.setCreateTables(job, createTables);
-        AccumuloOutputFormat.setDefaultTableName(job, outTable);
-        AccumuloOutputFormat.setBatchWriterOptions(job, new BatchWriterConfig().setMaxLatency(25, TimeUnit.MILLISECONDS));
+        
+        try (AccumuloClient client = Accumulo.newClient().from(clientProps).build()) {
+            // @formatter;off
+            AccumuloInputFormat.configure().clientProperties(clientProps).table(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE))
+                            .auths(client.securityOperations().getUserAuthorizations(client.whoami())).fetchColumns(columns).ranges(ranges).store(job);
+            
+            AccumuloOutputFormat.configure().clientProperties(clientProps).createTables(createTables).defaultTable(outTable).store(job);
+            // @formatter:on
+        }
         
         if (job.waitForCompletion(true)) {
             if (!keysToRemove.isEmpty()) {
                 bwConfig = new BatchWriterConfig().setMaxLatency(1024L, TimeUnit.MILLISECONDS).setMaxMemory(1024L).setMaxWriteThreads(8);
-                try (BatchWriter writer = Connections.metricsConnection(conf).createBatchWriter(
-                                conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), bwConfig)) {
+                try (AccumuloClient client = Connections.metricsClient(conf);
+                                BatchWriter writer = client.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE),
+                                                bwConfig)) {
                     
                     Mutation m = new Mutation("metrics");
                     for (Key key : keysToRemove) {

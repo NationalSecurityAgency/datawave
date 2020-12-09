@@ -32,7 +32,7 @@ import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -213,7 +213,7 @@ public class CompositeQueryLogicTest {
         private Map<Key,Value> data = new ConcurrentHashMap<>();
         
         @Override
-        public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
             return new TestQueryConfiguration();
         }
         
@@ -221,7 +221,7 @@ public class CompositeQueryLogicTest {
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
         
         @Override
-        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+        public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                         throws Exception {
             return "";
         }
@@ -301,7 +301,7 @@ public class CompositeQueryLogicTest {
         }
         
         @Override
-        public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
             return new TestQueryConfiguration();
         }
     }
@@ -309,7 +309,7 @@ public class CompositeQueryLogicTest {
     public static class DifferentTestQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         @Override
-        public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
             return new TestQueryConfiguration();
         }
         
@@ -317,7 +317,7 @@ public class CompositeQueryLogicTest {
         public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
         
         @Override
-        public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+        public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                         throws Exception {
             return "";
         }
@@ -378,7 +378,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
     }
     
     @Test
@@ -408,7 +408,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
     }
     
     @Test
@@ -428,7 +428,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
     }
     
     @Test
@@ -448,7 +448,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
     }
     
     @Test
@@ -468,7 +468,7 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
         c.close();
     }
     
@@ -508,9 +508,9 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
-        TransformIterator iter = c.getTransformIterator((Query) settings);
+        TransformIterator iter = c.getTransformIterator(settings);
         
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
@@ -521,7 +521,7 @@ public class CompositeQueryLogicTest {
             if (null == o)
                 break;
             Assert.assertTrue(o instanceof TestQueryResponse);
-            results.add((TestQueryResponse) o);
+            results.add(o);
         }
         Assert.assertEquals(8, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
@@ -529,7 +529,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer(settings).createResponse(page);
         Assert.assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
@@ -575,9 +575,9 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
-        TransformIterator iter = c.getTransformIterator((Query) settings);
+        TransformIterator iter = c.getTransformIterator(settings);
         
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
@@ -588,7 +588,7 @@ public class CompositeQueryLogicTest {
             if (null == o)
                 break;
             Assert.assertTrue(o instanceof TestQueryResponse);
-            results.add((TestQueryResponse) o);
+            results.add(o);
         }
         Assert.assertEquals(4, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
@@ -596,7 +596,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer(settings).createResponse(page);
         Assert.assertEquals(4, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
@@ -638,9 +638,9 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
-        TransformIterator iter = c.getTransformIterator((Query) settings);
+        TransformIterator iter = c.getTransformIterator(settings);
         
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
@@ -651,7 +651,7 @@ public class CompositeQueryLogicTest {
             if (null == o)
                 break;
             Assert.assertTrue(o instanceof TestQueryResponse);
-            results.add((TestQueryResponse) o);
+            results.add(o);
         }
         Assert.assertEquals(8, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
@@ -659,7 +659,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer(settings).createResponse(page);
         Assert.assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
@@ -701,9 +701,9 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
-        TransformIterator iter = c.getTransformIterator((Query) settings);
+        TransformIterator iter = c.getTransformIterator(settings);
         
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
@@ -714,7 +714,7 @@ public class CompositeQueryLogicTest {
             if (null == o)
                 break;
             Assert.assertTrue(o instanceof TestQueryResponse);
-            results.add((TestQueryResponse) o);
+            results.add(o);
         }
         Assert.assertEquals(8, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
@@ -722,7 +722,7 @@ public class CompositeQueryLogicTest {
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
-        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer((Query) settings).createResponse(page);
+        TestQueryResponseList response = (TestQueryResponseList) c.getTransformer(settings).createResponse(page);
         Assert.assertEquals(8, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
@@ -752,9 +752,9 @@ public class CompositeQueryLogicTest {
          * RunningQuery.setupConnection()
          */
         c.setQueryLogics(logics);
-        c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
+        c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
-        TransformIterator iter = c.getTransformIterator((Query) settings);
+        TransformIterator iter = c.getTransformIterator(settings);
         
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
@@ -765,7 +765,7 @@ public class CompositeQueryLogicTest {
             if (null == o)
                 break;
             Assert.assertTrue(o instanceof TestQueryResponse);
-            results.add((TestQueryResponse) o);
+            results.add(o);
         }
         Assert.assertEquals(0, results.size());
         c.close();

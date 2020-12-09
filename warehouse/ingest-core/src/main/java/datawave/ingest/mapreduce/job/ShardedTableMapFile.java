@@ -6,6 +6,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.admin.Locations;
@@ -68,7 +69,7 @@ public class ShardedTableMapFile {
     private static SequenceFile.Reader getReader(Configuration conf, String tableName) throws IOException {
         String shardMapFileName = conf.get(SHARD_TSERVER_MAP_FILE + "." + tableName);
         try {
-            return new SequenceFile.Reader(FileSystem.get(conf), new Path(shardMapFileName), conf);
+            return new SequenceFile.Reader(conf, SequenceFile.Reader.file(new Path(shardMapFileName)));
         } catch (Exception e) {
             throw new IOException("Failed to create sequence file reader for " + shardMapFileName, e);
         }
@@ -77,17 +78,12 @@ public class ShardedTableMapFile {
     public static TreeMap<Text,String> getShardIdToLocations(Configuration conf, String tableName) throws IOException {
         TreeMap<Text,String> locations = new TreeMap<>();
         
-        SequenceFile.Reader reader = ShardedTableMapFile.getReader(conf, tableName);
-        
-        Text shardID = new Text();
-        Text location = new Text();
-        
-        try {
+        try (SequenceFile.Reader reader = ShardedTableMapFile.getReader(conf, tableName)) {
+            Text shardID = new Text();
+            Text location = new Text();
             while (reader.next(shardID, location)) {
                 locations.put(new Text(shardID), location.toString());
             }
-        } finally {
-            reader.close();
         }
         return locations;
     }
@@ -203,7 +199,7 @@ public class ShardedTableMapFile {
             conf.set(SHARD_TSERVER_MAP_FILE + "." + entry.getKey(), entry.getValue().toString());
         }
         Set<String> var = map.keySet();
-        conf.setStrings(CONFIGURED_SHARDED_TABLE_NAMES, var.toArray(new String[var.size()]));
+        conf.setStrings(CONFIGURED_SHARDED_TABLE_NAMES, var.toArray(new String[0]));
     }
     
     private static Map<String,Path> loadMap(Configuration conf, boolean doValidation) throws IOException, URISyntaxException, AccumuloSecurityException,
@@ -292,10 +288,9 @@ public class ShardedTableMapFile {
      *            if validation of shards mappings should be performed
      * @return the path to the sharded table map file
      * @throws IOException
-     * @throws URISyntaxException
      */
     public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, AccumuloHelper accumuloHelper, String shardedTableName,
-                    boolean validateShardLocations) throws IOException, URISyntaxException {
+                    boolean validateShardLocations) throws IOException {
         Path shardedMapFile = null;
         // minus one to make zero based indexed
         int daysToVerify = conf.getInt(SHARDS_BALANCED_DAYS_TO_VERIFY, 2) - 1;
@@ -339,8 +334,8 @@ public class ShardedTableMapFile {
         boolean keepRetrying = true;
         int attempts = 0;
         while (keepRetrying && attempts < MAX_RETRY_ATTEMPTS) {
-            try {
-                TableOperations tableOps = accumuloHelper.getConnector().tableOperations();
+            try (AccumuloClient client = accumuloHelper.newClient()) {
+                TableOperations tableOps = client.tableOperations();
                 attempts++;
                 // if table does not exist don't want to catch the errors and end up in infinite loop
                 if (!tableOps.exists(shardedTableName)) {
