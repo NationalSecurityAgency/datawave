@@ -210,7 +210,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
             }
             
             JexlNode orNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, new ASTEQNode(
-                            ParserTreeConstants.JJTEQNODE), onlyRangeNodes, fieldsToTerms, expandFields, expandValues);
+                            ParserTreeConstants.JJTEQNODE), onlyRangeNodes, fieldsToTerms, expandFields, expandValues, false);
             
             // Set the parent and child pointers accordingly
             orNode.jjtSetParent(newNode);

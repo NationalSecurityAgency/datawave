@@ -21,6 +21,7 @@ import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.metric.IngestInput;
+import datawave.ingest.metric.IngestOutput;
 import datawave.ingest.metric.IngestProcess;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
@@ -57,6 +58,8 @@ import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobStatus;
 import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
@@ -423,7 +426,6 @@ public class IngestJob implements Tool {
         // output the counters to the log
         Counters counters = job.getCounters();
         log.info(counters);
-        
         try (JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration())) {
             RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
             
@@ -431,12 +433,28 @@ public class IngestJob implements Tool {
             if (!job.isSuccessful()) {
                 return jobFailed(job, runningJob, outputFs, workDirPath);
             }
-        }
-        
-        // determine if we had processing errors
-        if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
-            eventProcessingError = true;
-            log.error("Found Runtime Exceptions in the counters");
+            
+            // determine if we had processing errors
+            if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
+                eventProcessingError = true;
+                log.error("Found Runtime Exceptions in the counters");
+                long numExceptions = 0;
+                long numRecords = 0;
+                CounterGroup exceptionCounterGroup = counters.getGroup(IngestProcess.RUNTIME_EXCEPTION.name());
+                for (Counter exceptionC : exceptionCounterGroup) {
+                    numExceptions += exceptionC.getValue();
+                }
+                CounterGroup recordCounterGroup = counters.getGroup(IngestOutput.EVENTS_PROCESSED.name());
+                for (Counter recordC : recordCounterGroup) {
+                    numRecords += recordC.getValue();
+                }
+                // records that throw runtime exceptions are still counted as processed
+                float percentError = 100 * ((float) numExceptions / numRecords);
+                log.info(String.format("Percent Error: %.2f", percentError));
+                if (conf.getInt("job.percent.error.threshold", 101) <= percentError) {
+                    return jobFailed(job, runningJob, outputFs, workDirPath);
+                }
+            }
         }
         if (counters.findCounter(IngestInput.EVENT_FATAL_ERROR).getValue() > 0) {
             eventProcessingError = true;
