@@ -60,6 +60,7 @@ import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -584,7 +585,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * NOT THREAD SAFE - relies on QueryStopwatch which is not thread safe
-     * 
+     *
      * @param lastOperation
      * @param queryTree
      * @param config
@@ -595,7 +596,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * NOT THREAD SAFE when called with timed=true
-     * 
+     *
      * @param lastOperation
      * @param queryTree
      * @param config
@@ -1244,22 +1245,33 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
-                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
+                // Count each type of node in the query.
+                NodeTypeCountVisitor nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
+                
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
                                 config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
-                queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                if (log.isDebugEnabled()) {
-                    logQuery(queryTree, "Query after expanding regex:");
+                if (nodeCount.hasRegexNodes()) {
+                    innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
+                    queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding regex:");
+                    }
+                    innerStopwatch.stop();
+                } else {
+                    log.debug("No regex to expand");
                 }
-                innerStopwatch.stop();
                 
-                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
-                queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
-                                config.isExpandValues());
-                if (log.isDebugEnabled()) {
-                    logQuery(queryTree, "Query after expanding ranges:");
+                if (nodeCount.hasPossibleBoundedRange()) {
+                    innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
+                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
+                                    config.isExpandValues());
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding ranges:");
+                    }
+                    innerStopwatch.stop();
+                } else {
+                    log.debug("No ranges to expand");
                 }
-                innerStopwatch.stop();
                 
                 if (reduceQuery) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce after range expansion");
@@ -1283,12 +1295,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 innerStopwatch.stop();
                 
-                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand pushing functions into exceeded value ranges");
-                queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
-                if (log.isDebugEnabled()) {
-                    logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
+                if (nodeCount.hasFunctionNodes()) {
+                    innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand pushing functions into exceeded value ranges");
+                    queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
+                    }
+                    innerStopwatch.stop();
+                } else {
+                    log.debug("No functions to push into exceeded value ranges");
                 }
-                innerStopwatch.stop();
                 
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Remove delayed predicates");
                 // if we now have an unexecutable tree because of delayed
@@ -1315,15 +1331,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // predicates based on cost...
                     config.setExpandAllTerms(true);
                     
-                    queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding regex again:");
+                    // Recount the nodes of each type.
+                    nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
+                    
+                    if (nodeCount.hasRegexNodes()) {
+                        queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                        if (log.isDebugEnabled()) {
+                            logQuery(queryTree, "Query after expanding regex again:");
+                        }
                     }
-                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
-                                    config.isExpandValues());
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding ranges again:");
+                    if (nodeCount.hasPossibleBoundedRange()) {
+                        queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
+                                        config.isExpandValues());
+                        if (log.isDebugEnabled()) {
+                            logQuery(queryTree, "Query after expanding ranges again:");
+                        }
                     }
+                    
                     if (reduceQuery) {
                         
                         // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
@@ -1332,12 +1356,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after range expansion reduction again:");
                         }
-                        
                     }
-                    queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
-                    config.setExpandAllTerms(expandAllTerms);
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
+                    
+                    if (nodeCount.hasFunctionNodes()) {
+                        queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
+                        config.setExpandAllTerms(expandAllTerms);
+                        if (log.isDebugEnabled()) {
+                            logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
+                        }
                     }
                 }
                 innerStopwatch.stop();
