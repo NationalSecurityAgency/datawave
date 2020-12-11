@@ -75,6 +75,7 @@ import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
+import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -121,7 +122,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -1458,6 +1458,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         try {
             queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
             ValidPatternVisitor.check(queryTree);
+            ValidComparisonVisitor.check(queryTree);
         } catch (StackOverflowError soe) {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + soe);
