@@ -70,7 +70,7 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.9.1</version.jjwt>
-        <version.junit>4.12</version.junit>
+        <version.junit>4.13.1</version.junit>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j>1.2.16</version.log4j>
