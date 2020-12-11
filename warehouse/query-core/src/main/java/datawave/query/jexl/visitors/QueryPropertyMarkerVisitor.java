@@ -1,5 +1,7 @@
 package datawave.query.jexl.visitors;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
@@ -9,8 +11,8 @@ import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
@@ -33,7 +35,25 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  */
 public class QueryPropertyMarkerVisitor extends BaseVisitor {
     
-    private static final Set<String> TYPE_IDENTIFIERS;
+    // @formatter:off
+    private static final Set<String> DEFAULT_TYPES = ImmutableSet.of(
+                    IndexHoleMarkerJexlNode.class.getSimpleName(),
+                    ASTDelayedPredicate.class.getSimpleName(),
+                    ASTEvaluationOnly.class.getSimpleName(),
+                    ExceededOrThresholdMarkerJexlNode.class.getSimpleName(),
+                    ExceededTermThresholdMarkerJexlNode.class.getSimpleName(),
+                    ExceededValueThresholdMarkerJexlNode.class.getSimpleName());
+    // @formatter:on
+    
+    // @formatter:off
+    private static final List<Class<? extends QueryPropertyMarker>> DELAYED_PREDICATE_TYPES = ImmutableList.of(
+                    IndexHoleMarkerJexlNode.class,
+                    ASTDelayedPredicate.class,
+                    ASTEvaluationOnly.class,
+                    ExceededOrThresholdMarkerJexlNode.class,
+                    ExceededTermThresholdMarkerJexlNode.class,
+                    ExceededValueThresholdMarkerJexlNode.class);
+    // @formatter:on
     
     protected Set<String> typeIdentifiers = new HashSet<>();
     protected List<JexlNode> sourceNodes;
@@ -43,20 +63,10 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     protected Set<String> rejectedIdentifiers = new HashSet<>();
     private boolean rejectedIdentifiersFound = false;
     
-    static {
-        TYPE_IDENTIFIERS = new HashSet<>();
-        TYPE_IDENTIFIERS.add(IndexHoleMarkerJexlNode.class.getSimpleName());
-        TYPE_IDENTIFIERS.add(ASTDelayedPredicate.class.getSimpleName());
-        TYPE_IDENTIFIERS.add(ASTEvaluationOnly.class.getSimpleName());
-        TYPE_IDENTIFIERS.add(ExceededValueThresholdMarkerJexlNode.class.getSimpleName());
-        TYPE_IDENTIFIERS.add(ExceededTermThresholdMarkerJexlNode.class.getSimpleName());
-        TYPE_IDENTIFIERS.add(ExceededOrThresholdMarkerJexlNode.class.getSimpleName());
-    }
-    
     private QueryPropertyMarkerVisitor() {}
     
     public static boolean instanceOfAny(JexlNode node) {
-        return instanceOfAny(node, (List) null);
+        return instanceOfAny(node, null);
     }
     
     public static boolean instanceOfAny(JexlNode node, List<JexlNode> sourceNodes) {
@@ -84,8 +94,19 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     }
     
     /**
+     * Return whether or not the provided node is a delayed predicate type.
+     *
+     * @param node
+     *            the node
+     * @return true if the node is a delayed predicate, or false otherwise
+     */
+    public static boolean isDelayedPredicate(JexlNode node) {
+        return instanceOf(node, DELAYED_PREDICATE_TYPES, null);
+    }
+    
+    /**
      * Check a node for any QueryPropertyMarker in types as long as it doesn't have any QueryPropertyMarkers in except
-     * 
+     *
      * @param node
      * @param types
      * @param except
@@ -98,12 +119,12 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         
         if (node != null) {
             if (types != null)
-                types.stream().forEach(type -> visitor.typeIdentifiers.add(type.getSimpleName()));
+                types.forEach(type -> visitor.typeIdentifiers.add(type.getSimpleName()));
             else
-                visitor.typeIdentifiers.addAll(TYPE_IDENTIFIERS);
+                visitor.typeIdentifiers.addAll(DEFAULT_TYPES);
             
             if (except != null) {
-                except.stream().forEach(e -> visitor.rejectedIdentifiers.add(e.getSimpleName()));
+                except.forEach(e -> visitor.rejectedIdentifiers.add(e.getSimpleName()));
             }
             
             node.jjtAccept(visitor, null);

@@ -19,7 +19,6 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -35,10 +34,8 @@ import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -1217,15 +1214,6 @@ public class JexlASTHelper {
         return nodes;
     }
     
-    protected static boolean isDelayedPredicate(JexlNode currNode) {
-        if (ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
-                        || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode))
-            return true;
-        else
-            return false;
-    }
-    
     /**
      * Get the range operator nodes. If "mustBeIndexed" is true, then a config and helper must be supplied to check if the fields are indexed.
      * 
@@ -1244,7 +1232,7 @@ public class JexlASTHelper {
      */
     protected static void getRangeOperatorNodes(JexlNode root, Class<?> clz, List<JexlNode> nodes, List<JexlNode> otherNodes, Set<String> datatypeFilterSet,
                     MetadataHelper helper, List<JexlNode> nonIndexedRangeNodes, boolean includeDelayed, int maxDepth) {
-        if ((!includeDelayed && isDelayedPredicate(root)) || maxDepth == 0) {
+        if ((!includeDelayed && QueryPropertyMarkerVisitor.isDelayedPredicate(root)) || maxDepth == 0) {
             return;
         }
         for (int i = 0; i < root.jjtGetNumChildren(); i++) {
@@ -1253,7 +1241,7 @@ public class JexlASTHelper {
             // as the root, reference expression nodes, and reference nodes
             if (child.getClass().equals(clz) || child.getClass().equals(ASTReferenceExpression.class) || child.getClass().equals(ASTReference.class)) {
                 // ignore getting range nodes out of delayed expressions as they have already been processed
-                if (includeDelayed || !isDelayedPredicate(child)) {
+                if (includeDelayed || !QueryPropertyMarkerVisitor.isDelayedPredicate(child)) {
                     getRangeOperatorNodes(child, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed, maxDepth - 1);
                 } else if (otherNodes != null) {
                     otherNodes.add(JexlASTHelper.rereference(child));
