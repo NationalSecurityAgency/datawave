@@ -30,6 +30,7 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
+        node = (ASTAndNode) copy(node);
         if (hasChildOr(node)) {
             ASTOrNode orNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
             orNode.image = node.image;
@@ -41,7 +42,7 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
         }
     }
     
-    protected JexlNode optimizeTree(JexlNode currentNode, JexlNode newNode, Object data) {
+    private JexlNode optimizeTree(JexlNode currentNode, JexlNode newNode, Object data) {
         if ((currentNode instanceof ASTAndNode) && hasChildOr(currentNode)) {
             ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
             andNode.image = currentNode.image;
@@ -85,7 +86,7 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
      * @param newNode
      * @param prunedNode
      */
-    protected Tuple2<JexlNode,JexlNode> prune(JexlNode currentNode, JexlNode newNode, JexlNode prunedNode) {
+    private Tuple2<JexlNode,JexlNode> prune(JexlNode currentNode, JexlNode newNode, JexlNode prunedNode) {
         for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
             JexlNode child = currentNode.jjtGetChild(i);
             
@@ -115,7 +116,7 @@ public class BooleanOptimizationRebuildingVisitor extends RebuildingVisitor {
      * @param currentNode
      * @return
      */
-    protected boolean hasChildOr(JexlNode currentNode) {
+    private boolean hasChildOr(JexlNode currentNode) {
         boolean foundChildOr = false;
         for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
             JexlNode child = currentNode.jjtGetChild(i);
