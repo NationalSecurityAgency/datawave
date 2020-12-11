@@ -37,13 +37,17 @@ public class IsNotNullIntentVisitorTest {
         assertResult(query, expected);
     }
     
-    private void assertResult(String query, String expected) throws ParseException {
-        ASTJexlScript queryScript = JexlASTHelper.parseJexlQuery(query);
+    private void assertResult(String original, String expected) throws ParseException {
+        ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
+        ASTJexlScript actual = IsNotNullIntentVisitor.fixNotNullIntent(originalScript);
         
-        ASTJexlScript actual = IsNotNullIntentVisitor.fixNotNullIntent(queryScript);
-        
+        // Verify the resulting script is as expected and has a valid lineage.
         assertScriptEquality(actual, expected);
-        assertTrue(JexlASTHelper.validateLineage(actual, true));
+        assertLineage(actual);
+        
+        // Verify the original script was not modified and has a valid lineage.
+        assertScriptEquality(originalScript, original);
+        assertLineage(originalScript);
     }
     
     private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
@@ -56,5 +60,9 @@ public class IsNotNullIntentVisitorTest {
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
         assertTrue(reason.reason, equal);
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
 }
