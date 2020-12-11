@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Test;
@@ -20,7 +21,7 @@ public class RangeCoalescingVisitorTest {
         String originalQuery = "NUM >= '+aE2' && NUM <= '+aE5'";
         String expectedQuery = "(NUM >= '+aE2' && NUM <= '+aE5')";
         
-        assertVisitorResult(originalQuery, expectedQuery);
+        assertResult(originalQuery, expectedQuery);
     }
     
     @Test
@@ -28,7 +29,7 @@ public class RangeCoalescingVisitorTest {
         String originalQuery = "FOO == 'ba' && NUM >= '+aE2' && NUM <= '+aE5'";
         String expectedQuery = "FOO == 'ba' && (NUM >= '+aE2' && NUM <= '+aE5')";
         
-        assertVisitorResult(originalQuery, expectedQuery);
+        assertResult(originalQuery, expectedQuery);
     }
     
     @Test
@@ -36,7 +37,7 @@ public class RangeCoalescingVisitorTest {
         String originalQuery = "(NUM > '+aE1' && FOO == 'ba') && NUM < '+aE5'";
         String expectedQuery = "FOO == 'ba' && (NUM > '+aE1' && NUM < '+aE5')";
         
-        assertVisitorResult(originalQuery, expectedQuery);
+        assertResult(originalQuery, expectedQuery);
     }
     
     @Test
@@ -45,7 +46,7 @@ public class RangeCoalescingVisitorTest {
         // Ordering of query terms is not deterministic
         String expectedQuery = "TACO == 'tacocat' && (NUM >= '+aE1' && NUM <= '+aE4')";
         
-        assertVisitorResult(originalQuery, expectedQuery);
+        assertResult(originalQuery, expectedQuery);
     }
     
     @Test
@@ -54,7 +55,7 @@ public class RangeCoalescingVisitorTest {
         // Ordering of query terms is not deterministic
         String expectedQuery = "TACO == 'tacocat' && (FOO >= 'bar' && FOO <= 'bas')";
         
-        assertVisitorResult(originalQuery, expectedQuery);
+        assertResult(originalQuery, expectedQuery);
     }
     
     @Test
@@ -64,7 +65,7 @@ public class RangeCoalescingVisitorTest {
         String expectedQuery1 = "TACO == 'tacocat' && (FOO >= 'bar' && FOO <= 'bas') && (NUM >= '+aE1' && NUM <= '+aE4')";
         String expectedQuery2 = "TACO == 'tacocat' && (NUM >= '+aE1' && NUM <= '+aE4') && (FOO >= 'bar' && FOO <= 'bas')";
         
-        assertVisitorResult(originalQuery, expectedQuery1, expectedQuery2);
+        assertResult(originalQuery, expectedQuery1, expectedQuery2);
     }
     
     @Test
@@ -74,7 +75,7 @@ public class RangeCoalescingVisitorTest {
         String expectedQuery1 = "TACO == 'tacocat' && (FOO >= 'bar' && FOO <= 'bas') && (NUM >= '+aE1' && NUM <= '+aE4')";
         String expectedQuery2 = "TACO == 'tacocat' && (NUM >= '+aE1' && NUM <= '+aE4') && (FOO >= 'bar' && FOO <= 'bas')";
         
-        assertVisitorResult(originalQuery, expectedQuery1, expectedQuery2);
+        assertResult(originalQuery, expectedQuery1, expectedQuery2);
     }
     
     @Test
@@ -85,38 +86,53 @@ public class RangeCoalescingVisitorTest {
         String expectedQuery1 = "TACO == 'tacocat' && NUM3 == '+aE3' && (NUM2 >= '+aE2' && NUM2 <= '+aE4') && (NUM >= '+aE1' && NUM <= '+aE5')";
         String expectedQuery2 = "TACO == 'tacocat' && NUM3 == '+aE3' && (NUM >= '+aE1' && NUM <= '+aE5') && (NUM2 >= '+aE2' && NUM2 <= '+aE4')";
         
-        assertVisitorResult(originalQuery, expectedQuery1, expectedQuery2);
+        assertResult(originalQuery, expectedQuery1, expectedQuery2);
     }
     
-    private void assertVisitorResult(String original, String expected) throws ParseException {
+    private void assertResult(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        
         ASTJexlScript actualScript = RangeCoalescingVisitor.coalesceRanges(originalScript);
         
-        assertScriptEquality(actualScript, expectedScript);
-        assertTrue(JexlASTHelper.validateLineage(actualScript, true));
+        // Verify that the resulting script is as expected with a valid lineage.
+        assertScriptEquality(actualScript, expected);
+        assertLineage(actualScript);
+        
+        // Verify the original script was not modified and has a valid lineage.
+        assertScriptEquality(originalScript, original);
+        assertLineage(originalScript);
     }
     
-    private void assertVisitorResult(String original, String expected, String altExpected) throws ParseException {
+    private void assertResult(String original, String expected, String altExpected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        ASTJexlScript altExpectedScript = JexlASTHelper.parseJexlQuery(altExpected);
+        
         ASTJexlScript actualScript = RangeCoalescingVisitor.coalesceRanges(originalScript);
         
-        assertScriptEquality(actualScript, expectedScript, altExpectedScript);
-        assertTrue(JexlASTHelper.validateLineage(actualScript, true));
+        // Verify that the resulting script is as expected with a valid lineage.
+        assertScriptEquality(actualScript, expected, altExpected);
+        assertLineage(actualScript);
+        
+        // Verify the original script was not modified and has a valid lineage.
+        assertScriptEquality(originalScript, original);
+        assertLineage(originalScript);
     }
     
-    private void assertScriptEquality(ASTJexlScript actualScript, ASTJexlScript expectedScript) {
+    private void assertScriptEquality(ASTJexlScript actualScript, String expected) throws ParseException {
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        
         TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
         boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
         if (!equal) {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
+        assertTrue(reason.reason, equal);
     }
     
-    private void assertScriptEquality(ASTJexlScript actualScript, ASTJexlScript expectedScript, ASTJexlScript altExpectedScript) {
+    private void assertScriptEquality(ASTJexlScript actualScript, String expected, String altExpected) throws ParseException {
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        ASTJexlScript altExpectedScript = JexlASTHelper.parseJexlQuery(altExpected);
+        
         TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
         TreeEqualityVisitor.Reason altReason = new TreeEqualityVisitor.Reason();
         boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
@@ -128,5 +144,9 @@ public class RangeCoalescingVisitorTest {
         }
         
         assertTrue(equal || altEqual);
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
 }
