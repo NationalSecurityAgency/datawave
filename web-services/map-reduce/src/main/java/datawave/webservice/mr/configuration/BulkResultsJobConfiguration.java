@@ -31,6 +31,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -43,13 +44,14 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.infinispan.commons.util.Base64;
 import org.jboss.security.JSSESecurityDomain;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -304,7 +306,21 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     }
     
     private String encodePrincipal(DatawavePrincipal principal) throws IOException {
-        return Base64.encodeObject(principal, Base64.GZIP | Base64.DONT_BREAK_LINES);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = null;
+        try {
+            oos = new ObjectOutputStream(baos);
+            // create a copy because this DatawavePrincipal might be CDI injected and have a reference to Weld
+            oos.writeObject(new DatawavePrincipal(principal.getProxiedUsers(), principal.getCreationTime()));
+            return Base64.encodeBase64String(baos.toByteArray());
+        } finally {
+            if (oos != null) {
+                oos.close();
+            }
+            if (baos != null) {
+                baos.close();
+            }
+        }
     }
     
     private QuerySettings setupQuery(String sid, String queryId, Principal principal) throws Exception {
