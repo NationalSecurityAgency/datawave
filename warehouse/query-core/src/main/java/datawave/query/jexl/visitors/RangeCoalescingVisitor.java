@@ -35,6 +35,8 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
+        node = (ASTAndNode) copy(node);
+        
         List<JexlNode> leaves = new ArrayList<>();
         Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, leaves, false);
         
@@ -43,7 +45,7 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
         
         // We have a bounded range completely inside of an AND/OR
         if (!ranges.isEmpty()) {
-            andNode = coalesceBoundedRanges(ranges, leaves, node, andNode, data);
+            andNode = coalesceBoundedRanges(ranges, leaves, node, andNode);
         } else {
             // We have no bounded range to replace, just proceed as normal
             JexlNodes.ensureCapacity(andNode, node.jjtGetNumChildren());
@@ -57,8 +59,7 @@ public class RangeCoalescingVisitor extends RebuildingVisitor {
         return andNode;
     }
     
-    protected JexlNode coalesceBoundedRanges(Map<LiteralRange<?>,List<JexlNode>> ranges, List<JexlNode> leaves, ASTAndNode currentNode, JexlNode newNode,
-                    Object data) {
+    private JexlNode coalesceBoundedRanges(Map<LiteralRange<?>,List<JexlNode>> ranges, List<JexlNode> leaves, ASTAndNode currentNode, JexlNode newNode) {
         // Sanity check to ensure that we found some nodes (redundant since we couldn't have made a bounded LiteralRange in the first
         // place if we had found not range nodes)
         if (ranges.isEmpty()) {

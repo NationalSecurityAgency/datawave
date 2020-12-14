@@ -13,19 +13,13 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -141,27 +135,12 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         /**
          * If we have a delayed predicate we can safely assume that expansion has occurred in the unfieldex expansion along with all types
          */
-        if (isDelayedPredicate(node)) {
+        if (QueryPropertyMarkerVisitor.isDelayedPredicate(node)) {
             return node;
         } else {
             return super.visit(node, data);
         }
         
-    }
-    
-    /**
-     * method to return if the current node is an instance of a delayed predicate
-     * 
-     * @param currNode
-     * @return
-     */
-    protected boolean isDelayedPredicate(JexlNode currNode) {
-        if (ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
-                        || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode))
-            return true;
-        else
-            return false;
     }
     
     @Override
@@ -221,7 +200,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 for (Type<?> normalizer : config.getQueryFieldsDatatypes().get(field)) {
                     JexlNode lowerBound = lowerBounds.get(field), upperBound = upperBounds.get(field);
                     
-                    JexlNode left = null;
+                    JexlNode left;
                     try {
                         left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
                     } catch (Exception ne) {
@@ -232,7 +211,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         continue;
                     }
                     
-                    JexlNode right = null;
+                    JexlNode right;
                     try {
                         right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
                     } catch (Exception ne) {
@@ -256,7 +235,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         others.add(JexlNodes.wrap(aliasedBounds.get(0)));
                     } else {
                         List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
-                        others.add(JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()]))));
+                        others.add(JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[0]))));
                     }
                 }
             }
@@ -269,7 +248,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
          * The rebuilding visitor adds whatever {visit()} returns to the parent's child list, so we shouldn't have some weird object graph that means old nodes
          * never get GC'd because {super.visit()} will reset the parent in the call to {copy()}
          */
-        return super.visit(JexlNodes.children(node, others.toArray(new JexlNode[others.size()])), data);
+        return super.visit(JexlNodes.children(node, others.toArray(new JexlNode[0])), data);
     }
     
     @Override

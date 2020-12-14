@@ -2,14 +2,17 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import static datawave.query.Constants.SHARD_DAY_HINT;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DateIndexCleanupVisitorTest {
+    
+    private static final Logger log = Logger.getLogger(DateIndexCleanupVisitorTest.class);
     
     @Test
     public void testConjunction() throws ParseException {
@@ -48,9 +51,31 @@ public class DateIndexCleanupVisitorTest {
     
     private void testCleanup(String original, String expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
+        
         ASTJexlScript cleaned = DateIndexCleanupVisitor.cleanup(script);
-        String builtQuery = JexlStringBuildingVisitor.buildQuery(cleaned);
-        assertEquals(expected, builtQuery);
-        assertTrue(JexlASTHelper.validateLineage(cleaned, true));
+        
+        // Verify the result script is as expected, with a valid lineage.
+        assertScriptEquality(cleaned, expected);
+        assertLineage(cleaned);
+        
+        // Verify the original script was not modified, and has a valid lineage.
+        assertScriptEquality(script, original);
+        assertLineage(script);
+    }
+    
+    private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
+        ASTJexlScript actualScript = JexlASTHelper.parseJexlQuery(JexlStringBuildingVisitor.buildQuery(actual));
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
+        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
+        if (!equal) {
+            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
+            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
+        }
+        assertTrue(reason.reason, equal);
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
 }

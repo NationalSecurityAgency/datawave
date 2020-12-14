@@ -13,6 +13,7 @@ import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -94,14 +95,14 @@ public class QueryModelVisitorTest {
     @Test
     public void noAppliedMapping() throws ParseException {
         String original = "NOMAPPINGNAME == 'baz'";
-        assertVisitorResult(original, original);
+        assertResult(original, original);
     }
     
     @Test
     public void singleMapping() throws ParseException {
         String original = "OUT == 'baz'";
         String expected = "IN == 'baz'";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
@@ -109,7 +110,7 @@ public class QueryModelVisitorTest {
         for (int i = 0; i < 1000; i++) {
             String original = "FOO == 'baz'";
             String expected = "(BAR1 == 'baz' || BAR2 == 'baz')";
-            assertVisitorResult(original, expected);
+            assertResult(original, expected);
         }
     }
     
@@ -118,7 +119,7 @@ public class QueryModelVisitorTest {
         for (int i = 0; i < 1000; i++) {
             String original = "FOO != 'baz'";
             String expected = "(BAR1 != 'baz' && BAR2 != 'baz')";
-            assertVisitorResult(original, expected);
+            assertResult(original, expected);
         }
     }
     
@@ -126,149 +127,149 @@ public class QueryModelVisitorTest {
     public void multipleMappings() throws ParseException {
         String original = "FOO == 'baz' && FIELD == 'taco' && OUT == 2";
         String expected = "(BAR1 == 'baz' || BAR2 == 'baz') && FIELD == 'taco' && IN == 2";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void multipleMappingsWithBounds() throws ParseException {
         String original = "FOO > 'a' && FOO < 'z'";
         String expected = "(BAR1 > 'a' && BAR1 < 'z') || (BAR2 > 'a' && BAR2 < 'z')";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void multipleMappingsWithBoundsIdentity() throws ParseException {
         String original = "CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z'";
         String expected = "(CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z') || (CYCLIC_FIELD_ > 'a' && CYCLIC_FIELD_ < 'z')";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void functionMapping() throws ParseException {
         String original = "filter:isNotNull(FOO)";
         String expected = "filter:isNotNull(BAR1||BAR2)";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void functionWithMethod() throws ParseException {
         String original = "filter:includeRegex(FOO, '1').size()";
         String expected = "filter:includeRegex(BAR1||BAR2, '1').size()";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void functionWithMethodInExpression() throws ParseException {
         String original = "filter:includeRegex(FOO, '1').size() > 0";
         String expected = "filter:includeRegex(BAR1||BAR2, '1').size() > 0";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void identifierWithMethodWithFunctionInExpression() throws ParseException {
         String original = "AG.containsAll(filter:someFunction(NAM, '1')) > 0";
         String expected = "(AGE||ETA).containsAll(filter:someFunction((NAME||NOME), '1')) > 0";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void identifierWithMethodWithOneModelDoesNotAddParens() throws ParseException {
         String original = "OUT.containsAll(filter:someFunction(OUT, '1')) > 0";
         String expected = "IN.containsAll(filter:someFunction(IN, '1')) > 0";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void wrongOptimizationInQueryModelVisitor() throws ParseException {
         String original = "AGE > 10 && AGE > 0";
         String expected = "AGE > 0 && AGE > 10";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void identifiersWithMethodsInAndWithGT() throws ParseException {
         String original = "AGE.containsAll(filter:someFunction(BLAH, '1')) > 0 && AGE.containsAll(filter:someFunction(BOO, '1')) > 10";
-        assertVisitorResult(original, original);
+        assertResult(original, original);
     }
     
     @Test
     public void anotherFunctionMapping() throws ParseException {
         String original = "filter:isNull(FOO)";
         String expected = "filter:isNull(BAR1||BAR2)";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void functionMappingWithTwoArgs() throws ParseException {
         String original = "filter:someFunction(NAM,1,GEN,2)";
         String expected = "filter:someFunction(NAME||NOME, 1, GENDER||GENERE, 2)";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void isNullFunctionMapping() throws ParseException {
         String original = "filter:isNull(FOO)";
         String expected = "filter:isNull(BAR1||BAR2)";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void attributeWithMethodMapping() throws ParseException {
         String original = "FOO.getValuesForGroups(0) == 1";
         String expected = "(BAR2||BAR1).getValuesForGroups(0) == 1";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void attributeWithMethodAndFunctionMapping() throws ParseException {
         String original = "FOO.getValuesForGroups(grouping:getGroupsForMatchesInGroup(A, 'MEADOW', B, 'FEMALE')) < 19";
         String expected = "(BAR2||BAR1).getValuesForGroups(grouping:getGroupsForMatchesInGroup(A, 'MEADOW', B, 'FEMALE')) < 19";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void attributeWithMethodAndFunctionMappingInsideAndNode() throws ParseException {
         String original = "FOO.getValuesForGroups(grouping:getGroupsForMatchesInGroup(OUT, 'MEADOW')) < 19 && FOO.getValuesForGroups(grouping:getGroupsForMatchesInGroup(OUT, 'MEADOW')) > 16";
         String expected = "(BAR2||BAR1).getValuesForGroups(grouping:getGroupsForMatchesInGroup(IN, 'MEADOW')) < 19 && (BAR2||BAR1).getValuesForGroups(grouping:getGroupsForMatchesInGroup(IN, 'MEADOW')) > 16";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void sizeMethodOnFunction() throws ParseException {
         String original = "filter:includeRegex(NAM, 'MICHAEL').size() == 1";
         String expected = "filter:includeRegex(NAME||NOME, 'MICHAEL').size() == 1";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void testSubstitutionsEverywhere() throws ParseException {
         String original = "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19";
         String expected = "(AGE||ETA).getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME||NOME, 'MEADOW', GENDER||GENERE, 'FEMALE')) < 19";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void testMoreMethods() throws ParseException {
-        assertVisitorResult("NAM.size()", "(NAME||NOME).size()");
-        assertVisitorResult("(NAM).size()", "(NAME||NOME).size()");
-        assertVisitorResult("(NAME).size()", "NAME.size()");
-        assertVisitorResult("NAM.values()", "(NAME||NOME).values()");
-        assertVisitorResult("NAM.getGroupsForValue(FOO)", "(NAME||NOME).getGroupsForValue(BAR1||BAR2)");
-        assertVisitorResult("NAM.min().hashCode() != 0", "(NAME||NOME).min().hashCode() != 0");
+        assertResult("NAM.size()", "(NAME||NOME).size()");
+        assertResult("(NAM).size()", "(NAME||NOME).size()");
+        assertResult("(NAME).size()", "NAME.size()");
+        assertResult("NAM.values()", "(NAME||NOME).values()");
+        assertResult("NAM.getGroupsForValue(FOO)", "(NAME||NOME).getGroupsForValue(BAR1||BAR2)");
+        assertResult("NAM.min().hashCode() != 0", "(NAME||NOME).min().hashCode() != 0");
     }
     
     @Test
     public void additiveExpansion() throws ParseException {
         String original = "grouping:matchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE').size() + grouping:matchesInGroup(NAM, 'ANTHONY', GEN, 'MALE').size() >= 1";
         String expected = "grouping:matchesInGroup(NAME||NOME, 'MEADOW', GENDER||GENERE, 'FEMALE').size() + grouping:matchesInGroup(NAME||NOME, 'ANTHONY', GENDER||GENERE, 'MALE').size() >= 1";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
     public void contentFunctionMapping() throws ParseException {
         String original = "content:phrase(FOO, termOffsetMap, 'a', 'little', 'phrase')";
         String expected = "content:phrase(BAR1||BAR2, termOffsetMap, 'a', 'little', 'phrase')";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
@@ -278,7 +279,7 @@ public class QueryModelVisitorTest {
         
         String original = "FOO1 == 'baz'";
         String expected = "($1BAR == 'baz' || $2BAR == 'baz')";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
@@ -288,7 +289,7 @@ public class QueryModelVisitorTest {
         
         String original = "FOO1 == 'baz' && FOO1 == null";
         String expected = "($1BAR == 'baz' || $2BAR == 'baz') && ($1BAR == null && $2BAR == null)";
-        assertVisitorResult(original, expected);
+        assertResult(original, expected);
     }
     
     @Test
@@ -299,7 +300,7 @@ public class QueryModelVisitorTest {
         String original = "FOO == FOO1";
         ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
         String expected = "(BAR1 == $1BAR || BAR2 == $1BAR || BAR1 == $2BAR || BAR2 == $2BAR)";
-        assertVisitorResult(groomed, expected);
+        assertResult(JexlStringBuildingVisitor.buildQuery(groomed), expected);
     }
     
     @Test
@@ -309,7 +310,7 @@ public class QueryModelVisitorTest {
         String original = "FOO1 == 'baz'";
         ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
         String expected = "$1BAR == 'baz'";
-        ASTJexlScript actualScript = assertVisitorResult(groomed, expected);
+        ASTJexlScript actualScript = assertResult(JexlStringBuildingVisitor.buildQuery(groomed), expected);
         
         List<ASTEQNode> actualNodes = JexlASTHelper.getEQNodes(actualScript);
         for (ASTEQNode node : actualNodes) {
@@ -325,8 +326,9 @@ public class QueryModelVisitorTest {
         
         String original = "FOO1 == 'baz' and OTHER == null";
         ASTJexlScript groomed = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(JexlASTHelper.parseJexlQuery(original));
+        
         String expected = "BAR1 == 'baz' and $9_2 == null";
-        ASTJexlScript actualScript = assertVisitorResult(groomed, expected);
+        ASTJexlScript actualScript = assertResult(JexlStringBuildingVisitor.buildQuery(groomed), expected);
         
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.addNormalizers("FOO1", Sets.newHashSet(new LcNoDiacriticsType()));
@@ -339,20 +341,24 @@ public class QueryModelVisitorTest {
         assertTrue(types.values().stream().allMatch((o) -> o instanceof LcNoDiacriticsType || o instanceof NoOpType));
     }
     
-    private void assertVisitorResult(String original, String expected) throws ParseException {
+    private ASTJexlScript assertResult(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
-        assertVisitorResult(originalScript, expected);
-    }
-    
-    private ASTJexlScript assertVisitorResult(ASTJexlScript originalScript, String expected) throws ParseException {
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        
         ASTJexlScript actualScript = QueryModelVisitor.applyModel(originalScript, model, allFields);
-        assertScriptEquality(actualScript, expectedScript);
-        assertTrue(JexlASTHelper.validateLineage(actualScript, true));
+        
+        // Verify the resulting script is as expected with a valid lineage.
+        assertScriptEquality(actualScript, expected);
+        assertLineage(actualScript);
+        
+        // Verify the original script was not modified, and has a valid lineage.
+        assertScriptEquality(originalScript, original);
+        assertLineage(originalScript);
+        
         return actualScript;
     }
     
-    private void assertScriptEquality(ASTJexlScript expectedScript, ASTJexlScript actualScript) {
+    private void assertScriptEquality(ASTJexlScript actualScript, String expected) throws ParseException {
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         Reason reason = new Reason();
         boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
         if (!equal) {
@@ -360,5 +366,9 @@ public class QueryModelVisitorTest {
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
         assertTrue(reason.reason, equal);
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
 }

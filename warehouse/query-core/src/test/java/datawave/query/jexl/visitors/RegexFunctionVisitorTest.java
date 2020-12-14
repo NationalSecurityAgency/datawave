@@ -77,17 +77,21 @@ public class RegexFunctionVisitorTest {
     
     private void assertVisitorResult(String original, String expected, String field) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         
         Set<String> indexOnlyFields = Sets.newHashSet(field);
-        
         JexlNode actual = RegexFunctionVisitor.expandRegex(null, null, indexOnlyFields, originalScript);
         
-        assertScriptEquality(actual, expectedScript);
-        assertTrue(JexlASTHelper.validateLineage(actual, true));
+        // Verify the resulting script is as expected, with a valid lineage.
+        assertScriptEquality(actual, expected);
+        assertLineage(actual);
+        
+        // Verify the original script was not modified and has a valid lineage.
+        assertScriptEquality(originalScript, original);
+        assertLineage(originalScript);
     }
     
-    private void assertScriptEquality(JexlNode actual, ASTJexlScript expectedScript) throws ParseException {
+    private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         ASTJexlScript actualScript = JexlASTHelper.parseJexlQuery(JexlStringBuildingVisitor.buildQuery(actual));
         TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
         boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
@@ -96,5 +100,9 @@ public class RegexFunctionVisitorTest {
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
         assertTrue(reason.reason, equal);
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
 }
