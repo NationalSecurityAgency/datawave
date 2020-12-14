@@ -24,8 +24,6 @@ import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-
 /**
  * Visits an JexlNode tree, and expand the functions to be AND'ed with their index query equivalents. Note that the functions are left in the final query to
  * provide potentially additional filtering after applying the index query.
@@ -53,9 +51,11 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandFunctions(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     T script) {
+        JexlNode copy = RebuildingVisitor.copy(script);
+        
         FunctionIndexQueryExpansionVisitor visitor = new FunctionIndexQueryExpansionVisitor(config, metadataHelper, dateIndexHelper);
         
-        return (T) script.jjtAccept(visitor, null);
+        return (T) copy.jjtAccept(visitor, null);
     }
     
     @Override
