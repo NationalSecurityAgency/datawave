@@ -306,20 +306,12 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     }
     
     private String encodePrincipal(DatawavePrincipal principal) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = null;
-        try {
-            oos = new ObjectOutputStream(baos);
+        
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            
             // create a copy because this DatawavePrincipal might be CDI injected and have a reference to Weld
             oos.writeObject(new DatawavePrincipal(principal.getProxiedUsers(), principal.getCreationTime()));
             return Base64.encodeBase64String(baos.toByteArray());
-        } finally {
-            if (oos != null) {
-                oos.close();
-            }
-            if (baos != null) {
-                baos.close();
-            }
         }
     }
     
