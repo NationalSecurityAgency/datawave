@@ -49,7 +49,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     @Test
     public void expandContentFields() throws ParseException {
         Set<String> fields = Sets.newHashSet("FOO", "BAR");
-    
+        
         // Configure the mock metadata helper.
         MockMetadataHelper mockMetadataHelper = new MockMetadataHelper();
         mockMetadataHelper.setIndexedFields(fields);
@@ -73,29 +73,29 @@ public class FunctionIndexQueryExpansionVisitorTest {
         Connector connector = instance.getConnector("root", new PasswordToken(""));
         connector.tableOperations().create(TableName.DATE_INDEX);
         DateIndexTestIngest.writeItAll(connector);
-    
+        
         // Configure the helpers.
         Authorizations auths = new Authorizations("HUSH");
         metadataHelper = new MetadataHelperFactory().createMetadataHelper(connector, TableName.DATE_INDEX, Collections.singleton(auths));
-        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
-                        Collections.singleton(auths), 2, 0.9f);
-    
+        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX, Collections.singleton(auths), 2,
+                        0.9f);
+        
         // Configure the shard query configuration.
-        config.setBeginDate( DateHelper.parse("20100701"));
+        config.setBeginDate(DateHelper.parse("20100701"));
         config.setEndDate(DateHelper.parse("20100710"));
         
         // Execute the test.
         String original = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
         String expected = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100703_0,20100704_0,20100704_2,20100705_1'))";
-    
+        
         runTest(original, expected);
     }
     
     private void runTest(String originalQuery, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(originalQuery);
-    
+        
         ASTJexlScript actualScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, originalScript);
-    
+        
         // Verify the script is as expected, and has a valid lineage.
         assertScriptEquality(actualScript, expected);
         assertLineage(actualScript);
