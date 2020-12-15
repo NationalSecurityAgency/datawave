@@ -38,18 +38,12 @@ public class EmbeddedCallerPrincipalProducer {
         if (encodedCallerPrincipal == null) {
             throw new IllegalStateException("System property caller.principal must be set to a serialized, base64 encoded principal.");
         }
-        ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decodeBase64(encodedCallerPrincipal));
-        try {
-            ObjectInputStream ois = new ObjectInputStream(bais);
+        byte[] decodedCallerPrincipal = Base64.decodeBase64(encodedCallerPrincipal);
+        
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(decodedCallerPrincipal); ObjectInputStream ois = new ObjectInputStream(bais)) {
             callerPrincipal = (DatawavePrincipal) ois.readObject();
         } catch (Exception e) {
             throw new IllegalStateException(e);
-        } finally {
-            try {
-                bais.close();
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
         }
     }
 }

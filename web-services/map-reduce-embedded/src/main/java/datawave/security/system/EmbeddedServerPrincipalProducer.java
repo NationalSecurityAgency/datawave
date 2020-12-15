@@ -38,18 +38,12 @@ public class EmbeddedServerPrincipalProducer {
         if (encodedServerPrincipal == null) {
             throw new IllegalStateException("System property server.principal must be set to a serialized, base64 encoded principal.");
         }
-        ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decodeBase64(encodedServerPrincipal));
-        try {
-            ObjectInputStream ois = new ObjectInputStream(bais);
+        byte[] decodedServerPrincipal = Base64.decodeBase64(encodedServerPrincipal);
+        
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(decodedServerPrincipal); ObjectInputStream ois = new ObjectInputStream(bais)) {
             serverPrincipal = (DatawavePrincipal) ois.readObject();
         } catch (Exception e) {
             throw new IllegalStateException(e);
-        } finally {
-            try {
-                bais.close();
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
         }
     }
 }
