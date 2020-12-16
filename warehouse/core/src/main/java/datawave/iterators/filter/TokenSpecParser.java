@@ -35,18 +35,9 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
     protected static class ParserState {
         
         private enum ParseTokenType {
-            SEPARATION("[\\s\\n,]+"),
-            STRLITERAL("\"(?:[^\\\"]|\\.)*\""),
-            LABEL("[a-z]{6}"),
-            COLQUAL("[0-9A-Za-z]{6,8}"),
-            COLON(":"),
-            EQUALS("="),
-            NUMBER("[0-9]+"),
-            UNIT(AgeOffTtlUnits.MILLISECONDS + "|"
-                    + AgeOffTtlUnits.DAYS + "|"
-                    + AgeOffTtlUnits.HOURS + "|"
-                    + AgeOffTtlUnits.MINUTES + "|"
-                    + AgeOffTtlUnits.SECONDS);
+            SEPARATION("[\\s\\n,]+"), STRLITERAL("\"(?:[^\\\"]|\\.)*\""), LABEL("[a-z]{6}"), COLQUAL("[0-9A-Za-z]{6,8}"), COLON(":"), EQUALS("="), NUMBER(
+                            "[0-9]+"), UNIT(AgeOffTtlUnits.MILLISECONDS + "|" + AgeOffTtlUnits.DAYS + "|" + AgeOffTtlUnits.HOURS + "|" + AgeOffTtlUnits.MINUTES
+                            + "|" + AgeOffTtlUnits.SECONDS);
             
             private final Pattern matchPattern;
             
@@ -171,14 +162,14 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
         protected String parseStrliteral() {
             ParseToken token = peek();
             String literalContent = null;
-
+            
             if (token.type == ParseTokenType.STRLITERAL) {
                 literalContent = expect(ParseTokenType.STRLITERAL);
                 literalContent = literalContent.substring(1, literalContent.length() - 1);
             } else if (token.type == ParseTokenType.COLQUAL) {
                 literalContent = expect(ParseTokenType.COLQUAL);
             }
-
+            
             StringBuilder sb = new StringBuilder();
             for (int charPos = 0; charPos < literalContent.length(); charPos++) {
                 char c = literalContent.charAt(charPos);
