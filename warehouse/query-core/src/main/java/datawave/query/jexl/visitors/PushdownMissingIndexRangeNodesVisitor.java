@@ -124,7 +124,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        if (isIndexed(node) && missingIndexRange(node)) {
+        if (isFieldIndexedInRange(node) && missingIndexRange(node)) {
             return IndexHoleMarkerJexlNode.create(node);
         }
         return node;
@@ -132,14 +132,35 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        if (isIndexed(node) && missingIndexRange(node)) {
+        if (isFieldIndexedInRange(node) && missingIndexRange(node)) {
             return IndexHoleMarkerJexlNode.create(node);
         }
         return node;
     }
     
-    public boolean isIndexed(JexlNode node) {
+    public boolean isFieldIndexedInRange(JexlNode node) {
         String field = JexlASTHelper.getIdentifier(node);
+        
+        boolean overlaps = false;
+        boolean foundFieldHole = false;
+        if (field != null) {
+            for (FieldIndexHole indexHole : fieldIndexHoles) {
+                
+                if (indexHole.getFieldName().equals(field)) {
+                    overlaps = indexHole.overlaps(beginDate, endDate);
+                    foundFieldHole = true;
+                }
+                
+                if (overlaps)
+                    return overlaps;
+                
+            }
+            
+            if (foundFieldHole && !overlaps)
+                return false;
+        }
+        
+        // Not sure this is needed anymore since all indexed fields in the query should be in the fieldIndexHoles list.
         try {
             return (field != null && this.helper.isIndexed(field, this.dataTypeFilter));
         } catch (TableNotFoundException e) {

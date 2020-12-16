@@ -35,6 +35,18 @@ public class FieldIndexHole implements Serializable, Comparable<FieldIndexHole> 
         return comparison;
     }
     
+    /**
+     * Does the hole overlap the specified date range
+     */
+    public boolean overlaps(String start, String end) {
+        
+        if (startDate.compareTo(end) <= 0 && endDate.compareTo(start) >= 0) {
+            return true;
+        }
+        
+        return false;
+    }
+    
     public String getFieldName() {
         return fieldName;
     }
