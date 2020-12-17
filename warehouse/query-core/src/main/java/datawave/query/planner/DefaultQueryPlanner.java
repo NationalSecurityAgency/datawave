@@ -1713,7 +1713,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         String holeStart = startDate;
         for (String field : fieldToDatatypeMap.keySet()) {
             // TODO - This loop must be perfected. Not sure how to set start and end values.
-            // the start and end values in the DataToFrequency map have no relavance in
+            // the start and end values in the DataToFrequency map have no relevance in
             // this context.
             // TODO this loop needs more work
             counter = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
@@ -1727,7 +1727,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     else
                         newHole.setEndDate(endDate);
                     config.addFieldIndexHole(newHole);
-                    holeStart = entry.getKey().getYyyymmdd(); // TODO might need to write a function to increase this one day
+                    holeStart = endDate; // entry.getKey().getYyyymmdd(); // TODO might need to write a function to increase this one day
                     
                 }
             }

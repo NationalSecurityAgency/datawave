@@ -36,8 +36,8 @@ public class FieldIndexHoleQueryTest extends AbstractFunctionalQuery {
     
     private static final List<FieldIndexHole> FIELD_INDEX_HOLES = new ArrayList<>();
     static {
-        String[] dateHole = new String[] {BaseShardIdRange.DATE_2015_0404.getDateStr(), BaseShardIdRange.DATE_2015_0505.getDateStr()};
-        FieldIndexHole hole = new FieldIndexHole(CityField.CITY.name(), dateHole);
+        String[] dateHole = new String[] {BaseShardIdRange.DATE_2015_0606.getDateStr(), BaseShardIdRange.DATE_2015_0707.getDateStr()};
+        FieldIndexHole hole = new FieldIndexHole(CityField.CODE.name(), dateHole);
         FIELD_INDEX_HOLES.add(hole);
         /*
          * dateHole = new String[] {BaseShardIdRange.DATE_2015_0808.getDateStr(), BaseShardIdRange.DATE_2015_0909.getDateStr()}; hole = new
@@ -101,7 +101,6 @@ public class FieldIndexHoleQueryTest extends AbstractFunctionalQuery {
         runTest(query, query, start, end);
     }
     
-    @Ignore
     @Test
     public void testWithoutHole() throws Exception {
         log.info("------  testWithoutHole  ------");

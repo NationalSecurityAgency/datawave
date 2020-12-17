@@ -70,4 +70,15 @@ public class FieldIndexHole implements Serializable, Comparable<FieldIndexHole> 
     public void setEndDate(String endDate) {
         this.endDate = endDate;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append('(');
+        builder.append('[').append("fieldName").append(':').append(fieldName).append(']');
+        builder.append(',');
+        builder.append('[').append(startDate).append(',').append(endDate).append(']');
+        builder.append(')');
+        return builder.toString();
+    }
 }
