@@ -1731,6 +1731,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     
                 }
             }
+            
             if (holeStart.compareTo(endDate) < 0) {
                 FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {holeStart, endDate});
                 config.addFieldIndexHole(trailingHole);

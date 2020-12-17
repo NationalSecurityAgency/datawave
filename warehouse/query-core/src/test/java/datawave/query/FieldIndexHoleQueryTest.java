@@ -36,12 +36,13 @@ public class FieldIndexHoleQueryTest extends AbstractFunctionalQuery {
     
     private static final List<FieldIndexHole> FIELD_INDEX_HOLES = new ArrayList<>();
     static {
-        String[] dateHole = new String[] {BaseShardIdRange.DATE_2015_0404.getDateStr(), BaseShardIdRange.DATE_2015_0606.getDateStr()};
-        FieldIndexHole hole = new FieldIndexHole("PUBLISHER", dateHole);
+        String[] dateHole = new String[] {BaseShardIdRange.DATE_2015_0404.getDateStr(), BaseShardIdRange.DATE_2015_0505.getDateStr()};
+        FieldIndexHole hole = new FieldIndexHole(CityField.CITY.name(), dateHole);
         FIELD_INDEX_HOLES.add(hole);
-        dateHole = new String[] {BaseShardIdRange.DATE_2015_0808.getDateStr(), BaseShardIdRange.DATE_2015_0909.getDateStr()};
-        hole = new FieldIndexHole("PUBLISHER", dateHole);
-        FIELD_INDEX_HOLES.add(hole);
+        /*
+         * dateHole = new String[] {BaseShardIdRange.DATE_2015_0808.getDateStr(), BaseShardIdRange.DATE_2015_0909.getDateStr()}; hole = new
+         * FieldIndexHole(CityField.CITY.name(), dateHole); FIELD_INDEX_HOLES.add(hole);
+         */
     }
     
     @BeforeClass
@@ -95,11 +96,12 @@ public class FieldIndexHoleQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CODE.name() + EQ_OP + usa + AND_OP + CityField.CITY.name() + EQ_OP + rome;
         this.logic.setFieldIndexHoles(FIELD_INDEX_HOLES);
         // set the date range to cover just the index hole
-        Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0505.getDateStr());
+        Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0404.getDateStr());
         Date end = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0505.getDateStr());
         runTest(query, query, start, end);
     }
     
+    @Ignore
     @Test
     public void testWithoutHole() throws Exception {
         log.info("------  testWithoutHole  ------");
