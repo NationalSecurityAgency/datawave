@@ -339,7 +339,7 @@
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
-                <version>9.4.8.Final</version>
+                <version>9.4.21.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.javatuples</groupId>
