@@ -1,6 +1,5 @@
 package datawave.query.jexl;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -12,11 +11,9 @@ import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 
 import datawave.query.util.MockMetadataHelper;
-import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -269,8 +266,24 @@ public class JexlASTHelperTest {
         Assert.assertNotNull(range);
         Assert.assertNotNull(range.getLowerNode());
         Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals(1, range.getLower());
+        Assert.assertEquals(5, range.getUpper());
+        Assert.assertFalse(range.isLowerInclusive());
+        Assert.assertFalse(range.isUpperInclusive());
+
+        script = JexlASTHelper.parseJexlQuery("((BoundedRange = true) && (A <= 5 && A >= 1))");
+
+        range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
+
+        Assert.assertNotNull(range);
+        Assert.assertNotNull(range.getLowerNode());
+        Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals(1, range.getLower());
+        Assert.assertEquals(5, range.getUpper());
+        Assert.assertTrue(range.isLowerInclusive());
+        Assert.assertTrue(range.isUpperInclusive());
     }
-    
+
     @Test
     public void testFindDelayedRange() throws Exception {
         ASTJexlScript script = JexlASTHelper
@@ -287,6 +300,10 @@ public class JexlASTHelperTest {
         Assert.assertNotNull(range);
         Assert.assertNotNull(range.getLowerNode());
         Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals("a", range.getLower());
+        Assert.assertEquals("b", range.getUpper());
+        Assert.assertFalse(range.isLowerInclusive());
+        Assert.assertFalse(range.isUpperInclusive());
     }
     
     @Test
@@ -304,6 +321,10 @@ public class JexlASTHelperTest {
         Assert.assertNotNull(range);
         Assert.assertNotNull(range.getLowerNode());
         Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals(1, range.getLower());
+        Assert.assertEquals(5, range.getUpper());
+        Assert.assertFalse(range.isLowerInclusive());
+        Assert.assertFalse(range.isUpperInclusive());
     }
     
     @Test
@@ -318,7 +339,11 @@ public class JexlASTHelperTest {
         Assert.assertNotNull(range);
         Assert.assertNotNull(range.getLowerNode());
         Assert.assertNotNull(range.getUpperNode());
-        
+        Assert.assertEquals("a", range.getLower());
+        Assert.assertEquals("b", range.getUpper());
+        Assert.assertFalse(range.isLowerInclusive());
+        Assert.assertFalse(range.isUpperInclusive());
+
         script = JexlASTHelper.parseJexlQuery("B < 5 && B > 1");
         
         range = JexlASTHelper.findRange().indexedOnly(null, helper).getRange(script.jjtGetChild(0));
