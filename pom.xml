@@ -889,6 +889,12 @@
                 <artifactId>picketbox-infinispan</artifactId>
                 <version>${version.picketbox}</version>
                 <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>dom4j</groupId>
+                        <artifactId>dom4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
