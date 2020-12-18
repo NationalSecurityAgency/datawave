@@ -270,11 +270,11 @@ public class JexlASTHelperTest {
         Assert.assertEquals(5, range.getUpper());
         Assert.assertFalse(range.isLowerInclusive());
         Assert.assertFalse(range.isUpperInclusive());
-
+        
         script = JexlASTHelper.parseJexlQuery("((BoundedRange = true) && (A <= 5 && A >= 1))");
-
+        
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
-
+        
         Assert.assertNotNull(range);
         Assert.assertNotNull(range.getLowerNode());
         Assert.assertNotNull(range.getUpperNode());
@@ -283,7 +283,7 @@ public class JexlASTHelperTest {
         Assert.assertTrue(range.isLowerInclusive());
         Assert.assertTrue(range.isUpperInclusive());
     }
-
+    
     @Test
     public void testFindDelayedRange() throws Exception {
         ASTJexlScript script = JexlASTHelper
@@ -343,7 +343,7 @@ public class JexlASTHelperTest {
         Assert.assertEquals("b", range.getUpper());
         Assert.assertFalse(range.isLowerInclusive());
         Assert.assertFalse(range.isUpperInclusive());
-
+        
         script = JexlASTHelper.parseJexlQuery("B < 5 && B > 1");
         
         range = JexlASTHelper.findRange().indexedOnly(null, helper).getRange(script.jjtGetChild(0));
