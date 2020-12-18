@@ -851,7 +851,7 @@ public class JexlASTHelper {
             boolean marked = BoundedRange.instanceOf(node);
             
             // first unwrap any delayed expression except for a tag
-            if (includeDelayed && QueryPropertyMarker.instanceOf(node, null) && !marked) {
+            if (includeDelayed && !marked && QueryPropertyMarker.instanceOf(node, null)) {
                 node = QueryPropertyMarker.getQueryPropertySource(node, null);
                 marked = BoundedRange.instanceOf(node);
             }
@@ -892,7 +892,7 @@ public class JexlASTHelper {
             try {
                 fieldName1 = JexlASTHelper.getIdentifier(child1);
                 fieldName2 = JexlASTHelper.getIdentifier(child2);
-            } catch (NoSuchElementException e) {}
+            } catch (NoSuchElementException ignored) {}
             if (fieldName1 == null || fieldName2 == null || !fieldName1.equals(fieldName2)) {
                 if (marked)
                     throw new DatawaveFatalQueryException("A bounded range must contain two bounds against the same field");
@@ -914,7 +914,7 @@ public class JexlASTHelper {
             try {
                 literal1 = JexlASTHelper.getLiteralValue(child1);
                 literal2 = JexlASTHelper.getLiteralValue(child2);
-            } catch (NoSuchElementException e) {}
+            } catch (NoSuchElementException ignored) {}
             
             if (literal1 == null || literal2 == null) {
                 if (marked)

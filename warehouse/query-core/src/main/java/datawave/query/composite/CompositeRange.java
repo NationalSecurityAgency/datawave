@@ -307,10 +307,10 @@ public class CompositeRange extends Composite {
     }
     
     public boolean contains(JexlNode node) {
-        boolean success = true;
+        boolean success;
         LiteralRange range = JexlASTHelper.findRange().getRange(node);
         if (range != null)
-            success &= this.jexlNodeListLowerBound.contains(range.getLowerNode()) && this.jexlNodeListUpperBound.contains(range.getUpperNode());
+            success = this.jexlNodeListLowerBound.contains(range.getLowerNode()) && this.jexlNodeListUpperBound.contains(range.getUpperNode());
         else if (node instanceof ASTEQNode)
             success = this.jexlNodeList.contains(node);
         else
