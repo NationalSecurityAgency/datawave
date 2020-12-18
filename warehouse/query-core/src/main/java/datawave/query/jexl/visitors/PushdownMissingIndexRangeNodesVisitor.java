@@ -124,7 +124,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        if (isFieldIndexedInRange(node) && missingIndexRange(node)) {
+        if (!isFieldIndexedInRange(node) || missingIndexRange(node)) {
             return IndexHoleMarkerJexlNode.create(node);
         }
         return node;
@@ -132,7 +132,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        if (isFieldIndexedInRange(node) && missingIndexRange(node)) {
+        if (!isFieldIndexedInRange(node) || missingIndexRange(node)) {
             return IndexHoleMarkerJexlNode.create(node);
         }
         return node;
