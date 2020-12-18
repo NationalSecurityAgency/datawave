@@ -127,7 +127,6 @@ public class PushdownNegationVisitor extends BaseVisitor {
                 }
                 
                 // look for bounded ranges which will prevent propagation
-                List<JexlNode> otherNodes = new ArrayList<>();
                 if (JexlASTHelper.findRange().notDelayed().isRange(node)) {
                     // bounded range, can't do it
                     return data;

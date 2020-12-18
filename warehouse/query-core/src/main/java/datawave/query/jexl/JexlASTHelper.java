@@ -923,7 +923,6 @@ public class JexlASTHelper {
             }
             
             LiteralRange<?> range = null;
-            List<JexlNode> thisRangesNodes = new ArrayList<>();
             JexlNode[] children = new JexlNode[] {child1, child2};
             if (literal1 instanceof String || literal2 instanceof String) {
                 range = getStringBoundedRange(children, new LiteralRange<>(fieldName1, LiteralRange.NodeOperand.AND));

@@ -70,7 +70,6 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        List<JexlNode> otherNodes = new ArrayList<>();
         LiteralRange range = JexlASTHelper.findRange().getRange(node);
         if (range != null) {
             values.addRange(range.getFieldName(), range);
