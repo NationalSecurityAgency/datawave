@@ -666,7 +666,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
-        // TEMPORARY?: CHECK FOR UNMARKED BOUNDED RANGES
+        // Find unmarked bounded ranges
         if (UnmarkedBoundedRangeDetectionVisitor.findUnmarkedBoundedRanges(queryTree)) {
             throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
         }

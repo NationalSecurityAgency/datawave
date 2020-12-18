@@ -138,9 +138,10 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         try {
             fieldsToTerms = lookup.lookup(config, scannerFactory, config.getMaxIndexScanTimeMillis());
         } catch (IllegalRangeArgumentException e) {
-            log.info("Cannot expand "
+            log.error("Cannot expand "
                             + range
-                            + " because it creates an invalid Accumulo Range. This is likely due to bad user input or failed normalization. This range will be ignored.");
+                            + " because it creates an invalid Accumulo Range. This is likely due to bad user input or failed normalization. This range will be ignored.",
+                            e);
             return RebuildingVisitor.copy(currentNode);
         }
         

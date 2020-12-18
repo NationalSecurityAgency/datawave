@@ -22,6 +22,7 @@ public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
+        // determine if we have a marked range that is not actually a range
         if (BoundedRange.instanceOf(node)) {
             if (!JexlASTHelper.findRange().isRange(node)) {
                 if (null != data) {
@@ -31,7 +32,9 @@ public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
             }
             
             return false;
-        } else if (JexlASTHelper.findRange().notDelayed().notMarked().isRange(node)) {
+        }
+        // determine if we have a range that is not marked
+        else if (JexlASTHelper.findRange().notDelayed().notMarked().isRange(node)) {
             if (null != data) {
                 AtomicBoolean hasBounded = (AtomicBoolean) data;
                 hasBounded.set(true);
