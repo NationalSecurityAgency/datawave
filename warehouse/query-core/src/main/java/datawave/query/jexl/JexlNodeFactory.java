@@ -3,6 +3,8 @@ package datawave.query.jexl;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.query.Constants;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ValueSet;
@@ -136,11 +138,13 @@ public class JexlNodeFactory {
         for (String field : fields) {
             ValueSet valuesForField = fieldsToValues.get(field);
             
-            // if not expanding values, then reuse the original node with simply a new field name
+            // if not expanding values, then reuse the original node with simply a new field name (anyfield only)
             if (!expandValues) {
                 JexlNode child = RebuildingVisitor.copy(orgNode);
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
-                    identifier.image = field;
+                    if (identifier.image.equals(Constants.ANY_FIELD)) {
+                        identifier.image = field;
+                    }
                 }
                 parentNode.jjtAddChild(child, parentNodeChildCount);
                 child.jjtSetParent(parentNode);
@@ -230,7 +234,8 @@ public class JexlNodeFactory {
         
         switch (parentNodeChildCount) {
             case 0:
-                return orgNode;
+                // in this case we had no matches for the range, so this expression gets replaced with a FALSE node.
+                return new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
             case 1:
                 JexlNode child = parentNode.jjtGetChild(0);
                 JexlNodes.promote(parentNode, child);
@@ -644,7 +649,8 @@ public class JexlNodeFactory {
     
     public static JexlNode buildUntypedNode(JexlNode original, String fieldName) {
         // required to handle ranges that could not be expanded
-        if (original instanceof ASTAndNode || original instanceof ASTOrNode || original instanceof ASTReferenceExpression) {
+        if (original instanceof ASTAndNode || original instanceof ASTOrNode || original instanceof ASTReferenceExpression || original instanceof ASTReference
+                        || original instanceof ASTAssignment || original instanceof ASTIdentifier || original instanceof ASTTrueNode) {
             JexlNode newNode = shallowCopy(original);
             for (int i = 0; i < original.jjtGetNumChildren(); i++) {
                 newNode.jjtAddChild(buildUntypedNode(original.jjtGetChild(i), fieldName), i);
@@ -832,6 +838,8 @@ public class JexlNodeFactory {
             copy = new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE);
         } else if (ASTMulNode.class.isAssignableFrom(clz)) {
             copy = new ASTMulNode(ParserTreeConstants.JJTMULNODE);
+        } else if (ASTAssignment.class.isAssignableFrom(clz)) {
+            copy = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -1608,15 +1616,24 @@ public class JexlNodeFactory {
      * @return
      */
     public static JexlNode createExpression(JexlNode child) {
+        if (child instanceof ASTReference && child.jjtGetChild(0) instanceof ASTReferenceExpression) {
+            return child;
+        }
+        
         ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
         
-        ASTReferenceExpression exp = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-        
-        child.jjtSetParent(exp);
-        exp.jjtAddChild(child, 0);
-        
-        exp.jjtSetParent(ref);
-        ref.jjtAddChild(exp, 0);
+        if (child instanceof ASTReferenceExpression) {
+            child.jjtSetParent(ref);
+            ref.jjtAddChild(child, 0);
+        } else {
+            ASTReferenceExpression exp = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
+            
+            child.jjtSetParent(exp);
+            exp.jjtAddChild(child, 0);
+            
+            exp.jjtSetParent(ref);
+            ref.jjtAddChild(exp, 0);
+        }
         
         ref.jjtSetParent(child.jjtGetParent());
         
