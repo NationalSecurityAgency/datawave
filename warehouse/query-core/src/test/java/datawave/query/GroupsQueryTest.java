@@ -81,8 +81,8 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
         int min = 40;
         int max = 170;
         String query = GroupField.STATE_EAST.getQueryField() + EQ_OP + state + AND_OP + "(" + GroupField.CITY_EAST.getQueryField() + EQ_OP + one + OR_OP
-                        + GroupField.CITY_EAST.getQueryField() + EQ_OP + two + ")" + AND_OP + "(" + GroupField.COUNT_EAST.getQueryField() + GT_OP + min
-                        + AND_OP + GroupField.COUNT_EAST.getQueryField() + LT_OP + max + ")";
+                        + GroupField.CITY_EAST.getQueryField() + EQ_OP + two + ")" + AND_OP + "((BoundedRange = true) && ("
+                        + GroupField.COUNT_EAST.getQueryField() + GT_OP + min + AND_OP + GroupField.COUNT_EAST.getQueryField() + LT_OP + max + "))";
         runTest(query, query);
     }
     
@@ -95,9 +95,9 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
         int maxOne = 44;
         int minTwo = 125;
         int maxTwo = 170;
-        String query = GroupField.STATE_EAST.getQueryField() + EQ_OP + state + AND_OP + "(" + GroupField.COUNT_EAST.getQueryField() + GT_OP + minOne + AND_OP
-                        + GroupField.COUNT_EAST.getQueryField() + LT_OP + maxOne + OR_OP + GroupField.COUNT_EAST.getQueryField() + GT_OP + minTwo + AND_OP
-                        + GroupField.COUNT_EAST.getQueryField() + LT_OP + maxTwo + ")";
+        String query = GroupField.STATE_EAST.getQueryField() + EQ_OP + state + AND_OP + "((BoundedRange = true) && (" + GroupField.COUNT_EAST.getQueryField()
+                        + GT_OP + minOne + AND_OP + GroupField.COUNT_EAST.getQueryField() + LT_OP + maxOne + "))" + OR_OP + "((BoundedRange = true) && ("
+                        + GroupField.COUNT_EAST.getQueryField() + GT_OP + minTwo + AND_OP + GroupField.COUNT_EAST.getQueryField() + LT_OP + maxTwo + "))";
         runTest(query, query);
     }
     
@@ -129,9 +129,10 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
         int v2 = 36;
         int v3 = 155;
         String query = GroupField.STATE_EAST.getQueryField() + EQ_OP + state + AND_OP + "((" + GroupField.CITY_EAST.getQueryField() + EQ_OP + salem + AND_OP
-                        + GroupField.COUNT_EAST.getQueryField() + EQ_OP + s1 + ")" + OR_OP + "(" + GroupField.COUNT_EAST.getQueryField() + GT_OP + rmin
-                        + AND_OP + GroupField.COUNT_EAST.getQueryField() + LT_OP + rmax + ")" + OR_OP + "(" + GroupField.COUNT_EAST.getQueryField() + EQ_OP
-                        + v1 + OR_OP + GroupField.COUNT_EAST.getQueryField() + EQ_OP + v2 + OR_OP + GroupField.COUNT_EAST.getQueryField() + EQ_OP + v3 + "))";
+                        + GroupField.COUNT_EAST.getQueryField() + EQ_OP + s1 + ")" + OR_OP + "((BoundedRange = true) && ("
+                        + GroupField.COUNT_EAST.getQueryField() + GT_OP + rmin + AND_OP + GroupField.COUNT_EAST.getQueryField() + LT_OP + rmax + "))" + OR_OP
+                        + "(" + GroupField.COUNT_EAST.getQueryField() + EQ_OP + v1 + OR_OP + GroupField.COUNT_EAST.getQueryField() + EQ_OP + v2 + OR_OP
+                        + GroupField.COUNT_EAST.getQueryField() + EQ_OP + v3 + "))";
         runTest(query, query);
     }
     

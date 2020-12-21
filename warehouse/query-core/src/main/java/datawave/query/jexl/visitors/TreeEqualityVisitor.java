@@ -147,7 +147,8 @@ public class TreeEqualityVisitor implements ParserVisitor {
         while (changed) {
             changed = false;
             for (SimpleNode child : list) {
-                if ((child.getClass().equals(ASTReference.class) && (child.jjtGetNumChildren() == 1))
+                // note the isAssignableFrom is to handle QueryPropertyMarker nodes
+                if (((child.getClass().equals(ASTReference.class) || ASTReference.class.isAssignableFrom(child.getClass())) && (child.jjtGetNumChildren() == 1))
                                 || (child.getClass().equals(ASTReferenceExpression.class) && (child.jjtGetNumChildren() == 1))
                                 || (child.getClass().equals(ASTOrNode.class) && ((child.jjtGetNumChildren() == 1) || node.getClass().equals(ASTOrNode.class)))
                                 || (child.getClass().equals(ASTAndNode.class) && ((child.jjtGetNumChildren() == 1) || node.getClass().equals(ASTAndNode.class)))) {

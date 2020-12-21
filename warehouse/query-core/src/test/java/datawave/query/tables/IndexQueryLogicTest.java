@@ -257,7 +257,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         expected.add("tesla-eventid-002");
         expected.add("tesla-eventid-003");
         
-        String query = CarField.WHEELS.name() + ">='0' and " + CarField.WHEELS.name() + "<='5'";
+        String query = "((BoundedRange = true) && (" + CarField.WHEELS.name() + ">='0' and " + CarField.WHEELS.name() + "<='5'))";
         runTest(query, expected);
     }
     

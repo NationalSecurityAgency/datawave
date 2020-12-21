@@ -1,5 +1,6 @@
 package datawave.query.jexl;
 
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -21,6 +22,7 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
     private T lower, upper;
     private NodeOperand operand;
     private Boolean lowerInclusive, upperInclusive;
+    private JexlNode lowerNode, upperNode;
     
     public LiteralRange(String fieldName, NodeOperand operand) {
         this.fieldName = fieldName;
@@ -47,6 +49,10 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
         this.lower = lower;
     }
     
+    public JexlNode getLowerNode() {
+        return lowerNode;
+    }
+    
     public Boolean isLowerInclusive() {
         return lowerInclusive;
     }
@@ -55,8 +61,9 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
         this.lowerInclusive = lowerInclusive;
     }
     
-    public void updateLower(T candidateLower, Boolean candidateInclusive) {
+    public void updateLower(T candidateLower, Boolean candidateInclusive, JexlNode node) {
         if (null == lower) {
+            this.lowerNode = node;
             this.lower = candidateLower;
             this.lowerInclusive = candidateInclusive;
         } else {
@@ -66,11 +73,13 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
                 if (cmp < 0 || (cmp == 0 && this.lowerInclusive && !candidateInclusive)) {
                     this.lowerInclusive = candidateInclusive;
                     this.lower = candidateLower;
+                    this.lowerNode = node;
                 }
             } else {
                 if (cmp > 0 || (cmp == 0 && !this.lowerInclusive && candidateInclusive)) {
                     this.lowerInclusive = candidateInclusive;
                     this.lower = candidateLower;
+                    this.lowerNode = node;
                 }
             }
         }
@@ -82,6 +91,10 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
     
     private void setUpper(T upper) {
         this.upper = upper;
+    }
+    
+    public JexlNode getUpperNode() {
+        return upperNode;
     }
     
     public Boolean isUpperInclusive() {
@@ -96,8 +109,9 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
         return this.operand;
     }
     
-    public void updateUpper(T candidateUpper, Boolean candidateInclusive) {
+    public void updateUpper(T candidateUpper, Boolean candidateInclusive, JexlNode node) {
         if (null == upper) {
+            this.upperNode = node;
             this.upper = candidateUpper;
             this.upperInclusive = candidateInclusive;
         } else {
@@ -107,11 +121,13 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
                 if (cmp > 0 || (cmp == 0 && this.upperInclusive && !candidateInclusive)) {
                     this.upperInclusive = candidateInclusive;
                     this.upper = candidateUpper;
+                    this.upperNode = node;
                 }
             } else {
                 if (cmp < 0 || (cmp == 0 && !this.upperInclusive && candidateInclusive)) {
                     this.upperInclusive = candidateInclusive;
                     this.upper = candidateUpper;
+                    this.upperNode = node;
                 }
             }
         }
