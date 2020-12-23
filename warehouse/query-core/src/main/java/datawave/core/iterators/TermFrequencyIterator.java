@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import datawave.core.iterators.key.TFKey;
 import datawave.query.Constants;
-import datawave.query.data.parsers.DatawaveKey;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -20,19 +20,16 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
 /**
- * 
  * An iterator for the Datawave shard table, it searches TermFrequency keys for a list of terms and values. It is assumed that the range specified includes all
  * of the documents of interest.
- * 
+ * <p>
  * TermFrequency keys: {shardId}:tf:datatype\0uid\0{fieldValue}:{fieldName} {TermWeight protobuf}
- * 
  */
 public class TermFrequencyIterator extends WrappingIterator {
     public static final Logger log = Logger.getLogger(TermFrequencyIterator.class);
@@ -59,6 +56,8 @@ public class TermFrequencyIterator extends WrappingIterator {
     protected TreeSet<String> values;
     protected TreeSet<String> fields;
     protected TreeSet<String> uidsAndValues;
+    
+    protected TFKey tfKey = new TFKey();
     
     // Wrapping iterator only accesses its private source in setSource and getSource
     // Since this class overrides these methods, it's safest to keep the source declaration here
@@ -169,7 +168,7 @@ public class TermFrequencyIterator extends WrappingIterator {
     
     /**
      * Basic method to find our topKey which matches our given FieldName,FieldValue.
-     * 
+     *
      * @throws IOException
      */
     protected void findTop() throws IOException {
@@ -191,36 +190,28 @@ public class TermFrequencyIterator extends WrappingIterator {
                 break;
             }
             
-            if (count > MAX_SCAN_BEFORE_SEEK) {
+            tfKey.parse(k);
+            
+            if (fieldValueAccepted()) {
+                topKey = k;
+                topValue = source.getTopValue();
+                break;
+            } else if (!uidMatches() || shouldSeekByValue() || shouldSeekByCount(count)) {
                 seekToNext(k);
-                count = 0;
+                count = 0; // reset count
             } else {
-                String[] cqParts = StringUtils.split(k.getColumnQualifier().toString(), '\u0000');
-                String value = getValueFromParts(cqParts); // parse once and pass..
-                
-                if (!uidMatches(cqParts) || shouldSeekByValue(value)) {
-                    seekToNext(k);
-                    count = 0; // reset count
-                } else if (fieldValueAccepted(cqParts, value)) {
-                    topKey = k;
-                    topValue = source.getTopValue();
-                    break;
-                } else {
-                    source.next();
-                }
+                source.next();
+                count++;
             }
-            count++;
         }
     }
     
-    private boolean fieldValueAccepted(String[] cqParts, String value) {
-        String uid = cqParts[1];
-        String uidAndValue = uid + '\u0000' + value;
-        return uidsAndValues.contains(uidAndValue) && fields.contains(cqParts[cqParts.length - 1]);
+    private boolean fieldValueAccepted() {
+        return uidsAndValues.contains(tfKey.getUidAndValue()) && fields.contains(tfKey.getField());
     }
     
-    private boolean uidMatches(String[] parts) {
-        return uids.contains(parts[1]);
+    private boolean uidMatches() {
+        return uids.contains(tfKey.getUid());
     }
     
     // This method is required because there might exist a value that contains a null byte.
@@ -243,24 +234,30 @@ public class TermFrequencyIterator extends WrappingIterator {
     /**
      * IFF this value is greater than the maximum search value or less than the first search value by a distance measure.
      */
-    private boolean shouldSeekByValue(String value) {
+    private boolean shouldSeekByValue() {
         
-        // First check if the current value exceeds the maximum value in the search space
-        boolean valueGreaterThanMax = value.compareTo(values.last()) > 0;
-        if (valueGreaterThanMax) {
+        String next = values.higher(tfKey.getValue());
+        if (next == null) {
+            // the current value exceeds the maximum value, return true to trigger final seek to empty range.
             return true;
-        }
-        
-        // Next check if we are before the minimum value in the search space
-        boolean valueLessThanMin = value.compareTo(values.first()) < 0;
-        if (valueLessThanMin) {
-            // Next check distance
-            String first = values.first();
-            double distance = getDistance(value, first);
+        } else {
+            // Check the distance between this value and the next highest value
+            double distance = getDistance(tfKey.getValue(), next);
             // Iterator should seek if the distance between values exceeds the threshold
             return distance > MIN_DISTANCE_BEFORE_SEEK; // > 0.2d
         }
-        return false;
+    }
+    
+    /**
+     * Seek based on count IFF the current field is beyond the last possible field. This method assumes current key passed the uid and value checks.
+     *
+     * @param count
+     *            the current next count
+     * @return
+     */
+    protected boolean shouldSeekByCount(int count) {
+        boolean beyondField = tfKey.getField().compareTo(fields.last()) > 0;
+        return beyondField && (count > MAX_SCAN_BEFORE_SEEK);
     }
     
     private void seekToNext(Key k) throws IOException {
@@ -297,9 +294,20 @@ public class TermFrequencyIterator extends WrappingIterator {
      * @return
      */
     public Range getNextSeekRange(Key k) {
-        DatawaveKey tfKey = new DatawaveKey(k);
-        String uidAndValue = tfKey.getUid() + '\u0000' + tfKey.getFieldValue();
-        String next = uidsAndValues.higher(uidAndValue);
+        
+        if (uidsAndValues.contains(tfKey.getUidAndValue())) {
+            // check to see if there is another field in this value
+            String nextField = fields.higher(tfKey.getField());
+            if (nextField != null) {
+                // Seek to the next field
+                Text cq = new Text(tfKey.getDatatype() + '\u0000' + tfKey.getUidAndValue() + '\u0000' + nextField);
+                Key nextStart = new Key(k.getRow(), k.getColumnFamily(), cq);
+                return new Range(nextStart, true, initialSeekRange.getEndKey(), initialSeekRange.isEndKeyInclusive());
+            }
+            // otherwise fall through and seek to the next uid-value-field
+        }
+        
+        String next = uidsAndValues.higher(tfKey.getUidAndValue());
         if (next == null) {
             // Done, return an empty range.
             Key startKey = initialSeekRange.getEndKey();
@@ -307,9 +315,9 @@ public class TermFrequencyIterator extends WrappingIterator {
             return new Range(startKey, false, endKey, false);
         } else {
             // Seek to next document containing a hit
-            Text cq = new Text(tfKey.getDataType() + '\u0000' + next);
+            Text cq = new Text(tfKey.getDatatype() + '\u0000' + next + '\u0000' + fields.first());
             Key nextStart = new Key(k.getRow(), k.getColumnFamily(), cq);
-            return new Range(nextStart, false, initialSeekRange.getEndKey(), initialSeekRange.isEndKeyInclusive());
+            return new Range(nextStart, true, initialSeekRange.getEndKey(), initialSeekRange.isEndKeyInclusive());
         }
     }
     
@@ -324,8 +332,17 @@ public class TermFrequencyIterator extends WrappingIterator {
     public TreeSet<String> buildUidsFromKeys(Collection<Key> keys) {
         TreeSet<String> uids = new TreeSet<>();
         for (Key key : keys) {
-            DatawaveKey datawaveKey = new DatawaveKey(key);
-            uids.add(datawaveKey.getUid());
+            // keys are CF=datatype\x00uid
+            byte[] backing = key.getColumnFamilyData().getBackingArray();
+            int index = -1;
+            for (int i = 0; i < backing.length; i++) {
+                if (backing[i] == '\u0000') {
+                    index = i + 1;
+                    break;
+                }
+            }
+            String uid = new String(backing, index, (backing.length - index));
+            uids.add(uid);
         }
         return uids;
     }
