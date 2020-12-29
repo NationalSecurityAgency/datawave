@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Multimap;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -46,8 +47,23 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
             throw new IllegalStateException("Unexpected Attribute type for " + Document.DOCKEY_FIELD_NAME + ": " + docKeys.getClass());
         }
         
-        map.putAll(tfPopulator.getContextMap(from.first(), docKeys));
+        Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
+        
+        map.putAll(tfPopulator.getContextMap(from.first(), docKeys, fields));
         merged.putAll(tfPopulator.document(), false);
         return Tuples.tuple(from.first(), merged, map);
+    }
+    
+    private Set<String> getFieldsToRemove(Document doc, Multimap<String,String> tfFVs) {
+        Set<String> fieldsToRemove = new HashSet<>();
+        Set<String> docFields = doc.getDictionary().keySet();
+        Set<String> tfFields = tfFVs.keySet();
+        for (String tfField : tfFields) {
+            if (!docFields.contains(tfField)) {
+                // mark this field for removal prior to building the TermFrequencyIterator
+                fieldsToRemove.add(tfField);
+            }
+        }
+        return fieldsToRemove;
     }
 }

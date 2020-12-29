@@ -4,6 +4,9 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.model.QueryModel;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -155,93 +158,44 @@ public class QueryModelVisitor extends RebuildingVisitor {
             return node;
         }
         
-        Multimap<String,JexlNode> lowerBounds = ArrayListMultimap.create(), upperBounds = ArrayListMultimap.create();
-        List<JexlNode> others = Lists.newArrayList();
-        for (JexlNode child : JexlNodes.children(node)) {
-            if (log.isTraceEnabled()) {
-                log.trace("visiting:" + JexlStringBuildingVisitor.buildQuery(child));
-            }
-            // if this child has a method attached, be sure to descend into it for model substitutions
-            if (JexlASTHelper.HasMethodVisitor.hasMethod(child)) {
-                child = (JexlNode) child.jjtAccept(this.simpleQueryModelVisitor, null);
-            }
-            
-            switch (id(child)) {
-                case ParserTreeConstants.JJTGENODE:
-                case ParserTreeConstants.JJTGTNODE:
-                    upperBounds.put(JexlASTHelper.getIdentifier(child), child);
-                    break;
-                case ParserTreeConstants.JJTLENODE:
-                case ParserTreeConstants.JJTLTNODE:
-                    lowerBounds.put(JexlASTHelper.getIdentifier(child), child);
-                    break;
-                default:
-                    others.add(child);
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
+            return expandRangeNodeFromModel(range, node, data);
+        } else {
+            return super.visit(node, data);
+        }
+    }
+    
+    public Object expandRangeNodeFromModel(LiteralRange range, ASTAndNode node, Object data) {
+        
+        // this is the set of fields that have an upper and a lower bound operand
+        // make a copy of the intersection, as I will be modifying lowererBounds and upperBounds below
+        List<JexlNode> aliasedBounds = Lists.newArrayList();
+        
+        Collection<String> aliases = getAliasesForField(range.getFieldName());
+        if (aliases.isEmpty()) {
+            aliases = Lists.newArrayList(range.getFieldName());
+        }
+        
+        for (String alias : aliases) {
+            if (alias != null) {
+                BoundedRange rangeNode = BoundedRange.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
+                                JexlASTHelper.setField(RebuildingVisitor.copy(range.getLowerNode()), alias),
+                                JexlASTHelper.setField(RebuildingVisitor.copy(range.getUpperNode()), alias)));
+                aliasedBounds.add(rangeNode);
+                this.expandedNodes.add((ASTAndNode) JexlASTHelper.dereference(rangeNode));
             }
         }
         
-        if (!lowerBounds.isEmpty() && !upperBounds.isEmpty()) {
-            // this is the set of fields that have an upper and a lower bound operand
-            // make a copy of the intersection, as I will be modifying lowererBounds and upperBounds below
-            Set<String> tightBounds = Sets.newHashSet(Sets.intersection(lowerBounds.keySet(), upperBounds.keySet()));
-            if (log.isDebugEnabled())
-                log.debug("Found bounds to match: " + tightBounds);
-            for (String field : tightBounds) {
-                // String field = JexlASTHelper.getIdentifier(theNode);
-                List<ASTAndNode> aliasedBounds = Lists.newArrayList();
-                
-                Collection<String> aliases = getAliasesForField(field);
-                if (aliases.isEmpty()) {
-                    aliases = Lists.newArrayList(field);
-                }
-                
-                for (String alias : aliases) {
-                    if (alias != null) {
-                        Collection<JexlNode> lowers = lowerBounds.get(field);
-                        Collection<JexlNode> uppers = upperBounds.get(field);
-                        Iterator<JexlNode> lowIterator = lowers.iterator();
-                        Iterator<JexlNode> upIterator = uppers.iterator();
-                        while (lowIterator.hasNext() && upIterator.hasNext()) {
-                            JexlNode low = lowIterator.next();
-                            JexlNode up = upIterator.next();
-                            aliasedBounds.add(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
-                                            JexlASTHelper.setField(RebuildingVisitor.copy(low), alias),
-                                            JexlASTHelper.setField(RebuildingVisitor.copy(up), alias)));
-                        }
-                    }
-                }
-                // we don't need the original, unexpanded nodes any more
-                if (!aliasedBounds.isEmpty()) {
-                    lowerBounds.removeAll(field);
-                    upperBounds.removeAll(field);
-                    this.expandedNodes.addAll(aliasedBounds);
-                }
-                JexlNode nodeToAdd;
-                if (aliasedBounds.isEmpty()) {
-                    continue;
-                } else if (1 == aliasedBounds.size()) {
-                    // We know we only have one bound to process, avoid the extra parens
-                    nodeToAdd = JexlASTHelper.wrapInParens(aliasedBounds).get(0);
-                } else {
-                    ASTOrNode unionOfAliases = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-                    List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
-                    JexlNodes.children(unionOfAliases, var.toArray(new JexlNode[var.size()]));
-                    nodeToAdd = JexlNodes.wrap(unionOfAliases);
-                }
-                
-                others.add(nodeToAdd);
-            }
+        JexlNode nodeToAdd;
+        if (1 == aliasedBounds.size()) {
+            nodeToAdd = JexlASTHelper.dereference(aliasedBounds.get(0));
+        } else {
+            ASTOrNode unionOfAliases = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+            nodeToAdd = JexlNodes.children(unionOfAliases, aliasedBounds.toArray(new JexlNode[aliasedBounds.size()]));
         }
         
-        // we could have some unmatched bounds left over
-        others.addAll(lowerBounds.values());
-        others.addAll(upperBounds.values());
-        
-        /*
-         * The rebuilding visitor adds whatever {visit()} returns to the parent's child list, so we shouldn't have some weird object graph that means old nodes
-         * never get GC'd because {super.visit()} will reset the parent in the call to {copy()}
-         */
-        return super.visit(JexlNodes.children(node, others.toArray(new JexlNode[0])), data);
+        return nodeToAdd;
     }
     
     /**
