@@ -45,7 +45,8 @@ public class TestLuceneToJexlParser {
         Assert.assertEquals("FIELD == 'SELECTOR' && filter:matchesAtLeastCountOf(7, FIELD, 'v1', 'v2')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SOMETHING AND #EVALUATION_ONLY('NUM_FIELD: [0 TO 50}')");
-        Assert.assertEquals("FIELD == 'SOMETHING' && ((ASTEvaluationOnly = true) && (NUM_FIELD >= '0' && NUM_FIELD < '50'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SOMETHING' && ((ASTEvaluationOnly = true) && ((BoundedRange = true) && (NUM_FIELD >= '0' && NUM_FIELD < '50')))",
+                        node.getOriginalQuery());
     }
     
     @Test
