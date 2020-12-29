@@ -643,8 +643,8 @@ public abstract class ExecutableExpansionVisitorTest {
         Assert.assertTrue(
                         queryString,
                         queryString.equals("UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
-                                        + "((ExceededOrThresholdMarkerJexlNode = true) && (((id = '" + id
-                                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}')))))"));
+                                        + "((ExceededOrThresholdMarkerJexlNode = true) && ((id = '" + id
+                                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))"));
         
         // not executable
         Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -657,8 +657,8 @@ public abstract class ExecutableExpansionVisitorTest {
         // it looks like what we'd expect
         Assert.assertTrue(
                         queryString,
-                        queryString.equals("((QUOTE == 'kind') && UUID == 'capone') || " + "((((ExceededOrThresholdMarkerJexlNode = true) && (((id = '" + id
-                                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))) && UUID == 'capone') || "
+                        queryString.equals("((QUOTE == 'kind') && UUID == 'capone') || " + "((((ExceededOrThresholdMarkerJexlNode = true) && ((id = '" + id
+                                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}')))) && UUID == 'capone') || "
                                         + "((filter:includeRegex(QUOTE, '.*kind.*')) && UUID == 'capone')"));
     }
     

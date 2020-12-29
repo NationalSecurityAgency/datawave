@@ -16,6 +16,9 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -171,8 +174,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     public Object visit(ASTAndNode node, Object data) {
         ExpandData parentData = (ExpandData) data;
         
-        // only process delayed predicates
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(ASTDelayedPredicate.class))) {
+        // only process delayed and bounded range predicates
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
             return copy(node);
         }
         
@@ -287,20 +290,20 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         return node;
     }
     
-    // only descend into delayed predicates
+    // only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(ASTDelayedPredicate.class))) {
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
             return copy(node);
         }
         
         return super.visit(node, data);
     }
     
-    // only descend into delayed predicates
+    // only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(ASTDelayedPredicate.class))) {
+        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
             return copy(node);
         }
         
@@ -553,7 +556,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * @return Returns a composite node if one can be made, otherwise returns the original node
      */
     private JexlNode visitLeafNode(JexlNode node, ExpandData eData) {
-        String fieldName = (node instanceof ASTAndNode) ? JexlASTHelper.getIdentifier(node.jjtGetChild(0)) : JexlASTHelper.getIdentifier(node);
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        String fieldName = (range != null) ? range.getFieldName() : JexlASTHelper.getIdentifier(node);
         
         Multimap<String,JexlNode> leafNodes = LinkedHashMultimap.create();
         leafNodes.put(fieldName, node);
@@ -901,11 +905,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             JexlNode leafKid = getLeafNode(rootNode);
             if (leafKid != null) {
                 String kidFieldName;
-                if (leafKid instanceof ASTAndNode) {
-                    kidFieldName = JexlASTHelper.getIdentifier(leafKid.jjtGetChild(0));
-                } else {
-                    kidFieldName = JexlASTHelper.getIdentifier(leafKid);
-                }
+                LiteralRange range = JexlASTHelper.findRange().getRange(leafKid);
+                kidFieldName = (range != null) ? range.getFieldName() : JexlASTHelper.getIdentifier(leafKid);
                 childrenLeafNodes.put(kidFieldName, rootNode);
             }
         }
@@ -915,11 +916,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 JexlNode leafKid = getLeafNode(child);
                 if (leafKid != null) {
                     String kidFieldName;
-                    if (leafKid instanceof ASTAndNode) {
-                        kidFieldName = JexlASTHelper.getIdentifier(leafKid.jjtGetChild(0));
-                    } else {
-                        kidFieldName = JexlASTHelper.getIdentifier(leafKid);
-                    }
+                    LiteralRange range = JexlASTHelper.findRange().getRange(leafKid);
+                    kidFieldName = (range != null) ? range.getFieldName() : JexlASTHelper.getIdentifier(leafKid);
                     // note: we save the actual direct sibling of the and node, including
                     // any reference nodes. those will be trimmed off later
                     childrenLeafNodes.put(kidFieldName, child);
@@ -970,7 +968,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReference node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
             if (node.jjtGetNumChildren() == 1) {
                 JexlNode kid = node.jjtGetChild(0);
                 if (kid instanceof ASTReferenceExpression) {
@@ -991,7 +989,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReferenceExpression node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
             if (node != null && node.jjtGetNumChildren() == 1) {
                 JexlNode kid = node.jjtGetChild(0);
                 if (kid instanceof ASTAndNode) {
@@ -1017,18 +1015,11 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTAndNode node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
             if (node.jjtGetNumChildren() == 1) {
                 return getLeafNode(node.jjtGetChild(0));
-            } else if (node.jjtGetNumChildren() == 2) {
-                JexlNode beginNode = node.jjtGetChild(0);
-                JexlNode endNode = node.jjtGetChild(1);
-                if ((beginNode instanceof ASTGTNode || beginNode instanceof ASTGENode) && (endNode instanceof ASTLTNode || endNode instanceof ASTLENode)) {
-                    String beginFieldName = JexlASTHelper.getIdentifier(beginNode);
-                    String endFieldName = JexlASTHelper.getIdentifier(endNode);
-                    if (beginFieldName.equals(endFieldName))
-                        return node;
-                }
+            } else if (BoundedRange.instanceOf(node)) {
+                return node;
             }
         }
         return null;
@@ -1046,8 +1037,13 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         if (jexlNodes != null && !jexlNodes.isEmpty()) {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
-            else
-                return JexlNodeFactory.createUnwrappedAndNode(jexlNodes);
+            else {
+                JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(jexlNodes);
+                if (JexlASTHelper.findRange().notMarked().isRange(andNode))
+                    return BoundedRange.create(andNode);
+                else
+                    return andNode;
+            }
         }
         return null;
     }

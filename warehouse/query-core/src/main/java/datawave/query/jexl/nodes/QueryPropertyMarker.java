@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 
 import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
@@ -54,7 +55,7 @@ public class QueryPropertyMarker extends ASTReference {
         // create the assignment using the class name wrapped in an expression
         JexlNode refNode1 = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(getClass().getSimpleName(), true));
         
-        // wrap the source in an expression
+        // wrap the source in an expression, but only if needed
         JexlNode refNode2 = JexlNodeFactory.createExpression(source);
         
         // wrap the assignment and source in an AND node

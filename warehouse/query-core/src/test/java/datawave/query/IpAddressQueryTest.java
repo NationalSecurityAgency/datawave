@@ -55,29 +55,30 @@ public class IpAddressQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testRange() throws Exception {
-        String query = IpAddrField.PUBLIC_IP.name() + GTE_OP + "'9.9.9.9'" + AND_OP + IpAddrField.PUBLIC_IP.name() + LTE_OP + "'9.9.40.1'";
+        String query = "((BoundedRange = true) && (" + IpAddrField.PUBLIC_IP.name() + GTE_OP + "'9.9.9.9'" + AND_OP + IpAddrField.PUBLIC_IP.name() + LTE_OP
+                        + "'9.9.40.1'))";
         runTest(query, query);
     }
     
     @Test
     public void testRangeWithRegexField() throws Exception {
-        String query = IpAddrField.PUBLIC_IP.name() + GTE_OP + "'9.9.9.9'" + AND_OP + IpAddrField.PUBLIC_IP.name() + LTE_OP + "'9.9.40.1'" + AND_OP
-                        + IpAddrField.PLANET.name() + RE_OP + "'m.*'";
+        String query = "((BoundedRange = true) && (" + IpAddrField.PUBLIC_IP.name() + GTE_OP + "'9.9.9.9'" + AND_OP + IpAddrField.PUBLIC_IP.name() + LTE_OP
+                        + "'9.9.40.1'))" + AND_OP + IpAddrField.PLANET.name() + RE_OP + "'m.*'";
         runTest(query, query);
     }
     
     @Test
     public void testRangeWithNotEq() throws Exception {
-        String query = "(" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'20.20.20.20'" + AND_OP + IpAddrField.PRIVATE_IP.name() + LTE_OP + "'30.30.30.30'" + ")"
-                        + AND_OP + IpAddrField.LOCATION.name() + NE_OP + "'paris'";
+        String query = "((BoundedRange = true) && (" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'20.20.20.20'" + AND_OP + IpAddrField.PRIVATE_IP.name()
+                        + LTE_OP + "'30.30.30.30'" + "))" + AND_OP + IpAddrField.LOCATION.name() + NE_OP + "'paris'";
         runTest(query, query);
     }
     
     @Test
     public void testMultiRange() throws Exception {
-        String query = "(" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'20.20.20.20'" + AND_OP + IpAddrField.PRIVATE_IP.name() + LTE_OP + "'22.90.90.200'"
-                        + ")" + OR_OP + "(((" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'33.60.60.60'" + ")" + AND_OP + IpAddrField.PRIVATE_IP.name()
-                        + LTE_OP + "'33.100.100.200'" + "))";
+        String query = "((BoundedRange = true) && (" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'20.20.20.20'" + AND_OP + IpAddrField.PRIVATE_IP.name()
+                        + LTE_OP + "'22.90.90.200')" + ")" + OR_OP + "((((BoundedRange = true) && (" + IpAddrField.PRIVATE_IP.name() + GTE_OP + "'33.60.60.60'"
+                        + ")" + AND_OP + IpAddrField.PRIVATE_IP.name() + LTE_OP + "'33.100.100.200'" + ")))";
         runTest(query, query);
     }
     
