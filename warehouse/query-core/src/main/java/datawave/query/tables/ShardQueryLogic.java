@@ -273,6 +273,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(expandFields);
         this.config.setExpandValues(expandValues);
+        // if we are not generating the full plan, then set the flag such that we avoid checking for final executability/full table scan
+        if (!expandFields || !expandValues) {
+            this.config.setGeneratePlanOnly(true);
+        }
         initialize(config, connection, settings, auths);
         return config.getQueryString();
     }
@@ -443,7 +447,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
-        config.setQueries(this.queries.iterator());
+        if (this.queries != null) {
+            config.setQueries(this.queries.iterator());
+        }
         
         config.setQueryString(getQueryPlanner().getPlannedScript());
         

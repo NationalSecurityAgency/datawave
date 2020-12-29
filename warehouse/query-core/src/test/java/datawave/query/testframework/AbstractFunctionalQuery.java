@@ -259,14 +259,15 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         String plan = config.getQueryString();
         int idx;
         int total = 0;
+        String test = plan;
         do {
-            idx = plan.indexOf(subStr);
+            idx = test.indexOf(subStr);
             if (-1 < idx) {
                 total++;
-                plan = plan.substring(idx + subStr.length());
+                test = test.substring(idx + subStr.length());
             }
         } while (-1 < idx);
-        Assert.assertEquals("marker (" + subStr + ")", expect, total);
+        Assert.assertEquals("marker (" + subStr + ") in plan: " + plan, expect, total);
     }
     
     /**

@@ -179,7 +179,23 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "FOO > '1' && FOO < '10'";
-        String expected = "(FOO > '+aE1' && FOO < '+bE1')";
+        String expected = "FOO > '+aE1' && FOO < '+bE1'";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testBoundedNormalizedBoundsCase() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "((BoundedRange = true) && (FOO > '1' && FOO < '10'))";
+        String expected = "((BoundedRange = true) && (FOO > '+aE1' && FOO < '+bE1'))";
         expandTerms(original, expected);
     }
     
@@ -195,7 +211,23 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "FOO > 1 && FOO < 10";
-        String expected = "((FOO > '+aE1' && FOO < '+bE1') || (FOO > '1' && FOO < '10'))";
+        String expected = "(FOO > '1' || FOO > '+aE1') && (FOO < '+bE1' || FOO < '10')";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testBoundedMultiNormalizedBounds() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "((BoundedRange = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((((BoundedRange = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((BoundedRange = true) && (FOO > '1' && FOO < '10'))))";
         expandTerms(original, expected);
     }
     
@@ -208,7 +240,20 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "NEW == 'boo' && NEW > '1' && NEW < '10'";
-        String expected = "NEW == 'boo' && (NEW > '1' && NEW < '10')";
+        String expected = "NEW == 'boo' && NEW > '1' && NEW < '10'";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testBoundedUnNormalizedBoundsCase() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.put("NEW", new LcNoDiacriticsType());
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "NEW == 'boo' && ((BoundedRange = true) && (NEW > '1' && NEW < '10'))";
+        String expected = "NEW == 'boo' && ((BoundedRange = true) && (NEW > '1' && NEW < '10'))";
         expandTerms(original, expected);
     }
     
@@ -220,7 +265,19 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "NEW > '0' && NEW < '9' && FOO > 1 && FOO < 10";
-        String expected = "(NEW > '0' && NEW < '9') && FOO > 1 && FOO < 10";
+        String expected = "NEW > '0' && NEW < '9' && FOO > 1 && FOO < 10";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testBoundedNormalizedAndUnNormalizedBoundsCase() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.put("NEW", new LcNoDiacriticsType());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "((BoundedRange = true) && (NEW > '0' && NEW < '9')) && ((BoundedRange = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((BoundedRange = true) && (NEW > '0' && NEW < '9')) && ((BoundedRange = true) && (FOO > 1 && FOO < 10))";
         expandTerms(original, expected);
     }
     
