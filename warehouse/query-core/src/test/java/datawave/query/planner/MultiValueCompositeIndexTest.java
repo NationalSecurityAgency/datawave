@@ -72,6 +72,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
@@ -297,9 +298,13 @@ public class MultiValueCompositeIndexTest {
     
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
-        String query = "((" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312')" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " == 15) ||" + "("
-                        + GEO_FIELD + " == '1f20aaaaaaaaaaaaaa'" + JEXL_AND_OP + "(" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD
-                        + " <= 61)) ||" + "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
+        // @formatter:off
+        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312'))" + JEXL_AND_OP +
+                WKT_BYTE_LENGTH_FIELD + " == 15)" + JEXL_OR_OP +
+                "(" + GEO_FIELD + " == '1f20aaaaaaaaaaaaaa'" + JEXL_AND_OP +
+                "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " <= 61)))" + JEXL_OR_OP +
+                "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
+        // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, false);
         Assert.assertEquals(3, queries.size());
@@ -327,9 +332,13 @@ public class MultiValueCompositeIndexTest {
     
     @Test
     public void compositeWithIvaratorTest() throws Exception {
-        String query = "((" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312')" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " == 15) ||" + "("
-                        + GEO_FIELD + " == '1f20aaaaaaaaaaaaaa'" + JEXL_AND_OP + "(" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD
-                        + " <= 61)) ||" + "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
+        // @formatter:off
+        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312'))" + JEXL_AND_OP +
+                       WKT_BYTE_LENGTH_FIELD + " == 15)" + JEXL_OR_OP +
+                       "(" + GEO_FIELD + " == '1f20aaaaaaaaaaaaaa'" + JEXL_AND_OP +
+                       "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " <= 61)))" + JEXL_OR_OP +
+                       "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
+        // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, true);
         Assert.assertEquals(732, queries.size());

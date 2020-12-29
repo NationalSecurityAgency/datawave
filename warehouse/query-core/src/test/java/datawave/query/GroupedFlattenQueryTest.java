@@ -114,13 +114,26 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void testFoundedRange() throws Exception {
+    public void testFoundedRangeUnbounded() throws Exception {
         log.info("------  testFoundedRange  ------");
         String start = "1850";
         String end = "1860";
         String city = "'AuStiN'";
-        String query = GroupedField.CITY.name() + EQ_OP + city + AND_OP + "(" + GroupedField.FOUNDED.name() + GT_OP + start + AND_OP
-                        + GroupedField.FOUNDED.name() + LT_OP + end + ")";
+        String query = GroupedField.CITY.name() + EQ_OP + city + AND_OP + GroupedField.FOUNDED.name() + GT_OP + start + AND_OP + GroupedField.FOUNDED.name()
+                        + LT_OP + end;
+        // all entries have at least one founded less than end and one founded greater than start, just not the same value.
+        String expectquery = GroupedField.CITY.name() + EQ_OP + city;
+        runTest(query, expectquery);
+    }
+    
+    @Test
+    public void testFoundedRangeBounded() throws Exception {
+        log.info("------  testFoundedRange  ------");
+        String start = "1850";
+        String end = "1860";
+        String city = "'AuStiN'";
+        String query = GroupedField.CITY.name() + EQ_OP + city + AND_OP + "((BoundedRange = true) && (" + GroupedField.FOUNDED.name() + GT_OP + start + AND_OP
+                        + GroupedField.FOUNDED.name() + LT_OP + end + "))";
         runTest(query, query);
     }
     

@@ -1,8 +1,13 @@
 package datawave.query.iterator;
 
 import com.google.common.io.Files;
+import datawave.data.type.NoOpType;
+import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -19,6 +24,7 @@ import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.w3c.dom.Attr;
 
 import java.io.IOException;
 import java.net.URL;
@@ -29,10 +35,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static datawave.query.iterator.QueryOptions.ALLOW_FIELD_INDEX_EVALUATION;
 import static datawave.query.iterator.QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP;
@@ -90,7 +98,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(ALLOW_TERM_FREQUENCY_LOOKUP, "true");
         
         // set the indexed fields list
-        options.put(INDEXED_FIELDS, "EVENT_FIELD1,EVENT_FIELD4,EVENT_FIELD6,TF_FIELD1,TF_FIELD2,INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3");
+        options.put(INDEXED_FIELDS,
+                        "EVENT_FIELD1,EVENT_FIELD4,EVENT_FIELD6,TF_FIELD0,TF_FIELD1,TF_FIELD2,INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3");
         
         // set the unindexed fields list
         options.put(NON_INDEXED_DATATYPES, DEFAULT_DATATYPE + ":EVENT_FIELD2,EVENT_FIELD3,EVENT_FIELD5");
@@ -113,6 +122,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         typeMetadata.put("EVENT_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("EVENT_FIELD4", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("EVENT_FIELD6", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("TF_FIELD0", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("TF_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("TF_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("INDEX_ONLY_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
@@ -157,22 +167,22 @@ public class QueryIteratorIT extends EasyMockSupport {
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid, eventTime), getTFValue(0)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTime), getTFValue(1)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTime), getTFValue(2)));
         
         listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid, eventTime), getTFValue(23)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTime), getTFValue(24)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTime), getTFValue(25)));
         
         // add an index only TF
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD4", "d", dataType, uid, eventTime), new Value()));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD4", "d", dataType, uid, eventTime), getTFValue(3)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid, eventTime), getTFValue(3)));
         
         // add some index only field data
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTime), new Value()));
@@ -778,6 +788,58 @@ public class QueryIteratorIT extends EasyMockSupport {
         tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
+    // terms 'a' and 'b' are adjacent, thus a valid phrase
+    @Test
+    public void tf_contentFunction_validPhrase_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    // terms 'a' and 'c' do not appear adjacent
+    @Test
+    public void tf_contentFunction_invalidPhrase_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='c') && content:phrase(TF_FIELD1,termOffsetMap,'a','c'))";
+        tf_test(seekRange, query, new AbstractMap.SimpleEntry(null, null), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    // terms 'a' and 'b' are adjacent, thus a valid phrase
+    @Test
+    public void tf_contentFunction_validPhrase_docRange_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b'))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    // terms 'a' and 'c' do not appear adjacent
+    @Test
+    public void tf_contentFunction_invalidPhrase_docRange_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && ((TF_FIELD1 =='a' && TF_FIELD1 =='c') && content:phrase(TF_FIELD1,termOffsetMap,'a','c'))";
+        tf_test(seekRange, query, new AbstractMap.SimpleEntry(null, null), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    // A && (phrase:'a,b' || phrase:'j,k')
+    // Second phrase for TF_FIELD0 that does not appear in the document should be pruned from the TF FieldValues multimap.
+    @Test
+    public void tf_contentFunction_validPhrase_docRange_test2() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && (((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b')) || "
+                        + "((TF_FIELD0 =='j' && TF_FIELD0 =='k') && content:phrase(TF_FIELD0,termOffsetMap,'j','k')))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    // A && (phrase:'a,b' || phrase:'j,k')
+    // Second phrase for TF_FIELD0 that does not appear in the document should be pruned from the TF FieldValues multimap.
+    @Test
+    public void tf_contentFunction_validPhrase_shardRange_test3() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && (((TF_FIELD1 =='a' && TF_FIELD1 =='b') && content:phrase(TF_FIELD1,termOffsetMap,'a','b')) || "
+                        + "((TF_FIELD0 =='j' && TF_FIELD0 =='k') && content:phrase(TF_FIELD0,termOffsetMap,'j','k')))";
+        tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
     protected void configureIterator() {
         // configure iterator
         iterator.setEvaluationFilter(filter);
@@ -933,8 +995,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(TERM_FREQUENCIES_REQUIRED, "true");
         // set to be the index only fields required for the query?
         options.put(INDEX_ONLY_FIELDS, "INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3,TF_FIELD4");
-        // set t obe the term frequency fields required for the query?
-        options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD1,TF_FIELD2,TF_FIELD4");
+        // set to be the term frequency fields required for the query?
+        options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD0,TF_FIELD1,TF_FIELD2,TF_FIELD4");
         
         replayAll();
         
@@ -1058,8 +1120,18 @@ public class QueryIteratorIT extends EasyMockSupport {
                 List<String> expected = docKeys.get(field);
                 if (expected.size() == 1) {
                     // verify the only doc
-                    assertEquals(field + ": value: " + d.getDictionary().get(field).getData() + " did not match expected value: " + expected.get(0), d
-                                    .getDictionary().get(field).getData().toString(), expected.get(0));
+                    Attribute<?> docAttr = d.getDictionary().get(field);
+                    if (docAttr instanceof Attributes) {
+                        // Special handling of Content attributes, typically when TermFrequencies are looked up.
+                        // TFs append Content attributes which results in Attributes coming back instead of a single Attribute
+                        Set<?> datas = (Set<?>) docAttr.getData();
+                        Set<String> dataStrings = datas.stream().map(Object::toString).collect(Collectors.toSet());
+                        boolean stringsMatch = dataStrings.contains(expected.get(0));
+                        assertTrue(field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0), stringsMatch);
+                    } else {
+                        boolean stringsMatch = docAttr.getData().toString().equals(expected.get(0));
+                        assertTrue(field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0), stringsMatch);
+                    }
                 } else {
                     // the data should be a set, verify it matches expected
                     Object dictData = d.getDictionary().get(field).getData();
@@ -1097,6 +1169,13 @@ public class QueryIteratorIT extends EasyMockSupport {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         return new Key(row, "tf", dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value + Constants.NULL_BYTE_STRING + field,
                         timestamp);
+    }
+    
+    // Generate TermFrequencyOffsets from a key
+    protected Value getTFValue(int position) {
+        TermWeight.Info info = TermWeight.Info.newBuilder().addTermOffset(position).addPrevSkips(0)
+                        .addScore(TermWeightPosition.positionScoreToTermWeightScore(0.5f)).setZeroOffsetMatch(true).build();
+        return new Value(info.toByteArray());
     }
     
     protected Key getFI(String field, String value, String uid, long timestamp) {

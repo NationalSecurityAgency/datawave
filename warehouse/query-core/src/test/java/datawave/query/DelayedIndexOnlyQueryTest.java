@@ -7,6 +7,7 @@ import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.GenericCityFields;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -99,7 +100,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
     public void testExceededValueThresholdRangeDelayed() throws Exception {
         log.info("------  testExceededValueThresholdRangeDelayed  ------");
         logic.setMaxValueExpansionThreshold(1);
-        String query = "CITY == 'rome' && (COUNTRY == 'Italy' || (STATE > 'm' && STATE < 'n'))";
+        String query = "CITY == 'rome' && (COUNTRY == 'Italy' || ((BoundedRange = true) && (STATE > 'm' && STATE < 'n')))";
         ivaratorConfig();
         runTest(query, query);
     }
@@ -109,7 +110,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
     public void testExceededValueThresholdRangeDelayedFilterToRENode() throws Exception {
         log.info("------  testExceededValueThresholdRangeDelayedFilterToRENode  ------");
         logic.setMaxValueExpansionThreshold(1);
-        String query = "CITY == 'rome' && (COUNTRY == 'Italy' || ((STATE > 'm' && STATE < 'n') || filter:includeRegex(STATE,'Hainaut.*')))";
+        String query = "CITY == 'rome' && (COUNTRY == 'Italy' || (((BoundedRange = true) && (STATE > 'm' && STATE < 'n')) || filter:includeRegex(STATE,'Hainaut.*')))";
         String expectedQuery = "CITY == 'rome' && (COUNTRY == 'Italy' || ((STATE > 'm' && STATE < 'n') || STATE =~ 'Hainaut.*'))";
         ivaratorConfig();
         runTest(query, expectedQuery);

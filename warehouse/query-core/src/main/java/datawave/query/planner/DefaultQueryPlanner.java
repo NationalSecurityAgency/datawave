@@ -68,7 +68,6 @@ import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
-import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
@@ -78,6 +77,7 @@ import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
+import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -177,11 +177,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Disables the index expansion function
      */
     protected boolean disableExpandIndexFunction = false;
-    
-    /**
-     * Disables the range coalescing visitor
-     */
-    protected boolean disableRangeCoalescing = false;
     
     /**
      * Allows developers to cache data types
@@ -299,7 +294,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setDisableCompositeFields(other.disableCompositeFields);
         setDisableTestNonExistentFields(other.disableTestNonExistentFields);
         setDisableExpandIndexFunction(other.disableExpandIndexFunction);
-        setDisableRangeCoalescing(other.disableRangeCoalescing);
         rules.addAll(other.rules);
         queryIteratorClazz = other.queryIteratorClazz;
         setMetadataHelper(other.getMetadataHelper());
@@ -404,17 +398,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             return DefaultQueryPlanner.emptyCloseableIterator();
         }
         
-        final QueryStopwatch timers = config.getTimers();
-        Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
+        boolean isFullTable = false;
+        Tuple2<CloseableIterable<QueryPlan>,Boolean> queryRanges = null;
         
-        // a full table scan is required if
-        final boolean isFullTable = queryRanges.second();
-        
-        // abort if we cannot handle full table scans
-        if (isFullTable && !config.getFullTableScanEnabled()) {
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
-            throw new FullTableScansDisallowedException(qe);
+        if (!config.isGeneratePlanOnly()) {
+            queryRanges = getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
+            
+            // a full table scan is required if
+            isFullTable = queryRanges.second();
+            
+            // abort if we cannot handle full table scans
+            if (isFullTable && !config.getFullTableScanEnabled()) {
+                PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
+                throw new FullTableScansDisallowedException(qe);
+            }
         }
+        
+        final QueryStopwatch timers = config.getTimers();
         
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rebuild JEXL String from AST");
         
@@ -433,10 +433,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         queryData.setQuery(newQueryString);
         
-        while (null == cfg) {
-            cfg = getQueryIterator(metadataHelper, config, settings, "", false);
+        if (!config.isGeneratePlanOnly()) {
+            while (null == cfg) {
+                cfg = getQueryIterator(metadataHelper, config, settings, "", false);
+            }
+            configureIterator(config, cfg, newQueryString, isFullTable);
         }
-        configureIterator(config, cfg, newQueryString, isFullTable);
         
         // Load the IteratorSettings into the QueryData instance
         queryData.setSettings(Lists.newArrayList(cfg));
@@ -448,42 +450,46 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.getMaxEvaluationPipelines() == 1)
             docsToCombineForEvaluation = -1;
         
-        // add the geo query comparator to sort by geo range granularity if this is a geo query
-        List<Comparator<QueryPlan>> queryPlanComparators = null;
-        if (config.isSortGeoWaveQueryRanges()) {
-            List<String> geoFields = new ArrayList<>();
-            for (String fieldName : config.getIndexedFields()) {
-                for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
-                    if (type instanceof AbstractGeometryType) {
-                        geoFields.add(fieldName);
-                        break;
+        if (!config.isGeneratePlanOnly()) {
+            // add the geo query comparator to sort by geo range granularity if this is a geo query
+            List<Comparator<QueryPlan>> queryPlanComparators = null;
+            if (config.isSortGeoWaveQueryRanges()) {
+                List<String> geoFields = new ArrayList<>();
+                for (String fieldName : config.getIndexedFields()) {
+                    for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
+                        if (type instanceof AbstractGeometryType) {
+                            geoFields.add(fieldName);
+                            break;
+                        }
                     }
+                }
+                
+                if (!geoFields.isEmpty()) {
+                    queryPlanComparators = new ArrayList<>();
+                    queryPlanComparators.add(new GeoWaveQueryPlanComparator(geoFields));
+                    queryPlanComparators.add(new DefaultQueryPlanComparator());
                 }
             }
             
-            if (!geoFields.isEmpty()) {
-                queryPlanComparators = new ArrayList<>();
-                queryPlanComparators.add(new GeoWaveQueryPlanComparator(geoFields));
-                queryPlanComparators.add(new DefaultQueryPlanComparator());
-            }
+            // @formatter:off
+            return new ThreadedRangeBundler.Builder()
+                    .setOriginal(queryData)
+                    .setQueryTree(queryTree)
+                    .setRanges(queryRanges.first())
+                    .setMaxRanges(maxRangesPerQueryPiece())
+                    .setDocsToCombine(docsToCombineForEvaluation)
+                    .setSettings(settings)
+                    .setDocSpecificLimitOverride(docSpecificOverride)
+                    .setMaxRangeWaitMillis(maxRangeWaitMillis)
+                    .setQueryPlanComparators(queryPlanComparators)
+                    .setNumRangesToBuffer(config.getNumRangesToBuffer())
+                    .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
+                    .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
+                    .build();
+            // @formatter:on
+        } else {
+            return null;
         }
-        
-        // @formatter:off
-        return new ThreadedRangeBundler.Builder()
-                .setOriginal(queryData)
-                .setQueryTree(queryTree)
-                .setRanges(queryRanges.first())
-                .setMaxRanges(maxRangesPerQueryPiece())
-                .setDocsToCombine(docsToCombineForEvaluation)
-                .setSettings(settings)
-                .setDocSpecificLimitOverride(docSpecificOverride)
-                .setMaxRangeWaitMillis(maxRangeWaitMillis)
-                .setQueryPlanComparators(queryPlanComparators)
-                .setNumRangesToBuffer(config.getNumRangesToBuffer())
-                .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
-                .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
-                .build();
-        // @formatter:on
     }
     
     private void configureIterator(ShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
@@ -661,6 +667,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         capDateRange(config);
         
         stopwatch.stop();
+        
+        // Find unmarked bounded ranges
+        if (UnmarkedBoundedRangeDetectionVisitor.findUnmarkedBoundedRanges(queryTree)) {
+            throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
+        }
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - flatten");
         
@@ -1031,20 +1042,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
         }
         
-        if (!disableRangeCoalescing) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Coalesce ranges");
-            
-            // Coalesce any bounded ranges into separate AND subtrees
-            queryTree = RangeCoalescingVisitor.coalesceRanges(queryTree);
-            
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after ranges were coalesced:");
-            }
-            
-            stopwatch.stop();
-            
-        }
-        
         // apply the node transform rules
         // running it here before any regex or range expansions to enable potentially pushing down terms before index lookups
         queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre regex/range expansions");
@@ -1191,6 +1188,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             queryTree = ExpandCompositeTerms.expandTerms(config, queryTree);
             stopwatch.stop();
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after expanding composite terms:");
+            }
         }
         
         if (!disableBoundedLookup) {
@@ -2365,14 +2365,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     public boolean getDisableExpandIndexFunction() {
         return disableExpandIndexFunction;
-    }
-    
-    public void setDisableRangeCoalescing(boolean disableRangeCoalescing) {
-        this.disableRangeCoalescing = disableRangeCoalescing;
-    }
-    
-    public boolean getDisableRangeCoalescing() {
-        return disableRangeCoalescing;
     }
     
     /*
