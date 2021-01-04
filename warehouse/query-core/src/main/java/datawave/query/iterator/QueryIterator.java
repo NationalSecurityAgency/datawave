@@ -39,6 +39,7 @@ import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.pipeline.PipelineFactory;
 import datawave.query.iterator.pipeline.PipelineIterator;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
@@ -93,7 +94,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.pool2.PooledObject;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.htrace.Trace;
 import org.apache.htrace.TraceScope;
@@ -269,6 +271,31 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         
         DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());
         DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec());
+        
+        pruneIvaratorCacheDirs();
+    }
+    
+    // this method will prune any ivarator cache directories that are not available on this node
+    private void pruneIvaratorCacheDirs() throws IOException {
+        ivaratorCacheDirConfigs.removeIf(this::pruneIvaratorCacheDir);
+    }
+    
+    private boolean pruneIvaratorCacheDir(IvaratorCacheDirConfig config) {
+        boolean fsExists = false;
+        
+        // first, make sure the cache configuration is valid
+        if (config.isValid()) {
+            Path basePath = new Path(config.getBasePathURI());
+            
+            try {
+                FileSystem fs = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                fsExists = fs.mkdirs(basePath) || fs.exists(basePath);
+            } catch (Exception e) {
+                log.debug("Ivarator Cache Dir does not exist: " + basePath);
+            }
+        }
+        
+        return !fsExists;
     }
     
     @Override
