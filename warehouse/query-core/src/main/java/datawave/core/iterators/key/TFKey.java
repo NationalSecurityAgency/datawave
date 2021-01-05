@@ -1,5 +1,6 @@
 package datawave.core.iterators.key;
 
+import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.Key;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class TFKey {
         this.backing = k.getColumnQualifierData().getBackingArray();
         
         // Find all possible split points
-        for (int i = 0; i < backing.length; i++) {
+        for (int i = 0; i < k.getColumnQualifierData().length(); i++) {
             if (backing[i] == '\u0000')
                 nulls.add(i);
         }
