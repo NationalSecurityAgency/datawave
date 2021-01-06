@@ -149,13 +149,17 @@ public class TermOffsetPopulator {
         
         TermFrequencyIterator tfSource;
         // Do not prune if no fields exist or if the tf fields would prune to nothing. TODO skip tf entirely if this would prune to zero
-        if (fields == null || fields.isEmpty() || fields.size() == termFrequencyFieldValues.size()) {
+        if (fields == null || fields.isEmpty() || fields.size() == termFrequencyFieldValues.keySet().size()) {
             tfSource = new TermFrequencyIterator(termFrequencyFieldValues, keys);
         } else {
             // There are fields to remove, reduce the search space and continue
             Multimap<String,String> tfFVs = HashMultimap.create(termFrequencyFieldValues);
             fields.forEach(tfFVs::removeAll);
             tfSource = new TermFrequencyIterator(tfFVs, keys);
+            
+            if (tfFVs.size() == 0) {
+                log.error("Created a TFIter with no field values. Orig fields: " + termFrequencyFieldValues.keySet() + " fields to remove: " + fields);
+            }
         }
         
         Range range = getRange(keys);

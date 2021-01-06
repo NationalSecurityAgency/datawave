@@ -17,10 +17,13 @@ import datawave.query.util.Tuples;
 import org.apache.accumulo.core.data.Key;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
-    private TermOffsetPopulator tfPopulator;
     
-    public TermOffsetFunction(TermOffsetPopulator tfPopulator) {
+    private TermOffsetPopulator tfPopulator;
+    private Set<String> tfIndexOnlyFields;
+    
+    public TermOffsetFunction(TermOffsetPopulator tfPopulator, Set<String> tfIndexOnlyFields) {
         this.tfPopulator = tfPopulator;
+        this.tfIndexOnlyFields = tfIndexOnlyFields;
     }
     
     @Override
@@ -59,7 +62,8 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
         Set<String> docFields = doc.getDictionary().keySet();
         Set<String> tfFields = tfFVs.keySet();
         for (String tfField : tfFields) {
-            if (!docFields.contains(tfField)) {
+            // Can only prune a field if it is not index only
+            if (!docFields.contains(tfField) && !tfIndexOnlyFields.contains(tfField)) {
                 // mark this field for removal prior to building the TermFrequencyIterator
                 fieldsToRemove.add(tfField);
             }
