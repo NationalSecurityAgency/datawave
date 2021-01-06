@@ -82,4 +82,13 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
     public void setContext(T context) {
         // no-op
     }
+    
+    @Override
+    public T peek() {
+        if (offset + 1 < values.length) {
+            return values[offset + 1];
+        } else {
+            return null;
+        }
+    }
 }

@@ -250,8 +250,8 @@ public class AndIteratorTest {
         iterator.initialize();
         
         Assert.assertFalse(iterator.isContextRequired());
-        iterator.setContext("e");
         Assert.assertTrue(iterator.hasNext());
+        iterator.setContext("e");
         Assert.assertEquals("c", iterator.next());
         Assert.assertTrue(iterator.hasNext());
         Assert.assertEquals("e", iterator.next());
@@ -268,8 +268,8 @@ public class AndIteratorTest {
         iterator.initialize();
         
         Assert.assertFalse(iterator.isContextRequired());
-        iterator.setContext("d");
         Assert.assertTrue(iterator.hasNext());
+        iterator.setContext("d");
         Assert.assertEquals("c", iterator.next());
         Assert.assertFalse(iterator.hasNext());
     }
@@ -284,8 +284,8 @@ public class AndIteratorTest {
         iterator.initialize();
         
         Assert.assertFalse(iterator.isContextRequired());
-        iterator.setContext("z");
         Assert.assertTrue(iterator.hasNext());
+        iterator.setContext("z");
         Assert.assertEquals("c", iterator.next());
         Assert.assertTrue(iterator.hasNext());
         Assert.assertEquals("z", iterator.next());

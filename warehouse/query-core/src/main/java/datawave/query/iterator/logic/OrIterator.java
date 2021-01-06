@@ -348,4 +348,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     public void setContext(T context) {
         this.evaluationContext = context;
     }
+    
+    @Override
+    public T peek() {
+        // TODO convert this to use hints
+        return next;
+    }
 }

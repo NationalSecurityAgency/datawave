@@ -129,6 +129,8 @@ public class AndOrIteratorTest {
         
         NestedIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
+        
+        iterator.hasNext();
     }
     
     // X AND !Y AND (!Z OR !A)

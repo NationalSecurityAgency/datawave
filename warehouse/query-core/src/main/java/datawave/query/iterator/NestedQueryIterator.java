@@ -156,4 +156,9 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
     public void setContext(T context) {
         // no-op
     }
+    
+    @Override
+    public T peek() {
+        return currentNest.peek();
+    }
 }

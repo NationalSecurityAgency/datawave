@@ -196,4 +196,9 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     public void setContext(Key context) {
         // no-op
     }
+    
+    @Override
+    public Key peek() {
+        return topKey;
+    }
 }

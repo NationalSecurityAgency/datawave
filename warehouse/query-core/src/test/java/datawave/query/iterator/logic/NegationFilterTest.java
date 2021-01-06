@@ -106,6 +106,7 @@ public class NegationFilterTest {
     static class Itr<K extends Comparable<K>> implements NestedIterator<K> {
         private Iterator<K> i;
         private boolean contextRequired;
+        private K hint = null;
         
         public Itr(Iterable<K> it, boolean contextRequired) {
             i = it.iterator();
@@ -118,12 +119,18 @@ public class NegationFilterTest {
         
         @Override
         public boolean hasNext() {
-            return i.hasNext();
+            return hint != null || i.hasNext();
         }
         
         @Override
         public K next() {
-            return i.next();
+            if (hint != null) {
+                K result = hint;
+                hint = null;
+                return result;
+            } else {
+                return i.next();
+            }
         }
         
         @Override
@@ -173,6 +180,15 @@ public class NegationFilterTest {
         @Override
         public void setContext(K context) {
             // no-op
+        }
+        
+        @Override
+        public K peek() {
+            if (hint == null && hasNext()) {
+                hint = i.next();
+            }
+            
+            return hint;
         }
     }
 }

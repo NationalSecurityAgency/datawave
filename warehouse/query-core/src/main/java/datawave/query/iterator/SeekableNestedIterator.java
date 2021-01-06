@@ -90,4 +90,9 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
     public void setContext(T context) {
         source.setContext(context);
     }
+    
+    @Override
+    public T peek() {
+        return source.peek();
+    }
 }

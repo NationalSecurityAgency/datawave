@@ -191,4 +191,9 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
     public void setContext(Key context) {
         // no-op
     }
+    
+    @Override
+    public Key peek() {
+        return next;
+    }
 }

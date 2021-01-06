@@ -71,4 +71,11 @@ public interface NestedIterator<T> extends Iterator<T> {
      *            non-null context for evaluation
      */
     void setContext(T context);
+    
+    /**
+     * Based on the underlying iterators, what is the minimum value of this iterator without convergence, guaranteed to be less than or equal to next()
+     * 
+     * @return
+     */
+    T peek();
 }

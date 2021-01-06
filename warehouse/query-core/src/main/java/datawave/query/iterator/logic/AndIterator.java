@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,12 +47,14 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     private Transformer<T> transformer;
     
     private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads, contextIncludeHeads, contextExcludeHeads, contextIncludeNullHeads,
-                    contextExcludeNullHeads;
+                    contextExcludeNullHeads, includeHints, excludeHints;
     private T prev;
     private T next;
     
     private Document prevDocument, document;
     private T evaluationContext;
+    
+    private boolean converged = false;
     
     private static final Logger log = Logger.getLogger(AndIterator.class);
     
@@ -95,14 +98,18 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         transforms = new HashMap<>();
         
         includeHeads = TreeMultimap.create(keyComp, itrComp);
-        includeHeads = initSubtree(includeHeads, includes, transformer, transforms, true);
+        includeHints = TreeMultimap.create(keyComp, itrComp);
+        includeHints = initSubtree(includeHints, includes, transformer, transforms, true);
         
         if (excludes.isEmpty()) {
             excludeHeads = Util.getEmpty();
+            excludeHints = Util.getEmpty();
         } else {
             excludeHeads = TreeMultimap.create(keyComp, itrComp);
+            excludeHints = TreeMultimap.create(keyComp, itrComp);
+            
             // pass null in for transforms as excludes are not returned
-            excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
+            excludeHints = initSubtree(excludeHints, excludes, transformer, null, false);
         }
         
         if (!contextIncludes.isEmpty()) {
@@ -115,7 +122,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
             contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
         
-        next();
+        // do not converge
     }
     
     public boolean isInitialized() {
@@ -181,7 +188,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         prevDocument = document;
         
         // look through includes for candidates if there are any
-        while (!includeHeads.isEmpty()) {
+        while (!includeHeads.isEmpty() && converged) {
             SortedSet<T> topKeys = includeHeads.keySet();
             T lowest = topKeys.first();
             T highest = topKeys.last();
@@ -219,7 +226,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                         // found a match, set next/document and advance
                         next = transforms.get(lowest);
                         document = Util.buildNewDocument(includeHeads.values());
-                        includeHeads = advanceIterators(lowest);
+                        includeHints = hintIterators(lowest);
+                        converged = false;
                         break;
                     }
                 } else {
@@ -258,6 +266,19 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     public boolean hasNext() {
         if (!isInitialized()) {
             throw new IllegalStateException("initialize() was never called");
+        }
+        
+        if (!converged) {
+            // using the highest T from the subtree move the iterators if they are less than this hint
+            if (includeHints.size() > 0) {
+                converge(includeHints, transforms, includeHints.keySet().last(), includeHeads);
+            }
+            if (excludeHints.size() > 0) {
+                converge(excludeHints, null, excludeHints.keySet().last(), excludeHeads);
+            }
+            
+            converged = true;
+            next();
         }
         
         return next != null;
@@ -313,6 +334,13 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     public T move(T minimum) {
         if (!isInitialized()) {
             throw new IllegalStateException("initialize() was never called");
+        }
+        
+        if (!converged) {
+            converge(includeHints, transforms, minimum, includeHeads);
+            converge(excludeHints, null, minimum, excludeHeads);
+            
+            converged = true;
         }
         
         if (prev != null && prev.compareTo(minimum) >= 0) {
@@ -397,6 +425,39 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     }
     
     /**
+     * Advances all iterators associated with the supplied key and adds them back into the sorted multimap. If any of the sub-trees returns false, this method
+     * immediately returns false to indicate that a sub-tree has been exhausted.
+     *
+     * @param key
+     * @return
+     */
+    protected TreeMultimap<T,NestedIterator<T>> hintIterators(T key) {
+        transforms.remove(key);
+        for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
+            try {
+                T hint = itr.peek();
+                if (hint != null) {
+                    T transform = transformer.transform(hint);
+                    if (transforms != null) {
+                        transforms.put(transform, hint);
+                    }
+                    includeHints.put(transform, itr);
+                } else {
+                    return Util.getEmpty();
+                }
+            } catch (Exception e) {
+                // only need to actually fail if we have nothing left in the AND clause
+                if (includeHeads.isEmpty()) {
+                    throw e;
+                } else {
+                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
+                }
+            }
+        }
+        return includeHints;
+    }
+    
+    /**
      * Similar to <code>advanceIterators</code>, but instead of calling <code>next</code> on each sub-tree, this calls <code>move</code> with the supplied
      * <code>to</code> parameter.
      *
@@ -419,6 +480,15 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         return includeHeads;
     }
     
+    @Override
+    public T peek() {
+        if (!isInitialized()) {
+            throw new IllegalStateException("must be initialized prior to calling hint");
+        }
+        
+        return includeHints.keySet().size() > 0 ? includeHints.keySet().last() : null;
+    }
+    
     /**
      * Creates a sorted mapping of values to iterators.
      *
@@ -430,20 +500,85 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                     Iterable<NestedIterator<T>> sources, Transformer<T> transformer, Map<T,T> transforms, boolean anded) {
         for (NestedIterator<T> src : sources) {
             src.initialize();
-            if (src.hasNext()) {
-                T next = src.next();
-                T transform = transformer.transform(next);
+            T hint = src.peek();
+            if (hint != null) {
+                T transform = transformer.transform(hint);
                 if (transforms != null) {
-                    transforms.put(transform, next);
+                    transforms.put(transform, hint);
                 }
                 subtree.put(transform, src);
             } else if (anded) {
-                // If a source has no valid records, it shouldn't throw an exception. It should just return no results.
-                // For an And, once one source is exhausted, the entire tree is exhausted
                 return Util.getEmpty();
             }
         }
         return subtree;
+    }
+    
+    private void converge(TreeMultimap<T,NestedIterator<T>> sourceTree, Map<T,T> transforms, T minimum, TreeMultimap<T,NestedIterator<T>> targetTree) {
+        if (sourceTree.keySet().size() == 0) {
+            return;
+        }
+        
+        // all T less than highestHint
+        SortedSet<T> moveKeys = sourceTree.keySet().headSet(minimum);
+        
+        // anything at or beyond minimum must be advanced to get true values from hints
+        SortedSet<T> nextKeys = sourceTree.keySet().tailSet(minimum);
+        Set<T> safeToRemoveNextKeys = new HashSet<>(nextKeys.size());
+        safeToRemoveNextKeys.addAll(nextKeys);
+        List<Iterator<NestedIterator<T>>> iteratorList = new ArrayList<>(nextKeys.size());
+        for (T nextKey : safeToRemoveNextKeys) {
+            Iterator<NestedIterator<T>> nextIterator = sourceTree.removeAll(nextKey).iterator();
+            if (transforms != null) {
+                transforms.remove(nextKey);
+            }
+            iteratorList.add(nextIterator);
+        }
+        
+        for (T key : moveKeys) {
+            Iterator<NestedIterator<T>> iterator = sourceTree.removeAll(key).iterator();
+            if (transforms != null) {
+                transforms.remove(key);
+            }
+            while (iterator.hasNext()) {
+                NestedIterator<T> itr = iterator.next();
+                T next = itr.move(minimum);
+                if (next != null) {
+                    T transform = transformer.transform(next);
+                    if (transforms != null) {
+                        transforms.put(transform, next);
+                    }
+                    targetTree.put(transform, itr);
+                } else {
+                    targetTree.clear();
+                    return;
+                }
+            }
+        }
+        
+        for (Iterator<NestedIterator<T>> nextIterator : iteratorList) {
+            while (nextIterator.hasNext()) {
+                NestedIterator<T> itr = nextIterator.next();
+                if (itr.hasNext()) {
+                    T next = itr.next();
+                    if (next != null) {
+                        T transform = transformer.transform(next);
+                        if (transforms != null) {
+                            transforms.put(transform, next);
+                        }
+                        targetTree.put(transform, itr);
+                    } else {
+                        targetTree.clear();
+                        return;
+                    }
+                } else {
+                    targetTree.clear();
+                    return;
+                }
+            }
+        }
+        
+        return;
     }
     
     @Override
