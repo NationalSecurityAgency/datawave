@@ -35,6 +35,9 @@ public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
             auditParams.putSingle(AuditParameters.QUERY_LOGIC_CLASS, queryParameters.getFirst(PrivateAuditConstants.LOGIC_CLASS));
         if (queryParameters.containsKey(PrivateAuditConstants.SELECTORS))
             validatedParams.setSelectors(queryParameters.get(PrivateAuditConstants.SELECTORS));
+        if (queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+            validatedParams.setAuditId(queryParameters.getFirst(AuditParameters.AUDIT_ID));
+        }
         
         // Now validate the audit parameters and convert to a map.
         validatedParams.validate(auditParams);
