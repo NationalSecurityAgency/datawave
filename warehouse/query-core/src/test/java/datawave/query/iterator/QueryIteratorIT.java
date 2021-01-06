@@ -216,6 +216,17 @@ public class QueryIteratorIT extends EasyMockSupport {
         return new Range(startKey, true, startKey.followingKey(PartialKey.ROW), false);
     }
     
+    @Test(expected = IOException.class)
+    public void event_bogusIvaratorCacheDir_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))";
+        
+        // setup a bogus ivarator cache dir for the config
+        options.put(IVARATOR_CACHE_BASE_URI_ALTERNATIVES, "hdfs://bogusPath");
+        
+        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+    }
+    
     @Test
     public void indexOnly_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull

@@ -91,7 +91,8 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.pool2.PooledObject;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -99,6 +100,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -263,6 +265,32 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (env != null) {
             ActiveQueryLog.setConfig(env.getConfig());
         }
+        
+        pruneIvaratorCacheBaseURIs();
+    }
+    
+    public void pruneIvaratorCacheBaseURIs() {
+        if (ivaratorCacheBaseURIAlternatives != null) {
+            List<String> newAlternatives = new ArrayList<>(ivaratorCacheBaseURIAlternatives);
+            newAlternatives.removeIf(this::pruneIvaratorCacheDir);
+            this.ivaratorCacheBaseURIAlternatives = newAlternatives;
+        }
+    }
+    
+    private boolean pruneIvaratorCacheDir(String dir) {
+        boolean fsExists = false;
+        
+        // first, make sure the cache configuration is valid
+        Path basePath = new Path(dir);
+        
+        try {
+            FileSystem fs = this.getFileSystemCache().getFileSystem(basePath.toUri());
+            fsExists = fs.mkdirs(basePath) || fs.exists(basePath);
+        } catch (Exception e) {
+            log.debug("Ivarator Cache Dir does not exist: " + basePath);
+        }
+        
+        return !fsExists;
     }
     
     @Override
