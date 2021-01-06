@@ -91,7 +91,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     
-    private static final String GEO_FIELD = "GEO";
+    private static final String GEO_FIELD = "0GEO";
+    private static final String GEO_QUERY_FIELD = JexlASTHelper.rebuildIdentifier(GEO_FIELD);
     
     private static final String PASSWORD = "";
     private static final String AUTHS = "ALL";
@@ -280,9 +281,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void combinedRangesOneIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_3 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_5 + "' && " + GEO_FIELD + " <= '" + INDEX_7 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_9 + "' && " + GEO_FIELD + " <= '" + INDEX_11 + "')";
+        String query = "(" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_3 + "') || " +
+                "(" + GEO_QUERY_FIELD + " >= '" + INDEX_5 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_7 + "') || " +
+                "(" + GEO_QUERY_FIELD + " >= '" + INDEX_9 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -294,11 +295,14 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         List<String> queryRanges = getQueryRanges(query);
         
         Assert.assertEquals(1, queryRanges.size());
-        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6, queryRanges.get(0).indexOf("') && (field = 'GEO')"));
+        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
+                        queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
         Assert.assertEquals(
                         "((ExceededOrThresholdMarkerJexlNode = true) && (((id = '"
                                         + id
-                                        + "') && (field = 'GEO') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}'))))",
+                                        + "') && (field = '"
+                                        + GEO_QUERY_FIELD
+                                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}'))))",
                         queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
@@ -325,9 +329,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void combinedRangesTwoIvaratorsTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_3 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_5 + "' && " + GEO_FIELD + " <= '" + INDEX_7 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_9 + "' && " + GEO_FIELD + " <= '" + INDEX_11 + "')";
+        String query = "(" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_3 + "') || " +
+                "(" + GEO_QUERY_FIELD + " >= '" + INDEX_5 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_7 + "') || " +
+                "(" + GEO_QUERY_FIELD + " >= '" + INDEX_9 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -339,11 +343,18 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         List<String> queryRanges = getQueryRanges(query);
         
         Assert.assertEquals(1, queryRanges.size());
-        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6, queryRanges.get(0).indexOf("') && (field = 'GEO')"));
+        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
+                        queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
         Assert.assertEquals(
-                        "(((((ExceededValueThresholdMarkerJexlNode = true) && (GEO >= '1f200364bda9c63d03' && GEO <= '1f35553ac3ffb0ebff'))))) || ((ExceededOrThresholdMarkerJexlNode = true) && (((id = '"
+                        "(((((ExceededValueThresholdMarkerJexlNode = true) && ("
+                                        + GEO_QUERY_FIELD
+                                        + " >= '1f200364bda9c63d03' && "
+                                        + GEO_QUERY_FIELD
+                                        + " <= '1f35553ac3ffb0ebff'))))) || ((ExceededOrThresholdMarkerJexlNode = true) && (((id = '"
                                         + id
-                                        + "') && (field = 'GEO') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}'))))",
+                                        + "') && (field = '"
+                                        + GEO_QUERY_FIELD
+                                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}'))))",
                         queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
@@ -370,10 +381,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void combinedRangesWithNegationTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_12 + "') && " +
-                "not((" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_3 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_5 + "' && " + GEO_FIELD + " <= '" + INDEX_7 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_9 + "' && " + GEO_FIELD + " <= '" + INDEX_11 + "'))";
+        String query = "(" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_12 + "') && " +
+                "not((" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_3 + "') || " +
+                "(" + GEO_QUERY_FIELD + " >= '" + INDEX_5 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_7 + "') || " +
+                "(" + GEO_QUERY_FIELD + " >= '" + INDEX_9 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_11 + "'))";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -406,9 +417,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void valueListTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " == '" + INDEX_1 + "' || " + GEO_FIELD + " == '" + INDEX_2 + "' || " + GEO_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_5 + "' || " + GEO_FIELD + " == '" + INDEX_6 + "' || " + GEO_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_9 + "' || " + GEO_FIELD + " == '" + INDEX_10 + "' || " + GEO_FIELD + " == '" + INDEX_11 + "')";
+        String query = "(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 1;
@@ -441,10 +452,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void valueListWithNegationTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_12 + "') && " +
-                "not(" + GEO_FIELD + " == '" + INDEX_1 + "' || " + GEO_FIELD + " == '" + INDEX_2 + "' || " + GEO_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_5 + "' || " + GEO_FIELD + " == '" + INDEX_6 + "' || " + GEO_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_9 + "' || " + GEO_FIELD + " == '" + INDEX_10 + "' || " + GEO_FIELD + " == '" + INDEX_11 + "')";
+        String query = "(" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_12 + "') && " +
+                "not(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 1;
@@ -477,9 +488,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void fstTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " == '" + INDEX_1 + "' || " + GEO_FIELD + " == '" + INDEX_2 + "' || " + GEO_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_5 + "' || " + GEO_FIELD + " == '" + INDEX_6 + "' || " + GEO_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_9 + "' || " + GEO_FIELD + " == '" + INDEX_10 + "' || " + GEO_FIELD + " == '" + INDEX_11 + "')";
+        String query = "(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -512,10 +523,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void fstWithNegationTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_12 + "') && " +
-                "not(" + GEO_FIELD + " == '" + INDEX_1 + "' || " + GEO_FIELD + " == '" + INDEX_2 + "' || " + GEO_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_5 + "' || " + GEO_FIELD + " == '" + INDEX_6 + "' || " + GEO_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_9 + "' || " + GEO_FIELD + " == '" + INDEX_10 + "' || " + GEO_FIELD + " == '" + INDEX_11 + "')";
+        String query = "(" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_12 + "') && " +
+                "not(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;

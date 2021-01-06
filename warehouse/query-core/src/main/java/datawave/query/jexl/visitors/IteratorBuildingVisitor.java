@@ -1069,7 +1069,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         
         try {
             String id = ExceededOrThresholdMarkerJexlNode.getId(source);
-            String field = ExceededOrThresholdMarkerJexlNode.getField(source);
+            String field = JexlASTHelper.deconstructIdentifier(ExceededOrThresholdMarkerJexlNode.getField(source));
             ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(source);
             
             if (params.getRanges() != null && !params.getRanges().isEmpty()) {
