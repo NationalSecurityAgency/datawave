@@ -18,7 +18,7 @@ public class PerformanceIteratorIT {
     }
     
     @Test
-    public void baselineOr() {
+    public void baselineOrTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "c", "d"}));
         StatsWrappedIterator source2 = new StatsWrappedIterator(new ArrayIterator(new String[] {"x", "y", "z"}));
         
@@ -29,20 +29,20 @@ public class PerformanceIteratorIT {
         OrIterator orIterator = new OrIterator(sources);
         orIterator.initialize();
         
-        // a and b
-        Assert.assertEquals(2, source1.getNextCount());
-        // x
-        Assert.assertEquals(1, source2.getNextCount());
-        Assert.assertEquals(0, source1.getMoveCount());
-        Assert.assertEquals(0, source2.getMoveCount());
+        // // a and b
+        // Assert.assertEquals(2, source1.getNextCount());
+        // // x
+        // Assert.assertEquals(1, source2.getNextCount());
+        // Assert.assertEquals(0, source1.getMoveCount());
+        // Assert.assertEquals(0, source2.getMoveCount());
         
         Assert.assertEquals(true, orIterator.hasNext());
         Assert.assertEquals("a", orIterator.next());
         
         // c
-        Assert.assertEquals(3, source1.getNextCount());
+        Assert.assertEquals(1, source1.getNextCount());
         // still x
-        Assert.assertEquals(1, source2.getNextCount());
+        Assert.assertEquals(0, source2.getNextCount());
         Assert.assertEquals(0, source1.getMoveCount());
         Assert.assertEquals(0, source2.getMoveCount());
         
@@ -50,9 +50,9 @@ public class PerformanceIteratorIT {
         Assert.assertEquals("b", orIterator.next());
         
         // d
-        Assert.assertEquals(4, source1.getNextCount());
+        Assert.assertEquals(2, source1.getNextCount());
         // still x
-        Assert.assertEquals(1, source2.getNextCount());
+        Assert.assertEquals(0, source2.getNextCount());
         Assert.assertEquals(0, source1.getMoveCount());
         Assert.assertEquals(0, source2.getMoveCount());
         
@@ -60,9 +60,9 @@ public class PerformanceIteratorIT {
         Assert.assertEquals("c", orIterator.next());
         
         // null
-        Assert.assertEquals(4, source1.getNextCount());
+        Assert.assertEquals(3, source1.getNextCount());
         // still x
-        Assert.assertEquals(1, source2.getNextCount());
+        Assert.assertEquals(0, source2.getNextCount());
         Assert.assertEquals(0, source1.getMoveCount());
         Assert.assertEquals(0, source2.getMoveCount());
         
@@ -72,7 +72,7 @@ public class PerformanceIteratorIT {
         // null
         Assert.assertEquals(4, source1.getNextCount());
         // y
-        Assert.assertEquals(2, source2.getNextCount());
+        Assert.assertEquals(0, source2.getNextCount());
         Assert.assertEquals(0, source1.getMoveCount());
         Assert.assertEquals(0, source2.getMoveCount());
         
@@ -82,7 +82,7 @@ public class PerformanceIteratorIT {
         // null
         Assert.assertEquals(4, source1.getNextCount());
         // z
-        Assert.assertEquals(3, source2.getNextCount());
+        Assert.assertEquals(1, source2.getNextCount());
         Assert.assertEquals(0, source1.getMoveCount());
         Assert.assertEquals(0, source2.getMoveCount());
         
@@ -92,7 +92,7 @@ public class PerformanceIteratorIT {
         // null
         Assert.assertEquals(4, source1.getNextCount());
         // null
-        Assert.assertEquals(3, source2.getNextCount());
+        Assert.assertEquals(2, source2.getNextCount());
         Assert.assertEquals(0, source1.getMoveCount());
         Assert.assertEquals(0, source2.getMoveCount());
         
@@ -110,7 +110,102 @@ public class PerformanceIteratorIT {
     }
     
     @Test
-    public void baselineAnd() {
+    public void orNestedAndTest() {
+        StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "c", "d"}));
+        StatsWrappedIterator source2 = new StatsWrappedIterator(new ArrayIterator(new String[] {"x", "y", "z"}));
+        
+        // create an non-convergent AND within the OR, with nothing to anchor on to bypass this it has to be fully explored
+        StatsWrappedIterator source3 = new StatsWrappedIterator(new ArrayIterator(new String[] {"q", "s", "u"}));
+        StatsWrappedIterator source4 = new StatsWrappedIterator(new ArrayIterator(new String[] {"r", "t", "v"}));
+        
+        List<NestedIterator> sources = new ArrayList<>();
+        sources.add(source3);
+        sources.add(source4);
+        
+        AndIterator and = new AndIterator(sources);
+        
+        sources = new ArrayList<>();
+        sources.add(source1);
+        sources.add(source2);
+        sources.add(and);
+        
+        OrIterator orIterator = new OrIterator(sources);
+        orIterator.initialize();
+        
+        Assert.assertEquals(true, orIterator.hasNext());
+        Assert.assertEquals("a", orIterator.next());
+        Assert.assertEquals(true, orIterator.hasNext());
+        Assert.assertEquals("b", orIterator.next());
+        Assert.assertEquals(true, orIterator.hasNext());
+        Assert.assertEquals("c", orIterator.next());
+        Assert.assertEquals(true, orIterator.hasNext());
+        Assert.assertEquals("d", orIterator.next());
+        Assert.assertEquals(true, orIterator.hasNext());
+        Assert.assertEquals("x", orIterator.next());
+        Assert.assertEquals(true, orIterator.hasNext());
+        Assert.assertEquals("y", orIterator.next());
+        Assert.assertEquals(true, orIterator.hasNext());
+        Assert.assertEquals("z", orIterator.next());
+        Assert.assertEquals(false, orIterator.hasNext());
+        
+        Assert.assertEquals(4, source1.getNextCount());
+        Assert.assertEquals(0, source1.getMoveCount());
+        Assert.assertEquals(3, source2.getNextCount());
+        Assert.assertEquals(0, source2.getMoveCount());
+        Assert.assertEquals(0, source3.getNextCount());
+        Assert.assertEquals(3, source3.getMoveCount());
+        Assert.assertEquals(1, source4.getNextCount());
+        Assert.assertEquals(2, source4.getMoveCount());
+    }
+    
+    @Test
+    public void andOrNestedAndTest() {
+        StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "c", "d"}));
+        StatsWrappedIterator source2 = new StatsWrappedIterator(new ArrayIterator(new String[] {"x", "y", "z"}));
+        
+        // create an non-convergent AND within the OR, with nothing to anchor on to bypass this it has to be fully explored
+        StatsWrappedIterator source3 = new StatsWrappedIterator(new ArrayIterator(new String[] {"q", "s", "u"}));
+        StatsWrappedIterator source4 = new StatsWrappedIterator(new ArrayIterator(new String[] {"r", "t", "v"}));
+        
+        List<NestedIterator> sources = new ArrayList<>();
+        sources.add(source3);
+        sources.add(source4);
+        
+        AndIterator nestedAnd = new AndIterator(sources);
+        
+        sources = new ArrayList<>();
+        sources.add(source1);
+        sources.add(source2);
+        sources.add(nestedAnd);
+        
+        OrIterator orIterator = new OrIterator(sources);
+        
+        StatsWrappedIterator source5 = new StatsWrappedIterator(new ArrayIterator(new String[] {"x", "z"}));
+        sources = new ArrayList<>();
+        sources.add(source5);
+        sources.add(orIterator);
+        
+        AndIterator rootAnd = new AndIterator(sources);
+        rootAnd.initialize();
+        
+        Assert.assertEquals(true, rootAnd.hasNext());
+        Assert.assertEquals("x", rootAnd.next());
+        Assert.assertEquals(true, rootAnd.hasNext());
+        Assert.assertEquals("z", rootAnd.next());
+        Assert.assertEquals(false, rootAnd.hasNext());
+        
+        Assert.assertEquals(0, source1.getNextCount());
+        Assert.assertEquals(1, source1.getMoveCount());
+        Assert.assertEquals(1, source2.getNextCount());
+        Assert.assertEquals(1, source2.getMoveCount());
+        Assert.assertEquals(0, source3.getNextCount());
+        Assert.assertEquals(1, source3.getMoveCount());
+        Assert.assertEquals(0, source4.getNextCount());
+        Assert.assertEquals(0, source4.getMoveCount());
+    }
+    
+    @Test
+    public void baselineAndTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "c", "d"}));
         StatsWrappedIterator source2 = new StatsWrappedIterator(new ArrayIterator(new String[] {"x", "y", "z"}));
         
@@ -140,7 +235,7 @@ public class PerformanceIteratorIT {
     }
     
     @Test
-    public void baselineAndWorstCase() {
+    public void baselineAndWorstCaseTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "c", "e"}));
         StatsWrappedIterator source2 = new StatsWrappedIterator(new ArrayIterator(new String[] {"b", "d", "f"}));
         
@@ -176,7 +271,7 @@ public class PerformanceIteratorIT {
      * Bypass the inefficiencies in the baselineAndWorstCase by using rootSource to move source1 and exhaust it
      */
     @Test
-    public void nestedWorstCase() {
+    public void nestedWorstCaseTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "c", "e"}));
         StatsWrappedIterator source2 = new StatsWrappedIterator(new ArrayIterator(new String[] {"b", "d", "f"}));
         
@@ -267,7 +362,7 @@ public class PerformanceIteratorIT {
      * Like <code>nestedWorstCase()</code> but rather than hit the worst case on the first document, hit the worst case later in evaluation
      */
     @Test
-    public void nestedWorstCaseRepeat() {
+    public void nestedWorstCaseRepeatTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "c", "e"}));
         StatsWrappedIterator source2 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "d", "f"}));
         

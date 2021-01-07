@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,7 +32,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     private Map<T,T> transforms;
     private Util.Transformer<T> transformer;
     
-    private TreeMultimap<T,NestedIterator<T>> includeHeads, contextIncludeHeads, contextIncludeNullHeads, contextExcludeHeads, contextExcludeNullHeads;
+    private TreeMultimap<T,NestedIterator<T>> includeHeads, contextIncludeHeads, contextIncludeNullHeads, contextExcludeHeads, contextExcludeNullHeads,
+                    includeHints;
     
     private T prev;
     private T next;
@@ -39,6 +41,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     private Document prevDocument, document;
     
     private T evaluationContext;
+    
+    private boolean converged = false;
     
     public OrIterator(Iterable<NestedIterator<T>> sources) {
         this(sources, null);
@@ -78,7 +82,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         transforms = new HashMap<>();
         
         includeHeads = TreeMultimap.create(keyComp, itrComp);
-        initSubtree(includeHeads, includes, transformer, transforms, false);
+        includeHints = TreeMultimap.create(keyComp, itrComp);
+        initSubtree(includeHints, includes, transformer, transforms, false);
         
         if (contextIncludes.size() > 0) {
             contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
@@ -90,12 +95,21 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
         
-        next();
+        // do not converge
     }
     
     public boolean hasNext() {
         if (null == includeHeads) {
             throw new IllegalStateException("initialize() was never called");
+        }
+        
+        if (!converged) {
+            if (includeHints.size() > 0) {
+                converge(includeHints, transforms, includeHints.keySet().first(), includeHeads);
+            }
+            
+            converged = true;
+            next();
         }
         
         return next != null;
@@ -115,57 +129,60 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         prev = next;
         prevDocument = document;
         
-        SortedSet<T> candidateSet = new TreeSet<>(Util.keyComparator());
-        T lowest;
-        if (includeHeads.keySet().size() > 0) {
-            lowest = includeHeads.keySet().first();
-            candidateSet.add(lowest);
-        }
-        
-        T lowestContextInclude = null;
-        if (evaluationContext != null) {
-            if (contextIncludes.size() > 0) {
-                // get the lowest union and add it for contextRequiredIncludes
-                lowestContextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
-                                transformer);
-                if (lowestContextInclude != null) {
-                    candidateSet.add(lowestContextInclude);
+        if (converged) {
+            SortedSet<T> candidateSet = new TreeSet<>(Util.keyComparator());
+            T lowest;
+            if (includeHeads.keySet().size() > 0) {
+                lowest = includeHeads.keySet().first();
+                candidateSet.add(lowest);
+            }
+            
+            T lowestContextInclude = null;
+            if (evaluationContext != null) {
+                if (contextIncludes.size() > 0) {
+                    // get the lowest union and add it for contextRequiredIncludes
+                    lowestContextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
+                                    transformer);
+                    if (lowestContextInclude != null) {
+                        candidateSet.add(lowestContextInclude);
+                    }
+                }
+                
+                if (contextExcludes.size() > 0) {
+                    // DeMorgan's Law: (~A) OR (~B) == ~(A AND B)
+                    // for an exclude intersect the evaluation context with the set and then as long as the result doesn't match it is a candidate
+                    T intersectExclude = NestedIteratorContextUtil.intersect(evaluationContext, contextExcludes, contextExcludeHeads, contextExcludeNullHeads,
+                                    transformer);
+                    if (!evaluationContext.equals(intersectExclude)) {
+                        candidateSet.add(evaluationContext);
+                    }
                 }
             }
             
-            if (contextExcludes.size() > 0) {
-                // DeMorgan's Law: (~A) OR (~B) == ~(A AND B)
-                // for an exclude intersect the evaluation context with the set and then as long as the result doesn't match it is a candidate
-                T intersectExclude = NestedIteratorContextUtil.intersect(evaluationContext, contextExcludes, contextExcludeHeads, contextExcludeNullHeads,
-                                transformer);
-                if (!evaluationContext.equals(intersectExclude)) {
-                    candidateSet.add(evaluationContext);
+            // take the lowest of the candidates
+            if (candidateSet.size() > 0) {
+                lowest = candidateSet.first();
+                
+                // decide how to construct the document
+                if (lowest.equals(lowestContextInclude)) {
+                    // build it from the contextIncludeHeads
+                    next = lowestContextInclude;
+                    document = Util.buildNewDocument(contextIncludeHeads.get(next));
+                } else if (includeHeads.keySet().size() > 0 && lowest.equals(includeHeads.keySet().first())) {
+                    // build it from the includeHeads
+                    next = transforms.get(lowest);
+                    document = Util.buildNewDocument(includeHeads.get(lowest));
+                } else {
+                    // nothing to build it from all we know is that it wasn't in the exclude set
+                    next = evaluationContext;
+                    document = Util.buildNewDocument(Collections.emptyList());
                 }
-            }
-        }
-        
-        // take the lowest of the candidates
-        if (candidateSet.size() > 0) {
-            lowest = candidateSet.first();
-            
-            // decide how to construct the document
-            if (lowest.equals(lowestContextInclude)) {
-                // build it from the contextIncludeHeads
-                next = lowestContextInclude;
-                document = Util.buildNewDocument(contextIncludeHeads.get(next));
-            } else if (includeHeads.keySet().size() > 0 && lowest.equals(includeHeads.keySet().first())) {
-                // build it from the includeHeads
-                next = transforms.get(lowest);
-                document = Util.buildNewDocument(includeHeads.get(lowest));
-            } else {
-                // nothing to build it from all we know is that it wasn't in the exclude set
-                next = evaluationContext;
-                document = Util.buildNewDocument(Collections.emptyList());
-            }
-            
-            // regardless of where we hit make sure to advance includeHeads if it matches there
-            if (includeHeads.get(lowest) != null) {
-                includeHeads = advanceIterators(lowest);
+                
+                // regardless of where we hit make sure to advance includeHeads if it matches there
+                if (includeHeads.containsKey(lowest)) {
+                    includeHints = hintIterators(lowest);
+                    converged = false;
+                }
             }
         }
         
@@ -189,6 +206,13 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     public T move(T minimum) {
         if (null == includeHeads) {
             throw new IllegalStateException("initialize() was never called");
+        }
+        
+        if (!converged) {
+            converge(includeHints, transforms, minimum, includeHeads);
+            
+            converged = true;
+            next();
         }
         
         // test preconditions
@@ -215,7 +239,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         next();
         
         // now as long as the newly computed next exists return it and advance
-        if (hasNext()) {
+        if (next != null) {
             return next();
         } else {
             includeHeads = Util.getEmpty();
@@ -230,17 +254,18 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @param key
      * @return
      */
-    protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
+    protected TreeMultimap<T,NestedIterator<T>> hintIterators(T key) {
         transforms.remove(key);
         for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
-            if (itr.hasNext()) {
-                T next = itr.next();
-                T transform = transformer.transform(next);
-                transforms.put(transform, next);
-                includeHeads.put(transform, itr);
+            T hint = itr.peek();
+            if (hint != null) {
+                T transform = transformer.transform(hint);
+                transforms.put(transform, hint);
+                includeHints.put(transform, itr);
             }
         }
-        return includeHeads;
+        
+        return includeHints;
     }
     
     /**
@@ -299,20 +324,78 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     Iterable<NestedIterator<T>> sources, Util.Transformer<T> transformer, Map<T,T> transforms, boolean anded) {
         for (NestedIterator<T> src : sources) {
             src.initialize();
-            if (src.hasNext()) {
-                T next = src.next();
-                T transform = transformer.transform(next);
+            T hint = src.peek();
+            if (hint != null) {
+                T transform = transformer.transform(hint);
                 if (transforms != null) {
-                    transforms.put(transform, next);
+                    transforms.put(transform, hint);
                 }
                 subtree.put(transform, src);
             } else if (anded) {
-                // If a source has no valid records, it shouldn't throw an exception. It should just return no results.
-                // For an And, once one source is exhausted, the entire tree is exhausted
                 return Util.getEmpty();
             }
         }
         return subtree;
+    }
+    
+    private void converge(TreeMultimap<T,NestedIterator<T>> sourceTree, Map<T,T> transforms, T minimum, TreeMultimap<T,NestedIterator<T>> targetTree) {
+        boolean found = false;
+        while (!found && sourceTree.keySet().size() > 0) {
+            if (sourceTree.keySet().size() == 0) {
+                return;
+            }
+            
+            // first grab anything less than minimum (move case only)
+            Set<T> moveKeys = new HashSet<>(sourceTree.keySet().headSet(minimum));
+            
+            // anything at minimum must be checked that it's really at minimum
+            Iterator<NestedIterator<T>> nextIterator = sourceTree.removeAll(minimum).iterator();
+            if (transforms != null) {
+                transforms.remove(minimum);
+            }
+            
+            while (nextIterator.hasNext()) {
+                NestedIterator<T> itr = nextIterator.next();
+                if (itr.hasNext()) {
+                    T next = itr.next();
+                    if (next != null) {
+                        T transform = transformer.transform(next);
+                        if (transforms != null) {
+                            transforms.put(transform, next);
+                        }
+                        targetTree.put(transform, itr);
+                        found = true;
+                    }
+                }
+            }
+            
+            // move the moveKeys
+            for (T key : moveKeys) {
+                Iterator<NestedIterator<T>> iterator = sourceTree.removeAll(key).iterator();
+                if (transforms != null) {
+                    transforms.remove(key);
+                }
+                while (iterator.hasNext()) {
+                    NestedIterator<T> itr = iterator.next();
+                    T next = itr.move(minimum);
+                    if (next != null) {
+                        T transform = transformer.transform(next);
+                        if (transforms != null) {
+                            transforms.put(transform, next);
+                        }
+                        targetTree.put(transform, itr);
+                        found = true;
+                    }
+                }
+            }
+            
+            // test if the remaining sourceTree has a smallest key larger than minimum and adjust if necessary
+            if (sourceTree.keySet().size() > 0 && sourceTree.keySet().first().compareTo(minimum) > 0) {
+                minimum = sourceTree.keySet().first();
+            }
+        }
+        
+        return;
     }
     
     @Override
@@ -351,7 +434,6 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     @Override
     public T peek() {
-        // TODO convert this to use hints
-        return next;
+        return includeHints.keySet().size() > 0 ? includeHints.keySet().first() : null;
     }
 }

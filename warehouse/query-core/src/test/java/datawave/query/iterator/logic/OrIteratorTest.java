@@ -280,6 +280,8 @@ public class OrIteratorTest {
         Assert.assertTrue(childOr.isContextRequired());
         
         iterator.initialize();
+        
+        iterator.hasNext();
     }
     
     @Test

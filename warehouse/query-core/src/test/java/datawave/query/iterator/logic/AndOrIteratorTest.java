@@ -103,6 +103,8 @@ public class AndOrIteratorTest {
         
         NestedIterator iterator = new OrIterator(includes, excludes);
         iterator.initialize();
+        
+        iterator.hasNext();
     }
     
     // !X OR !Y
@@ -116,6 +118,8 @@ public class AndOrIteratorTest {
         
         NestedIterator iterator = new OrIterator(includes, excludes);
         iterator.initialize();
+        
+        iterator.hasNext();
     }
     
     // !X AND !Y

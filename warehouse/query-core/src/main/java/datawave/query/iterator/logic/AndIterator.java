@@ -341,6 +341,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
             converge(excludeHints, null, minimum, excludeHeads);
             
             converged = true;
+            next();
         }
         
         if (prev != null && prev.compareTo(minimum) >= 0) {
@@ -366,7 +367,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         next();
         
         // now as long as the newly computed next exists return it and advance
-        if (hasNext()) {
+        if (next != null) {
             return next();
         } else {
             includeHeads = Util.getEmpty();
@@ -438,9 +439,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 T hint = itr.peek();
                 if (hint != null) {
                     T transform = transformer.transform(hint);
-                    if (transforms != null) {
-                        transforms.put(transform, hint);
-                    }
+                    transforms.put(transform, hint);
                     includeHints.put(transform, itr);
                 } else {
                     return Util.getEmpty();
