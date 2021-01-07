@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import datawave.query.iterator.NestedIterator;
 import datawave.query.attributes.Document;
@@ -28,11 +29,15 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
     }
     
     public boolean hasNext() {
-        return ++offset < values.length;
+        return offset + 1 < values.length;
     }
     
     public T next() {
-        return values[offset];
+        if (hasNext()) {
+            return values[++offset];
+        } else {
+            throw new NoSuchElementException();
+        }
     }
     
     public void remove() {}
@@ -50,10 +55,12 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
             } else {
                 return values[offset];
             }
-        } else if (values != null && offset < values.length) {
+        } else if (values != null && values[offset].compareTo(minimum) == 0) {
             return values[offset];
+        } else if (values != null) {
+            throw new IllegalStateException("iterator beyond minimum");
         } else {
-            return null;
+            throw new NoSuchElementException();
         }
     }
     
@@ -85,7 +92,7 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
     
     @Override
     public T peek() {
-        if (offset + 1 < values.length) {
+        if (hasNext()) {
             return values[offset + 1];
         } else {
             return null;
