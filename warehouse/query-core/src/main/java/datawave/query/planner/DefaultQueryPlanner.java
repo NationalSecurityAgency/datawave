@@ -1728,7 +1728,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             counter = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
             if (counter != null && !counter.getDateToFrequencyValueMap().isEmpty()) {
                 for (Entry<YearMonthDay,Frequency> entry : counter.getDateToFrequencyValueMap().entrySet()) {
-                    // Only create a hole if the indexed field are with date bounds
+                    // Only create a hole if the indexed field are within date bounds
                     if (bounds.withinBounds(entry.getKey())) {
                         foundHolesInDateBounds = true;
                         if (firstHole && holeStart.compareTo(entry.getKey().getYyyymmdd()) < 0) {
@@ -1737,23 +1737,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             FieldIndexHole firstIndexHole = new FieldIndexHole();
                             firstIndexHole.setFieldName(field);
                             firstIndexHole.setStartDate(startDate);
-                            previousDay = YearMonthDay.previousDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
-                            nextDay = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            previousDay = previousDay(entry.getKey().getYyyymmdd());
+                            nextDay = nextDay(entry.getKey().getYyyymmdd());
                             log.debug("The date in the entry is: " + entry.getKey().getYyyymmdd());
                             log.debug("The previous day is: " + previousDay);
                             log.debug("The next day is: " + nextDay);
                             firstIndexHole.setEndDate(previousDay);
                             config.addFieldIndexHole(firstIndexHole);
-                            holeStart = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            holeStart = nextDay(entry.getKey().getYyyymmdd());
                             firstHole = false;
                         }
                         
                         // The end date of the last hole processed depends on the next date the field was indexed
                         if (newHole != null) {
-                            lastHoleEndate = YearMonthDay.previousDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            lastHoleEndate = previousDay(entry.getKey().getYyyymmdd());
                             newHole.setEndDate(lastHoleEndate);
                         } else {
-                            lastHoleEndate = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            lastHoleEndate = nextDay(entry.getKey().getYyyymmdd());
                         }
                         
                         /*
@@ -1761,24 +1761,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                          * starting on that date so increment the holeStart and find the next indexed date.
                          */
                         if (holeStart.equals(entry.getKey().getYyyymmdd())) {
-                            holeStart = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            holeStart = nextDay(entry.getKey().getYyyymmdd());
                             continue;
                         }
                         
-                        newHole = new FieldIndexHole();
-                        newHole.setFieldName(field);
-                        newHole.setStartDate(holeStart);
-                        
+                        // At this point, create a new FieldIndexHole
                         if (bounds.withinBounds(holeStart)) {
+                            newHole = new FieldIndexHole();
+                            newHole.setFieldName(field);
+                            newHole.setStartDate(holeStart);
+                            // you have to see next date the the field was indexed in the next iteration
+                            // before you can set the end date.  That may get done outside the loop on line 1698
+                            // or on 1669 with the previous day of the next date the field was indexed
                             config.addFieldIndexHole(newHole);
-                            
                         }
-                        
                     }
-                    
-                    holeStart = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                    holeStart = nextDay(entry.getKey().getYyyymmdd());
                 }
-                
             }
             
             if (newHole != null)
@@ -1794,15 +1793,25 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.addFieldIndexHole(trailingHole);
             }
             
-            if (foundHolesInDateBounds) {
+            if (!config.getFieldIndexHoles().isEmpty()) {
                 log.debug("Found Field index holes for field: " + field + " within date bounds");
                 for (FieldIndexHole hole : config.getFieldIndexHoles()) {
                     log.debug(hole.toString());
                 }
+            } else {
+                log.debug("No fieldHoles created.");
             }
             
         }
         
+    }
+    
+    private static String previousDay(String day) {
+        return YearMonthDay.previousDay(day).getYyyymmdd();
+    }
+    
+    private static String nextDay(String day) {
+        return YearMonthDay.nextDay(day).getYyyymmdd();
     }
     
     /**
