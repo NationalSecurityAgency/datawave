@@ -1721,6 +1721,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         FieldIndexHole newHole = null;
         boolean firstHole = true;
         boolean foundHolesInDateBounds = false;
+        String previousDay, nextDay = null;
+        log.debug("startDate is: " + startDate + " and endDate is " + endDate);
         
         for (String field : fieldToDatatypeMap.keySet()) {
             counter = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
@@ -1735,8 +1737,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             FieldIndexHole firstIndexHole = new FieldIndexHole();
                             firstIndexHole.setFieldName(field);
                             firstIndexHole.setStartDate(startDate);
-                            firstIndexHole.setEndDate(YearMonthDay.previousDay(entry.getKey().getYyyymmdd()).getYyyymmdd());
+                            previousDay = YearMonthDay.previousDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            nextDay = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            log.debug("The date in the entry is: " + entry.getKey().getYyyymmdd());
+                            log.debug("The previous day is: " + previousDay);
+                            log.debug("The next day is: " + nextDay);
+                            firstIndexHole.setEndDate(previousDay);
                             config.addFieldIndexHole(firstIndexHole);
+                            holeStart = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
                             firstHole = false;
                         }
                         
@@ -1760,7 +1768,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         newHole = new FieldIndexHole();
                         newHole.setFieldName(field);
                         newHole.setStartDate(holeStart);
-                        config.addFieldIndexHole(newHole);
+                        
+                        if (bounds.withinBounds(holeStart)) {
+                            config.addFieldIndexHole(newHole);
+                            
+                        }
                         
                     }
                     
@@ -1772,8 +1784,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (newHole != null)
                 newHole.setEndDate(lastHoleEndate);
             
-            if (holeStart.compareTo(endDate) < 0 && foundHolesInDateBounds) {
+            if (foundHolesInDateBounds && bounds.withinBounds(holeStart)) {
                 FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {holeStart, endDate});
+                config.addFieldIndexHole(trailingHole);
+            }
+            
+            if (!foundHolesInDateBounds) {
+                FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {startDate, endDate});
                 config.addFieldIndexHole(trailingHole);
             }
             
