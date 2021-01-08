@@ -124,6 +124,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1715,30 +1716,72 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         String startDate = DateHelper.format(config.getBeginDate().getTime());
         String endDate = DateHelper.format(config.getEndDate().getTime());
         String holeStart = startDate;
+        String lastHoleEndate = null;
+        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, true, endDate, true);
+        FieldIndexHole newHole = null;
+        boolean firstHole = true;
+        boolean foundHolesInDateBounds = false;
+        
         for (String field : fieldToDatatypeMap.keySet()) {
-            // TODO - This loop must be perfected. Not sure how to set start and end values.
-            // the start and end values in the DataToFrequency map have no relevance in
-            // this context.
-            // TODO this loop needs more work
             counter = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
             if (counter != null && !counter.getDateToFrequencyValueMap().isEmpty()) {
                 for (Entry<YearMonthDay,Frequency> entry : counter.getDateToFrequencyValueMap().entrySet()) {
-                    FieldIndexHole newHole = new FieldIndexHole();
-                    newHole.setFieldName(field);
-                    newHole.setStartDate(holeStart);
-                    if (endDate.compareTo(entry.getKey().getYyyymmdd()) > 0)
-                        newHole.setEndDate(entry.getKey().getYyyymmdd());
-                    else
-                        newHole.setEndDate(endDate);
-                    config.addFieldIndexHole(newHole);
-                    holeStart = endDate; // entry.getKey().getYyyymmdd(); // TODO might need to write a function to increase this one day
+                    // Only create a hole if the indexed field are with date bounds
+                    if (bounds.withinBounds(entry.getKey())) {
+                        foundHolesInDateBounds = true;
+                        if (firstHole && holeStart.compareTo(entry.getKey().getYyyymmdd()) < 0) {
+                            // create the FieldIndexHole for the dates the field was not indexed before the first
+                            // time in the date range that it was indexed.
+                            FieldIndexHole firstIndexHole = new FieldIndexHole();
+                            firstIndexHole.setFieldName(field);
+                            firstIndexHole.setStartDate(startDate);
+                            firstIndexHole.setEndDate(YearMonthDay.previousDay(entry.getKey().getYyyymmdd()).getYyyymmdd());
+                            config.addFieldIndexHole(firstIndexHole);
+                            firstHole = false;
+                        }
+                        
+                        // The end date of the last hole processed depends on the next date the field was indexed
+                        if (newHole != null) {
+                            lastHoleEndate = YearMonthDay.previousDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            newHole.setEndDate(lastHoleEndate);
+                        } else {
+                            lastHoleEndate = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                        }
+                        
+                        /*
+                         * If the start of the next potential hole is the same as the date indexed field there is no need to start creating and index hole
+                         * starting on that date so increment the holeStart and find the next indexed date.
+                         */
+                        if (holeStart.equals(entry.getKey().getYyyymmdd())) {
+                            holeStart = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
+                            continue;
+                        }
+                        
+                        newHole = new FieldIndexHole();
+                        newHole.setFieldName(field);
+                        newHole.setStartDate(holeStart);
+                        config.addFieldIndexHole(newHole);
+                        
+                    }
                     
+                    holeStart = YearMonthDay.nextDay(entry.getKey().getYyyymmdd()).getYyyymmdd();
                 }
+                
             }
             
-            if (holeStart.compareTo(endDate) < 0) {
+            if (newHole != null)
+                newHole.setEndDate(lastHoleEndate);
+            
+            if (holeStart.compareTo(endDate) < 0 && foundHolesInDateBounds) {
                 FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {holeStart, endDate});
                 config.addFieldIndexHole(trailingHole);
+            }
+            
+            if (foundHolesInDateBounds) {
+                log.debug("Found Field index holes for field: " + field + " within date bounds");
+                for (FieldIndexHole hole : config.getFieldIndexHoles()) {
+                    log.debug(hole.toString());
+                }
             }
             
         }
