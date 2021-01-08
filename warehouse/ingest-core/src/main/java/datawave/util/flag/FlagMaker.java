@@ -44,15 +44,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
 
 /**
  * 
@@ -63,9 +60,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private static final CompressionType ct = CompressionType.BLOCK;
     
     private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
-    // our yyyy/mm/dd pattern for most things.
-    public static final Pattern pattern = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2,5})(?:/.*|$)");
-    private static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd";
     
     private static final String COUNTER_LIMIT_HADOOP_2 = "mapreduce.job.counters.max";
     private static final String COUNTER_LIMIT_HADOOP_1 = "mapreduce.job.counters.limit";
@@ -269,31 +263,40 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      */
     void loadFilesForDistributor(FlagDataTypeConfig fc, FileSystem fs) throws IOException {
         for (String folder : fc.getFolder()) {
-            String folderPattern = folder + "/" + fmc.getFilePattern();
-            log.trace("searching for " + fc.getDataName() + " files in " + folderPattern);
-            FileStatus[] files = fs.globStatus(new Path(folderPattern));
-            if (files == null || files.length == 0) {
-                continue;
-            }
-            
-            // remove the base directory from the folder
-            if (folder.startsWith(this.fmc.getBaseHDFSDir())) {
-                folder = folder.substring(this.fmc.getBaseHDFSDir().length());
-                if (folder.startsWith(File.separator)) {
-                    folder = folder.substring(File.separator.length());
+            for (String filePattern : fmc.getFilePatterns()) {
+                String folderPattern = folder + "/" + filePattern;
+                if (log.isTraceEnabled()) {
+                    log.trace("searching for " + fc.getDataName() + " files in " + folderPattern);
                 }
-            }
-            
-            // add the files
-            for (FileStatus status : files) {
-                if (status.isDirectory()) {
-                    log.warn("Skipping subdirectory " + status.getPath());
-                } else {
-                    try {
-                        this.fd.addInputFile(new InputFile(folder, status, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp()));
-                        logFileInfo(fc, status);
-                    } catch (UnusableFileException e) {
-                        log.warn("Skipping unusable file " + status.getPath(), e);
+                FileStatus[] files = fs.globStatus(new Path(folderPattern));
+                if (files == null || files.length == 0) {
+                    continue;
+                }
+                
+                // remove the base directory from the folder
+                if (folder.startsWith(this.fmc.getBaseHDFSDir())) {
+                    folder = folder.substring(this.fmc.getBaseHDFSDir().length());
+                    if (folder.startsWith(File.separator)) {
+                        folder = folder.substring(File.separator.length());
+                    }
+                }
+                
+                // add the files
+                for (FileStatus status : files) {
+                    if (status.isDirectory()) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Skipping subdirectory " + status.getPath());
+                        }
+                    } else {
+                        try {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Adding file " + status.getPath());
+                            }
+                            this.fd.addInputFile(new InputFile(folder, status, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp()));
+                            logFileInfo(fc, status);
+                        } catch (UnusableFileException e) {
+                            log.warn("Skipping unusable file " + status.getPath(), e);
+                        }
                     }
                 }
             }
