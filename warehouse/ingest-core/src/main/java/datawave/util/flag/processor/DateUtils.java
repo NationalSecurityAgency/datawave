@@ -18,7 +18,7 @@ public class DateUtils {
     
     static final HashSet<String> GROUPS = new HashSet<>(Arrays.asList("none", "year", "month", "day"));
     // Pattern: /YYYY/MM/DD followed by a / or the end of the string, (?: ) is a non-capturing group....
-    public static final Pattern pattern = Pattern.compile("/([0-9]{4})((/[0-9]{2}){2,5})(?:/|$)");
+    public static final Pattern pattern = Pattern.compile("/([0-9]{4})((/[0-9]{2}){2})(?:/|$)");
     public static final long A_MINUTE = 1000L * 60L;
     public static final long ADAY = A_MINUTE * 60L * 24L;
     static final TimeZone GMT = TimeZone.getTimeZone("GMT");
