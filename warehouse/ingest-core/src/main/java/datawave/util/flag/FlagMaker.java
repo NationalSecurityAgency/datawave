@@ -64,7 +64,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     
     private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
     // our yyyy/mm/dd pattern for most things.
-    public static final Pattern pattern = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2})(?:/.*|$)");
+    public static final Pattern pattern = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2,5})(?:/.*|$)");
     private static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd";
     
     private static final String COUNTER_LIMIT_HADOOP_2 = "mapreduce.job.counters.max";
