@@ -512,7 +512,7 @@ public class PerformanceIteratorIT {
             }
         }
         
-        System.out.println("overlap: " + and.getNextCount());
+        System.out.println("hits: " + and.getNextCount());
         System.out.println("source X next: " + xSource.getNextCount());
         System.out.println("source X move: " + xSource.getMoveCount());
         System.out.println("source Y next: " + ySource.getNextCount());
