@@ -8,7 +8,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 public class PerformanceIteratorIT {
     
@@ -17,6 +19,7 @@ public class PerformanceIteratorIT {
         
     }
     
+    // (X OR Y)
     @Test
     public void baselineOrTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "c", "d"}));
@@ -28,13 +31,6 @@ public class PerformanceIteratorIT {
         
         OrIterator orIterator = new OrIterator(sources);
         orIterator.initialize();
-        
-        // // a and b
-        // Assert.assertEquals(2, source1.getNextCount());
-        // // x
-        // Assert.assertEquals(1, source2.getNextCount());
-        // Assert.assertEquals(0, source1.getMoveCount());
-        // Assert.assertEquals(0, source2.getMoveCount());
         
         Assert.assertEquals(true, orIterator.hasNext());
         Assert.assertEquals("a", orIterator.next());
@@ -109,6 +105,7 @@ public class PerformanceIteratorIT {
         Assert.assertEquals(0, source2.getMoveCount());
     }
     
+    // (A OR B OR (C AND D))
     @Test
     public void orNestedAndTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "c", "d"}));
@@ -158,6 +155,7 @@ public class PerformanceIteratorIT {
         Assert.assertEquals(2, source4.getMoveCount());
     }
     
+    // (E AND (A OR B OR (C AND D)))
     @Test
     public void andOrNestedAndTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "c", "d"}));
@@ -204,6 +202,7 @@ public class PerformanceIteratorIT {
         Assert.assertEquals(0, source4.getMoveCount());
     }
     
+    // (A AND B)
     @Test
     public void baselineAndTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "b", "c", "d"}));
@@ -234,6 +233,7 @@ public class PerformanceIteratorIT {
         Assert.assertEquals(0, source2.getNextCount());
     }
     
+    // (A AND B)
     @Test
     public void baselineAndWorstCaseTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "c", "e"}));
@@ -270,6 +270,7 @@ public class PerformanceIteratorIT {
     /**
      * Bypass the inefficiencies in the baselineAndWorstCase by using rootSource to move source1 and exhaust it
      */
+    // ((A AND B) AND C)
     @Test
     public void nestedWorstCaseTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "c", "e"}));
@@ -308,6 +309,7 @@ public class PerformanceIteratorIT {
     /**
      * Ensure that regardless of the nesting of the inefficient iterator it is minimally exercised
      */
+    // ((A AND B AND (C AND D)) AND E)
     @Test
     public void doubleNestingTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "c", "e", "y"}));
@@ -361,6 +363,7 @@ public class PerformanceIteratorIT {
     /**
      * Like <code>nestedWorstCase()</code> but rather than hit the worst case on the first document, hit the worst case later in evaluation
      */
+    // ((A AND B) AND C)
     @Test
     public void nestedWorstCaseRepeatTest() {
         StatsWrappedIterator source1 = new StatsWrappedIterator(new ArrayIterator(new String[] {"a", "c", "e"}));
@@ -405,13 +408,143 @@ public class PerformanceIteratorIT {
         Assert.assertEquals(1, source2.getMoveCount());
     }
     
+    // X AND Y AND (A OR B OR C OR (E AND F AND G))
+    @Test
+    public void highDensityTest() {
+        List<String> x = new ArrayList<>();
+        List<String> y = new ArrayList<>();
+        
+        List<String> a = new ArrayList<>();
+        List<String> b = new ArrayList<>();
+        List<String> c = new ArrayList<>();
+        
+        double xCardinality = .75;
+        double yCardinality = .99;
+        
+        double aCardinality = .2;
+        double bCardinality = .5;
+        double cCardinality = .1;
+        
+        Random r = new Random();
+        
+        List<String> expected = new ArrayList<>();
+        
+        for (int i = 0; i < 1000000; i++) {
+            String parsed = Integer.toString(i);
+            
+            boolean addX = accept(r, xCardinality);
+            boolean addY = accept(r, yCardinality);
+            
+            boolean addA = accept(r, aCardinality);
+            boolean addB = accept(r, bCardinality);
+            boolean addC = accept(r, cCardinality);
+            
+            if (addX) {
+                x.add(parsed);
+            }
+            if (addY) {
+                y.add(parsed);
+            }
+            
+            if (addA) {
+                a.add(parsed);
+            }
+            if (addB) {
+                b.add(parsed);
+            }
+            if (addC) {
+                c.add(parsed);
+            }
+            
+            if (addX && addY && (addA || addB || addC)) {
+                expected.add(parsed);
+            }
+        }
+        
+        Collections.sort(expected);
+        
+        // convert to ArrayIterators
+        StatsWrappedIterator xSource = new StatsWrappedIterator("X", new ArrayIterator(x.toArray(new String[0])));
+        StatsWrappedIterator ySource = new StatsWrappedIterator("Y", new ArrayIterator(y.toArray(new String[0])));
+        
+        List<NestedIterator<String>> sources = new ArrayList<>(3);
+        
+        StatsWrappedIterator aSource = new StatsWrappedIterator("A", new ArrayIterator(a.toArray(new String[0])));
+        StatsWrappedIterator bSource = new StatsWrappedIterator("B", new ArrayIterator(b.toArray(new String[0])));
+        StatsWrappedIterator cSource = new StatsWrappedIterator("C", new ArrayIterator(c.toArray(new String[0])));
+        
+        sources.add(aSource);
+        sources.add(bSource);
+        sources.add(cSource);
+        
+        StatsWrappedIterator or = new StatsWrappedIterator("A OR B OR C", new OrIterator<>(sources));
+        
+        sources = new ArrayList<>(3);
+        sources.add(xSource);
+        sources.add(ySource);
+        sources.add(or);
+        
+        StatsWrappedIterator and = new StatsWrappedIterator("X AND Y AND (A OR B OR C)", new AndIterator<>(sources));
+        and.initialize();
+        
+        int lastIndex = -1;
+        while (and.hasNext()) {
+            Comparable<String> next = and.next();
+            int expectedIndex = -1;
+            for (int i = lastIndex + 1; i < expected.size(); i++) {
+                if (expected.get(i) == next) {
+                    expectedIndex = i;
+//                    System.out.println("found " + next);
+                    break;
+                } else if (next.compareTo(expected.get(i)) < 0) {
+                    Assert.assertFalse( "unexpected result: " + next, true);
+                }
+            }
+            
+            if (expectedIndex - lastIndex > 1) {
+                Assert.assertFalse( "skipped an expected result: " + next + " moved " + (expectedIndex - lastIndex) + " spots", true);
+            }
+            
+            if (expectedIndex == -1) {
+                Assert.assertFalse( "unexpected result: " + next, true);
+            } else {
+                lastIndex = expectedIndex;
+            }
+        }
+        
+        System.out.println("overlap: " + and.getNextCount());
+        System.out.println("source X next: " + xSource.getNextCount());
+        System.out.println("source X move: " + xSource.getMoveCount());
+        System.out.println("source Y next: " + ySource.getNextCount());
+        System.out.println("source Y move: " + ySource.getMoveCount());
+        System.out.println("(A OR B OR C) next: " + or.getNextCount());
+        System.out.println("(A OR B OR C) move: " + or.getMoveCount());
+        System.out.println("source A next: " + aSource.getNextCount());
+        System.out.println("source A move: " + aSource.getMoveCount());
+        System.out.println("source B next: " + bSource.getNextCount());
+        System.out.println("source B move: " + bSource.getMoveCount());
+        System.out.println("source C next: " + cSource.getNextCount());
+        System.out.println("source C move: " + cSource.getMoveCount());
+        Assert.assertEquals(expected.size(), and.getNextCount());
+    }
+    
+    private boolean accept(Random r, double accept) {
+        return r.nextDouble() <= accept;
+    }
+    
     public static class StatsWrappedIterator<T extends Comparable<T>> implements NestedIterator<T> {
+        private String name;
         private NestedIterator<T> delegate;
         
         private long nextCount = 0;
         private long moveCount = 0;
         
         public StatsWrappedIterator(NestedIterator<T> delegate) {
+            this(null, delegate);
+        }
+        
+        public StatsWrappedIterator(String name, NestedIterator<T> delegate) {
+            this.name = name;
             this.delegate = delegate;
         }
         
@@ -423,7 +556,12 @@ public class PerformanceIteratorIT {
         @Override
         public T next() {
             nextCount++;
-            return delegate.next();
+            T result = delegate.next();
+            if (result == null) {
+                System.out.println(this + " exhausted after next");
+            }
+            
+            return result;
         }
         
         @Override
@@ -434,7 +572,12 @@ public class PerformanceIteratorIT {
         @Override
         public T move(T minimum) {
             moveCount++;
-            return delegate.move(minimum);
+            T result = delegate.move(minimum);
+            if (result == null) {
+                System.out.println(this + " exhausted after move " + minimum);
+            }
+            
+            return result;
         }
         
         @Override
@@ -473,6 +616,15 @@ public class PerformanceIteratorIT {
         
         public long getMoveCount() {
             return moveCount;
+        }
+        
+        @Override
+        public String toString() {
+            if (name != null) {
+                return "[" + name + " next=" + peek() + "]";
+            } else {
+                return super.toString();
+            }
         }
     }
 }

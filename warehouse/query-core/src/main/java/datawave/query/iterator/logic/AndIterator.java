@@ -519,14 +519,12 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         }
         
         // all T less than highestHint
-        SortedSet<T> moveKeys = sourceTree.keySet().headSet(minimum);
+        HashSet<T> moveKeys = new HashSet<>(sourceTree.keySet().headSet(minimum));
         
         // anything at or beyond minimum must be advanced to get true values from hints
-        SortedSet<T> nextKeys = sourceTree.keySet().tailSet(minimum);
-        Set<T> safeToRemoveNextKeys = new HashSet<>(nextKeys.size());
-        safeToRemoveNextKeys.addAll(nextKeys);
+        Set<T> nextKeys = new HashSet<>(sourceTree.keySet().tailSet(minimum));
         List<Iterator<NestedIterator<T>>> iteratorList = new ArrayList<>(nextKeys.size());
-        for (T nextKey : safeToRemoveNextKeys) {
+        for (T nextKey : nextKeys) {
             Iterator<NestedIterator<T>> nextIterator = sourceTree.removeAll(nextKey).iterator();
             if (transforms != null) {
                 transforms.remove(nextKey);

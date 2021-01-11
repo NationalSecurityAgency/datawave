@@ -208,13 +208,6 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new IllegalStateException("initialize() was never called");
         }
         
-        if (!converged) {
-            converge(includeHints, transforms, minimum, includeHeads);
-            
-            converged = true;
-            next();
-        }
-        
         // test preconditions
         if (prev != null && prev.compareTo(minimum) >= 0) {
             throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + prev + ", movekey=" + minimum);
@@ -225,14 +218,27 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             // simply advance to next
             return next();
         }
+
+        if (!converged) {
+            converge(includeHints, transforms, minimum, includeHeads);
+            converged = true;
+        }
         
         Set<T> headSet = includeHeads.keySet().headSet(minimum);
         
         // some iterators need to be moved into the target range before recalculating the next
         Iterator<T> topKeys = new LinkedList<>(headSet).iterator();
+        boolean moved = false;
         while (!includeHeads.isEmpty() && topKeys.hasNext()) {
             // advance each iterator that is under the threshold
             includeHeads = moveIterators(topKeys.next(), minimum);
+            moved = true;
+        }
+        
+        // after moving the heads, ensure that anything still in hints is great than the new minimum
+        if (moved && includeHints.size() > 0 && includeHeads.keySet().first().compareTo(includeHints.keySet().first()) >= 0) {
+            // converge the hints again
+            converge(includeHints, transforms, includeHeads.keySet().first(), includeHeads);
         }
         
         // next < minimum, so advance throwing next away and re-populating next with what should be >= minimum
@@ -338,9 +344,16 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         return subtree;
     }
     
+    /**
+     * Until all sourceTree keys are >= minimum AND there is something in targetTree AND nothing in sourceTree <= targetTree
+     * @param sourceTree
+     * @param transforms
+     * @param minimum
+     * @param targetTree
+     */
     private void converge(TreeMultimap<T,NestedIterator<T>> sourceTree, Map<T,T> transforms, T minimum, TreeMultimap<T,NestedIterator<T>> targetTree) {
         boolean found = false;
-        while (!found && sourceTree.keySet().size() > 0) {
+        while (sourceTree.keySet().size() > 0 && (targetTree.size() == 0 || sourceTree.keySet().first().compareTo(minimum) <= 0 || sourceTree.keySet().first().compareTo(targetTree.keySet().first()) <= 0)) {
             if (sourceTree.keySet().size() == 0) {
                 return;
             }
@@ -350,7 +363,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             
             // anything at minimum must be checked that it's really at minimum
             Iterator<NestedIterator<T>> nextIterator = sourceTree.removeAll(minimum).iterator();
-            if (transforms != null) {
+            if (transforms != null && !targetTree.containsKey(minimum)) {
                 transforms.remove(minimum);
             }
             
@@ -372,7 +385,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             // move the moveKeys
             for (T key : moveKeys) {
                 Iterator<NestedIterator<T>> iterator = sourceTree.removeAll(key).iterator();
-                if (transforms != null) {
+                if (transforms != null && !targetTree.containsKey(key)) {
                     transforms.remove(key);
                 }
                 while (iterator.hasNext()) {
@@ -390,7 +403,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             }
             
             // test if the remaining sourceTree has a smallest key larger than minimum and adjust if necessary
-            if (sourceTree.keySet().size() > 0 && sourceTree.keySet().first().compareTo(minimum) > 0) {
+            if (sourceTree.keySet().size() > 0 && (targetTree.size() == 0 || sourceTree.keySet().first().compareTo(targetTree.keySet().first()) <= 0)) {
                 minimum = sourceTree.keySet().first();
             }
         }
@@ -434,6 +447,16 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     @Override
     public T peek() {
-        return includeHints.keySet().size() > 0 ? includeHints.keySet().first() : null;
+        SortedSet<T> candidates = new TreeSet<>();
+//        return includeHints.keySet().size() > 0 ? includeHints.keySet().first() : null;
+        if (includeHints.keySet().size() > 0) {
+            candidates.add(includeHints.keySet().first());
+        }
+        
+        if (includeHeads.size() > 0) {
+            candidates.add(includeHeads.keySet().first());
+        }
+        
+        return candidates.first();
     }
 }
