@@ -1754,6 +1754,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             newHole.setEndDate(lastHoleEndate);
                         } else {
                             lastHoleEndate = nextDay(entry.getKey().getYyyymmdd());
+                            if (lastHoleEndate.compareTo(endDate) > 0)
+                                lastHoleEndate = endDate;
                         }
                         
                         /*
@@ -1771,7 +1773,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             newHole.setFieldName(field);
                             newHole.setStartDate(holeStart);
                             // you have to see next date the the field was indexed in the next iteration
-                            // before you can set the end date.  That may get done outside the loop on line 1698
+                            // before you can set the end date. That may get done outside the loop on line 1698
                             // or on 1669 with the previous day of the next date the field was indexed
                             config.addFieldIndexHole(newHole);
                         }
