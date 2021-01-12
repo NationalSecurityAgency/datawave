@@ -1,5 +1,11 @@
 package datawave.query.jexl.visitors;
 
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -13,10 +19,12 @@ import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
 import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
 import org.apache.commons.jexl2.parser.ASTBlock;
 import org.apache.commons.jexl2.parser.ASTConstructorNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTDivNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEmptyFunction;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTForeachStatement;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -114,6 +122,13 @@ public class NodeTypeCountVisitor implements ParserVisitor {
     private int totalASTConstructorNodes;
     private int totalASTArrayAccessNodes;
     private int totalASTReferenceExpressionNodes;
+    private int totalASTDelayedPredicateNodes;
+    private int totalASTEvaluationOnlyNodes;
+    private int totalBoundedRangeNodes;
+    private int totalExceededOrThresholdMarkerJexlNode;
+    private int totalExceededTermThresholdMarkerJexlNodes;
+    private int totalExceededValueThresholdMarkerJexlNodes;
+    private int totalIndexHoleMarkerJexlNodes;
     
     @Override
     public Object visit(SimpleNode node, Object data) {
@@ -124,7 +139,6 @@ public class NodeTypeCountVisitor implements ParserVisitor {
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        System.out.println("Visiting astjexlnode");
         totalASTJexlScriptNodes++;
         node.childrenAccept(this, data);
         return null;
@@ -188,7 +202,26 @@ public class NodeTypeCountVisitor implements ParserVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        totalASTReferenceNodes++;
+        // Check if this is a specialized reference type.
+        if (node instanceof QueryPropertyMarker) {
+            if (node instanceof ASTDelayedPredicate) {
+                totalASTDelayedPredicateNodes++;
+            } else if (node instanceof ASTEvaluationOnly) {
+                totalASTEvaluationOnlyNodes++;
+            } else if (node instanceof BoundedRange) {
+                totalBoundedRangeNodes++;
+            } else if (node instanceof ExceededOrThresholdMarkerJexlNode) {
+                totalExceededOrThresholdMarkerJexlNode++;
+            } else if (node instanceof ExceededTermThresholdMarkerJexlNode) {
+                totalExceededTermThresholdMarkerJexlNodes++;
+            } else if (node instanceof ExceededValueThresholdMarkerJexlNode) {
+                totalExceededValueThresholdMarkerJexlNodes++;
+            } else if (node instanceof IndexHoleMarkerJexlNode) {
+                totalIndexHoleMarkerJexlNodes++;
+            }
+        } else {
+            totalASTReferenceNodes++;
+        }
         node.childrenAccept(this, data);
         return null;
     }
@@ -917,8 +950,71 @@ public class NodeTypeCountVisitor implements ParserVisitor {
     }
     
     /**
+     * Return the total {@link org.apache.commons.jexl2.parser.ASTDelayedPredicate} nodes found.
+     *
+     * @return the total count
+     */
+    public int getTotalASTDelayedPredicateNodes() {
+        return totalASTDelayedPredicateNodes;
+    }
+    
+    /**
+     * Return the total {@link org.apache.commons.jexl2.parser.ASTEvaluationOnly} nodes found.
+     *
+     * @return the total count
+     */
+    public int getTotalASTEvaluationOnlyNodes() {
+        return totalASTEvaluationOnlyNodes;
+    }
+    
+    /**
+     * Return the total {@link datawave.query.jexl.nodes.BoundedRange} nodes found.
+     *
+     * @return the total count
+     */
+    public int getTotalBoundedRangeNodes() {
+        return totalBoundedRangeNodes;
+    }
+    
+    /**
+     * Return the total {@link datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode} nodes found.
+     *
+     * @return the total count
+     */
+    public int getTotalExceededOrThresholdMarkerJexlNode() {
+        return totalExceededOrThresholdMarkerJexlNode;
+    }
+    
+    /**
+     * Return the total {@link datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode} nodes found.
+     *
+     * @return the total count
+     */
+    public int getTotalExceededTermThresholdMarkerJexlNodes() {
+        return totalExceededTermThresholdMarkerJexlNodes;
+    }
+    
+    /**
+     * Return the total {@link datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode} nodes found.
+     *
+     * @return the total count
+     */
+    public int getTotalExceededValueThresholdMarkerJexlNodes() {
+        return totalExceededValueThresholdMarkerJexlNodes;
+    }
+    
+    /**
+     * Return the total {@link datawave.query.jexl.nodes.IndexHoleMarkerJexlNode} nodes found.
+     *
+     * @return the total count
+     */
+    public int getTotalIndexHoleMarkerJexlNodes() {
+        return totalIndexHoleMarkerJexlNodes;
+    }
+    
+    /**
      * Return whether or not any regex nodes were found.
-     * 
+     *
      * @return true if at least one regex node was found, or false otherwise
      */
     public boolean hasRegexNodes() {
@@ -926,17 +1022,17 @@ public class NodeTypeCountVisitor implements ParserVisitor {
     }
     
     /**
-     * Return whether or not if a possible bounded range was found, i.e. if either a LE or LT node, and either a GE or GT node were found.
-     * 
-     * @return true if a possible bounded range was found, or false otherwise
+     * Return whether or not if a node indicating a bounded range was found.
+     *
+     * @return true if a bounded range was found, or false otherwise
      */
-    public boolean hasPossibleBoundedRange() {
-        return (totalASTLENodes > 0 || totalASTLTNodes > 0) && (totalASTGENodes > 0 || totalASTGTNodes > 0);
+    public boolean hasBoundedRange() {
+        return totalBoundedRangeNodes > 0;
     }
     
     /**
      * Return whether or not any function nodes were found.
-     * 
+     *
      * @return true if at least one function node was found, or false otherwise.
      */
     public boolean hasFunctionNodes() {

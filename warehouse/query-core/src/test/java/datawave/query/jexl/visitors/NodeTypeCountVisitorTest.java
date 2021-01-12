@@ -1,6 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -13,10 +18,12 @@ import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
 import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
 import org.apache.commons.jexl2.parser.ASTBlock;
 import org.apache.commons.jexl2.parser.ASTConstructorNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTDivNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEmptyFunction;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTForeachStatement;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -50,6 +57,7 @@ import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl2.parser.SimpleNode;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -61,8 +69,14 @@ public class NodeTypeCountVisitorTest {
     // Verify the correct internal count is incremented for each node type.
     @Test
     public void testCountForEachType() throws ParseException {
+        SimpleNode node = new SimpleNode(ParserTreeConstants.JJTREFERENCE);
+        NodeTypeCountVisitor visitor = new NodeTypeCountVisitor();
+        node.jjtAccept(visitor, null);
+        assertEquals(1, visitor.getTotalSimpleNodes());
+        
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
         assertEquals(1, NodeTypeCountVisitor.countNodes(script).getTotalASTJexlScriptNodes());
+        
         assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT)).getTotalASTJexlScriptNodes());
         assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTBlock(ParserTreeConstants.JJTBLOCK)).getTotalASTBlockNodes());
         assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTAmbiguous(ParserTreeConstants.JJTAMBIGUOUS)).getTotalASTAmbiguousNodes());
@@ -113,6 +127,16 @@ public class NodeTypeCountVisitorTest {
         assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTArrayAccess(ParserTreeConstants.JJTARRAYACCESS)).getTotalASTArrayAccessNodes());
         assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION))
                         .getTotalASTReferenceExpressionNodes());
+        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTDelayedPredicate(ParserTreeConstants.JJTREFERENCE)).getTotalASTDelayedPredicateNodes());
+        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTEvaluationOnly(ParserTreeConstants.JJTREFERENCE)).getTotalASTEvaluationOnlyNodes());
+        assertEquals(1, NodeTypeCountVisitor.countNodes(new BoundedRange(ParserTreeConstants.JJTREFERENCE)).getTotalBoundedRangeNodes());
+        assertEquals(1, NodeTypeCountVisitor.countNodes(new ExceededOrThresholdMarkerJexlNode(ParserTreeConstants.JJTREFERENCE))
+                        .getTotalExceededOrThresholdMarkerJexlNode());
+        assertEquals(1, NodeTypeCountVisitor.countNodes(new ExceededTermThresholdMarkerJexlNode(ParserTreeConstants.JJTREFERENCE))
+                        .getTotalExceededTermThresholdMarkerJexlNodes());
+        assertEquals(1, NodeTypeCountVisitor.countNodes(new ExceededValueThresholdMarkerJexlNode(ParserTreeConstants.JJTREFERENCE))
+                        .getTotalExceededValueThresholdMarkerJexlNodes());
+        assertEquals(1, NodeTypeCountVisitor.countNodes(new IndexHoleMarkerJexlNode(ParserTreeConstants.JJTREFERENCE)).getTotalIndexHoleMarkerJexlNodes());
     }
     
     @Test
@@ -123,13 +147,9 @@ public class NodeTypeCountVisitorTest {
     }
     
     @Test
-    public void testHasPossibleBoundedRange() throws ParseException {
-        assertFalse(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO > 1 && BAR >= 2")).hasPossibleBoundedRange()); // Does not have LT or LE.
-        assertFalse(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO < 1 && BAR <= 2")).hasPossibleBoundedRange()); // Does not have GT or GE.
-        assertTrue(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO < 1 && BAR > 2")).hasPossibleBoundedRange()); // Has LT and GT.
-        assertTrue(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO < 1 && BAR >= 2")).hasPossibleBoundedRange()); // Has LT and GE.
-        assertTrue(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO <= 1 && BAR > 2")).hasPossibleBoundedRange()); // Has LE and GT.
-        assertTrue(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO <= 1 && BAR >= 2")).hasPossibleBoundedRange()); // Has LE and GE.
+    public void testHasBoundedRange() {
+        assertTrue(NodeTypeCountVisitor.countNodes(new BoundedRange(ParserTreeConstants.JJTREFERENCE)).hasBoundedRange()); // Bounded range present.
+        assertFalse(NodeTypeCountVisitor.countNodes(new ASTEQNode(ParserTreeConstants.JJTEQNODE)).hasBoundedRange()); // No bounded range present.
     }
     
     @Test
