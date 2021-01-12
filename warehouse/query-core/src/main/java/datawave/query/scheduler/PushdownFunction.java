@@ -9,6 +9,7 @@ import java.util.Set;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.planner.QueryPlan;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -16,10 +17,7 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
-import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.Credentials;
 import org.apache.accumulo.core.clientImpl.Tables;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.TableId;
@@ -175,9 +173,13 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         while (true) {
             
             binnedRanges.clear();
-            AuthenticationToken authToken = new PasswordToken(config.getAccumuloPassword());
-            Credentials creds = new Credentials(config.getClient().whoami(), authToken);
-            List<Range> failures = tl.binRanges((ClientContext) client, ranges, binnedRanges);
+            ClientContext ctx;
+            if (client instanceof WrappedAccumuloClient) {
+                ctx = (ClientContext) ((WrappedAccumuloClient) client).getReal();
+            } else {
+                ctx = (ClientContext) client;
+            }
+            List<Range> failures = tl.binRanges(ctx, ranges, binnedRanges);
             
             if (!failures.isEmpty()) {
                 // tried to only do table state checks when failures.size()
@@ -188,9 +190,9 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                 // deleted table were not cleared... so
                 // need to always do the check when failures occur
                 if (failures.size() >= lastFailureSize)
-                    if (!Tables.exists((ClientContext) client, tableId))
+                    if (!Tables.exists(ctx, tableId))
                         throw new TableDeletedException(tableId.canonical());
-                    else if (Tables.getTableState((ClientContext) client, tableId) == TableState.OFFLINE)
+                    else if (Tables.getTableState(ctx, tableId) == TableState.OFFLINE)
                         throw new TableOfflineException("Table " + tableId + " is offline");
                 
                 lastFailureSize = failures.size();
