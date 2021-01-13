@@ -39,6 +39,8 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
@@ -79,8 +81,8 @@ import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
-import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
+import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -115,7 +117,10 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
@@ -1245,23 +1250,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
-                // Count each type of node in the query.
-                NodeTypeCountVisitor nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
-                
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
                                 config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
-                if (nodeCount.hasRegexNodes()) {
+                
+                // Check if there is any regex to expand.
+                if (NodeTypeCountVisitor.countNodes(queryTree).hasAny(ASTNRNode.class, ASTERNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
                     queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding regex:");
                     }
                     innerStopwatch.stop();
-                } else {
-                    log.debug("No regex to expand");
                 }
                 
-                if (nodeCount.hasBoundedRange()) {
+                // Check if there are any bounded ranges to expand.
+                if (NodeTypeCountVisitor.countNodes(queryTree).isPresent(BoundedRange.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
                     queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
                                     config.isExpandValues());
@@ -1269,8 +1272,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         logQuery(queryTree, "Query after expanding ranges:");
                     }
                     innerStopwatch.stop();
-                } else {
-                    log.debug("No ranges to expand");
                 }
                 
                 if (reduceQuery) {
@@ -1295,15 +1296,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 innerStopwatch.stop();
                 
-                if (nodeCount.hasFunctionNodes()) {
+                // Check if there are functions that can be pushed into exceeded value ranges.
+                if (NodeTypeCountVisitor.countNodes(queryTree).hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand pushing functions into exceeded value ranges");
                     queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
                     }
                     innerStopwatch.stop();
-                } else {
-                    log.debug("No functions to push into exceeded value ranges");
                 }
                 
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Remove delayed predicates");
@@ -1315,7 +1315,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     debugOutput = new ArrayList<>(32);
                 }
                 
-                // Unless config.isExandAllTerms is true, this may set some of
+                // Unless config.isExpandAllTerms is true, this may set some of
                 // the terms to be delayed.
                 if (!ExecutableDeterminationVisitor
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
@@ -1331,17 +1331,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // predicates based on cost...
                     config.setExpandAllTerms(true);
                     
-                    // Recount the nodes of each type.
-                    nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
-                    
-                    if (nodeCount.hasRegexNodes()) {
+                    // Check if there is any regex to expand.
+                    if (NodeTypeCountVisitor.countNodes(queryTree).hasAny(ASTNRNode.class, ASTERNode.class)) {
                         queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding regex again:");
                         }
                     }
                     
-                    if (nodeCount.hasBoundedRange()) {
+                    // Check if there are any bounded ranges to expand.
+                    if (NodeTypeCountVisitor.countNodes(queryTree).isPresent(BoundedRange.class)) {
                         queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
                                         config.isExpandValues());
                         if (log.isDebugEnabled()) {
@@ -1359,7 +1358,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         }
                     }
                     
-                    if (nodeCount.hasFunctionNodes()) {
+                    if (NodeTypeCountVisitor.countNodes(queryTree).hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
                         queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                         config.setExpandAllTerms(expandAllTerms);
                         if (log.isDebugEnabled()) {

@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
@@ -11,6 +12,7 @@ import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTArrayAccess;
+import org.apache.commons.jexl2.parser.ASTArrayLiteral;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
 import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
@@ -25,7 +27,6 @@ import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEmptyFunction;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTForeachStatement;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -35,6 +36,7 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTMapEntry;
+import org.apache.commons.jexl2.parser.ASTMapLiteral;
 import org.apache.commons.jexl2.parser.ASTMethodNode;
 import org.apache.commons.jexl2.parser.ASTModNode;
 import org.apache.commons.jexl2.parser.ASTMulNode;
@@ -55,106 +57,302 @@ import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class NodeTypeCountVisitorTest {
     
-    // Verify the correct internal count is incremented for each node type.
     @Test
-    public void testCountForEachType() throws ParseException {
-        SimpleNode node = new SimpleNode(ParserTreeConstants.JJTREFERENCE);
-        NodeTypeCountVisitor visitor = new NodeTypeCountVisitor();
-        node.jjtAccept(visitor, null);
-        assertEquals(1, visitor.getTotalSimpleNodes());
-        
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
-        assertEquals(1, NodeTypeCountVisitor.countNodes(script).getTotalASTJexlScriptNodes());
-        
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT)).getTotalASTJexlScriptNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTBlock(ParserTreeConstants.JJTBLOCK)).getTotalASTBlockNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTAmbiguous(ParserTreeConstants.JJTAMBIGUOUS)).getTotalASTAmbiguousNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTIfStatement(ParserTreeConstants.JJTIFSTATEMENT)).getTotalASTIfStatementNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTWhileStatement(ParserTreeConstants.JJTWHILESTATEMENT)).getTotalASTWhileStatementNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTForeachStatement(ParserTreeConstants.JJTFOREACHSTATEMENT)).getTotalASTForeachStatementNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTReturnStatement(ParserTreeConstants.JJTRETURNSTATEMENT)).getTotalASTReturnStatementNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT)).getTotalASTAssignmentNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTVar(ParserTreeConstants.JJTVAR)).getTotalASTVarNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTReference(ParserTreeConstants.JJTREFERENCE)).getTotalASTReferenceNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTTernaryNode(ParserTreeConstants.JJTTERNARYNODE)).getTotalASTTernaryNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTOrNode(ParserTreeConstants.JJTORNODE)).getTotalASTOrNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTAndNode(ParserTreeConstants.JJTANDNODE)).getTotalASTAndNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTBitwiseOrNode(ParserTreeConstants.JJTBITWISEORNODE)).getTotalASTBitwiseOrNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTBitwiseXorNode(ParserTreeConstants.JJTBITWISEXORNODE)).getTotalASTBitwiseXorNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTBitwiseAndNode(ParserTreeConstants.JJTBITWISEANDNODE)).getTotalASTBitwiseAndNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTEQNode(ParserTreeConstants.JJTEQNODE)).getTotalASTEQNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTNENode(ParserTreeConstants.JJTNENODE)).getTotalASTNENodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTLTNode(ParserTreeConstants.JJTLTNODE)).getTotalASTLTNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTGTNode(ParserTreeConstants.JJTGTNODE)).getTotalASTGTNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTLENode(ParserTreeConstants.JJTLENODE)).getTotalASTLENodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTGENode(ParserTreeConstants.JJTGENODE)).getTotalASTGENodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTERNode(ParserTreeConstants.JJTERNODE)).getTotalASTERNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTNRNode(ParserTreeConstants.JJTNRNODE)).getTotalASTNRNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTAdditiveNode(ParserTreeConstants.JJTADDITIVENODE)).getTotalASTAdditiveNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTAdditiveOperator(ParserTreeConstants.JJTADDITIVEOPERATOR)).getTotalASTAdditiveOperatorNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTMulNode(ParserTreeConstants.JJTMULNODE)).getTotalASTMulNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTDivNode(ParserTreeConstants.JJTDIVNODE)).getTotalASTDivNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTModNode(ParserTreeConstants.JJTMODNODE)).getTotalASTModNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTUnaryMinusNode(ParserTreeConstants.JJTUNARYMINUSNODE)).getTotalASTUnaryMinusNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTBitwiseComplNode(ParserTreeConstants.JJTBITWISECOMPLNODE)).getTotalASTBitwiseComplNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTNotNode(ParserTreeConstants.JJTNOTNODE)).getTotalASTNotNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER)).getTotalASTIdentifiersNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL)).getTotalASTNullLiteralNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTTrueNode(ParserTreeConstants.JJTTRUENODE)).getTotalASTTrueNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTFalseNode(ParserTreeConstants.JJTFALSENODE)).getTotalASTFalseNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL)).getTotalASTNumberLiteralNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL)).getTotalASTStringLiteralNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("[1, 2, 3]")).getTotalASTArrayLiteralNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("{'one':1, 'two':2, 'three':3}")).getTotalASTMapLiteralNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTMapEntry(ParserTreeConstants.JJTMAPENTRY)).getTotalASTMapEntryNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTEmptyFunction(ParserTreeConstants.JJTEMPTYFUNCTION)).getTotalASTEmptyFunctionNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTSizeFunction(ParserTreeConstants.JJTSIZEFUNCTION)).getTotalASTSizeFunctionNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE)).getTotalASTFunctionNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTMethodNode(ParserTreeConstants.JJTMETHODNODE)).getTotalASTMethodNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTSizeMethod(ParserTreeConstants.JJTSIZEMETHOD)).getTotalASTSizeMethodNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTConstructorNode(ParserTreeConstants.JJTCONSTRUCTORNODE)).getTotalASTConstructorNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTArrayAccess(ParserTreeConstants.JJTARRAYACCESS)).getTotalASTArrayAccessNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION))
-                        .getTotalASTReferenceExpressionNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTDelayedPredicate(ParserTreeConstants.JJTREFERENCE)).getTotalASTDelayedPredicateNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ASTEvaluationOnly(ParserTreeConstants.JJTREFERENCE)).getTotalASTEvaluationOnlyNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new BoundedRange(ParserTreeConstants.JJTREFERENCE)).getTotalBoundedRangeNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ExceededOrThresholdMarkerJexlNode(ParserTreeConstants.JJTREFERENCE))
-                        .getTotalExceededOrThresholdMarkerJexlNode());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ExceededTermThresholdMarkerJexlNode(ParserTreeConstants.JJTREFERENCE))
-                        .getTotalExceededTermThresholdMarkerJexlNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new ExceededValueThresholdMarkerJexlNode(ParserTreeConstants.JJTREFERENCE))
-                        .getTotalExceededValueThresholdMarkerJexlNodes());
-        assertEquals(1, NodeTypeCountVisitor.countNodes(new IndexHoleMarkerJexlNode(ParserTreeConstants.JJTREFERENCE)).getTotalIndexHoleMarkerJexlNodes());
+    public void testSimpleNode() {
+        NodeTypeCount count = (NodeTypeCount) new SimpleNode(ParserTreeConstants.JJTREFERENCE).jjtAccept(new NodeTypeCountVisitor(), null);
+        assertEquals(1, count.getTotal(SimpleNode.class));
     }
     
     @Test
-    public void testHasRegexNodes() throws ParseException {
-        assertFalse(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO == 'bar'")).hasRegexNodes()); // No regex present.
-        assertTrue(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO =~ '*value*'")).hasRegexNodes()); // ER regex present.
-        assertTrue(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO !~ '*value*'")).hasRegexNodes()); // NR regex present.
+    public void testASTJexlScript() {
+        assertEquals(1, count(new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT)).getTotal(ASTJexlScript.class));
     }
     
     @Test
-    public void testHasBoundedRange() {
-        assertTrue(NodeTypeCountVisitor.countNodes(new BoundedRange(ParserTreeConstants.JJTREFERENCE)).hasBoundedRange()); // Bounded range present.
-        assertFalse(NodeTypeCountVisitor.countNodes(new ASTEQNode(ParserTreeConstants.JJTEQNODE)).hasBoundedRange()); // No bounded range present.
+    public void testASTBlock() {
+        assertEquals(1, count(new ASTBlock(ParserTreeConstants.JJTBLOCK)).getTotal(ASTBlock.class));
     }
     
     @Test
-    public void testHasFunctionNodes() throws ParseException {
-        assertFalse(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("FOO == 'bar'")).hasFunctionNodes()); // No function present.
-        assertTrue(NodeTypeCountVisitor.countNodes(JexlASTHelper.parseJexlQuery("ns:expand(FOO == 'bar')")).hasFunctionNodes()); // Function present.
+    public void testASTAmbiguous() {
+        assertEquals(1, count(new ASTAmbiguous(ParserTreeConstants.JJTAMBIGUOUS)).getTotal(ASTAmbiguous.class));
+    }
+    
+    @Test
+    public void testASTIfStatement() {
+        assertEquals(1, count(new ASTIfStatement(ParserTreeConstants.JJTIFSTATEMENT)).getTotal(ASTIfStatement.class));
+    }
+    
+    @Test
+    public void testASTForeachStatement() {
+        assertEquals(1, count(new ASTWhileStatement(ParserTreeConstants.JJTWHILESTATEMENT)).getTotal(ASTWhileStatement.class));
+    }
+    
+    @Test
+    public void testASTReturnStatement() {
+        assertEquals(1, count(new ASTReturnStatement(ParserTreeConstants.JJTRETURNSTATEMENT)).getTotal(ASTReturnStatement.class));
+    }
+    
+    @Test
+    public void testASTAssignment() {
+        assertEquals(1, count(new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT)).getTotal(ASTAssignment.class));
+    }
+    
+    @Test
+    public void testASTVar() {
+        assertEquals(1, count(new ASTVar(ParserTreeConstants.JJTVAR)).getTotal(ASTVar.class));
+    }
+    
+    @Test
+    public void testASTReference() {
+        assertEquals(1, count(new ASTReference(ParserTreeConstants.JJTREFERENCE)).getTotal(ASTReference.class));
+    }
+    
+    @Test
+    public void testASTTernaryNode() {
+        assertEquals(1, count(new ASTTernaryNode(ParserTreeConstants.JJTTERNARYNODE)).getTotal(ASTTernaryNode.class));
+    }
+    
+    @Test
+    public void testASTOrNode() {
+        assertEquals(1, count(new ASTOrNode(ParserTreeConstants.JJTORNODE)).getTotal(ASTOrNode.class));
+    }
+    
+    @Test
+    public void testASTAndNode() {
+        assertEquals(1, count(new ASTAndNode(ParserTreeConstants.JJTANDNODE)).getTotal(ASTAndNode.class));
+    }
+    
+    @Test
+    public void testASTBitwiseOrNode() {
+        assertEquals(1, count(new ASTBitwiseOrNode(ParserTreeConstants.JJTBITWISEORNODE)).getTotal(ASTBitwiseOrNode.class));
+    }
+    
+    @Test
+    public void testASTBitwiseXorNodee() {
+        assertEquals(1, count(new ASTBitwiseXorNode(ParserTreeConstants.JJTBITWISEXORNODE)).getTotal(ASTBitwiseXorNode.class));
+    }
+    
+    @Test
+    public void testASTBitwiseAndNode() {
+        assertEquals(1, count(new ASTBitwiseAndNode(ParserTreeConstants.JJTBITWISEANDNODE)).getTotal(ASTBitwiseAndNode.class));
+    }
+    
+    @Test
+    public void testASTEQNode() {
+        assertEquals(1, count(new ASTEQNode(ParserTreeConstants.JJTEQNODE)).getTotal(ASTEQNode.class));
+    }
+    
+    @Test
+    public void testASTNENode() {
+        assertEquals(1, count(new ASTNENode(ParserTreeConstants.JJTNENODE)).getTotal(ASTNENode.class));
+    }
+    
+    @Test
+    public void testASTLTNode() {
+        assertEquals(1, count(new ASTLTNode(ParserTreeConstants.JJTLTNODE)).getTotal(ASTLTNode.class));
+    }
+    
+    @Test
+    public void testASTGTNode() {
+        assertEquals(1, count(new ASTGTNode(ParserTreeConstants.JJTGTNODE)).getTotal(ASTGTNode.class));
+    }
+    
+    @Test
+    public void testASTLENode() {
+        assertEquals(1, count(new ASTLENode(ParserTreeConstants.JJTLENODE)).getTotal(ASTLENode.class));
+    }
+    
+    @Test
+    public void testASTGENode() {
+        assertEquals(1, count(new ASTGENode(ParserTreeConstants.JJTGENODE)).getTotal(ASTGENode.class));
+    }
+    
+    @Test
+    public void testASTERNode() {
+        assertEquals(1, count(new ASTERNode(ParserTreeConstants.JJTERNODE)).getTotal(ASTERNode.class));
+    }
+    
+    @Test
+    public void testASTNRNode() {
+        assertEquals(1, count(new ASTNRNode(ParserTreeConstants.JJTNRNODE)).getTotal(ASTNRNode.class));
+    }
+    
+    @Test
+    public void testASTAdditiveNode() {
+        assertEquals(1, count(new ASTAdditiveNode(ParserTreeConstants.JJTADDITIVENODE)).getTotal(ASTAdditiveNode.class));
+    }
+    
+    @Test
+    public void testASTAdditiveOperator() {
+        assertEquals(1, count(new ASTAdditiveOperator(ParserTreeConstants.JJTADDITIVEOPERATOR)).getTotal(ASTAdditiveOperator.class));
+    }
+    
+    @Test
+    public void testASTMulNode() {
+        assertEquals(1, count(new ASTMulNode(ParserTreeConstants.JJTMULNODE)).getTotal(ASTMulNode.class));
+    }
+    
+    @Test
+    public void testASTDivNode() {
+        assertEquals(1, count(new ASTDivNode(ParserTreeConstants.JJTDIVNODE)).getTotal(ASTDivNode.class));
+    }
+    
+    @Test
+    public void testASTModNode() {
+        assertEquals(1, count(new ASTModNode(ParserTreeConstants.JJTMODNODE)).getTotal(ASTModNode.class));
+    }
+    
+    @Test
+    public void testASTUnaryMinusNode() {
+        assertEquals(1, count(new ASTUnaryMinusNode(ParserTreeConstants.JJTUNARYMINUSNODE)).getTotal(ASTUnaryMinusNode.class));
+    }
+    
+    @Test
+    public void testASTBitwiseComplNode() {
+        assertEquals(1, count(new ASTBitwiseComplNode(ParserTreeConstants.JJTBITWISECOMPLNODE)).getTotal(ASTBitwiseComplNode.class));
+    }
+    
+    @Test
+    public void testASTNotNode() {
+        assertEquals(1, count(new ASTNotNode(ParserTreeConstants.JJTNOTNODE)).getTotal(ASTNotNode.class));
+    }
+    
+    @Test
+    public void testASTIdentifier() {
+        assertEquals(1, count(new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER)).getTotal(ASTIdentifier.class));
+    }
+    
+    @Test
+    public void testASTNullLiteral() {
+        assertEquals(1, count(new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL)).getTotal(ASTNullLiteral.class));
+    }
+    
+    @Test
+    public void testASTTrueNode() {
+        assertEquals(1, count(new ASTTrueNode(ParserTreeConstants.JJTTRUENODE)).getTotal(ASTTrueNode.class));
+    }
+    
+    @Test
+    public void testASTFalseNode() {
+        assertEquals(1, count(new ASTFalseNode(ParserTreeConstants.JJTFALSENODE)).getTotal(ASTFalseNode.class));
+    }
+    
+    @Test
+    public void testASTNumberLiteral() {
+        assertEquals(1, count(new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL)).getTotal(ASTNumberLiteral.class));
+    }
+    
+    @Test
+    public void testASTStringLiteral() {
+        assertEquals(1, count(new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL)).getTotal(ASTStringLiteral.class));
+    }
+    
+    @Test
+    public void testASTArrayLiteral() throws ParseException {
+        assertEquals(1, count("[1, 2, 3]").getTotal(ASTArrayLiteral.class));
+    }
+    
+    @Test
+    public void testASTMapLiteral() throws ParseException {
+        assertEquals(1, count("{'one':1, 'two':2, 'three':3}").getTotal(ASTMapLiteral.class));
+    }
+    
+    @Test
+    public void testASTMapEntry() {
+        assertEquals(1, count(new ASTMapEntry(ParserTreeConstants.JJTMAPENTRY)).getTotal(ASTMapEntry.class));
+    }
+    
+    @Test
+    public void testASTEmptyFunction() {
+        assertEquals(1, count(new ASTEmptyFunction(ParserTreeConstants.JJTEMPTYFUNCTION)).getTotal(ASTEmptyFunction.class));
+    }
+    
+    @Test
+    public void testASTSizeFunction() {
+        assertEquals(1, count(new ASTSizeFunction(ParserTreeConstants.JJTSIZEFUNCTION)).getTotal(ASTSizeFunction.class));
+    }
+    
+    @Test
+    public void testASTFunctionNode() {
+        assertEquals(1, count(new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE)).getTotal(ASTFunctionNode.class));
+    }
+    
+    @Test
+    public void testASTMethodNode() {
+        assertEquals(1, count(new ASTMethodNode(ParserTreeConstants.JJTMETHODNODE)).getTotal(ASTMethodNode.class));
+    }
+    
+    @Test
+    public void testASTSizeMethod() {
+        assertEquals(1, count(new ASTSizeMethod(ParserTreeConstants.JJTSIZEMETHOD)).getTotal(ASTSizeMethod.class));
+    }
+    
+    @Test
+    public void testASTConstructorNode() {
+        assertEquals(1, count(new ASTConstructorNode(ParserTreeConstants.JJTCONSTRUCTORNODE)).getTotal(ASTConstructorNode.class));
+    }
+    
+    @Test
+    public void testASTArrayAccess() {
+        assertEquals(1, count(new ASTArrayAccess(ParserTreeConstants.JJTARRAYACCESS)).getTotal(ASTArrayAccess.class));
+    }
+    
+    @Test
+    public void testASTReferenceExpression() {
+        assertEquals(1, count(new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION)).getTotal(ASTReferenceExpression.class));
+    }
+    
+    @Test
+    public void testASTDelayedPredicate() throws ParseException {
+        assertEquals(1, count("((ASTDelayedPredicate = true) && (FOO == 1 && FOO == 3))").getTotal(ASTDelayedPredicate.class));
+    }
+    
+    @Test
+    public void testASTEvaluationOnly() throws ParseException {
+        assertEquals(1, count("((ASTEvaluationOnly = true) && (FOO == 1 && FOO == 3))").getTotal(ASTEvaluationOnly.class));
+    }
+    
+    @Test
+    public void testBoundedRange() throws ParseException {
+        assertEquals(1, count("((BoundedRange = true) && (FOO > 1 && FOO < 5))").getTotal(BoundedRange.class));
+    }
+    
+    @Test
+    public void testExceededOrThresholdMarkerJexlNode() throws ParseException {
+        assertEquals(1, count("((ExceededOrThresholdMarkerJexlNode = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededOrThresholdMarkerJexlNode.class));
+    }
+    
+    @Test
+    public void testExceededTermThresholdMarkerJexlNode() throws ParseException {
+        assertEquals(1, count("((ExceededTermThresholdMarkerJexlNode = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededTermThresholdMarkerJexlNode.class));
+    }
+    
+    @Test
+    public void testExceededValueThresholdMarkerJexlNode() throws ParseException {
+        assertEquals(1, count("((ExceededValueThresholdMarkerJexlNode = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededValueThresholdMarkerJexlNode.class));
+    }
+    
+    @Test
+    public void testIndexHoleMarkerJexlNode() throws ParseException {
+        assertEquals(1, count("((IndexHoleMarkerJexlNode = true) && (FOO == 1 && FOO == 3))").getTotal(IndexHoleMarkerJexlNode.class));
+    }
+    
+    private NodeTypeCount count(String query) throws ParseException {
+        return count(JexlASTHelper.parseJexlQuery(query));
+    }
+    
+    private NodeTypeCount count(JexlNode script) {
+        return NodeTypeCountVisitor.countNodes(script);
     }
 }
