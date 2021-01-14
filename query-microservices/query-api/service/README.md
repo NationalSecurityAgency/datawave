@@ -11,8 +11,8 @@ query capabilities.
 
 ### User API
 
-| Method | Operation | Description            | Path Param | Request Body   | Response Body |
-|:-------|:----------|:-----------------------|:-----------|:---------------|
+| Method        | Operation                            | Description                                                                       | Path Param         | Request Body         | Response Body                            |
+|:--------------|:-------------------------------------|:----------------------------------------------------------------------------------|:-------------------|:---------------------|:-----------------------------------------|
 | `GET`         | /listQueryLogic                      | List QueryLogic types that are currently available                                | N/A                | N/A                  | [QueryLogicResponse]                     |
 | `POST`        | /{queryLogic}/define                 | Define a query using the specified query logic and params                         | [QueryLogicName]   | [QueryParameters]    | [GenericResponse]                        |
 | `POST`        | /{queryLogic}/create                 | Create a query using the specified query logic and params                         | [QueryLogicName]   | [QueryParameters]    | [GenericResponse]                        |
@@ -22,10 +22,10 @@ query capabilities.
 | `PUT`         | /{id}/reset                          | Resets the specified query                                                        | [QueryId]          | N/A                  | [VoidResponse]                           |
 | `POST`        | /{queryLogic}/createAndNext          | Create a query using the specified query logic and params, and get the first page | [QueryLogicName]   | [QueryParameters]    | [BaseQueryResponse]                      |
 | `POST`        | /{queryLogic}/async/createAndNext    | Create a query using the specified query logic and params, and get the first page | [QueryLogicName]   | [QueryParameters]    | [BaseQueryResponse]                      |
-| `GET`         | /lookupContentUUID/{uuidType}/{uuid} | Returns content associated with the given UUID                                    | [UUIDType], [UUID] | N/A                  | [BaseQueryResponse] || [StreamingOutput] |
-| `POST`        | /lookupContentUUID                   | Returns content associated with the given batch of UUIDs                          | N/A                | [QueryParameters]    | [BaseQueryResponse] || [StreamingOutput] |
-| `GET`         | /lookupUUID/{uuidType}/{uuid}        | Returns event associated with the given batch of UUID                             | [UUIDType], [UUID] | N/A                  | [BaseQueryResponse] || [StreamingOutput] |
-| `POST`        | /lookupUUID                          | Returns event(s) associated with the given batch of UUIDs                         | N/A                | [QueryParameters]    | [BaseQueryResponse] || [StreamingOutput] |
+| `GET`         | /lookupContentUUID/{uuidType}/{uuid} | Returns content associated with the given UUID                                    | [UUIDType], [UUID] | N/A                  | [BaseQueryResponse] or [StreamingOutput] |
+| `POST`        | /lookupContentUUID                   | Returns content associated with the given batch of UUIDs                          | N/A                | [QueryParameters]    | [BaseQueryResponse] or [StreamingOutput] |
+| `GET`         | /lookupUUID/{uuidType}/{uuid}        | Returns event associated with the given batch of UUID                             | [UUIDType], [UUID] | N/A                  | [BaseQueryResponse] or [StreamingOutput] |
+| `POST`        | /lookupUUID                          | Returns event(s) associated with the given batch of UUIDs                         | N/A                | [QueryParameters]    | [BaseQueryResponse] or [StreamingOutput] |
 | `GET`         | /{id}/plan                           | Returns the plan for the specified query                                          | [QueryId]          | N/A                  | [GenericResponse]                        |
 | `GET`         | /{id}/predictions                    | Returns the predictions for the specified query                                   | [QueryId]          | N/A                  | [GenericResponse]                        |
 | `GET`         | /{id}/async/next                     | Returns the next page of results for the specified query                          | [QueryId]          | N/A                  | [BaseQueryResponse]                      |
