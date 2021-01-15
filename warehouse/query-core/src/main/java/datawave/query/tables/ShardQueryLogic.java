@@ -1864,6 +1864,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setIndexOnlyFilterFunctionsEnabled(enabled);
     }
     
+    public void setDefaultMaxNumIndexLookupThreads(int defaultMaxNumIndexLookupThreads) {
+        getConfig().setDefaultMaxNumIndexLookupThreads(defaultMaxNumIndexLookupThreads);
+    }
+    
+    public int getDefaultMaxNumIndexLookupThreads() {
+        return getConfig().getDefaultMaxNumIndexLookupThreads();
+    }
+    
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> optionalParams = new TreeSet<>();

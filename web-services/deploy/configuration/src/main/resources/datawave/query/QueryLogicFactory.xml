@@ -235,6 +235,8 @@
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="evaluationOnlyFields" value="${evaluation.only.fields}" />
+        <!-- The default maximum number of threads to use when performing index lookups. -->
+        <property name="defaultMaxNumIndexLookupThreads" value="10" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">

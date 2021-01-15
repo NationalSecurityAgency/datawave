@@ -193,6 +193,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getCacheModel());
         Assert.assertTrue(config.isTrackSizes());
         Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
+        Assert.assertEquals(10, config.getDefaultMaxNumIndexLookupThreads());
     }
     
     /**
@@ -437,7 +438,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 176;
+        int expectedObjectCount = 177;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
