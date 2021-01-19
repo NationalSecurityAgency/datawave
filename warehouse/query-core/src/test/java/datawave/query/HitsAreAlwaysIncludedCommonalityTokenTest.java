@@ -8,6 +8,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.function.JexlEvaluation;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
@@ -173,7 +174,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             log.trace(entry.getKey() + " => " + d);
             docs.add(d);
             
-            Attribute hitAttribute = d.get("HIT_TERM");
+            Attribute hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
             
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;

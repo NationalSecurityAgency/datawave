@@ -11,6 +11,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.cardinality.CardinalityRecord;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
@@ -90,7 +91,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * 'URL_URL.208.2.0:someplace.com' In case there are ever any more fields to be treated this way, a transformValuePrefixFields collection will be used to
      * contain fields that should be transformed this way.
      */
-    private static final String HIT_TERM = "HIT_TERM";
+    private static final String HIT_TERM = JexlEvaluation.HIT_TERM_FIELD;
     
     private final Collection<String> transformValuePrefixFields = Sets.newHashSet(HIT_TERM);
     
