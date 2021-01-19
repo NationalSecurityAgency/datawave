@@ -7,7 +7,7 @@
         <version>1.8</version>
         <relativePath />
     </parent>
-    <artifactId>query-api-service-parent</artifactId>
+    <artifactId>query-service-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>

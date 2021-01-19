@@ -1,13 +1,13 @@
-# Query API Service
+# Query Service
 
 [![Apache License][li]][ll] ![Build Status](https://github.com/NationalSecurityAgency/datawave/workflows/Tests/badge.svg)
 
 The query api service is a DATAWAVE microservice that provides
 query capabilities.
 
-### Query API Context
+### Query Context
 
-*https://host:port/query-api/v1/*
+*https://host:port/query/v1/*
 
 ### User API
 
