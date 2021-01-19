@@ -8,6 +8,12 @@ import org.apache.commons.jexl2.parser.JexlNodes;
  */
 public class IndexHoleMarkerJexlNode extends QueryPropertyMarker {
     
+    private static final String LABEL = "IOM";
+    
+    public static String label() {
+        return LABEL;
+    }
+    
     public IndexHoleMarkerJexlNode(int id) {
         super(id);
     }
@@ -18,14 +24,19 @@ public class IndexHoleMarkerJexlNode extends QueryPropertyMarker {
     
     /**
      * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:IndexHoleMarkerJexlNode True node (the one specified
+     * Assignment Reference Identifier:IOM True node (the one specified
      *
-     * Hence the resulting expression will be ((IndexHoleMarkerJexlNode = True) AND {specified node})
+     * Hence the resulting expression will be ((IOM = True) AND {specified node})
      *
      * @param node
      */
     public IndexHoleMarkerJexlNode(JexlNode node) {
         super(node);
+    }
+    
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
     
     /**

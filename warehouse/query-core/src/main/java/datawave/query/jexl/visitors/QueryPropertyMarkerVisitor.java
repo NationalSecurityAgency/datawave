@@ -2,14 +2,13 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.nodes.BoundedRange;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -19,13 +18,19 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -36,15 +41,17 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  */
 public class QueryPropertyMarkerVisitor extends BaseVisitor {
     
+    private static final Map<String,String> LABEL_MAP = new HashMap<>();
+    
     // @formatter:off
     private static final Set<String> DEFAULT_TYPES = ImmutableSet.of(
-                    IndexHoleMarkerJexlNode.class.getSimpleName(),
-                    ASTDelayedPredicate.class.getSimpleName(),
-                    ASTEvaluationOnly.class.getSimpleName(),
-                    ExceededOrThresholdMarkerJexlNode.class.getSimpleName(),
-                    ExceededTermThresholdMarkerJexlNode.class.getSimpleName(),
-                    ExceededValueThresholdMarkerJexlNode.class.getSimpleName(),
-                    BoundedRange.class.getSimpleName());
+                    IndexHoleMarkerJexlNode.label(),
+                    ASTDelayedPredicate.label(),
+                    ASTEvaluationOnly.label(),
+                    ExceededOrThresholdMarkerJexlNode.label(),
+                    ExceededTermThresholdMarkerJexlNode.label(),
+                    ExceededValueThresholdMarkerJexlNode.label(),
+                    BoundedRange.label());
     // @formatter:on
     
     // @formatter:off
@@ -57,42 +64,47 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                     ExceededValueThresholdMarkerJexlNode.class);
     // @formatter:on
     
-    protected Set<String> typeIdentifiers = new HashSet<>();
-    protected List<JexlNode> sourceNodes;
+    private final Set<String> whitelist;
+    private final Set<String> blacklist;
+    private List<JexlNode> sourceNodes;
     
-    private boolean identifierFound = false;
-    
-    protected Set<String> rejectedIdentifiers = new HashSet<>();
-    private boolean rejectedIdentifiersFound = false;
-    
-    private QueryPropertyMarkerVisitor() {}
+    private boolean whitelistedTypeFound = false;
+    private boolean blacklistedTypeFound = false;
     
     public static boolean instanceOfAny(JexlNode node) {
         return instanceOfAny(node, null);
     }
     
     public static boolean instanceOfAny(JexlNode node, List<JexlNode> sourceNodes) {
-        return instanceOf(node, (Set) null, sourceNodes);
+        return instanceOf(node, null, null, sourceNodes);
     }
     
-    public static boolean instanceOf(JexlNode node, Set<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
-        return instanceOf(node, types != null ? Lists.newArrayList(types) : null, sourceNodes);
-    }
-    
-    public static boolean instanceOfAnyExcept(JexlNode node, List<Class<? extends QueryPropertyMarker>> except) {
-        return instanceOfAnyExcept(node, except, null);
-    }
-    
-    public static boolean instanceOfAnyExcept(JexlNode node, List<Class<? extends QueryPropertyMarker>> except, List<JexlNode> sourceNodes) {
-        return instanceOf(node, null, except, sourceNodes);
+    public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type) {
+        return instanceOf(node, type, null);
     }
     
     public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, List<JexlNode> sourceNodes) {
-        return instanceOf(node, type == null ? null : Collections.singletonList(type), null, sourceNodes);
+        return instanceOf(node, type == null ? null : Collections.singleton(type), null, sourceNodes);
     }
     
-    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
+    public static boolean instanceOf(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> types) {
+        return instanceOf(node, types, null);
+    }
+    
+    public static boolean instanceOf(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> types, List<JexlNode> sourceNodes) {
         return instanceOf(node, types, null, sourceNodes);
+    }
+    
+    public static boolean instanceOfAnyExcept(JexlNode node, Class<? extends QueryPropertyMarker> blacklistedType) {
+        return instanceOfAnyExcept(node, blacklistedType == null ? null : Collections.singleton(blacklistedType));
+    }
+    
+    public static boolean instanceOfAnyExcept(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> blacklist) {
+        return instanceOfAnyExcept(node, blacklist, null);
+    }
+    
+    public static boolean instanceOfAnyExcept(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> blacklist, List<JexlNode> sourceNodes) {
+        return instanceOf(node, null, blacklist, sourceNodes);
     }
     
     /**
@@ -103,7 +115,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
      * @return true if the node is a delayed predicate, or false otherwise
      */
     public static boolean isDelayedPredicate(JexlNode node) {
-        return instanceOf(node, DELAYED_PREDICATE_TYPES, null);
+        return instanceOf(node, DELAYED_PREDICATE_TYPES);
     }
     
     /**
@@ -111,35 +123,59 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
      *
      * @param node
      * @param types
-     * @param except
+     * @param blacklistedTypes
      * @param sourceNodes
      * @return true if at least one of the types QueryPropertyMarkers exists and there are no QueryPropertyMarkers from except, false otherwise
      */
-    public static boolean instanceOf(JexlNode node, List<Class<? extends QueryPropertyMarker>> types, List<Class<? extends QueryPropertyMarker>> except,
-                    List<JexlNode> sourceNodes) {
-        QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor();
-        
+    public static boolean instanceOf(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> types,
+                    Collection<Class<? extends QueryPropertyMarker>> blacklistedTypes, List<JexlNode> sourceNodes) {
         if (node != null) {
-            if (types != null)
-                types.forEach(type -> visitor.typeIdentifiers.add(type.getSimpleName()));
-            else
-                visitor.typeIdentifiers.addAll(DEFAULT_TYPES);
+            Set<String> whitelist = types == null ? DEFAULT_TYPES : types.stream().map(QueryPropertyMarkerVisitor::getLabel).collect(Collectors.toSet());
+            Set<String> blacklist = blacklistedTypes == null ? Collections.emptySet() : blacklistedTypes.stream().map(QueryPropertyMarkerVisitor::getLabel)
+                            .collect(Collectors.toSet());
             
-            if (except != null) {
-                except.forEach(e -> visitor.rejectedIdentifiers.add(e.getSimpleName()));
-            }
+            QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor(whitelist, blacklist);
             
             node.jjtAccept(visitor, null);
             
-            if (visitor.identifierFound) {
+            if (visitor.whitelistedTypeFound) {
                 if (sourceNodes != null)
                     for (JexlNode sourceNode : visitor.sourceNodes)
                         sourceNodes.add(trimReferenceNodes(sourceNode));
-                return !visitor.rejectedIdentifiersFound;
+                return !visitor.blacklistedTypeFound;
             }
         }
-        
         return false;
+    }
+    
+    /**
+     * Return the label associated with the particular {@link QueryPropertyMarker} type.
+     * 
+     * @param type
+     *            the type to return the label for
+     * @return the label to return
+     * @throws java.lang.IllegalStateException
+     *             if the provided type does not override {@link QueryPropertyMarker#getLabel()}, or if the overridden method returns a null or empty label.
+     */
+    private static String getLabel(Class<? extends QueryPropertyMarker> type) {
+        String label = LABEL_MAP.get(type.getName());
+        // If the label is null, this is the first time this type has been encountered in the visitor. Add the type's label.
+        if (label == null) {
+            try {
+                // Get the label via reflection by calling the static label() method.
+                Method method = type.getDeclaredMethod("label");
+                label = (String) method.invoke(null);
+                // Verify the label returned is not null or empty. This will ensure no new query marker types are created without properly overriding the base
+                // QueryPropertyMarker.label() method.
+                if (label == null || label.isEmpty()) {
+                    throw new IllegalStateException("label() method returns null/empty label for type " + type.getName());
+                }
+                LABEL_MAP.put(type.getName(), label);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                throw new IllegalStateException("Unable to invoke label() method for " + type.getName(), e);
+            }
+        }
+        return label;
     }
     
     private static JexlNode trimReferenceNodes(JexlNode node) {
@@ -148,18 +184,24 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         return node;
     }
     
+    private QueryPropertyMarkerVisitor(Set<String> whitelist, Set<String> blacklist) {
+        this.whitelist = whitelist;
+        this.blacklist = blacklist;
+    }
+    
     @Override
     public Object visit(ASTAssignment node, Object data) {
         if (data != null) {
-            Set foundIdentifiers = (Set) data;
+            @SuppressWarnings("unchecked")
+            Set<String> foundIdentifiers = (Set<String>) data;
             
             String identifier = JexlASTHelper.getIdentifier(node);
             if (identifier != null) {
                 foundIdentifiers.add(identifier);
             }
             
-            if (rejectedIdentifiers.contains(identifier)) {
-                rejectedIdentifiersFound = true;
+            if (blacklist.contains(identifier)) {
+                blacklistedTypeFound = true;
             }
         }
         return null;
@@ -200,15 +242,15 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             for (JexlNode child : siblings) {
                 
                 // don't look for identifiers if we already found what we were looking for
-                if (!identifierFound) {
+                if (!whitelistedTypeFound) {
                     Set<String> foundIdentifiers = new HashSet<>();
                     child.jjtAccept(this, foundIdentifiers);
                     
-                    foundIdentifiers.retainAll(typeIdentifiers);
+                    foundIdentifiers.retainAll(whitelist);
                     
                     // if we found our identifier, proceed to the next child node
                     if (!foundIdentifiers.isEmpty()) {
-                        identifierFound = true;
+                        whitelistedTypeFound = true;
                         continue;
                     }
                 }
@@ -216,7 +258,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                 siblingNodes.add(child);
             }
             
-            if (identifierFound)
+            if (whitelistedTypeFound)
                 sourceNodes = siblingNodes;
         }
         return null;

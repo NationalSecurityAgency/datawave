@@ -84,7 +84,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -878,9 +877,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         Iterator<ASTIdentifier> iter = identifiers.iterator();
         while (iter.hasNext()) {
             ASTIdentifier id = iter.next();
-            if (ExceededValueThresholdMarkerJexlNode.class.getSimpleName().equals(id.image)
-                            || ExceededTermThresholdMarkerJexlNode.class.getSimpleName().equals(id.image)
-                            || ExceededOrThresholdMarkerJexlNode.class.getSimpleName().equals(id.image)) {
+            if (ExceededValueThresholdMarkerJexlNode.label().equals(id.image) || ExceededTermThresholdMarkerJexlNode.label().equals(id.image)
+                            || ExceededOrThresholdMarkerJexlNode.label().equals(id.image)) {
                 iter.remove();
             }
         }

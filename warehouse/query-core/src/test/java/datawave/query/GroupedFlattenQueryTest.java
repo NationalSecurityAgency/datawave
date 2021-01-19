@@ -132,7 +132,7 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
         String start = "1850";
         String end = "1860";
         String city = "'AuStiN'";
-        String query = GroupedField.CITY.name() + EQ_OP + city + AND_OP + "((BoundedRange = true) && (" + GroupedField.FOUNDED.name() + GT_OP + start + AND_OP
+        String query = GroupedField.CITY.name() + EQ_OP + city + AND_OP + "((BR = true) && (" + GroupedField.FOUNDED.name() + GT_OP + start + AND_OP
                         + GroupedField.FOUNDED.name() + LT_OP + end + "))";
         runTest(query, query);
     }

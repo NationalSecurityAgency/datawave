@@ -132,15 +132,15 @@ public class QueryModelVisitorTest {
     
     @Test
     public void multipleMappingsWithBounds() throws ParseException {
-        String original = "((BoundedRange = true) && (FOO > 'a' && FOO < 'z'))";
-        String expected = "((BoundedRange = true) && (BAR1 > 'a' && BAR1 < 'z')) || ((BoundedRange = true) && (BAR2 > 'a' && BAR2 < 'z'))";
+        String original = "((BR = true) && (FOO > 'a' && FOO < 'z'))";
+        String expected = "((BR = true) && (BAR1 > 'a' && BAR1 < 'z')) || ((BR = true) && (BAR2 > 'a' && BAR2 < 'z'))";
         assertResult(original, expected);
     }
     
     @Test
     public void multipleMappingsWithBoundsIdentity() throws ParseException {
-        String original = "((BoundedRange = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z'))";
-        String expected = "(((BoundedRange = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z')) || ((BoundedRange = true) && (CYCLIC_FIELD_ > 'a' && CYCLIC_FIELD_ < 'z')))";
+        String original = "((BR = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z'))";
+        String expected = "(((BR = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z')) || ((BR = true) && (CYCLIC_FIELD_ > 'a' && CYCLIC_FIELD_ < 'z')))";
         assertResult(original, expected);
     }
     

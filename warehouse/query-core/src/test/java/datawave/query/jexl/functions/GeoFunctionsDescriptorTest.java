@@ -1,6 +1,5 @@
 package datawave.query.jexl.functions;
 
-import datawave.data.normalizer.GeoNormalizer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -18,7 +17,7 @@ public class GeoFunctionsDescriptorTest {
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
         JexlNode queryNode = argDesc.getIndexQuery(null, null, null, null);
         Assert.assertEquals(
-                        "(((BoundedRange = true) && (GEO_FIELD >= '40.0_170.0' && GEO_FIELD <= '50.0_180')) && ((BoundedRange = true) && (GEO_FIELD >= '40.0_-180' && GEO_FIELD <= '50.0_-170.0')))",
+                        "(((BR = true) && (GEO_FIELD >= '40.0_170.0' && GEO_FIELD <= '50.0_180')) && ((BR = true) && (GEO_FIELD >= '40.0_-180' && GEO_FIELD <= '50.0_-170.0')))",
                         JexlStringBuildingVisitor.buildQuery(queryNode));
     }
     
@@ -29,7 +28,7 @@ public class GeoFunctionsDescriptorTest {
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
         JexlNode queryNode = argDesc.getIndexQuery(null, null, null, null);
         Assert.assertEquals(
-                        "((((BoundedRange = true) && (LON_FIELD >= '170.0' && LON_FIELD <= '180')) && ((BoundedRange = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))) && (((BoundedRange = true) && (LON_FIELD >= '-180' && LON_FIELD <= '-170.0')) && ((BoundedRange = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))))",
+                        "((((BR = true) && (LON_FIELD >= '170.0' && LON_FIELD <= '180')) && ((BR = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))) && (((BR = true) && (LON_FIELD >= '-180' && LON_FIELD <= '-170.0')) && ((BR = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))))",
                         JexlStringBuildingVisitor.buildQuery(queryNode));
     }
     

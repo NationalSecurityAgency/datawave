@@ -293,7 +293,7 @@ public class IndexInfoTest {
         IndexInfo merged = right.union(left);
         assertEquals(0, merged.uids().size());
         assertEquals("Count should be 53 but is " + merged.count(), 53, merged.count());
-        String expectedQuery = "((ASTDelayedPredicate = true) && (FIELD == 'VALUE'))";
+        String expectedQuery = "((DP = true) && (FIELD == 'VALUE'))";
         String actualQuery = JexlStringBuildingVisitor.buildQuery(merged.getNode());
         assertEquals(expectedQuery, actualQuery);
     }

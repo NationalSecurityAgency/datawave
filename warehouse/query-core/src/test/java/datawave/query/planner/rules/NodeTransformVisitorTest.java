@@ -89,9 +89,9 @@ public class NodeTransformVisitorTest {
                 "BLA =~ '.*<bla>'";
         String expected = "BLA == 'x' && " +
                 "BLA =~ 'ab.*' && " +
-                "((ASTEvaluationOnly = true) && (BLA =~ 'a.*')) && " +
+                "((EO = true) && (BLA =~ 'a.*')) && " +
                 "BLA =~ 'okregex' && " +
-                "((ASTEvaluationOnly = true) && (BLA =~ '.*<bla>'))";
+                "((EO = true) && (BLA =~ '.*<bla>'))";
         // @formatter:on
         testPushdown(query, expected);
     }
@@ -106,9 +106,9 @@ public class NodeTransformVisitorTest {
                 "_ANYFIELD_ =~ '.*<bla>'";
         String expected = "BLA == 'x' && " +
                 "BLA =~ 'ab.*' && " +
-                "((ASTEvaluationOnly = true) && (BLA =~ 'a.*')) && " +
+                "((EO = true) && (BLA =~ 'a.*')) && " +
                 "BLA =~ 'okregex' && " +
-                "((ASTEvaluationOnly = true) && (_ANYFIELD_ =~ '.*<bla>'))";
+                "((EO = true) && (_ANYFIELD_ =~ '.*<bla>'))";
         // @formatter:on
         try {
             testPushdown(query, expected);
@@ -140,14 +140,14 @@ public class NodeTransformVisitorTest {
         // @formatter:off
         String query = "BLA == 'x' && " +
                 "BLA =~ 'ab.*' && (" +
-                "(ExceededValueThresholdMarkerJexlNode = true) && (BLA =~ 'a.*')) && " +
-                "((ExceededValueThresholdMarkerJexlNode = true) && (BLA =~ 'okregex')) && " +
+                "(EVTM = true) && (BLA =~ 'a.*')) && " +
+                "((EVTM = true) && (BLA =~ 'okregex')) && " +
                 "BLA =~ '.*<bla>'";
         String expected = "BLA == 'x' && " +
                 "BLA =~ 'ab.*' && " +
-                "((ExceededValueThresholdMarkerJexlNode = true) && (BLA =~ 'a.*')) && " +
-                "((ExceededValueThresholdMarkerJexlNode = true) && (BLA =~ 'okregex')) && " +
-                "((ASTEvaluationOnly = true) && (BLA =~ '.*<bla>'))";
+                "((EVTM = true) && (BLA =~ 'a.*')) && " +
+                "((EVTM = true) && (BLA =~ 'okregex')) && " +
+                "((EO = true) && (BLA =~ '.*<bla>'))";
         // @formatter:on
         testPushdown(query, expected);
     }
@@ -160,9 +160,9 @@ public class NodeTransformVisitorTest {
                 "BLA =~ 'a.*') && " +
                 "((BLA =~ 'okregex'))) && " +
                 "BLA =~ '.*<bla>')";
-        String expected = "(((ASTEvaluationOnly = true) && (BLA =~ '.*<bla>')) && " +
+        String expected = "(((EO = true) && (BLA =~ '.*<bla>')) && " +
                 "(((BLA =~ 'okregex')) && " +
-                "(((ASTEvaluationOnly = true) && (BLA =~ 'a.*')) && " +
+                "(((EO = true) && (BLA =~ 'a.*')) && " +
                 "BLA =~ 'ab.*' && " +
                 "BLA == 'x')))";
         // @formatter:on
@@ -177,9 +177,9 @@ public class NodeTransformVisitorTest {
                 "BLA =~ 'a.*' && " +
                 "BLA =~ 'okregex' && " +
                 "BLA =~ '.*<bla>'";
-        String expected = "((ASTEvaluationOnly = true) && (BLA =~ '.*<bla>')) && " +
+        String expected = "((EO = true) && (BLA =~ '.*<bla>')) && " +
                 "BLA =~ 'okregex' && " +
-                "((ASTEvaluationOnly = true) && (BLA =~ 'a.*')) && " +
+                "((EO = true) && (BLA =~ 'a.*')) && " +
                 "BLA =~ 'ab.*' && " +
                 "BLA == 'x'";
         // @formatter:on
@@ -199,9 +199,9 @@ public class NodeTransformVisitorTest {
                 "BLA =~ 'a.*' && " +
                 "BLA =~ 'ab.*' && " +
                 "BLA == 'x'";
-        String expected2 = "((ASTEvaluationOnly = true) && (BLA =~ '.*<bla>')) && " +
+        String expected2 = "((EO = true) && (BLA =~ '.*<bla>')) && " +
                 "BLA =~ 'okregex' && " +
-                "((ASTEvaluationOnly = true) && (BLA =~ 'a.*')) && " +
+                "((EO = true) && (BLA =~ 'a.*')) && " +
                 "BLA =~ 'ab.*' && " +
                 "BLA == 'x'";
         // @formatter:on

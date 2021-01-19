@@ -45,8 +45,7 @@ public class TestLuceneToJexlParser {
         Assert.assertEquals("FIELD == 'SELECTOR' && filter:matchesAtLeastCountOf(7, FIELD, 'v1', 'v2')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SOMETHING AND #EVALUATION_ONLY('NUM_FIELD: [0 TO 50}')");
-        Assert.assertEquals("FIELD == 'SOMETHING' && ((ASTEvaluationOnly = true) && ((BoundedRange = true) && (NUM_FIELD >= '0' && NUM_FIELD < '50')))",
-                        node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SOMETHING' && ((EO = true) && ((BR = true) && (NUM_FIELD >= '0' && NUM_FIELD < '50')))", node.getOriginalQuery());
     }
     
     @Test
@@ -67,7 +66,7 @@ public class TestLuceneToJexlParser {
         Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB\\\\.{3,1}'))", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SOMETHING AND #EVALUATION_ONLY('#INCLUDE(F1, GB\\.{3\\,1})')");
-        Assert.assertEquals("FIELD == 'SOMETHING' && ((ASTEvaluationOnly = true) && (filter:includeRegex(F1, 'GB\\\\.{3,1}')))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SOMETHING' && ((EO = true) && (filter:includeRegex(F1, 'GB\\\\.{3,1}')))", node.getOriginalQuery());
     }
     
     public static LuceneToJexlQueryParser getQueryParser() {

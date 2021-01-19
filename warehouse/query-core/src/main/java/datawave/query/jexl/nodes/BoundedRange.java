@@ -9,6 +9,12 @@ import org.apache.commons.jexl2.parser.JexlNodes;
  */
 public class BoundedRange extends QueryPropertyMarker {
     
+    private static final String LABEL = "BR";
+    
+    public static String label() {
+        return LABEL;
+    }
+    
     public BoundedRange(int id) {
         super(id);
     }
@@ -19,14 +25,19 @@ public class BoundedRange extends QueryPropertyMarker {
     
     /**
      * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:BoundedRange True node (the one specified
+     * Assignment Reference Identifier:BR True node (the one specified
      *
-     * Hence the resulting expression will be ((BoundedRange = True) AND (range)))
+     * Hence the resulting expression will be ((BR = True) AND (range)))
      *
      * @param node
      */
     public BoundedRange(JexlNode node) {
         super(node);
+    }
+    
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
     
     /**

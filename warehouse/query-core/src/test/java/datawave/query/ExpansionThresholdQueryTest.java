@@ -1,17 +1,15 @@
 package datawave.query;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
-import org.apache.log4j.Level;
+import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,7 +60,7 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         String state = "'.*ss.*'";
         String country = "'un.*'";
         String countryQuery = CityField.COUNTRY.name() + RE_OP + country + AND_OP + CityField.COUNTRY.name() + RE_OP + country.toUpperCase();
-        String query = "((ExceededValueThresholdMarkerJexlNode = true)" + AND_OP + CityField.STATE.name() + RE_OP + state + ") && " + countryQuery;
+        String query = "((EVTM = true)" + AND_OP + CityField.STATE.name() + RE_OP + state + ") && " + countryQuery;
         String expect = "(" + CityField.STATE.name() + RE_OP + state + ")" + AND_OP + countryQuery;
         
         this.logic.setMaxValueExpansionThreshold(6);
@@ -97,7 +95,7 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         String anyRegex = RE_OP + "'.*a'";
         String country = RE_OP + "'un.*'";
         String countryQuery = CityField.COUNTRY.name() + country + AND_OP + CityField.COUNTRY.name() + country.toUpperCase();
-        String marker = "(ExceededValueThresholdMarkerJexlNode = true)" + AND_OP;
+        String marker = "(EVTM = true)" + AND_OP;
         String query = "(" + marker + Constants.ANY_FIELD + anyRegex + ") && " + countryQuery;
         String anyCity = this.dataManager.convertAnyField(anyRegex);
         String anyCountry = this.dataManager.convertAnyField(country);

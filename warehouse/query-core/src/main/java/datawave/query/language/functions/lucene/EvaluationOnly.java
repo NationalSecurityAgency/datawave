@@ -33,7 +33,7 @@ public class EvaluationOnly extends LuceneQueryFunction {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("((ASTEvaluationOnly = true) && ");
+        sb.append("((EO = true) && ");
         List<String> params = getParameterList();
         if (params.size() != 1) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));

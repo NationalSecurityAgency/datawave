@@ -38,17 +38,6 @@ import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -62,8 +51,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -75,16 +62,28 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedMap;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
 import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 
 @RunWith(Arquillian.class)
 public class CompositeIndexTest {
@@ -330,12 +329,12 @@ public class CompositeIndexTest {
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
-                "(((BoundedRange = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
-                "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
+        String query = "(((BR = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
+                "((BR = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
+                "((BR = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
+                "(((BR = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
+                "((BR = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
+                "((BR = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, false);
@@ -380,12 +379,12 @@ public class CompositeIndexTest {
     @Test
     public void compositeWithIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
-                "(((BoundedRange = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
-                "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
+        String query = "(((BR = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
+                "((BR = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
+                "((BR = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
+                "(((BR = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
+                "((BR = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
+                "((BR = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, true);

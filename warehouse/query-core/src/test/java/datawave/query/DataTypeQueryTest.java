@@ -159,7 +159,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         for (String num : TEST_NUMS) {
             String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
-            query = "((BoundedRange = true) && (" + query + "))";
+            query = "((BR = true) && (" + query + "))";
             runTest(query, expect, qOptions);
         }
     }
@@ -176,7 +176,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         for (String num : TEST_NUMS) {
             String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
-            query = "((BoundedRange = true) && (" + query + "))";
+            query = "((BR = true) && (" + query + "))";
             runTest(query, expect, qOptions);
         }
     }

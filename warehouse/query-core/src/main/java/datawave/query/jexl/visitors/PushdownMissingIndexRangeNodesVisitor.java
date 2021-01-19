@@ -2,12 +2,12 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.config.IndexHole;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -20,7 +20,6 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -105,7 +104,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, BoundedRange.class)) {
             return super.visit(node, data);
         }
         return node;
@@ -114,7 +113,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, BoundedRange.class)) {
             return super.visit(node, data);
         }
         return node;
