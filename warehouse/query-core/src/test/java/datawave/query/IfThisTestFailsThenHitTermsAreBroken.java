@@ -17,6 +17,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -215,7 +216,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             String uuid = uuidAttr.getType().getDelegate().toString();
             Assert.assertTrue("Received unexpected UUID: " + uuid, expected.contains(uuid));
             
-            Attribute<?> hitTermAttribute = d.get("HIT_TERM");
+            Attribute<?> hitTermAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
             if (hitTermAttribute instanceof Attributes) {
                 
                 Attributes hitTerms = (Attributes) hitTermAttribute;
