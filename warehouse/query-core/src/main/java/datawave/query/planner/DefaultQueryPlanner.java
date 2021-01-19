@@ -27,6 +27,7 @@ import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
@@ -128,6 +129,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -978,9 +980,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // Fields in the data dictionary is always uppercase. Convert the unique fields to uppercase
             // so the comparisons are case insensitive
             List<String> fields = config.getUniqueFields().stream().map(field -> field.toUpperCase()).collect(Collectors.toList());
-            if (!allFields.containsAll(fields)) {
+            // for the unique fields we need to also look for any model aliases (forward or reverse) and fields generated post evaluation (e.g. HIT_TERM)
+            // this is because unique fields operate on the fields as returned to the user. We essentially leave all variants of the fields
+            // in the unique field list to ensure we catch everything
+            Set<String> uniqueFields = new HashSet<>(allFields);
+            if (queryModel != null) {
+                uniqueFields.addAll(queryModel.getForwardQueryMapping().keySet());
+                uniqueFields.addAll(queryModel.getReverseQueryMapping().values());
+            }
+            uniqueFields.add(JexlEvaluation.HIT_TERM_FIELD);
+            if (!uniqueFields.containsAll(fields)) {
                 Set<String> missingFields = Sets.newHashSet(config.getUniqueFields());
-                missingFields.removeAll(allFields);
+                missingFields.removeAll(uniqueFields);
                 nonexistentFields.addAll(missingFields);
             }
             
