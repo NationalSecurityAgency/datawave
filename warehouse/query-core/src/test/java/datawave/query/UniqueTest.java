@@ -20,6 +20,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -309,4 +310,33 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
     }
     
+    @Test
+    public void testUniquenessWithHitTermField() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(HIT_TERM)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testUniquenessWithModelAliases() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(BOTH_NULL)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
 }
