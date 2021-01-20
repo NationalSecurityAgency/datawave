@@ -219,7 +219,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     }
     
     private Map<String,String> getHitTermMap(Document document) {
-        Attribute<?> attr = document.get("HIT_TERM");
+        Attribute<?> attr = document.get(JexlEvaluation.HIT_TERM_FIELD);
         Map<String,String> attrMap = new HashMap<>();
         if (attr instanceof Attributes) {
             Attributes attrs = (Attributes) attr;
