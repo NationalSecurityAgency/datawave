@@ -11,6 +11,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>query-api</module>
+        <module>query-storage</module>
     </modules>
     <repositories>
         <repository>
