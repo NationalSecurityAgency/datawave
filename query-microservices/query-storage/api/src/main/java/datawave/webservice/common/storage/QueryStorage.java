@@ -1,26 +1,57 @@
 package datawave.webservice.common.storage;
 
+import datawave.webservice.query.Query;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * This is the interface to the query storage service
+ */
 public interface QueryStorage {
-    
     /**
-     * update a query state
-     *
-     * @param queryState
-     *            The query state
-     * @return uuid for the query (generated if not already in the queryState)
-     * @throws Exception
-     *             if there is any problem storing
+     * Store a new query. This will automatically create an initial CREATE query task.
+     * 
+     * @param queryType
+     *            The query type for this query
+     * @param query
+     *            The query to be executed
+     * @return The assigned query id
      */
-    String update(QueryState queryState) throws Exception;
+    UUID storeQuery(QueryType queryType, Query query);
     
     /**
-     * Get a query state using the provided priority policy
+     * Add a set of query tasks to be performed for a query
+     * 
+     * @param tasks
+     *            A list of query tasks to perform
+     */
+    void addQueryTasks(List<QueryTask> tasks);
+    
+    /**
+     * Get a query task for the specified queue
      *
-     * @param queryPriorityPolicy
+     * @param queryType
+     *            The type of query for which to get a query task
      * @return a query state or null if none to be found
      * @throws java.lang.Exception
      *             if there is any problem retrieving a query
      */
-    QueryState getQuery(QueryPriorityPolicy queryPriorityPolicy);
+    QueryTask getQueryTask(QueryType queryType);
     
+    /**
+     * Checkpoint a task in progress
+     * 
+     * @param task
+     *            A query task checkpoint
+     */
+    void checkpointTask(QueryTask task);
+    
+    /**
+     * Complete a query task
+     * 
+     * @param task
+     *            The completed query task
+     */
+    void completeTask(QueryTask task);
 }
