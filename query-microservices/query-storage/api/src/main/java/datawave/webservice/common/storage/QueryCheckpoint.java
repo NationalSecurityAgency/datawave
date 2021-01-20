@@ -1,5 +1,10 @@
 package datawave.webservice.common.storage;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.checkerframework.common.util.report.qual.ReportOverride;
+
+import java.io.Serializable;
 import java.util.Map;
 import java.util.UUID;
 
@@ -47,5 +52,27 @@ public class QueryCheckpoint {
      */
     public Map<String, Object> getProperties() {
         return properties;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof QueryCheckpoint) {
+            QueryCheckpoint other = (QueryCheckpoint)o;
+            return new EqualsBuilder()
+                    .append(getQueryId(), other.getQueryId())
+                    .append(getQueryType(), other.getQueryType())
+                    .append(getProperties(), other.getProperties())
+                    .isEquals();
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+                .append(getQueryId())
+                .append(getQueryType())
+                .append(getProperties())
+                .toHashCode();
     }
 }

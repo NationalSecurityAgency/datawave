@@ -1,5 +1,8 @@
 package datawave.webservice.common.storage;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 /**
  * A query task is an action to perform for a specified query.
  */
@@ -34,5 +37,25 @@ public class QueryTask {
      */
     public QueryCheckpoint getQueryState() {
         return queryCheckpoint;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof QueryTask) {
+            QueryTask other = (QueryTask)o;
+            return new EqualsBuilder()
+                    .append(getAction(), other.getAction())
+                    .append(getQueryState(), other.getQueryState())
+                    .isEquals();
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+                .append(getAction())
+                .append(getQueryState())
+                .toHashCode();
     }
 }
