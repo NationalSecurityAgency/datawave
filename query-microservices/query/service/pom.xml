@@ -7,9 +7,9 @@
         <version>2.0</version>
         <relativePath />
     </parent>
-    <artifactId>query-api-service</artifactId>
+    <artifactId>query-service</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <description>DATAWAVE Query API Microservice</description>
+    <description>DATAWAVE Query Microservice</description>
     <properties>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
         <version.microservice.starter>1.6.5</version.microservice.starter>
