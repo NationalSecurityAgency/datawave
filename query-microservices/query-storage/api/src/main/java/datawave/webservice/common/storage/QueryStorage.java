@@ -2,7 +2,10 @@ package datawave.webservice.common.storage;
 
 import datawave.webservice.query.Query;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -18,7 +21,14 @@ public interface QueryStorage {
      *            The query to be executed
      * @return The assigned query id
      */
-    UUID storeQuery(QueryType queryType, Query query);
+    default UUID storeQuery(QueryType queryType, Query query) {
+        UUID uuid = UUID.randomUUID();
+        Map<String, Object> props = new HashMap<>();
+        props.put(QueryCheckpoint.INITIAL_QUERY_PROPERTY, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(uuid, queryType, props);
+        this.addQueryTasks(Collections.singletonList(new QueryTask(QueryTask.QUERY_ACTION.CREATE, checkpoint)));
+        return uuid;
+    }
     
     /**
      * Add a set of query tasks to be performed for a query

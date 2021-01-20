@@ -1,6 +1,6 @@
 package datawave.webservice.common.storage;
 
-import java.util.Properties;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -14,9 +14,9 @@ public class QueryCheckpoint {
     
     private UUID queryId;
     private QueryType queryType;
-    private Properties properties;
+    private Map<String, Object> properties;
     
-    public QueryCheckpoint(UUID queryId, QueryType queryType, Properties properties) {
+    public QueryCheckpoint(UUID queryId, QueryType queryType, Map<String, Object> properties) {
         this.queryId = queryId;
         this.queryType = queryType;
         this.properties = properties;
@@ -45,7 +45,7 @@ public class QueryCheckpoint {
      * 
      * @return The properties
      */
-    public Properties getProperties() {
+    public Map<String, Object> getProperties() {
         return properties;
     }
 }
