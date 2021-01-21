@@ -161,7 +161,7 @@ function hadoopStatus() {
     test -z "${_jobHist}" && warn "JobHistoryServer is not running"
     test -z "${_dataNode}" && warn "DataNode is not running"
     test -z "${_nameNode}" && warn "NameNode is not running"
-    test -z "${_secNameNode}" && warn "SecondaryName is not running"
+    test -z "${_secNameNode}" && warn "SecondaryNameNode is not running"
     test -z "${_nodeMgr}" && warn "NodeManager is not running"
     test -z "${_resourceMgr}" && warn "ResourceManager is not running"
 }

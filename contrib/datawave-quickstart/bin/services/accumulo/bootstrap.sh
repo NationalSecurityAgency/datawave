@@ -156,6 +156,7 @@ function accumuloStatus() {
         echo "pids: ${DW_ACCUMULO_PID_LIST}"
 
         for _arg in $(jps -lm | grep -E "${_pids}"); do
+
             case ${_opt} in
                 pid)
                     _pid=${_arg}
@@ -173,11 +174,9 @@ function accumuloStatus() {
                     esac
 
                     test -z "${_none}" && info "${_arg} => ${_pid}"
-                    _opt=address
+                    _opt=pid
                     unset _none
                     _pid=;;
-                address) _opt=addrValue;;
-                addrValue) _opt=pid;;
             esac
         done
     }
