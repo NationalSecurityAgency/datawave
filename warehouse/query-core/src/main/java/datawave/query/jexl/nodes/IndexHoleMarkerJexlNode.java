@@ -55,26 +55,4 @@ public class IndexHoleMarkerJexlNode extends QueryPropertyMarker {
         
         return expr;
     }
-    
-    /**
-     * A routine to determine whether an and node is actually an index hold marker. The reason for this routine is that if the query is serialized and
-     * deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is an index hold marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return instanceOf(node, IndexHoleMarkerJexlNode.class);
-    }
-    
-    /**
-     * A routine to determine get the node which is the source of the index hold (i.e. the underlying eq, regex or range)
-     * 
-     * @param node
-     * @return the source node or null if not an an index hole Marker
-     */
-    public static JexlNode getIndexHoleSource(JexlNode node) {
-        return getQueryPropertySource(node, IndexHoleMarkerJexlNode.class);
-    }
-    
 }

@@ -7,6 +7,18 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.TreeMultimap;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.language.parser.jexl.JexlNodeSet;
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuples;
+import datawave.util.StringUtils;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,20 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.language.parser.jexl.JexlNodeSet;
-import datawave.query.util.Tuple2;
-import datawave.query.util.Tuples;
-import datawave.util.StringUtils;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
 
 /**
  * Intersect global index range streams. This will take a set of underlying streams and will intersect them: e.g. stream 1: 20130102_4/UID1,UID2,UID3
@@ -155,21 +153,6 @@ public class Intersection implements IndexStream {
         }
         if (log.isTraceEnabled())
             log.trace("Stream context " + this.context);
-    }
-    
-    protected boolean isDelayed(JexlNode testNode) {
-        if (ASTDelayedPredicate.instanceOf(testNode)) {
-            return true;
-            // We do not consider the index hole marker delayed as that is only a hole in the global index, not the field index
-            // } else if (IndexHoleMarkerJexlNode.instanceOf(testNode)) {
-            // return true;
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(testNode)) {
-            return true;
-        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(testNode)) {
-            return true;
-        } else {
-            return false;
-        }
     }
     
     @Override

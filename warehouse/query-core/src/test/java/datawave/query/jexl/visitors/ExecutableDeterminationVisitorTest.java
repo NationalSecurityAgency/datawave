@@ -65,6 +65,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         verifyAll();
     }
     
+    @Test
     public void testIndexOnlyEqNull() throws ParseException, TableNotFoundException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXONLYFIELD == null");
         
@@ -563,7 +564,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     }
     
     @Test
-    public void testEvaluationOnlyReferenceNode() throws TableNotFoundException, ParseException {
+    public void testEvaluationOnlyReferenceNode() throws ParseException {
         JexlNode query = ASTEvaluationOnly.create(JexlASTHelper.parseJexlQuery("FOO == FOO2"));
         Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper));
     }
