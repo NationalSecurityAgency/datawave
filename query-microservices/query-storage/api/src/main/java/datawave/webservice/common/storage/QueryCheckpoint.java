@@ -2,9 +2,7 @@ package datawave.webservice.common.storage;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.checkerframework.common.util.report.qual.ReportOverride;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,9 +15,9 @@ public class QueryCheckpoint {
     // This is the property name for the initial datawave.webservice.query.Query object
     public static final String INITIAL_QUERY_PROPERTY = "QUERY";
     
-    private UUID queryId;
-    private QueryType queryType;
-    private Map<String,Object> properties;
+    private final UUID queryId;
+    private final QueryType queryType;
+    private final Map<String,Object> properties;
     
     public QueryCheckpoint(UUID queryId, QueryType queryType, Map<String,Object> properties) {
         this.queryId = queryId;

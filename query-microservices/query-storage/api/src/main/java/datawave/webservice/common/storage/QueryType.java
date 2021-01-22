@@ -7,7 +7,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  * A query type. It is expected that this type will correspond to a class of query executor service.
  */
 public class QueryType {
-    private String type;
+    private final String type;
     
     public QueryType(String type) {
         this.type = type;

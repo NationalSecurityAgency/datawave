@@ -2,9 +2,7 @@ package datawave.webservice.common.storage;
 
 import datawave.webservice.query.Query;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -13,7 +11,7 @@ import java.util.UUID;
  */
 public interface QueryStorage {
     /**
-     * Store a new query. This will automatically create an initial CREATE query task.
+     * Store a new query. This will automatically create an initial CREATE query task and send a task notification message.
      * 
      * @param queryType
      *            The query type for this query
@@ -26,42 +24,45 @@ public interface QueryStorage {
         Map<String,Object> props = new HashMap<>();
         props.put(QueryCheckpoint.INITIAL_QUERY_PROPERTY, query);
         QueryCheckpoint checkpoint = new QueryCheckpoint(uuid, queryType, props);
-        this.addQueryTasks(Collections.singletonList(new QueryTask(QueryTask.QUERY_ACTION.CREATE, checkpoint)));
-        return uuid;
+        QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
+        return task.getTaskId();
     }
     
     /**
-     * Add a set of query tasks to be performed for a query
-     * 
-     * @param tasks
-     *            A list of query tasks to perform
+     * Store a new query task
+     *
+     * @param action
+     *            The action to perform
+     * @param checkpoint
+     *            The query state/checkpoint to perform the action on
+     * @return The new query task with a newly generated taskId
      */
-    void addQueryTasks(List<QueryTask> tasks);
+    QueryTask createTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint);
     
     /**
      * Get a query task for the specified queue
      *
-     * @param queryType
-     *            The type of query for which to get a query task
-     * @return a query state or null if none to be found
-     * @throws java.lang.Exception
-     *             if there is any problem retrieving a query
+     * @param msg
+     *            The query task notification
+     * @return the query task to perform
      */
-    QueryTask getQueryTask(QueryType queryType);
+    QueryTask getQueryTask(QueryTaskNotification msg);
     
     /**
      * Checkpoint a task in progress
-     * 
-     * @param task
-     *            A query task checkpoint
+     *
+     * @param taskId
+     *            A query task id
+     * @param checkpoint
+     *            The new checkpoint
      */
-    void checkpointTask(QueryTask task);
+    void checkpointTask(UUID taskId, QueryCheckpoint checkpoint);
     
     /**
      * Complete a query task
      * 
-     * @param task
-     *            The completed query task
+     * @param taskId
+     *            The completed query task id
      */
-    void completeTask(QueryTask task);
+    void completeTask(UUID taskId);
 }
