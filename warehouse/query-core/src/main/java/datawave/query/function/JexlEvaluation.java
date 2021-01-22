@@ -23,6 +23,7 @@ import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.transformer.ExcerptTransform;
@@ -53,7 +54,9 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     }
 
     public JexlEvaluation(String query, JexlArithmetic arithmetic) {
-        this.query = query;
+
+        this.query = OrderByCostVisitor.order(query);
+
         this.arithmetic = arithmetic;
 
         // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
