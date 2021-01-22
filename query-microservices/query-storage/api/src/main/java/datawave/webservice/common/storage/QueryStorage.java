@@ -23,7 +23,7 @@ public interface QueryStorage {
      */
     default UUID storeQuery(QueryType queryType, Query query) {
         UUID uuid = UUID.randomUUID();
-        Map<String, Object> props = new HashMap<>();
+        Map<String,Object> props = new HashMap<>();
         props.put(QueryCheckpoint.INITIAL_QUERY_PROPERTY, query);
         QueryCheckpoint checkpoint = new QueryCheckpoint(uuid, queryType, props);
         this.addQueryTasks(Collections.singletonList(new QueryTask(QueryTask.QUERY_ACTION.CREATE, checkpoint)));

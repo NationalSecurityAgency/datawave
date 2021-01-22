@@ -19,9 +19,9 @@ public class QueryCheckpoint {
     
     private UUID queryId;
     private QueryType queryType;
-    private Map<String, Object> properties;
+    private Map<String,Object> properties;
     
-    public QueryCheckpoint(UUID queryId, QueryType queryType, Map<String, Object> properties) {
+    public QueryCheckpoint(UUID queryId, QueryType queryType, Map<String,Object> properties) {
         this.queryId = queryId;
         this.queryType = queryType;
         this.properties = properties;
@@ -50,29 +50,22 @@ public class QueryCheckpoint {
      * 
      * @return The properties
      */
-    public Map<String, Object> getProperties() {
+    public Map<String,Object> getProperties() {
         return properties;
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryCheckpoint) {
-            QueryCheckpoint other = (QueryCheckpoint)o;
-            return new EqualsBuilder()
-                    .append(getQueryId(), other.getQueryId())
-                    .append(getQueryType(), other.getQueryType())
-                    .append(getProperties(), other.getProperties())
-                    .isEquals();
+            QueryCheckpoint other = (QueryCheckpoint) o;
+            return new EqualsBuilder().append(getQueryId(), other.getQueryId()).append(getQueryType(), other.getQueryType())
+                            .append(getProperties(), other.getProperties()).isEquals();
         }
         return false;
     }
-
+    
     @Override
     public int hashCode() {
-        return new HashCodeBuilder()
-                .append(getQueryId())
-                .append(getQueryType())
-                .append(getProperties())
-                .toHashCode();
+        return new HashCodeBuilder().append(getQueryId()).append(getQueryType()).append(getProperties()).toHashCode();
     }
 }

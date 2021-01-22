@@ -16,22 +16,18 @@ public class QueryType {
     public String getType() {
         return type;
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryType) {
-            QueryType other = (QueryType)o;
-            return new EqualsBuilder()
-                    .append(getType(), other.getType())
-                    .isEquals();
+            QueryType other = (QueryType) o;
+            return new EqualsBuilder().append(getType(), other.getType()).isEquals();
         }
         return false;
     }
-
+    
     @Override
     public int hashCode() {
-        return new HashCodeBuilder()
-                .append(getType())
-                .toHashCode();
+        return new HashCodeBuilder().append(getType()).toHashCode();
     }
 }

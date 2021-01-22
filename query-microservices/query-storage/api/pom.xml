@@ -15,6 +15,12 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>3.11.7</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
             <version>3.1.5-SNAPSHOT</version>
@@ -24,12 +30,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>3.11.7</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     <repositories>
