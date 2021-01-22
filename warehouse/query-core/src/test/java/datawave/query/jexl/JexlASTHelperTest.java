@@ -22,6 +22,9 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+
+import static junit.framework.TestCase.assertNull;
 
 public class JexlASTHelperTest {
     
@@ -120,6 +123,18 @@ public class JexlASTHelperTest {
             
             Assert.assertEquals(expectations.get(value), JexlASTHelper.isWithinOr(erNode));
         }
+    }
+    
+    @Test
+    public void testGetLiteralValueSafely() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
+        assertNull(JexlASTHelper.getLiteralValueSafely(query));
+    }
+    
+    @Test(expected = NoSuchElementException.class)
+    public void testGetLiteralValueThrowsNSEE() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
+        assertNull(JexlASTHelper.getLiteralValue(query));
     }
     
     @Test

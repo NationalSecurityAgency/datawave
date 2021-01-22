@@ -336,6 +336,21 @@ public class JexlASTHelper {
     }
     
     /**
+     * Fetch the literal off of the grandchild safely. Return null if there's an exception.
+     * 
+     * @param node
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    public static Object getLiteralValueSafely(JexlNode node) {
+        try {
+            return getLiteralValue(node);
+        } catch (NoSuchElementException nsee) {
+            return null;
+        }
+    }
+    
+    /**
      * Fetch the identifier off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no identifier This
      * identifier will be deconstructed
      * 
