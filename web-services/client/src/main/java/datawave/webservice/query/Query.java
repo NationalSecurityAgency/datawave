@@ -1,5 +1,10 @@
 package datawave.webservice.query;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -14,10 +19,13 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(QueryImpl.class)
-public abstract class Query {
+public abstract class Query implements Externalizable {
+    
+    private static final long serialVersionUID = -5980134700364340930L;
     
     public abstract void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp,
                     MultivaluedMap<String,String> optionalQueryParameters);
@@ -104,6 +112,8 @@ public abstract class Query {
     
     public abstract MultivaluedMap<String,String> toMap();
     
+    public abstract void readMap(MultivaluedMap<String,String> map) throws ParseException;
+    
     public abstract Map<String,String> getCardinalityFields();
     
     public abstract void populateMetric(BaseQueryMetric metric);
@@ -113,4 +123,38 @@ public abstract class Query {
     public abstract MultivaluedMap<String,String> getOptionalQueryParameters();
     
     public abstract void removeParameter(String key);
+    
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        MultivaluedMap<String,String> map = new MultivaluedMapImpl<>();
+        int numKeys = in.readInt();
+        for (int i = 0; i < numKeys; i++) {
+            String key = in.readUTF();
+            int numValues = in.readInt();
+            for (int j = 0; j < numValues; j++) {
+                String value = in.readUTF();
+                map.add(key, value);
+            }
+        }
+        try {
+            readMap(map);
+        } catch (ParseException pe) {
+            throw new IOException("Could not parse value", pe);
+        }
+    }
+    
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        MultivaluedMap<String,String> map = toMap();
+        Set<String> keys = map.keySet();
+        out.writeInt(keys.size());
+        for (String key : keys) {
+            out.writeUTF(key);
+            List<String> values = map.get(key);
+            out.writeInt(values.size());
+            for (String value : values) {
+                out.writeUTF(value);
+            }
+        }
+    }
 }

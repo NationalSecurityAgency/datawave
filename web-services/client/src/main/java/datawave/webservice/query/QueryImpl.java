@@ -48,6 +48,25 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     public static final String PARAMETER_SEPARATOR = ";";
     public static final String PARAMETER_NAME_VALUE_SEPARATOR = ":";
     
+    public static final String USER_DN = "userDN";
+    public static final String DN_LIST = "dnList";
+    public static final String COLUMN_VISIBILITY = "columnVisibility";
+    public static final String QUERY_LOGIC_NAME = QueryParameters.QUERY_LOGIC_NAME;
+    public static final String QUERY_NAME = QueryParameters.QUERY_NAME;
+    public static final String EXPIRATION_DATE = QueryParameters.QUERY_EXPIRATION;
+    public static final String UUID = "uuid";
+    public static final String PAGESIZE = QueryParameters.QUERY_PAGESIZE;
+    public static final String PAGE_TIMEOUT = QueryParameters.QUERY_PAGETIMEOUT;
+    public static final String MAX_RESULTS_OVERRIDE = QueryParameters.QUERY_MAX_RESULTS_OVERRIDE;
+    public static final String QUERY = QueryParameters.QUERY_STRING;
+    public static final String QUERY_AUTHORIZATIONS = QueryParameters.QUERY_AUTHORIZATIONS;
+    public static final String OWNER = "owner";
+    public static final String PARAMETERS = "parameters";
+    public static final String BEGIN_DATE = QueryParameters.QUERY_BEGIN;
+    public static final String END_DATE = QueryParameters.QUERY_END;
+    public static final String QUERY_USER_FIELD = "QUERY_USER";
+    public static final String QUERY_LOGIC_NAME_FIELD = "QUERY_LOGIC_NAME";
+    
     @XmlAccessorType(XmlAccessType.FIELD)
     public static final class Parameter implements Serializable, Message<Parameter> {
         
@@ -243,7 +262,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     public UUID getId() {
         if (null == id)
             return null;
-        return UUID.fromString(id);
+        return java.util.UUID.fromString(id);
     }
     
     public String getQueryName() {
@@ -402,7 +421,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setQueryLogicName(this.getQueryLogicName());
         query.setQueryName(newQueryName);
         query.setExpirationDate(this.getExpirationDate());
-        query.setId(UUID.randomUUID());
+        query.setId(java.util.UUID.randomUUID());
         query.setPagesize(this.getPagesize());
         query.setPageTimeout(this.getPageTimeout());
         if (query.isMaxResultsOverridden()) {
@@ -424,7 +443,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(this.getQueryLogicName()).append(this.getQueryName()).append(this.getExpirationDate())
-                        .append(UUID.randomUUID()).append(this.getPagesize()).append(this.getPageTimeout())
+                        .append(java.util.UUID.randomUUID()).append(this.getPagesize()).append(this.getPageTimeout())
                         .append(this.isMaxResultsOverridden() ? this.getMaxResultsOverride() : 0).append(this.getQuery()).append(this.getQueryAuthorizations())
                         .append(this.getUserDN()).append(this.getOwner()).append(this.getParameters()).append(this.getDnList())
                         .append(this.getColumnVisibility()).append(this.getBeginDate()).append(this.getEndDate()).toHashCode();
@@ -433,22 +452,22 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @Override
     public String toString() {
         ToStringBuilder tsb = new ToStringBuilder(this);
-        tsb.append("queryLogicName", this.getQueryLogicName());
-        tsb.append("queryName", this.getQueryName());
-        tsb.append("expirationDate", this.getExpirationDate());
-        tsb.append("uuid", this.getId());
-        tsb.append("pagesize", this.getPagesize());
-        tsb.append("pageTimeout", this.getPageTimeout());
-        tsb.append("maxResultsOverride", (this.isMaxResultsOverridden() ? this.getMaxResultsOverride() : "NA"));
-        tsb.append("query", this.getQuery());
-        tsb.append("queryAuthorizations", this.getQueryAuthorizations());
-        tsb.append("userDN", this.getUserDN());
-        tsb.append("owner", this.getOwner());
-        tsb.append("parameters", this.getParameters());
-        tsb.append("dnList", this.getDnList());
-        tsb.append("columnVisibility", this.getColumnVisibility());
-        tsb.append("beginDate", this.getBeginDate());
-        tsb.append("endDate", this.getEndDate());
+        tsb.append(QUERY_LOGIC_NAME, this.getQueryLogicName());
+        tsb.append(QUERY_NAME, this.getQueryName());
+        tsb.append(EXPIRATION_DATE, this.getExpirationDate());
+        tsb.append(UUID, this.getId());
+        tsb.append(PAGESIZE, this.getPagesize());
+        tsb.append(PAGE_TIMEOUT, this.getPageTimeout());
+        tsb.append(MAX_RESULTS_OVERRIDE, (this.isMaxResultsOverridden() ? this.getMaxResultsOverride() : "NA"));
+        tsb.append(QUERY, this.getQuery());
+        tsb.append(QUERY_AUTHORIZATIONS, this.getQueryAuthorizations());
+        tsb.append(USER_DN, this.getUserDN());
+        tsb.append(OWNER, this.getOwner());
+        tsb.append(PARAMETERS, this.getParameters());
+        tsb.append(DN_LIST, this.getDnList());
+        tsb.append(COLUMN_VISIBILITY, this.getColumnVisibility());
+        tsb.append(BEGIN_DATE, this.getBeginDate());
+        tsb.append(END_DATE, this.getEndDate());
         return tsb.toString();
     }
     
@@ -642,35 +661,35 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
-                    return "queryLogicName";
+                    return QueryParameters.QUERY_LOGIC_NAME;
                 case 2:
-                    return "id";
+                    return UUID;
                 case 3:
-                    return "queryName";
+                    return QueryParameters.QUERY_NAME;
                 case 4:
-                    return "userDN";
+                    return USER_DN;
                 case 5:
-                    return "query";
+                    return QUERY;
                 case 6:
-                    return "beginDate";
+                    return BEGIN_DATE;
                 case 7:
-                    return "endDate";
+                    return END_DATE;
                 case 8:
-                    return "queryAuthorizations";
+                    return QUERY_AUTHORIZATIONS;
                 case 9:
-                    return "expirationDate";
+                    return EXPIRATION_DATE;
                 case 10:
-                    return "pagesize";
+                    return PAGESIZE;
                 case 11:
-                    return "parameters";
+                    return PARAMETERS;
                 case 12:
-                    return "owner";
+                    return OWNER;
                 case 13:
-                    return "dnList";
+                    return DN_LIST;
                 case 14:
-                    return "columnVisibility";
+                    return COLUMN_VISIBILITY;
                 case 15:
-                    return "pageTimeout";
+                    return PAGE_TIMEOUT;
                 default:
                     return null;
             }
@@ -683,21 +702,21 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
-            fieldMap.put("queryLogicName", 1);
-            fieldMap.put("id", 2);
-            fieldMap.put("queryName", 3);
-            fieldMap.put("userDN", 4);
-            fieldMap.put("query", 5);
-            fieldMap.put("beginDate", 6);
-            fieldMap.put("endDate", 7);
-            fieldMap.put("queryAuthorizations", 8);
-            fieldMap.put("expirationDate", 9);
-            fieldMap.put("pagesize", 10);
-            fieldMap.put("parameters", 11);
-            fieldMap.put("owner", 12);
-            fieldMap.put("dnList", 13);
-            fieldMap.put("columnVisibility", 14);
-            fieldMap.put("pageTimeout", 15);
+            fieldMap.put(QUERY_LOGIC_NAME, 1);
+            fieldMap.put(UUID, 2);
+            fieldMap.put(QUERY_NAME, 3);
+            fieldMap.put(USER_DN, 4);
+            fieldMap.put(QUERY, 5);
+            fieldMap.put(BEGIN_DATE, 6);
+            fieldMap.put(END_DATE, 7);
+            fieldMap.put(QUERY_AUTHORIZATIONS, 8);
+            fieldMap.put(EXPIRATION_DATE, 9);
+            fieldMap.put(PAGESIZE, 10);
+            fieldMap.put(PARAMETERS, 11);
+            fieldMap.put(OWNER, 12);
+            fieldMap.put(DN_LIST, 13);
+            fieldMap.put(COLUMN_VISIBILITY, 14);
+            fieldMap.put(PAGE_TIMEOUT, 15);
         }
     };
     
@@ -712,7 +731,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     public void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp, MultivaluedMap<String,String> optionalQueryParameters) {
         this.dnList = dnList;
         this.expirationDate = qp.getExpirationDate();
-        this.id = UUID.randomUUID().toString();
+        this.id = java.util.UUID.randomUUID().toString();
         this.pagesize = qp.getPagesize();
         this.pageTimeout = qp.getPageTimeout();
         this.query = qp.getQuery();
@@ -800,13 +819,13 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             p.putSingle(QueryParameters.QUERY_STRING, this.query);
         }
         if (this.userDN != null) {
-            p.putSingle("userDN", this.userDN);
+            p.putSingle(USER_DN, this.userDN);
         }
         if (this.dnList != null) {
-            p.putSingle("dnList", this.dnList.toString());
+            p.put(DN_LIST, this.dnList);
         }
         if (this.columnVisibility != null) {
-            p.putSingle("columnVisibility", this.columnVisibility);
+            p.putSingle(COLUMN_VISIBILITY, this.columnVisibility);
         }
         if (this.beginDate != null) {
             try {
@@ -830,6 +849,51 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         return p;
     }
     
+    @Override
+    public void readMap(MultivaluedMap<String,String> map) throws ParseException {
+        for (String key : map.keySet()) {
+            switch (key) {
+                case QueryParameters.QUERY_AUTHORIZATIONS:
+                    setQueryAuthorizations(map.get(key).get(0));
+                    break;
+                case QueryParameters.QUERY_EXPIRATION:
+                    setExpirationDate(QueryParametersImpl.parseDate(map.get(key).get(0), null, null));
+                    break;
+                case QueryParameters.QUERY_NAME:
+                    setQueryName(map.get(key).get(0));
+                    break;
+                case QueryParameters.QUERY_LOGIC_NAME:
+                    setQueryLogicName(this.queryLogicName);
+                    break;
+                case QueryParameters.QUERY_PAGESIZE:
+                    setPagesize(Integer.parseInt(map.get(key).get(0)));
+                    break;
+                case QueryParameters.QUERY_STRING:
+                    setQuery(map.get(key).get(0));
+                    break;
+                case USER_DN:
+                    setUserDN(map.get(key).get(0));
+                    setOwner(getOwner(getUserDN()));
+                    break;
+                case DN_LIST:
+                    setDnList(map.get(key));
+                    break;
+                case COLUMN_VISIBILITY:
+                    setColumnVisibility(map.get(key).get(0));
+                    break;
+                case QueryParameters.QUERY_BEGIN:
+                    setBeginDate(QueryParametersImpl.parseStartDate(map.get(key).get(0)));
+                    break;
+                case QueryParameters.QUERY_END:
+                    setEndDate(QueryParametersImpl.parseEndDate(map.get(key).get(0)));
+                    break;
+                default:
+                    addParameter(key, map.get(key).get(0));
+                    break;
+            }
+        }
+    }
+    
     public void populateMetric(BaseQueryMetric metric) {
         QueryMetric qm = (QueryMetric) metric;
         qm.setQueryType(this.getClass());
@@ -848,8 +912,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @Override
     public Map<String,String> getCardinalityFields() {
         Map<String,String> cardinalityFields = new HashMap<String,String>();
-        cardinalityFields.put("QUERY_USER", getOwner());
-        cardinalityFields.put("QUERY_LOGIC_NAME", getQueryLogicName());
+        cardinalityFields.put(QUERY_USER_FIELD, getOwner());
+        cardinalityFields.put(QUERY_LOGIC_NAME_FIELD, getQueryLogicName());
         return cardinalityFields;
     }
     
