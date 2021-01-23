@@ -193,7 +193,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getCacheModel());
         Assert.assertTrue(config.isTrackSizes());
         Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
-        Assert.assertEquals(10, config.getDefaultMaxNumIndexLookupThreads());
+        Assert.assertEquals(10, config.getMinIndexLookupThreads());
     }
     
     /**
