@@ -29,7 +29,7 @@ public class QueryController {
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
     @RequestMapping(path = "{logicName}/define", method = {RequestMethod.POST})
     public String define() {
-        return null;
+        return "";
     }
     
 }

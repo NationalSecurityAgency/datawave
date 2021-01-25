@@ -1,7 +1,7 @@
 spring:
 
   application:
-    name: query-api-test
+    name: query
 
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
@@ -19,7 +19,7 @@ hazelcast.client.enabled: false
 server:
   port: 0
   non-secure-port: 0
-  servlet.context-path: /query-api
+  servlet.context-path: /query
   ssl:
     client-auth: NEED
     trust-store: classpath:ssl/rootCA.p12
