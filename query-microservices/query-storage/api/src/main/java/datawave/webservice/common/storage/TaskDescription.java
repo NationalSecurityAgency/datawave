@@ -3,6 +3,8 @@ package datawave.webservice.common.storage;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Collections;
@@ -40,5 +42,25 @@ public class TaskDescription {
     @JsonIgnore
     public Map<String,String> getParameters() {
         return parameters;
+    }
+    
+    @Override
+    public String toString() {
+        return getAction() + " for " + getTaskId();
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof TaskDescription) {
+            TaskDescription other = (TaskDescription) o;
+            return new EqualsBuilder().append(getTaskId(), other.getTaskId()).append(getAction(), other.getAction())
+                            .append(getParameters(), other.getParameters()).isEquals();
+        }
+        return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder().append(getTaskId()).append(getAction()).append(getParameters()).toHashCode();
     }
 }

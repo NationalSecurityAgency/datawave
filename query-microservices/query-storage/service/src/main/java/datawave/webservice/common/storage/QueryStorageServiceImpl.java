@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
-public class QueryStorageImpl implements QueryStorage {
+public class QueryStorageServiceImpl implements QueryStorageService {
     
     @Autowired
     private QueryStorageCache cache;

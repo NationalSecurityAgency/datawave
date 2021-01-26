@@ -22,6 +22,11 @@ public class QueryType implements Serializable {
     }
     
     @Override
+    public String toString() {
+        return type;
+    }
+    
+    @Override
     public boolean equals(Object o) {
         if (o instanceof QueryType) {
             QueryType other = (QueryType) o;

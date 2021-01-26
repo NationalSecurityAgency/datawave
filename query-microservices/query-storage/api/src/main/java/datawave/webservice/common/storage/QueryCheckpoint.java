@@ -4,6 +4,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,32 +19,25 @@ public class QueryCheckpoint implements Serializable {
     // This is the property name for the initial datawave.webservice.query.Query object
     public static final String INITIAL_QUERY_PROPERTY = "QUERY";
     
-    private final UUID queryId;
-    private final QueryType queryType;
+    private final QueryKey queryKey;
     private final Map<String,Object> properties;
     
     public QueryCheckpoint(UUID queryId, QueryType queryType, Map<String,Object> properties) {
-        this.queryId = queryId;
-        this.queryType = queryType;
-        this.properties = properties;
+        this(new QueryKey(queryType, queryId), properties);
+    }
+    
+    public QueryCheckpoint(QueryKey queryKey, Map<String,Object> properties) {
+        this.queryKey = queryKey;
+        this.properties = Collections.unmodifiableMap(new HashMap<>(properties));
     }
     
     /**
-     * Get the query id
-     * 
-     * @return A UUID representation of the query id
+     * Get the query key
+     *
+     * @return the query key
      */
-    public UUID getQueryId() {
-        return queryId;
-    }
-    
-    /**
-     * Get the query type
-     * 
-     * @return the query type
-     */
-    public QueryType getQueryType() {
-        return queryType;
+    public QueryKey getQueryKey() {
+        return queryKey;
     }
     
     /**
@@ -55,17 +50,21 @@ public class QueryCheckpoint implements Serializable {
     }
     
     @Override
+    public String toString() {
+        return getQueryKey() + ": " + getProperties();
+    }
+    
+    @Override
     public boolean equals(Object o) {
         if (o instanceof QueryCheckpoint) {
             QueryCheckpoint other = (QueryCheckpoint) o;
-            return new EqualsBuilder().append(getQueryId(), other.getQueryId()).append(getQueryType(), other.getQueryType())
-                            .append(getProperties(), other.getProperties()).isEquals();
+            return new EqualsBuilder().append(getQueryKey(), other.getQueryKey()).append(getProperties(), other.getProperties()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getQueryId()).append(getQueryType()).append(getProperties()).toHashCode();
+        return new HashCodeBuilder().append(getQueryKey()).append(getProperties()).toHashCode();
     }
 }

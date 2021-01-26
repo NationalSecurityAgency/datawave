@@ -63,7 +63,12 @@ public class QueryTask implements Serializable {
      * @return a query task notification
      */
     public QueryTaskNotification getNotification() {
-        return new QueryTaskNotification(getQueryCheckpoint().getQueryId(), getQueryCheckpoint().getQueryType(), getTaskId());
+        return new QueryTaskNotification(getTaskId(), getQueryCheckpoint().getQueryKey());
+    }
+    
+    @Override
+    public String toString() {
+        return getTaskId() + ":" + getAction() + " on " + getQueryCheckpoint();
     }
     
     @Override
@@ -79,5 +84,27 @@ public class QueryTask implements Serializable {
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(getTaskId()).toHashCode();
+    }
+    
+    /**
+     * Get the key used to store this query task uniquely in a cache
+     * 
+     * @return a key
+     */
+    public String toKey() {
+        return toKey(getTaskId(), getQueryCheckpoint().getQueryKey());
+    }
+    
+    /**
+     * Get the key used to store a query task containing the specified components
+     * 
+     * @param taskId
+     *            The task id
+     * @param queryKey
+     *            The query key
+     * @return a key
+     */
+    public static String toKey(UUID taskId, QueryKey queryKey) {
+        return taskId.toString() + ':' + queryKey.toKey();
     }
 }

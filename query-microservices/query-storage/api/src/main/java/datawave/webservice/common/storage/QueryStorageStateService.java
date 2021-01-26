@@ -1,12 +1,11 @@
 package datawave.webservice.common.storage;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * This is the interface to the query storage state service
  */
-public interface QueryStorageState {
+public interface QueryStorageStateService {
     
     /**
      * Get the list of queries running.

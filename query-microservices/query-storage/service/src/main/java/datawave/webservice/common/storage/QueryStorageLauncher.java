@@ -10,8 +10,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  */
 @EnableDiscoveryClient
 @SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {ErrorMvcAutoConfiguration.class})
-public class QueryStorageService {
+public class QueryStorageLauncher {
     public static void main(String[] args) {
-        SpringApplication.run(QueryStorageService.class, args);
+        SpringApplication.run(QueryStorageLauncher.class, args);
     }
 }

@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * This is an interface to the query storage service
  */
-public interface QueryStorage {
+public interface QueryStorageService {
     /**
      * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification.
      * 

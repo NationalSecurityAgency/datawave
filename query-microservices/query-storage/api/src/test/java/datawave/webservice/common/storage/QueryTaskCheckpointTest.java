@@ -28,23 +28,23 @@ public class QueryTaskCheckpointTest {
         UUID queryId = UUID.randomUUID();
         UUID taskId = UUID.randomUUID();
         QueryType type = new QueryType("default");
-        QueryTaskNotification notification = new QueryTaskNotification(queryId, type, taskId);
+        QueryTaskNotification notification = new QueryTaskNotification(taskId, queryId, type);
         
-        assertEquals(queryId, notification.getQueryId());
+        assertEquals(queryId, notification.getQueryKey().getQueryId());
         assertEquals(taskId, notification.getTaskId());
-        assertEquals(type, notification.getQueryType());
+        assertEquals(type, notification.getQueryKey().getType());
         
-        QueryTaskNotification notification2 = new QueryTaskNotification(queryId, type, taskId);
+        QueryTaskNotification notification2 = new QueryTaskNotification(taskId, queryId, type);
         assertEquals(notification, notification2);
         assertEquals(notification.hashCode(), notification2.hashCode());
         
         UUID otherId = UUID.randomUUID();
         QueryType otherType = new QueryType("other");
-        QueryTaskNotification otherNotification = new QueryTaskNotification(otherId, type, taskId);
+        QueryTaskNotification otherNotification = new QueryTaskNotification(taskId, otherId, type);
         assertNotEquals(otherNotification, notification);
-        otherNotification = new QueryTaskNotification(queryId, otherType, taskId);
+        otherNotification = new QueryTaskNotification(taskId, queryId, otherType);
         assertNotEquals(otherNotification, notification);
-        otherNotification = new QueryTaskNotification(queryId, type, otherId);
+        otherNotification = new QueryTaskNotification(otherId, queryId, type);
         assertNotEquals(otherNotification, notification);
     }
     
@@ -57,9 +57,9 @@ public class QueryTaskCheckpointTest {
         props.put("query", "foo == bar");
         QueryCheckpoint qcp = new QueryCheckpoint(uuid, type, props);
         
-        assertEquals(type, qcp.getQueryType());
+        assertEquals(type, qcp.getQueryKey().getType());
         assertEquals(props, qcp.getProperties());
-        assertEquals(uuid, qcp.getQueryId());
+        assertEquals(uuid, qcp.getQueryKey().getQueryId());
         
         UUID uuid2 = UUID.fromString(uuid.toString());
         QueryType type2 = new QueryType("default");
@@ -98,8 +98,8 @@ public class QueryTaskCheckpointTest {
         assertEquals(qcp, task.getQueryCheckpoint());
         
         QueryTaskNotification notification = task.getNotification();
-        assertEquals(uuid, notification.getQueryId());
-        assertEquals(type, notification.getQueryType());
+        assertEquals(uuid, notification.getQueryKey().getQueryId());
+        assertEquals(type, notification.getQueryKey().getType());
         assertEquals(task.getTaskId(), notification.getTaskId());
         
         UUID uuid2 = UUID.fromString(uuid.toString());

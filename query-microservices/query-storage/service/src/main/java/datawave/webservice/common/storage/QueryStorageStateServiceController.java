@@ -19,14 +19,14 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
-public class QueryStorageController implements QueryStorageState {
+public class QueryStorageStateServiceController implements QueryStorageStateService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     private final QueryStorageProperties storageProperties;
     
     private final QueryStorageCache cache;
     
-    public QueryStorageController(QueryStorageProperties storageProperties, QueryStorageCache cache) {
+    public QueryStorageStateServiceController(QueryStorageProperties storageProperties, QueryStorageCache cache) {
         this.storageProperties = storageProperties;
         this.cache = cache;
     }
