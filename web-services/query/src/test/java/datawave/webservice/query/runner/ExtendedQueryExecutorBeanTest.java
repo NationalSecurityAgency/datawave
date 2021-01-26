@@ -750,6 +750,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.NONE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
@@ -923,6 +924,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.NONE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.principal.getPrimaryUser()).andReturn(dwUser);
@@ -1090,6 +1092,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
@@ -1209,6 +1212,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.NONE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.principal.getPrimaryUser()).andReturn(dwUser);
@@ -1454,6 +1458,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of("userDN"));
         expect(this.principal.getDNs()).andReturn(new String[] {"userDN"});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).andReturn(true);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).times(4);
         
@@ -3317,6 +3322,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.PASSIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
@@ -3448,6 +3454,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.PASSIVE);
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
         expect(auditor.audit(eq(queryParameters))).andReturn(null);
@@ -3569,6 +3576,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(principal.getUserDN()).andReturn(userDNpair);
         expect(principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
@@ -3780,6 +3788,395 @@ public class ExtendedQueryExecutorBeanTest {
         subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize,
                         pageTimeout, maxResultsOverride, persistenceMode, parameters);
         PowerMock.verifyAll();
+    }
+    
+    @Test
+    public void testDefineQuery_userNotInAllowedDNs() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 9999);
+        int pagesize = 1000;
+        int pageTimeout = -1;
+        Long maxResultsOverride = null;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String parameters = null;
+        boolean trace = false;
+        // Set expectations
+        
+        MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+        
+        QueryParameters qp = new QueryParametersImpl();
+        qp.validate(queryParameters);
+        
+        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        
+        queryLogic1.validate(queryParameters);
+        expect(this.principal.getName()).andReturn("userName Full");
+        expect(this.principal.getShortName()).andReturn("userName");
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of("userDN"));
+        expect(this.principal.getDNs()).andReturn(new String[] {"userDN"});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).andReturn(false);
+        
+        // Run the test
+        PowerMock.replayAll();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        Throwable result1 = null;
+        try {
+            subject.defineQuery(queryLogicName, queryParameters);
+        } catch (DatawaveWebApplicationException e) {
+            result1 = e.getCause();
+        }
+        PowerMock.verifyAll();
+        
+        // Verify results
+        assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
+        assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
+        assertEquals("Thrown exception expected to detail reason for access denial",
+                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+    }
+    
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Test
+    public void testCreateQuery_userNotInAllowedDNs() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 9999);
+        int pagesize = 1000;
+        int pageTimeout = -1;
+        Long maxResultsOverride = null;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String parameters = null;
+        boolean trace = false;
+        // Set expectations
+        
+        MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+        
+        QueryParameters qp = new QueryParametersImpl();
+        qp.validate(queryParameters);
+        
+        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        
+        queryLogic1.validate(queryParameters);
+        expect(this.principal.getName()).andReturn("userName Full");
+        expect(this.principal.getShortName()).andReturn("userName");
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of("userDN"));
+        expect(this.principal.getDNs()).andReturn(new String[] {"userDN"});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).andReturn(false);
+        
+        // Run the test
+        PowerMock.replayAll();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        Throwable result1 = null;
+        try {
+            subject.createQuery(queryLogicName, queryParameters);
+        } catch (DatawaveWebApplicationException e) {
+            result1 = e.getCause();
+        }
+        PowerMock.verifyAll();
+        
+        // Verify results
+        assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
+        assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
+        assertEquals("Thrown exception expected to detail reason for access denial",
+                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+    }
+    
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Test
+    public void testCreateQueryAndNext_userNotInAllowedDNs() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 9999);
+        int pagesize = 1000;
+        int pageTimeout = -1;
+        Long maxResultsOverride = null;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String parameters = null;
+        boolean trace = false;
+        // Set expectations
+        
+        MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+        
+        QueryParameters qp = new QueryParametersImpl();
+        qp.validate(queryParameters);
+        
+        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        
+        queryLogic1.validate(queryParameters);
+        expect(this.principal.getName()).andReturn("userName Full");
+        expect(this.principal.getShortName()).andReturn("userName");
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of("userDN"));
+        expect(this.principal.getDNs()).andReturn(new String[] {"userDN"});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).andReturn(false);
+        
+        // Run the test
+        PowerMock.replayAll();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        Throwable result1 = null;
+        try {
+            subject.createQueryAndNext(queryLogicName, queryParameters);
+        } catch (DatawaveWebApplicationException e) {
+            result1 = e.getCause();
+        }
+        PowerMock.verifyAll();
+        
+        // Verify results
+        assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
+        assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
+        assertEquals("Thrown exception expected to detail reason for access denial",
+                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+    }
+    
+    @Test
+    public void testPlanQuery_userNotInAllowedDNs() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 999999);
+        int pagesize = 10;
+        int pageTimeout = -1;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        boolean trace = false;
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userdn";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+        
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.putSingle("valid", "param");
+        
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+        
+        QueryParameters qp = new QueryParametersImpl();
+        qp.validate(queryParameters);
+        
+        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+        
+        // Set expectations of the create logic
+        queryLogic1.validate(queryParameters);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        expect(this.principal.getName()).andReturn(userName);
+        expect(this.principal.getShortName()).andReturn(userSid);
+        expect(this.principal.getUserDN()).andReturn(userDNpair);
+        expect(this.principal.getDNs()).andReturn(new String[] {userDN});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(false);
+        
+        // Run the test
+        PowerMock.replayAll();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
+        setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricsBean.class, metrics);
+        setInternalState(subject, Multimap.class, traceInfos);
+        setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        Throwable result1 = null;
+        try {
+            subject.planQuery(queryLogicName, queryParameters);
+        } catch (DatawaveWebApplicationException e) {
+            result1 = e.getCause();
+        }
+        PowerMock.verifyAll();
+        
+        // Verify results
+        assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
+        assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
+        assertEquals("Thrown exception expected to detail reason for access denial",
+                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+    }
+    
+    @Test
+    public void testPredictQuery_userNotInAllowedDNs() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 999999);
+        int pagesize = 10;
+        int pageTimeout = -1;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        boolean trace = false;
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userdn";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+        
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.putSingle("valid", "param");
+        
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+        
+        QueryParameters qp = new QueryParametersImpl();
+        qp.validate(queryParameters);
+        
+        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+        
+        // Set expectations of the create logic
+        queryLogic1.validate(queryParameters);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        expect(this.principal.getName()).andReturn(userName);
+        expect(this.principal.getShortName()).andReturn(userSid);
+        expect(this.principal.getUserDN()).andReturn(userDNpair);
+        expect(this.principal.getDNs()).andReturn(new String[] {userDN});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(false);
+        
+        // Run the test
+        PowerMock.replayAll();
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
+        setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, ClosedQueryCache.class, closedCache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricsBean.class, metrics);
+        setInternalState(subject, Multimap.class, traceInfos);
+        setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        Throwable result1 = null;
+        try {
+            subject.predictQuery(queryLogicName, queryParameters);
+        } catch (DatawaveWebApplicationException e) {
+            result1 = e.getCause();
+        }
+        PowerMock.verifyAll();
+        
+        // Verify results
+        assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
+        assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
+        assertEquals("Thrown exception expected to detail reason for access denial",
+                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
     }
     
     public class TestQuery extends QueryImpl {
