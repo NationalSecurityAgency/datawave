@@ -3,14 +3,16 @@ package datawave.webservice.common.storage;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
  * A query task is an action to perform for a specified query.
  */
-public class QueryTask {
+public class QueryTask implements Serializable {
+    private static final long serialVersionUID = 579211458890999398L;
     
-    public enum QUERY_ACTION {
+    public enum QUERY_ACTION implements Serializable {
         CREATE, NEXT, CLOSE
     }
     

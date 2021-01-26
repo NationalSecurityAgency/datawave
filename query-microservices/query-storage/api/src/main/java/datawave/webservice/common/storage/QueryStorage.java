@@ -2,67 +2,60 @@ package datawave.webservice.common.storage;
 
 import datawave.webservice.query.Query;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 /**
- * This is the interface to the query storage service
+ * This is an interface to the query storage service
  */
 public interface QueryStorage {
     /**
-     * Store a new query. This will automatically create an initial CREATE query task and send a task notification message.
+     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification.
      * 
      * @param queryType
-     *            The query type for this query
+     *            The query type
      * @param query
-     *            The query to be executed
-     * @return The assigned query id
+     *            The query parameters
+     * @return The query UUID
      */
-    default UUID storeQuery(QueryType queryType, Query query) {
-        UUID uuid = UUID.randomUUID();
-        Map<String,Object> props = new HashMap<>();
-        props.put(QueryCheckpoint.INITIAL_QUERY_PROPERTY, query);
-        QueryCheckpoint checkpoint = new QueryCheckpoint(uuid, queryType, props);
-        QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
-        return task.getTaskId();
-    }
+    UUID storeQuery(QueryType queryType, Query query);
     
     /**
-     * Store a new query task
-     *
+     * Create a new query task. This will create a new query task, store it, and send out a task notification.
+     * 
      * @param action
-     *            The action to perform
+     *            The query action
      * @param checkpoint
-     *            The query state/checkpoint to perform the action on
-     * @return The new query task with a newly generated taskId
+     *            The query checkpoint
+     * @return The new query task
      */
     QueryTask createTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint);
     
     /**
-     * Get a query task for the specified queue
-     *
-     * @param msg
-     *            The query task notification
-     * @return the query task to perform
-     */
-    QueryTask getQueryTask(QueryTaskNotification msg);
-    
-    /**
-     * Checkpoint a task in progress
-     *
-     * @param taskId
-     *            A query task id
-     * @param checkpoint
-     *            The new checkpoint
-     */
-    void checkpointTask(UUID taskId, QueryCheckpoint checkpoint);
-    
-    /**
-     * Complete a query task
+     * Update a stored query task with an updated checkpoint
      * 
      * @param taskId
-     *            The completed query task id
+     *            The task id to update
+     * @param checkpoint
+     *            The new query checkpoint
+     * @return The updated query task
      */
-    void completeTask(UUID taskId);
+    QueryTask checkpointTask(UUID taskId, QueryCheckpoint checkpoint);
+    
+    /**
+     * Get a task for a given task id
+     * 
+     * @param taskNotification
+     *            The task notification
+     * @return The query task
+     */
+    QueryTask getTask(QueryTaskNotification taskNotification);
+    
+    /**
+     * Delete a query task
+     * 
+     * @param taskId
+     *            The task id
+     * @return true if found and deleted
+     */
+    boolean deleteTask(UUID taskId);
 }

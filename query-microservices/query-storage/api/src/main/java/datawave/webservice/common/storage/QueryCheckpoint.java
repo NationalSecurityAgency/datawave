@@ -3,6 +3,7 @@ package datawave.webservice.common.storage;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.UUID;
 
@@ -10,7 +11,8 @@ import java.util.UUID;
  * A query checkpoint will be very different depending on the query logic. It is expected that whatever the query state is can be encoded in a map of
  * properties.
  */
-public class QueryCheckpoint {
+public class QueryCheckpoint implements Serializable {
+    private static final long serialVersionUID = -9201879510622137934L;
     
     // This is the property name for the initial datawave.webservice.query.Query object
     public static final String INITIAL_QUERY_PROPERTY = "QUERY";

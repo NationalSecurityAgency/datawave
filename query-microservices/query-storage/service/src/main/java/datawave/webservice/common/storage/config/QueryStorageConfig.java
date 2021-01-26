@@ -9,13 +9,22 @@ import datawave.webservice.common.storage.QueryStorageCache;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.MessageChannel;
 
 @Configuration
 @EnableCaching
 @EnableConfigurationProperties(QueryStorageProperties.class)
 public class QueryStorageConfig {
+    
+    public interface TaskNotificationSourceBinding {
+        String NAME = "queryTaskSource";
+        
+        @Output(NAME)
+        MessageChannel queryTaskSource();
+    }
     
     @Bean
     public QueryStorageCache queryStorageCache(CacheInspector cacheInspector, CacheManager cacheManager) {

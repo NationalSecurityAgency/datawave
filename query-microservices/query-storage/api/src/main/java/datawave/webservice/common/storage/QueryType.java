@@ -3,10 +3,14 @@ package datawave.webservice.common.storage;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.io.Serializable;
+
 /**
  * A query type. It is expected that this type will correspond to a class of query executor service.
  */
-public class QueryType {
+public class QueryType implements Serializable {
+    private static final long serialVersionUID = -1790098342235290281L;
+    
     private final String type;
     
     public QueryType(String type) {

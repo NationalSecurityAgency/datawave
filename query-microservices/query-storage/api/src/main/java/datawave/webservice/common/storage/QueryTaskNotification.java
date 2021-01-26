@@ -3,12 +3,15 @@ package datawave.webservice.common.storage;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
  * This is a message for the control queue to denote a pending task to perform.
  */
-public class QueryTaskNotification {
+public class QueryTaskNotification implements Serializable {
+    private static final long serialVersionUID = 364194052797912452L;
+    
     private final UUID queryId;
     private final QueryType queryType;
     private final UUID taskId;
