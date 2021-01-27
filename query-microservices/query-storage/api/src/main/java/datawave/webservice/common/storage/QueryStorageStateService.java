@@ -11,9 +11,17 @@ public interface QueryStorageStateService {
      * Get the list of queries running.
      */
     List<QueryState> getRunningQueries();
-    
+
     /**
-     * Get the list of taskIDs for a query
+     * Get the query state for a specified query state
+     * @param queryId
+     *         The query id
+     * @return The query state
+     */
+    QueryState getQuery(String queryId);
+
+    /**
+     * Get the list of task descriptions for a query
      */
     List<TaskDescription> getTasks(String queryId);
     

@@ -36,17 +36,14 @@ public class QueryState {
         return queryKey;
     }
     
-    @JsonIgnore
     public UUID getQueryId() {
         return getQueryKey().getQueryId();
     }
     
-    @JsonIgnore
     public QueryType getQueryType() {
         return getQueryKey().getType();
     }
     
-    @JsonIgnore
     public Map<QueryTask.QUERY_ACTION,Integer> getTaskCounts() {
         return taskCounts;
     }

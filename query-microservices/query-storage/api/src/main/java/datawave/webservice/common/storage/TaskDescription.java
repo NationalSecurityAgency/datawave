@@ -29,17 +29,14 @@ public class TaskDescription {
         this.parameters = Collections.unmodifiableMap(new HashMap<>(parameters));
     }
     
-    @JsonIgnore
     public UUID getTaskId() {
         return taskId;
     }
     
-    @JsonIgnore
     public QueryTask.QUERY_ACTION getAction() {
         return action;
     }
     
-    @JsonIgnore
     public Map<String,String> getParameters() {
         return parameters;
     }

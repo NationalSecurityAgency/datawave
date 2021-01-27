@@ -1,5 +1,7 @@
 package datawave.webservice.common.storage;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -12,8 +14,9 @@ public class QueryType implements Serializable {
     private static final long serialVersionUID = -1790098342235290281L;
     
     private final String type;
-    
-    public QueryType(String type) {
+
+    @JsonCreator
+    public QueryType(@JsonProperty("type") String type) {
         this.type = type;
     }
     

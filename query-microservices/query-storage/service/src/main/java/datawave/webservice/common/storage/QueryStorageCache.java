@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @CacheConfig(cacheNames = QueryStorageCache.CACHE_NAME)
 public class QueryStorageCache {
@@ -122,25 +123,87 @@ public class QueryStorageCache {
      * @return A list of query states
      */
     public List<QueryState> getQueries() {
-        Map<QueryKey,Map<QueryTask.QUERY_ACTION,Integer>> queries = new HashMap<>();
-        for (QueryTask task : cacheInspector.listAll(CACHE_NAME, QueryTask.class)) {
-            // TODO
+        return getQueries(cacheInspector.listAll(CACHE_NAME, QueryTask.class));
+    }
+
+    /**
+     * Get a list of query states from the cache for a specified query type
+     * @param type
+     * @return a list of query states
+     */
+    public List<QueryState> getQueries(QueryType type) {
+        return getQueries(cacheInspector.listMatching(CACHE_NAME, QueryTask.class, type.getType()));
+    }
+
+    /**
+     * Get the query state for a specified query
+     * @param queryId
+     *         A query id
+     * @return the query state
+     */
+    public QueryState getQuery(UUID queryId) {
+        List<QueryState> states = getQueries(cacheInspector.listMatching(CACHE_NAME, QueryTask.class, queryId.toString()));
+        if (states == null || states.isEmpty()) {
+            return null;
+        } else if (states.size() == 1) {
+            return states.get(0);
+        } else {
+            throw new IllegalStateException("Found " + states.size() + " query states matching query id " + queryId);
+        }
+    }
+
+    /**
+     * Get the task descriptions for a specified query
+     * @param queryId
+     * @return a list of task descriptions
+     */
+    public List<TaskDescription> getTaskDescriptions(UUID queryId) {
+        return getTaskDescriptions(cacheInspector.listMatching(CACHE_NAME, QueryTask.class, queryId.toString()));
+    }
+    
+    /**
+     * For a list of tasks, return a list of QueryState
+     * @param tasks
+     *           A list of query tasks
+     * @return A list of QueryState
+     */
+    private List<QueryState> getQueries(List<? extends QueryTask> tasks) {
+        Map<QueryKey,Map<QueryTask.QUERY_ACTION,MutableInt>> queries = new HashMap<>();
+        for (QueryTask task : tasks) {
+            QueryKey key = task.getQueryCheckpoint().getQueryKey();
+            Map<QueryTask.QUERY_ACTION,MutableInt> actionCounts = queries.get(key);
+            if (actionCounts == null) {
+                actionCounts = new HashMap<>();
+                queries.put(key, actionCounts);
+            }
+            MutableInt count = actionCounts.get(task.getAction());
+            if (count == null) {
+                count = new MutableInt(0);
+                actionCounts.put(task.getAction(), count);
+            }
+            count.increment();
         }
         List<QueryState> states = new ArrayList<>();
-        for (Map.Entry<QueryKey,Map<QueryTask.QUERY_ACTION,Integer>> entry : queries.entrySet()) {
-            QueryState state = new QueryState(entry.getKey(), entry.getValue());
+        for (Map.Entry<QueryKey,Map<QueryTask.QUERY_ACTION,MutableInt>> entry : queries.entrySet()) {
+            QueryState state = new QueryState(entry.getKey(),
+                    entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue())));
             states.add(state);
         }
         return states;
     }
-    
-    public List<TaskDescription> getTasks(UUID queryId) {
-        // TODO
-        return null;
-    }
-    
-    public List<QueryState> getQueries(QueryType type) {
-        // TODO
-        return null;
+
+    /**
+     * For a list of tasks, return a list of task descriptions
+     * @param tasks
+     *           A list of query tasks
+     * @return A list of TaskDescription
+     */
+    private List<TaskDescription> getTaskDescriptions(List<? extends QueryTask> tasks) {
+        List<TaskDescription> descriptions = new ArrayList<>();
+        for (QueryTask task : tasks) {
+            descriptions.add(new TaskDescription(task.getTaskId(), task.getAction(),
+                    task.getQueryCheckpoint().getProperties().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())))));
+        }
+        return descriptions;
     }
 }
