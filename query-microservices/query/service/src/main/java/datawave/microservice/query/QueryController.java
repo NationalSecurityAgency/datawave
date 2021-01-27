@@ -1,6 +1,6 @@
 package datawave.microservice.query;
 
-import datawave.microservice.query.filter.annotation.GenerateQuerySessionId;
+import datawave.microservice.query.filter.QuerySessionIdFilter.QuerySessionIdContext;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -26,9 +26,11 @@ public class QueryController {
     // @Timed(name = "dw.query.defineQuery", absolute = true)
     // public GenericResponse<String> defineQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
     // MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders)
-    @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
     @RequestMapping(path = "{logicName}/define", method = {RequestMethod.POST})
     public String define() {
+        QuerySessionIdContext.setCookieBasePath("/DataWave/Query/");
+        QuerySessionIdContext.setQueryId("some-query-id");
+        
         return "";
     }
     
