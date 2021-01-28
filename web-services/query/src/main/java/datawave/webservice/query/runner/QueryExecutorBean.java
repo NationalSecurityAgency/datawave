@@ -3222,8 +3222,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         if (null == responseType) {
             QueryException qe = new QueryException(DatawaveErrorCode.UNSUPPORTED_MEDIA_TYPE);
+            response.setHasResults(false);
             response.addException(qe);
-            throw new DatawaveWebApplicationException(qe, response);
+            throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
         }
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
@@ -3246,9 +3247,10 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR, e);
             log.error(qe, e);
+            response.setHasResults(false);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
-            throw new DatawaveWebApplicationException(qe, response, statusCode);
+            throw new DatawaveWebApplicationException(qe, response, statusCode, MediaType.APPLICATION_XML_TYPE);
         }
         
         SerializationType s;
@@ -3259,26 +3261,43 @@ public class QueryExecutorBean implements QueryExecutor {
         } else if (responseType.equals(PB_MEDIA_TYPE)) {
             if (!(Message.class.isAssignableFrom(responseClass))) {
                 QueryException qe = new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, MessageFormat.format("Response  class: {0}", responseClass));
+                response.setHasResults(false);
                 response.addException(qe);
-                throw new DatawaveWebApplicationException(qe, response);
+                throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
             }
             s = SerializationType.PB;
         } else if (responseType.equals(YAML_MEDIA_TYPE)) {
             if (!(Message.class.isAssignableFrom(responseClass))) {
                 QueryException qe = new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, MessageFormat.format("Response  class: {0}", responseClass));
+                response.setHasResults(false);
                 response.addException(qe);
-                throw new DatawaveWebApplicationException(qe, response);
+                throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
             }
             s = SerializationType.YAML;
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.INVALID_FORMAT, MessageFormat.format("format: {0}", responseType.toString()));
+            response.setHasResults(false);
             response.addException(qe);
-            throw new DatawaveWebApplicationException(qe, response);
+            throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
         }
         
         long start = System.nanoTime();
         GenericResponse<String> createResponse = null;
-        createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
+        
+        try {
+            createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
+        } catch (Throwable t) {
+            if (t instanceof DatawaveWebApplicationException) {
+                QueryException qe = (QueryException) ((DatawaveWebApplicationException) t).getCause();
+                response.setHasResults(false);
+                response.addException(qe.getBottomQueryException());
+                int statusCode = qe.getBottomQueryException().getStatusCode();
+                throw new DatawaveWebApplicationException(qe, response, statusCode, MediaType.APPLICATION_XML_TYPE);
+            } else {
+                throw t;
+            }
+        }
+        
         long createCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         final String queryId = createResponse.getResult();
         
