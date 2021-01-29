@@ -4,6 +4,7 @@ import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +73,7 @@ public class QueryServiceTest {
             assertTrue("", true);
         }
     }
-    
+
     @Configuration
     @Profile("QueryServiceTest")
     @ComponentScan(basePackages = "datawave.microservice")
