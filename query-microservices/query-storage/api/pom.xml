@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>1.8</version>
+        <version>1.7</version>
         <relativePath />
     </parent>
     <artifactId>query-state-api</artifactId>

@@ -73,7 +73,7 @@ public class QueryServiceTest {
             assertTrue("", true);
         }
     }
-
+    
     @Configuration
     @Profile("QueryServiceTest")
     @ComponentScan(basePackages = "datawave.microservice")
