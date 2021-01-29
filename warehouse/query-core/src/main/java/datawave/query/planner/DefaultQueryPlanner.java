@@ -1712,7 +1712,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private void calculateFieldIndexHoles(MetadataHelper metadataHelper, Multimap<String,Type<?>> fieldToDatatypeMap, ShardQueryConfiguration config)
                     throws TableNotFoundException {
         
-        FrequencyFamilyCounter counter;
+        IndexedDatesValue indexedDates;
         String startDate = DateHelper.format(config.getBeginDate().getTime());
         String endDate = DateHelper.format(config.getEndDate().getTime());
         String holeStart = startDate;
@@ -1725,35 +1725,35 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         log.debug("startDate is: " + startDate + " and endDate is " + endDate);
         
         for (String field : fieldToDatatypeMap.keySet()) {
-            counter = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
-            if (counter != null && !counter.getDateToFrequencyValueMap().isEmpty()) {
-                for (Entry<YearMonthDay,Frequency> entry : counter.getDateToFrequencyValueMap().entrySet()) {
+            indexedDates = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
+            if (indexedDates != null && !(indexedDates.getIndexedDatesSet().size() == 0)) {
+                for (YearMonthDay entry : indexedDates.getIndexedDatesSet()) {
                     // Only create a hole if the indexed field are within date bounds
-                    if (bounds.withinBounds(entry.getKey())) {
+                    if (bounds.withinBounds(entry)) {
                         foundHolesInDateBounds = true;
-                        if (firstHole && holeStart.compareTo(entry.getKey().getYyyymmdd()) < 0) {
+                        if (firstHole && holeStart.compareTo(entry.getYyyymmdd()) < 0) {
                             // create the FieldIndexHole for the dates the field was not indexed before the first
                             // time in the date range that it was indexed.
                             FieldIndexHole firstIndexHole = new FieldIndexHole();
                             firstIndexHole.setFieldName(field);
                             firstIndexHole.setStartDate(startDate);
-                            previousDay = previousDay(entry.getKey().getYyyymmdd());
-                            nextDay = nextDay(entry.getKey().getYyyymmdd());
-                            log.debug("The date in the entry is: " + entry.getKey().getYyyymmdd());
+                            previousDay = previousDay(entry.getYyyymmdd());
+                            nextDay = nextDay(entry.getYyyymmdd());
+                            log.debug("The date in the entry is: " + entry.getYyyymmdd());
                             log.debug("The previous day is: " + previousDay);
                             log.debug("The next day is: " + nextDay);
                             firstIndexHole.setEndDate(previousDay);
                             config.addFieldIndexHole(firstIndexHole);
-                            holeStart = nextDay(entry.getKey().getYyyymmdd());
+                            holeStart = nextDay(entry.getYyyymmdd());
                             firstHole = false;
                         }
                         
                         // The end date of the last hole processed depends on the next date the field was indexed
                         if (newHole != null) {
-                            lastHoleEndate = previousDay(entry.getKey().getYyyymmdd());
+                            lastHoleEndate = previousDay(entry.getYyyymmdd());
                             newHole.setEndDate(lastHoleEndate);
                         } else {
-                            lastHoleEndate = nextDay(entry.getKey().getYyyymmdd());
+                            lastHoleEndate = nextDay(entry.getYyyymmdd());
                             if (lastHoleEndate.compareTo(endDate) > 0)
                                 lastHoleEndate = endDate;
                         }
@@ -1762,8 +1762,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                          * If the start of the next potential hole is the same as the date indexed field there is no need to start creating and index hole
                          * starting on that date so increment the holeStart and find the next indexed date.
                          */
-                        if (holeStart.equals(entry.getKey().getYyyymmdd())) {
-                            holeStart = nextDay(entry.getKey().getYyyymmdd());
+                        if (holeStart.equals(entry.getYyyymmdd())) {
+                            holeStart = nextDay(entry.getYyyymmdd());
                             continue;
                         }
                         
@@ -1778,7 +1778,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             config.addFieldIndexHole(newHole);
                         }
                     }
-                    holeStart = nextDay(entry.getKey().getYyyymmdd());
+                    holeStart = nextDay(entry.getYyyymmdd());
                 }
             }
             

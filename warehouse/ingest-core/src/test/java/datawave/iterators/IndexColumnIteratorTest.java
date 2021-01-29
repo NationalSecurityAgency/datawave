@@ -33,7 +33,6 @@ public class IndexColumnIteratorTest {
     private Authorizations auths = new Authorizations("STUFF,THINGS");
     private static final String DATA_TYPE = "TheDataType";
     Text colqPrefix = new Text(DATA_TYPE + "\u0000TheNormalizer");
-    FrequencyFamilyCounter frequencyFamilyCounter = new FrequencyFamilyCounter();
     
     @BeforeClass
     public static void setUp() throws Exception {
@@ -68,9 +67,9 @@ public class IndexColumnIteratorTest {
     }
     
     private Value getNewValue(String yyyymmdd) {
-        frequencyFamilyCounter.clear();
-        frequencyFamilyCounter.aggregateRecord(yyyymmdd, 1);
-        return frequencyFamilyCounter.serialize();
+        
+        IndexedDatesValue indexedDatesValue = new IndexedDatesValue(new YearMonthDay(yyyymmdd));
+        return indexedDatesValue.serialize();
     }
     
     private void loadData() throws Exception {
@@ -161,7 +160,7 @@ public class IndexColumnIteratorTest {
         scanner.setBatchSize(200);
         scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_I));
         int numEntries = 0;
-        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
+        HashMap<String,IndexedDatesValue> counterHashMap = new HashMap<>();
         
         numEntries = getNumEntries(scanner, numEntries, counterHashMap);
         
@@ -169,16 +168,15 @@ public class IndexColumnIteratorTest {
         
     }
     
-    private int getNumEntries(Scanner scanner, int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
+    private int getNumEntries(Scanner scanner, int numEntries, HashMap<String,IndexedDatesValue> counterHashMap) {
         for (Map.Entry<Key,Value> entry : scanner) {
             Assert.assertTrue(entry.getKey().getColumnQualifier().toString().startsWith(colqPrefix.toString()));
-            FrequencyFamilyCounter counter = new FrequencyFamilyCounter();
-            counter.deserializeCompressedValue(entry.getValue());
-            TreeMap<YearMonthDay,Frequency> dateFreqMap = counter.getDateToFrequencyValueMap();
-            for (Map.Entry<YearMonthDay,Frequency> entry2 : dateFreqMap.entrySet()) {
-                System.out.println("Date: " + entry2.getKey() + " frequency: " + entry2.getValue());
+            IndexedDatesValue indexedDates = IndexedDatesValue.deserialize(entry.getValue());
+            TreeSet<YearMonthDay> dateIndexSet = indexedDates.getIndexedDatesSet();
+            for (YearMonthDay entry2 : dateIndexSet) {
+                System.out.println("Indexed Date: " + entry2);
             }
-            counterHashMap.put(entry.getKey().getRow().toString(), counter);
+            counterHashMap.put(entry.getKey().getRow().toString(), indexedDates);
             numEntries++;
         }
         return numEntries;
@@ -195,7 +193,7 @@ public class IndexColumnIteratorTest {
         scanner.setBatchSize(200);
         scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_I));
         int numEntries = 0;
-        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
+        HashMap<String,IndexedDatesValue> counterHashMap = new HashMap<>();
         
         numEntries = getNumEntries(scanner, numEntries, counterHashMap);
         
@@ -213,7 +211,7 @@ public class IndexColumnIteratorTest {
         scanner.setBatchSize(200);
         scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_I));
         int numEntries = 0;
-        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
+        HashMap<String,IndexedDatesValue> counterHashMap = new HashMap<>();
         
         numEntries = getNumEntries(scanner, numEntries, counterHashMap);
         
@@ -230,7 +228,7 @@ public class IndexColumnIteratorTest {
         scanner.setBatchSize(200);
         scanner.fetchColumnFamily(new Text(ColumnFamilyConstants.COLF_I));
         int numEntries = 0;
-        HashMap<String,FrequencyFamilyCounter> counterHashMap = new HashMap<>();
+        HashMap<String,IndexedDatesValue> counterHashMap = new HashMap<>();
         
         numEntries = getNumEntries(scanner, numEntries, counterHashMap);
         
@@ -263,39 +261,39 @@ public class IndexColumnIteratorTest {
         connector.tableOperations().compact(METADATA_TABLE_NAME, new Text("A"), new Text("Z"), true, true);
     }
     
-    private void checkFrequencyCompressedData(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
+    private void checkFrequencyCompressedData(int numEntries, HashMap<String,IndexedDatesValue> counterHashMap) {
         // Also verifies AgeOff
         Assert.assertTrue(numEntries == 3);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090426"))) == null);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190101"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190102"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190103"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190201"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190201"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190504"))).getValue() == 1);
+        // Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20090426"))));
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190101"))));
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190102"))));
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190103"))));
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190201"))));
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190201"))));
+        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190504"))));
         
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190301"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190302"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190303"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190401"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190401"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190502"))).getValue() == 1);
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190301"))));
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190302"))));
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190303"))));
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190401"))));
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190401"))));
+        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190502"))));
         
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190401"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190402"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190403"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190501"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190502"))).getValue() == 1);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20190503"))).getValue() == 1);
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190401"))));
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190402"))));
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190403"))));
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190501"))));
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190502"))));
+        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190503"))));
         
     }
     
-    private void checkFrequencyCompressedDataForAgeOff(int numEntries, HashMap<String,FrequencyFamilyCounter> counterHashMap) {
+    private void checkFrequencyCompressedDataForAgeOff(int numEntries, HashMap<String,IndexedDatesValue> counterHashMap) {
         Assert.assertTrue(numEntries == 3);
         
-        Assert.assertTrue((counterHashMap.get("BAR_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090426"))) == null);
-        Assert.assertTrue((counterHashMap.get("NAME_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090526"))) == null);
-        Assert.assertTrue((counterHashMap.get("PUB_FIELD").getDateToFrequencyValueMap().get(new YearMonthDay("20090726"))) == null);
+        Assert.assertTrue(!(counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20090426"))));
+        Assert.assertTrue(!(counterHashMap.get("NAME_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20090526"))));
+        Assert.assertTrue(!(counterHashMap.get("PUB_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20090726"))));
         
     }
     
@@ -324,6 +322,9 @@ public class IndexColumnIteratorTest {
         Assert.assertFalse(indexedFields.isEmpty());
         Set<String> ingestTypeFilter = new HashSet<>();
         Assert.assertTrue(metadataHelper.isIndexed("BAR_FIELD", ingestTypeFilter));
+        Assert.assertTrue(metadataHelper.isIndexed("NAME_FIELD", ingestTypeFilter));
+        Assert.assertTrue(metadataHelper.isIndexed("PUB_FIELD", ingestTypeFilter));
+        
     }
     
 }

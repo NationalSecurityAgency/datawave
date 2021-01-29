@@ -1,10 +1,7 @@
 package datawave.iterators;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.query.util.Frequency;
-import datawave.query.util.FrequencyFamilyCounter;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.YearMonthDay;
+import datawave.query.util.*;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -21,10 +18,10 @@ import java.util.Map;
 
 public class IndexColumnIterator extends TransformingIterator {
     
-    private FrequencyFamilyCounter frequencyFamilyCounter;
+    private IndexedDatesValue indexedDatesValue;
     // TODO Figure out how to keep the rowIdToCompressedFreqCQMap from getting too large
     // TODO maybe we do not have to worry about that from happening.
-    private HashMap<String,FrequencyFamilyCounter> rowIdToCompressedFreqCQMap = new HashMap<>();
+    private HashMap<String,IndexedDatesValue> rowIdToCompressedIndexedDatesToCQMap = new HashMap<>();
     private String ageOffDate = "19000101";
     
     public IndexColumnIterator() {}
@@ -49,8 +46,8 @@ public class IndexColumnIterator extends TransformingIterator {
     @Override
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
         Long numRecords = 0L;
-        frequencyFamilyCounter = new FrequencyFamilyCounter();
-        FrequencyFamilyCounter tempFrequencyFamilyCounter = new FrequencyFamilyCounter();
+        indexedDatesValue = new IndexedDatesValue(null);
+        IndexedDatesValue tempFrequencyFamilyCounter;
         
         if (log.isTraceEnabled())
             log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
@@ -81,37 +78,36 @@ public class IndexColumnIterator extends TransformingIterator {
                 startingNewRange = false;
                 // TODO The two lines below may need some reevaluation
                 if (topValue.toString().isEmpty())
-                    frequencyFamilyCounter.aggregateRecord(DateHelper.format(topKey.getTimestamp()), 1);
+                    indexedDatesValue.addIndexedDate(new YearMonthDay(DateHelper.format(topKey.getTimestamp())));
                 else
-                    frequencyFamilyCounter.deserializeCompressedValue(topValue);
-                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() == 0)
+                    indexedDatesValue = IndexedDatesValue.deserialize(topValue);
+                if (indexedDatesValue.getIndexedDatesSet().size() == 0)
                     log.error("Compressed value was not deserialized properly");
-                aggregatedValue = frequencyFamilyCounter.serialize();
+                aggregatedValue = indexedDatesValue.serialize();
                 aggregatedKey = topKey;
                 
                 if (log.isTraceEnabled())
                     log.trace("Aggregate Key: " + aggregatedKey.toStringNoTime());
                 
-                if (!rowIdToCompressedFreqCQMap.containsKey(aggregatedKey.getRow() + cq.toString()))
-                    rowIdToCompressedFreqCQMap.put(aggregatedKey.getRow().toString() + cq.toString(), frequencyFamilyCounter);
+                if (!rowIdToCompressedIndexedDatesToCQMap.containsKey(aggregatedKey.getRow() + cq.toString()))
+                    rowIdToCompressedIndexedDatesToCQMap.put(aggregatedKey.getRow().toString() + cq.toString(), indexedDatesValue);
                 else {
-                    FrequencyFamilyCounter previousCounter = rowIdToCompressedFreqCQMap.get(aggregatedKey.getRow() + cq.toString());
-                    for (Map.Entry<YearMonthDay,Frequency> entry : previousCounter.getDateToFrequencyValueMap().entrySet()) {
-                        if (ageOffDate.compareTo(entry.getKey().getYyyymmdd()) < 0)
-                            frequencyFamilyCounter.aggregateRecord(entry.getKey().getYyyymmdd(), entry.getValue().getValue());
+                    IndexedDatesValue previousCounter = rowIdToCompressedIndexedDatesToCQMap.get(aggregatedKey.getRow() + cq.toString());
+                    for (YearMonthDay entry : previousCounter.getIndexedDatesSet()) {
+                        if (ageOffDate.compareTo(entry.getYyyymmdd()) < 0)
+                            indexedDatesValue.addIndexedDate(new YearMonthDay(entry.getYyyymmdd()));
                     }
-                    rowIdToCompressedFreqCQMap.remove(aggregatedKey.getRow() + cq.toString());
-                    rowIdToCompressedFreqCQMap.put(aggregatedKey.getRow() + cq.toString(), frequencyFamilyCounter);
+                    rowIdToCompressedIndexedDatesToCQMap.remove(aggregatedKey.getRow() + cq.toString());
+                    rowIdToCompressedIndexedDatesToCQMap.put(aggregatedKey.getRow() + cq.toString(), indexedDatesValue);
                     
                 }
                 
             } else {
-                tempFrequencyFamilyCounter.clear();
-                tempFrequencyFamilyCounter.deserializeCompressedValue(topValue);
+                tempFrequencyFamilyCounter = IndexedDatesValue.deserialize(topValue);
                 
-                for (Map.Entry<YearMonthDay,Frequency> entry : tempFrequencyFamilyCounter.getDateToFrequencyValueMap().entrySet()) {
-                    if (ageOffDate.compareTo(entry.getKey().getYyyymmdd()) < 0)
-                        frequencyFamilyCounter.aggregateRecord(entry.getKey().getYyyymmdd(), entry.getValue().getValue());
+                for (YearMonthDay entry : tempFrequencyFamilyCounter.getIndexedDatesSet()) {
+                    if (ageOffDate.compareTo(entry.getYyyymmdd()) < 0)
+                        indexedDatesValue.addIndexedDate(new YearMonthDay(entry.getYyyymmdd()));
                     // SummingCombiner.VAR_LEN_ENCODER.decode(topValue.get()).intValue()
                 }
             }
@@ -124,8 +120,8 @@ public class IndexColumnIterator extends TransformingIterator {
         
         if (numRecords > 1) {
             try {
-                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() > 0) {
-                    kvBuffer.append(topKey, frequencyFamilyCounter.serialize());
+                if (indexedDatesValue.getIndexedDatesSet().size() > 0) {
+                    kvBuffer.append(topKey, indexedDatesValue.serialize());
                     log.trace(numRecords + " frequency records for " + topKey.toStringNoTime().replaceAll("false", "") + " were serialized");
                 }
                 
@@ -139,9 +135,9 @@ public class IndexColumnIterator extends TransformingIterator {
         } else if (numRecords == 1) {
             if (aggregatedValue != null && aggregatedKey != null) {
                 // TODO The two lines below may need some reevaluation
-                if (frequencyFamilyCounter.getDateToFrequencyValueMap().size() == 0)
-                    frequencyFamilyCounter.aggregateRecord(DateHelper.format(aggregatedKey.getTimestamp()), 1);
-                kvBuffer.append(aggregatedKey, frequencyFamilyCounter.serialize());
+                if (indexedDatesValue.getIndexedDatesSet().size() == 0)
+                    indexedDatesValue.addIndexedDate(new YearMonthDay(DateHelper.format(aggregatedKey.getTimestamp())));
+                kvBuffer.append(aggregatedKey, indexedDatesValue.serialize());
                 log.trace("Number of records is 1 Key is: " + aggregatedKey.toStringNoTime() + " - Range tranformed a single aggregated range.");
             } else {
                 kvBuffer.append(topKey, topValue);
