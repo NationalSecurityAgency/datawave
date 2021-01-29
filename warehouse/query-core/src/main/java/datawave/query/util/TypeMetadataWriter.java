@@ -72,6 +72,8 @@ public class TypeMetadataWriter {
                 // got here because the VFSClassLoader on the tservers does not implement findResources
                 // none of the spring wiring will work.
                 log.warn("Could not load spring context files. got " + t);
+            } finally {
+                context.close();
             }
             
             return typeMetadataWriter;

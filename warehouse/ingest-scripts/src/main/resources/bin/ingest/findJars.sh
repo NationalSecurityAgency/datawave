@@ -97,7 +97,6 @@ SPRING_BEAN_JAR=$(findJar spring-beans)
 SPRING_AOP_JAR=$(findJar spring-aop)
 SPRING_EXPRESSION_JAR=$(findJar spring-expression)
 COMMON_JAR=$(findJar datawave-ws-common)
-#XERCES_JAR=$(findJar org.apache.xerces)
 JCOMMANDER_JAR=$(findJar jcommander)
 
 #for geo hilbert curve processing
@@ -109,14 +108,10 @@ UZAYGEZEN_JAR=$(findJar uzaygezen-core)
 VECMATH_JAR=$(findJar vecmath)
 GT_OPENGIS_JAR=$(findJar gt-opengis)
 GT_API_JAR=$(findJar gt-api)
-GT_DATA_JAR=$(findJar gt-data)
 GT_EPSG_JAR=$(findJar gt-epsg-wkt)
 GT_MAIN_JAR=$(findJar gt-main)
 GT_MD_JAR=$(findJar gt-metadata)
 GT_REF_JAR=$(findJar gt-referencing)
-# Currently, gt-shapefile is not getting packaged and only appears in dependency:tree of
-# datawave-ws-deploy-application (even w/geowave profile enabled), so removing for now...
-#GT_SHAPE_JAR=$(findJar gt-shapefile)
 JAXB_IMPL_JAR=$(findJar resteasy-jaxb-provider)
 
 # extra jars

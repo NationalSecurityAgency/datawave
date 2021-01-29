@@ -107,6 +107,7 @@
                 <include>${groupId}:datawave-ingest-wikipedia</include>
                 <include>${groupId}:datawave-ingest-nyctlc</include>
                 <include>${groupId}:datawave-ingest-json</include>
+                <include>${groupId}:datawave-type-metadata-hdfs</include>
                 <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                 <include>gov.nsa.datawave.microservice:metadata-utils</include>
                 <include>gov.nsa.datawave.microservice:type-utils</include>
