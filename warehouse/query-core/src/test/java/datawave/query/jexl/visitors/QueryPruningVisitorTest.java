@@ -458,6 +458,17 @@ public class QueryPruningVisitorTest {
         Assert.assertEquals("(Expression = 'somevalue'); false", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
     }
     
+    public void propertyMarkerTest() throws ParseException {
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (FIELD = 'x'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
+        JexlNode newScript = QueryPruningVisitor.reduce(script, false);
+        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
+        Assert.assertEquals(query, newQuery);
+        
+        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+    }
+    
     private static class TestLogAppender extends AppenderSkeleton {
         private List<String> messages = new ArrayList<>();
         

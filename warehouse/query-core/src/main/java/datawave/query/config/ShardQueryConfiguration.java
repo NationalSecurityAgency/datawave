@@ -98,6 +98,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean limitAnyFieldLookups = false;
     private boolean bypassExecutabilityCheck = false;
     /**
+     * Usually we are planning for the purposes of running the query. This can be set if only generating a plan (i.e. don't start generating ranges)
+     */
+    private boolean generatePlanOnly = false;
+    /**
      * Allows for back off of scanners.
      */
     private boolean backoffEnabled = false;
@@ -2084,7 +2088,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * <li>{@value QUERY_LOGIC_NAME_SOURCE}: returns the name of the shard query logic class</li>
      * <li>otherwise returns a blank value</li>
      * </ul>
-     * 
+     *
      * @return the custom active query name to use, or a blank value if the default active query log should be used
      */
     @JsonIgnore
@@ -2096,5 +2100,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         } else {
             return "";
         }
+    }
+    
+    public boolean isGeneratePlanOnly() {
+        return generatePlanOnly;
+    }
+    
+    public void setGeneratePlanOnly(boolean generatePlanOnly) {
+        this.generatePlanOnly = generatePlanOnly;
     }
 }
