@@ -48,7 +48,7 @@ public class QueryStorageCache {
      *            The new query checkpoint
      * @return The updated query task
      */
-    @CachePut(key = "QueryTask.toKey(#taskId, #checkpoint.queryKey)")
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryTask).toKey(#taskId, #checkpoint.queryKey)")
     public QueryTask updateQueryTask(UUID taskId, QueryCheckpoint checkpoint) {
         QueryTask task = getTask(taskId, checkpoint.getQueryKey());
         if (task == null) {
@@ -65,12 +65,7 @@ public class QueryStorageCache {
      * @return True if found and deleted
      */
     public boolean deleteTask(UUID taskId) {
-        QueryTask task = getTask(taskId);
-        if (task != null) {
-            _deleteTask(task);
-            return true;
-        }
-        return false;
+        return (cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, taskId.toString()) > 0);
     }
     
     /**
@@ -96,23 +91,15 @@ public class QueryStorageCache {
         return cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, type.getType());
     }
     
+    /**
+     * Clear out the cache
+     * 
+     * @return a clear message
+     */
     @CacheEvict(allEntries = true)
     @CheckReturnValue
     public String clear() {
         return "Cleared " + CACHE_NAME + " cache";
-    }
-    
-    /**
-     * Delete a query task
-     * 
-     * @param task
-     *            The task
-     * @return An eviction message
-     */
-    @CacheEvict(key = "#task.getKey()")
-    @CheckReturnValue
-    private String _deleteTask(QueryTask task) {
-        return "Evicted " + task.toKey();
     }
     
     /**

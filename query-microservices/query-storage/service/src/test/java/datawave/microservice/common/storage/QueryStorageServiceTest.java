@@ -11,6 +11,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParametersImpl;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,14 +20,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -36,18 +34,21 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static datawave.security.authorization.DatawaveUser.UserType.USER;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = QueryStorageServiceTest.QueryStorageServiceTestConfiguration.class)
 @ActiveProfiles({"QueryStorageServiceTest", "sync-disabled"})
 public class QueryStorageServiceTest {
     @LocalServerPort
@@ -59,9 +60,6 @@ public class QueryStorageServiceTest {
     private JWTRestTemplate jwtRestTemplate;
     
     @Autowired
-    private QueryStorageConfig.TaskNotificationSourceBinding taskNotificationSourceBinding;
-    
-    @Autowired
     private QueryStorageProperties queryStorageProperties;
     
     @Autowired
@@ -71,8 +69,14 @@ public class QueryStorageServiceTest {
     private QueryStorageStateService storageStateService;
     
     @Autowired
+    private QueryStorageConfig.TaskNotificationSourceBinding taskNotificationSourceBinding;
+    
+    @Autowired
     @Qualifier(QueryStorageConfig.TaskNotificationSourceBinding.NAME)
     private MessageChannel taskNotificationChannel;
+    
+    @Autowired
+    private MessageCollector messageCollector;
     
     private SubjectIssuerDNPair DN;
     private String userDN = "userDn";
@@ -83,8 +87,17 @@ public class QueryStorageServiceTest {
         DN = SubjectIssuerDNPair.of(userDN, "issuerDn");
     }
     
+    @After
+    public void cleanup() throws InterruptedException {
+        storageService.clear();
+        messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).clear();
+    }
+    
     @Test
-    public void testStoreQuery() throws ParseException {
+    public void testStoreQuery() throws ParseException, InterruptedException {
+        // ensure the message queue is empty
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
@@ -94,6 +107,207 @@ public class QueryStorageServiceTest {
         assertNotNull(queryId);
         
         // ensure we got a task notification
+        assertFalse(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
+                        .getPayload();
+        assertEquals(queryId, notification.getQueryKey().getQueryId());
+        assertEquals(type, notification.getQueryKey().getType());
+        UUID taskId = notification.getTaskId();
+        
+        // ensure the message queue is empty again
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        QueryTask task = storageService.getTask(taskId);
+        assertQueryTask(taskId, queryId, type, QueryTask.QUERY_ACTION.CREATE, query, task);
+    }
+    
+    @Test
+    public void testStoreTask() throws ParseException, InterruptedException {
+        // ensure the message queue is empty
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        Query query = new QueryImpl();
+        query.setQuery("foo == bar");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        UUID queryId = UUID.randomUUID();
+        QueryType type = new QueryType("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
+        
+        // ensure we got a task notification
+        assertFalse(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
+                        .getPayload();
+        assertEquals(queryId, notification.getQueryKey().getQueryId());
+        assertEquals(type, notification.getQueryKey().getType());
+        UUID taskId = notification.getTaskId();
+        
+        // ensure the message queue is empty again
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        QueryTask task = storageService.getTask(taskId);
+        assertQueryTask(taskId, queryId, type, QueryTask.QUERY_ACTION.NEXT, query, task);
+    }
+    
+    @Test
+    public void testCheckpointTask() throws InterruptedException, ParseException {
+        // ensure the message queue is empty
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        Query query = new QueryImpl();
+        query.setQuery("foo == bar");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        UUID queryId = UUID.randomUUID();
+        QueryType type = new QueryType("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        
+        try {
+            storageService.checkpointTask(UUID.randomUUID(), checkpoint);
+            fail("Expected storage service to fail checkpointing an invalid task");
+        } catch (NullPointerException e) {
+            // expected
+        }
+        
+        storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
+        
+        // clear out message queue
+        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
+                        .getPayload();
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        // now update the task
+        Map<String,Object> props = new HashMap<>();
+        props.put("checkpoint", Boolean.TRUE);
+        checkpoint = new QueryCheckpoint(queryId, type, props);
+        storageService.checkpointTask(notification.getTaskId(), checkpoint);
+        
+        // ensure we did not get another task notification
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        QueryTask task = storageService.getTask(notification.getTaskId());
+        assertEquals(checkpoint, task.getQueryCheckpoint());
+    }
+    
+    @Test
+    public void testGetAndDeleteTask() throws ParseException, InterruptedException {
+        // ensure the message queue is empty
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        Query query = new QueryImpl();
+        query.setQuery("foo == bar");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        UUID queryId = UUID.randomUUID();
+        QueryType type = new QueryType("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        
+        storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
+        
+        // clear out message queue
+        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
+                        .getPayload();
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        // ensure we can get a task
+        QueryTask task = storageService.getTask(notification.getTaskId());
+        assertQueryTask(notification.getTaskId(), queryId, type, QueryTask.QUERY_ACTION.NEXT, query, task);
+        
+        // now delete the task
+        storageService.deleteTask(notification.getTaskId());
+        
+        // ensure we did not get another task notification
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        // ensure there is no more task stored
+        task = storageService.getTask(notification.getTaskId());
+        assertNull(task);
+    }
+    
+    @Test
+    public void testGetAndDeleteQueryTasks() throws ParseException, InterruptedException {
+        // ensure the message queue is empty
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        Query query = new QueryImpl();
+        query.setQuery("foo == bar");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        UUID queryId = UUID.randomUUID();
+        QueryType type = new QueryType("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        
+        storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
+        
+        // clear out message queue
+        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
+                        .getPayload();
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        // not get the query tasks
+        List<QueryTask> tasks = storageService.getTasks(queryId);
+        assertEquals(1, tasks.size());
+        QueryTask task = tasks.get(0);
+        assertQueryTask(notification.getTaskId(), queryId, type, QueryTask.QUERY_ACTION.NEXT, query, task);
+        
+        // now delete the query tasks
+        storageService.deleteQuery(queryId);
+        
+        // ensure we did not get another task notification
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        // make sure it deleted
+        tasks = storageService.getTasks(queryId);
+        assertEquals(0, tasks.size());
+    }
+    
+    @Test
+    public void testGetAndDeleteTypeTasks() throws ParseException, InterruptedException {
+        // ensure the message queue is empty
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        Query query = new QueryImpl();
+        query.setQuery("foo == bar");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        UUID queryId = UUID.randomUUID();
+        QueryType type = new QueryType("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        
+        storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
+        
+        // clear out message queue
+        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
+                        .getPayload();
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        // not get the query tasks
+        List<QueryTask> tasks = storageService.getTasks(type);
+        assertEquals(1, tasks.size());
+        QueryTask task = tasks.get(0);
+        assertQueryTask(notification.getTaskId(), queryId, type, QueryTask.QUERY_ACTION.NEXT, query, task);
+        
+        // now delete the query tasks
+        storageService.deleteQueryType(type);
+        
+        // ensure we did not get another task notification
+        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        
+        // make sure it deleted
+        tasks = storageService.getTasks(type);
+        assertEquals(0, tasks.size());
+    }
+    
+    @Test
+    public void testStateStorageService() throws ParseException, InterruptedException {
+        Query query = new QueryImpl();
+        query.setQuery("foo == bar");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        QueryType type = new QueryType("default");
+        UUID queryId = storageService.storeQuery(type, query);
+        assertNotNull(queryId);
         
         QueryStorageStateService storageStateService = new TestQueryStateService("Administrator");
         
@@ -110,10 +324,11 @@ public class QueryStorageServiceTest {
         
         List<TaskDescription> tasks = storageStateService.getTasks(queryId.toString());
         assertEquals(1, tasks.size());
-        UUID taskId = assertQueryCreate(queryId, query, tasks.get(0));
+        assertQueryCreate(queryId, query, tasks.get(0));
+        UUID taskId = tasks.get(0).getTaskId();
         
         QueryTask task = storageService.getTask(taskId);
-        assertQueryCreate(taskId, queryId, type, query, task);
+        assertQueryTask(taskId, queryId, type, QueryTask.QUERY_ACTION.CREATE, query, task);
     }
     
     private void assertQueryCreate(UUID queryId, QueryType type, QueryState state) {
@@ -125,17 +340,17 @@ public class QueryStorageServiceTest {
         assertEquals(1, counts.get(QueryTask.QUERY_ACTION.CREATE).intValue());
     }
     
-    private UUID assertQueryCreate(UUID queryId, Query query, TaskDescription task) throws ParseException {
+    private void assertQueryCreate(UUID queryId, Query query, TaskDescription task) throws ParseException {
+        assertNotNull(task.getTaskId());
         assertEquals(QueryTask.QUERY_ACTION.CREATE, task.getAction());
         assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
         assertEquals(QueryParametersImpl.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
         assertEquals(QueryParametersImpl.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));
-        return task.getTaskId();
     }
     
-    private void assertQueryCreate(UUID taskId, UUID queryId, QueryType type, Query query, QueryTask task) throws ParseException {
+    private void assertQueryTask(UUID taskId, UUID queryId, QueryType type, QueryTask.QUERY_ACTION action, Query query, QueryTask task) throws ParseException {
         assertEquals(taskId, task.getTaskId());
-        assertEquals(QueryTask.QUERY_ACTION.CREATE, task.getAction());
+        assertEquals(action, task.getAction());
         assertEquals(queryId, task.getQueryCheckpoint().getQueryKey().getQueryId());
         assertEquals(type, task.getQueryCheckpoint().getQueryKey().getType());
         assertEquals(query, task.getQueryCheckpoint().getPropertiesAsQuery());
@@ -208,10 +423,5 @@ public class QueryStorageServiceTest {
             }
         }
     }
-    
-    @Configuration
-    @Profile("QueryStorageServiceTest")
-    @ComponentScan(basePackages = "datawave.microservice")
-    public static class QueryStorageServiceTestConfiguration {}
     
 }
