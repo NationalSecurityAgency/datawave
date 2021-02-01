@@ -1,10 +1,10 @@
 package datawave.microservice.common.storage.config;
 
 import com.hazelcast.spring.cache.HazelcastCacheManager;
-import datawave.microservice.cached.LockableCacheInspector;
-import datawave.microservice.cached.UniversalLockableCacheInspector;
-import datawave.microservice.cached.LockableHazelcastCacheInspector;
 import datawave.microservice.cached.CacheInspector;
+import datawave.microservice.cached.LockableCacheInspector;
+import datawave.microservice.cached.LockableHazelcastCacheInspector;
+import datawave.microservice.cached.UniversalLockableCacheInspector;
 import datawave.microservice.common.storage.QueryStorageCache;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;

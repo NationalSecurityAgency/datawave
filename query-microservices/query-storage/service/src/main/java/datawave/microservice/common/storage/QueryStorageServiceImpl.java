@@ -8,8 +8,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -41,9 +40,7 @@ public class QueryStorageServiceImpl implements QueryStorageService {
         }
         
         // create the initial query checkpoint
-        Map<String,Object> props = new HashMap<>();
-        props.put(QueryCheckpoint.INITIAL_QUERY_PROPERTY, query);
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryUuid, queryType, props);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryUuid, queryType, query);
         
         // create and store the initial create task with the checkpoint
         createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
@@ -90,13 +87,13 @@ public class QueryStorageServiceImpl implements QueryStorageService {
     /**
      * Get a task for a given task id
      * 
-     * @param taskNotification
-     *            The task notification
+     * @param taskId
+     *            The task id
      * @return The query task
      */
     @Override
-    public QueryTask getTask(QueryTaskNotification taskNotification) {
-        return cache.getTask(taskNotification.getTaskId());
+    public QueryTask getTask(UUID taskId) {
+        return cache.getTask(taskId);
     }
     
     /**
@@ -109,6 +106,62 @@ public class QueryStorageServiceImpl implements QueryStorageService {
     @Override
     public boolean deleteTask(UUID taskId) {
         return cache.deleteTask(taskId);
+    }
+    
+    /**
+     * Get the tasks for a query
+     *
+     * @param queryId
+     *            The query id
+     * @return A list of tasks
+     */
+    @Override
+    public List<QueryTask> getTasks(UUID queryId) {
+        return cache.getTasks(queryId);
+    }
+    
+    /**
+     * Get the tasks for a query
+     *
+     * @param type
+     *            The query type
+     * @return A list of tasks
+     */
+    @Override
+    public List<QueryTask> getTasks(QueryType type) {
+        return cache.getTasks(type);
+    }
+    
+    /**
+     * Delete a query
+     *
+     * @param queryId
+     *            the query id
+     * @return true if deleted
+     */
+    @Override
+    public boolean deleteQuery(UUID queryId) {
+        return (cache.deleteTasks(queryId) > 0);
+    }
+    
+    /**
+     * Delete all queries for a query type
+     *
+     * @param type
+     *            The query type
+     * @return true if anything deleted
+     */
+    @Override
+    public boolean deleteQueryType(QueryType type) {
+        return (cache.deleteTasks(type) > 0);
+    }
+    
+    /**
+     * Clear the cache
+     */
+    @Override
+    public void clear() {
+        cache.clear();
     }
     
     /**

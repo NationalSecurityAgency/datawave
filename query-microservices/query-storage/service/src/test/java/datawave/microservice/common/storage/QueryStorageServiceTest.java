@@ -4,43 +4,38 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.microservice.common.storage.config.QueryStorageConfig;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParametersImpl;
-import org.joda.time.format.ISODateTimeFormat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -75,10 +70,12 @@ public class QueryStorageServiceTest {
     @Autowired
     private QueryStorageStateService storageStateService;
     
+    @Autowired
+    @Qualifier(QueryStorageConfig.TaskNotificationSourceBinding.NAME)
+    private MessageChannel taskNotificationChannel;
+    
     private SubjectIssuerDNPair DN;
     private String userDN = "userDn";
-    private String query = "some query";
-    private String authorizations = "AUTH1,AUTH2";
     
     @Before
     public void setup() {
@@ -96,7 +93,10 @@ public class QueryStorageServiceTest {
         UUID queryId = storageService.storeQuery(type, query);
         assertNotNull(queryId);
         
+        // ensure we got a task notification
+        
         QueryStorageStateService storageStateService = new TestQueryStateService("Administrator");
+        
         QueryState state = storageStateService.getQuery(queryId.toString());
         assertQueryCreate(queryId, type, state);
         
@@ -112,7 +112,7 @@ public class QueryStorageServiceTest {
         assertEquals(1, tasks.size());
         UUID taskId = assertQueryCreate(queryId, query, tasks.get(0));
         
-        QueryTask task = storageService.getTask(new QueryTaskNotification(taskId, queryId, type));
+        QueryTask task = storageService.getTask(taskId);
         assertQueryCreate(taskId, queryId, type, query, task);
     }
     
@@ -127,21 +127,18 @@ public class QueryStorageServiceTest {
     
     private UUID assertQueryCreate(UUID queryId, Query query, TaskDescription task) throws ParseException {
         assertEquals(QueryTask.QUERY_ACTION.CREATE, task.getAction());
-        String taskQuery = task.getParameters().get(QueryCheckpoint.INITIAL_QUERY_PROPERTY);
-        assertTrue(taskQuery.contains(queryId.toString()));
-        assertTrue(taskQuery.contains(query.getQuery()));
-        assertTrue(taskQuery.contains(query.getBeginDate().toString()));
-        assertTrue(taskQuery.contains(query.getEndDate().toString()));
+        assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
+        assertEquals(QueryParametersImpl.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
+        assertEquals(QueryParametersImpl.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));
         return task.getTaskId();
     }
     
-    private void assertQueryCreate(UUID taskId, UUID queryId, QueryType type, Query query, QueryTask task) {
+    private void assertQueryCreate(UUID taskId, UUID queryId, QueryType type, Query query, QueryTask task) throws ParseException {
         assertEquals(taskId, task.getTaskId());
         assertEquals(QueryTask.QUERY_ACTION.CREATE, task.getAction());
         assertEquals(queryId, task.getQueryCheckpoint().getQueryKey().getQueryId());
         assertEquals(type, task.getQueryCheckpoint().getQueryKey().getType());
-        assertEquals(1, task.getQueryCheckpoint().getProperties().size());
-        assertEquals(query, task.getQueryCheckpoint().getProperties().get(QueryCheckpoint.INITIAL_QUERY_PROPERTY));
+        assertEquals(query, task.getQueryCheckpoint().getPropertiesAsQuery());
     }
     
     /**

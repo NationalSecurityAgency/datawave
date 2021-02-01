@@ -2,6 +2,7 @@ package datawave.microservice.common.storage;
 
 import datawave.webservice.query.Query;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -44,11 +45,11 @@ public interface QueryStorageService {
     /**
      * Get a task for a given task id
      * 
-     * @param taskNotification
-     *            The task notification
+     * @param taskId
+     *            The task id
      * @return The query task
      */
-    QueryTask getTask(QueryTaskNotification taskNotification);
+    QueryTask getTask(UUID taskId);
     
     /**
      * Delete a query task
@@ -58,4 +59,45 @@ public interface QueryStorageService {
      * @return true if found and deleted
      */
     boolean deleteTask(UUID taskId);
+    
+    /**
+     * Get the tasks for a query
+     *
+     * @param queryId
+     *            The query id
+     * @return A list of tasks
+     */
+    List<QueryTask> getTasks(UUID queryId);
+    
+    /**
+     * Get the tasks for a query
+     *
+     * @param type
+     *            The query type
+     * @return A list of tasks
+     */
+    List<QueryTask> getTasks(QueryType type);
+    
+    /**
+     * Delete a query
+     *
+     * @param queryId
+     *            the query id
+     * @return true if deleted
+     */
+    public boolean deleteQuery(UUID queryId);
+    
+    /**
+     * Delete all queries for a query type
+     *
+     * @param type
+     *            The query type
+     * @return true if anything deleted
+     */
+    public boolean deleteQueryType(QueryType type);
+    
+    /**
+     * Clear the cache
+     */
+    public void clear();
 }
