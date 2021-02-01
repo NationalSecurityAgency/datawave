@@ -57,7 +57,7 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     
     @ApiOperation(value = "Get the list of running task ids.")
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
-    @RequestMapping(path = "/tasks/{type}", method = RequestMethod.GET)
+    @RequestMapping(path = "/queries/{type}", method = RequestMethod.GET)
     @Override
     public List<QueryState> getRunningQueries(@PathVariable("type") String type) {
         return cache.getQueries(new QueryType(type));

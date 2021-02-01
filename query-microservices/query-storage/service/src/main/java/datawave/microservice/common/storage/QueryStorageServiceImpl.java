@@ -33,8 +33,12 @@ public class QueryStorageServiceImpl implements QueryStorageService {
      */
     @Override
     public UUID storeQuery(QueryType queryType, Query query) {
-        // create the query UUID
-        UUID queryUuid = UUID.randomUUID();
+        UUID queryUuid = query.getId();
+        if (queryUuid == null) {
+            // create the query UUID
+            queryUuid = UUID.randomUUID();
+            query.setId(queryUuid);
+        }
         
         // create the initial query checkpoint
         Map<String,Object> props = new HashMap<>();
