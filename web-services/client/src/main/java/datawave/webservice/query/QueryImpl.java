@@ -1,5 +1,29 @@
 package datawave.webservice.query;
 
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.metric.QueryMetric;
+import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
+import io.protostuff.UninitializedMessageException;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.ParseException;
@@ -14,33 +38,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.naming.InvalidNameException;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-import io.protostuff.UninitializedMessageException;
-
 @XmlRootElement(name = "QueryImpl")
 @XmlAccessorType(XmlAccessType.NONE)
 public class QueryImpl extends Query implements Serializable, Message<QueryImpl> {
@@ -54,7 +51,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     public static final String QUERY_LOGIC_NAME = QueryParameters.QUERY_LOGIC_NAME;
     public static final String QUERY_NAME = QueryParameters.QUERY_NAME;
     public static final String EXPIRATION_DATE = QueryParameters.QUERY_EXPIRATION;
-    public static final String UUID = "uuid";
+    public static final String QUERY_ID = "uuid";
     public static final String PAGESIZE = QueryParameters.QUERY_PAGESIZE;
     public static final String PAGE_TIMEOUT = QueryParameters.QUERY_PAGETIMEOUT;
     public static final String MAX_RESULTS_OVERRIDE = QueryParameters.QUERY_MAX_RESULTS_OVERRIDE;
@@ -455,7 +452,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         tsb.append(QUERY_LOGIC_NAME, this.getQueryLogicName());
         tsb.append(QUERY_NAME, this.getQueryName());
         tsb.append(EXPIRATION_DATE, this.getExpirationDate());
-        tsb.append(UUID, this.getId());
+        tsb.append(QUERY_ID, this.getId());
         tsb.append(PAGESIZE, this.getPagesize());
         tsb.append(PAGE_TIMEOUT, this.getPageTimeout());
         tsb.append(MAX_RESULTS_OVERRIDE, (this.isMaxResultsOverridden() ? this.getMaxResultsOverride() : "NA"));
@@ -663,7 +660,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                 case 1:
                     return QueryParameters.QUERY_LOGIC_NAME;
                 case 2:
-                    return UUID;
+                    return QUERY_ID;
                 case 3:
                     return QueryParameters.QUERY_NAME;
                 case 4:
@@ -703,7 +700,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put(QUERY_LOGIC_NAME, 1);
-            fieldMap.put(UUID, 2);
+            fieldMap.put(QUERY_ID, 2);
             fieldMap.put(QUERY_NAME, 3);
             fieldMap.put(USER_DN, 4);
             fieldMap.put(QUERY, 5);
@@ -795,8 +792,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     }
     
     public MultivaluedMap<String,String> toMap() {
-        // TODO: missing variables uuid and owner -- not going into map
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+        if (this.id != null) {
+            p.putSingle(QUERY_ID, this.id);
+        }
         if (this.queryAuthorizations != null) {
             p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, this.queryAuthorizations);
         }
@@ -853,6 +852,9 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     public void readMap(MultivaluedMap<String,String> map) throws ParseException {
         for (String key : map.keySet()) {
             switch (key) {
+                case QUERY_ID:
+                    setId(UUID.fromString(map.get(key).get(0)));
+                    break;
                 case QueryParameters.QUERY_AUTHORIZATIONS:
                     setQueryAuthorizations(map.get(key).get(0));
                     break;
