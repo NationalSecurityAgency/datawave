@@ -3854,7 +3854,7 @@ public class ExtendedQueryExecutorBeanTest {
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
         assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
         assertEquals("Thrown exception expected to detail reason for access denial",
-                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+                        "None of the DNs used have access to this query logic: [userDN]", result1.getMessage());
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -3922,7 +3922,7 @@ public class ExtendedQueryExecutorBeanTest {
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
         assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
         assertEquals("Thrown exception expected to detail reason for access denial",
-                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+                        "None of the DNs used have access to this query logic: [userDN]", result1.getMessage());
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -3990,7 +3990,7 @@ public class ExtendedQueryExecutorBeanTest {
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
         assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
         assertEquals("Thrown exception expected to detail reason for access denial",
-                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+                        "None of the DNs used have access to this query logic: [userDN]", result1.getMessage());
     }
     
     @Test
@@ -4083,7 +4083,7 @@ public class ExtendedQueryExecutorBeanTest {
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
         assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
         assertEquals("Thrown exception expected to detail reason for access denial",
-                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+                        "None of the DNs used have access to this query logic: [userdn]", result1.getMessage());
     }
     
     @Test
@@ -4176,7 +4176,7 @@ public class ExtendedQueryExecutorBeanTest {
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
         assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
         assertEquals("Thrown exception expected to detail reason for access denial",
-                        "User userdn is not part of the authorized DNs for the query logic queryLogicName", result1.getMessage());
+                        "None of the DNs used have access to this query logic: [userdn]", result1.getMessage());
     }
     
     public class TestQuery extends QueryImpl {

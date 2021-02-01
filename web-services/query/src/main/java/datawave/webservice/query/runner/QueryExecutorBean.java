@@ -492,8 +492,7 @@ public class QueryExecutorBean implements QueryExecutor {
             
             // Verify that the calling principal has access to the query logic.
             if (!qd.logic.containsDNWithAccess(qd.dnList)) {
-                UnauthorizedQueryException qe = new UnauthorizedQueryException("User " + qd.userDn + " is not part of the authorized DNs for the query logic "
-                                + queryLogicName, 401);
+                UnauthorizedQueryException qe = new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + qd.dnList, 401);
                 GenericResponse<String> response = new GenericResponse<>();
                 response.addException(qe);
                 throw new UnauthorizedException(qe, response);
