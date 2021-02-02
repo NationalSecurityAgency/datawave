@@ -457,7 +457,7 @@ arguments to the IngestJob class in order to enable [Live Ingest](../ingest/over
    -
    - type 'help' for a list of available commands
    -
-   root@my-instance-01> grep Veep -t shard
+   root@my-instance-01> grep Veep -t datawave.shard
 
 ```
 </div>
