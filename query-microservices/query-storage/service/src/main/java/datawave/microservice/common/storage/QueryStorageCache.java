@@ -8,6 +8,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,7 @@ public class QueryStorageCache {
     }
     
     /**
-     * Delete a task
+     * Delete a task. For efficiency it is recommended to use deleteTask(taskId, queryId) instead.
      *
      * @param taskId
      *            The task to delete
@@ -77,18 +78,34 @@ public class QueryStorageCache {
     }
     
     /**
+     * Delete a task
+     * 
+     * @param taskId
+     *            The taskid
+     * @param queryKey
+     *            The queryid
+     */
+    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryTask).toKey(#taskId, #queryKey)")
+    public void deleteTask(UUID taskId, QueryKey queryKey) {
+        String key = QueryTask.toKey(taskId, queryKey);
+        if (log.isDebugEnabled()) {
+            log.debug("Deleted task " + key);
+        }
+    }
+    
+    /**
      * Delete all tasks for a query
      * 
      * @param queryId
      *            the query id
      * @return the number of tasks deleted
      */
-    @CacheEvict
     public int deleteTasks(UUID queryId) {
+        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, queryId.toString());
         if (log.isDebugEnabled()) {
-            log.debug("Deleting all tasks for query " + queryId);
+            log.debug("Deleted all ( " + deleted + ") tasks for query " + queryId);
         }
-        return cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, queryId.toString());
+        return deleted;
     }
     
     /**
@@ -99,7 +116,11 @@ public class QueryStorageCache {
      * @return the number of tasks deleted
      */
     public int deleteTasks(QueryType type) {
-        return cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, type.getType());
+        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, type.getType());
+        if (log.isDebugEnabled()) {
+            log.debug("Deleted all ( " + deleted + ") tasks for query type " + type);
+        }
+        return deleted;
     }
     
     /**
@@ -109,6 +130,7 @@ public class QueryStorageCache {
      */
     @CacheEvict(allEntries = true)
     public String clear() {
+        log.debug("Clearing all tasks");
         return "Cleared " + CACHE_NAME + " cache";
     }
     
@@ -122,10 +144,14 @@ public class QueryStorageCache {
     public QueryTask getTask(UUID taskId) {
         List<? extends QueryTask> tasks = cacheInspector.listMatching(CACHE_NAME, QueryTask.class, taskId.toString());
         if (tasks == null || tasks.isEmpty()) {
+            log.debug("Retrieved no tasks for taskId " + taskId);
             return null;
         } else if (tasks.size() == 1) {
-            return tasks.get(0);
+            QueryTask task = tasks.get(0);
+            logTask("Retrieved 1 task for taskId", task);
+            return task;
         } else {
+            log.error("Retrieved too many (" + tasks.size() + ") tasks for taskId " + taskId);
             throw new IllegalStateException("Found " + tasks.size() + " tasks matching the specified taskId : " + taskId);
         }
     }
@@ -140,7 +166,9 @@ public class QueryStorageCache {
      * @return The query task
      */
     public QueryTask getTask(UUID taskId, QueryKey queryKey) {
-        return cacheInspector.list(CACHE_NAME, QueryTask.class, QueryTask.toKey(taskId, queryKey));
+        QueryTask task = cacheInspector.list(CACHE_NAME, QueryTask.class, QueryTask.toKey(taskId, queryKey));
+        logTask("Retrieved", task);
+        return task;
     }
     
     /**
@@ -151,7 +179,14 @@ public class QueryStorageCache {
      * @return A list of tasks
      */
     public List<QueryTask> getTasks(UUID queryId) {
-        return (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, queryId.toString());
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, queryId.toString());
+        if (tasks == null) {
+            tasks = Collections.EMPTY_LIST;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieved " + tasks.size() + " tasks for queryId " + queryId);
+        }
+        return tasks;
     }
     
     /**
@@ -162,7 +197,14 @@ public class QueryStorageCache {
      * @return A list of tasks
      */
     public List<QueryTask> getTasks(QueryType type) {
-        return (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, type.getType());
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, type.getType());
+        if (tasks == null) {
+            tasks = Collections.EMPTY_LIST;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieved " + tasks.size() + "tasks for query type " + type);
+        }
+        return tasks;
     }
     
     /**
@@ -171,7 +213,14 @@ public class QueryStorageCache {
      * @return A list of tasks
      */
     public List<QueryTask> getTasks() {
-        return (List<QueryTask>) cacheInspector.listAll(CACHE_NAME, QueryTask.class);
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listAll(CACHE_NAME, QueryTask.class);
+        if (tasks == null) {
+            tasks = Collections.EMPTY_LIST;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieved " + tasks.size() + " tasks");
+        }
+        return tasks;
     }
     
     /**
@@ -180,7 +229,11 @@ public class QueryStorageCache {
      * @return A list of query states
      */
     public List<QueryState> getQueries() {
-        return getQueries(getTasks());
+        List<QueryState> queries = getQueries(getTasks());
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieved " + queries.size() + " queries");
+        }
+        return queries;
     }
     
     /**
@@ -190,7 +243,11 @@ public class QueryStorageCache {
      * @return a list of query states
      */
     public List<QueryState> getQueries(QueryType type) {
-        return getQueries(getTasks(type));
+        List<QueryState> queries = getQueries(getTasks(type));
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieved " + queries.size() + " queries for type " + type);
+        }
+        return queries;
     }
     
     /**
@@ -202,11 +259,21 @@ public class QueryStorageCache {
      */
     public QueryState getQuery(UUID queryId) {
         List<QueryState> states = getQueries(getTasks(queryId));
-        if (states == null || states.isEmpty()) {
+        if (states.isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Returning null query state for queryId " + queryId);
+            }
             return null;
         } else if (states.size() == 1) {
-            return states.get(0);
+            QueryState state = states.get(0);
+            if (log.isTraceEnabled()) {
+                log.trace("Returning query state " + state);
+            } else if (log.isDebugEnabled()) {
+                log.debug("Returning query state for queryId " + queryId);
+            }
+            return state;
         } else {
+            log.error("Retrieved too many (" + states.size() + ") query states for queryId " + queryId);
             throw new IllegalStateException("Found " + states.size() + " query states matching query id " + queryId);
         }
     }
@@ -218,7 +285,11 @@ public class QueryStorageCache {
      * @return a list of task descriptions
      */
     public List<TaskDescription> getTaskDescriptions(UUID queryId) {
-        return getTaskDescriptions(getTasks(queryId));
+        List<TaskDescription> tasks = getTaskDescriptions(getTasks(queryId));
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieved " + tasks.size() + " task descriptions for queryId " + queryId);
+        }
+        return tasks;
     }
     
     /**
@@ -279,7 +350,7 @@ public class QueryStorageCache {
      */
     private void logTask(String msg, QueryTask task) {
         if (log.isTraceEnabled()) {
-            log.trace(msg + ' ' + task);
+            log.trace(msg + ' ' + (task == null ? "null task" : task.toString()));
         } else if (log.isDebugEnabled()) {
             log.debug(msg + ' ' + task.toDebug());
         }
