@@ -6,7 +6,6 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 
-import javax.annotation.CheckReturnValue;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,7 +96,6 @@ public class QueryStorageCache {
      * @return a clear message
      */
     @CacheEvict(allEntries = true)
-    @CheckReturnValue
     public String clear() {
         return "Cleared " + CACHE_NAME + " cache";
     }

@@ -46,7 +46,8 @@ server:
 
 logging:
   level:
-    datawave.microservice.common.storage: DEBUG
+    root: WARN
+    datawave.microservice.common.storage: WARN
     io.undertow.request: FATAL
 
 ---
