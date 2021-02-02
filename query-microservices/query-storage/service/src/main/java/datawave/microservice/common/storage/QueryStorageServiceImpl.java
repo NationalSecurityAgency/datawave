@@ -28,10 +28,10 @@ public class QueryStorageServiceImpl implements QueryStorageService {
      *            The query type
      * @param query
      *            The query parameters
-     * @return The query UUID
+     * @return The task key
      */
     @Override
-    public UUID storeQuery(QueryType queryType, Query query) {
+    public TaskKey storeQuery(QueryType queryType, Query query) {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
             // create the query UUID
@@ -43,10 +43,10 @@ public class QueryStorageServiceImpl implements QueryStorageService {
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryUuid, queryType, query);
         
         // create and store the initial create task with the checkpoint
-        createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
+        QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
         
-        // return the query id
-        return queryUuid;
+        // return the task key
+        return task.getTaskKey();
     }
     
     /**
@@ -73,39 +73,38 @@ public class QueryStorageServiceImpl implements QueryStorageService {
     /**
      * Update a stored query task with an updated checkpoint
      * 
-     * @param taskId
-     *            The task id to update
+     * @param taskKey
+     *            The task key to update
      * @param checkpoint
      *            The new query checkpoint
      * @return The updated query task
      */
     @Override
-    public QueryTask checkpointTask(UUID taskId, QueryCheckpoint checkpoint) {
-        return cache.updateQueryTask(taskId, checkpoint);
+    public QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
+        return cache.updateQueryTask(taskKey, checkpoint);
     }
     
     /**
-     * Get a task for a given task id
+     * Get a task for a given task key
      * 
-     * @param taskId
-     *            The task id
+     * @param taskKey
+     *            The task key
      * @return The query task
      */
     @Override
-    public QueryTask getTask(UUID taskId) {
-        return cache.getTask(taskId);
+    public QueryTask getTask(TaskKey taskKey) {
+        return cache.getTask(taskKey);
     }
     
     /**
      * Delete a query task
      * 
-     * @param taskId
-     *            The task id
-     * @return true if found and deleted
+     * @param taskKey
+     *            The task key
      */
     @Override
-    public boolean deleteTask(UUID taskId) {
-        return cache.deleteTask(taskId);
+    public void deleteTask(TaskKey taskKey) {
+        cache.deleteTask(taskKey);
     }
     
     /**
@@ -171,7 +170,7 @@ public class QueryStorageServiceImpl implements QueryStorageService {
      *            The task notification to be sent
      */
     private boolean sendMessage(QueryTaskNotification taskNotification) {
-        return taskNotificationChannel.send(MessageBuilder.withPayload(taskNotification).setCorrelationId(taskNotification.getTaskId()).build());
+        return taskNotificationChannel.send(MessageBuilder.withPayload(taskNotification).setCorrelationId(taskNotification.getTaskKey().toKey()).build());
     }
     
 }

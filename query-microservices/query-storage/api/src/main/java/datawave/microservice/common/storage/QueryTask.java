@@ -16,7 +16,7 @@ public class QueryTask implements Serializable {
         CREATE, NEXT, CLOSE
     }
     
-    private final UUID taskId;
+    private final TaskKey taskKey;
     private final QUERY_ACTION action;
     private final QueryCheckpoint queryCheckpoint;
     
@@ -25,7 +25,7 @@ public class QueryTask implements Serializable {
     }
     
     public QueryTask(UUID taskId, QUERY_ACTION action, QueryCheckpoint queryCheckpoint) {
-        this.taskId = taskId;
+        this.taskKey = new TaskKey(taskId, queryCheckpoint.getQueryKey());
         this.action = action;
         this.queryCheckpoint = queryCheckpoint;
     }
@@ -49,12 +49,12 @@ public class QueryTask implements Serializable {
     }
     
     /**
-     * Get the task id
+     * Get the task key
      *
-     * @return The task id
+     * @return The task key
      */
-    public UUID getTaskId() {
-        return taskId;
+    public TaskKey getTaskKey() {
+        return taskKey;
     }
     
     /**
@@ -63,12 +63,12 @@ public class QueryTask implements Serializable {
      * @return a query task notification
      */
     public QueryTaskNotification getNotification() {
-        return new QueryTaskNotification(getTaskId(), getQueryCheckpoint().getQueryKey());
+        return new QueryTaskNotification(getTaskKey(), getAction());
     }
     
     @Override
     public String toString() {
-        return getTaskId() + ":" + getAction() + " on " + getQueryCheckpoint();
+        return getTaskKey() + ":" + getAction() + " on " + getQueryCheckpoint().getProperties();
     }
     
     /**
@@ -77,14 +77,14 @@ public class QueryTask implements Serializable {
      * @return A debug string
      */
     public String toDebug() {
-        return getTaskId() + ":" + getAction() + " on " + getQueryCheckpoint().getQueryKey();
+        return getTaskKey() + ":" + getAction();
     }
     
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryTask) {
             QueryTask other = (QueryTask) o;
-            return new EqualsBuilder().append(getTaskId(), other.getTaskId()).append(getAction(), other.getAction())
+            return new EqualsBuilder().append(getTaskKey(), other.getTaskKey()).append(getAction(), other.getAction())
                             .append(getQueryCheckpoint(), other.getQueryCheckpoint()).isEquals();
         }
         return false;
@@ -92,16 +92,7 @@ public class QueryTask implements Serializable {
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getTaskId()).toHashCode();
-    }
-    
-    /**
-     * Get the key used to store this query task uniquely in a cache
-     * 
-     * @return a key
-     */
-    public String toKey() {
-        return toKey(getTaskId(), getQueryCheckpoint().getQueryKey());
+        return new HashCodeBuilder().append(getTaskKey()).toHashCode();
     }
     
     /**

@@ -36,7 +36,7 @@ public class QueryStorageCache {
      *            The query checkpoint
      * @return The new query task
      */
-    @CachePut(key = "#result.toKey()")
+    @CachePut(key = "#result.getTaskKey().toKey()")
     public QueryTask addQueryTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) {
         QueryTask task = new QueryTask(action, checkpoint);
         logTask("Adding task", task);
@@ -46,50 +46,36 @@ public class QueryStorageCache {
     /**
      * Update a stored query task with an updated checkpoint
      * 
-     * @param taskId
-     *            The task id to update
+     * @param taskKey
+     *            The task key to update
      * @param checkpoint
      *            The new query checkpoint
      * @return The updated query task
      */
-    @CachePut(key = "T(datawave.microservice.common.storage.QueryTask).toKey(#taskId, #checkpoint.queryKey)")
-    public QueryTask updateQueryTask(UUID taskId, QueryCheckpoint checkpoint) {
-        QueryTask task = getTask(taskId, checkpoint.getQueryKey());
-        if (task == null) {
-            throw new NullPointerException("Could not find a query task for " + taskId);
+    @CachePut(key = "#result.getTaskKey().toKey()")
+    public QueryTask updateQueryTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
+        if (!checkpoint.getQueryKey().equals(taskKey)) {
+            throw new IllegalArgumentException("Checkpoint query key " + checkpoint.getQueryKey() + " does not match " + taskKey);
         }
-        task = new QueryTask(task.getTaskId(), task.getAction(), checkpoint);
+        QueryTask task = getTask(taskKey);
+        if (task == null) {
+            throw new NullPointerException("Could not find a query task for " + taskKey);
+        }
+        task = new QueryTask(taskKey.getTaskId(), task.getAction(), checkpoint);
         logTask("Updating task", task);
         return task;
     }
     
     /**
-     * Delete a task. For efficiency it is recommended to use deleteTask(taskId, queryId) instead.
-     *
-     * @param taskId
-     *            The task to delete
-     * @return True if found and deleted
-     */
-    public boolean deleteTask(UUID taskId) {
-        if (log.isDebugEnabled()) {
-            log.debug("Deleting task " + taskId);
-        }
-        return (cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, taskId.toString()) > 0);
-    }
-    
-    /**
      * Delete a task
      * 
-     * @param taskId
-     *            The taskid
-     * @param queryKey
-     *            The queryid
+     * @param taskKey
+     *            The task key
      */
-    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryTask).toKey(#taskId, #queryKey)")
-    public void deleteTask(UUID taskId, QueryKey queryKey) {
-        String key = QueryTask.toKey(taskId, queryKey);
+    @CacheEvict(key = "#taskKey.toKey()")
+    public void deleteTask(TaskKey taskKey) {
         if (log.isDebugEnabled()) {
-            log.debug("Deleted task " + key);
+            log.debug("Deleted task " + taskKey);
         }
     }
     
@@ -135,38 +121,14 @@ public class QueryStorageCache {
     }
     
     /**
-     * Get a task for a given task id
-     *
-     * @param taskId
-     *            The task id
-     * @return The query task
-     */
-    public QueryTask getTask(UUID taskId) {
-        List<? extends QueryTask> tasks = cacheInspector.listMatching(CACHE_NAME, QueryTask.class, taskId.toString());
-        if (tasks == null || tasks.isEmpty()) {
-            log.debug("Retrieved no tasks for taskId " + taskId);
-            return null;
-        } else if (tasks.size() == 1) {
-            QueryTask task = tasks.get(0);
-            logTask("Retrieved 1 task for taskId", task);
-            return task;
-        } else {
-            log.error("Retrieved too many (" + tasks.size() + ") tasks for taskId " + taskId);
-            throw new IllegalStateException("Found " + tasks.size() + " tasks matching the specified taskId : " + taskId);
-        }
-    }
-    
-    /**
      * Return the task for a given task id and query key
      * 
-     * @param taskId
-     *            The task id
-     * @param queryKey
-     *            The query key
+     * @param taskKey
+     *            The task key
      * @return The query task
      */
-    public QueryTask getTask(UUID taskId, QueryKey queryKey) {
-        QueryTask task = cacheInspector.list(CACHE_NAME, QueryTask.class, QueryTask.toKey(taskId, queryKey));
+    public QueryTask getTask(TaskKey taskKey) {
+        QueryTask task = cacheInspector.list(CACHE_NAME, QueryTask.class, taskKey.toKey());
         logTask("Retrieved", task);
         return task;
     }
@@ -334,7 +296,7 @@ public class QueryStorageCache {
     private List<TaskDescription> getTaskDescriptions(List<QueryTask> tasks) {
         List<TaskDescription> descriptions = new ArrayList<>();
         for (QueryTask task : tasks) {
-            descriptions.add(new TaskDescription(task.getTaskId(), task.getAction(), task.getQueryCheckpoint().getProperties().entrySet().stream()
+            descriptions.add(new TaskDescription(task.getTaskKey(), task.getAction(), task.getQueryCheckpoint().getProperties().entrySet().stream()
                             .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())))));
         }
         return descriptions;

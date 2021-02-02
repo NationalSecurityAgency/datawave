@@ -16,9 +16,9 @@ public interface QueryStorageService {
      *            The query type
      * @param query
      *            The query parameters
-     * @return The query UUID
+     * @return The create task key
      */
-    UUID storeQuery(QueryType queryType, Query query);
+    TaskKey storeQuery(QueryType queryType, Query query);
     
     /**
      * Create a new query task. This will create a new query task, store it, and send out a task notification.
@@ -34,31 +34,30 @@ public interface QueryStorageService {
     /**
      * Update a stored query task with an updated checkpoint
      * 
-     * @param taskId
-     *            The task id to update
+     * @param taskKey
+     *            The task key to update
      * @param checkpoint
      *            The new query checkpoint
      * @return The updated query task
      */
-    QueryTask checkpointTask(UUID taskId, QueryCheckpoint checkpoint);
+    QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint);
     
     /**
-     * Get a task for a given task id
+     * Get a task for a given task key
      * 
-     * @param taskId
-     *            The task id
+     * @param taskKey
+     *            The task key
      * @return The query task
      */
-    QueryTask getTask(UUID taskId);
+    QueryTask getTask(TaskKey taskKey);
     
     /**
      * Delete a query task
      * 
-     * @param taskId
-     *            The task id
-     * @return true if found and deleted
+     * @param taskKey
+     *            The task key
      */
-    boolean deleteTask(UUID taskId);
+    void deleteTask(TaskKey taskKey);
     
     /**
      * Get the tasks for a query

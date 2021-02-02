@@ -12,43 +12,39 @@ import java.util.UUID;
 public class QueryTaskNotification implements Serializable {
     private static final long serialVersionUID = 364194052797912452L;
     
-    private final UUID taskId;
-    private final QueryKey queryKey;
+    private final TaskKey taskKey;
+    private final QueryTask.QUERY_ACTION action;
     
-    public QueryTaskNotification(UUID taskId, UUID queryId, QueryType queryType) {
-        this(taskId, new QueryKey(queryType, queryId));
+    public QueryTaskNotification(TaskKey taskKey, QueryTask.QUERY_ACTION action) {
+        this.taskKey = taskKey;
+        this.action = action;
     }
     
-    public QueryTaskNotification(UUID taskId, QueryKey queryKey) {
-        this.taskId = taskId;
-        this.queryKey = queryKey;
+    public TaskKey getTaskKey() {
+        return taskKey;
     }
     
-    public QueryKey getQueryKey() {
-        return queryKey;
-    }
-    
-    public UUID getTaskId() {
-        return taskId;
+    public QueryTask.QUERY_ACTION getAction() {
+        return action;
     }
     
     @Override
     public String toString() {
-        return taskId.toString() + ":" + queryKey.toString();
+        return taskKey.toString() + ':' + action;
     }
     
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryTaskNotification) {
             QueryTaskNotification other = (QueryTaskNotification) o;
-            return new EqualsBuilder().append(getQueryKey(), other.getQueryKey()).append(getTaskId(), other.getTaskId()).isEquals();
+            return new EqualsBuilder().append(getAction(), other.getAction()).append(getTaskKey(), other.getTaskKey()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getQueryKey()).append(getTaskId()).toHashCode();
+        return new HashCodeBuilder().append(getAction()).append(getTaskKey()).toHashCode();
     }
     
 }
