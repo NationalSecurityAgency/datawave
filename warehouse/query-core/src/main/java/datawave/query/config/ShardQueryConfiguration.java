@@ -333,11 +333,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<String> contentFieldNames = Collections.emptyList();
     
     /**
-     * The default minimum number of threads to use when performing an index lookup. Default value: 10.
-     */
-    private int minIndexLookupThreads = 10;
-    
-    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -511,7 +506,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
-        this.setMinIndexLookupThreads(other.getMinIndexLookupThreads());
     }
     
     /**
@@ -2073,13 +2067,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setGeneratePlanOnly(boolean generatePlanOnly) {
         this.generatePlanOnly = generatePlanOnly;
-    }
-    
-    public int getMinIndexLookupThreads() {
-        return minIndexLookupThreads;
-    }
-    
-    public void setMinIndexLookupThreads(int minIndexLookupThreads) {
-        this.minIndexLookupThreads = minIndexLookupThreads;
     }
 }

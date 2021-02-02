@@ -153,10 +153,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
     }
     
+    private static final int MIN_THREADS = 1;
+    
     protected void setupThreadResources() {
         int threads = this.config.getNumIndexLookupThreads();
-        int minimum = this.config.getMinIndexLookupThreads();
-        executor = Executors.newFixedThreadPool(Math.max(threads, minimum), new ParallelExpansionFactory(this.config.getQuery(), this.threadName));
+        executor = Executors.newFixedThreadPool(Math.max(threads, MIN_THREADS), new ParallelExpansionFactory(this.config.getQuery(), this.threadName));
     }
     
     @Override
