@@ -9,6 +9,9 @@ import java.util.UUID;
 public class QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
     
+    public static final String QUERY_ID_PREFIX = " Q:";
+    public static final String TYPE_PREFIX = " T:";
+    
     private final QueryType type;
     private final UUID queryId;
     
@@ -26,7 +29,7 @@ public class QueryKey implements Serializable {
     }
     
     public String toKey() {
-        return queryId.toString() + ':' + type.getType();
+        return QUERY_ID_PREFIX + queryId.toString() + TYPE_PREFIX + type.getType();
     }
     
     @Override

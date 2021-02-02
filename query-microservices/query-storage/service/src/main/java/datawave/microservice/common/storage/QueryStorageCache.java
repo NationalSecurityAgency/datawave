@@ -87,7 +87,7 @@ public class QueryStorageCache {
      * @return the number of tasks deleted
      */
     public int deleteTasks(UUID queryId) {
-        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, queryId.toString());
+        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, QueryKey.QUERY_ID_PREFIX + queryId.toString());
         if (log.isDebugEnabled()) {
             log.debug("Deleted all ( " + deleted + ") tasks for query " + queryId);
         }
@@ -102,7 +102,7 @@ public class QueryStorageCache {
      * @return the number of tasks deleted
      */
     public int deleteTasks(QueryType type) {
-        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, type.getType());
+        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, QueryKey.TYPE_PREFIX + type.getType());
         if (log.isDebugEnabled()) {
             log.debug("Deleted all ( " + deleted + ") tasks for query type " + type);
         }
@@ -141,7 +141,7 @@ public class QueryStorageCache {
      * @return A list of tasks
      */
     public List<QueryTask> getTasks(UUID queryId) {
-        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, queryId.toString());
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, QueryKey.QUERY_ID_PREFIX + queryId.toString());
         if (tasks == null) {
             tasks = Collections.EMPTY_LIST;
         }
@@ -159,7 +159,7 @@ public class QueryStorageCache {
      * @return A list of tasks
      */
     public List<QueryTask> getTasks(QueryType type) {
-        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, type.getType());
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, QueryKey.TYPE_PREFIX + type.getType());
         if (tasks == null) {
             tasks = Collections.EMPTY_LIST;
         }

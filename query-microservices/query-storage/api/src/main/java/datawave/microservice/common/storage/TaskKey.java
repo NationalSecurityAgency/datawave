@@ -13,6 +13,8 @@ import java.util.UUID;
 public class TaskKey extends QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
     
+    public static final String TASK_ID_PREFIX = " T:";
+    
     private final UUID taskId;
     
     @JsonCreator
@@ -30,7 +32,7 @@ public class TaskKey extends QueryKey implements Serializable {
     }
     
     public String toKey() {
-        return taskId.toString() + ':' + super.toKey();
+        return TASK_ID_PREFIX + taskId.toString() + super.toKey();
     }
     
     @Override
