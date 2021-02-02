@@ -71,6 +71,15 @@ public class QueryTask implements Serializable {
         return getTaskId() + ":" + getAction() + " on " + getQueryCheckpoint();
     }
     
+    /**
+     * Get a somewhat simpler message for debugging purposes
+     * 
+     * @return A debug string
+     */
+    public String toDebug() {
+        return getTaskId() + ":" + getAction() + " on " + getQueryCheckpoint().getQueryKey();
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryTask) {

@@ -2,6 +2,7 @@ package datawave.microservice.common.storage;
 
 import datawave.microservice.cached.LockableCacheInspector;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.log4j.Logger;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 
 @CacheConfig(cacheNames = QueryStorageCache.CACHE_NAME)
 public class QueryStorageCache {
+    private final static Logger log = Logger.getLogger(QueryStorageCache.class);
     
     public static final String CACHE_NAME = "QueryCache";
     
@@ -35,7 +37,9 @@ public class QueryStorageCache {
      */
     @CachePut(key = "#result.toKey()")
     public QueryTask addQueryTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) {
-        return new QueryTask(action, checkpoint);
+        QueryTask task = new QueryTask(action, checkpoint);
+        logTask("Adding task", task);
+        return task;
     }
     
     /**
@@ -53,7 +57,9 @@ public class QueryStorageCache {
         if (task == null) {
             throw new NullPointerException("Could not find a query task for " + taskId);
         }
-        return new QueryTask(task.getTaskId(), task.getAction(), checkpoint);
+        task = new QueryTask(task.getTaskId(), task.getAction(), checkpoint);
+        logTask("Updating task", task);
+        return task;
     }
     
     /**
@@ -64,6 +70,9 @@ public class QueryStorageCache {
      * @return True if found and deleted
      */
     public boolean deleteTask(UUID taskId) {
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting task " + taskId);
+        }
         return (cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, taskId.toString()) > 0);
     }
     
@@ -76,6 +85,9 @@ public class QueryStorageCache {
      */
     @CacheEvict
     public int deleteTasks(UUID queryId) {
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting all tasks for query " + queryId);
+        }
         return cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, queryId.toString());
     }
     
@@ -255,5 +267,21 @@ public class QueryStorageCache {
                             .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())))));
         }
         return descriptions;
+    }
+    
+    /**
+     * A convience method for logging a task
+     * 
+     * @param msg
+     *            The message
+     * @param task
+     *            The task
+     */
+    private void logTask(String msg, QueryTask task) {
+        if (log.isTraceEnabled()) {
+            log.trace(msg + ' ' + task);
+        } else if (log.isDebugEnabled()) {
+            log.debug(msg + ' ' + task.toDebug());
+        }
     }
 }
