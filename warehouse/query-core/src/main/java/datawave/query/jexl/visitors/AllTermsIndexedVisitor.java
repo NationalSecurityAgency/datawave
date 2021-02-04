@@ -139,7 +139,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
             // In the case of an ANY_FIELD or NO_FIELD, the query could not be expanded against the index and hence this
             // term has no results. Leave it in the query as such.
             if (Constants.ANY_FIELD.equals(fieldName) || Constants.NO_FIELD.equals(fieldName)) {
-                return node;
+                return copy(node);
             }
             
             // Verify that the term is indexed.
@@ -153,7 +153,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         
-        return node;
+        return copy(node);
     }
     
     /**

@@ -19,9 +19,9 @@ import org.slf4j.LoggerFactory;
 public class InputFile implements Comparable<InputFile> {
     
     private static final Logger log = LoggerFactory.getLogger(InputFile.class);
-    static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd";
-    // our yyyy/mm/dd pattern for most things.
-    public static final Pattern PATTERN = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2})(?:/.*|$)");
+    static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd" + File.separator + "HH";
+    // our yyyy/MM/dd{/HH{/mm{/ss}}} pattern for most things.
+    public static final Pattern PATTERN = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2,5})(?:/.*|$)");
     
     /**
      * Defines the tracked directory locations within the flag hdfs.
