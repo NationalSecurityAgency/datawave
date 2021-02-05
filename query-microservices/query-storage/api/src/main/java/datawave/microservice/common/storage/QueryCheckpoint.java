@@ -26,12 +26,12 @@ public class QueryCheckpoint implements Serializable {
     private final QueryKey queryKey;
     private final Map<String,Object> properties;
     
-    public QueryCheckpoint(UUID queryId, QueryType queryType, Query query) {
-        this(queryId, queryType, queryToProperties(query));
+    public QueryCheckpoint(UUID queryId, QueryPool queryPool, Query query) {
+        this(queryId, queryPool, queryToProperties(query));
     }
     
-    public QueryCheckpoint(UUID queryId, QueryType queryType, Map<String,Object> properties) {
-        this(new QueryKey(queryType, queryId), properties);
+    public QueryCheckpoint(UUID queryId, QueryPool queryPool, Map<String,Object> properties) {
+        this(new QueryKey(queryPool, queryId), properties);
     }
     
     public QueryCheckpoint(QueryKey queryKey, Query query) {

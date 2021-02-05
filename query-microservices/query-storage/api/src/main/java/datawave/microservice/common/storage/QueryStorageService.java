@@ -12,13 +12,13 @@ public interface QueryStorageService {
     /**
      * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification.
      * 
-     * @param queryType
-     *            The query type
+     * @param queryPool
+     *            The query pool
      * @param query
      *            The query parameters
      * @return The create task key
      */
-    TaskKey storeQuery(QueryType queryType, Query query);
+    TaskKey storeQuery(QueryPool queryPool, Query query);
     
     /**
      * Create a new query task. This will create a new query task, store it, and send out a task notification.
@@ -71,11 +71,11 @@ public interface QueryStorageService {
     /**
      * Get the tasks for a query
      *
-     * @param type
-     *            The query type
+     * @param queryPool
+     *            The query pool
      * @return A list of tasks
      */
-    List<QueryTask> getTasks(QueryType type);
+    List<QueryTask> getTasks(QueryPool queryPool);
     
     /**
      * Delete a query
@@ -87,13 +87,13 @@ public interface QueryStorageService {
     public boolean deleteQuery(UUID queryId);
     
     /**
-     * Delete all queries for a query type
+     * Delete all queries for a query pool
      *
-     * @param type
-     *            The query type
+     * @param queryPool
+     *            The query pool
      * @return true if anything deleted
      */
-    public boolean deleteQueryType(QueryType type);
+    public boolean deleteQueryPool(QueryPool queryPool);
     
     /**
      * Clear the cache

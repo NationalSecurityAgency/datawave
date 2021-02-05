@@ -8,38 +8,38 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import java.io.Serializable;
 
 /**
- * A query type. It is expected that this type will correspond to a class of query executor service.
+ * A query pool
  */
-public class QueryType implements Serializable {
+public class QueryPool implements Serializable {
     private static final long serialVersionUID = -1790098342235290281L;
     
-    private final String type;
+    private final String name;
     
     @JsonCreator
-    public QueryType(@JsonProperty("type") String type) {
-        this.type = type;
+    public QueryPool(@JsonProperty("name") String name) {
+        this.name = name;
     }
     
-    public String getType() {
-        return type;
+    public String getName() {
+        return name;
     }
     
     @Override
     public String toString() {
-        return type;
+        return name;
     }
     
     @Override
     public boolean equals(Object o) {
-        if (o instanceof QueryType) {
-            QueryType other = (QueryType) o;
-            return new EqualsBuilder().append(getType(), other.getType()).isEquals();
+        if (o instanceof QueryPool) {
+            QueryPool other = (QueryPool) o;
+            return new EqualsBuilder().append(getName(), other.getName()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getType()).toHashCode();
+        return new HashCodeBuilder().append(getName()).toHashCode();
     }
 }

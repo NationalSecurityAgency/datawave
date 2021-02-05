@@ -5,11 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.util.UUID;
 
-@XmlRootElement
 public class TaskKey extends QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
     
@@ -18,13 +16,13 @@ public class TaskKey extends QueryKey implements Serializable {
     private final UUID taskId;
     
     @JsonCreator
-    public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("type") QueryType type, @JsonProperty("queryId") UUID queryId) {
-        super(type, queryId);
+    public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId) {
+        super(queryPool, queryId);
         this.taskId = taskId;
     }
     
     public TaskKey(UUID taskId, QueryKey queryKey) {
-        this(taskId, queryKey.getType(), queryKey.getQueryId());
+        this(taskId, queryKey.getQueryPool(), queryKey.getQueryId());
     }
     
     public UUID getTaskId() {
@@ -51,6 +49,6 @@ public class TaskKey extends QueryKey implements Serializable {
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().appendSuper(super.hashCode()).append(getType()).append(getQueryId()).toHashCode();
+        return new HashCodeBuilder().appendSuper(super.hashCode()).append(getQueryPool()).append(getQueryId()).toHashCode();
     }
 }

@@ -102,8 +102,8 @@ public class QueryStorageServiceTest {
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
-        QueryType type = new QueryType("default");
-        TaskKey key = storageService.storeQuery(type, query);
+        QueryPool queryPool = new QueryPool("default");
+        TaskKey key = storageService.storeQuery(queryPool, query);
         assertNotNull(key);
         
         // ensure we got a task notification
@@ -129,8 +129,8 @@ public class QueryStorageServiceTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryType type = new QueryType("default");
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        QueryPool queryPool = new QueryPool("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, queryPool, query);
         QueryTask task = storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         TaskKey key = task.getTaskKey();
         assertEquals(checkpoint.getQueryKey(), key);
@@ -158,10 +158,10 @@ public class QueryStorageServiceTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryType type = new QueryType("default");
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        QueryPool queryPool = new QueryPool("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, queryPool, query);
         
-        TaskKey key = new TaskKey(UUID.randomUUID(), type, UUID.randomUUID());
+        TaskKey key = new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID());
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing an invalid task ofkey");
@@ -187,7 +187,7 @@ public class QueryStorageServiceTest {
         // now update the task
         Map<String,Object> props = new HashMap<>();
         props.put("checkpoint", Boolean.TRUE);
-        checkpoint = new QueryCheckpoint(queryId, type, props);
+        checkpoint = new QueryCheckpoint(queryId, queryPool, props);
         storageService.checkpointTask(notification.getTaskKey(), checkpoint);
         
         // ensure we did not get another task notification
@@ -207,8 +207,8 @@ public class QueryStorageServiceTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryType type = new QueryType("default");
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        QueryPool queryPool = new QueryPool("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, queryPool, query);
         
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
@@ -242,8 +242,8 @@ public class QueryStorageServiceTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryType type = new QueryType("default");
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        QueryPool queryPool = new QueryPool("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, queryPool, query);
         
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
@@ -279,8 +279,8 @@ public class QueryStorageServiceTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryType type = new QueryType("default");
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, type, query);
+        QueryPool queryPool = new QueryPool("default");
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryId, queryPool, query);
         
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
@@ -290,19 +290,19 @@ public class QueryStorageServiceTest {
         assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
         
         // not get the query tasks
-        List<QueryTask> tasks = storageService.getTasks(type);
+        List<QueryTask> tasks = storageService.getTasks(queryPool);
         assertEquals(1, tasks.size());
         QueryTask task = tasks.get(0);
         assertQueryTask(notification.getTaskKey(), QueryTask.QUERY_ACTION.NEXT, query, task);
         
         // now delete the query tasks
-        storageService.deleteQueryType(type);
+        storageService.deleteQueryPool(queryPool);
         
         // ensure we did not get another task notification
         assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
         
         // make sure it deleted
-        tasks = storageService.getTasks(type);
+        tasks = storageService.getTasks(queryPool);
         assertEquals(0, tasks.size());
     }
     
@@ -312,44 +312,44 @@ public class QueryStorageServiceTest {
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
-        QueryType type = new QueryType("default");
-        TaskKey key = storageService.storeQuery(type, query);
+        QueryPool queryPool = new QueryPool("default");
+        TaskKey key = storageService.storeQuery(queryPool, query);
         assertNotNull(key);
         
         QueryStorageStateService storageStateService = new TestQueryStateService("Administrator");
         
         QueryState state = storageStateService.getQuery(key.getQueryId().toString());
-        assertQueryCreate(key.getQueryId(), type, state);
+        assertQueryCreate(key.getQueryId(), queryPool, state);
         
         List<QueryState> queries = storageStateService.getRunningQueries();
         assertEquals(1, queries.size());
-        assertQueryCreate(key.getQueryId(), type, queries.get(0));
+        assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
         
-        queries = storageStateService.getRunningQueries(type.toString());
+        queries = storageStateService.getRunningQueries(queryPool.toString());
         assertEquals(1, queries.size());
-        assertQueryCreate(key.getQueryId(), type, queries.get(0));
+        assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
         
         List<TaskDescription> tasks = storageStateService.getTasks(key.getQueryId().toString());
         assertEquals(1, tasks.size());
-        assertQueryCreate(key.getQueryId(), type, query, tasks.get(0));
+        assertQueryCreate(key.getQueryId(), queryPool, query, tasks.get(0));
         
         QueryTask task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, task);
     }
     
-    private void assertQueryCreate(UUID queryId, QueryType type, QueryState state) {
+    private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {
         assertEquals(queryId, state.getQueryId());
-        assertEquals(type, state.getQueryType());
+        assertEquals(queryPool, state.getQueryPool());
         Map<QueryTask.QUERY_ACTION,Integer> counts = state.getTaskCounts();
         assertEquals(1, counts.size());
         assertTrue(counts.containsKey(QueryTask.QUERY_ACTION.CREATE));
         assertEquals(1, counts.get(QueryTask.QUERY_ACTION.CREATE).intValue());
     }
     
-    private void assertQueryCreate(UUID queryId, QueryType type, Query query, TaskDescription task) throws ParseException {
+    private void assertQueryCreate(UUID queryId, QueryPool queryPool, Query query, TaskDescription task) throws ParseException {
         assertNotNull(task.getTaskKey());
         assertEquals(queryId, task.getTaskKey().getQueryId());
-        assertEquals(type, task.getTaskKey().getType());
+        assertEquals(queryPool, task.getTaskKey().getQueryPool());
         assertEquals(QueryTask.QUERY_ACTION.CREATE, task.getAction());
         assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
         assertEquals(QueryParametersImpl.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
@@ -398,9 +398,9 @@ public class QueryStorageServiceTest {
         }
         
         @Override
-        public List<QueryState> getRunningQueries(String type) {
+        public List<QueryState> getRunningQueries(String queryPool) {
             UriComponents getQueryUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                            .path("/QueryStorage/v1/queries/" + type).build();
+                            .path("/QueryStorage/v1/queries/" + queryPool).build();
             return toStates(jwtRestTemplate.exchange(authUser, HttpMethod.GET, getQueryUri, String.class));
         }
         

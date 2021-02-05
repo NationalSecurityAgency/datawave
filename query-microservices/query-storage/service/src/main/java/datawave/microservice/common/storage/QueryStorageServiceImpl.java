@@ -24,14 +24,14 @@ public class QueryStorageServiceImpl implements QueryStorageService {
     /**
      * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification.
      * 
-     * @param queryType
-     *            The query type
+     * @param queryPool
+     *            The query pool
      * @param query
      *            The query parameters
      * @return The task key
      */
     @Override
-    public TaskKey storeQuery(QueryType queryType, Query query) {
+    public TaskKey storeQuery(QueryPool queryPool, Query query) {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
             // create the query UUID
@@ -40,7 +40,7 @@ public class QueryStorageServiceImpl implements QueryStorageService {
         }
         
         // create the initial query checkpoint
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryUuid, queryType, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryUuid, queryPool, query);
         
         // create and store the initial create task with the checkpoint
         QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
@@ -122,13 +122,13 @@ public class QueryStorageServiceImpl implements QueryStorageService {
     /**
      * Get the tasks for a query
      *
-     * @param type
-     *            The query type
+     * @param queryPool
+     *            The query pool
      * @return A list of tasks
      */
     @Override
-    public List<QueryTask> getTasks(QueryType type) {
-        return cache.getTasks(type);
+    public List<QueryTask> getTasks(QueryPool queryPool) {
+        return cache.getTasks(queryPool);
     }
     
     /**
@@ -144,15 +144,15 @@ public class QueryStorageServiceImpl implements QueryStorageService {
     }
     
     /**
-     * Delete all queries for a query type
+     * Delete all queries for a query pool
      *
-     * @param type
-     *            The query type
+     * @param queryPool
+     *            The query pool
      * @return true if anything deleted
      */
     @Override
-    public boolean deleteQueryType(QueryType type) {
-        return (cache.deleteTasks(type) > 0);
+    public boolean deleteQueryPool(QueryPool queryPool) {
+        return (cache.deleteTasks(queryPool) > 0);
     }
     
     /**

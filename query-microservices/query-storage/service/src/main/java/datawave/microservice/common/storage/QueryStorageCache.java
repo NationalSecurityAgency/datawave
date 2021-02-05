@@ -95,16 +95,16 @@ public class QueryStorageCache {
     }
     
     /**
-     * Delete all tasks for a query type
+     * Delete all tasks for a query pool
      *
-     * @param type
-     *            the query type
+     * @param queryPool
+     *            the query pool
      * @return the number of tasks deleted
      */
-    public int deleteTasks(QueryType type) {
-        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, QueryKey.TYPE_PREFIX + type.getType());
+    public int deleteTasks(QueryPool queryPool) {
+        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, QueryKey.POOL_PREFIX + queryPool.getName());
         if (log.isDebugEnabled()) {
-            log.debug("Deleted all ( " + deleted + ") tasks for query type " + type);
+            log.debug("Deleted all ( " + deleted + ") tasks for query pool " + queryPool);
         }
         return deleted;
     }
@@ -152,19 +152,19 @@ public class QueryStorageCache {
     }
     
     /**
-     * Get the query tasks for a query type
+     * Get the query tasks for a query pool
      *
-     * @param type
-     *            The query type
+     * @param queryPool
+     *            The query pool
      * @return A list of tasks
      */
-    public List<QueryTask> getTasks(QueryType type) {
-        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, QueryKey.TYPE_PREFIX + type.getType());
+    public List<QueryTask> getTasks(QueryPool queryPool) {
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, QueryKey.POOL_PREFIX + queryPool.getName());
         if (tasks == null) {
             tasks = Collections.EMPTY_LIST;
         }
         if (log.isDebugEnabled()) {
-            log.debug("Retrieved " + tasks.size() + "tasks for query type " + type);
+            log.debug("Retrieved " + tasks.size() + "tasks for query pool " + queryPool);
         }
         return tasks;
     }
@@ -199,15 +199,15 @@ public class QueryStorageCache {
     }
     
     /**
-     * Get a list of query states from the cache for a specified query type
+     * Get a list of query states from the cache for a specified query pool
      * 
-     * @param type
+     * @param queryPool
      * @return a list of query states
      */
-    public List<QueryState> getQueries(QueryType type) {
-        List<QueryState> queries = getQueries(getTasks(type));
+    public List<QueryState> getQueries(QueryPool queryPool) {
+        List<QueryState> queries = getQueries(getTasks(queryPool));
         if (log.isDebugEnabled()) {
-            log.debug("Retrieved " + queries.size() + " queries for type " + type);
+            log.debug("Retrieved " + queries.size() + " queries for pool " + queryPool);
         }
         return queries;
     }
