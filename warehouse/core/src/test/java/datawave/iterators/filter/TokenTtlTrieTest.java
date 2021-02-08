@@ -126,40 +126,40 @@ public class TokenTtlTrieTest {
     
     @Test
     public void testNewFormatOnly() {
-        String initial = "foobar 000000=42d\nbarbaz 00abcd=9001d";
+        String initial = "foobar 1234abcd=42d\nbarbaz ABCD1234=9001d";
         
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
-        assertThat(trie.scan("000000".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("00abcd".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("1234abcd".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("ABCD1234".getBytes()), is(notNullValue()));
     }
     
     @Test
     public void testNewFormatWithOldFormat() {
-        String initial = "foobar 000000=42d\nbarbaz 00abcd=9001d\n\"moocow\" : 1234d";
+        String initial = "foobar 3001futurama=42d\nbarbaz 42planetExpress=9001d\n\"moocow\" : 1234d";
         
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
-        assertThat(trie.scan("000000".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("00abcd".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("00ffff".getBytes()), is(nullValue()));
+        assertThat(trie.scan("3001futurama".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("42planetExpress".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("momCorp".getBytes()), is(nullValue()));
         assertThat(trie.scan("moocow".getBytes()), is(notNullValue()));
     }
     
     @Test
     public void testNewFormatWithWhiteSpace() {
-        String initial = "foobar 000000 = 42d";
+        String initial = "foobar 9001powerLevel = 42d";
         
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
-        assertThat(trie.scan("000000".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("9001powerLevel".getBytes()), is(notNullValue()));
         assertThat(trie.scan("foobar".getBytes()), is(nullValue()));
     }
     
     @Test
     public void testNewFormatWithMixedWhitespaceAndOldFormat() {
-        String initial = "foobar 000000=42d\nbarbaz 00abcd = 9001d\n\"foobaz\" : 1234d";
+        String initial = "foobar 1punchMan=42d\nbarbaz 2coders1terminal = 9001d\n\"foobaz\" : 1234d";
         
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
-        assertThat(trie.scan("000000".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("00abcd".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("1punchMan".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("2coders1terminal".getBytes()), is(notNullValue()));
         assertThat(trie.scan("foobar".getBytes()), is(nullValue()));
         assertThat(trie.scan("foobaz".getBytes()), is(notNullValue()));
     }
