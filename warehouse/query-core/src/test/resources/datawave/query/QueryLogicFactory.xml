@@ -158,7 +158,7 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
-        <property name="ivaratorCacheBaseURIs" value="file:///tmp/IvaratorCache" />	<!-- was ${ivarator.cache.base.uris} -->
+        <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />	<!-- was ${ivarator.cache.dir.config} -->
         <property name="ivaratorCacheBufferSize" value="10000" />
         <property name="ivaratorCacheScanPersistThreshold" value="100000" />
         <!-- property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />	 -->
@@ -182,9 +182,39 @@
         <property name="numRangesToBuffer" value="15" />
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
+        <property name="evaluationOnlyFields" value="_ANYFIELD_" />
     </bean>
 
-     <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
+    <bean id="FacetedQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.facets.FacetedQueryLogic">
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Faceted search over indexed fields, returning aggregate counts for field values" />
+        <property name="facetedSearchType" value="FIELD_VALUE_FACETS" />
+        <property name="facetTableName" value="${table.name.facet}" />
+        <property name="facetMetadataTableName" value="${table.name.facet.metadata}" />
+        <property name="facetHashTableName" value="${table.name.facet.hashes}" />
+        <property name="maximumFacetGrouping" value="200" />
+        <property name="minimumFacet" value="1" />
+        <property name="streaming" value="true" />
+        <property name="querySyntaxParsers">
+            <map key-type="java.lang.String" value-type="datawave.query.language.parser.QueryParser">
+                <entry key="JEXL">
+                    <null/>
+                </entry>
+                <entry key="LUCENE">
+                    <bean class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser" />
+                </entry>
+                <entry key="LUCENE-UUID" value-ref="LuceneToJexlUUIDQueryParser" />
+            </map>
+        </property>
+    </bean>
+
+    <util:list id="IvaratorCacheDirConfigs">
+        <bean class="datawave.query.iterator.ivarator.IvaratorCacheDirConfig">
+            <constructor-arg value="file:///tmp/IvaratorCache" />
+        </bean>
+    </util:list>
+
+    <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
          <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
     
@@ -217,7 +247,7 @@
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="transformRules" ref="transformRuleList" />
     </bean>
-    
+
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />

@@ -1,7 +1,7 @@
 package datawave.query.iterator.builder;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
+import java.util.Set;
+
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
@@ -9,13 +9,16 @@ import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Set;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
@@ -33,6 +36,7 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected Set<String> fieldsToAggregate;
     protected EventDataQueryFilter attrFilter;
     protected TermFrequencyAggregator termFrequencyAggregator;
+    protected IteratorEnvironment iteratorEnvironment;
     protected JexlNode node;
     
     public void setNode(JexlNode node) {
@@ -109,6 +113,10 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     
     public void setTermFrequencyAggregator(TermFrequencyAggregator termFrequencyAggregator) {
         this.termFrequencyAggregator = termFrequencyAggregator;
+    }
+    
+    public void setEnv(IteratorEnvironment env) {
+        this.iteratorEnvironment = env;
     }
     
     @SuppressWarnings("unchecked")

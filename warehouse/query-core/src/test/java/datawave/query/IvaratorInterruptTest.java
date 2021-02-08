@@ -1,5 +1,6 @@
 package datawave.query;
 
+import com.google.common.io.Files;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
@@ -8,6 +9,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.TypeMetadata;
@@ -28,8 +30,11 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.*;
-import org.junit.rules.TemporaryFolder;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
@@ -38,10 +43,21 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.*;
+import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
 import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 import static datawave.query.iterator.QueryOptions.SORTED_UIDS;
 
 public abstract class IvaratorInterruptTest {
@@ -56,9 +72,6 @@ public abstract class IvaratorInterruptTest {
     private KryoDocumentDeserializer deserializer;
     
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    
-    @Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
     
     @Deployment
     public static JavaArchive createDeployment() {
@@ -88,8 +101,10 @@ public abstract class IvaratorInterruptTest {
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
         
         // setup a directory for cache results
-        File tmpDir = this.tmpDir.newFolder("Ivarator.cache");
-        logic.setIvaratorCacheBaseURIs(tmpDir.toURI().toString());
+        File tmpDir = Files.createTempDir();
+        tmpDir.deleteOnExit();
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
         
         deserializer = new KryoDocumentDeserializer();
     }

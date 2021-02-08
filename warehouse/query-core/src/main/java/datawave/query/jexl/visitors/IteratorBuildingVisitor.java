@@ -7,6 +7,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
@@ -17,6 +19,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
 import datawave.query.iterator.SourceManager;
@@ -94,6 +97,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -132,7 +136,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected FileSystemCache hdfsFileSystem;
     protected String hdfsFileCompressionCodec;
     protected QueryLock queryLock;
-    protected List<String> ivaratorCacheDirURIs;
+    protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     protected String queryId;
     protected String scanId;
     protected String ivaratorCacheSubDirPrefix = "";
@@ -141,6 +145,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorCacheBufferSize = 10000;
     protected int maxRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
+    protected long maxIvaratorResults = -1;
+    protected int ivaratorNumRetries = 2;
+    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
     protected SortedKeyValueIterator<Key,Value> unsortedIvaratorSource = null;
     protected int ivaratorCount = 0;
     protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
@@ -241,12 +248,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // index checking has already been done, otherwise we would not have
             // an "ExceededValueThresholdMarker"
             // hence the "IndexAgnostic" method can be used here
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(and, null, true);
-            if (ranges.size() != 1) {
+            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(and);
+            if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            ((IndexRangeIteratorBuilder) data).setRange(ranges.keySet().iterator().next());
+            ((IndexRangeIteratorBuilder) data).setRange(range);
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(and)) {
             // if the parent is our ExceededValueThreshold marker, then use an
             // Ivarator to get the job done unless we don't have to
@@ -380,14 +387,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             LiteralRange<String> range = new LiteralRange<>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
             if (!analyzer.isLeadingLiteral()) {
                 // if the range is a leading wildcard we have to seek over the whole range since it's forward indexed only
-                range.updateLower(Constants.NULL_BYTE_STRING, true);
-                range.updateUpper(Constants.MAX_UNICODE_STRING, true);
+                range.updateLower(Constants.NULL_BYTE_STRING, true, node);
+                range.updateUpper(Constants.MAX_UNICODE_STRING, true, node);
             } else {
-                range.updateLower(analyzer.getLeadingLiteral(), true);
+                range.updateLower(analyzer.getLeadingLiteral(), true, node);
                 if (analyzer.hasWildCard()) {
-                    range.updateUpper(analyzer.getLeadingLiteral() + Constants.MAX_UNICODE_STRING, true);
+                    range.updateUpper(analyzer.getLeadingLiteral() + Constants.MAX_UNICODE_STRING, true, node);
                 } else {
-                    range.updateUpper(analyzer.getLeadingLiteral(), true);
+                    range.updateUpper(analyzer.getLeadingLiteral(), true, node);
                 }
             }
             return range;
@@ -402,8 +409,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             analyzer = new JavaRegexAnalyzer(String.valueOf(JexlASTHelper.getLiteralValue(node)));
             
             LiteralRange<String> range = new LiteralRange<>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
-            range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true);
-            range.updateUpper(analyzer.getLeadingOrTrailingLiteral() + Constants.MAX_UNICODE_STRING, true);
+            range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true, node);
+            range.updateUpper(analyzer.getLeadingOrTrailingLiteral() + Constants.MAX_UNICODE_STRING, true, node);
             
             return range;
         } catch (JavaRegexParseException | NoSuchElementException e) {
@@ -425,6 +432,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
+            builder.setEnv(env);
             builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount()
                             : -1));
             builder.setNode(rootNode);
@@ -557,6 +565,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        builder.setQueryId(queryId);
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
@@ -635,12 +644,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
             isNegation = oib.isInANot();
         }
+        builder.setQueryId(queryId);
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         builder.setNode(node);
         node.childrenAccept(this, builder);
@@ -873,6 +884,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         
         IteratorToSortedKeyValueIterator kvIter = new IteratorToSortedKeyValueIterator(getExceededEntry(identifier, range).iterator());
+        builder.setQueryId(queryId);
         builder.setSource(kvIter);
         builder.setValue(null != range.getLower() ? range.getLower().toString() : "null");
         builder.setField(identifier);
@@ -910,11 +922,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         boolean isNegation = (null != data && data instanceof AbstractIteratorBuilder && ((AbstractIteratorBuilder) data).isInANot());
         builder.setSource(getSourceIterator(node, isNegation));
         
+        builder.setQueryId(queryId);
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        builder.setEnv(env);
         
         node.childrenAccept(this, builder);
         
@@ -1024,26 +1038,36 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * 
      * @return A path
      */
-    private URI getTemporaryCacheDir() throws IOException {
+    private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
+        List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
+        
         // first lets increment the count for a unique subdirectory
         String subdirectory = ivaratorCacheSubDirPrefix + "term" + Integer.toString(++ivaratorCount);
         
-        if (ivaratorCacheDirURIs != null && !ivaratorCacheDirURIs.isEmpty()) {
-            for (int i = 0; i < ivaratorCacheDirURIs.size(); i++) {
-                String hdfsCacheDirURI = ivaratorCacheDirURIs.get(i);
-                Path path = new Path(hdfsCacheDirURI, queryId);
-                if (scanId == null) {
-                    log.warn("Running query iterator for " + queryId + " without a scan id.  This could cause ivarator directory conflicts.");
-                } else {
-                    path = new Path(path, scanId);
-                }
-                path = new Path(path, subdirectory);
-                if (isUsable(path)) {
-                    return path.toUri();
+        if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
+            for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
+                
+                // first, make sure the cache configuration is valid
+                if (config.isValid()) {
+                    Path path = new Path(config.getBasePathURI(), queryId);
+                    if (scanId == null) {
+                        log.warn("Running query iterator for " + queryId + " without a scan id.  This could cause ivarator directory conflicts.");
+                    } else {
+                        path = new Path(path, scanId);
+                    }
+                    path = new Path(path, subdirectory);
+                    if (isUsable(path)) {
+                        URI uri = path.toUri();
+                        pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
+                    }
                 }
             }
         }
-        throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirURIs);
+        
+        if (pathAndFs.isEmpty())
+            throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirConfigs);
+        
+        return pathAndFs;
     }
     
     /**
@@ -1085,7 +1109,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         
         try {
             String id = ExceededOrThresholdMarkerJexlNode.getId(sourceNode);
-            String field = ExceededOrThresholdMarkerJexlNode.getField(sourceNode);
+            String field = JexlASTHelper.deconstructIdentifier(ExceededOrThresholdMarkerJexlNode.getField(sourceNode));
             ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(sourceNode);
             
             if (params.getRanges() != null && !params.getRanges().isEmpty()) {
@@ -1160,12 +1184,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (source instanceof ASTAndNode) {
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) source, null, true);
-            if (ranges.size() != 1) {
+            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(source);
+            if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            return ranges.keySet().iterator().next();
+            return range;
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
                             MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
@@ -1189,12 +1213,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (sourceNode instanceof ASTAndNode) {
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) sourceNode, null, true);
-            if (ranges.size() != 1) {
+            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(sourceNode);
+            if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            builder.setRange(ranges.keySet().iterator().next());
+            builder.setRange(range);
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
                             MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
@@ -1220,12 +1244,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
         if (sourceNode instanceof ASTAndNode) {
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) sourceNode, null, true);
-            if (ranges.size() != 1) {
+            LiteralRange range = JexlASTHelper.findRange().recursively().getRange(sourceNode);
+            if (range == null) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MULTIPLE_RANGES_IN_EXPRESSION);
                 throw new DatawaveFatalQueryException(qe);
             }
-            builder.setRangeAndFunction(ranges.keySet().iterator().next(), new FunctionFilter(functionNodes));
+            builder.setRangeAndFunction(range, new FunctionFilter(functionNodes));
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "ASTFunctionNode"));
             throw new DatawaveFatalQueryException(qe);
@@ -1346,6 +1370,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param data
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
+        builder.setQueryId(queryId);
         builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
@@ -1354,16 +1379,17 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
-        URI path = getTemporaryCacheDir();
-        builder.setHdfsFileSystem(hdfsFileSystem.getFileSystem(path));
+        builder.setIvaratorCacheDirs(getIvaratorCacheDirs());
         builder.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
         builder.setQueryLock(queryLock);
-        builder.setIvaratorCacheDirURI(path.toString());
         builder.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
         builder.setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
         builder.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
         builder.setMaxRangeSplit(maxRangeSplit);
         builder.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
+        builder.setMaxIvaratorResults(maxIvaratorResults);
+        builder.setIvaratorNumRetries(ivaratorNumRetries);
+        builder.setIvaratorPersistOptions(ivaratorPersistOptions);
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
@@ -1539,8 +1565,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public IteratorBuildingVisitor setIvaratorCacheDirURIAlternatives(List<String> ivaratorCacheDirURIAlternatives) {
-        this.ivaratorCacheDirURIs = ivaratorCacheDirURIAlternatives;
+    public IteratorBuildingVisitor setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
         return this;
     }
     
@@ -1586,6 +1612,21 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorNumRetries(int ivaratorNumRetries) {
+        this.ivaratorNumRetries = ivaratorNumRetries;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorPersistOptions(FileSortedSet.PersistOptions persistOptions) {
+        this.ivaratorPersistOptions = persistOptions;
         return this;
     }
     

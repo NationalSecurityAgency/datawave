@@ -1,10 +1,10 @@
 package datawave.query.jexl.functions;
 
-import com.vividsolutions.jts.geom.Geometry;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.util.AbstractGeometry;
 import datawave.query.attributes.ValueTuple;
+import org.locationtech.jts.geom.Geometry;
 
 /**
  * Provides functions for doing spatial queries, such as bounding boxes and circles of interest, as well as spatial relationships.

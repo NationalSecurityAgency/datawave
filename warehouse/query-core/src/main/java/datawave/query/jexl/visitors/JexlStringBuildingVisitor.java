@@ -401,6 +401,18 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         StringBuilder sb = (StringBuilder) data;
         
         String literal = node.image;
+        
+        JexlNode parent = node;
+        do {
+            parent = parent.jjtGetParent();
+        } while (parent instanceof ASTReference);
+        
+        // escape any backslashes in the literal if this is not a regex node.
+        // this is necessary to ensure that the query string created by this
+        // visitor can be correctly parsed back into the current query tree.
+        if (!(parent instanceof ASTERNode || parent instanceof ASTNRNode))
+            literal = literal.replace(JexlASTHelper.SINGLE_BACKSLASH, JexlASTHelper.DOUBLE_BACKSLASH);
+        
         int index = literal.indexOf(STRING_QUOTE);
         if (-1 != index) {
             // Slightly larger buffer
@@ -412,7 +424,6 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
                 builder.append(literal.substring(begin, index));
                 builder.append(BACKSLASH).append(STRING_QUOTE);
                 begin = index + 1;
-                literal.substring(index + 1, literal.length());
                 index = literal.indexOf(STRING_QUOTE, begin);
             }
             
@@ -420,20 +431,6 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             builder.append(literal.substring(begin));
             
             // Set the new version on the literal
-            literal = builder.toString();
-        }
-        
-        // Make sure we don't accidentally escape the closing quotation mark
-        // e.g. FOO == 'C:\Foo\'
-        if (literal.charAt(literal.length() - 1) == BACKSLASH) {
-            StringBuilder builder = new StringBuilder(literal);
-            
-            // Nuke that last backslash
-            builder.setLength(literal.length() - 1);
-            
-            // We need to ensure that a literal backslash makes it down to the tservers
-            builder.append(BACKSLASH).append(BACKSLASH);
-            
             literal = builder.toString();
         }
         

@@ -10,6 +10,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
@@ -116,7 +117,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * @param groupFieldsSet
      */
     public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet) {
-        this.groupFieldsSet = new HashSet<>(groupFieldsSet);
+        this.groupFieldsSet = deconstruct(groupFieldsSet);
         if (logic != null) {
             QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
             if (model != null) {
@@ -124,6 +125,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             }
         }
         log.trace("groupFieldsSet: {}", this.groupFieldsSet);
+    }
+    
+    private Set<String> deconstruct(Collection<String> fields) {
+        return fields.stream().map(field -> JexlASTHelper.deconstructIdentifier(field)).collect(Collectors.toSet());
     }
     
     @Override
@@ -538,9 +543,23 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             if (o instanceof TypeAttribute) {
                 TypeAttribute other = (TypeAttribute) o;
-                return this.getType().equals(other.getType());// don't compare metadata: && (0 == this.compareMetadata(other));
+                return this.getType().equals(other.getType()) && (0 == this.compareMetadataRow(other));
             }
             return false;
+        }
+        
+        private int compareMetadataRow(Attribute<T> other) {
+            if (this.isMetadataSet() != other.isMetadataSet()) {
+                if (this.isMetadataSet()) {
+                    return 1;
+                } else {
+                    return -1;
+                }
+            } else if (this.isMetadataSet()) {
+                return this.metadata.compareRow(other.getMetadata().getRow());
+            } else {
+                return 0;
+            }
         }
         
         @Override

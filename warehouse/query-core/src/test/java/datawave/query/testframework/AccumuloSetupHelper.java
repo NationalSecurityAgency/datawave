@@ -62,7 +62,7 @@ public class AccumuloSetupHelper {
     }
     
     /**
-     * Allows loading of test data into Accumuo using multiple file formats.
+     * Allows loading of test data into Accumulo using multiple file formats.
      * 
      * @param types
      *            datatypes for loading
@@ -139,6 +139,11 @@ public class AccumuloSetupHelper {
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_TABLE_NAME);
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        
+        // TODO: elsewhere?
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_TABLE_NAME);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_HASH_TABLE_NAME);
         
         return connector;
     }

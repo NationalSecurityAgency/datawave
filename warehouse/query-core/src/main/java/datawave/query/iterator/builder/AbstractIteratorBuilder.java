@@ -3,10 +3,11 @@ package datawave.query.iterator.builder;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+
 import datawave.query.iterator.NestedIterator;
 
 import com.google.common.collect.HashMultimap;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
@@ -25,6 +26,8 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     protected boolean sortedUIDs;
     
     protected JexlNode node;
+    
+    protected String queryId;
     
     public boolean isSortedUIDs() {
         return sortedUIDs;
@@ -102,6 +105,14 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     
     public JexlNode getNode() {
         return node;
+    }
+    
+    public String getQueryId() {
+        return queryId;
+    }
+    
+    public void setQueryId(String queryId) {
+        this.queryId = queryId;
     }
     
     /**

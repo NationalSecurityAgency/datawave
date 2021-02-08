@@ -101,7 +101,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                     FilterOptions option = new FilterOptions();
                     
                     if (ruleConfig.ttlValue != null) {
-                        option.setTTL(Long.valueOf(ruleConfig.ttlValue));
+                        option.setTTL(Long.parseLong(ruleConfig.ttlValue));
                     }
                     if (ruleConfig.ttlUnits != null) {
                         option.setTTLUnits(ruleConfig.ttlUnits);

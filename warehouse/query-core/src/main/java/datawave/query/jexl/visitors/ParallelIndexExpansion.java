@@ -35,6 +35,8 @@ import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
@@ -73,6 +75,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     protected Collection<String> onlyUseThese;
     protected boolean expandFields;
     protected boolean expandValues;
+    protected boolean expandUnfieldedNegations;
     protected Set<String> expansionFields;
     protected MetadataHelper helper;
     protected Set<String> indexOnlyFields;
@@ -84,13 +87,14 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(ParallelIndexExpansion.class);
     
     public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
-                    boolean expandFields, boolean expandValues) throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        this(config, scannerFactory, helper, expansionFields, expandFields, expandValues, "Datawave Fielded Regex");
+                    boolean expandFields, boolean expandValues, boolean expandUnfieldedNegations) throws InstantiationException, IllegalAccessException,
+                    TableNotFoundException {
+        this(config, scannerFactory, helper, expansionFields, expandFields, expandValues, expandUnfieldedNegations, "Datawave Fielded Regex");
     }
     
     public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
-                    boolean expandFields, boolean expandValues, String threadName) throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException {
+                    boolean expandFields, boolean expandValues, boolean expandUnfieldedNegations, String threadName) throws InstantiationException,
+                    IllegalAccessException, TableNotFoundException {
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
         this.config = config;
         this.scannerFactory = scannerFactory;
@@ -98,6 +102,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         this.expandFields = expandFields;
         this.expandValues = expandValues;
+        this.expandUnfieldedNegations = expandUnfieldedNegations;
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
         
         todo = Lists.newArrayList();
@@ -150,7 +155,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     
     protected void setupThreadResources() {
         int threads = this.config.getNumIndexLookupThreads().intValue();
-        executor = Executors.newFixedThreadPool((int) Math.max(Math.ceil(threads), 10), new ParallelExpansionFactory(this.config.getQuery(), this.threadName));
+        executor = Executors.newFixedThreadPool((int) Math.max(threads, 10), new ParallelExpansionFactory(this.config.getQuery(), this.threadName));
     }
     
     @Override
@@ -213,13 +218,12 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * Performs a lookup in the global index for an ANYFIELD term and returns the field names where the term is found
      * 
      * @param node
-     * @param positive
      * @return set of field names from the global index for the nodes value
      * @throws TableNotFoundException
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    protected IndexLookupCallable buildIndexLookup(JexlNode node, boolean positive) throws TableNotFoundException, IOException, InstantiationException,
+    protected IndexLookupCallable buildIndexLookup(JexlNode node, boolean keepOriginalNode) throws TableNotFoundException, IOException, InstantiationException,
                     IllegalAccessException {
         
         String fieldName = JexlASTHelper.getIdentifier(node);
@@ -237,7 +241,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             
         }
         
-        return new IndexLookupCallable(task, node, positive, true, false);
+        return new IndexLookupCallable(task, node, true, false, keepOriginalNode);
     }
     
     /**
@@ -286,6 +290,16 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         }
         
         return super.visit(node, markedParents);
+    }
+    
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        toggleNegation();
+        try {
+            return super.visit(node, data);
+        } finally {
+            toggleNegation();
+        }
     }
     
     @Override
@@ -395,7 +409,27 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(e);
         }
         
-        return expandFieldNames(node, true);
+        return expandFieldNames(node, false);
+    }
+    
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        toggleNegation();
+        try {
+            return super.visit(node, data);
+        } finally {
+            toggleNegation();
+        }
+    }
+    
+    @Override
+    public Object visit(ASTNotNode node, Object data) {
+        toggleNegation();
+        try {
+            return super.visit(node, data);
+        } finally {
+            toggleNegation();
+        }
     }
     
     @Override
@@ -527,24 +561,67 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         return expand;
     }
     
-    protected boolean isIdentifier(JexlNode node) {
-        return node instanceof ASTERNode;
+    /**
+     * Given a JexlNode, get all grandchildren which follow a path from ASTReference to ASTIdentifier, returning true if the image of the ASTIdentifier is equal
+     * to {@link Constants#ANY_FIELD}
+     *
+     * @param node
+     *            The starting node to check
+     * @return
+     */
+    protected boolean hasUnfieldedIdentifier(JexlNode node) {
+        if (null == node || 2 != node.jjtGetNumChildren()) {
+            return false;
+        }
+        
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
+            
+            if (null != child && child instanceof ASTReference) {
+                for (int j = 0; j < child.jjtGetNumChildren(); j++) {
+                    JexlNode grandChild = child.jjtGetChild(j);
+                    
+                    // If the grandchild and its image is non-null and equal to
+                    // the any-field identifier
+                    if (null != grandChild && grandChild instanceof ASTIdentifier && null != grandChild.image && Constants.ANY_FIELD.equals(grandChild.image)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    // This flag should keep track of whether we are in a negated portion of the tree.
+    protected boolean negated = false;
+    
+    protected void toggleNegation() {
+        this.negated = !this.negated;
+    }
+    
+    /**
+     * The default implementation only expands ERnodes
+     * 
+     * @param node
+     * @return True if an ER node
+     */
+    protected boolean shouldExpand(JexlNode node) {
+        return (!negated || expandUnfieldedNegations || !hasUnfieldedIdentifier(node)) && (node instanceof ASTERNode);
     }
     
     /**
      * Now, when nodes are expanded, we shall create a callable object that will be added to the todo list.
      * 
      * @param node
-     * @param positive
      * @return
      */
-    protected Object expandFieldNames(JexlNode node, Boolean positive) {
+    protected Object expandFieldNames(JexlNode node, boolean keepOriginalNode) {
         
-        if (isIdentifier(node)) {
+        if (shouldExpand(node)) {
             
             try {
-                
-                IndexLookupCallable runnableLookup = buildIndexLookup(node, positive.booleanValue());
+                IndexLookupCallable runnableLookup = buildIndexLookup(node, keepOriginalNode);
                 
                 JexlNode newNode = new IndexLookupCallback(ParserTreeConstants.JJTREFERENCE, runnableLookup);
                 todo.add(((IndexLookupCallback) newNode).get());
@@ -558,6 +635,16 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         // Return itself if we don't have an expansion to perform
         return node;
         
+    }
+    
+    /**
+     * Return true if this is a NR, NE, or NOT node.
+     * 
+     * @param node
+     * @return true of a negative node
+     */
+    private boolean isNegativeNode(JexlNode node) {
+        return (node instanceof ASTNENode || node instanceof ASTNRNode || node instanceof ASTNotNode);
     }
     
     /**
@@ -626,20 +713,20 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         protected IndexLookup lookup;
         protected JexlNode node;
-        protected boolean positive;
         protected boolean ignoreComposites;
+        protected boolean keepOriginalNode;
         
         protected JexlNode parentNode = null;
         private int id;
         private JexlNode newNode;
         protected boolean enforceTimeout;
         
-        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean positive, boolean enforceTimeout, boolean ignoreComposites) {
+        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean enforceTimeout, boolean ignoreComposites, boolean keepOriginalNode) {
             this.lookup = lookup;
             this.node = currNode;
-            this.positive = positive;
             this.enforceTimeout = enforceTimeout;
             this.ignoreComposites = ignoreComposites;
+            this.keepOriginalNode = keepOriginalNode;
             parentNode = currNode.jjtGetParent();
         }
         
@@ -685,21 +772,21 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
                 // the query against the document
                 for (ASTIdentifier id : JexlASTHelper.getIdentifiers(node)) {
-                    if (Constants.ANY_FIELD.equals(id.image)) {
+                    if (!keepOriginalNode && Constants.ANY_FIELD.equals(id.image)) {
                         id.image = Constants.NO_FIELD;
                     }
                 }
                 newNode = node;
             } else {
                 onlyRetainFieldNamesInTheModelForwardMapping(fieldsToValues);
-                if (positive) {
-                    // for a positive node, we want equalities in a OR
-                    newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), node,
-                                    fieldsToValues, expandFields, expandValues);
-                } else {
+                if (isNegativeNode(node)) {
                     // for a negative node, we want negative equalities in an AND
                     newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.AND_NODE, new ASTNENode(ParserTreeConstants.JJTNENODE), node,
-                                    fieldsToValues, expandFields, expandValues);
+                                    fieldsToValues, expandFields, expandValues, keepOriginalNode);
+                } else {
+                    // for a positive node, we want equalities in a OR
+                    newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), node,
+                                    fieldsToValues, expandFields, expandValues, keepOriginalNode);
                 }
             }
             

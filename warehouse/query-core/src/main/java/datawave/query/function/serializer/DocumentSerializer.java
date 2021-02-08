@@ -6,8 +6,8 @@ import java.util.Map.Entry;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 
-import org.apache.accumulo.trace.instrument.Span;
-import org.apache.accumulo.trace.instrument.Trace;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 

@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -38,6 +39,7 @@ import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.pipeline.PipelineFactory;
 import datawave.query.iterator.pipeline.PipelineIterator;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
@@ -84,8 +86,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
-import org.apache.accumulo.trace.instrument.Span;
-import org.apache.accumulo.trace.instrument.Trace;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl2.JexlArithmetic;
@@ -94,6 +96,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -185,7 +189,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected boolean groupingContextAddedByMe = false;
     
     protected TypeMetadata typeMetadataWithNonIndexed = null;
-    protected TypeMetadata typeMetadata = null;
     
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
@@ -265,6 +268,34 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (env != null) {
             ActiveQueryLog.setConfig(env.getConfig());
         }
+        
+        DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());
+        DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec());
+        
+        pruneIvaratorCacheDirs();
+    }
+    
+    // this method will prune any ivarator cache directories that are not available on this node
+    private void pruneIvaratorCacheDirs() throws IOException {
+        ivaratorCacheDirConfigs.removeIf(this::pruneIvaratorCacheDir);
+    }
+    
+    private boolean pruneIvaratorCacheDir(IvaratorCacheDirConfig config) {
+        boolean fsExists = false;
+        
+        // first, make sure the cache configuration is valid
+        if (config.isValid()) {
+            Path basePath = new Path(config.getBasePathURI());
+            
+            try {
+                FileSystem fs = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                fsExists = fs.mkdirs(basePath) || fs.exists(basePath);
+            } catch (Exception e) {
+                log.debug("Ivarator Cache Dir does not exist: " + basePath);
+            }
+        }
+        
+        return !fsExists;
     }
     
     @Override
@@ -366,7 +397,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     log.trace("Received non-inclusive event specific range: " + documentRange);
                 }
                 if (gatherTimingDetails()) {
-                    this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.EmptyTree, trackingSpan, new EmptyTreeIterable());
+                    this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.EmptyTree, trackingSpan, new EmptyTreeIterable(), myEnvironment);
                 } else {
                     this.seekKeySource = new EmptyTreeIterable();
                 }
@@ -385,7 +416,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 
                 if (gatherTimingDetails()) {
                     this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.DocumentSpecificTree, trackingSpan,
-                                    new DocumentSpecificNestedIterator(documentKey));
+                                    new DocumentSpecificNestedIterator(documentKey), myEnvironment);
                 } else {
                     this.seekKeySource = new DocumentSpecificNestedIterator(documentKey);
                 }
@@ -600,8 +631,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     Key myStartKey = myRange.getStartKey();
                     
                     /*
-                     * if our seek key is greater than our start key we can skip this batched query. myStartKey.compareto(seekstartKey) must be <= 0, which
-                     * means that startkey must be greater than or equal be seekstartkey
+                     * if our seek key is greater than our start key we can skip this batched query. myStartKey.compareTo(seekStartKey) must be <= 0, which
+                     * means that startKey must be greater than or equal be seekStartKey
                      */
                     if (null != myStartKey && null != seekStartKey && !seekRange.contains(myStartKey)) {
                         
@@ -641,7 +672,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
                 
                 if (gatherTimingDetails()) {
-                    subDocIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, subDocIter);
+                    subDocIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, subDocIter, myEnvironment);
                 }
                 
                 // Seek() the boolean logic stuff
@@ -675,7 +706,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             
             if (gatherTimingDetails()) {
-                docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter);
+                docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
             }
             
             // Seek() the boolean logic stuff
@@ -948,9 +979,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // getting an additional source deep copy for this function
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
             if (this.isTermFrequenciesRequired()) {
+                
+                // The TFFunction can only prune non index-only fields
+                Set<String> tfIndexOnlyFields = Sets.intersection(getTermFrequencyFields(), getIndexOnlyFields());
+                
                 Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction;
                 tfFunction = TFFactory.getFunction(getScript(documentSource), getContentExpansionFields(), getTermFrequencyFields(), this.getTypeMetadata(),
-                                super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment));
+                                super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment), tfIndexOnlyFields);
                 
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
@@ -959,7 +994,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             try {
                 IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
-                iteratorBuildingVisitor.setExceededOrEvaluationCache(exceededOrEvaluationCache);
                 Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor, script,
                                 getNonEventFields());
                 
@@ -1103,7 +1137,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.value = entry.getValue();
             
             if (Trace.isTracing()) {
-                span.data("Key", rowColfamToString(this.key));
+                span.data("Key", rowColFamToString(this.key));
             }
         } else {
             if (log.isTraceEnabled()) {
@@ -1237,7 +1271,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *            - a {@link Key}
      * @return - a string representation of the given key's row &amp; column family.
      */
-    public static String rowColfamToString(Key k) {
+    public static String rowColFamToString(Key k) {
         if (null == k) {
             return "null";
         }
@@ -1312,7 +1346,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             debugBooleanLogicIterators(sourceIter);
             
             if (sourceIter != null) {
-                sourceIter = new SeekableNestedIterator(sourceIter);
+                sourceIter = new SeekableNestedIterator(sourceIter, this.myEnvironment);
             }
         }
         
@@ -1353,22 +1387,46 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         Set<String> indexedFields = this.getIndexedFields();
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
-        return c.newInstance().setSource(this, this.myEnvironment).setTimeFilter(this.getTimeFilter()).setTypeMetadata(this.getTypeMetadata())
-                        .setFieldsToAggregate(this.getNonEventFields()).setAttrFilter(this.getEvaluationFilter())
-                        .setDatatypeFilter(this.getFieldIndexKeyDataTypeFilter()).setFiAggregator(this.fiAggregator)
-                        .setHdfsFileSystem(this.getFileSystemCache()).setQueryLock(this.getQueryLock())
-                        .setIvaratorCacheDirURIAlternatives(this.getIvaratorCacheBaseURIsAsList()).setQueryId(this.getQueryId()).setScanId(this.getScanId())
-                        .setIvaratorCacheSubDirPrefix(this.getHdfsCacheSubDirPrefix()).setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec())
-                        .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())
-                        .setIvaratorCacheScanPersistThreshold(this.getIvaratorCacheScanPersistThreshold())
-                        .setIvaratorCacheScanTimeout(this.getIvaratorCacheScanTimeout()).setMaxRangeSplit(this.getMaxIndexRangeSplit())
-                        .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles()).setUnsortedIvaratorSource(this.sourceForDeepCopies)
-                        .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources)).setIncludes(indexedFields)
-                        .setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied).setSortedUIDs(sortedUIDs)
-                        .limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit).setCollectTimingDetails(this.collectTimingDetails)
-                        .setQuerySpanCollector(this.querySpanCollector).setIndexOnlyFields(this.getAllIndexOnlyFields())
-                        .setAllowTermFrequencyLookup(this.allowTermFrequencyLookup).setCompositeMetadata(compositeMetadata)
-                        .setExceededOrEvaluationCache(exceededOrEvaluationCache);
+        // @formatter:off
+        return c.newInstance()
+                .setSource(this, this.myEnvironment)
+                .setTimeFilter(this.getTimeFilter())
+                .setTypeMetadata(this.getTypeMetadata())
+                .setFieldsToAggregate(this.getNonEventFields())
+                .setAttrFilter(this.getEvaluationFilter())
+                .setDatatypeFilter(this.getFieldIndexKeyDataTypeFilter())
+                .setFiAggregator(this.fiAggregator)
+                .setHdfsFileSystem(this.getFileSystemCache())
+                .setQueryLock(this.getQueryLock())
+                .setIvaratorCacheDirConfigs(this.getIvaratorCacheDirConfigs())
+                .setQueryId(this.getQueryId())
+                .setScanId(this.getScanId())
+                .setIvaratorCacheSubDirPrefix(this.getHdfsCacheSubDirPrefix())
+                .setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec())
+                .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())
+                .setIvaratorCacheScanPersistThreshold(this.getIvaratorCacheScanPersistThreshold())
+                .setIvaratorCacheScanTimeout(this.getIvaratorCacheScanTimeout())
+                .setMaxRangeSplit(this.getMaxIndexRangeSplit())
+                .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles())
+                .setIvaratorNumRetries(this.getIvaratorNumRetries())
+                .setIvaratorPersistOptions(this.getIvaratorPersistOptions())
+                .setUnsortedIvaratorSource(this.sourceForDeepCopies)
+                .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources))
+                .setMaxIvaratorResults(this.getMaxIvaratorResults())
+                .setIncludes(indexedFields)
+                .setTermFrequencyFields(this.getTermFrequencyFields())
+                .setIsQueryFullySatisfied(isQueryFullySatisfied)
+                .setSortedUIDs(sortedUIDs)
+                .limit(documentRange)
+                .disableIndexOnly(disableFiEval)
+                .limit(this.sourceLimit)
+                .setCollectTimingDetails(this.collectTimingDetails)
+                .setQuerySpanCollector(this.querySpanCollector)
+                .setIndexOnlyFields(this.getAllIndexOnlyFields())
+                .setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
+                .setCompositeMetadata(compositeMetadata)
+                .setExceededOrEvaluationCache(exceededOrEvaluationCache);
+        // @formatter:on
         // TODO: .setStatsPort(this.statsdHostAndPort);
     }
     
@@ -1403,13 +1461,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (isDocumentSpecificRange(this.range)) {
             hdfsPrefix = range.getStartKey().getColumnFamily().toString().replace('\0', '_');
         } else if (batchedQueries > 0) {
-            StringBuilder hdfsPrefixBuilder = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             for (Entry<Range,String> queries : batchStack) {
-                if (hdfsPrefixBuilder.length() > 0) {
-                    hdfsPrefixBuilder.append('-');
+                if (sb.length() > 0) {
+                    sb.append('-');
                 }
-                hdfsPrefixBuilder.append(queries.getKey().getStartKey().getColumnFamily().toString().replace('\0', '_'));
+                sb.append(queries.getKey().getStartKey().getColumnFamily().toString().replace('\0', '_'));
             }
+            hdfsPrefix = sb.toString();
         }
         return hdfsPrefix;
     }
@@ -1475,7 +1534,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected UniqueTransform getUniqueTransform() {
-        if (uniqueTransform == null && getUniqueFields() != null & !getUniqueFields().isEmpty()) {
+        if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
                     uniqueTransform = new UniqueTransform(getUniqueFields());
@@ -1486,7 +1545,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected GroupingTransform getGroupingTransform() {
-        if (groupingTransform == null && getGroupFields() != null & !getGroupFields().isEmpty()) {
+        if (groupingTransform == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
                 if (groupingTransform == null) {
                     groupingTransform = new GroupingTransform(null, getGroupFields(), true);

@@ -336,7 +336,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
         }
         Pipeline pipeline = pipelines.checkOut(key, document, nestedQuery, columnFamilies, inclusive);
         
-        evaluationQueue.add(new Tuple2<>(IteratorThreadPoolManager.executeEvaluation(pipeline, pipeline.toString()), pipeline));
+        evaluationQueue.add(new Tuple2<>(IteratorThreadPoolManager.executeEvaluation(pipeline, pipeline.toString(), env), pipeline));
     }
     
     /*

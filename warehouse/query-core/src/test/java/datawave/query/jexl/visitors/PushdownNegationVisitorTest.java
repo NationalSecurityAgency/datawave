@@ -187,23 +187,25 @@ public class PushdownNegationVisitorTest {
     
     @Test
     public void testBoundedRangeNoPropagation() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("F3 == 'v3' || !(F1 >= 'v1' && F1 <= 'v2')");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("F3 == 'v3' || !((BoundedRange = true) && (F1 >= 'v1' && F1 <= 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("F3 == 'v3' || !(F1 >= 'v1' && F1 <= 'v2')", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("F3 == 'v3' || !((BoundedRange = true) && (F1 >= 'v1' && F1 <= 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testPartialBoundedRangePropagation() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("F3 == 'v3' || !(F1 >= 'v1' && F2 <= 'v2')");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("F3 == 'v3' || !((BoundedRange = true) && (F1 >= 'v1' && F2 <= 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("F3 == 'v3' || !(F1 >= 'v1') || !(F2 <= 'v2')", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("F3 == 'v3' || !((BoundedRange = true) && (F1 >= 'v1' && F2 <= 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testMixedBoundedRanges() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("(F3 == 'v3' || !((F1 >= 'v1' && F2 <= 'v2') || !(F1 >= 'v1' && F1 <= 'v2')))");
+        ASTJexlScript query = JexlASTHelper
+                        .parseJexlQuery("(F3 == 'v3' || !(((BoundedRange = true) && (F1 >= 'v1' && F2 <= 'v2')) || !((BoundedRange = true) && (F1 >= 'v1' && F1 <= 'v2'))))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("(F3 == 'v3' || (((((!(F1 >= 'v1') || !(F2 <= 'v2')))) && ((F1 >= 'v1' && F1 <= 'v2')))))",
+        Assert.assertEquals(
+                        "(F3 == 'v3' || ((!(((BoundedRange = true) && (F1 >= 'v1' && F2 <= 'v2'))) && (((BoundedRange = true) && (F1 >= 'v1' && F1 <= 'v2'))))))",
                         JexlStringBuildingVisitor.buildQuery(result));
     }
     
@@ -228,6 +230,13 @@ public class PushdownNegationVisitorTest {
     @Test
     public void testFunction() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!filter:includeRegex(F1, '.*')");
+        JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
+        Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(query), JexlStringBuildingVisitor.buildQuery(result));
+    }
+    
+    @Test
+    public void testExpandedFunction() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!filter:includeRegex(F1 || F2, '.*')");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
         Assert.assertEquals(JexlStringBuildingVisitor.buildQuery(query), JexlStringBuildingVisitor.buildQuery(result));
     }

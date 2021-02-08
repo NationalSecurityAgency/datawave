@@ -1,73 +1,7 @@
 package datawave.webservice.results.cached;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.Principal;
-import java.sql.BatchUpdateException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLSyntaxErrorException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.Future;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.AsyncResult;
-import javax.ejb.Asynchronous;
-import javax.ejb.EJBContext;
-import javax.ejb.EJBException;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.ejb.TransactionManagement;
-import javax.ejb.TransactionManagementType;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.inject.Inject;
-import javax.interceptor.Interceptors;
-import javax.sql.DataSource;
-import javax.sql.rowset.CachedRowSet;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
-
 import datawave.annotation.ClearQuerySessionId;
 import datawave.annotation.GenerateQuerySessionId;
 import datawave.annotation.Required;
@@ -79,6 +13,7 @@ import datawave.marking.SecurityMarking;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -124,7 +59,6 @@ import datawave.webservice.result.CachedResultsResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.TotalResultsAware;
 import datawave.webservice.result.VoidResponse;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
@@ -139,6 +73,69 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.AsyncResult;
+import javax.ejb.Asynchronous;
+import javax.ejb.EJBContext;
+import javax.ejb.EJBException;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
+import javax.enterprise.concurrent.ManagedExecutorService;
+import javax.inject.Inject;
+import javax.interceptor.Interceptors;
+import javax.sql.DataSource;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.Principal;
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * CachedResultsBean loads the results of a predefined query into a relational database (MySQL) so that the user can run SQL queries against the data, which
@@ -207,7 +204,7 @@ public class CachedResultsBean {
     @Inject
     private QueryPredictor predictor;
     
-    protected static String BASE_COLUMNS = null;
+    protected static final String BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");
     
     @Inject
     private ResponseObjectFactory responseObjectFactory;
@@ -232,10 +229,6 @@ public class CachedResultsBean {
     
     @Inject
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
-    
-    static {
-        BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");
-    }
     
     protected static final String COMMA = ",";
     protected static final String TABLE = "$table";
@@ -270,8 +263,7 @@ public class CachedResultsBean {
         CachedRunningQuery.setResponseObjectFactory(responseObjectFactory);
         
         String template = null;
-        try (Connection con = ds.getConnection()) {
-            Statement s = con.createStatement();
+        try (Connection con = ds.getConnection(); Statement s = con.createStatement()) {
             template = cachedResultsConfiguration.getParameters().get("TEMPLATE_TABLE");
             s.execute(template);
         } catch (SQLException sqle) {
@@ -466,6 +458,10 @@ public class CachedResultsBean {
                         }
                     } catch (Exception e) {
                         log.error(e.getMessage());
+                    }
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryMap.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryMap.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                     }
                     auditor.audit(queryMap);
                 } catch (Exception e) {
@@ -1316,6 +1312,10 @@ public class CachedResultsBean {
                 params.remove(QueryParameters.QUERY_STRING);
                 params.putSingle(QueryParameters.QUERY_STRING, auditMessage.toString());
                 params.putAll(queryParameters);
+                // if the user didn't set an audit id, use the query id
+                if (!params.containsKey(AuditParameters.AUDIT_ID)) {
+                    params.putSingle(AuditParameters.AUDIT_ID, queryId);
+                }
                 auditor.audit(params);
             }
             
@@ -2499,9 +2499,9 @@ public class CachedResultsBean {
             if (log.isTraceEnabled()) {
                 log.trace("Creating view using sql: " + view);
             }
-            Statement viewStmt = con.createStatement();
-            viewStmt.execute(view.toString());
-            viewStmt.close();
+            try (Statement viewStmt = con.createStatement()) {
+                viewStmt.execute(view.toString());
+            }
             viewCreated = true;
         } catch (SQLException e) {
             log.error("Error creating view with sql: " + view, e);

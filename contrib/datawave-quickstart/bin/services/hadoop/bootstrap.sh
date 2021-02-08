@@ -3,15 +3,17 @@
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.9.3.tar.gz}"
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive.apache.org/dist/hadoop/common/hadoop-3.1.2/hadoop-3.1.2.tar.gz}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
 
 DW_HADOOP_DFS_URI="hdfs://localhost:9000"
-DW_HADOOP_MR_INTER_DIR="${DW_CLOUD_DATA}/hadoop/jobhist/inter"
-DW_HADOOP_MR_DONE_DIR="${DW_CLOUD_DATA}/hadoop/jobhist/done"
+DW_HADOOP_MR_INTER_DIR="/jobhist/inter"
+DW_HADOOP_MR_DONE_DIR="/jobhist/done"
 DW_HADOOP_RESOURCE_MANAGER_ADDRESS="localhost:8050"
+
+HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
 
 # core-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_CORE_SITE_CONF="fs.defaultFS ${DW_HADOOP_DFS_URI}
@@ -20,6 +22,7 @@ io.compression.codecs org.apache.hadoop.io.compress.GzipCodec"
 
 # hdfs-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_HDFS_SITE_CONF="dfs.namenode.name.dir file://${DW_CLOUD_DATA}/hadoop/nn
+dfs.namenode.secondary.http-address localhost
 dfs.namenode.checkpoint.dir file://${DW_CLOUD_DATA}/hadoop/nnchk
 dfs.datanode.data.dir file://${DW_CLOUD_DATA}/hadoop/dn
 dfs.datanode.handler.count 10
@@ -36,7 +39,10 @@ mapreduce.map.memory.mb 2048
 mapreduce.reduce.memory.mb 2048
 mapreduce.map.java.opts -Xmx1024m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
 mapreduce.reduce.java.opts -Xmx1792m -server -XX:NewRatio=8 -Djava.net.preferIPv4Stack=true -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath=${DW_HADOOP_MR_HEAPDUMP_DIR}
-mapreduce.framework.name yarn"
+mapreduce.framework.name yarn
+yarn.app.mapreduce.am.env HADOOP_MAPRED_HOME=${HADOOP_HOME}
+mapreduce.map.env HADOOP_MAPRED_HOME=${HADOOP_HOME}
+mapreduce.reduce.env HADOOP_MAPRED_HOME=${HADOOP_HOME}"
 
 # yarn-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_YARN_SITE_CONF="yarn.resourcemanager.scheduler.address localhost:8030
@@ -76,25 +82,23 @@ yarn.scheduler.capacity.root.default.acl_administer_queue *
 yarn.scheduler.capacity.node-locality-delay 40"
 
 # Hadoop standard exports...
-export HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
+export HADOOP_HOME
 export HADOOP_CONF_DIR="${HADOOP_HOME}/etc/hadoop"
 export HADOOP_LOG_DIR="${HADOOP_HOME}/logs"
-export HADOOP_PREFIX="${HADOOP_HOME}"
 export HADOOP_YARN_HOME="${HADOOP_HOME}"
 export HADOOP_MAPRED_HOME="${HADOOP_HOME}"
 export HADOOP_PID_DIR="${DW_CLOUD_DATA}/hadoop/pids"
-export HADOOP_MAPRED_PID_DIR="${HADOOP_PID_DIR}"
 
 export PATH=${HADOOP_HOME}/bin:$PATH
 
 # Service helpers...
 
-DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-all.sh && ./mr-jobhistory-daemon.sh start historyserver )"
-DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && ./mr-jobhistory-daemon.sh stop historyserver &&./stop-all.sh )"
-DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -f 'datanode.DataNode|namenode.NameNode|namenode.SecondaryNameNode|nodemanager.NodeManager|resourcemanager.ResourceManager|mapreduce.v2.hs.JobHistoryServer'"
+DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && ./mr-jobhistory-daemon.sh start historyserver )"
+DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && ./mr-jobhistory-daemon.sh stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
+DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {
-    DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
     [ -z "${DW_HADOOP_PID_LIST}" ] && return 1 || return 0
 }
 

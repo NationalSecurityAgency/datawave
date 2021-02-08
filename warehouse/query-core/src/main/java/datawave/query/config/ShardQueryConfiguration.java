@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -14,9 +15,9 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
-import datawave.query.UnindexType;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -67,7 +69,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,String> filterOptions = new HashMap<>();
     private boolean disableIndexOnlyDocuments = false;
     @JsonIgnore
-    private QueryStopwatch timers = new QueryStopwatch();
+    private transient QueryStopwatch timers = new QueryStopwatch();
     private int maxScannerBatchSize = 1000;
     /**
      * Index batch size is the size of results use for each index lookup
@@ -76,8 +78,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean allTermsIndexOnly;
     private String accumuloPassword = "";
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
+    // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
+    private boolean parseTldUids = false;
     private boolean collapseUids = false;
     private int collapseUidsThreshold = -1;
+    // Should this query dedupe terms within ANDs and ORs
+    private boolean enforceUniqueTermsWithinExpressions = false;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -87,6 +93,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int statsdMaxQueueSize = 500;
     private boolean limitAnyFieldLookups = false;
     private boolean bypassExecutabilityCheck = false;
+    /**
+     * Usually we are planning for the purposes of running the query. This can be set if only generating a plan (i.e. don't start generating ranges)
+     */
+    private boolean generatePlanOnly = false;
     /**
      * Allows for back off of scanners.
      */
@@ -127,6 +137,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Used to determine the maximum number of query ranges to generate when performing a geowave query against a PointType field.
      */
     private int pointMaxExpansion = 32;
+    /**
+     * Used during geowave range optimization to determine the minimum number of sub-ranges we should split a range into.
+     */
+    private int geoWaveRangeSplitThreshold = 16;
+    /**
+     * Used during geowave range optimization to determine whether or not a large range should be split into smaller ranges - expressed as a float between 0 and
+     * 1.0
+     */
+    private double geoWaveMaxRangeOverlap = 0.25;
+    /**
+     * Determines whether or not we should attempt to optimize the GeoWave ranges which are produced.
+     */
+    private boolean optimizeGeoWaveRanges = true;
     /**
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
@@ -185,6 +208,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -246,6 +270,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * By default enable using term frequency instead of field index when possible for value lookup
      */
     private boolean allowTermFrequencyLookup = true;
+    /**
+     * By default we will expand unfielded expressions in a negation. May want to disable if there are non-indexed fields.
+     */
+    private boolean expandUnfieldedNegations = true;
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
@@ -264,14 +292,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
-    private List<String> ivaratorCacheBaseURIs = null;
+    private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
     private long ivaratorCacheScanPersistThreshold = 100000L;
     private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     private int maxFieldIndexRangeSplit = 11;
     private int ivaratorMaxOpenFiles = 100;
+    private int ivaratorNumRetries = 2;
+    private boolean ivaratorPersistVerify = true;
+    private int ivaratorPersistVerifyCount = 100;
     private int maxIvaratorSources = 33;
+    private long maxIvaratorResults = -1;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;
     private boolean expandAllTerms = false;
@@ -330,6 +362,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
+        this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
+        this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
@@ -349,6 +383,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
         this.setGeometryMaxExpansion(other.getGeometryMaxExpansion());
         this.setPointMaxExpansion(other.getPointMaxExpansion());
+        this.setGeoWaveRangeSplitThreshold(other.getGeoWaveRangeSplitThreshold());
+        this.setGeoWaveMaxRangeOverlap(other.getGeoWaveMaxRangeOverlap());
+        this.setOptimizeGeoWaveRanges(other.isOptimizeGeoWaveRanges());
         this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
         this.setShardTableName(other.getShardTableName());
         this.setIndexTableName(other.getIndexTableName());
@@ -419,6 +456,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setContainsCompositeTerms(other.isContainsCompositeTerms());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
         this.setAllowTermFrequencyLookup(other.isAllowTermFrequencyLookup());
+        this.setExpandUnfieldedNegations(other.isExpandUnfieldedNegations());
         this.setReturnType(other.getReturnType());
         this.setEventPerDayThreshold(other.getEventPerDayThreshold());
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
@@ -437,14 +475,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setZookeeperConfig(other.getZookeeperConfig());
-        this.setIvaratorCacheBaseURIs(other.getIvaratorCacheBaseURIs());
+        this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
         this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
         this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
         this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
         this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
         this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
+        this.setIvaratorNumRetries(other.getIvaratorNumRetries());
+        this.setIvaratorPersistVerify(other.isIvaratorPersistVerify());
+        this.setIvaratorPersistVerifyCount(other.getIvaratorPersistVerifyCount());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
+        this.setMaxIvaratorResults(other.getMaxIvaratorResults());
         this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
         this.setMaxPipelineCachedResults(other.getMaxPipelineCachedResults());
         this.setExpandAllTerms(other.isExpandAllTerms());
@@ -463,6 +505,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
+        this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
     }
     
     /**
@@ -567,7 +610,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @return
      */
     public boolean canHandleExceededValueThreshold() {
-        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheBaseURIs && !this.ivaratorCacheBaseURIs.isEmpty());
+        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
     }
     
     /**
@@ -709,12 +752,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
     
+    private Set<String> deconstruct(Collection<String> fields) {
+        return fields == null ? null : fields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
+    }
+    
     public Set<String> getProjectFields() {
         return projectFields;
     }
     
     public void setProjectFields(Set<String> projectFields) {
-        this.projectFields = projectFields;
+        this.projectFields = deconstruct(projectFields);
     }
     
     public String getProjectFieldsAsString() {
@@ -726,7 +773,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setBlacklistedFields(Set<String> blacklistedFields) {
-        this.blacklistedFields = blacklistedFields;
+        this.blacklistedFields = deconstruct(blacklistedFields);
     }
     
     public String getBlacklistedFieldsAsString() {
@@ -817,6 +864,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.pointMaxExpansion = pointMaxExpansion;
     }
     
+    public int getGeoWaveRangeSplitThreshold() {
+        return geoWaveRangeSplitThreshold;
+    }
+    
+    public void setGeoWaveRangeSplitThreshold(int geoWaveRangeSplitThreshold) {
+        this.geoWaveRangeSplitThreshold = geoWaveRangeSplitThreshold;
+    }
+    
+    public double getGeoWaveMaxRangeOverlap() {
+        return geoWaveMaxRangeOverlap;
+    }
+    
+    public void setGeoWaveMaxRangeOverlap(double geoWaveMaxRangeOverlap) {
+        this.geoWaveMaxRangeOverlap = geoWaveMaxRangeOverlap;
+    }
+    
+    public boolean isOptimizeGeoWaveRanges() {
+        return optimizeGeoWaveRanges;
+    }
+    
+    public void setOptimizeGeoWaveRanges(boolean optimizeGeoWaveRanges) {
+        this.optimizeGeoWaveRanges = optimizeGeoWaveRanges;
+    }
+    
     public int getGeoWaveMaxEnvelopes() {
         return geoWaveMaxEnvelopes;
     }
@@ -860,7 +931,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
     
-    @SuppressWarnings("unchecked")
     public Map<String,String> getFilterOptions() {
         return Collections.unmodifiableMap(filterOptions);
     }
@@ -944,7 +1014,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         if (null == unevaluatedFields) {
             this.unevaluatedFields = new HashSet<>();
         } else {
-            this.unevaluatedFields = new HashSet<>(unevaluatedFields);
+            this.unevaluatedFields = deconstruct(unevaluatedFields);
         }
     }
     
@@ -1106,31 +1176,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.zookeeperConfig = zookeeperConfig;
     }
     
-    public List<String> getIvaratorCacheBaseURIsAsList() {
-        return ivaratorCacheBaseURIs;
+    public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
+        return ivaratorCacheDirConfigs;
     }
     
-    public String getIvaratorCacheBaseURIs() {
-        if (ivaratorCacheBaseURIs == null) {
-            return null;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIs) {
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(hdfsCacheBaseURI);
-            }
-            return builder.toString();
-        }
-    }
-    
-    public void setIvaratorCacheBaseURIs(String ivaratorCacheBaseURIs) {
-        if (ivaratorCacheBaseURIs == null || ivaratorCacheBaseURIs.isEmpty()) {
-            this.ivaratorCacheBaseURIs = null;
-        } else {
-            this.ivaratorCacheBaseURIs = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIs, ','));
-        }
+    public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
     }
     
     public String getIvaratorFstHdfsBaseURIs() {
@@ -1181,12 +1232,44 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
     
+    public int getIvaratorNumRetries() {
+        return ivaratorNumRetries;
+    }
+    
+    public void setIvaratorNumRetries(int ivaratorNumRetries) {
+        this.ivaratorNumRetries = ivaratorNumRetries;
+    }
+    
+    public boolean isIvaratorPersistVerify() {
+        return ivaratorPersistVerify;
+    }
+    
+    public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
+        this.ivaratorPersistVerify = ivaratorPersistVerify;
+    }
+    
+    public int getIvaratorPersistVerifyCount() {
+        return ivaratorPersistVerifyCount;
+    }
+    
+    public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
+        this.ivaratorPersistVerifyCount = ivaratorPersistVerifyCount;
+    }
+    
     public int getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
     
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+    
+    public long getMaxIvaratorResults() {
+        return maxIvaratorResults;
+    }
+    
+    public void setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
     }
     
     public int getMaxEvaluationPipelines() {
@@ -1260,15 +1343,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
         this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
-        for (Entry<String,Type<?>> entry : indexedFieldsAndTypes.entries()) {
-            if (entry.getValue() instanceof UnindexType) {
-                this.indexedFields.remove(entry.getKey());
-            }
-        }
     }
     
     public void setIndexedFields(Set<String> indexedFields) {
-        this.indexedFields = Sets.newHashSet(indexedFields);
+        this.indexedFields = (null == indexedFields) ? Collections.emptySet() : Sets.newHashSet(indexedFields);
     }
     
     public Set<String> getReverseIndexedFields() {
@@ -1277,15 +1355,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
         this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
-        for (Entry<String,Type<?>> entry : reverseIndexedFieldsAndTypes.entries()) {
-            if (entry.getValue() instanceof UnindexType) {
-                this.reverseIndexedFields.remove(entry.getKey());
-            }
-        }
     }
     
     public void setReverseIndexedFields(Set<String> reverseIndexedFields) {
-        this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFields);
+        this.reverseIndexedFields = reverseIndexedFields == null ? new HashSet<>() : Sets.newHashSet(reverseIndexedFields);
     }
     
     public Set<String> getNormalizedFields() {
@@ -1357,8 +1430,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setNormalizedFieldsDatatypes(Multimap<String,Type<?>> normalizedFieldsDatatypes) {
-        this.normalizedFieldsDatatypes = normalizedFieldsDatatypes;
-        this.normalizedFields = Sets.newHashSet(normalizedFieldsDatatypes.keySet());
+        this.normalizedFieldsDatatypes = (null == normalizedFieldsDatatypes) ? HashMultimap.create() : normalizedFieldsDatatypes;
+        this.normalizedFields = Sets.newHashSet(this.normalizedFieldsDatatypes.keySet());
     }
     
     public Set<String> getLimitFields() {
@@ -1366,7 +1439,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setLimitFields(Set<String> limitFields) {
-        this.limitFields = limitFields;
+        this.limitFields = deconstruct(limitFields);
     }
     
     public String getLimitFieldsAsString() {
@@ -1418,7 +1491,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setGroupFields(Set<String> groupFields) {
-        this.groupFields = groupFields;
+        this.groupFields = deconstruct(groupFields);
     }
     
     public String getGroupFieldsAsString() {
@@ -1442,7 +1515,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setUniqueFields(Set<String> uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.uniqueFields = deconstruct(uniqueFields);
     }
     
     public String getUniqueFieldsAsString() {
@@ -1550,8 +1623,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setDocumentPermutations(List<String> documentPermutations) {
+        List<String> permutations = (null == documentPermutations) ? Collections.emptyList() : documentPermutations;
         // validate we have instances of DocumentPermutation
-        for (String perm : documentPermutations) {
+        for (String perm : permutations) {
             try {
                 Class<?> clazz = Class.forName(perm);
                 if (!DocumentPermutation.class.isAssignableFrom(clazz)) {
@@ -1561,7 +1635,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 throw new IllegalArgumentException("Unable to load " + perm + " as a DocumentPermutation");
             }
         }
-        this.documentPermutations = documentPermutations;
+        this.documentPermutations = permutations;
     }
     
     public boolean isReducedResponse() {
@@ -1618,6 +1692,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
         this.allowTermFrequencyLookup = allowTermFrequencyLookup;
+    }
+    
+    public boolean isExpandUnfieldedNegations() {
+        return expandUnfieldedNegations;
+    }
+    
+    public void setExpandUnfieldedNegations(boolean expandUnfieldedNegations) {
+        this.expandUnfieldedNegations = expandUnfieldedNegations;
     }
     
     public boolean isAllTermsIndexOnly() {
@@ -1722,7 +1804,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setQueryTermFrequencyFields(Set<String> queryTermFrequencyFields) {
-        this.queryTermFrequencyFields = queryTermFrequencyFields;
+        this.queryTermFrequencyFields = deconstruct(queryTermFrequencyFields);
     }
     
     public boolean isTermFrequenciesRequired() {
@@ -1749,6 +1831,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxIndexScanTimeMillis = maxTime;
     }
     
+    public boolean getParseTldUids() {
+        return parseTldUids;
+    }
+    
+    public void setParseTldUids(boolean parseTldUids) {
+        this.parseTldUids = parseTldUids;
+    }
+    
     public boolean getCollapseUids() {
         return collapseUids;
     }
@@ -1763,6 +1853,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setCollapseUidsThreshold(int collapseUidsThreshold) {
         this.collapseUidsThreshold = collapseUidsThreshold;
+    }
+    
+    public boolean getEnforceUniqueTermsWithinExpressions() {
+        return enforceUniqueTermsWithinExpressions;
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
     
     public boolean getSequentialScheduler() {
@@ -1953,5 +2051,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setContentFieldNames(List<String> contentFieldNames) {
         this.contentFieldNames = contentFieldNames;
+    }
+    
+    public void setEvaluationOnlyFields(Set<String> evaluationOnlyFields) {
+        this.evaluationOnlyFields = evaluationOnlyFields;
+    }
+    
+    public Set<String> getEvaluationOnlyFields() {
+        return this.evaluationOnlyFields;
+    }
+    
+    public boolean isGeneratePlanOnly() {
+        return generatePlanOnly;
+    }
+    
+    public void setGeneratePlanOnly(boolean generatePlanOnly) {
+        this.generatePlanOnly = generatePlanOnly;
     }
 }

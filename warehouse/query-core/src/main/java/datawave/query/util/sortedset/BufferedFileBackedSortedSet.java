@@ -7,6 +7,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 import org.apache.log4j.Logger;
@@ -22,6 +24,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     private static final Logger log = Logger.getLogger(BufferedFileBackedSortedSet.class);
     protected static final int DEFAULT_BUFFER_PERSIST_THRESHOLD = 1000;
     protected static final int DEFAULT_MAX_OPEN_FILES = 100;
+    protected static final int DEFAULT_NUM_RETRIES = 2;
     
     protected MultiSetBackedSortedSet<E> set = new MultiSetBackedSortedSet<>();
     protected int maxOpenFiles = 10000;
@@ -30,8 +33,9 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     protected Comparator<? super E> comparator = null;
     protected boolean sizeModified = false;
     protected int size = 0;
+    protected int numRetries;
     
-    protected SortedSetFileHandlerFactory handlerFactory;
+    protected List<SortedSetFileHandlerFactory> handlerFactories;
     protected int bufferPersistThreshold;
     
     /**
@@ -42,10 +46,12 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
      */
     public interface SortedSetFileHandlerFactory {
         SortedSetFileHandler createHandler() throws IOException;
+        
+        boolean isValid();
     }
     
     public BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
-        this(other.comparator, other.bufferPersistThreshold, other.maxOpenFiles, other.handlerFactory, other.setFactory);
+        this(other.comparator, other.bufferPersistThreshold, other.maxOpenFiles, other.numRetries, new ArrayList<>(other.handlerFactories), other.setFactory);
         for (SortedSet<E> subSet : other.set.getSets()) {
             FileSortedSet<E> clone = ((FileSortedSet<E>) subSet).clone();
             this.set.addSet(clone);
@@ -57,40 +63,87 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         this.size = other.size;
     }
     
-    public BufferedFileBackedSortedSet(SortedSetFileHandlerFactory handlerFactory) {
-        this(handlerFactory, new FileSerializableSortedSet.Factory());
+    public BufferedFileBackedSortedSet(List<SortedSetFileHandlerFactory> handlerFactories) {
+        this(handlerFactories, new FileSerializableSortedSet.Factory());
     }
     
-    public BufferedFileBackedSortedSet(SortedSetFileHandlerFactory handlerFactory, FileSortedSet.FileSortedSetFactory<E> setFactory) {
-        this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, handlerFactory, setFactory);
+    public BufferedFileBackedSortedSet(List<SortedSetFileHandlerFactory> handlerFactories, FileSortedSet.FileSortedSetFactory<E> setFactory) {
+        this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories);
     }
     
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, SortedSetFileHandlerFactory handlerFactory) {
-        this(comparator, handlerFactory, new FileSerializableSortedSet.Factory());
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, List<SortedSetFileHandlerFactory> handlerFactories) {
+        this(comparator, handlerFactories, new FileSerializableSortedSet.Factory());
     }
     
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, SortedSetFileHandlerFactory handlerFactory,
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, List<SortedSetFileHandlerFactory> handlerFactories,
                     FileSortedSet.FileSortedSetFactory<E> setFactory) {
-        this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, handlerFactory, setFactory);
+        this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories);
     }
     
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles,
-                    SortedSetFileHandlerFactory handlerFactory) {
-        this(comparator, bufferPersistThreshold, maxOpenFiles, handlerFactory, new FileSerializableSortedSet.Factory());
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles, int numRetries,
+                    List<SortedSetFileHandlerFactory> handlerFactories) {
+        this(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, handlerFactories, new FileSerializableSortedSet.Factory());
     }
     
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles,
-                    SortedSetFileHandlerFactory handlerFactory, FileSortedSet.FileSortedSetFactory<E> setFactory) {
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles, int numRetries,
+                    List<SortedSetFileHandlerFactory> handlerFactories, FileSortedSet.FileSortedSetFactory<E> setFactory) {
         this.comparator = comparator;
-        this.handlerFactory = handlerFactory;
+        this.handlerFactories = handlerFactories;
         this.setFactory = setFactory;
         this.bufferPersistThreshold = bufferPersistThreshold;
+        this.numRetries = numRetries;
         this.maxOpenFiles = maxOpenFiles;
+    }
+    
+    private SortedSetFileHandler createFileHandler(SortedSetFileHandlerFactory handlerFactory) throws IOException {
+        if (handlerFactory.isValid()) {
+            try {
+                return handlerFactory.createHandler();
+            } catch (IOException e) {
+                log.warn("Unable to create file handler using handler factory: " + handlerFactory, e);
+            }
+        }
+        
+        return null;
     }
     
     public void persist() throws IOException {
         if (buffer != null) {
-            buffer.persist();
+            // go through the handler factories and try to persist the sorted set
+            for (int i = 0; i < handlerFactories.size() && !buffer.isPersisted(); i++) {
+                SortedSetFileHandlerFactory handlerFactory = handlerFactories.get(i);
+                SortedSetFileHandler handler = createFileHandler(handlerFactory);
+                
+                // if we have a valid handler, try to persist
+                if (handler != null) {
+                    Exception cause = null;
+                    for (int attempts = 0; attempts <= numRetries && !buffer.isPersisted(); attempts++) {
+                        try {
+                            buffer.persist(handler);
+                        } catch (IOException e) {
+                            if (attempts == numRetries)
+                                cause = e;
+                        }
+                    }
+                    
+                    if (!buffer.isPersisted()) {
+                        log.warn("Unable to persist the sorted set using the file handler: " + handler, cause);
+                        
+                        // if this was an hdfs file handler, decrement the count
+                        if (handlerFactory instanceof HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) {
+                            HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory hdfsHandlerFactory = ((HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) handlerFactory);
+                            hdfsHandlerFactory.setFileCount(hdfsHandlerFactory.getFileCount() - 1);
+                        }
+                    }
+                } else {
+                    log.warn("Unable to create a file handler using the handler factory: " + handlerFactory);
+                }
+            }
+            
+            // if the buffer was not persisted, throw an exception
+            if (!buffer.isPersisted())
+                throw new IOException("Unable to persist the sorted set using the configured handler factories.");
+            
             buffer = null;
             compact(maxOpenFiles);
         }
@@ -106,6 +159,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     
     protected void addSet(FileSortedSet<E> subSet) {
         set.addSet(subSet);
+        size += subSet.size();
     }
     
     public boolean hasPersistedData() {
@@ -178,6 +232,10 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         return set.iterator();
     }
     
+    private String printHandlerFactories() {
+        return String.join(", ", handlerFactories.stream().map(SortedSetFileHandlerFactory::toString).collect(Collectors.toList()));
+    }
+    
     /**
      * If the number of sets is over maxFiles, then start compacting those files down. The goal is to get the number of files down around 50% of maxFiles.
      * 
@@ -188,7 +246,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         // if we have more sets than we are allowed, then we need to compact this down
         if (maxFiles > 0 && set.getSets().size() > maxFiles) {
             if (log.isDebugEnabled()) {
-                log.debug("Compacting " + handlerFactory);
+                log.debug("Compacting [" + printHandlerFactories() + "]");
             }
             // create a copy of the set list (sorting below)
             List<SortedSet<E>> sets = new ArrayList<>(set.getSets());
@@ -238,7 +296,44 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     }
     
     private FileSortedSet<E> compact(MultiSetBackedSortedSet<E> setToCompact) throws IOException {
-        return setFactory.newInstance(setToCompact, handlerFactory.createHandler(), true);
+        FileSortedSet<E> compactedSet = null;
+        
+        // go through the handler factories and try to persist the sorted set
+        for (int i = 0; i < handlerFactories.size() && compactedSet == null; i++) {
+            SortedSetFileHandlerFactory handlerFactory = handlerFactories.get(i);
+            SortedSetFileHandler handler = createFileHandler(handlerFactory);
+            
+            // if we have a valid handler, try to persist
+            if (handler != null) {
+                Exception cause = null;
+                for (int attempts = 0; attempts <= numRetries && compactedSet == null; attempts++) {
+                    try {
+                        compactedSet = setFactory.newInstance(setToCompact, handlerFactory.createHandler(), true);
+                    } catch (IOException e) {
+                        if (attempts == numRetries)
+                            cause = e;
+                    }
+                }
+                
+                if (compactedSet == null) {
+                    log.warn("Unable to compact the sorted set using the file handler: " + handler, cause);
+                    
+                    // if this was an hdfs file handler, decrement the count
+                    if (handlerFactory instanceof HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) {
+                        HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory hdfsHandlerFactory = ((HdfsBackedSortedSet.SortedSetHdfsFileHandlerFactory) handlerFactory);
+                        hdfsHandlerFactory.setFileCount(hdfsHandlerFactory.getFileCount() - 1);
+                    }
+                }
+            } else {
+                log.warn("Unable to create a file handler using the handler factory: " + handlerFactory);
+            }
+        }
+        
+        // if the sorted sets were not compacted, throw an exception
+        if (compactedSet == null)
+            throw new IOException("Unable to persist the sorted set using the configured handler factories.");
+        
+        return compactedSet;
     }
     
     @Override
@@ -255,7 +350,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     public boolean add(E e) {
         if (buffer == null) {
             try {
-                buffer = setFactory.newInstance(comparator, handlerFactory.createHandler(), false);
+                buffer = setFactory.newInstance(comparator, null, false);
             } catch (Exception ex) {
                 throw new IllegalStateException("Unable to create an underlying FileSortedSet", ex);
             }
@@ -280,7 +375,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     public boolean addAll(Collection<? extends E> c) {
         if (buffer == null) {
             try {
-                buffer = setFactory.newInstance(comparator, handlerFactory.createHandler(), false);
+                buffer = setFactory.newInstance(comparator, null, false);
             } catch (Exception ex) {
                 throw new IllegalStateException("Unable to create an underlying FileSortedSet", ex);
             }
@@ -309,15 +404,23 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
                 if (fileSet.isPersisted()) {
                     try {
                         fileSet.load();
-                        fileSet.remove(o);
-                        fileSet.persist();
-                        removed = true;
+                        if (fileSet.remove(o)) {
+                            removed = true;
+                            fileSet.persist();
+                        } else {
+                            fileSet.unload();
+                            // since we checked for containership first, remove should have returned true
+                            throw new IllegalStateException("FileSet contains object but failed to remove it from persisted set");
+                        }
                     } catch (Exception e) {
                         throw new IllegalStateException("Unable to remove item from underlying files", e);
                     }
                 } else {
                     if (fileSet.remove(o)) {
                         removed = true;
+                    } else {
+                        // since we checked for containership first, remove should have returned true
+                        throw new IllegalStateException("FileSet contains object but failed to remove it");
                     }
                 }
             }
@@ -338,8 +441,10 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
                     fileSet.load();
                     if (fileSet.retainAll(c)) {
                         modified = true;
+                        fileSet.persist();
+                    } else {
+                        fileSet.unload();
                     }
-                    fileSet.persist();
                 } catch (Exception e) {
                     throw new IllegalStateException("Unable to remove item from underlying files", e);
                 }
@@ -365,8 +470,10 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
                     fileSet.load();
                     if (fileSet.removeAll(c)) {
                         modified = true;
+                        fileSet.persist();
+                    } else {
+                        fileSet.unload();
                     }
-                    fileSet.persist();
                 } catch (Exception e) {
                     throw new IllegalStateException("Unable to remove item from underlying files", e);
                 }
@@ -380,6 +487,35 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
             this.sizeModified = true;
         }
         return modified;
+    }
+    
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        boolean removed = false;
+        for (SortedSet<E> subSet : set.getSets()) {
+            FileSortedSet<E> fileSet = (FileSortedSet<E>) subSet;
+            if (fileSet.isPersisted()) {
+                try {
+                    fileSet.load();
+                    if (fileSet.removeIf(filter)) {
+                        removed = true;
+                        fileSet.persist();
+                    } else {
+                        fileSet.unload();
+                    }
+                } catch (Exception e) {
+                    throw new IllegalStateException("Unable to remove item from underlying files", e);
+                }
+            } else {
+                if (fileSet.removeIf(filter)) {
+                    removed = true;
+                }
+            }
+        }
+        if (removed) {
+            this.sizeModified = true;
+        }
+        return removed;
     }
     
     @Override

@@ -359,7 +359,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     // Get the table list
     protected Set<String> getTableList() {
-        Set<String> tableList = new HashSet<>(IngestJob.getTables(conf));
+        Set<String> tableList = new HashSet<>(TableConfigurationUtil.getTables(conf));
         
         String configNames = conf.get(CONFIGURED_TABLE_NAMES, "");
         if (log.isInfoEnabled())
@@ -575,15 +575,15 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 if (generateMapFileRowKeys && !shardMapFileRowKeys.isEmpty()) {
                     log.info("Writing mapFileRowKeys");
                     Path shardMapFilePath = new Path(workDir, getUniqueFile(context, "mapFileRowKeys", ".lst"));
-                    SequenceFile.Writer output = SequenceFile.createWriter(fs, conf, shardMapFilePath, Text.class, Text.class);
-                    for (Map.Entry<String,Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
-                        Path path = shardMapFiles.get(entry.getKey());
-                        Text pathText = new Text(path.getParent().getName() + "/" + path.getName());
-                        for (Text rowKey : entry.getValue()) {
-                            output.append(pathText, rowKey);
+                    try (SequenceFile.Writer output = SequenceFile.createWriter(fs, conf, shardMapFilePath, Text.class, Text.class)) {
+                        for (Map.Entry<String,Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
+                            Path path = shardMapFiles.get(entry.getKey());
+                            Text pathText = new Text(path.getParent().getName() + "/" + path.getName());
+                            for (Text rowKey : entry.getValue()) {
+                                output.append(pathText, rowKey);
+                            }
                         }
                     }
-                    output.close();
                 }
             }
             

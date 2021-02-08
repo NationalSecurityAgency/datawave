@@ -1,9 +1,11 @@
 package datawave.query.iterator;
 
-import datawave.query.attributes.Document;
-
 import java.util.Collection;
 import java.util.Iterator;
+
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+
+import datawave.query.attributes.Document;
 
 /**
  * An interface that allows nested iterators (such as ANDs, and ORs) to return references to their leaf nodes. NestedIterators can be visualized as a tree. The
@@ -49,6 +51,11 @@ public interface NestedIterator<T> extends Iterator<T> {
      * Returns a <code>Document</code> object that is composed of attributes read in by the leaf nodes of this sub-tree.
      */
     Document document();
+    
+    /**
+     * Provides configuration information to the Iterator before initializing and seeking. Default does nothing.
+     */
+    default void setEnvironment(IteratorEnvironment env) {}
     
     /**
      * Returns true if the NestedIterator requires context for evaluation or false if it can be evaluated without context

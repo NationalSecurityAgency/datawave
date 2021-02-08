@@ -16,7 +16,7 @@ public class QueryInformation {
     
     public static final String QUERY_ID = "queryId", QUERY_LOGIC_NAME = "queryLogicName", QUERY_NAME = "queryName", QUERY_STRING = "queryString",
                     QUERY_USER = "queryUser", COMMENT = "comment";
-    public static int MAX_COMMENT_LENGTH = 256;
+    public static final int MAX_COMMENT_LENGTH = 256;
     
     private static final String EQ = "=", SEP = ", ", QUOTE = "\"", NONE_PROVIDED = "None provided";
     

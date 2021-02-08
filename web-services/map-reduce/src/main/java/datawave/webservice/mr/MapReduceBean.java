@@ -8,6 +8,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -288,6 +289,10 @@ public class MapReduceBean {
                     List<String> selectors = job.getSelectors(queryParameters, oozieConf);
                     if (selectors != null && !selectors.isEmpty()) {
                         queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                    }
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                     }
                     auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {
@@ -596,21 +601,22 @@ public class MapReduceBean {
                 Path resultsDir = new Path(thisJob.getResultsDirectory());
                 hdfs.getConf().set("mapreduce.jobtracker.address", thisJob.getJobTracker());
                 // Create a Job object
-                JobClient job = new JobClient(new JobConf(hdfs.getConf()));
-                for (String killId : jobIdsToKill) {
-                    try {
-                        JobID jid = JobID.forName(killId);
-                        RunningJob rj = job.getJob(new org.apache.hadoop.mapred.JobID(jid.getJtIdentifier(), jid.getId()));
-                        // job.getJob(jid);
-                        if (null != rj)
-                            rj.killJob();
-                        else
-                            mapReduceState.updateState(killId, MapReduceState.KILLED);
-                    } catch (IOException | QueryException e) {
-                        QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_KILL_ERROR, e, MessageFormat.format("job_id: {0}", killId));
-                        log.error(qe);
-                        response.addException(qe.getBottomQueryException());
-                        throw new DatawaveWebApplicationException(qe, response);
+                try (JobClient job = new JobClient(new JobConf(hdfs.getConf()))) {
+                    for (String killId : jobIdsToKill) {
+                        try {
+                            JobID jid = JobID.forName(killId);
+                            RunningJob rj = job.getJob(new org.apache.hadoop.mapred.JobID(jid.getJtIdentifier(), jid.getId()));
+                            // job.getJob(jid);
+                            if (null != rj)
+                                rj.killJob();
+                            else
+                                mapReduceState.updateState(killId, MapReduceState.KILLED);
+                        } catch (IOException | QueryException e) {
+                            QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_KILL_ERROR, e, MessageFormat.format("job_id: {0}", killId));
+                            log.error(qe);
+                            response.addException(qe.getBottomQueryException());
+                            throw new DatawaveWebApplicationException(qe, response);
+                        }
                     }
                 }
                 // Delete the contents of the results directory
@@ -704,9 +710,10 @@ public class MapReduceBean {
     @GZIP
     public MapReduceInfoResponseList list(@PathParam("jobId") String jobId) {
         MapReduceInfoResponseList response = mapReduceState.findById(jobId);
-        if (null == response || null == response.getResults() || response.getResults().isEmpty()) {
-            if (null == response)
-                response = new MapReduceInfoResponseList();
+        if (null == response) {
+            response = new MapReduceInfoResponseList();
+        }
+        if (null == response.getResults() || response.getResults().isEmpty()) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
             response.addException(qe);
             throw new NotFoundException(qe, response);

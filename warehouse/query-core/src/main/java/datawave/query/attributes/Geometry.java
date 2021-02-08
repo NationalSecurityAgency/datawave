@@ -3,18 +3,17 @@ package datawave.query.attributes;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.io.WKBReader;
-import com.vividsolutions.jts.io.WKBWriter;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
-import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.normalizer.Normalizer;
-import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.DatawaveJexlContext;
 import datawave.webservice.query.data.ObjectSizeOf;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKBReader;
+import org.locationtech.jts.io.WKBWriter;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -26,7 +25,7 @@ import java.util.Collections;
 public class Geometry extends Attribute<Geometry> implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    private com.vividsolutions.jts.geom.Geometry geometry;
+    private org.locationtech.jts.geom.Geometry geometry;
     
     protected Geometry() {
         super(null, true);
@@ -38,7 +37,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
         validate();
     }
     
-    public Geometry(com.vividsolutions.jts.geom.Geometry geometry, Key docKey, boolean toKeep) {
+    public Geometry(org.locationtech.jts.geom.Geometry geometry, Key docKey, boolean toKeep) {
         super(docKey, toKeep);
         this.geometry = geometry;
         validate();
@@ -103,10 +102,12 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
         if (geometry == null) {
             if (other == null || other.geometry == null) {
                 cmp = 0;
+            } else {
+                cmp = -1;
             }
-            cmp = -1;
+        } else {
+            cmp = geometry.compareTo(other.geometry);
         }
-        cmp = geometry.compareTo(other.geometry);
         if (0 == cmp) {
             return compareMetadata(other);
         }

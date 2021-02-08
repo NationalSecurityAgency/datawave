@@ -68,7 +68,7 @@ public class ShardedTableMapFile {
     private static SequenceFile.Reader getReader(Configuration conf, String tableName) throws IOException {
         String shardMapFileName = conf.get(SHARD_TSERVER_MAP_FILE + "." + tableName);
         try {
-            return new SequenceFile.Reader(FileSystem.get(conf), new Path(shardMapFileName), conf);
+            return new SequenceFile.Reader(conf, SequenceFile.Reader.file(new Path(shardMapFileName)));
         } catch (Exception e) {
             throw new IOException("Failed to create sequence file reader for " + shardMapFileName, e);
         }
@@ -386,14 +386,14 @@ public class ShardedTableMapFile {
         long count = 0;
         // reusable value for writing
         Text value = new Text();
-        SequenceFile.Writer writer = SequenceFile.createWriter(conf, SequenceFile.Writer.file(file), SequenceFile.Writer.keyClass(Text.class),
-                        SequenceFile.Writer.valueClass(Text.class));
-        for (Entry<Text,String> entry : splits.entrySet()) {
-            count++;
-            value.set(entry.getValue());
-            writer.append(entry.getKey(), value);
+        try (SequenceFile.Writer writer = SequenceFile.createWriter(conf, SequenceFile.Writer.file(file), SequenceFile.Writer.keyClass(Text.class),
+                        SequenceFile.Writer.valueClass(Text.class))) {
+            for (Entry<Text,String> entry : splits.entrySet()) {
+                count++;
+                value.set(entry.getValue());
+                writer.append(entry.getKey(), value);
+            }
         }
-        writer.close();
         return count;
     }
     

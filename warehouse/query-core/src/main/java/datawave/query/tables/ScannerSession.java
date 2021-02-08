@@ -244,8 +244,6 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         
     }
     
-    // public ScannerSession fetchColumnFamily(Text familY)
-    
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ScannerSession) {
@@ -257,6 +255,14 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         }
         
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = ranges != null ? ranges.hashCode() : 0;
+        result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
+        result = 31 * result + (auths != null ? auths.hashCode() : 0);
+        return result;
     }
     
     /*

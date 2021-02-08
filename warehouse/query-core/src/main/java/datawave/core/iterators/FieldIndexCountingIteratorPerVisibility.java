@@ -97,7 +97,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private TreeMap<Key,Value> keyCache = null;
-    protected static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+    protected static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     
     // -------------------------------------------------------------------------
     // ------------- Constructors

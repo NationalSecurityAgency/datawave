@@ -1,5 +1,6 @@
 package datawave.query.iterator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -16,6 +17,8 @@ import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -45,6 +48,7 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataProvider;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
 import org.apache.accumulo.core.data.Key;
@@ -79,6 +83,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -191,7 +196,7 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String ZOOKEEPER_CONFIG = "zookeeper.config";
     
-    public static final String IVARATOR_CACHE_BASE_URI_ALTERNATIVES = "ivarator.cache.base.uri.alternatives";
+    public static final String IVARATOR_CACHE_DIR_CONFIG = "ivarator.cache.dir.config";
     
     public static final String IVARATOR_CACHE_BUFFER_SIZE = "ivarator.cache.buffer.size";
     
@@ -205,7 +210,15 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String MAX_IVARATOR_OPEN_FILES = "max.ivarator.open.files";
     
+    public static final String IVARATOR_NUM_RETRIES = "ivarator.num.retries";
+    
+    public static final String IVARATOR_PERSIST_VERIFY = "ivarator.persist.verify";
+    
+    public static final String IVARATOR_PERSIST_VERIFY_COUNT = "ivarator.persist.verify.count";
+    
     public static final String MAX_IVARATOR_SOURCES = "max.ivarator.sources";
+    
+    public static final String MAX_IVARATOR_RESULTS = "max.ivarator.results";
     
     public static final String COMPRESS_SERVER_SIDE_RESULTS = "compress.server.side.results";
     
@@ -224,6 +237,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String DATE_INDEX_TIME_TRAVEL = "date.index.time.travel";
     
     public static final String SORTED_UIDS = "sorted.uids";
+    
+    public static final String RANGES = "ranges";
     
     protected Map<String,String> options;
     
@@ -303,15 +318,19 @@ public class QueryOptions implements OptionDescriber {
     
     protected String zookeeperConfig = null;
     
-    protected List<String> ivaratorCacheBaseURIAlternatives = null;
+    protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     protected int ivaratorCacheBufferSize = 10000;
     
     protected int maxIndexRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
+    protected int ivaratorNumRetries = 2;
+    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
     
     protected int maxIvaratorSources = 33;
+    
+    protected long maxIvaratorResults = -1;
     
     protected long yieldThresholdMs = Long.MAX_VALUE;
     
@@ -421,7 +440,7 @@ public class QueryOptions implements OptionDescriber {
         this.evaluationFilter = other.evaluationFilter;
         this.fiAggregator = other.fiAggregator;
         
-        this.ivaratorCacheBaseURIAlternatives = other.ivaratorCacheBaseURIAlternatives;
+        this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
@@ -430,6 +449,7 @@ public class QueryOptions implements OptionDescriber {
         this.maxIndexRangeSplit = other.maxIndexRangeSplit;
         this.ivaratorMaxOpenFiles = other.ivaratorMaxOpenFiles;
         this.maxIvaratorSources = other.maxIvaratorSources;
+        this.maxIvaratorResults = other.maxIvaratorResults;
         
         this.yieldThresholdMs = other.yieldThresholdMs;
         
@@ -791,7 +811,8 @@ public class QueryOptions implements OptionDescriber {
     }
     
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
-        return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache()).forIvaratorDirs(getIvaratorCacheBaseURIAlternatives())
+        return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
+                        .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
                         .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
     }
     
@@ -811,31 +832,12 @@ public class QueryOptions implements OptionDescriber {
         this.zookeeperConfig = zookeeperConfig;
     }
     
-    public List<String> getIvaratorCacheBaseURIsAsList() {
-        return ivaratorCacheBaseURIAlternatives;
+    public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
+        return ivaratorCacheDirConfigs;
     }
     
-    public String getIvaratorCacheBaseURIAlternatives() {
-        if (ivaratorCacheBaseURIAlternatives == null) {
-            return null;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIAlternatives) {
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(hdfsCacheBaseURI);
-            }
-            return builder.toString();
-        }
-    }
-    
-    public void setIvaratorCacheBaseURIAlternatives(String ivaratorCacheBaseURIAlternatives) {
-        if (ivaratorCacheBaseURIAlternatives == null || ivaratorCacheBaseURIAlternatives.isEmpty()) {
-            this.ivaratorCacheBaseURIAlternatives = null;
-        } else {
-            this.ivaratorCacheBaseURIAlternatives = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIAlternatives, ','));
-        }
+    public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
     }
     
     public int getIvaratorCacheBufferSize() {
@@ -878,12 +880,36 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
     
+    public int getIvaratorNumRetries() {
+        return ivaratorNumRetries;
+    }
+    
+    public void setIvaratorNumRetries(int ivaratorNumRetries) {
+        this.ivaratorNumRetries = ivaratorNumRetries;
+    }
+    
+    public FileSortedSet.PersistOptions getIvaratorPersistOptions() {
+        return ivaratorPersistOptions;
+    }
+    
+    public void setIvaratorPersistOptions(FileSortedSet.PersistOptions ivaratorPersistOptions) {
+        this.ivaratorPersistOptions = ivaratorPersistOptions;
+    }
+    
     public int getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
     
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+    
+    public long getMaxIvaratorResults() {
+        return maxIvaratorResults;
+    }
+    
+    public void setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
     }
     
     public boolean isCompressResults() {
@@ -1029,8 +1055,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(CONTENT_EXPANSION_FIELDS, "comma-delimited list of fields used for content function expansions");
         options.put(HDFS_SITE_CONFIG_URLS, "URLs (comma delimited) of where to find the hadoop hdfs and core site configuration files");
         options.put(HDFS_FILE_COMPRESSION_CODEC, "A hadoop compression codec to use for files if supported");
-        options.put(IVARATOR_CACHE_BASE_URI_ALTERNATIVES,
-                        "A list of URIs of where all query's caches are to be located for ivarators (caching field index iterators)");
+        options.put(IVARATOR_CACHE_DIR_CONFIG,
+                        "A JSON-formatted array of ivarator cache config objects.  Each config object MUST specify a pathURI to use when caching field index iterator output.");
         options.put(IVARATOR_CACHE_BUFFER_SIZE, "The size of the hdfs cache buffer size (items held in memory before dumping to hdfs).  Default is 10000.");
         options.put(IVARATOR_SCAN_PERSIST_THRESHOLD,
                         "The number of underlying field index keys scanned before the hdfs cache buffer is forced to persist).  Default is 100000.");
@@ -1039,6 +1065,8 @@ public class QueryOptions implements OptionDescriber {
                         "The maximum number of ranges to split a field index scan (ivarator) range into for multithreading.  Note the thread pool size is controlled via an accumulo property.");
         options.put(MAX_IVARATOR_OPEN_FILES,
                         "The maximum number of files that can be opened at one time during a merge sort.  If more that this number of files are created, then compactions will occur");
+        options.put(IVARATOR_NUM_RETRIES,
+                        "The number of times an ivarator should attempt to persist a sorted set to a given ivarator cache directory.  We will use the specified number of retries for each of the configured ivarator cache directories.");
         options.put(MAX_IVARATOR_SOURCES,
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(YIELD_THRESHOLD_MS,
@@ -1051,6 +1079,8 @@ public class QueryOptions implements OptionDescriber {
         
         options.put(SORTED_UIDS,
                         "Whether the UIDs need to be sorted.  Normally this is true, however in limited circumstances it could be false which allows ivarators to avoid pre-fetching all UIDs and sorting before returning the first one.");
+        
+        options.put(RANGES, "The ranges associated with this scan.  Intended to be used for investigative purposes.");
         
         options.put(DEBUG_MULTITHREADED_SOURCES, "If provided, the SourceThreadTrackingIterator will be used");
         
@@ -1086,7 +1116,7 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(LIMIT_SOURCES)) {
             try {
-                this.sourceLimit = Long.valueOf(options.get(LIMIT_SOURCES));
+                this.sourceLimit = Long.parseLong(options.get(LIMIT_SOURCES));
             } catch (NumberFormatException nfe) {
                 this.sourceLimit = -1;
             }
@@ -1167,7 +1197,7 @@ public class QueryOptions implements OptionDescriber {
                 Collections.addAll(this.whiteListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
-                this.whiteListedFields.add("HIT_TERM");
+                this.whiteListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
         
@@ -1393,8 +1423,12 @@ public class QueryOptions implements OptionDescriber {
             this.setZookeeperConfig(options.get(ZOOKEEPER_CONFIG));
         }
         
-        if (options.containsKey(IVARATOR_CACHE_BASE_URI_ALTERNATIVES)) {
-            this.setIvaratorCacheBaseURIAlternatives(options.get(IVARATOR_CACHE_BASE_URI_ALTERNATIVES));
+        if (options.containsKey(IVARATOR_CACHE_DIR_CONFIG)) {
+            try {
+                this.setIvaratorCacheDirConfigs(IvaratorCacheDirConfig.fromJson(options.get(IVARATOR_CACHE_DIR_CONFIG)));
+            } catch (JsonProcessingException e) {
+                log.warn("Unable to parse ivaratorCacheDirConfig.", e);
+            }
         }
         
         if (options.containsKey(IVARATOR_CACHE_BUFFER_SIZE)) {
@@ -1417,8 +1451,28 @@ public class QueryOptions implements OptionDescriber {
             this.setIvaratorMaxOpenFiles(Integer.parseInt(options.get(MAX_IVARATOR_OPEN_FILES)));
         }
         
+        if (options.containsKey(IVARATOR_NUM_RETRIES)) {
+            this.setIvaratorNumRetries(Integer.parseInt(options.get(IVARATOR_NUM_RETRIES)));
+        }
+        
+        if (options.containsKey(IVARATOR_PERSIST_VERIFY)) {
+            boolean verify = Boolean.parseBoolean(options.get(IVARATOR_PERSIST_VERIFY));
+            FileSortedSet.PersistOptions persistOptions = getIvaratorPersistOptions();
+            this.setIvaratorPersistOptions(new FileSortedSet.PersistOptions(verify, verify, persistOptions.getNumElementsToVerify()));
+        }
+        
+        if (options.containsKey(IVARATOR_PERSIST_VERIFY_COUNT)) {
+            int numElements = Integer.parseInt(options.get(IVARATOR_PERSIST_VERIFY_COUNT));
+            FileSortedSet.PersistOptions persistOptions = getIvaratorPersistOptions();
+            this.setIvaratorPersistOptions(new FileSortedSet.PersistOptions(persistOptions.isVerifySize(), persistOptions.isVerifyElements(), numElements));
+        }
+        
         if (options.containsKey(MAX_IVARATOR_SOURCES)) {
             this.setMaxIvaratorSources(Integer.parseInt(options.get(MAX_IVARATOR_SOURCES)));
+        }
+        
+        if (options.containsKey(MAX_IVARATOR_RESULTS)) {
+            this.setMaxIvaratorResults(Long.parseLong(options.get(MAX_IVARATOR_RESULTS)));
         }
         
         if (options.containsKey(YIELD_THRESHOLD_MS)) {

@@ -78,10 +78,10 @@ public class QueryIteratorTest {
         Text cq = new Text("FOO\0bar");
         Key key = new Key(row, cf, cq);
         
-        String parsed = QueryIterator.rowColfamToString(key);
+        String parsed = QueryIterator.rowColFamToString(key);
         assertEquals(expected, parsed);
         
         // Test the null case as well
-        assertEquals("null", QueryIterator.rowColfamToString(null));
+        assertEquals("null", QueryIterator.rowColFamToString(null));
     }
 }

@@ -46,7 +46,6 @@ import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -315,7 +314,6 @@ public class QueryExecutorBean implements QueryExecutor {
         q.setExpirationDate(now);
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
-        ResultsPage emptyList = new ResultsPage();
         
         for (QueryLogic<?> l : logicList) {
             try {
@@ -670,6 +668,10 @@ public class QueryExecutorBean implements QueryExecutor {
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
                         }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                        }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
                         log.error("Error validating audit parameters", e);
@@ -848,6 +850,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1201,6 +1207,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -2027,6 +2037,11 @@ public class QueryExecutorBean implements QueryExecutor {
                 close(id);
                 closedQueryCache.add(id); // remember that we auto-closed this query
             } else {
+                try {
+                    close(id);
+                } catch (Exception ce) {
+                    log.error(qe, ce);
+                }
                 log.error(qe, e);
                 response.addException(qe.getBottomQueryException());
             }
@@ -2822,12 +2837,15 @@ public class QueryExecutorBean implements QueryExecutor {
                             maxResultsOverride, parameters);
             
             // Fire off an audit prior to updating
-            Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
-            cbAuths.retainAll(methodAuths);
             AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    auditor.audit(duplicate.toMap());
+                    MultivaluedMap<String,String> queryParameters = duplicate.toMap();
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                    }
+                    auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {
                     log.error("Error validating audit parameters", e);
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
@@ -3445,79 +3463,80 @@ public class QueryExecutorBean implements QueryExecutor {
                                 jsonSerializer.getTypeFactory())));
                 // Don't close the output stream
                 jsonSerializer.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-                JsonGenerator jsonGenerator = jsonSerializer.getFactory().createGenerator(out, JsonEncoding.UTF8);
-                jsonGenerator.enable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
-                
-                boolean sentResults = false;
-                boolean done = false;
-                Span span = null;
-                List<PageMetric> pageMetrics = rq.getMetric().getPageTimes();
-                
-                do {
-                    try {
-                        long callStart = System.nanoTime();
-                        BaseQueryResponse page = _next(rq, queryId, proxies, span);
-                        PageMetric pm = pageMetrics.get(pageMetrics.size() - 1);
-                        
-                        // Wrap the output stream so that we can get a byte count
-                        CountingOutputStream countingStream = new CountingOutputStream(out);
-                        
-                        long serializationStart = System.nanoTime();
-                        switch (serializationType) {
-                            case XML:
-                                xmlSerializer.marshal(page, countingStream);
-                                break;
-                            case JSON:
-                                // First page!
-                                if (!sentResults) {
-                                    jsonGenerator.writeStartObject();
-                                    jsonGenerator.writeArrayFieldStart("Pages");
-                                    jsonGenerator.flush();
-                                } else {
-                                    // Delimiter for subsequent pages...
-                                    countingStream.write(',');
-                                }
-                                jsonSerializer.writeValue(countingStream, page);
-                                break;
-                            case PB:
-                                @SuppressWarnings("unchecked")
-                                Message<Object> pb = (Message<Object>) page;
-                                Schema<Object> pbSchema = pb.cachedSchema();
-                                ProtobufIOUtil.writeTo(countingStream, page, pbSchema, buffer);
-                                buffer.clear();
-                                break;
-                            case YAML:
-                                @SuppressWarnings("unchecked")
-                                Message<Object> yaml = (Message<Object>) page;
-                                Schema<Object> yamlSchema = yaml.cachedSchema();
-                                YamlIOUtil.writeTo(countingStream, page, yamlSchema, buffer);
-                                buffer.clear();
-                                break;
+                try (JsonGenerator jsonGenerator = jsonSerializer.getFactory().createGenerator(out, JsonEncoding.UTF8)) {
+                    jsonGenerator.enable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
+                    
+                    boolean sentResults = false;
+                    boolean done = false;
+                    Span span = null;
+                    List<PageMetric> pageMetrics = rq.getMetric().getPageTimes();
+                    
+                    do {
+                        try {
+                            long callStart = System.nanoTime();
+                            BaseQueryResponse page = _next(rq, queryId, proxies, span);
+                            PageMetric pm = pageMetrics.get(pageMetrics.size() - 1);
+                            
+                            // Wrap the output stream so that we can get a byte count
+                            CountingOutputStream countingStream = new CountingOutputStream(out);
+                            
+                            long serializationStart = System.nanoTime();
+                            switch (serializationType) {
+                                case XML:
+                                    xmlSerializer.marshal(page, countingStream);
+                                    break;
+                                case JSON:
+                                    // First page!
+                                    if (!sentResults) {
+                                        jsonGenerator.writeStartObject();
+                                        jsonGenerator.writeArrayFieldStart("Pages");
+                                        jsonGenerator.flush();
+                                    } else {
+                                        // Delimiter for subsequent pages...
+                                        countingStream.write(',');
+                                    }
+                                    jsonSerializer.writeValue(countingStream, page);
+                                    break;
+                                case PB:
+                                    @SuppressWarnings("unchecked")
+                                    Message<Object> pb = (Message<Object>) page;
+                                    Schema<Object> pbSchema = pb.cachedSchema();
+                                    ProtobufIOUtil.writeTo(countingStream, page, pbSchema, buffer);
+                                    buffer.clear();
+                                    break;
+                                case YAML:
+                                    @SuppressWarnings("unchecked")
+                                    Message<Object> yaml = (Message<Object>) page;
+                                    Schema<Object> yamlSchema = yaml.cachedSchema();
+                                    YamlIOUtil.writeTo(countingStream, page, yamlSchema, buffer);
+                                    buffer.clear();
+                                    break;
+                            }
+                            countingStream.flush();
+                            long serializationTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - serializationStart);
+                            pm.setSerializationTime(serializationTime);
+                            long pageCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - callStart);
+                            pm.setCallTime(pageCallTime);
+                            pm.setBytesWritten(countingStream.getCount());
+                            sentResults = true;
+                        } catch (Exception e) {
+                            if (e instanceof NoResultsException || e.getCause() instanceof NoResultsException) {
+                                // No more results, break out of loop
+                                done = true;
+                                break; // probably redundant
+                            } else {
+                                throw e;
+                            }
                         }
-                        countingStream.flush();
-                        long serializationTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - serializationStart);
-                        pm.setSerializationTime(serializationTime);
-                        long pageCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - callStart);
-                        pm.setCallTime(pageCallTime);
-                        pm.setBytesWritten(countingStream.getCount());
-                        sentResults = true;
-                    } catch (Exception e) {
-                        if (e instanceof NoResultsException || e.getCause() instanceof NoResultsException) {
-                            // No more results, break out of loop
-                            done = true;
-                            break; // probably redundant
-                        } else {
-                            throw e;
-                        }
+                    } while (!done);
+                    
+                    if (!sentResults)
+                        throw new NoResultsQueryException(DatawaveErrorCode.RESULTS_NOT_SENT);
+                    else if (serializationType == SerializationType.JSON) {
+                        jsonGenerator.writeEndArray();
+                        jsonGenerator.writeEndObject();
+                        jsonGenerator.flush();
                     }
-                } while (!done);
-                
-                if (!sentResults)
-                    throw new NoResultsQueryException(DatawaveErrorCode.RESULTS_NOT_SENT);
-                else if (serializationType == SerializationType.JSON) {
-                    jsonGenerator.writeEndArray();
-                    jsonGenerator.writeEndObject();
-                    jsonGenerator.flush();
                 }
             } catch (DatawaveWebApplicationException e) {
                 throw e;

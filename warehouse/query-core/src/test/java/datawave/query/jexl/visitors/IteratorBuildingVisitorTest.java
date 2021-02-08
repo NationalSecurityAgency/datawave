@@ -17,6 +17,7 @@ import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -215,7 +216,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
@@ -243,7 +245,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeIndexOnlyTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
@@ -271,7 +274,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNodeRange_LowerBoundaryTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
@@ -299,7 +303,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNodeRange_LowerBoundaryIndexOnlyTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
@@ -327,7 +332,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeUpperBoundaryTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
@@ -355,7 +361,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeUpperBoundaryIndexOnlyTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
@@ -383,7 +390,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeUpperBoundaryOutsideTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
         source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
@@ -402,7 +410,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeUpperBoundaryOutsideIndexOnlyTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
         source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
@@ -421,7 +430,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeLowerBoundaryOutsideTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
         source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
@@ -440,7 +450,8 @@ public class IteratorBuildingVisitorTest {
     
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeLowerBoundaryOutsideIndexOnlyTest() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && (FOO >= 'e' && FOO <= 'm'))");
+        ASTJexlScript script = JexlASTHelper
+                        .parseJexlQuery("BAZ == 'woot' && ((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
         source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
@@ -882,7 +893,8 @@ public class IteratorBuildingVisitorTest {
         TypeMetadata typeMetadata = new TypeMetadata();
         
         Iterator<Map.Entry<Key,Value>> iterator = source.iterator();
-        visitor.setSource(new SourceFactory(iterator), new BaseIteratorEnvironment());
+        IteratorEnvironment env = new BaseIteratorEnvironment();
+        visitor.setSource(new SourceFactory(iterator), env);
         
         // configure the visitor for use
         visitor.setTermFrequencyFields(termFrequencyFields);
@@ -896,7 +908,7 @@ public class IteratorBuildingVisitorTest {
         query.jjtAccept(visitor, null);
         NestedIterator result = visitor.root();
         Assert.assertTrue(result != null);
-        SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result);
+        SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
         seekableNestedIterator.seek(docRange, null, true);
         seekableNestedIterator.initialize();
         

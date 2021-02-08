@@ -84,12 +84,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static boolean FIFO = true;
     private static boolean INGEST_METRICS = true;
     
+    public static final String CLEANUP_FILE_MARKER = "job.cleanup";
     public static final String COMPLETE_FILE_MARKER = "job.complete";
     public static final String LOADING_FILE_MARKER = "job.loading";
     public static final String FAILED_FILE_MARKER = "job.failed";
     public static final String ATTEMPT_FILE_MARKER = "job.load.attempt.failed.do.not.delete";
     public static final String INPUT_FILES_MARKER = "job.paths";
-    private static String cleanUpScript;
     
     private Path workDir;
     private String jobDirPattern;
@@ -253,13 +253,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-destHdfs must be followed a file system URI (e.g. hdfs://hostname:54310).", e);
                         System.exit(-2);
                     }
-                } else if ("-jobCleanupScript".equalsIgnoreCase(args[i])) {
-                    if (i + 2 > args.length) {
-                        log.error("-jobCleanupScript must be followed by an absolute file path.");
-                        System.exit(-2);
-                    }
-                    cleanUpScript = args[++i];
-                    log.info("Using " + cleanUpScript + " to post process map loading");
                 } else if ("-jt".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-jt must be followed a jobtracker (e.g. hostname:54311).");
@@ -349,7 +342,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         }
         
         // get the table priorities
-        Map<String,Integer> tablePriorities = IngestJob.getTablePriorities(conf);
+        Map<String,Integer> tablePriorities = TableConfigurationUtil.getTablePriorities(conf);
         if (tablePriorities.isEmpty()) {
             log.error("Configured tables for configured data types is empty");
             System.exit(-2);
@@ -433,7 +426,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
         int fsAccessFailures = 0;
         Path[] jobDirectories = new Path[0];
         int nextJobIndex = 0;
+        
         try {
+            cleanJobDirectoriesOnStartup();
+        } catch (IOException e) {
+            log.error("Error Cleaning Up Directories.  Manually check for orphans: " + e.getMessage(), e);
+        }
+        
+        try {
+            
             while (true) {
                 try {
                     if (!running)
@@ -454,7 +455,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     }
                     List<Path> processedDirectories = new ArrayList<>();
                     if (nextJobIndex >= jobDirectories.length) {
-                        jobDirectories = getJobDirectories();
+                        jobDirectories = getJobDirectories(srcHdfs, new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
                         nextJobIndex = 0;
                     }
                     if (jobDirectories.length > 0) {
@@ -513,7 +514,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                 }
                             }
                             if (nextJobIndex >= jobDirectories.length) {
-                                jobDirectories = getJobDirectories();
+                                jobDirectories = getJobDirectories(srcHdfs, new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
                                 nextJobIndex = 0;
                             }
                             
@@ -527,11 +528,27 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     log.error("Error: " + e.getMessage(), e);
                 }
             }
+            
         } finally {
             log.info("Shutting down executor service");
             executor.shutdown();
         }
         log.info("Bulk map file loader shutting down.");
+    }
+    
+    protected void cleanJobDirectoriesOnStartup() throws IOException {
+        Path[] cleanupDirectories = getJobDirectories(destHdfs, new Path(workDir, jobDirPattern + '/' + CLEANUP_FILE_MARKER));
+        for (int i = 0; i < cleanupDirectories.length; i++) {
+            
+            markSourceFilesLoaded(cleanupDirectories[i]);
+            try {
+                getFileSystem(destHdfs).delete(cleanupDirectories[i], true);
+            } catch (IOException e) {
+                log.warn("Unable to delete directory " + cleanupDirectories[i], e);
+            }
+            
+        }
+        
     }
     
     protected void shutdown() {
@@ -599,12 +616,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
             // not carry block size or replication across. This is especially important because by default the
             // MapReduce jobs produce output with the replication set to 1 and we definitely don't want to preserve
             // that when copying across clusters.
-            DistCpOptions options = new DistCpOptions(srcPath, destPath);
-            options.setLogPath(logPath);
-            options.setSyncFolder(true);
-            options.preserve(DistCpOptions.FileAttribute.USER);
-            options.preserve(DistCpOptions.FileAttribute.GROUP);
-            options.preserve(DistCpOptions.FileAttribute.PERMISSION);
+            //@formatter:off
+            DistCpOptions options = new DistCpOptions.Builder(srcPath, destPath)
+                .withLogPath(logPath)
+                .withSyncFolder(true)
+                .preserve(DistCpOptions.FileAttribute.USER)
+                .preserve(DistCpOptions.FileAttribute.GROUP)
+                .preserve(DistCpOptions.FileAttribute.PERMISSION)
+                .build();
+            //@formatter:on
             String[] args = (jobtracker == null) ? new String[0] : new String[] {"-jt", jobtracker};
             int res = ToolRunner.run(conf, new DistCp(conf, options), args);
             if (res != 0) {
@@ -678,13 +698,14 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
     
     /**
-     * Gets a list of job directories that are marked as completed. That is, these are job directories for which the MapReduce jobs have completed and there are
-     * map files ready to be loaded.
+     * Gets a list of job directories that are marked with pathPattern.
+     * 
+     * @param pathPattern
      */
-    private Path[] getJobDirectories() throws IOException {
+    private Path[] getJobDirectories(URI hdfs, Path pathPattern) throws IOException {
         log.debug("Checking for completed job directories.");
-        FileSystem fs = getFileSystem(srcHdfs);
-        FileStatus[] files = fs.globStatus(new Path(workDir, jobDirPattern + '/' + COMPLETE_FILE_MARKER));
+        FileSystem fs = getFileSystem(hdfs);
+        FileStatus[] files = fs.globStatus(pathPattern);
         Path[] jobDirectories;
         if (files != null && files.length > 0) {
             final int order = (FIFO ? 1 : -1);
@@ -933,7 +954,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         /**
          * Return a rfile with .1 appended before the extension. {@code foo.ext -> foo.1.ext foo -> foo.1}
-         * 
+         *
          * @param rfile
          * @return a rfile with .1 appended before the extension
          */
@@ -985,6 +1006,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         FileStatus[] failedDirs = destFs.globStatus(new Path(mapFilesDir, "failures/*/*"));
         boolean jobSucceeded = failedDirs == null || failedDirs.length == 0;
         if (jobSucceeded) {
+            markDirectoryForCleanup(jobDirectory, destHdfs);
             markSourceFilesLoaded(jobDirectory);
             // delete the successfully loaded map files directory and its parent directory
             destFs.delete(jobDirectory, true);
@@ -1002,20 +1024,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 success = destFs.createNewFile(new Path(jobDirectory, FAILED_FILE_MARKER));
                 if (!success)
                     log.error("Unable to create " + FAILED_FILE_MARKER + " file in " + jobDirectory);
-            }
-        }
-        
-        if (cleanUpScript != null) {
-            Process proc = Runtime.getRuntime().exec(new String[] {cleanUpScript, jobDirectory.toString(), "" + jobSucceeded});
-            int code;
-            try {
-                code = proc.waitFor();
-            } catch (InterruptedException ex) {
-                log.error("Cleanup script interrupted. ");
-                code = -1;
-            }
-            if (code != 0) {
-                log.error("Error occurred running external cleanup script: " + cleanUpScript);
             }
         }
         
@@ -1097,12 +1105,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
         ArrayList<String> files = new ArrayList<>();
         
         final FileSystem destFs = getFileSystem(destHdfs);
-        BufferedReader rdr = new BufferedReader(new InputStreamReader(destFs.open(new Path(jobDirectory, INPUT_FILES_MARKER))));
-        String line;
-        while ((line = rdr.readLine()) != null) {
-            files.add(line);
+        try (BufferedReader rdr = new BufferedReader(new InputStreamReader(destFs.open(new Path(jobDirectory, INPUT_FILES_MARKER))))) {
+            String line;
+            while ((line = rdr.readLine()) != null) {
+                files.add(line);
+            }
+            
         }
-        rdr.close();
         
         final FileSystem sourceFs = getFileSystem(seqFileHdfs);
         List<Callable<Boolean>> renameCallables = Lists.newArrayList();
@@ -1189,6 +1198,18 @@ public final class BulkIngestMapFileLoader implements Runnable {
             else
                 throw new IOException(e);
         }
+    }
+    
+    public boolean markDirectoryForCleanup(Path jobDirectory, URI destFs) {
+        boolean success = false;
+        try {
+            success = getFileSystem(destFs).rename(new Path(jobDirectory, LOADING_FILE_MARKER), new Path(jobDirectory, CLEANUP_FILE_MARKER));
+            log.info("Renamed " + jobDirectory + '/' + LOADING_FILE_MARKER + " to " + CLEANUP_FILE_MARKER);
+        } catch (IOException e2) {
+            log.error("Exception while marking " + jobDirectory + " for Cleanup: " + e2.getMessage(), e2);
+        }
+        
+        return success;
     }
     
     private void writeStats(Path[] jobDirectories) throws IOException {
