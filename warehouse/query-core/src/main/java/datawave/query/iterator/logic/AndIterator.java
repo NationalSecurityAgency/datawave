@@ -375,19 +375,19 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 } else {
                     return Util.getEmpty();
                 }
-
+                
                 if (next == null) {
                     return Util.getEmpty();
                 }
-
+                
                 T transform = transformer.transform(next);
                 transforms.put(transform, next);
                 includeHeads.put(transform, itr);
-
+                
                 // move the highest if the new key is higher than the current key and the highest seen so far
                 if ((highest == null && transform.compareTo(key) > 0) || (highest != null && transform.compareTo(highest) > 0)) {
                     highest = transform;
-                }              
+                }
             } catch (Exception e) {
                 // only need to actually fail if we have nothing left in the AND clause
                 if (includeHeads.isEmpty()) {
