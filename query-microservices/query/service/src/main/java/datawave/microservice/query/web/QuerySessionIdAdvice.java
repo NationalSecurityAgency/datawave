@@ -27,8 +27,7 @@ public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
     
     @Override
     public boolean supports(@NonNull MethodParameter returnType, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
-        return Arrays.stream(returnType.getMethodAnnotations())
-                .anyMatch(GenerateQuerySessionId.class::isInstance);
+        return Arrays.stream(returnType.getMethodAnnotations()).anyMatch(GenerateQuerySessionId.class::isInstance);
     }
     
     @Override

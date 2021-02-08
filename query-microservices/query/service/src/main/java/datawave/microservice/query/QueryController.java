@@ -31,12 +31,12 @@ public class QueryController {
     // X public GenericResponse<String> defineQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
     // X MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders)
     // NOTE: The goal is to not use this, but it's here if we need it.
-//    @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    // @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
     @Timed(name = "dw.query.defineQuery", absolute = true) // TODO: Figure out where this is used
     @RequestMapping(path = "{logicName}/define", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public GenericResponse define(@PathVariable(name = "logicName") String logicName, @RequestParam MultiValueMap<String,String> parameters) {
-//        QuerySessionIdContext.setQueryId("some-query-id");
+        // QuerySessionIdContext.setQueryId("some-query-id");
         GenericResponse<String> resp = new GenericResponse<>();
         resp.setResult("something something");
         return resp;
