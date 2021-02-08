@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 
 public abstract class TokenSpecParser<B extends TokenSpecParser> {
@@ -11,7 +12,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      * Add a new token with its TTL to the the structure.
      */
     public abstract B addToken(byte[] token, long ttl);
-    
+
     /**
      * Parse additional token configurations from a string.
      */
@@ -20,7 +21,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
         parser.parseTo(this);
         return (B) this;
     }
-    
+
     /**
      * Minimal grammar for parsing tokens specs:
      *
@@ -29,60 +30,70 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      *           &lt;- &lt;tokens&gt; &lt;tokenspec&gt;
      * tokenspec &lt;- "strliteral"
      *           &lt;- "strliteral" : &lt;num&gt;&lt;unit&gt;
-     *           &lt;- label colqual=&lt;num&gt;&lt;unit&gt;
+     *           &lt;- word strliteral2=&lt;num&gt;&lt;unit&gt;
      * </pre>
      */
     protected static class ParserState {
-        
+
         private enum ParseTokenType {
-            SEPARATION("[\\s\\n,]+"), STRLITERAL("\"(?:[^\\\"]|\\.)*\""), LABEL("[a-z]{6}"), COLQUAL("[0-9A-Za-z]{6,8}"), COLON(":"), EQUALS("="), NUMBER(
-                            "[0-9]+"), UNIT(AgeOffTtlUnits.MILLISECONDS + "|" + AgeOffTtlUnits.DAYS + "|" + AgeOffTtlUnits.HOURS + "|" + AgeOffTtlUnits.MINUTES
-                            + "|" + AgeOffTtlUnits.SECONDS);
-            
+            SEPARATION("[\\s\\n,]+"),
+            STRLITERAL("\"(?:[^\\\"]|\\.)*\""),
+            WORD("(?:[a-z]{6,})"),
+            STRLITERAL2("[\\w]{6,}"),
+            COLON(":"),
+            EQUALS("="),
+            NUMBER("[0-9]+"),
+            UNIT(AgeOffTtlUnits.MILLISECONDS + "|" +
+                    AgeOffTtlUnits.DAYS + "|" +
+                    AgeOffTtlUnits.HOURS + "|" +
+                    AgeOffTtlUnits.MINUTES + "|" +
+                    AgeOffTtlUnits.SECONDS);
+
             private final Pattern matchPattern;
-            
+
             ParseTokenType(String matchExpr) {
                 this.matchPattern = Pattern.compile(matchExpr);
             }
         }
-        
+
         private static class ParseToken {
-            
+
             public ParseTokenType type;
             public String content;
             public int offset;
-            
+
             public ParseToken(ParseTokenType type, String content, int offset) {
                 this.type = type;
                 this.content = content;
                 this.offset = offset;
             }
         }
-        
+
         private final String input;
         private final List<ParseToken> parseTokens;
         private int nextTokenPos;
-        
+
         protected ParserState(String input) {
             this.input = input;
             this.parseTokens = tokenize(input);
             nextTokenPos = 0;
         }
-        
+
         private IllegalArgumentException error(String message, int posn) {
             return error(message, posn, null);
         }
-        
+
         private IllegalArgumentException error(String message, int posn, Throwable cause) {
             return new IllegalArgumentException(message + " near ..." + input.substring(posn, Math.min(input.length(), posn + 20)) + "...", cause);
         }
-        
+
         private List<ParseToken> tokenize(String input) {
             List<ParseToken> result = new ArrayList<>();
             int curPos = 0;
             while (curPos < input.length()) {
                 boolean foundMatch = false;
-                nextToken: for (ParseTokenType type : ParseTokenType.values()) {
+                nextToken:
+                for (ParseTokenType type : ParseTokenType.values()) {
                     // To avoid quadratic parsing time, initially assume no token is more than 50 characters long.
                     int maxTokenLength = 50;
                     while (true) {
@@ -94,7 +105,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                                 continue;
                             }
                             foundMatch = true;
-                            if (type != ParseTokenType.SEPARATION && type != ParseTokenType.LABEL) {
+                            if (type != ParseTokenType.SEPARATION && type != ParseTokenType.WORD) {
                                 result.add(new ParseToken(type, input.substring(curPos, curPos + m.end()), curPos));
                             }
                             curPos += m.end();
@@ -110,7 +121,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             }
             return result;
         }
-        
+
         /**
          * Return the next token without advancing.
          */
@@ -120,7 +131,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             }
             return parseTokens.get(nextTokenPos);
         }
-        
+
         /**
          * Consume the next token, assuming it's of the specified type, and return its content.
          */
@@ -132,7 +143,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             nextTokenPos++;
             return next.content;
         }
-        
+
         /**
          * Parse the entire input and add it to the TtlTrieBuilder.
          */
@@ -141,7 +152,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             ParseToken initialToken;
             while ((initialToken = peek()) != null) {
                 String tokenStr = parseStrliteral();
-                
+
                 long ttl = -1;
                 if (peek() != null && peek().type == ParseTokenType.COLON) {
                     ttl = parseTtl(ParseTokenType.COLON);
@@ -155,21 +166,21 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                 }
             }
         }
-        
+
         /**
          * Read a string literal.
          */
         protected String parseStrliteral() {
             ParseToken token = peek();
             String literalContent = null;
-            
+
             if (token.type == ParseTokenType.STRLITERAL) {
                 literalContent = expect(ParseTokenType.STRLITERAL);
                 literalContent = literalContent.substring(1, literalContent.length() - 1);
-            } else if (token.type == ParseTokenType.COLQUAL) {
-                literalContent = expect(ParseTokenType.COLQUAL);
+            } else if (token.type == ParseTokenType.STRLITERAL2) {
+                literalContent = expect(ParseTokenType.STRLITERAL2);
             }
-            
+
             StringBuilder sb = new StringBuilder();
             for (int charPos = 0; charPos < literalContent.length(); charPos++) {
                 char c = literalContent.charAt(charPos);
@@ -240,7 +251,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             }
             return sb.toString();
         }
-        
+
         protected long parseTtl(ParseTokenType type) {
             ParseToken token = peek();
             expect(type);
@@ -253,5 +264,5 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             }
         }
     }
-    
+
 }
