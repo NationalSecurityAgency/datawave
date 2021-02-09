@@ -208,8 +208,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         log.info("------  testTermThreshold  ------");
         String state = "'ohio'";
         for (TestCities city : TestCities.values()) {
-            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.STATE.name() + LTE_OP + state + AND_OP
-                            + CityField.STATE.name() + GTE_OP + state + ")";
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "((BoundedRange = true) && (" + CityField.STATE.name() + LTE_OP
+                            + state + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
             
             this.logic.setMaxTermThreshold(3);
             runTest(query, query);

@@ -7,7 +7,6 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
@@ -20,7 +19,6 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 
@@ -30,7 +28,6 @@ import java.util.Arrays;
  *
  */
 public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(FunctionIndexQueryExpansionVisitor.class);
     
     protected ShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
@@ -51,7 +48,7 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandFunctions(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     T script) {
-        JexlNode copy = RebuildingVisitor.copy(script);
+        JexlNode copy = copy(script);
         
         FunctionIndexQueryExpansionVisitor visitor = new FunctionIndexQueryExpansionVisitor(config, metadataHelper, dateIndexHelper);
         
@@ -60,32 +57,32 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        return node;
+        return copy(node);
     }
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return node;
+        return copy(node);
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return node;
+        return copy(node);
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return node;
+        return copy(node);
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return node;
+        return copy(node);
     }
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return node;
+        return copy(node);
     }
     
     @Override
@@ -111,7 +108,7 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
             }
         }
         
-        return node;
+        return copy(node);
     }
     
     @Override

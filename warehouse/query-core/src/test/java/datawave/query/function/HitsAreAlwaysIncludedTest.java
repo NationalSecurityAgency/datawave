@@ -174,7 +174,7 @@ public abstract class HitsAreAlwaysIncludedTest {
             log.trace(entry.getKey() + " => " + d);
             docs.add(d);
             
-            Attribute hitAttribute = d.get("HIT_TERM");
+            Attribute hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
             
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
