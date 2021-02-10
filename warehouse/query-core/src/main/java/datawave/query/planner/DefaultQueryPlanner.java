@@ -1734,9 +1734,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         if (firstHole && holeStart.compareTo(entry.getYyyymmdd()) < 0) {
                             // create the FieldIndexHole for the dates the field was not indexed before the first
                             // time in the date range that it was indexed.
-                            FieldIndexHole firstIndexHole = new FieldIndexHole();
-                            firstIndexHole.setFieldName(field);
-                            firstIndexHole.setStartDate(startDate);
+                            FieldIndexHole firstIndexHole = new FieldIndexHole(field, startDate);
                             previousDay = previousDay(entry.getYyyymmdd());
                             nextDay = nextDay(entry.getYyyymmdd());
                             log.debug("The date in the entry is: " + entry.getYyyymmdd());
