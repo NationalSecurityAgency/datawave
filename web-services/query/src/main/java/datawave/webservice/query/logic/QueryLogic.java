@@ -1,9 +1,5 @@
 package datawave.webservice.query.logic;
 
-import java.security.Principal;
-import java.util.List;
-import java.util.Set;
-
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.validation.ParameterValidator;
@@ -15,11 +11,16 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-
 import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
+
+import java.security.Principal;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidator {
     
@@ -297,4 +298,36 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     Set<String> getExampleQueries();
     
+    /**
+     * Set the map of DNs to query result limits. This should override the default limit returned by {@link #getMaxResults()} for any included DNs.
+     *
+     * @param dnResultLimits
+     *            the map of DNs to query result limits
+     */
+    void setDnResultLimits(Map<String,Long> dnResultLimits);
+    
+    /**
+     * Return the map of DNs to result limits.
+     *
+     * @return the map of DNs to query result limits
+     */
+    Map<String,Long> getDnResultLimits();
+    
+    /**
+     * Return the maximum number of results to include for the query for any DN present in the specified collection. If limits are found for multiple DNs in the
+     * collection, the smallest value will be returned. If the provided collection is null or empty, or if no limits are found for any DN, the value of
+     * {@link #getMaxResults()} will be returned.
+     * 
+     * @param dns
+     *            the DNs to determine the maximum number of results to include for the query. It's expected that this list represents all the DNs in the DN
+     *            chain for an individual user.
+     * @return the maximum number of results to include
+     */
+    default long getResultLimit(Collection<String> dns) {
+        Map<String,Long> dnResultLimits = getDnResultLimits();
+        if (dnResultLimits == null || dns == null) {
+            return getMaxResults();
+        }
+        return dns.stream().filter(dnResultLimits::containsKey).map(dnResultLimits::get).min(Long::compareTo).orElseGet(this::getMaxResults);
+    }
 }

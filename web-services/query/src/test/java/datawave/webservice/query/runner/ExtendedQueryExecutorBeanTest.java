@@ -360,6 +360,7 @@ public class ExtendedQueryExecutorBeanTest {
     public void testAdminCancel_LookupAccumuloQuery() throws Exception {
         // Set local test input
         UUID queryId = UUID.randomUUID();
+        List<String> dnList = Collections.singletonList("qwe");
         
         // Set expectations of the create logic
         expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
@@ -371,6 +372,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getQueryLogicName()).andReturn("ql1").anyTimes();
         expect(this.query.getOwner()).andReturn("qwe").anyTimes();
         expect(this.query.getUserDN()).andReturn("qwe").anyTimes();
+        expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn("qwe").anyTimes();
         expect(this.query.getBeginDate()).andReturn(null).anyTimes();
@@ -385,6 +387,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogicFactory.getQueryLogic("ql1", principal)).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
+        expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
+        expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
         cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         cache.remove(queryId.toString());
         this.queryLogic1.close();
@@ -783,6 +787,9 @@ public class ExtendedQueryExecutorBeanTest {
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
+        expect(this.query.getDnList()).andReturn(dnList).anyTimes();
+        expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
+        expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -955,6 +962,9 @@ public class ExtendedQueryExecutorBeanTest {
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
+        expect(this.query.getDnList()).andReturn(dnList).anyTimes();
+        expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
+        expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -1238,6 +1248,9 @@ public class ExtendedQueryExecutorBeanTest {
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
+        expect(this.query.getDnList()).andReturn(dnList).anyTimes();
+        expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
+        expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -2241,7 +2254,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String sid = "sid";
         UUID queryId = UUID.randomUUID();
-        
+        List<String> dnList = Collections.singletonList("userDn");
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("USERDN", Arrays.asList("AUTH_1"));
         
@@ -2272,6 +2285,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
+        expect(this.query.getDnList()).andReturn(dnList).anyTimes();
+        expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
+        expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
         this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         
         // Run the test
@@ -2729,7 +2745,8 @@ public class ExtendedQueryExecutorBeanTest {
         qp.setExpirationDate(new Date());
         qp.setQueryName(queryName);
         qp.setUserDN(userDN);
-        qp.setDnList(Collections.singletonList(userDN));
+        List<String> dnList = Collections.singletonList(userDN);
+        qp.setDnList(dnList);
         
         MultivaluedMap<String,String> map = qp.toMap();
         map.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
@@ -2764,6 +2781,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.lock(queryName)).andReturn(true);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
+        expect(this.query.getDnList()).andReturn(dnList).anyTimes();
+        expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
+        expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
         expect(this.query.toMap()).andReturn(map);
         expect(this.query.getColumnVisibility()).andReturn(authorization);
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
