@@ -64,12 +64,12 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                     ExceededValueThresholdMarkerJexlNode.class);
     // @formatter:on
     
-    private final Set<String> whitelist;
-    private final Set<String> blacklist;
+    private final Set<String> allowedTypes;
+    private final Set<String> deniedTypes;
     private List<JexlNode> sourceNodes;
     
-    private boolean whitelistedTypeFound = false;
-    private boolean blacklistedTypeFound = false;
+    private boolean allowedTypeFound = false;
+    private boolean deniedTypeFound = false;
     
     public static boolean instanceOfAny(JexlNode node) {
         return instanceOfAny(node, null);
@@ -95,16 +95,16 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         return instanceOf(node, types, null, sourceNodes);
     }
     
-    public static boolean instanceOfAnyExcept(JexlNode node, Class<? extends QueryPropertyMarker> blacklistedType) {
-        return instanceOfAnyExcept(node, blacklistedType == null ? null : Collections.singleton(blacklistedType));
+    public static boolean instanceOfAnyExcept(JexlNode node, Class<? extends QueryPropertyMarker> deniedType) {
+        return instanceOfAnyExcept(node, deniedType == null ? null : Collections.singleton(deniedType));
     }
     
-    public static boolean instanceOfAnyExcept(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> blacklist) {
-        return instanceOfAnyExcept(node, blacklist, null);
+    public static boolean instanceOfAnyExcept(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> deniedTypes) {
+        return instanceOfAnyExcept(node, deniedTypes, null);
     }
     
-    public static boolean instanceOfAnyExcept(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> blacklist, List<JexlNode> sourceNodes) {
-        return instanceOf(node, null, blacklist, sourceNodes);
+    public static boolean instanceOfAnyExcept(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> deniedTypes, List<JexlNode> sourceNodes) {
+        return instanceOf(node, null, deniedTypes, sourceNodes);
     }
     
     /**
@@ -123,26 +123,26 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
      *
      * @param node
      * @param types
-     * @param blacklistedTypes
+     * @param deniedTypes
      * @param sourceNodes
      * @return true if at least one of the types QueryPropertyMarkers exists and there are no QueryPropertyMarkers from except, false otherwise
      */
     public static boolean instanceOf(JexlNode node, Collection<Class<? extends QueryPropertyMarker>> types,
-                    Collection<Class<? extends QueryPropertyMarker>> blacklistedTypes, List<JexlNode> sourceNodes) {
+                    Collection<Class<? extends QueryPropertyMarker>> deniedTypes, List<JexlNode> sourceNodes) {
         if (node != null) {
-            Set<String> whitelist = types == null ? DEFAULT_TYPES : types.stream().map(QueryPropertyMarkerVisitor::getLabel).collect(Collectors.toSet());
-            Set<String> blacklist = blacklistedTypes == null ? Collections.emptySet() : blacklistedTypes.stream().map(QueryPropertyMarkerVisitor::getLabel)
+            Set<String> allowed = types == null ? DEFAULT_TYPES : types.stream().map(QueryPropertyMarkerVisitor::getLabel).collect(Collectors.toSet());
+            Set<String> denied = deniedTypes == null ? Collections.emptySet() : deniedTypes.stream().map(QueryPropertyMarkerVisitor::getLabel)
                             .collect(Collectors.toSet());
             
-            QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor(whitelist, blacklist);
+            QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor(allowed, denied);
             
             node.jjtAccept(visitor, null);
             
-            if (visitor.whitelistedTypeFound) {
+            if (visitor.allowedTypeFound) {
                 if (sourceNodes != null)
                     for (JexlNode sourceNode : visitor.sourceNodes)
                         sourceNodes.add(trimReferenceNodes(sourceNode));
-                return !visitor.blacklistedTypeFound;
+                return !visitor.deniedTypeFound;
             }
         }
         return false;
@@ -184,9 +184,9 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         return node;
     }
     
-    private QueryPropertyMarkerVisitor(Set<String> whitelist, Set<String> blacklist) {
-        this.whitelist = whitelist;
-        this.blacklist = blacklist;
+    private QueryPropertyMarkerVisitor(Set<String> allowedTypes, Set<String> deniedTypes) {
+        this.allowedTypes = allowedTypes;
+        this.deniedTypes = deniedTypes;
     }
     
     @Override
@@ -200,8 +200,8 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                 foundIdentifiers.add(identifier);
             }
             
-            if (blacklist.contains(identifier)) {
-                blacklistedTypeFound = true;
+            if (deniedTypes.contains(identifier)) {
+                deniedTypeFound = true;
             }
         }
         return null;
@@ -242,15 +242,15 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             for (JexlNode child : siblings) {
                 
                 // don't look for identifiers if we already found what we were looking for
-                if (!whitelistedTypeFound) {
+                if (!allowedTypeFound) {
                     Set<String> foundIdentifiers = new HashSet<>();
                     child.jjtAccept(this, foundIdentifiers);
                     
-                    foundIdentifiers.retainAll(whitelist);
+                    foundIdentifiers.retainAll(allowedTypes);
                     
                     // if we found our identifier, proceed to the next child node
                     if (!foundIdentifiers.isEmpty()) {
-                        whitelistedTypeFound = true;
+                        allowedTypeFound = true;
                         continue;
                     }
                 }
@@ -258,7 +258,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                 siblingNodes.add(child);
             }
             
-            if (whitelistedTypeFound)
+            if (allowedTypeFound)
                 sourceNodes = siblingNodes;
         }
         return null;
