@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -143,12 +144,7 @@ public class PushdownScheduler extends Scheduler {
             tl = new InMemoryTabletLocator();
             tableId = TableId.of(config.getTableName());
         } else {
-            ClientContext ctx;
-            if (client instanceof WrappedAccumuloClient) {
-                ctx = (ClientContext) ((WrappedAccumuloClient) client).getReal();
-            } else {
-                ctx = (ClientContext) client;
-            }
+            ClientContext ctx = AccumuloConnectionFactory.getClientContext(client);
             tableId = Tables.getTableId(ctx, tableName);
             tl = TabletLocator.getLocator(ctx, tableId);
         }

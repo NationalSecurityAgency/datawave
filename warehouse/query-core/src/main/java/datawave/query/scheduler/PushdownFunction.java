@@ -9,6 +9,7 @@ import java.util.Set;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.planner.QueryPlan;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -173,12 +174,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         while (true) {
             
             binnedRanges.clear();
-            ClientContext ctx;
-            if (client instanceof WrappedAccumuloClient) {
-                ctx = (ClientContext) ((WrappedAccumuloClient) client).getReal();
-            } else {
-                ctx = (ClientContext) client;
-            }
+            ClientContext ctx = AccumuloConnectionFactory.getClientContext(client);
             List<Range> failures = tl.binRanges(ctx, ranges, binnedRanges);
             
             if (!failures.isEmpty()) {
