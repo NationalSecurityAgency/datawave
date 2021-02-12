@@ -7,26 +7,33 @@ import datawave.microservice.cached.LockableHazelcastCacheInspector;
 import datawave.microservice.cached.UniversalLockableCacheInspector;
 import datawave.microservice.common.storage.QueryCache;
 import org.apache.log4j.Logger;
-import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.MessageChannel;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
 @EnableCaching
+@Profile("QueryStorageConfig")
 @EnableConfigurationProperties(QueryStorageProperties.class)
 public class QueryStorageConfig {
     private static final Logger log = Logger.getLogger(QueryStorageConfig.class);
     
-    public interface TaskNotificationSourceBinding {
-        String NAME = "queryTaskSource";
-        
-        @Output(NAME)
-        MessageChannel queryTaskSource();
+    @Bean
+    public AmqpAdmin amqpAdmin(ConnectionFactory connectionFactory) {
+        return new RabbitAdmin(connectionFactory);
+    }
+    
+    @Bean
+    public AmqpTemplate amqpTemplate(ConnectionFactory connectionFactory) {
+        return new RabbitTemplate(connectionFactory);
     }
     
     @Bean

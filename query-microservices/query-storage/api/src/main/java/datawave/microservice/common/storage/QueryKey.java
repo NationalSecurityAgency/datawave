@@ -9,9 +9,9 @@ import java.util.UUID;
 public class QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
     
-    public static final String QUERY_ID_PREFIX = " Q:";
-    public static final String POOL_PREFIX = " P:";
-    public static final String LOGIC_PREFIX = " L:";
+    public static final String QUERY_ID_PREFIX = "Q:";
+    public static final String POOL_PREFIX = "P:";
+    public static final String LOGIC_PREFIX = "L:";
     
     private final QueryPool queryPool;
     private final UUID queryId;
@@ -36,9 +36,13 @@ public class QueryKey implements Serializable {
     }
     
     public String toKey() {
-        return QUERY_ID_PREFIX + queryId.toString() + POOL_PREFIX + queryPool.getName() + LOGIC_PREFIX + queryLogic;
+        return POOL_PREFIX + queryPool.getName() + ' ' + QUERY_ID_PREFIX + queryId.toString() + ' ' + LOGIC_PREFIX + queryLogic;
     }
-    
+
+    public String toRoutingKey() {
+        return POOL_PREFIX + queryPool.getName() + ".#";
+    }
+
     @Override
     public String toString() {
         return toKey();

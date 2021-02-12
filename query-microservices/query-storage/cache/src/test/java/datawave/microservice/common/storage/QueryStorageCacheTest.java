@@ -1,20 +1,25 @@
 package datawave.microservice.common.storage;
 
-import datawave.microservice.common.storage.config.QueryStorageConfig;
-import datawave.microservice.common.storage.config.QueryStorageProperties;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.test.binder.MessageCollector;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.messaging.MessageChannel;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -26,40 +31,45 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = QueryStorageCacheTest.QueryStorageTestConfiguration.class)
-@ActiveProfiles({"QueryStorageCacheTest", "sync-disabled"})
-@ComponentScan(basePackages = "datawave.microservice.common.storage.config, datawave.microservice.common.storage")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-disabled"})
+@EnableRabbit
 public class QueryStorageCacheTest {
     @Autowired
     private QueryStorageCache storageService;
     
     @Autowired
-    private QueryStorageConfig.TaskNotificationSourceBinding taskNotificationSourceBinding;
+    private AmqpAdmin admin;
     
     @Autowired
-    @Qualifier(QueryStorageConfig.TaskNotificationSourceBinding.NAME)
-    private MessageChannel taskNotificationChannel;
-    
-    @Autowired
-    private MessageCollector messageCollector;
+    private AmqpTemplate template;
     
     @After
     public void cleanup() throws InterruptedException {
         storageService.clear();
-        messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).clear();
+        clearQueue();
+    }
+    
+    void clearQueue() {
+        QueryTaskNotification task;
+        do {
+            task = receive();
+        } while (task != null);
+    }
+    
+    QueryTaskNotification receive() {
+        return template.receiveAndConvert("default", 10, new ParameterizedTypeReference<QueryTaskNotification>() {});
     }
     
     @Test
     public void testStoreQuery() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
@@ -70,13 +80,12 @@ public class QueryStorageCacheTest {
         assertNotNull(key);
         
         // ensure we got a task notification
-        assertFalse(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
-        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
-                        .getPayload();
+        QueryTaskNotification notification = receive();
+        assertNotNull(notification);
         assertEquals(key, notification.getTaskKey());
         
         // ensure the message queue is empty again
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         QueryTask task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, task);
@@ -85,7 +94,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testStoreTask() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -100,13 +109,12 @@ public class QueryStorageCacheTest {
         assertEquals(checkpoint.getQueryKey(), key);
         
         // ensure we got a task notification
-        assertFalse(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
-        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
-                        .getPayload();
+        QueryTaskNotification notification = receive();
+        assertNotNull(notification);
         assertEquals(key, notification.getTaskKey());
         
         // ensure the message queue is empty again
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.NEXT, query, task);
@@ -115,7 +123,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testCheckpointTask() throws InterruptedException, ParseException {
         // ensure the message queue is empty
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -145,9 +153,8 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
-                        .getPayload();
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        QueryTaskNotification notification = receive();
+        assertNull(receive());
         
         // now update the task
         Map<String,Object> props = new HashMap<>();
@@ -156,7 +163,7 @@ public class QueryStorageCacheTest {
         storageService.checkpointTask(notification.getTaskKey(), checkpoint);
         
         // ensure we did not get another task notification
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         QueryTask task = storageService.getTask(notification.getTaskKey());
         assertEquals(checkpoint, task.getQueryCheckpoint());
@@ -165,7 +172,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testGetAndDeleteTask() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -179,9 +186,8 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
-                        .getPayload();
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        QueryTaskNotification notification = receive();
+        assertNull(receive());
         
         // ensure we can get a task
         QueryTask task = storageService.getTask(notification.getTaskKey());
@@ -191,7 +197,7 @@ public class QueryStorageCacheTest {
         storageService.deleteTask(notification.getTaskKey());
         
         // ensure we did not get another task notification
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         // ensure there is no more task stored
         task = storageService.getTask(notification.getTaskKey());
@@ -201,7 +207,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testGetAndDeleteQueryTasks() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -215,9 +221,8 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
-                        .getPayload();
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        QueryTaskNotification notification = receive();
+        assertNull(receive());
         
         // not get the query tasks
         List<QueryTask> tasks = storageService.getTasks(queryId);
@@ -229,7 +234,7 @@ public class QueryStorageCacheTest {
         storageService.deleteQuery(queryId);
         
         // ensure we did not get another task notification
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         // make sure it deleted
         tasks = storageService.getTasks(queryId);
@@ -239,7 +244,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testGetAndDeleteTypeTasks() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -253,9 +258,8 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = (QueryTaskNotification) messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).take()
-                        .getPayload();
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        QueryTaskNotification notification = receive();
+        assertNull(receive());
         
         // not get the query tasks
         List<QueryTask> tasks = storageService.getTasks(queryPool);
@@ -267,7 +271,7 @@ public class QueryStorageCacheTest {
         storageService.deleteQueryPool(queryPool);
         
         // ensure we did not get another task notification
-        assertTrue(messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).isEmpty());
+        assertNull(receive());
         
         // make sure it deleted
         tasks = storageService.getTasks(queryPool);
@@ -282,8 +286,17 @@ public class QueryStorageCacheTest {
     }
     
     @Configuration
-    @Profile("QueryStorageCacheTestTest")
-    @ComponentScan(basePackages = "datawave.microservice.common.storage.config, datawave.microservice.common.storage")
-    public static class QueryStorageTestConfiguration {}
-    
+    @Profile("QueryStorageCacheTest")
+    @ComponentScan(basePackages = {"datawave.microservice", "org.springframework.cloud.stream.test"})
+    public static class QueryStorageTestConfiguration {
+        @Bean
+        public CacheManager cacheManager() {
+            return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
+        }
+
+        @Bean
+        public ConnectionFactory connectionFactory() {
+            return new SimpleRoutingConnectionFactory();
+        }
+    }
 }

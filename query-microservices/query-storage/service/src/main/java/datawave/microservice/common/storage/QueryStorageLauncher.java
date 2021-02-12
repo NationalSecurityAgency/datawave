@@ -12,7 +12,6 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
  */
 @EnableDiscoveryClient
 @SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {ErrorMvcAutoConfiguration.class})
-@EnableBinding(QueryStorageConfig.TaskNotificationSourceBinding.class)
 public class QueryStorageLauncher {
     public static void main(String[] args) {
         SpringApplication.run(QueryStorageLauncher.class, args);

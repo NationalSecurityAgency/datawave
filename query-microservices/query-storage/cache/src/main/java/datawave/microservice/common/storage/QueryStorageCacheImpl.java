@@ -1,11 +1,14 @@
 package datawave.microservice.common.storage;
 
-import datawave.microservice.common.storage.config.QueryStorageConfig;
+import datawave.microservice.common.storage.config.QueryStorageProperties;
 import datawave.webservice.query.Query;
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.integration.support.MessageBuilder;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -19,11 +22,17 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     @Autowired
     private QueryCache cache;
     
-    private Map<String,MessageChannel> channels = new HashMap<>();
+    @Autowired
+    private AmqpAdmin admin;
     
     @Autowired
-    @Qualifier(QueryStorageConfig.TaskNotificationSourceBinding.NAME)
-    private MessageChannel taskNotificationChannel;
+    private AmqpTemplate template;
+    
+    // A mapping of query pools to routing keys
+    private Map<QueryPool,String> exchanges = new HashMap<>();
+    
+    @Autowired
+    QueryStorageProperties properties;
     
     /**
      * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification on a channel
@@ -69,7 +78,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         QueryTask task = cache.addQueryTask(action, checkpoint);
         
         // send a task notification
-        sendMessage(checkpoint.getQueryKey().getQueryLogic(), task.getNotification());
+        sendMessage(task.getNotification());
         
         // return the task
         return task;
@@ -174,8 +183,23 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @param taskNotification
      *            The task notification to be sent
      */
-    private boolean sendMessage(String queryLogic, QueryTaskNotification taskNotification) {
-        return taskNotificationChannel.send(MessageBuilder.withPayload(taskNotification).setCorrelationId(taskNotification.getTaskKey().toKey()).build());
+    private void sendMessage(QueryTaskNotification taskNotification) {
+        TaskKey taskKey = taskNotification.getTaskKey();
+        QueryPool queryPool = taskKey.getQueryPool();
+        if (exchanges.get(queryPool) == null) {
+            synchronized (exchanges) {
+                if (exchanges.get(queryPool) == null) {
+                    TopicExchange exchange = new TopicExchange(queryPool.getName(), properties.isSynchStorage(), false);
+                    Queue queue = new Queue(queryPool.getName(), properties.isSynchStorage(), false, false);
+                    Binding binding = BindingBuilder.bind(queue).to(exchange).with(taskKey.toRoutingKey());
+                    admin.declareQueue(queue);
+                    admin.declareBinding(binding);
+                    exchanges.put(queryPool, taskKey.toRoutingKey());
+                }
+            }
+        }
+        
+        template.convertAndSend(taskNotification.getTaskKey().toKey(), taskNotification);
     }
     
 }

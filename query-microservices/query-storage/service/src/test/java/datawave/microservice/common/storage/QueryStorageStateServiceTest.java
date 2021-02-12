@@ -2,9 +2,10 @@ package datawave.microservice.common.storage;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
-import datawave.microservice.common.storage.config.QueryStorageConfig;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
@@ -15,15 +16,20 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.cloud.stream.test.binder.MessageCollector;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.util.UriComponents;
@@ -45,7 +51,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStorageServiceTest", "sync-disabled"})
+@ActiveProfiles({"QueryStorageStateServiceTest", "QueryStorageConfig", "sync-disabled"})
+@EnableRabbit
 public class QueryStorageStateServiceTest {
     @LocalServerPort
     private int webServicePort;
@@ -64,16 +71,6 @@ public class QueryStorageStateServiceTest {
     @Autowired
     private QueryStorageStateService storageStateService;
     
-    @Autowired
-    private QueryStorageConfig.TaskNotificationSourceBinding taskNotificationSourceBinding;
-    
-    @Autowired
-    @Qualifier(QueryStorageConfig.TaskNotificationSourceBinding.NAME)
-    private MessageChannel taskNotificationChannel;
-    
-    @Autowired
-    private MessageCollector messageCollector;
-    
     private SubjectIssuerDNPair DN;
     private String userDN = "userDn";
     
@@ -86,7 +83,6 @@ public class QueryStorageStateServiceTest {
     @After
     public void cleanup() throws InterruptedException {
         storageService.clear();
-        messageCollector.forChannel(taskNotificationSourceBinding.queryTaskSource()).clear();
     }
     
     @Test
@@ -213,5 +209,20 @@ public class QueryStorageStateServiceTest {
             }
         }
     }
-    
+
+    @Configuration
+    @Profile("QueryStorageStateServiceTest")
+    @ComponentScan(basePackages = {"datawave.microservice", "org.springframework.cloud.stream.test"})
+    public static class QueryStorageTestConfiguration {
+        @Bean
+        public CacheManager cacheManager() {
+            return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
+        }
+
+        @Bean
+        public ConnectionFactory connectionFactory() {
+            return new SimpleRoutingConnectionFactory();
+        }
+    }
+
 }

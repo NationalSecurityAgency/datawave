@@ -11,7 +11,7 @@ import java.util.UUID;
 public class TaskKey extends QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
     
-    public static final String TASK_ID_PREFIX = " T:";
+    public static final String TASK_ID_PREFIX = "T:";
     
     private final UUID taskId;
     
@@ -31,7 +31,11 @@ public class TaskKey extends QueryKey implements Serializable {
     }
     
     public String toKey() {
-        return TASK_ID_PREFIX + taskId.toString() + super.toKey();
+        return TASK_ID_PREFIX + taskId.toString() + ' ' + super.toKey();
+    }
+
+    public String toRoutingKey() {
+        return "*." + super.toRoutingKey();
     }
     
     @Override
