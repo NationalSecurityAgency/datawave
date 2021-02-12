@@ -20,7 +20,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import org.apache.accumulo.core.client.SampleNotPresentException;
-import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
@@ -199,7 +198,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                             mapping = new CustomColumnToClassMapping(priority, clazz);
                             myCombiner = mapping.getObject(CustomColumnToClassMapping.ALL_CF_KEY);
                             options.put("all", "true");
-                            myCombiner.init(null, options, new BaseIteratorEnvironment());
+                            myCombiner.init(null, options, new IteratorEnvironment() {});
                         }
                         
                         list.add(mapping);
