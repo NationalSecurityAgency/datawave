@@ -15,15 +15,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@CacheConfig(cacheNames = QueryStorageCache.CACHE_NAME)
-public class QueryStorageCache {
-    private final static Logger log = Logger.getLogger(QueryStorageCache.class);
+@CacheConfig(cacheNames = QueryCache.CACHE_NAME)
+public class QueryCache {
+    private final static Logger log = Logger.getLogger(QueryCache.class);
     
     public static final String CACHE_NAME = "QueryCache";
     
     private final LockableCacheInspector cacheInspector;
     
-    public QueryStorageCache(LockableCacheInspector cacheInspector) {
+    public QueryCache(LockableCacheInspector cacheInspector) {
         this.cacheInspector = cacheInspector;
     }
     

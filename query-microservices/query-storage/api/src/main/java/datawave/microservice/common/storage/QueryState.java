@@ -21,13 +21,13 @@ public class QueryState {
     private Map<QueryTask.QUERY_ACTION,Integer> taskCounts;
     
     public QueryState(QueryKey queryKey, Map<QueryTask.QUERY_ACTION,Integer> taskCounts) {
-        this(queryKey.getQueryId(), queryKey.getQueryPool(), taskCounts);
+        this(queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic(), taskCounts);
     }
     
     @JsonCreator
-    public QueryState(@JsonProperty("queryId") UUID queryId, @JsonProperty("queryPool") QueryPool queryPool,
+    public QueryState(@JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId, @JsonProperty("queryLogic") String queryLogic,
                     @JsonProperty("taskCounts") Map<QueryTask.QUERY_ACTION,Integer> taskCounts) {
-        this.queryKey = new QueryKey(queryPool, queryId);
+        this.queryKey = new QueryKey(queryPool, queryId, queryLogic);
         this.taskCounts = Collections.unmodifiableMap(new HashMap<>(taskCounts));
     }
     
@@ -42,6 +42,10 @@ public class QueryState {
     
     public QueryPool getQueryPool() {
         return getQueryKey().getQueryPool();
+    }
+    
+    public String getQueryLogic() {
+        return getQueryKey().getQueryLogic();
     }
     
     public Map<QueryTask.QUERY_ACTION,Integer> getTaskCounts() {

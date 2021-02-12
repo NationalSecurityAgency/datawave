@@ -1,5 +1,6 @@
 package datawave.microservice.common.storage.config;
 
+import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;

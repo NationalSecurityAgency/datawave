@@ -16,13 +16,14 @@ public class TaskKey extends QueryKey implements Serializable {
     private final UUID taskId;
     
     @JsonCreator
-    public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId) {
-        super(queryPool, queryId);
+    public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId,
+                    @JsonProperty("queryLogic") String queryLogic) {
+        super(queryPool, queryId, queryLogic);
         this.taskId = taskId;
     }
     
     public TaskKey(UUID taskId, QueryKey queryKey) {
-        this(taskId, queryKey.getQueryPool(), queryKey.getQueryId());
+        this(taskId, queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic());
     }
     
     public UUID getTaskId() {

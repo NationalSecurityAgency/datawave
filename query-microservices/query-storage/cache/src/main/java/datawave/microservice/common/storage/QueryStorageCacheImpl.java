@@ -8,21 +8,26 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
-public class QueryStorageServiceImpl implements QueryStorageService {
+public class QueryStorageCacheImpl implements QueryStorageCache {
     
     @Autowired
-    private QueryStorageCache cache;
+    private QueryCache cache;
+    
+    private Map<String,MessageChannel> channels = new HashMap<>();
     
     @Autowired
     @Qualifier(QueryStorageConfig.TaskNotificationSourceBinding.NAME)
     private MessageChannel taskNotificationChannel;
     
     /**
-     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification.
+     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification on a channel
+     * using the name of the query logic.
      * 
      * @param queryPool
      *            The query pool
@@ -40,7 +45,7 @@ public class QueryStorageServiceImpl implements QueryStorageService {
         }
         
         // create the initial query checkpoint
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryUuid, queryPool, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryUuid, query.getQueryLogicName(), query);
         
         // create and store the initial create task with the checkpoint
         QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
@@ -64,7 +69,7 @@ public class QueryStorageServiceImpl implements QueryStorageService {
         QueryTask task = cache.addQueryTask(action, checkpoint);
         
         // send a task notification
-        sendMessage(task.getNotification());
+        sendMessage(checkpoint.getQueryKey().getQueryLogic(), task.getNotification());
         
         // return the task
         return task;
@@ -169,7 +174,7 @@ public class QueryStorageServiceImpl implements QueryStorageService {
      * @param taskNotification
      *            The task notification to be sent
      */
-    private boolean sendMessage(QueryTaskNotification taskNotification) {
+    private boolean sendMessage(String queryLogic, QueryTaskNotification taskNotification) {
         return taskNotificationChannel.send(MessageBuilder.withPayload(taskNotification).setCorrelationId(taskNotification.getTaskKey().toKey()).build());
     }
     

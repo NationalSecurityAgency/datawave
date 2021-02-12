@@ -24,9 +24,9 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     
     private final QueryStorageProperties storageProperties;
     
-    private final QueryStorageCache cache;
+    private final QueryCache cache;
     
-    public QueryStorageStateServiceController(QueryStorageProperties storageProperties, QueryStorageCache cache) {
+    public QueryStorageStateServiceController(QueryStorageProperties storageProperties, QueryCache cache) {
         this.storageProperties = storageProperties;
         this.cache = cache;
     }

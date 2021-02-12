@@ -1,9 +1,11 @@
 package datawave.microservice.common.storage.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
+@EnableConfigurationProperties(QueryStorageProperties.class)
 @ConfigurationProperties(prefix = "query.storage")
 public class QueryStorageProperties {
     

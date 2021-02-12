@@ -11,13 +11,16 @@ public class QueryKey implements Serializable {
     
     public static final String QUERY_ID_PREFIX = " Q:";
     public static final String POOL_PREFIX = " P:";
+    public static final String LOGIC_PREFIX = " L:";
     
     private final QueryPool queryPool;
     private final UUID queryId;
+    private final String queryLogic;
     
-    public QueryKey(QueryPool queryPool, UUID queryId) {
+    public QueryKey(QueryPool queryPool, UUID queryId, String queryLogic) {
         this.queryPool = queryPool;
         this.queryId = queryId;
+        this.queryLogic = queryLogic;
     }
     
     public QueryPool getQueryPool() {
@@ -28,8 +31,12 @@ public class QueryKey implements Serializable {
         return queryId;
     }
     
+    public String getQueryLogic() {
+        return queryLogic;
+    }
+    
     public String toKey() {
-        return QUERY_ID_PREFIX + queryId.toString() + POOL_PREFIX + queryPool.getName();
+        return QUERY_ID_PREFIX + queryId.toString() + POOL_PREFIX + queryPool.getName() + LOGIC_PREFIX + queryLogic;
     }
     
     @Override
@@ -41,13 +48,14 @@ public class QueryKey implements Serializable {
     public boolean equals(Object o) {
         if (o instanceof QueryKey) {
             QueryKey other = (QueryKey) o;
-            return new EqualsBuilder().append(getQueryPool(), other.getQueryPool()).append(getQueryId(), other.getQueryId()).isEquals();
+            return new EqualsBuilder().append(getQueryPool(), other.getQueryPool()).append(getQueryId(), other.getQueryId())
+                            .append(getQueryLogic(), other.getQueryLogic()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getQueryPool()).append(getQueryId()).toHashCode();
+        return new HashCodeBuilder().append(getQueryPool()).append(getQueryId()).append(getQueryLogic()).toHashCode();
     }
 }
