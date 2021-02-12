@@ -1,9 +1,13 @@
 package datawave.microservice.query;
 
-import datawave.microservice.query.filter.QuerySessionIdFilter.QuerySessionIdContext;
+import com.codahale.metrics.annotation.Timed;
+import datawave.webservice.result.GenericResponse;
 import org.springframework.http.MediaType;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -15,23 +19,26 @@ public class QueryController {
     // * @param queryParameters
     // * @return
     // */
-    // @POST
-    // @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+    // X @POST
+    // X @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
     // "application/x-protostuff"})
-    // @Path("/{logicName}/define")
-    // @GZIP
-    // @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    // X @Path("/{logicName}/define")
+    // X @GZIP
+    // X @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
     // @EnrichQueryMetrics(methodType = MethodType.CREATE)
-    // @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
-    // @Timed(name = "dw.query.defineQuery", absolute = true)
-    // public GenericResponse<String> defineQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
-    // MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders)
-    @RequestMapping(path = "{logicName}/define", method = {RequestMethod.POST})
-    public String define() {
-        QuerySessionIdContext.setCookieBasePath("/DataWave/Query/");
-        QuerySessionIdContext.setQueryId("some-query-id");
-        
-        return "";
+    // X @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
+    // X @Timed(name = "dw.query.defineQuery", absolute = true)
+    // X public GenericResponse<String> defineQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+    // X MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders)
+    // NOTE: The goal is to not use this, but it's here if we need it.
+    // @GenerateQuerySessionId(cookieBasePath = "/DataWave/Query/")
+    @Timed(name = "dw.query.defineQuery", absolute = true) // TODO: Figure out where this is used
+    @RequestMapping(path = "{logicName}/define", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public GenericResponse define(@PathVariable(name = "logicName") String logicName, @RequestParam MultiValueMap<String,String> parameters) {
+        // QuerySessionIdContext.setQueryId("some-query-id");
+        GenericResponse<String> resp = new GenericResponse<>();
+        resp.setResult("something something");
+        return resp;
     }
-    
 }

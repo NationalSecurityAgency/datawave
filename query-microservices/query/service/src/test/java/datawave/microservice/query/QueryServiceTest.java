@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -68,7 +69,9 @@ public class QueryServiceTest {
         RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         try {
-            jwtRestTemplate.exchange(requestEntity, String.class);
+            ResponseEntity resp = jwtRestTemplate.exchange(requestEntity, String.class);
+            
+            System.out.println("done!");
         } finally {
             assertTrue("", true);
         }
