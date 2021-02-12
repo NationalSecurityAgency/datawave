@@ -10,6 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -142,9 +144,9 @@ public class PushdownScheduler extends Scheduler {
             tl = new InMemoryTabletLocator();
             tableId = TableId.of(config.getTableName());
         } else {
-            tableId = Tables.getTableId((ClientContext) client, tableName);
-            Credentials credentials = new Credentials(client.whoami(), new PasswordToken(config.getAccumuloPassword()));
-            tl = TabletLocator.getLocator((ClientContext) client, tableId);
+            ClientContext ctx = AccumuloConnectionFactory.getClientContext(client);
+            tableId = Tables.getTableId(ctx, tableName);
+            tl = TabletLocator.getLocator(ctx, tableId);
         }
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
         
