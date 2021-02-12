@@ -66,8 +66,11 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     protected TimeFilter timeFilter;
     
     private DatawaveKey startKeyParser;
-    
     private DatawaveKey stopKeyParser;
+    
+    // support for lazy building of scan range
+    private boolean startInclusive;
+    private boolean endInclusive;
     
     /**
      * A convenience constructor that allows all keys to pass through unmodified from the source.
@@ -100,27 +103,20 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         // Build the cf: fi\x00FIELD_NAME
         this.columnFamily = Constants.TERM_FREQUENCY_COLUMN_FAMILY;
         
-        seekColumnFamilies = Lists.newArrayList();
-        seekColumnFamilies.add(new ArrayByteSequence(columnFamily.getBytes()));
+        this.seekColumnFamilies = Lists.newArrayList();
+        this.seekColumnFamilies.add(new ArrayByteSequence(columnFamily.getBytes()));
         
-        startKeyParser = new DatawaveKey(fiStartKey);
-        stopKeyParser = new DatawaveKey(fiEndKey);
+        this.startKeyParser = new DatawaveKey(fiStartKey);
+        this.stopKeyParser = new DatawaveKey(fiEndKey);
         
         this.includeColumnFamilies = true;
         
-        document = new Document();
+        this.document = new Document();
         
         this.field = startKeyParser.getFieldName().toUpperCase();
         
-        Key startKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + Constants.NULL + startKeyParser.getUid()
-                        + Constants.NULL + startKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + startKeyParser.getFieldName()));
-        
-        // must use the start key row so that the scan will be bounded by the specified cf/cq. All these scans are assumed to be across a single row
-        Key endKey = new Key(stopKeyParser.getRow(), columnFamily, new Text(stopKeyParser.getDataType() + Constants.NULL + stopKeyParser.getUid()
-                        + Constants.NULL + stopKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + stopKeyParser.getFieldName()));
-        scanRange = new Range(startKey, startInclusive, endKey, endInclusive);
-        if (log.isTraceEnabled())
-            log.trace("Adding scan range of " + scanRange);
+        this.startInclusive = startInclusive;
+        this.endInclusive = endInclusive;
         
         // Only when this source is running over an indexOnlyField
         // do we want to add it to the Document
@@ -137,8 +133,20 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         }
         
         this.aggregation = aggregator;
+    }
+    
+    public void buildScanRangeLazily() {
+        Key startKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + Constants.NULL + startKeyParser.getUid()
+                        + Constants.NULL + startKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + startKeyParser.getFieldName()));
         
-        this.timeFilter = timeFilter;
+        // must use the start key row so that the scan will be bounded by the specified cf/cq. All these scans are assumed to be across a single row
+        Key endKey = new Key(stopKeyParser.getRow(), columnFamily, new Text(stopKeyParser.getDataType() + Constants.NULL + stopKeyParser.getUid()
+                        + Constants.NULL + stopKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + stopKeyParser.getFieldName()));
+        
+        this.scanRange = new Range(startKey, startInclusive, endKey, endInclusive);
+        
+        if (log.isTraceEnabled())
+            log.trace("Adding scan range of " + scanRange);
     }
     
     public void applyPattern(Pattern pattern) {
@@ -163,6 +171,10 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         tk = null;
         // reusable buffers
         Text row = new Text(), cf = new Text(), cq = new Text();
+        
+        if (scanRange == null) {
+            buildScanRangeLazily();
+        }
         
         if (log.isTraceEnabled()) {
             log.trace(source.hasTop() + " nexting on " + scanRange);
@@ -281,6 +293,10 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        
+        if (scanRange == null) {
+            buildScanRangeLazily();
+        }
         
         if (log.isTraceEnabled()) {
             log.trace(this + " seek'ing to: " + this.scanRange + " from requested range " + range);
