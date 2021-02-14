@@ -1,10 +1,10 @@
 package datawave.microservice.query;
 
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
+import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,7 +35,7 @@ import static org.springframework.test.util.AssertionErrors.assertTrue;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(classes = QueryServiceTest.QueryServiceTestConfiguration.class)
-@ActiveProfiles({"QueryServiceTest"})
+@ActiveProfiles({"QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceTest {
     
     @LocalServerPort
