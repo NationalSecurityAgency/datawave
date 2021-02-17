@@ -7,11 +7,14 @@ import datawave.webservice.query.QueryImpl;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
@@ -44,10 +47,13 @@ public class QueryStorageCacheTest {
     private QueryStorageCache storageService;
     
     @Autowired
-    private AmqpAdmin admin;
+    ConnectionFactory connectionFactory;
     
     @Autowired
-    private AmqpTemplate template;
+    private RabbitAdmin admin;
+    
+    @Autowired
+    private RabbitTemplate template;
     
     @After
     public void cleanup() throws InterruptedException {
@@ -63,7 +69,14 @@ public class QueryStorageCacheTest {
     }
     
     QueryTaskNotification receive() {
-        return template.receiveAndConvert("default", 10, new ParameterizedTypeReference<QueryTaskNotification>() {});
+        try {
+            return template.receiveAndConvert("default", 10, new ParameterizedTypeReference<QueryTaskNotification>() {});
+        } catch (IllegalStateException e) {
+            // maybe the queue does not exist
+            return null;
+        } catch (AmqpException ae) {
+            return null;
+        }
     }
     
     @Test
@@ -154,6 +167,7 @@ public class QueryStorageCacheTest {
         
         // clear out message queue
         QueryTaskNotification notification = receive();
+        assertNotNull(notification);
         assertNull(receive());
         
         // now update the task
@@ -187,6 +201,7 @@ public class QueryStorageCacheTest {
         
         // clear out message queue
         QueryTaskNotification notification = receive();
+        assertNotNull(notification);
         assertNull(receive());
         
         // ensure we can get a task
@@ -222,6 +237,7 @@ public class QueryStorageCacheTest {
         
         // clear out message queue
         QueryTaskNotification notification = receive();
+        assertNotNull(notification);
         assertNull(receive());
         
         // not get the query tasks
@@ -259,6 +275,7 @@ public class QueryStorageCacheTest {
         
         // clear out message queue
         QueryTaskNotification notification = receive();
+        assertNotNull(notification);
         assertNull(receive());
         
         // not get the query tasks
@@ -293,10 +310,16 @@ public class QueryStorageCacheTest {
         public CacheManager cacheManager() {
             return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
         }
-
+        
         @Bean
         public ConnectionFactory connectionFactory() {
-            return new SimpleRoutingConnectionFactory();
+            SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
+            factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
+            Map<Object,ConnectionFactory> map = new HashMap<>();
+            map.put("default", new CachingConnectionFactory());
+            factory.setTargetConnectionFactories(map);
+            return factory;
         }
     }
+    
 }

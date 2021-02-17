@@ -38,11 +38,11 @@ public class QueryKey implements Serializable {
     public String toKey() {
         return POOL_PREFIX + queryPool.getName() + ' ' + QUERY_ID_PREFIX + queryId.toString() + ' ' + LOGIC_PREFIX + queryLogic;
     }
-
+    
     public String toRoutingKey() {
         return POOL_PREFIX + queryPool.getName() + ".#";
     }
-
+    
     @Override
     public String toString() {
         return toKey();

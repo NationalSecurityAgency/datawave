@@ -33,7 +33,7 @@ public class TaskKey extends QueryKey implements Serializable {
     public String toKey() {
         return TASK_ID_PREFIX + taskId.toString() + ' ' + super.toKey();
     }
-
+    
     public String toRoutingKey() {
         return "*." + super.toRoutingKey();
     }

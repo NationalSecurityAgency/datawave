@@ -209,7 +209,7 @@ public class QueryStorageStateServiceTest {
             }
         }
     }
-
+    
     @Configuration
     @Profile("QueryStorageStateServiceTest")
     @ComponentScan(basePackages = {"datawave.microservice", "org.springframework.cloud.stream.test"})
@@ -218,11 +218,11 @@ public class QueryStorageStateServiceTest {
         public CacheManager cacheManager() {
             return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
         }
-
+        
         @Bean
         public ConnectionFactory connectionFactory() {
             return new SimpleRoutingConnectionFactory();
         }
     }
-
+    
 }

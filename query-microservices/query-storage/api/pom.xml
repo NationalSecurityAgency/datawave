@@ -11,8 +11,8 @@
     <version>1.0-SNAPSHOT</version>
     <properties>
         <version.datawave>3.1.5-SNAPSHOT</version.datawave>
+        <version.jaxrs>3.7.0.Final</version.jaxrs>
         <version.lang3>3.3.2</version.lang3>
-        <version.resteasy.jaxrs>3.7.0.Final</version.resteasy.jaxrs>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -21,9 +21,14 @@
                 <artifactId>datawave-ws-client</artifactId>
                 <version>${version.datawave}</version>
                 <exclusions>
+                    <!-- Exclude log4j since with spring boot we're using log4j2 -->
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
                     <exclusion>
                         <artifactId>*</artifactId>
-                        <groupId>*</groupId>
+                        <groupId>org.slf4j</groupId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -35,7 +40,7 @@
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-jaxrs</artifactId>
-                <version>${version.resteasy.jaxrs}</version>
+                <version>${version.jaxrs}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>

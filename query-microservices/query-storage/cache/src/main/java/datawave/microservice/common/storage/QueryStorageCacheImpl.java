@@ -1,19 +1,10 @@
 package datawave.microservice.common.storage;
 
-import datawave.microservice.common.storage.config.QueryStorageProperties;
 import datawave.webservice.query.Query;
-import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.AmqpTemplate;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -23,16 +14,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     private QueryCache cache;
     
     @Autowired
-    private AmqpAdmin admin;
-    
-    @Autowired
-    private AmqpTemplate template;
-    
-    // A mapping of query pools to routing keys
-    private Map<QueryPool,String> exchanges = new HashMap<>();
-    
-    @Autowired
-    QueryStorageProperties properties;
+    private QueryQueueManager queue;
     
     /**
      * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification on a channel
@@ -78,7 +60,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         QueryTask task = cache.addQueryTask(action, checkpoint);
         
         // send a task notification
-        sendMessage(task.getNotification());
+        queue.sendMessage(task.getNotification());
         
         // return the task
         return task;
@@ -175,31 +157,6 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     @Override
     public void clear() {
         cache.clear();
-    }
-    
-    /**
-     * Passes task notifications to the messaging infrastructure.
-     *
-     * @param taskNotification
-     *            The task notification to be sent
-     */
-    private void sendMessage(QueryTaskNotification taskNotification) {
-        TaskKey taskKey = taskNotification.getTaskKey();
-        QueryPool queryPool = taskKey.getQueryPool();
-        if (exchanges.get(queryPool) == null) {
-            synchronized (exchanges) {
-                if (exchanges.get(queryPool) == null) {
-                    TopicExchange exchange = new TopicExchange(queryPool.getName(), properties.isSynchStorage(), false);
-                    Queue queue = new Queue(queryPool.getName(), properties.isSynchStorage(), false, false);
-                    Binding binding = BindingBuilder.bind(queue).to(exchange).with(taskKey.toRoutingKey());
-                    admin.declareQueue(queue);
-                    admin.declareBinding(binding);
-                    exchanges.put(queryPool, taskKey.toRoutingKey());
-                }
-            }
-        }
-        
-        template.convertAndSend(taskNotification.getTaskKey().toKey(), taskNotification);
     }
     
 }
