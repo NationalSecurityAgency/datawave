@@ -30,10 +30,7 @@ import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
-import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.MetadataHelperQueryModelProvider;
-import datawave.query.planner.QueryModelProvider;
-import datawave.query.planner.QueryPlanner;
+import datawave.query.planner.*;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
@@ -181,6 +178,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
+    private FederatedQueryPlanner federatedQueryPlanner = null;
     private QueryParser parser = null;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
@@ -1737,6 +1735,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.planner = planner;
     }
     
+    public void setFederatedQueryPlanner(QueryPlanner planner) {
+        this.federatedQueryPlanner = new FederatedQueryPlanner(planner, this);
+    }
+    
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
         return createUidsIteratorClass;
     }
@@ -2257,5 +2259,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public Set<String> getEvaluationOnlyFields() {
         return getConfig().getEvaluationOnlyFields();
+    }
+    
+    public FederatedQueryPlanner getFederatedQueryPlanner() {
+        if (federatedQueryPlanner == null)
+            return new FederatedQueryPlanner(planner, this);
+        else
+            return federatedQueryPlanner;
     }
 }

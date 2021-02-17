@@ -279,6 +279,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * performance impact.
      */
     protected boolean showReducedQueryPrune = true;
+
+    protected FederatedQueryPlanner federatedQueryPlanner = null;
     
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
