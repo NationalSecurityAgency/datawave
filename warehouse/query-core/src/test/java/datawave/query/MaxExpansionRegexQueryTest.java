@@ -266,7 +266,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
         // verify that the ivarators ran and completed
         assertTrue(countComplete(dirs) >= 1);
-
+        
         // clear list before new set is added
         dirs.clear();
         // now get a new set of ivarator directories
@@ -310,7 +310,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
         // verify that the ivarators ran and completed
         assertTrue(countComplete(dirs) >= 1);
-
+        
         // clear list before new set is added
         dirs.clear();
         
