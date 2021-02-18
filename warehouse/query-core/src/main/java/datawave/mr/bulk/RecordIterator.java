@@ -24,20 +24,21 @@ import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.conf.IterConfigUtil;
+import org.apache.accumulo.core.conf.IterLoad;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.data.thrift.IterInfo;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
-import org.apache.accumulo.core.file.blockfile.BlockFileReader;
+import org.apache.accumulo.core.file.blockfile.impl.CachableBlockFile;
 import org.apache.accumulo.core.file.blockfile.impl.CachableBlockFile.Reader;
 import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.system.DeletingIterator;
@@ -45,7 +46,6 @@ import org.apache.accumulo.core.iterators.system.MultiIterator;
 import org.apache.accumulo.core.iterators.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.util.CachedConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -156,15 +156,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
         
         public RFileEnvironment() {
-            this.conf = AccumuloConfiguration.getDefaultConfiguration();
-        }
-        
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
-            Configuration conf = CachedConfiguration.getInstance();
-            FileSystem fs = FileSystem.get(conf);
-            return RFileOperations.getInstance().newReaderBuilder().forFile(mapFileName, fs, conf)
-                            .withTableConfiguration(AccumuloConfiguration.getDefaultConfiguration()).build();
+            this.conf = DefaultConfiguration.getInstance();
         }
         
         @Override
@@ -175,16 +167,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         @Override
         public IteratorScope getIteratorScope() {
             return IteratorScope.scan;
-        }
-        
-        @Override
-        public boolean isFullMajorCompaction() {
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public Authorizations getAuthorizations() {
-            throw new UnsupportedOperationException();
         }
         
         @Override
@@ -200,11 +182,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
             return null;
-        }
-        
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            throw new UnsupportedOperationException();
         }
         
     }
@@ -346,7 +323,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         boolean applyDeletingIterator = conf.getBoolean("range.record.reader.apply.delete", true);
         if (applyDeletingIterator)
-            topIter = new DeletingIterator(topIter, false);
+            topIter = DeletingIterator.wrap(topIter, false, DeletingIterator.Behavior.PROCESS);
         
         try {
             globalIter = applyTableIterators(topIter, conf);
@@ -377,18 +354,12 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             // don't need to be populated as we'll do this later.
             RFileEnvironment iterEnv = new RFileEnvironment();
             
-            List<IterInfo> serverSideIteratorList = Collections.emptyList();
-            Map<String,Map<String,String>> serverSideIteratorOptions = Collections.emptyMap();
-            
-            byte[] defaultSecurityLabel;
-            
             ColumnVisibility cv = new ColumnVisibility(acuTableConf.get(Property.TABLE_DEFAULT_SCANTIME_VISIBILITY));
-            defaultSecurityLabel = cv.getExpression();
+            byte[] defaultSecurityLabel = cv.getExpression();
             
             SortedKeyValueIterator<Key,Value> visFilter = VisibilityFilter.wrap(topIter, auths, defaultSecurityLabel);
-            
-            return IteratorUtil.loadIterators(IteratorScope.scan, visFilter, null, acuTableConf, serverSideIteratorList, serverSideIteratorOptions, iterEnv,
-                            false);
+            IterLoad iterLoad = IterConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(), acuTableConf);
+            return IterConfigUtil.loadIterators(visFilter, iterLoad.iterEnv(iterEnv).useAccumuloClassLoader(false));
         }
         
         return topIter;
@@ -479,7 +450,9 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 
                 long length = fs.getFileStatus(path).getLen();
                 
-                closeable.setBlockFile(new Reader(path.getName(), closeable.getInputStream(), length, conf, null, null, acuTableConf));
+                CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder().fsPath(fs, path).input(closeable.getInputStream())
+                                .length(length).conf(conf);
+                closeable.setBlockFile(new Reader(builder));
                 
                 fileIterator = new RFile.Reader(closeable.getReader());
                 
@@ -807,7 +780,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             this.fileIterator = fileIterator;
         }
         
-        public BlockFileReader getReader() {
+        public CachableBlockFile.Reader getReader() {
             return reader;
         }
         

@@ -75,7 +75,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.rome, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
+        client = helper.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
     }
     
     @Before

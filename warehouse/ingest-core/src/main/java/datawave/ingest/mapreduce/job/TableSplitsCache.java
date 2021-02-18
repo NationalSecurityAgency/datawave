@@ -15,12 +15,13 @@ import java.util.Set;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.util.StringUtils;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -77,7 +78,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     private ClientContext getClientContext() throws AccumuloSecurityException {
-        return new ClientContext(this.cbHelper.getInstance(), this.cbHelper.getCredentials(), this.cbHelper.getZookeeperConfig());
+        return new ClientContext(this.cbHelper.newClientProperties());
     }
     
     /**
@@ -168,15 +169,13 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     public void writeCacheFile(FileSystem fs, Path tmpSplitsFile) throws IOException {
         TableOperations tops = null;
         initAccumuloHelper();
-        try {
-            tops = this.accumuloHelper.getConnector().tableOperations();
-        } catch (AccumuloSecurityException | AccumuloException ex) {
-            throw new IOException("Could not get TableOperations", ex);
-        }
-        Set<String> tableNames = getIngestTableNames();
-        Map<String,Integer> splitsPerTable = new HashMap<>();
-        Map<String,Map<Text,String>> tmpSplitLocations = new HashMap<>();
-        if (tops != null) {
+        
+        try (AccumuloClient client = this.accumuloHelper.newClient()) {
+            tops = client.tableOperations();
+            Set<String> tableNames = getIngestTableNames();
+            Map<String,Integer> splitsPerTable = new HashMap<>();
+            Map<String,Map<Text,String>> tmpSplitLocations = new HashMap<>();
+            
             try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
                 this.splits = new HashMap<>();
                 // gather the splits and write to PrintStream

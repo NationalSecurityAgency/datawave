@@ -64,7 +64,7 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(flatten);
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes, FileLoaderFactory.FileType.JSON);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public NormalFlattenQueryTest() {
@@ -127,7 +127,8 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
         log.info("------  testFoundedRange  ------");
         String start = "1840";
         String end = "1860";
-        String query = NormalField.CAPITAL_FOUNDED.name() + GT_OP + start + AND_OP + NormalField.CAPITAL_FOUNDED.name() + LT_OP + end;
+        String query = "((BoundedRange = true) && (" + NormalField.CAPITAL_FOUNDED.name() + GT_OP + start + AND_OP + NormalField.CAPITAL_FOUNDED.name() + LT_OP
+                        + end + "))";
         runTest(query, query);
     }
     

@@ -18,7 +18,7 @@ public class PruneLessSelectiveFieldsVisitor extends RebuildingVisitor {
     
     public PruneLessSelectiveFieldsVisitor(ShardQueryConfiguration config) {
         this.config = config;
-        stats = new IndexStatsClient(this.config.getConnector(), this.config.getIndexStatsTableName());
+        stats = new IndexStatsClient(this.config.getClient(), this.config.getIndexStatsTableName());
     }
     
     /**

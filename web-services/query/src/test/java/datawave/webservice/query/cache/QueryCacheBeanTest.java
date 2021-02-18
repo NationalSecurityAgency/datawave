@@ -5,7 +5,7 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.runner.RunningQuery;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class QueryCacheBeanTest {
     QueryLogic<?> logic;
     
     @Mock
-    Pair<QueryLogic<?>,Connector> pair;
+    Pair<QueryLogic<?>,AccumuloClient> pair;
     
     @Mock
     CreatedQueryLogicCacheBean remoteCache;
@@ -85,7 +85,7 @@ public class QueryCacheBeanTest {
     public void testListRunningQueries() throws Exception {
         // Set expectations
         expect(altCache.iterator()).andReturn((Iterator<RunningQuery>) new HashMap().values().iterator());
-        Map<String,Pair<QueryLogic<?>,Connector>> snapshot = new HashMap<>();
+        Map<String,Pair<QueryLogic<?>,AccumuloClient>> snapshot = new HashMap<>();
         snapshot.put("key", this.pair);
         expect(this.remoteCache.snapshot()).andReturn(snapshot);
         expect(this.pair.getFirst()).andReturn((QueryLogic) this.logic);

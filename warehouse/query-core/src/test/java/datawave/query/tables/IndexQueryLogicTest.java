@@ -57,7 +57,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.ford, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     @Before
@@ -257,7 +257,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         expected.add("tesla-eventid-002");
         expected.add("tesla-eventid-003");
         
-        String query = CarField.WHEELS.name() + ">='0' and " + CarField.WHEELS.name() + "<='5'";
+        String query = "((BoundedRange = true) && (" + CarField.WHEELS.name() + ">='0' and " + CarField.WHEELS.name() + "<='5'))";
         runTest(query, expected);
     }
     

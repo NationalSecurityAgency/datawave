@@ -29,7 +29,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -86,12 +86,12 @@ public abstract class GroupingTestWithModel {
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
                         throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown, interrupt);
-            Connector connector = qtth.connector;
-            VisibilityWiseGuysIngestWithModel.writeItAll(connector, VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD);
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
-            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+            AccumuloClient client = qtth.client;
+            VisibilityWiseGuysIngestWithModel.writeItAll(client, VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD);
+            PrintUtility.printTable(client, auths, SHARD_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_INDEX_TABLE_NAME);
+            PrintUtility.printTable(client, auths, MODEL_TABLE_NAME);
+            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
@@ -103,12 +103,12 @@ public abstract class GroupingTestWithModel {
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
                         throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, teardown, interrupt);
-            Connector connector = qtth.connector;
-            VisibilityWiseGuysIngestWithModel.writeItAll(connector, VisibilityWiseGuysIngestWithModel.WhatKindaRange.DOCUMENT);
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
-            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+            AccumuloClient client = qtth.client;
+            VisibilityWiseGuysIngestWithModel.writeItAll(client, VisibilityWiseGuysIngestWithModel.WhatKindaRange.DOCUMENT);
+            PrintUtility.printTable(client, auths, SHARD_TABLE_NAME);
+            PrintUtility.printTable(client, auths, SHARD_INDEX_TABLE_NAME);
+            PrintUtility.printTable(client, auths, MODEL_TABLE_NAME);
+            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
@@ -157,7 +157,7 @@ public abstract class GroupingTestWithModel {
                     throws Exception;
     
     protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
-                    Map<String,String> extraParms, Connector connector) throws Exception {
+                    Map<String,String> extraParms, AccumuloClient client) throws Exception {
         log.debug("runTestQueryWithGrouping");
         
         QueryImpl settings = new QueryImpl();
@@ -172,7 +172,7 @@ public abstract class GroupingTestWithModel {
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));

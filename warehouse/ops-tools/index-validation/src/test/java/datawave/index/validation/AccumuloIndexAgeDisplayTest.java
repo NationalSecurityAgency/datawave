@@ -1,18 +1,12 @@
 package datawave.index.validation;
 
-/**
- This is the test class for AccumuloIndexAgeDisplay.  It will create an instance
- of accumulo, load it with data and verify AccumuloIndexAgeDisplay shows the
- data in the proper buckets.
- */
-
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -35,6 +29,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This is the test class for AccumuloIndexAgeDisplay. It will create an instance of accumulo, load it with data and verify AccumuloIndexAgeDisplay shows the
+ * data in the proper buckets.
+ */
 public class AccumuloIndexAgeDisplayTest {
     private static final Logger log = Logger.getLogger(AccumuloIndexAgeDisplayTest.class);
     
@@ -48,8 +46,7 @@ public class AccumuloIndexAgeDisplayTest {
     private static final long THIRTYONE_DAYS = MILLIS_IN_DAY * 31 + ONE_MINUTE;
     
     // our fake accumulo instance
-    private Instance mockInstance = null;
-    private Connector conn = null;
+    private AccumuloClient client = null;
     
     // name of the table we'll be scanning
     private final String tableName = "DatawaveMetadata";
@@ -69,10 +66,9 @@ public class AccumuloIndexAgeDisplayTest {
         // set hadoop.home.dir so we don't get an IOException about it. Doesn't appear to be used though
         System.setProperty("hadoop.home.dir", "/tmp");
         // May need to replace InMemoryInstance with MiniCluster. Apparently InMemoryInstance isn't kept up as well.
-        mockInstance = new InMemoryInstance();
-        conn = mockInstance.getConnector(userName, password);
-        conn.securityOperations().changeUserAuthorizations(userName, auths);
-        conn.tableOperations().create(tableName);
+        client = new InMemoryAccumuloClient(userName, new InMemoryInstance());
+        client.securityOperations().changeUserAuthorizations(userName, auths);
+        client.tableOperations().create(tableName);
     }
     
     /**
@@ -82,19 +78,11 @@ public class AccumuloIndexAgeDisplayTest {
      *            - the array of buckets to use
      */
     private void completeSetup(Integer[] bucketsToUse) {
-        try {
-            deleteFile(fileName);
-            aiad = new AccumuloIndexAgeDisplay(mockInstance, tableName, columns, userName, password, bucketsToUse);
-            aiad.extractDataFromAccumulo();
-            aiad.logAgeSummary();
-            aiad.createAccumuloShellScript(fileName);
-        } catch (AccumuloException ae) {
-            log.error("Accumlo exception from our mock instance.");
-            log.error(ae.getMessage());
-        } catch (AccumuloSecurityException ase) {
-            log.error("Accumulo security exception from our mock instance");
-            log.error(ase.getMessage());
-        }
+        deleteFile(fileName);
+        aiad = new AccumuloIndexAgeDisplay(client, tableName, columns, bucketsToUse);
+        aiad.extractDataFromAccumulo();
+        aiad.logAgeSummary();
+        aiad.createAccumuloShellScript(fileName);
     }
     
     /**
@@ -123,27 +111,17 @@ public class AccumuloIndexAgeDisplayTest {
      */
     @Test
     public void sortBucketsInReverseOrderTest() {
-        Assert.assertNotNull(mockInstance);
-        try {
-            aiad = new AccumuloIndexAgeDisplay(mockInstance, tableName, columns, userName, password, new Integer[0]);
-            aiad.setBuckets(null);
-            Integer[] expected = {180, 90, 60, 30, 14, 7, 2};
-            Integer[] actual = aiad.getBuckets();
-            Assert.assertArrayEquals(expected, actual);
-            
-            Integer[] useExpectedWithTooSmallNumber = {1, 2, 3, 4, 5};
-            expected = new Integer[] {5, 4, 3, 2};
-            aiad.setBuckets(useExpectedWithTooSmallNumber);
-            actual = aiad.getBuckets();
-            Assert.assertArrayEquals(expected, actual);
-            
-        } catch (AccumuloException ae) {
-            log.error("Accumlo exception from our mock instance.");
-            log.error(ae.getMessage());
-        } catch (AccumuloSecurityException ase) {
-            log.error("Accumulo security exception from our mock instance");
-            log.error(ase.getMessage());
-        }
+        aiad = new AccumuloIndexAgeDisplay(client, tableName, columns, new Integer[0]);
+        aiad.setBuckets(null);
+        Integer[] expected = {180, 90, 60, 30, 14, 7, 2};
+        Integer[] actual = aiad.getBuckets();
+        Assert.assertArrayEquals(expected, actual);
+        
+        Integer[] useExpectedWithTooSmallNumber = {1, 2, 3, 4, 5};
+        expected = new Integer[] {5, 4, 3, 2};
+        aiad.setBuckets(useExpectedWithTooSmallNumber);
+        actual = aiad.getBuckets();
+        Assert.assertArrayEquals(expected, actual);
     }
     
     /**
@@ -237,7 +215,7 @@ public class AccumuloIndexAgeDisplayTest {
      */
     private void loadAssortedData() {
         try {
-            BatchWriter bw = conn.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
+            BatchWriter bw = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
                             .setMaxWriteThreads(4));
             
             long currentTime = System.currentTimeMillis();
@@ -296,7 +274,7 @@ public class AccumuloIndexAgeDisplayTest {
      */
     private void loadOneHourData() {
         try {
-            BatchWriter bw = conn.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
+            BatchWriter bw = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
                             .setMaxWriteThreads(4));
             
             long currentTime = System.currentTimeMillis();

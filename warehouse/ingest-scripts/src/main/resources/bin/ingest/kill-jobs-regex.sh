@@ -24,7 +24,7 @@ else
 fi
 
 
-$ACC_HOME/bin/accumulo -add $DATAWAVE_INGEST_CORE_JAR datawave.ingest.util.KillJobByRegex $REGEX
+CLASSPATH=$DATAWAVE_INGEST_CORE_JAR $ACC_HOME/bin/accumulo datawave.ingest.util.KillJobByRegex $REGEX
 RETURN_CODE=$?
 
 exit $RETURN_CODE

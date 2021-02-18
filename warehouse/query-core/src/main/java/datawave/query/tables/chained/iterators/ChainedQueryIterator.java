@@ -6,12 +6,12 @@ import java.util.Set;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.QueryLogic;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 /**
  * Abstract class that encompasses the members necessary to run a ChainedQuery. Any implementation should need two {@link QueryLogic}'s, the original query the
- * user entered, the user's auths, and a {@link Connector}
+ * user entered, the user's auths, and an {@link AccumuloClient}
  * 
  * 
  * 
@@ -25,15 +25,15 @@ public abstract class ChainedQueryIterator<T1,T2> implements Iterator<T2> {
     protected QueryLogic<T2> latterQueryLogic = null;
     protected Iterator<T2> latterQueryResults = null;
     protected Query initialQuery = null;
-    protected Connector connector = null;
+    protected AccumuloClient client = null;
     protected Set<Authorizations> auths = null;
     
-    public Connector getConnector() {
-        return connector;
+    public AccumuloClient getClient() {
+        return client;
     }
     
-    public void setConnector(Connector connector) {
-        this.connector = connector;
+    public void setClient(AccumuloClient client) {
+        this.client = client;
     }
     
     public Set<Authorizations> getAuths() {

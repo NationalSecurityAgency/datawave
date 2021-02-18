@@ -4,6 +4,7 @@ import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -12,6 +13,7 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -22,8 +24,6 @@ import java.util.Collection;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
-import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.Assert.assertEquals;
 
@@ -38,7 +38,7 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public LuceneQueryTest() {
@@ -176,6 +176,35 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         
         expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + CityField.STATE.name() + " >= '" + startState + "'" + AND_OP
                         + CityField.STATE.name() + " <= '" + endState + "'";
+        runTest(query, expect);
+    }
+    
+    @Test
+    public void testMultiRangeSameField() throws Exception {
+        log.info("------  testMultiRangeSameField  ------");
+        logic.setMaxValueExpansionThreshold(1);
+        logic.setFullTableScanEnabled(true);
+        String code = "europe";
+        String startState1 = "a";
+        String endState1 = "lon";
+        String startState2 = "hawaii";
+        String endState2 = "wyoming";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + CityField.STATE.name() + ":[" + startState1 + " TO " + endState1 + "]"
+                        + CityField.STATE.name() + ":[" + startState2 + " TO " + endState2 + "]";
+        
+        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP
+                        + "((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true)" + JEXL_AND_OP + "(" + CityField.STATE.name() + " >= '"
+                        + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "')))" + JEXL_AND_OP
+                        + "((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true)" + JEXL_AND_OP + "(" + CityField.STATE.name() + " >= '"
+                        + startState2 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "')))";
+        
+        System.out.println("Expected: " + expect);
+        String plan = getPlan(query, true, true);
+        assertEquals(expect, plan);
+        assertPlanEquals(expect, plan);
+        
+        expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + CityField.STATE.name() + " >= '" + startState2 + "'" + AND_OP
+                        + CityField.STATE.name() + " <= '" + endState1 + "'";
         runTest(query, expect);
     }
     

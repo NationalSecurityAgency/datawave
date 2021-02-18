@@ -41,7 +41,7 @@ public class UnevaluatedFieldsQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.generic, fldConfig));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public UnevaluatedFieldsQueryTest() {

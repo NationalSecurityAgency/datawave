@@ -470,7 +470,7 @@ public class EventDataQueryExpressionVisitorTest {
     
     @Test
     public void testRange1() throws Exception {
-        String originalQuery = "BAZ >= '+aE5' AND BAZ <= '+bE1.2'";
+        String originalQuery = "((BoundedRange = true) && (BAZ >= '+aE5' AND BAZ <= '+bE1.2'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         
@@ -494,7 +494,7 @@ public class EventDataQueryExpressionVisitorTest {
     @Test
     public void testRange2() throws Exception {
         // Between 5 and 12.
-        String originalQuery = "FOO == 'abc' AND (BAZ >= '+aE5' AND BAZ <= '+bE1.2')";
+        String originalQuery = "FOO == 'abc' AND ((BoundedRange = true) && (BAZ >= '+aE5' AND BAZ <= '+bE1.2'))";
         // @TODO, use ExpandMultiNormalizedTerms to normalize this query?
         
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);

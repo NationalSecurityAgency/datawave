@@ -2,6 +2,7 @@ package datawave.query.tables;
 
 import com.google.common.io.Files;
 import datawave.mr.bulk.RfileResource;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -11,6 +12,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -40,10 +42,10 @@ import java.util.TreeSet;
  * simplifications that in the past have masked bugs
  */
 public class ScannerSessionTest {
-    private static final String PASSWORD = "";
+    private static final String PASSWORD = "password";
     
     private static MiniAccumuloCluster instance;
-    private static Connector connector;
+    private static AccumuloClient client;
     private static ResourceQueue resourceQueue;
     
     @BeforeClass
@@ -52,7 +54,7 @@ public class ScannerSessionTest {
         instance = new MiniAccumuloCluster(Files.createTempDir(), PASSWORD);
         instance.start();
         
-        connector = instance.getConnector("root", PASSWORD);
+        client = instance.createAccumuloClient("root", new PasswordToken(PASSWORD));
         
         setupTable();
     }
@@ -64,14 +66,14 @@ public class ScannerSessionTest {
     
     private static void setupTable() throws TableExistsException, AccumuloSecurityException, AccumuloException, TableNotFoundException, InterruptedException,
                     IOException {
-        connector.tableOperations().create("testTable");
+        client.tableOperations().create("testTable");
         
         // create splits 1 to 99
         SortedSet<Text> splits = new TreeSet<>();
         for (int i = 0; i < 100; i++) {
             splits.add(new Text(String.valueOf(i)));
         }
-        connector.tableOperations().addSplits("testTable", splits);
+        client.tableOperations().addSplits("testTable", splits);
         
         // give the table a chance to be split
         Thread.sleep(10000);
@@ -86,7 +88,7 @@ public class ScannerSessionTest {
     }
     
     private static void writeData() throws TableNotFoundException, MutationsRejectedException {
-        BatchWriter bw = connector.createBatchWriter("testTable", new BatchWriterConfig());
+        BatchWriter bw = client.createBatchWriter("testTable", new BatchWriterConfig());
         
         // add CF 1000 to 1099 with CQ 10000 to 10099, or 10000 entries per row
         for (int i = 0; i < 100; i++) {
@@ -105,7 +107,7 @@ public class ScannerSessionTest {
     
     @Before
     public void setup() throws Exception {
-        resourceQueue = new ResourceQueue(100, connector);
+        resourceQueue = new ResourceQueue(100, client);
     }
     
     @Test
@@ -179,7 +181,7 @@ public class ScannerSessionTest {
         }
         
         int batchScannerCount = 0;
-        BatchScanner scanner = connector.createBatchScanner("testTable", new Authorizations(), 12);
+        BatchScanner scanner = client.createBatchScanner("testTable", new Authorizations(), 12);
         scanner.setRanges(Arrays.asList(new Range(new Text(String.valueOf(25)), true, new Text(String.valueOf(27)), false),
                         new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false), new Range(new Text(String.valueOf(98)), true,
                                         new Text(String.valueOf(99)), false)));
@@ -205,7 +207,7 @@ public class ScannerSessionTest {
     
     private static class StubbedRuntimeExceptionResource extends AccumuloResource {
         
-        public StubbedRuntimeExceptionResource(Connector cxn) {
+        public StubbedRuntimeExceptionResource(AccumuloClient cxn) {
             super(cxn);
         }
         

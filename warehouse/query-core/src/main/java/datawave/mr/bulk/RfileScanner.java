@@ -11,10 +11,11 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -59,16 +60,13 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     private static Cache<String,AccumuloConfiguration> tableConfigMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
                     .expireAfterAccess(24, TimeUnit.HOURS).build();
     
-    private static Cache<String,String> tableIdMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100).expireAfterAccess(24, TimeUnit.HOURS)
-                    .build();
+    protected AccumuloClient client;
     
-    protected Connector connector;
-    
-    public RfileScanner(Connector connector, Configuration conf, String table, Set<Authorizations> auths, int numQueryThreads) {
-        ArgumentChecker.notNull(connector, conf, table, auths);
+    public RfileScanner(AccumuloClient client, Configuration conf, String table, Set<Authorizations> auths, int numQueryThreads) {
+        ArgumentChecker.notNull(client, conf, table, auths);
         this.table = table;
         this.auths = auths;
-        this.connector = connector;
+        this.client = client;
         ranges = null;
         authIter = AuthorizationsUtil.minimize(auths).iterator();
         recordIterAuthString = authIter.next().toString();
@@ -116,9 +114,9 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     
     protected Iterator<Entry<Key,Value>> getIterator(List<InputSplit> splits, AccumuloConfiguration acuTableConf) {
         // optimization for single tablets
-        Iterator<Entry<Key,Value>> kv = Iterators.emptyIterator();
+        Iterator<Entry<Key,Value>> kv = Collections.emptyIterator();
         for (InputSplit split : splits) {
-            RecordIterator recordIter = null;
+            RecordIterator recordIter;
             
             recordIter = new RecordIterator((TabletSplitSplit) split, acuTableConf, conf);
             
@@ -139,7 +137,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
             if (resought.get()) {
                 resought.set(false);
                 
-                kv = Iterators.emptyIterator();
+                kv = Collections.emptyIterator();
                 
                 for (RecordIterator recordIterator : iterators) {
                     kv = Iterators.concat(kv, new RfileIterator(recordIterator));
@@ -157,19 +155,14 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
             
             final long failureSleep = conf.getLong(RecordIterator.RECORDITER_FAILURE_SLEEP_INTERVAL, RecordIterator.DEFAULT_FAILURE_SLEEP);
             try {
-                splits = MultiRfileInputformat.computeSplitPoints(connector, conf, table, ranges);
+                splits = MultiRfileInputformat.computeSplitPoints(client, conf, table, ranges);
                 if (log.isDebugEnabled()) {
                     log.debug("Completed " + splits.size() + " splits");
                 }
-                String tableId = tableIdMap.getIfPresent(table);
-                if (null == tableId) {
-                    tableId = connector.tableOperations().tableIdMap().get(table);
-                    tableIdMap.put(table, tableId);
-                }
-                AccumuloConfiguration acuTableConf = tableConfigMap.getIfPresent(tableId);
+                AccumuloConfiguration acuTableConf = tableConfigMap.getIfPresent(table);
                 if (null == acuTableConf) {
-                    acuTableConf = AccumuloConfiguration.getTableConfiguration(connector, tableId);
-                    tableConfigMap.put(tableId, acuTableConf);
+                    acuTableConf = new ConfigurationCopy(client.tableOperations().getProperties(table));
+                    tableConfigMap.put(table, acuTableConf);
                 }
                 
                 int maxRetries = conf.getInt(RecordIterator.RECORDITER_FAILURE_COUNT_MAX, RecordIterator.FAILURE_MAX_DEFAULT);
@@ -201,7 +194,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
                         
                         Thread.sleep(failureSleep);
                         
-                        splits = MultiRfileInputformat.computeSplitPoints(connector, conf, table, ranges);
+                        splits = MultiRfileInputformat.computeSplitPoints(client, conf, table, ranges);
                         if (log.isDebugEnabled()) {
                             log.debug("Recomputed " + splits.size() + " splits");
                         }
@@ -212,11 +205,11 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
                 } while (null == kv);
                 
             } catch (Exception e) {
-                IOUtils.cleanup(null, this);
+                IOUtils.cleanupWithLogger(null, this);
                 throw new RuntimeException(e);
             }
         } finally {
-            /**
+            /*
              * This is required because Hadoop will swallow the interrupt. As a result we must notify ourselves that the interrupt occurred. In doing so we call
              * a subsequent close here since we weren't interrupted in the call to getIterator(...).
              */
@@ -231,7 +224,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     @Override
     public void close() {
         log.info("Closing RfileScanner");
-        /**
+        /*
          * This is required because Hadoop will swallow the interrupt. As a result we must notify ourselves that the interrupt occurred. In doing so we call a
          * subsequent close here since we weren't interrupted in the call to getIterator(...).
          */

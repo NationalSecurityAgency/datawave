@@ -49,7 +49,6 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.sql.DataSource;
-import javax.sql.rowset.CachedRowSet;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
@@ -67,7 +66,6 @@ import javax.ws.rs.core.Response.Status;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
-
 import datawave.annotation.ClearQuerySessionId;
 import datawave.annotation.GenerateQuerySessionId;
 import datawave.annotation.Required;
@@ -79,6 +77,7 @@ import datawave.marking.SecurityMarking;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -125,10 +124,7 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.TotalResultsAware;
 import datawave.webservice.result.VoidResponse;
 
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
-import org.apache.accumulo.core.trace.thrift.TInfo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.jexl2.parser.TokenMgrError;
@@ -136,9 +132,75 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.htrace.Trace;
+import org.apache.htrace.TraceInfo;
+import org.apache.htrace.TraceScope;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.AsyncResult;
+import javax.ejb.Asynchronous;
+import javax.ejb.EJBContext;
+import javax.ejb.EJBException;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
+import javax.enterprise.concurrent.ManagedExecutorService;
+import javax.inject.Inject;
+import javax.interceptor.Interceptors;
+import javax.sql.DataSource;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.Principal;
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.Future;
 
 /**
  * CachedResultsBean loads the results of a predefined query into a relational database (MySQL) so that the user can run SQL queries against the data, which
@@ -353,7 +415,7 @@ public class CachedResultsBean {
         }
         
         AccumuloConnectionFactory.Priority priority;
-        Connector connector = null;
+        AccumuloClient client = null;
         RunningQuery query = null;
         String tableName = "t" + nameBase;
         String viewName = "v" + nameBase;
@@ -362,7 +424,7 @@ public class CachedResultsBean {
         boolean tableCreated = false;
         boolean viewCreated = false;
         CachedRunningQuery crq = null;
-        Span span = null;
+        TraceScope span = null;
         boolean queryLockedException = false;
         int rowsPerBatch = cachedResultsConfiguration.getRowsPerBatch();
         try {
@@ -373,7 +435,7 @@ public class CachedResultsBean {
             QueryLogic<?> logic = null;
             Query q = null;
             BaseQueryMetric queryMetric = null;
-            TInfo traceInfo = null;
+            TraceInfo traceInfo = null;
             try {
                 rq = getQueryById(queryId);
                 
@@ -404,17 +466,15 @@ public class CachedResultsBean {
                 // rq and RunningQuery.close will call close on the logic. This is causing the batch scanner to
                 // be closed after 15 minutes
                 logic = (QueryLogic<?>) logic.clone();
-                if (rq.getTraceInfo() != null) {
-                    traceInfo = rq.getTraceInfo().deepCopy();
-                }
+                traceInfo = rq.getTraceInfo();
             } finally {
                 if (rq != null) {
                     // the original query was cloned including the queryId
                     // remove original query from the cache to avoid duplicate metrics
                     // when it is expired by the QueryExpirationBean
                     rq.setActiveCall(false);
-                    if (rq.getConnection() != null) {
-                        connectionFactory.returnConnection(rq.getConnection());
+                    if (rq.getClient() != null) {
+                        connectionFactory.returnClient(rq.getClient());
                     }
                     runningQueryCache.remove(queryId);
                 }
@@ -435,7 +495,7 @@ public class CachedResultsBean {
             addQueryToTrackingMap(trackingMap, q);
             accumuloConnectionRequestBean.requestBegin(queryId);
             try {
-                connector = connectionFactory.getConnection(priority, trackingMap);
+                client = connectionFactory.getClient(priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(queryId);
             }
@@ -462,6 +522,10 @@ public class CachedResultsBean {
                     } catch (Exception e) {
                         log.error(e.getMessage());
                     }
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryMap.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryMap.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                    }
                     auditor.audit(queryMap);
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
@@ -473,7 +537,7 @@ public class CachedResultsBean {
             
             if (t instanceof CacheableLogic) {
                 // hold on to a reference of the query logic so we cancel it if need be.
-                qlCache.add(q.getId().toString(), owner, logic, connector);
+                qlCache.add(q.getId().toString(), owner, logic, client);
                 
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
@@ -482,7 +546,7 @@ public class CachedResultsBean {
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
-                    query.setConnection(connector);
+                    query.setClient(client);
                     // Copy trace info from a clone of the original query
                     query.setTraceInfo(traceInfo);
                 } finally {
@@ -522,7 +586,7 @@ public class CachedResultsBean {
             
             // If we're tracing this query, then continue the trace for the next call.
             if (traceInfo != null) {
-                span = Trace.trace(traceInfo, "cachedresults:load");
+                span = Trace.startSpan("cachedresults:load", traceInfo);
             }
             
             int rowsWritten = 0;
@@ -533,15 +597,15 @@ public class CachedResultsBean {
                     throw new QueryCanceledQueryException(DatawaveErrorCode.QUERY_CANCELED);
                 }
                 
-                Span nextSpan = (span == null) ? null : Trace.start("cachedresults:next");
+                TraceScope nextSpan = (span == null) ? null : Trace.startSpan("cachedresults:next");
                 try {
-                    if (nextSpan != null)
-                        nextSpan.data("pageNumber", Long.toString(query.getLastPageNumber() + 1));
+                    if (nextSpan != null && nextSpan.getSpan() != null)
+                        nextSpan.getSpan().addKVAnnotation("pageNumber", Long.toString(query.getLastPageNumber() + 1));
                     
                     results = query.next();
                 } finally {
                     if (nextSpan != null)
-                        nextSpan.stop();
+                        nextSpan.close();
                 }
                 if (results.getResults().isEmpty()) {
                     go = false;
@@ -732,10 +796,12 @@ public class CachedResultsBean {
             }
             
             if (span != null) {
-                span.stop();
+                span.close();
                 
-                span = Trace.trace(query.getTraceInfo(), "query:close");
-                span.data("closedAt", new Date().toString());
+                span = Trace.startSpan("query:close", query.getTraceInfo());
+                if (span.getSpan() != null) {
+                    span.getSpan().addKVAnnotation("closedAt", new Date().toString());
+                }
                 // Spans aren't recorded if they take no time, so sleep for a
                 // couple milliseconds just to ensure we get something saved.
                 try {
@@ -743,7 +809,7 @@ public class CachedResultsBean {
                 } catch (InterruptedException e) {
                     // ignore
                 }
-                span.stop();
+                span.close();
                 // TODO: 1.8.1: no longer done?
                 // Tracer.getInstance().flush();
             }
@@ -755,9 +821,9 @@ public class CachedResultsBean {
                 } catch (Exception e) {
                     response.addException(new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e).getBottomQueryException());
                 }
-            } else if (connector != null) {
+            } else if (client != null) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error(new QueryException(DatawaveErrorCode.CONNECTOR_RETURN_ERROR, e));
                 }
@@ -1311,6 +1377,10 @@ public class CachedResultsBean {
                 params.remove(QueryParameters.QUERY_STRING);
                 params.putSingle(QueryParameters.QUERY_STRING, auditMessage.toString());
                 params.putAll(queryParameters);
+                // if the user didn't set an audit id, use the query id
+                if (!params.containsKey(AuditParameters.AUDIT_ID)) {
+                    params.putSingle(AuditParameters.AUDIT_ID, queryId);
+                }
                 auditor.audit(params);
             }
             

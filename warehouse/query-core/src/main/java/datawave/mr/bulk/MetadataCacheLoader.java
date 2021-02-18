@@ -7,11 +7,12 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import datawave.query.util.Tuple2;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -31,13 +32,13 @@ import org.apache.log4j.Logger;
 public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set<String>>>> {
     
     private static final Logger log = Logger.getLogger(MetadataCacheLoader.class);
-    protected Connector conn = null;
+    protected AccumuloClient client;
     protected String defaultBasePath;
     
     private static final String HDFS_BASE = "hdfs://";
     
-    public MetadataCacheLoader(Connector connector, String defaultBasePath) {
-        conn = connector;
+    public MetadataCacheLoader(AccumuloClient client, String defaultBasePath) {
+        this.client = client;
         this.defaultBasePath = defaultBasePath;
     }
     
@@ -48,7 +49,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         
         // determine the table id
         final String metadataString = inputKey.getStartKey().getRow().toString().intern();
-        final String tableId = getTableId(metadataString);
+        final TableId tableId = TableId.of(getTableId(metadataString));
         
         // determine our stop criteria
         final String stopRow = inputKey.getEndKey().getRow().toString().intern();
@@ -57,7 +58,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         Key endKey = new Key(new KeyExtent(tableId, null, null).getMetadataEntry()).followingKey(PartialKey.ROW);
         Range metadataRange = new Range(inputKey.getStartKey(), inputKey.isStartKeyInclusive(), endKey, false);
         
-        Scanner scanner = conn.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
+        Scanner scanner = client.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
         MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.DataFileColumnFamily.NAME);
@@ -137,7 +138,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
      *            The range against the table
      * @return the accumulo metadata table range
      */
-    public static Range createMetadataRange(String tableId, Range range) {
+    public static Range createMetadataRange(TableId tableId, Range range) {
         Text startRow;
         if (range.getStartKey() != null) {
             startRow = range.getStartKey().getRow();

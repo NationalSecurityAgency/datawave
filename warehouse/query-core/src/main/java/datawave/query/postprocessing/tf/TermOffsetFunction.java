@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Multimap;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -16,10 +17,13 @@ import datawave.query.util.Tuples;
 import org.apache.accumulo.core.data.Key;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
-    private TermOffsetPopulator tfPopulator;
     
-    public TermOffsetFunction(TermOffsetPopulator tfPopulator) {
+    private TermOffsetPopulator tfPopulator;
+    private Set<String> tfIndexOnlyFields;
+    
+    public TermOffsetFunction(TermOffsetPopulator tfPopulator, Set<String> tfIndexOnlyFields) {
         this.tfPopulator = tfPopulator;
+        this.tfIndexOnlyFields = tfIndexOnlyFields;
     }
     
     @Override
@@ -46,8 +50,24 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
             throw new IllegalStateException("Unexpected Attribute type for " + Document.DOCKEY_FIELD_NAME + ": " + docKeys.getClass());
         }
         
-        map.putAll(tfPopulator.getContextMap(from.first(), docKeys));
+        Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
+        
+        map.putAll(tfPopulator.getContextMap(from.first(), docKeys, fields));
         merged.putAll(tfPopulator.document(), false);
         return Tuples.tuple(from.first(), merged, map);
+    }
+    
+    private Set<String> getFieldsToRemove(Document doc, Multimap<String,String> tfFVs) {
+        Set<String> fieldsToRemove = new HashSet<>();
+        Set<String> docFields = doc.getDictionary().keySet();
+        Set<String> tfFields = tfFVs.keySet();
+        for (String tfField : tfFields) {
+            // Can only prune a field if it is not index only
+            if (!docFields.contains(tfField) && !tfIndexOnlyFields.contains(tfField)) {
+                // mark this field for removal prior to building the TermFrequencyIterator
+                fieldsToRemove.add(tfField);
+            }
+        }
+        return fieldsToRemove;
     }
 }

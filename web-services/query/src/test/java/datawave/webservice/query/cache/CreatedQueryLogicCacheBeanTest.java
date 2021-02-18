@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import datawave.webservice.query.logic.QueryLogic;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.easymock.EasyMock;
 import org.junit.Assert;
@@ -31,13 +31,13 @@ public class CreatedQueryLogicCacheBeanTest {
     protected CreatedQueryLogicCacheBean qlCache = null;
     protected ConcurrentHashMap<Pair<String,Long>,Triple> internalCache = null;
     protected QueryLogic<?> queryLogic;
-    protected Connector conn;
+    protected AccumuloClient client;
     
     @Before
     public void setupCacheBean() throws IllegalAccessException, SecurityException, NoSuchMethodException {
         qlCache = new CreatedQueryLogicCacheBean();
         queryLogic = PowerMock.createMock(QueryLogic.class);
-        conn = PowerMock.createMock(Connector.class);
+        client = PowerMock.createMock(AccumuloClient.class);
         internalCache = new ConcurrentHashMap<>();
         
         PowerMock.field(CreatedQueryLogicCacheBean.class, "cache").set(qlCache, internalCache);
@@ -55,7 +55,7 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
+        boolean ret = qlCache.add(queryId, userId, queryLogic, client);
         
         PowerMock.verifyAll();
         
@@ -72,7 +72,7 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
+        boolean ret = qlCache.add(queryId, userId, queryLogic, client);
         
         PowerMock.verifyAll();
         
@@ -87,7 +87,7 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        ret = qlCache.add(queryId, userId, queryLogic, conn);
+        ret = qlCache.add(queryId, userId, queryLogic, client);
         
         PowerMock.verifyAll();
         
@@ -106,7 +106,7 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        boolean ret = qlCache.add(queryId, userId, queryLogic, conn);
+        boolean ret = qlCache.add(queryId, userId, queryLogic, client);
         qlCache.poll(queryId);
         
         PowerMock.verifyAll();
@@ -127,8 +127,8 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        boolean ret1 = qlCache.add(queryId, userId, queryLogic, conn);
-        boolean ret2 = qlCache.add(queryId, userId, queryLogic, conn);
+        boolean ret1 = qlCache.add(queryId, userId, queryLogic, client);
+        boolean ret2 = qlCache.add(queryId, userId, queryLogic, client);
         qlCache.poll(queryId);
         
         PowerMock.verifyAll();
@@ -152,11 +152,11 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        boolean ret1 = qlCache.add(queryId1, userId, queryLogic, conn);
-        boolean ret2 = qlCache.add(queryId2, userId, queryLogic, conn);
-        boolean ret3 = qlCache.add(queryId3, userId, queryLogic, conn);
+        boolean ret1 = qlCache.add(queryId1, userId, queryLogic, client);
+        boolean ret2 = qlCache.add(queryId2, userId, queryLogic, client);
+        boolean ret3 = qlCache.add(queryId3, userId, queryLogic, client);
         
-        Map<String,Pair<QueryLogic<?>,Connector>> oldEntries = qlCache.entriesOlderThan(5l, 2l), olderEntries = qlCache.entriesOlderThan(5l, 3l), noEntries = qlCache
+        Map<String,Pair<QueryLogic<?>,AccumuloClient>> oldEntries = qlCache.entriesOlderThan(5l, 2l), olderEntries = qlCache.entriesOlderThan(5l, 3l), noEntries = qlCache
                         .entriesOlderThan(5l, 4l);
         
         PowerMock.verifyAll();
@@ -187,10 +187,10 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        boolean ret1 = qlCache.add(queryId1, user1, queryLogic, conn);
-        boolean ret2 = qlCache.add(queryId2, user2, queryLogic, conn);
+        boolean ret1 = qlCache.add(queryId1, user1, queryLogic, client);
+        boolean ret2 = qlCache.add(queryId2, user2, queryLogic, client);
         
-        Pair<QueryLogic<?>,Connector> user2FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user2), user1FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user1);
+        Pair<QueryLogic<?>,AccumuloClient> user2FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user2), user1FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user1);
         
         PowerMock.verifyAll();
         
@@ -204,7 +204,7 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.resetAll();
         
-        Pair<QueryLogic<?>,Connector> user1FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user1), user2FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user2);
+        Pair<QueryLogic<?>,AccumuloClient> user1FetchQuery1 = qlCache.pollIfOwnedBy(queryId1, user1), user2FetchQuery2 = qlCache.pollIfOwnedBy(queryId2, user2);
         
         Assert.assertNotNull(user1FetchQuery1);
         Assert.assertNotNull(user2FetchQuery2);
@@ -222,9 +222,9 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        boolean ret1 = qlCache.add(queryId1, userId, queryLogic, conn);
+        boolean ret1 = qlCache.add(queryId1, userId, queryLogic, client);
         
-        Map<String,Pair<QueryLogic<?>,Connector>> snapshot = qlCache.snapshot();
+        Map<String,Pair<QueryLogic<?>,AccumuloClient>> snapshot = qlCache.snapshot();
         
         PowerMock.verifyAll();
         
@@ -238,7 +238,7 @@ public class CreatedQueryLogicCacheBeanTest {
         
         PowerMock.replayAll();
         
-        boolean ret2 = qlCache.add(queryId2, userId, queryLogic, conn);
+        boolean ret2 = qlCache.add(queryId2, userId, queryLogic, client);
         
         PowerMock.verifyAll();
         
