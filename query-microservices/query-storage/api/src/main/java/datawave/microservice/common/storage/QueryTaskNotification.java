@@ -14,7 +14,7 @@ public class QueryTaskNotification implements Serializable {
     
     private TaskKey taskKey;
     private QueryTask.QUERY_ACTION action;
-
+    
     /**
      * Default constructor for deserialization
      */

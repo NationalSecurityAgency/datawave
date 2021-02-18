@@ -14,12 +14,12 @@ public class TaskKey extends QueryKey implements Serializable {
     public static final String TASK_ID_PREFIX = "T-";
     
     private UUID taskId;
-
+    
     /**
      * Default constructor for deserialization
      */
     public TaskKey() {}
-
+    
     @JsonCreator
     public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId,
                     @JsonProperty("queryLogic") String queryLogic) {

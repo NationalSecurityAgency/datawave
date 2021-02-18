@@ -16,7 +16,7 @@ public class QueryKey implements Serializable {
     private QueryPool queryPool;
     private UUID queryId;
     private String queryLogic;
-
+    
     /**
      * Default constructor for deserialization
      */

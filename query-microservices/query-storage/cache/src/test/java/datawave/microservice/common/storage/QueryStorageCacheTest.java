@@ -49,25 +49,26 @@ public class QueryStorageCacheTest {
     
     @Autowired
     private QueryStorageCache storageService;
-
+    
     @Autowired
     private QueryQueueManager queueManager;
-
+    
     @Autowired
     private MessageConsumer messageConsumer;
     
     @Autowired
     ConnectionFactory connectionFactory;
-
+    
     @Before
     public void before() {
-        // create 
-        QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), new QueryPool(TEST_POOL), UUID.randomUUID(), "None"), QueryTask.QUERY_ACTION.TEST);
+        // create
+        QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), new QueryPool(TEST_POOL), UUID.randomUUID(), "None"),
+                        QueryTask.QUERY_ACTION.TEST);
         queueManager.ensureQueueCreated(testNotification);
         queueManager.addQueueToListener(messageConsumer.getListenerId(), TEST_POOL);
         cleanup();
     }
-
+    
     @After
     public void cleanup() {
         storageService.clear();
@@ -320,49 +321,46 @@ public class QueryStorageCacheTest {
             factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
             return factory;
         }
-
+        
     }
-
+    
     public static class ExceptionalQueryTaskNotification extends QueryTaskNotification {
         private static final long serialVersionUID = 9177184396078311888L;
         private Exception e;
+        
         public ExceptionalQueryTaskNotification(Exception e) {
             super(null, null);
             this.e = e;
         }
-
+        
         public Exception getException() {
             return e;
         }
     }
-
+    
     @Component
     public static class MessageConsumer {
         // using a listener with the same name as the queue to ensure we don't miss messages from that queue
         // (automatically linked up when the message is sent)
         private static final String LISTENER_ID = "QueryStorageCacheTestListener";
         private static final long WAIT_MS_DEFAULT = 100;
-
-        @Autowired
-        private QueryQueueManager queueManager;
-
+        
         private Queue<QueryTaskNotification> notificationQueue = new ArrayBlockingQueue<>(10);
-
+        
         @RabbitListener(id = LISTENER_ID, autoStartup = "true")
         public void processMessage(QueryTaskNotification notification) {
             notificationQueue.add(notification);
         }
-
+        
         public String getListenerId() {
             return LISTENER_ID;
         }
-
+        
         public QueryTaskNotification receive() {
             return receive(WAIT_MS_DEFAULT);
         }
-
+        
         public QueryTaskNotification receive(long waitMs) {
-            queueManager.addQueueToListener(LISTENER_ID, TEST_POOL);
             long start = System.currentTimeMillis();
             int count = 0;
             while (notificationQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {

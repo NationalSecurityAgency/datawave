@@ -34,10 +34,10 @@ public class QueryQueueManager {
     
     @Autowired
     private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
-
+    
     @Autowired
     private TestMessageConsumer testMessageConsumer;
-
+    
     @Autowired
     private ConnectionFactory factory;
     
@@ -46,7 +46,7 @@ public class QueryQueueManager {
     
     @Autowired
     QueryStorageProperties properties;
-
+    
     /**
      * Passes task notifications to the messaging infrastructure.
      *
@@ -55,14 +55,14 @@ public class QueryQueueManager {
      */
     public void sendMessage(QueryTaskNotification taskNotification) {
         ensureQueueCreated(taskNotification);
-
+        
         String exchangeName = taskNotification.getTaskKey().getQueryPool().getName();
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName + " for " + taskNotification.getTaskKey().toKey());
         }
         rabbitTemplate.convertAndSend(exchangeName, taskNotification.getTaskKey().toKey(), taskNotification);
     }
-
+    
     /**
      * Add a queue to a listener
      *
@@ -90,7 +90,7 @@ public class QueryQueueManager {
             }
         }
     }
-
+    
     /**
      * Remove a queue from a listener
      *
@@ -109,7 +109,7 @@ public class QueryQueueManager {
             }
         }
     }
-
+    
     /**
      * Check whether a queue exists on a listener
      *
@@ -145,7 +145,7 @@ public class QueryQueueManager {
             return false;
         }
     }
-
+    
     /**
      * Get the listener given a listener id
      *
@@ -158,7 +158,7 @@ public class QueryQueueManager {
         }
         return ((AbstractMessageListenerContainer) this.rabbitListenerEndpointRegistry.getListenerContainer(listenerId));
     }
-
+    
     /**
      * Ensure a queue is created for a given task notification
      *
@@ -180,41 +180,39 @@ public class QueryQueueManager {
                     rabbitAdmin.declareExchange(exchange);
                     rabbitAdmin.declareQueue(queue);
                     rabbitAdmin.declareBinding(binding);
-
+                    
                     if (log.isInfoEnabled()) {
                         log.debug("Sending test message to verify exchange/queue " + exchangeQueueName);
                     }
                     // add our test listener to the queue and wait for a test message
                     addQueueToListener(testMessageConsumer.getListenerId(), exchangeQueueName);
-                    QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "None"), QueryTask.QUERY_ACTION.TEST);
+                    QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "None"),
+                                    QueryTask.QUERY_ACTION.TEST);
                     rabbitTemplate.convertAndSend(exchangeQueueName, testNotification.getTaskKey().toKey(), testNotification);
                     QueryTaskNotification notification = testMessageConsumer.receive();
                     removeQueueFromListener(testMessageConsumer.getListenerId(), exchangeQueueName);
                     if (notification == null) {
                         throw new RuntimeException("Unable to verify that queue and exchange were created for " + exchangeQueueName);
                     }
-
+                    
                     exchanges.put(queryPool, taskKey.toRoutingKey());
                 }
             }
         }
     }
-
+    
     @Component
     public static class TestMessageConsumer {
         private static final String LISTENER_ID = "QueryQueueManagerTestListener";
-
+        
         // default wait for 1 minute
         private static final long WAIT_MS_DEFAULT = 60L * 1000L;
-
-        @Autowired
-        private QueryQueueManager queueManager;
-
+        
         @Autowired
         private RabbitTemplate rabbitTemplate;
-
+        
         private java.util.Queue<QueryTaskNotification> notificationQueue = new ArrayBlockingQueue<>(10);
-
+        
         @RabbitListener(id = LISTENER_ID, autoStartup = "true")
         public void processMessage(QueryTaskNotification notification) {
             // determine if this is a test message
@@ -225,17 +223,16 @@ public class QueryQueueManager {
                 rabbitTemplate.convertAndSend(notification.getTaskKey().getQueryPool().getName(), notification.getTaskKey().toKey(), notification);
             }
         }
-
+        
         public String getListenerId() {
             return LISTENER_ID;
         }
-
+        
         public QueryTaskNotification receive() {
             return receive(WAIT_MS_DEFAULT);
         }
-
+        
         public QueryTaskNotification receive(long waitMs) {
-            queueManager.addQueueToListener(LISTENER_ID, "default");
             long start = System.currentTimeMillis();
             while (notificationQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
                 try {
@@ -251,6 +248,5 @@ public class QueryQueueManager {
             }
         }
     }
-
-
+    
 }
