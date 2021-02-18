@@ -12,8 +12,13 @@ import java.util.UUID;
 public class QueryTaskNotification implements Serializable {
     private static final long serialVersionUID = 364194052797912452L;
     
-    private final TaskKey taskKey;
-    private final QueryTask.QUERY_ACTION action;
+    private TaskKey taskKey;
+    private QueryTask.QUERY_ACTION action;
+
+    /**
+     * Default constructor for deserialization
+     */
+    public QueryTaskNotification() {}
     
     public QueryTaskNotification(TaskKey taskKey, QueryTask.QUERY_ACTION action) {
         this.taskKey = taskKey;

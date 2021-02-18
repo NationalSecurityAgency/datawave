@@ -4,17 +4,16 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
+import org.apache.log4j.Logger;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
@@ -22,7 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.stereotype.Component;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -31,7 +30,9 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -40,65 +41,67 @@ import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-disabled"})
+@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-enabled"})
 @EnableRabbit
 public class QueryStorageCacheTest {
+    private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);
+    public static final String TEST_POOL = "testPool";
+    
     @Autowired
     private QueryStorageCache storageService;
+
+    @Autowired
+    private QueryQueueManager queueManager;
+
+    @Autowired
+    private MessageConsumer messageConsumer;
     
     @Autowired
     ConnectionFactory connectionFactory;
-    
-    @Autowired
-    private RabbitAdmin admin;
-    
-    @Autowired
-    private RabbitTemplate template;
-    
+
+    @Before
+    public void before() {
+        // create 
+        QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), new QueryPool(TEST_POOL), UUID.randomUUID(), "None"), QueryTask.QUERY_ACTION.TEST);
+        queueManager.ensureQueueCreated(testNotification);
+        queueManager.addQueueToListener(messageConsumer.getListenerId(), TEST_POOL);
+        cleanup();
+    }
+
     @After
-    public void cleanup() throws InterruptedException {
+    public void cleanup() {
         storageService.clear();
         clearQueue();
     }
     
     void clearQueue() {
         QueryTaskNotification task;
+        task = messageConsumer.receive();
         do {
-            task = receive();
+            task = messageConsumer.receive(0L);
         } while (task != null);
-    }
-    
-    QueryTaskNotification receive() {
-        try {
-            return template.receiveAndConvert("default", 10, new ParameterizedTypeReference<QueryTaskNotification>() {});
-        } catch (IllegalStateException e) {
-            // maybe the queue does not exist
-            return null;
-        } catch (AmqpException ae) {
-            return null;
-        }
     }
     
     @Test
     public void testStoreQuery() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
-        QueryPool queryPool = new QueryPool("default");
+        QueryPool queryPool = new QueryPool(TEST_POOL);
         TaskKey key = storageService.storeQuery(queryPool, query);
         assertNotNull(key);
         
         // ensure we got a task notification
-        QueryTaskNotification notification = receive();
+        QueryTaskNotification notification = messageConsumer.receive();
         assertNotNull(notification);
         assertEquals(key, notification.getTaskKey());
         
         // ensure the message queue is empty again
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         QueryTask task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, task);
@@ -107,7 +110,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testStoreTask() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -115,19 +118,19 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryPool queryPool = new QueryPool("default");
+        QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
         QueryTask task = storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         TaskKey key = task.getTaskKey();
         assertEquals(checkpoint.getQueryKey(), key);
         
         // ensure we got a task notification
-        QueryTaskNotification notification = receive();
+        QueryTaskNotification notification = messageConsumer.receive();
         assertNotNull(notification);
         assertEquals(key, notification.getTaskKey());
         
         // ensure the message queue is empty again
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.NEXT, query, task);
@@ -136,7 +139,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testCheckpointTask() throws InterruptedException, ParseException {
         // ensure the message queue is empty
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -144,7 +147,7 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryPool queryPool = new QueryPool("default");
+        QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
         
         TaskKey key = new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), query.getQueryLogicName());
@@ -166,9 +169,9 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = receive();
+        QueryTaskNotification notification = messageConsumer.receive();
         assertNotNull(notification);
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         // now update the task
         Map<String,Object> props = new HashMap<>();
@@ -177,7 +180,7 @@ public class QueryStorageCacheTest {
         storageService.checkpointTask(notification.getTaskKey(), checkpoint);
         
         // ensure we did not get another task notification
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         QueryTask task = storageService.getTask(notification.getTaskKey());
         assertEquals(checkpoint, task.getQueryCheckpoint());
@@ -186,7 +189,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testGetAndDeleteTask() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -194,15 +197,15 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryPool queryPool = new QueryPool("default");
+        QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
         
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = receive();
+        QueryTaskNotification notification = messageConsumer.receive();
         assertNotNull(notification);
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         // ensure we can get a task
         QueryTask task = storageService.getTask(notification.getTaskKey());
@@ -212,7 +215,7 @@ public class QueryStorageCacheTest {
         storageService.deleteTask(notification.getTaskKey());
         
         // ensure we did not get another task notification
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         // ensure there is no more task stored
         task = storageService.getTask(notification.getTaskKey());
@@ -222,7 +225,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testGetAndDeleteQueryTasks() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -230,15 +233,15 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryPool queryPool = new QueryPool("default");
+        QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
         
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = receive();
+        QueryTaskNotification notification = messageConsumer.receive();
         assertNotNull(notification);
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         // not get the query tasks
         List<QueryTask> tasks = storageService.getTasks(queryId);
@@ -250,7 +253,7 @@ public class QueryStorageCacheTest {
         storageService.deleteQuery(queryId);
         
         // ensure we did not get another task notification
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         // make sure it deleted
         tasks = storageService.getTasks(queryId);
@@ -260,7 +263,7 @@ public class QueryStorageCacheTest {
     @Test
     public void testGetAndDeleteTypeTasks() throws ParseException, InterruptedException {
         // ensure the message queue is empty
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -268,15 +271,15 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
-        QueryPool queryPool = new QueryPool("default");
+        QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
         
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = receive();
+        QueryTaskNotification notification = messageConsumer.receive();
         assertNotNull(notification);
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         // not get the query tasks
         List<QueryTask> tasks = storageService.getTasks(queryPool);
@@ -288,7 +291,7 @@ public class QueryStorageCacheTest {
         storageService.deleteQueryPool(queryPool);
         
         // ensure we did not get another task notification
-        assertNull(receive());
+        assertNull(messageConsumer.receive(0));
         
         // make sure it deleted
         tasks = storageService.getTasks(queryPool);
@@ -315,10 +318,69 @@ public class QueryStorageCacheTest {
         public ConnectionFactory connectionFactory() {
             SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
             factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
-            Map<Object,ConnectionFactory> map = new HashMap<>();
-            map.put("default", new CachingConnectionFactory());
-            factory.setTargetConnectionFactories(map);
             return factory;
+        }
+
+    }
+
+    public static class ExceptionalQueryTaskNotification extends QueryTaskNotification {
+        private static final long serialVersionUID = 9177184396078311888L;
+        private Exception e;
+        public ExceptionalQueryTaskNotification(Exception e) {
+            super(null, null);
+            this.e = e;
+        }
+
+        public Exception getException() {
+            return e;
+        }
+    }
+
+    @Component
+    public static class MessageConsumer {
+        // using a listener with the same name as the queue to ensure we don't miss messages from that queue
+        // (automatically linked up when the message is sent)
+        private static final String LISTENER_ID = "QueryStorageCacheTestListener";
+        private static final long WAIT_MS_DEFAULT = 100;
+
+        @Autowired
+        private QueryQueueManager queueManager;
+
+        private Queue<QueryTaskNotification> notificationQueue = new ArrayBlockingQueue<>(10);
+
+        @RabbitListener(id = LISTENER_ID, autoStartup = "true")
+        public void processMessage(QueryTaskNotification notification) {
+            notificationQueue.add(notification);
+        }
+
+        public String getListenerId() {
+            return LISTENER_ID;
+        }
+
+        public QueryTaskNotification receive() {
+            return receive(WAIT_MS_DEFAULT);
+        }
+
+        public QueryTaskNotification receive(long waitMs) {
+            queueManager.addQueueToListener(LISTENER_ID, TEST_POOL);
+            long start = System.currentTimeMillis();
+            int count = 0;
+            while (notificationQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
+                count++;
+                try {
+                    Thread.sleep(1L);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("Cycled " + count + " rounds looking for notification");
+            }
+            if (notificationQueue.isEmpty()) {
+                return null;
+            } else {
+                return notificationQueue.remove();
+            }
         }
     }
     

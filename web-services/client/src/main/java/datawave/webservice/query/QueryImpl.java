@@ -865,7 +865,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                     setQueryName(map.get(key).get(0));
                     break;
                 case QueryParameters.QUERY_LOGIC_NAME:
-                    setQueryLogicName(this.queryLogicName);
+                    setQueryLogicName(map.get(key).get(0));
                     break;
                 case QueryParameters.QUERY_PAGESIZE:
                     setPagesize(Integer.parseInt(map.get(key).get(0)));

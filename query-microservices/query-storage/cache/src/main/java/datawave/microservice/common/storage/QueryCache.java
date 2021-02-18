@@ -314,7 +314,7 @@ public class QueryCache {
         if (log.isTraceEnabled()) {
             log.trace(msg + ' ' + (task == null ? "null task" : task.toString()));
         } else if (log.isDebugEnabled()) {
-            log.debug(msg + ' ' + task.toDebug());
+            log.debug(msg + ' ' + (task == null ? "null task" : task.toDebug()));
         }
     }
 }
