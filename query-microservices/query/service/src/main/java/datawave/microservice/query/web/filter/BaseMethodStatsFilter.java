@@ -1,7 +1,7 @@
 package datawave.microservice.query.web.filter;
 
+import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -15,13 +15,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static datawave.microservice.config.web.Constants.REQUEST_LOGIN_TIME_ATTRIBUTE;
 import static datawave.microservice.config.web.Constants.REQUEST_START_TIME_NS_ATTRIBUTE;
 
-@Component
-public class BaseMethodStatsFilter extends OncePerRequestFilter {
+public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
+    
+    private static final String START_NS_ATTRIBUTE = "STATS_START_NS";
+    private static final String STOP_NS_ATTRIBUTE = "STATS_STOP_NS";
     
     protected static class RequestMethodStats {
         private String uri;
@@ -91,63 +96,121 @@ public class BaseMethodStatsFilter extends OncePerRequestFilter {
     }
     
     @Override
-    public void initFilterBean() throws ServletException {
-        System.out.println("init");
-    }
-    
-    @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
                     throws IOException, ServletException {
-        RequestMethodStats stats = new RequestMethodStats();
         
-        stats.uri = request.getRequestURI();
-        stats.method = request.getMethod();
+        preProcess(request, response);
         
-        stats.callStartTime = System.nanoTime();
+        if (!(response instanceof CountingHttpServletResponseWrapper)) {
+            response = new CountingHttpServletResponseWrapper(response);
+        }
+        
+        chain.doFilter(request, response);
+        postProcess(request, response);
+    }
+    
+    public void preProcess(HttpServletRequest request, HttpServletResponse response) {
+        if (BaseMethodStatsContext.getRequestStats() == null) {
+            BaseMethodStatsContext.setRequestStats(createRequestMethodStats(request, response));
+            
+            long start = System.nanoTime();
+            request.setAttribute(START_NS_ATTRIBUTE, start);
+        }
+        preProcess(BaseMethodStatsContext.getRequestStats());
+    }
+    
+    public void preProcess(RequestMethodStats requestStats) {
+        // do nothing
+    }
+    
+    public void postProcess(HttpServletRequest request, HttpServletResponse response) {
+        if (BaseMethodStatsContext.getResponseStats() == null) {
+            long stop = System.nanoTime();
+            request.setAttribute(STOP_NS_ATTRIBUTE, stop);
+            
+            BaseMethodStatsContext.setResponseStats(createResponseMethodStats(request, response));
+        }
+        postProcess(BaseMethodStatsContext.getResponseStats());
+    }
+    
+    public void postProcess(ResponseMethodStats responseStats) {
+        // do nothing
+    }
+    
+    protected RequestMethodStats createRequestMethodStats(HttpServletRequest request, HttpServletResponse response) {
+        RequestMethodStats requestStats = new RequestMethodStats();
+        
+        requestStats.uri = request.getRequestURI();
+        requestStats.method = request.getMethod();
+        
+        requestStats.callStartTime = System.nanoTime();
         try {
-            stats.callStartTime = (long) request.getAttribute(REQUEST_START_TIME_NS_ATTRIBUTE);
+            requestStats.callStartTime = (long) request.getAttribute(REQUEST_START_TIME_NS_ATTRIBUTE);
         } catch (Exception e) {
             // do nothing
         }
         try {
-            stats.loginTime = (long) request.getAttribute(REQUEST_LOGIN_TIME_ATTRIBUTE);
+            requestStats.loginTime = (long) request.getAttribute(REQUEST_LOGIN_TIME_ATTRIBUTE);
         } catch (Exception e) {
             // do nothing
         }
-
+        
         for (Enumeration<String> headerNames = request.getHeaderNames(); headerNames.hasMoreElements();) {
             String header = headerNames.nextElement();
-            for (Enumeration<String> headerValues = request.getHeaders(header); headerValues.hasMoreElements();){
-                stats.requestHeaders.add(header, headerValues.nextElement());
+            for (Enumeration<String> headerValues = request.getHeaders(header); headerValues.hasMoreElements();) {
+                requestStats.requestHeaders.add(header, headerValues.nextElement());
             }
         }
-
-        // TODO: Finish this!
-//         MediaType mediaType = request.getMediaType();
-//         if (mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE)) {
-//         MultivaluedMap<String,String> formParameters = request.getHttpRequest().getDecodedFormParameters();
-//         if (formParameters != null)
-//         MultivaluedTreeMap.addAll(formParameters, stats.formParameters);
-//         }
-        // request.setProperty(REQUEST_STATS_NAME, stats);
-        // return stats;
         
-        System.out.println("doFilter before");
-        if (response instanceof HttpServletResponse) {
-            chain.doFilter(request, new CountingHttpServletResponseWrapper((HttpServletResponse) response));
-        } else {
-            chain.doFilter(request, response);
+        if (request.getContentType() != null && MediaType.parseMediaType(request.getContentType()).isCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+            Map<String,String[]> formParameters = request.getParameterMap();
+            if (formParameters != null) {
+                formParameters.forEach((k, v) -> requestStats.formParameters.addAll(k, Arrays.asList(v)));
+            }
         }
-        System.out.println("doFilter after");
+        
+        return requestStats;
+    }
+    
+    private ResponseMethodStats createResponseMethodStats(HttpServletRequest request, HttpServletResponse response) {
+        ResponseMethodStats responseStats = new ResponseMethodStats();
+        
+        long start = System.nanoTime();
+        try {
+            start = (long) request.getAttribute(START_NS_ATTRIBUTE);
+        } catch (Exception e) {
+            // do nothing
+        }
+        
+        long stop = System.nanoTime();
+        try {
+            stop = (long) request.getAttribute(STOP_NS_ATTRIBUTE);
+        } catch (Exception e) {
+            // do nothing
+        }
+        
+        responseStats.serializationTime = TimeUnit.NANOSECONDS.toMillis(stop - start);
+        responseStats.loginTime = BaseMethodStatsContext.getRequestStats().getLoginTime();
+        responseStats.callTime = TimeUnit.NANOSECONDS.toMillis(stop - BaseMethodStatsContext.getRequestStats().getCallStartTime());
+        
+        if (response instanceof CountingHttpServletResponseWrapper) {
+            responseStats.bytesWritten = ((CountingHttpServletResponseWrapper) response).getByteCount();
+        }
+        
+        for (String header : response.getHeaderNames()) {
+            responseStats.responseHeaders.add(header, response.getHeaders(header));
+        }
+        
+        return responseStats;
     }
     
     @Override
     public void destroy() {
-        System.out.println("destroy");
+        BaseMethodStatsContext.remove();
     }
     
     private static class CountingHttpServletResponseWrapper extends HttpServletResponseWrapper {
-        private ServletResponse response;
+        private final ServletResponse response;
         private CountingServletOutputStream cos;
         
         /**
@@ -208,6 +271,33 @@ public class BaseMethodStatsFilter extends OncePerRequestFilter {
         
         public long getByteCount() {
             return count;
+        }
+    }
+    
+    public static class BaseMethodStatsContext {
+        
+        private static final ThreadLocal<RequestMethodStats> requestStats = new ThreadLocal<>();
+        private static final ThreadLocal<ResponseMethodStats> responseStats = new ThreadLocal<>();
+        
+        public static RequestMethodStats getRequestStats() {
+            return requestStats.get();
+        }
+        
+        public static void setRequestStats(RequestMethodStats requestStats) {
+            BaseMethodStatsContext.requestStats.set(requestStats);
+        }
+        
+        public static ResponseMethodStats getResponseStats() {
+            return responseStats.get();
+        }
+        
+        public static void setResponseStats(ResponseMethodStats responseStats) {
+            BaseMethodStatsContext.responseStats.set(responseStats);
+        }
+        
+        private static void remove() {
+            requestStats.remove();
+            responseStats.remove();
         }
     }
 }

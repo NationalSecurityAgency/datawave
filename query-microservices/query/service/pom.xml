@@ -13,6 +13,7 @@
     <properties>
         <version.datawave>3.1.5-SNAPSHOT</version.datawave>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
+        <version.microservice.query-cache>1.0-SNAPSHOT</version.microservice.query-cache>
         <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
     </properties>
     <dependencyManagement>
@@ -21,6 +22,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
                 <version>${version.microservice.query-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>query-cache</artifactId>
+                <version>${version.microservice.query-cache}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -45,6 +51,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query-cache</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

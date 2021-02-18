@@ -70,7 +70,7 @@ public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
             
             return body;
         } finally {
-            QuerySessionIdContext.removeQueryId();
+            QuerySessionIdContext.remove();
         }
     }
     
@@ -90,7 +90,7 @@ public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
             QuerySessionIdContext.queryId.set(queryId);
         }
         
-        private static void removeQueryId() {
+        private static void remove() {
             queryId.remove();
         }
     }
