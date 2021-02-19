@@ -100,7 +100,6 @@ public class QueryStorageStateServiceTest {
         List<QueryTask> storedTasks = storageService.getTasks(key.getQueryId());
         assertNotNull(storedTasks);
         assertEquals(1, storedTasks.size());
-
         
         QueryStorageStateService storageStateService = new TestQueryStateService("Administrator");
         
@@ -234,14 +233,14 @@ public class QueryStorageStateServiceTest {
         public CacheManager cacheManager() {
             return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
         }
-
+        
         @Bean(name = "query-storage-connection-factory")
         public ConnectionFactory connectionFactory() {
             SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
             factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
             return factory;
         }
-
+        
     }
     
 }
