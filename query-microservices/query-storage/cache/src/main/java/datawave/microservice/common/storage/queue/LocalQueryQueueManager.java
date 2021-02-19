@@ -1,5 +1,8 @@
-package datawave.microservice.common.storage;
+package datawave.microservice.common.storage.queue;
 
+import datawave.microservice.common.storage.QueryPool;
+import datawave.microservice.common.storage.QueryQueueManager;
+import datawave.microservice.common.storage.QueryTaskNotification;
 import org.apache.log4j.Logger;
 
 import java.util.Collections;

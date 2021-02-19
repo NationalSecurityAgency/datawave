@@ -1,5 +1,10 @@
-package datawave.microservice.common.storage;
+package datawave.microservice.common.storage.queue;
 
+import datawave.microservice.common.storage.QueryPool;
+import datawave.microservice.common.storage.QueryQueueManager;
+import datawave.microservice.common.storage.QueryTask;
+import datawave.microservice.common.storage.QueryTaskNotification;
+import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.apache.log4j.Logger;
 import org.springframework.amqp.core.Binding;
@@ -22,26 +27,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 
-public class RabbitQueryQueueManager implements QueryQueueManager {
+public class KafkaQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
-    
-    @Autowired
-    private RabbitAdmin rabbitAdmin;
-    
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
-    
-    @Autowired
-    private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
-    
-    @Autowired
-    private TestMessageConsumer testMessageConsumer;
-    
-    @Autowired
-    private ConnectionFactory factory;
     
     // A mapping of query pools to routing keys
     private Map<QueryPool,String> exchanges = new HashMap<>();
+    
+    @Autowired
+    TestMessageConsumer testMessageConsumer;
     
     @Autowired
     QueryStorageProperties properties;
@@ -60,7 +53,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName + " for " + taskNotification.getTaskKey().toKey());
         }
-        rabbitTemplate.convertAndSend(exchangeName, taskNotification.getTaskKey().toKey(), taskNotification);
+        
+        // TODO: rabbitTemplate.convertAndSend(exchangeName, taskNotification.getTaskKey().toKey(), taskNotification);
     }
     
     /**
@@ -158,7 +152,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         if (log.isTraceEnabled()) {
             log.trace("getting message listener container by id : " + listenerId);
         }
-        return ((AbstractMessageListenerContainer) this.rabbitListenerEndpointRegistry.getListenerContainer(listenerId));
+        // TODO return ((AbstractMessageListenerContainer) this.rabbitListenerEndpointRegistry.getListenerContainer(listenerId));
+        return null;
     }
     
     /**
@@ -176,26 +171,27 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
                     if (log.isInfoEnabled()) {
                         log.debug("Creating exchange/queue " + exchangeQueueName + " with routing key " + taskKey.toRoutingKey());
                     }
-                    TopicExchange exchange = new TopicExchange(exchangeQueueName, properties.isSynchStorage(), false);
-                    Queue queue = new Queue(exchangeQueueName, properties.isSynchStorage(), false, false);
-                    Binding binding = BindingBuilder.bind(queue).to(exchange).with(taskKey.toRoutingKey());
-                    rabbitAdmin.declareExchange(exchange);
-                    rabbitAdmin.declareQueue(queue);
-                    rabbitAdmin.declareBinding(binding);
-                    
-                    if (log.isInfoEnabled()) {
-                        log.debug("Sending test message to verify exchange/queue " + exchangeQueueName);
-                    }
-                    // add our test listener to the queue and wait for a test message
-                    addQueueToListener(testMessageConsumer.getListenerId(), exchangeQueueName);
-                    QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "None"),
-                                    QueryTask.QUERY_ACTION.TEST);
-                    rabbitTemplate.convertAndSend(exchangeQueueName, testNotification.getTaskKey().toKey(), testNotification);
-                    QueryTaskNotification notification = testMessageConsumer.receive();
-                    removeQueueFromListener(testMessageConsumer.getListenerId(), exchangeQueueName);
-                    if (notification == null) {
-                        throw new RuntimeException("Unable to verify that queue and exchange were created for " + exchangeQueueName);
-                    }
+                    // TopicExchange exchange = new TopicExchange(exchangeQueueName, properties.isSynchStorage(), false);
+                    // Queue queue = new Queue(exchangeQueueName, properties.isSynchStorage(), false, false);
+                    // Binding binding = BindingBuilder.bind(queue).to(exchange).with(taskKey.toRoutingKey());
+                    // // TODO rabbitAdmin.declareExchange(exchange);
+                    // // TODO rabbitAdmin.declareQueue(queue);
+                    // // TODO rabbitAdmin.declareBinding(binding);
+                    //
+                    // if (log.isInfoEnabled()) {
+                    // log.debug("Sending test message to verify exchange/queue " + exchangeQueueName);
+                    // }
+                    // // add our test listener to the queue and wait for a test message
+                    // addQueueToListener(testMessageConsumer.getListenerId(), exchangeQueueName);
+                    //// QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(),
+                    // "None"),
+                    //// QueryTask.QUERY_ACTION.TEST);
+                    // // TODO rabbitTemplate.convertAndSend(exchangeQueueName, testNotification.getTaskKey().toKey(), testNotification);
+                    // QueryTaskNotification notification = testMessageConsumer.receive();
+                    // removeQueueFromListener(testMessageConsumer.getListenerId(), exchangeQueueName);
+                    // if (notification == null) {
+                    // throw new RuntimeException("Unable to verify that queue and exchange were created for " + exchangeQueueName);
+                    // }
                     
                     exchanges.put(queryPool, taskKey.toRoutingKey());
                 }
@@ -205,7 +201,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     
     @Component
     public static class TestMessageConsumer {
-        private static final String LISTENER_ID = "RabbitQueryQueueManagerTestListener";
+        private static final String LISTENER_ID = "KafkaQueryQueueManagerTestListener";
         
         // default wait for 1 minute
         private static final long WAIT_MS_DEFAULT = 60L * 1000L;

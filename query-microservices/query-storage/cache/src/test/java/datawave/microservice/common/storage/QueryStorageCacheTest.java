@@ -2,6 +2,7 @@ package datawave.microservice.common.storage;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.cache.HazelcastCacheManager;
+import datawave.microservice.common.storage.queue.LocalQueryQueueManager;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParametersImpl;
