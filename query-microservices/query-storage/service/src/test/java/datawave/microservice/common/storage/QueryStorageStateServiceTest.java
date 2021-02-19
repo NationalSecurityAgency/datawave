@@ -27,6 +27,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -229,12 +230,14 @@ public class QueryStorageStateServiceTest {
     @Profile("QueryStorageStateServiceTest")
     @ComponentScan(basePackages = {"datawave.microservice"})
     public static class QueryStorageStateTestConfiguration {
-        @Bean(name = "query-storage-cache-manager")
+        @Bean
+        @Primary
         public CacheManager cacheManager() {
             return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
         }
         
-        @Bean(name = "query-storage-connection-factory")
+        @Bean
+        @Primary
         public ConnectionFactory connectionFactory() {
             SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
             factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());

@@ -11,10 +11,9 @@
     <version>1.0-SNAPSHOT</version>
     <description>DATAWAVE Query Cache</description>
     <properties>
-        <version.log4j-1.2-api>2.11.2</version.log4j-1.2-api>
         <version.microservice.hazelcast-client>1.5</version.microservice.hazelcast-client>
         <version.microservice.query-storage-api>1.0-SNAPSHOT</version.microservice.query-storage-api>
-        <version.microservice.starter.cache>1.0</version.microservice.starter.cache>
+        <version.microservice.starter>1.6.5</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -36,19 +35,8 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave-cache</artifactId>
-                <version>${version.microservice.starter.cache}</version>
-            </dependency>
-            <dependency>
-                <!-- This bridge allows log4j2 to work with code that is still using the log4j 1.2 classes/api -->
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-1.2-api</artifactId>
-                <version>${version.log4j-1.2-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave-cache</artifactId>
-                <version>${version.microservice.starter.cache}</version>
+                <artifactId>spring-boot-starter-datawave</artifactId>
+                <version>${version.microservice.starter}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

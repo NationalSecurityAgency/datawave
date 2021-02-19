@@ -39,7 +39,7 @@ logging:
   level:
     root: WARN
     datawave.microservice.common.storage: WARN
-    datawave.microservice.common.storage.QueryCache: DEBUG
+    datawave.microservice.common.storage.QueryCache: WARN
     io.undertow.request: FATAL
 
 ---

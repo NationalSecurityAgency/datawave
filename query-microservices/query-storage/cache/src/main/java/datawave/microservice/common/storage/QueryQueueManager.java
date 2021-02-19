@@ -13,7 +13,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +38,6 @@ public class QueryQueueManager {
     @Autowired
     private TestMessageConsumer testMessageConsumer;
     
-    @Qualifier("query-storage-connection-factory")
     @Autowired
     private ConnectionFactory factory;
     

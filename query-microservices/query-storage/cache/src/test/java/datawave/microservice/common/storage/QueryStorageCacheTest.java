@@ -18,9 +18,11 @@ import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ActiveProfiles;
@@ -353,13 +355,16 @@ public class QueryStorageCacheTest {
     @Configuration
     @Profile("QueryStorageCacheTest")
     @ComponentScan(basePackages = {"datawave.microservice"})
+    @EnableCaching
     public static class QueryStorageCacheTestConfiguration {
-        @Bean(name = "query-storage-cache-manager")
+        @Bean
+        @Primary
         public CacheManager cacheManager() {
             return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
         }
         
-        @Bean(name = "query-storage-connection-factory")
+        @Bean
+        @Primary
         public ConnectionFactory connectionFactory() {
             SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
             factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
