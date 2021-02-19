@@ -317,7 +317,7 @@ public class QueryCache {
             log.debug(msg + ' ' + (task == null ? "null task" : task.toDebug()));
         }
     }
-
+    
     /**
      * A convience method for logging a task
      *

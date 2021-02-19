@@ -38,7 +38,7 @@ public class QueryQueueManager {
     
     @Autowired
     private TestMessageConsumer testMessageConsumer;
-
+    
     @Qualifier("query-storage-connection-factory")
     @Autowired
     private ConnectionFactory factory;

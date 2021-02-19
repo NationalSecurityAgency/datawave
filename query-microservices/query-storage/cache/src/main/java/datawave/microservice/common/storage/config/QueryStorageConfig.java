@@ -33,11 +33,11 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
 @EnableConfigurationProperties(QueryStorageProperties.class)
 public class QueryStorageConfig implements RabbitListenerConfigurer {
     private static final Logger log = Logger.getLogger(QueryStorageConfig.class);
-
+    
     @Qualifier("query-storage-connection-factory")
     @Autowired
     private ConnectionFactory connectionFactory;
-
+    
     @Bean
     public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
         return new Jackson2JsonMessageConverter();

@@ -48,10 +48,10 @@ import static org.junit.Assert.fail;
 public class QueryStorageCacheTest {
     private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);
     public static final String TEST_POOL = "testPool";
-
+    
     @Autowired
     private QueryCache queryCache;
-
+    
     @Autowired
     private QueryStorageCache storageService;
     
@@ -60,7 +60,7 @@ public class QueryStorageCacheTest {
     
     @Autowired
     private MessageConsumer messageConsumer;
-
+    
     @Before
     public void before() {
         // ensure our pool is created so we can start listening to it
@@ -106,27 +106,27 @@ public class QueryStorageCacheTest {
         
         QueryTask task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, task);
-
+        
         List<QueryTask> tasks = storageService.getTasks(key.getQueryId());
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, tasks.get(0));
-
+        
         tasks = storageService.getTasks(queryPool);
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, tasks.get(0));
-
+        
         List<QueryState> queries = queryCache.getQueries();
         assertNotNull(queries);
         assertEquals(1, queries.size());
         assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
-
+        
         queries = queryCache.getQueries(queryPool);
         assertNotNull(queries);
         assertEquals(1, queries.size());
         assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
-
+        
         List<TaskDescription> taskDescs = queryCache.getTaskDescriptions(key.getQueryId());
         assertNotNull(taskDescs);
         assertEquals(1, taskDescs.size());
@@ -323,7 +323,7 @@ public class QueryStorageCacheTest {
         tasks = storageService.getTasks(queryPool);
         assertEquals(0, tasks.size());
     }
-
+    
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {
         assertEquals(queryId, state.getQueryId());
         assertEquals(queryPool, state.getQueryPool());
@@ -332,7 +332,7 @@ public class QueryStorageCacheTest {
         assertTrue(counts.containsKey(QueryTask.QUERY_ACTION.CREATE));
         assertEquals(1, counts.get(QueryTask.QUERY_ACTION.CREATE).intValue());
     }
-
+    
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, Query query, TaskDescription task) throws ParseException {
         assertNotNull(task.getTaskKey());
         assertEquals(queryId, task.getTaskKey().getQueryId());
@@ -342,7 +342,7 @@ public class QueryStorageCacheTest {
         assertEquals(QueryParametersImpl.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
         assertEquals(QueryParametersImpl.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));
     }
-
+    
     private void assertQueryTask(TaskKey key, QueryTask.QUERY_ACTION action, Query query, QueryTask task) throws ParseException {
         assertEquals(key, task.getTaskKey());
         assertEquals(action, task.getAction());
