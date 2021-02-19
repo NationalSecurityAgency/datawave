@@ -11,18 +11,12 @@
     <version>1.0-SNAPSHOT</version>
     <description>DATAWAVE Query State Microservice</description>
     <properties>
-        <version.microservice.hazelcast-client>1.5</version.microservice.hazelcast-client>
         <version.microservice.query-cache>1.0-SNAPSHOT</version.microservice.query-cache>
         <version.microservice.query-storage-api>1.0-SNAPSHOT</version.microservice.query-storage-api>
         <version.microservice.starter>1.6.5</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>hazelcast-client</artifactId>
-                <version>${version.microservice.hazelcast-client}</version>
-            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-cache</artifactId>
@@ -50,10 +44,6 @@
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>hazelcast-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-cache</artifactId>
         </dependency>
         <dependency>
@@ -65,8 +55,13 @@
             <artifactId>spring-boot-starter-datawave</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream-test-support</artifactId>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbit-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

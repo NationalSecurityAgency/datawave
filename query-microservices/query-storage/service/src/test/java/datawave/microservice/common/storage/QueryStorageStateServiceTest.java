@@ -6,7 +6,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
-import datawave.microservice.common.storage.config.QueryStorageProperties;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.Query;
@@ -17,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +51,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStorageStateServiceTest", "QueryStorageConfig", "sync-disabled"})
+@ActiveProfiles({"QueryStorageStateServiceTest", "QueryStorageConfig", "sync-enabled"})
 @EnableRabbit
 public class QueryStorageStateServiceTest {
     @LocalServerPort
@@ -63,9 +63,6 @@ public class QueryStorageStateServiceTest {
     private JWTRestTemplate jwtRestTemplate;
     
     @Autowired
-    private QueryStorageProperties queryStorageProperties;
-    
-    @Autowired
     private QueryStorageCache storageService;
     
     @Autowired
@@ -74,14 +71,17 @@ public class QueryStorageStateServiceTest {
     private SubjectIssuerDNPair DN;
     private String userDN = "userDn";
     
+    private static final String TEST_POOL = "storageTestPool";
+    
     @Before
     public void setup() {
         jwtRestTemplate = restTemplateBuilder.build(JWTRestTemplate.class);
         DN = SubjectIssuerDNPair.of(userDN, "issuerDn");
+        storageService.clear();
     }
     
     @After
-    public void cleanup() throws InterruptedException {
+    public void cleanup() {
         storageService.clear();
     }
     
@@ -89,11 +89,18 @@ public class QueryStorageStateServiceTest {
     public void testStateStorageService() throws ParseException, InterruptedException {
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
+        query.setQueryLogicName("EventQuery");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
-        QueryPool queryPool = new QueryPool("default");
+        QueryPool queryPool = new QueryPool(TEST_POOL);
         TaskKey key = storageService.storeQuery(queryPool, query);
         assertNotNull(key);
+        QueryTask storedTask = storageService.getTask(key);
+        assertNotNull(storedTask);
+        List<QueryTask> storedTasks = storageService.getTasks(key.getQueryId());
+        assertNotNull(storedTasks);
+        assertEquals(1, storedTasks.size());
+
         
         QueryStorageStateService storageStateService = new TestQueryStateService("Administrator");
         
@@ -186,6 +193,9 @@ public class QueryStorageStateServiceTest {
         private final ObjectMapper mapper = new ObjectMapper();
         
         private QueryState toState(ResponseEntity<String> responseEntity) {
+            if (responseEntity.getBody() == null) {
+                return null;
+            }
             try {
                 return mapper.readerFor(QueryState.class).readValue(responseEntity.getBody());
             } catch (IOException e) {
@@ -194,6 +204,9 @@ public class QueryStorageStateServiceTest {
         }
         
         private List<QueryState> toStates(ResponseEntity<String> responseEntity) {
+            if (responseEntity.getBody() == null) {
+                return null;
+            }
             try {
                 return mapper.readValue(responseEntity.getBody(), new TypeReference<List<QueryState>>() {});
             } catch (IOException e) {
@@ -202,6 +215,9 @@ public class QueryStorageStateServiceTest {
         }
         
         private List<TaskDescription> toTaskDescriptions(ResponseEntity<String> responseEntity) {
+            if (responseEntity.getBody() == null) {
+                return null;
+            }
             try {
                 return mapper.readValue(responseEntity.getBody(), new TypeReference<List<TaskDescription>>() {});
             } catch (IOException e) {
@@ -212,17 +228,20 @@ public class QueryStorageStateServiceTest {
     
     @Configuration
     @Profile("QueryStorageStateServiceTest")
-    @ComponentScan(basePackages = {"datawave.microservice", "org.springframework.cloud.stream.test"})
-    public static class QueryStorageTestConfiguration {
-        @Bean
+    @ComponentScan(basePackages = {"datawave.microservice"})
+    public static class QueryStorageStateTestConfiguration {
+        @Bean(name = "query-storage-cache-manager")
         public CacheManager cacheManager() {
             return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
         }
-        
-        @Bean
+
+        @Bean(name = "query-storage-connection-factory")
         public ConnectionFactory connectionFactory() {
-            return new SimpleRoutingConnectionFactory();
+            SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
+            factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
+            return factory;
         }
+
     }
     
 }

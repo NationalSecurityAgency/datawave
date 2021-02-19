@@ -4,6 +4,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.QueryParametersImpl;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -37,6 +38,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
@@ -46,7 +48,10 @@ import static org.junit.Assert.fail;
 public class QueryStorageCacheTest {
     private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);
     public static final String TEST_POOL = "testPool";
-    
+
+    @Autowired
+    private QueryCache queryCache;
+
     @Autowired
     private QueryStorageCache storageService;
     
@@ -55,16 +60,11 @@ public class QueryStorageCacheTest {
     
     @Autowired
     private MessageConsumer messageConsumer;
-    
-    @Autowired
-    ConnectionFactory connectionFactory;
-    
+
     @Before
     public void before() {
-        // create
-        QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), new QueryPool(TEST_POOL), UUID.randomUUID(), "None"),
-                        QueryTask.QUERY_ACTION.TEST);
-        queueManager.ensureQueueCreated(testNotification);
+        // ensure our pool is created so we can start listening to it
+        queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
         queueManager.addQueueToListener(messageConsumer.getListenerId(), TEST_POOL);
         cleanup();
     }
@@ -106,6 +106,31 @@ public class QueryStorageCacheTest {
         
         QueryTask task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, task);
+
+        List<QueryTask> tasks = storageService.getTasks(key.getQueryId());
+        assertNotNull(tasks);
+        assertEquals(1, tasks.size());
+        assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, tasks.get(0));
+
+        tasks = storageService.getTasks(queryPool);
+        assertNotNull(tasks);
+        assertEquals(1, tasks.size());
+        assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, tasks.get(0));
+
+        List<QueryState> queries = queryCache.getQueries();
+        assertNotNull(queries);
+        assertEquals(1, queries.size());
+        assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
+
+        queries = queryCache.getQueries(queryPool);
+        assertNotNull(queries);
+        assertEquals(1, queries.size());
+        assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
+
+        List<TaskDescription> taskDescs = queryCache.getTaskDescriptions(key.getQueryId());
+        assertNotNull(taskDescs);
+        assertEquals(1, taskDescs.size());
+        assertQueryCreate(key.getQueryId(), queryPool, query, taskDescs.get(0));
     }
     
     @Test
@@ -298,7 +323,26 @@ public class QueryStorageCacheTest {
         tasks = storageService.getTasks(queryPool);
         assertEquals(0, tasks.size());
     }
-    
+
+    private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {
+        assertEquals(queryId, state.getQueryId());
+        assertEquals(queryPool, state.getQueryPool());
+        Map<QueryTask.QUERY_ACTION,Integer> counts = state.getTaskCounts();
+        assertEquals(1, counts.size());
+        assertTrue(counts.containsKey(QueryTask.QUERY_ACTION.CREATE));
+        assertEquals(1, counts.get(QueryTask.QUERY_ACTION.CREATE).intValue());
+    }
+
+    private void assertQueryCreate(UUID queryId, QueryPool queryPool, Query query, TaskDescription task) throws ParseException {
+        assertNotNull(task.getTaskKey());
+        assertEquals(queryId, task.getTaskKey().getQueryId());
+        assertEquals(queryPool, task.getTaskKey().getQueryPool());
+        assertEquals(QueryTask.QUERY_ACTION.CREATE, task.getAction());
+        assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
+        assertEquals(QueryParametersImpl.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
+        assertEquals(QueryParametersImpl.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));
+    }
+
     private void assertQueryTask(TaskKey key, QueryTask.QUERY_ACTION action, Query query, QueryTask task) throws ParseException {
         assertEquals(key, task.getTaskKey());
         assertEquals(action, task.getAction());
@@ -308,14 +352,14 @@ public class QueryStorageCacheTest {
     
     @Configuration
     @Profile("QueryStorageCacheTest")
-    @ComponentScan(basePackages = {"datawave.microservice", "org.springframework.cloud.stream.test"})
-    public static class QueryStorageTestConfiguration {
-        @Bean
+    @ComponentScan(basePackages = {"datawave.microservice"})
+    public static class QueryStorageCacheTestConfiguration {
+        @Bean(name = "query-storage-cache-manager")
         public CacheManager cacheManager() {
             return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
         }
         
-        @Bean
+        @Bean(name = "query-storage-connection-factory")
         public ConnectionFactory connectionFactory() {
             SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
             factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());

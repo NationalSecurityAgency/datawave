@@ -129,7 +129,7 @@ public class QueryCache {
      */
     public QueryTask getTask(TaskKey taskKey) {
         QueryTask task = cacheInspector.list(CACHE_NAME, QueryTask.class, taskKey.toKey());
-        logTask("Retrieved", task);
+        logTask("Retrieved", task, taskKey);
         return task;
     }
     
@@ -315,6 +315,24 @@ public class QueryCache {
             log.trace(msg + ' ' + (task == null ? "null task" : task.toString()));
         } else if (log.isDebugEnabled()) {
             log.debug(msg + ' ' + (task == null ? "null task" : task.toDebug()));
+        }
+    }
+
+    /**
+     * A convience method for logging a task
+     *
+     * @param msg
+     *            The message
+     * @param task
+     *            The task
+     * @param key
+     *            The task key
+     */
+    private void logTask(String msg, QueryTask task, TaskKey key) {
+        if (log.isTraceEnabled()) {
+            log.trace(msg + ' ' + (task == null ? "null task for " + key : task.toString()));
+        } else if (log.isDebugEnabled()) {
+            log.debug(msg + ' ' + (task == null ? "null task for " + key : task.toDebug()));
         }
     }
 }

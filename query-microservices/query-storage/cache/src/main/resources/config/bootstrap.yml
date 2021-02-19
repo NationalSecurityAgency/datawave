@@ -1,6 +1,6 @@
 spring:
   application:
-    name: query-storage
+    name: query-cache
   cloud:
     config:
       # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.

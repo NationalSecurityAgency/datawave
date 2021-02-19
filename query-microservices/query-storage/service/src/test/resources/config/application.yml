@@ -2,15 +2,6 @@ spring:
 
   application:
     name: query-storage-test
-  cloud:
-    stream:
-      bindings:
-        queryTaskSource:
-          # Use native serialization for tests, since this works around an issue with the
-          # MessageCollector getting messages that still need to be decoded.
-          producer:
-            useNativeEncoding: true
-          destination: 'query.storage'
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
@@ -48,6 +39,7 @@ logging:
   level:
     root: WARN
     datawave.microservice.common.storage: WARN
+    datawave.microservice.common.storage.QueryCache: DEBUG
     io.undertow.request: FATAL
 
 ---
