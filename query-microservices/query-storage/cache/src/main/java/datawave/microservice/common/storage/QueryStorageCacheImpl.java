@@ -1,5 +1,6 @@
 package datawave.microservice.common.storage;
 
+import datawave.microservice.common.storage.config.QueryStorageProperties;
 import datawave.webservice.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,9 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     
     @Autowired
     private QueryQueueManager queue;
+
+    @Autowired
+    private QueryStorageProperties properties;
     
     /**
      * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification on a channel
@@ -60,7 +64,9 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         QueryTask task = cache.addQueryTask(action, checkpoint);
         
         // send a task notification
-        queue.sendMessage(task.getNotification());
+        if (properties.isSendNotifications()) {
+            queue.sendMessage(task.getNotification());
+        }
         
         // return the task
         return task;

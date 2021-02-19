@@ -14,6 +14,10 @@ public class QueryStoragePropertiesTest {
         assertTrue(props.isSynchStorage());
         props.setSynchStorage(false);
         assertFalse(props.isSynchStorage());
+        props.setSendNotifications(true);
+        assertTrue(props.isSendNotifications());
+        props.setSendNotifications(false);
+        assertFalse(props.isSendNotifications());
     }
     
 }

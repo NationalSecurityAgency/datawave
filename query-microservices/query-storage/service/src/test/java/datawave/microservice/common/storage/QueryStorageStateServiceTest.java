@@ -52,7 +52,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStorageStateServiceTest", "QueryStorageConfig", "sync-enabled"})
+@ActiveProfiles({"QueryStorageStateServiceTest", "QueryStorageConfig", "sync-enabled", "no-notifications"})
 @EnableRabbit
 public class QueryStorageStateServiceTest {
     @LocalServerPort

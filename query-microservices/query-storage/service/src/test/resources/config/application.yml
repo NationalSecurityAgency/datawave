@@ -65,4 +65,24 @@ query:
 ---
 
 spring:
+  profiles: send-notifications
+
+query:
+  storage:
+    sendNotifications:
+      true
+
+---
+
+spring:
+  profiles: no-notifications
+
+query:
+  storage:
+    sendNotifications:
+      false
+
+---
+
+spring:
   profiles: missing
