@@ -57,4 +57,34 @@ query:
 ---
 
 spring:
+  profiles: use-rabbitmq
+
+query:
+  storage:
+    backend:
+      RABBITMQ
+
+---
+
+spring:
+  profiles: use-kafka
+
+query:
+  storage:
+    backend:
+      KAFKA
+
+---
+
+spring:
+  profiles: use-localqueues
+
+query:
+  storage:
+    backend:
+      LOCAL
+
+---
+
+spring:
   profiles: missing

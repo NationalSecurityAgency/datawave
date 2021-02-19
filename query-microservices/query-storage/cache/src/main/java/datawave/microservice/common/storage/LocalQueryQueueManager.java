@@ -1,9 +1,8 @@
 package datawave.microservice.common.storage;
 
 import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,13 +10,11 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 
-@Service
-@Primary
 public class LocalQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
     
-    private Map<QueryPool,Queue<QueryTaskNotification>> queues = new HashMap<>();
-    private Map<String,Set<QueryPool>> listenerToPools = new HashMap<>();
+    private Map<QueryPool,Queue<QueryTaskNotification>> queues = Collections.synchronizedMap(new HashMap<>());
+    private Map<String,Set<QueryPool>> listenerToPools = Collections.synchronizedMap(new HashMap<>());
     
     /**
      * Passes task notifications to the messaging infrastructure.
@@ -37,7 +34,7 @@ public class LocalQueryQueueManager implements QueryQueueManager {
     
     public LocalQueueListener createListener(String listenerId) {
         LocalQueueListener listener = new LocalQueueListener(listenerId);
-        listenerToPools.put(listener.getListenerId(), new HashSet<>());
+        listenerToPools.put(listener.getListenerId(), Collections.synchronizedSet(new HashSet<>()));
         listener.start();
         return listener;
     }

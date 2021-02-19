@@ -5,7 +5,11 @@ import datawave.microservice.cached.CacheInspector;
 import datawave.microservice.cached.LockableCacheInspector;
 import datawave.microservice.cached.LockableHazelcastCacheInspector;
 import datawave.microservice.cached.UniversalLockableCacheInspector;
+import datawave.microservice.common.storage.KafkaQueryQueueManager;
+import datawave.microservice.common.storage.LocalQueryQueueManager;
 import datawave.microservice.common.storage.QueryCache;
+import datawave.microservice.common.storage.QueryQueueManager;
+import datawave.microservice.common.storage.RabbitQueryQueueManager;
 import org.apache.log4j.Logger;
 import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -35,6 +39,9 @@ public class QueryStorageConfig implements RabbitListenerConfigurer {
     
     @Autowired
     private ConnectionFactory connectionFactory;
+    
+    @Autowired
+    private QueryStorageProperties properties;
     
     @Bean
     public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
@@ -96,5 +103,19 @@ public class QueryStorageConfig implements RabbitListenerConfigurer {
         else
             lockableCacheInspector = new UniversalLockableCacheInspector(cacheInspector);
         return new QueryCache(lockableCacheInspector);
+    }
+    
+    @Bean
+    public QueryQueueManager queueManager() {
+        switch (properties.getBackend()) {
+            case KAFKA:
+                return new KafkaQueryQueueManager();
+            case RABBITMQ:
+                return new RabbitQueryQueueManager();
+            case LOCAL:
+                return new LocalQueryQueueManager();
+            default:
+                throw new IllegalArgumentException("Unknown queue backend " + properties.getBackend());
+        }
     }
 }
