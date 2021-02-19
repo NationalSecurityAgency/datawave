@@ -3,7 +3,6 @@ package datawave.query.jexl.nodes;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
-import com.google.common.io.Files;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.data.type.GeometryType;
@@ -24,6 +23,7 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
@@ -52,8 +52,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -62,16 +60,19 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
-import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -88,6 +89,9 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
 @RunWith(Arquillian.class)
 public class ExceededOrThresholdMarkerJexlNodeTest {
+    
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     private static final int NUM_SHARDS = 1;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -109,6 +113,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
     
     private static String fstUri;
+    
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     
     private static final Configuration conf = new Configuration();
     
@@ -189,9 +195,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     public static void setupClass() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         
-        File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
-        fstUri = tempDir.toURI().toString();
+        fstUri = temporaryFolder.newFolder().toURI().toString();
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
         
         setupConfiguration(conf);
         
@@ -271,8 +276,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
-            if (!tops.exists(tableName))
+            if (!tops.exists(tableName)) {
                 tops.create(tableName);
+            }
             
             final BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
@@ -688,7 +694,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         return logic.getTransformIterator(query);
     }
     
-    private ShardQueryLogic getShardQueryLogic() {
+    private ShardQueryLogic getShardQueryLogic() throws IOException {
         ShardQueryLogic logic = new ShardQueryLogic(this.logic);
         
         // increase the depth threshold
@@ -705,7 +711,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         return logic;
     }
     
-    private void setupIvarator(ShardQueryLogic logic) {
+    private void setupIvarator(ShardQueryLogic logic) throws IOException {
         // Set these to ensure ivarator runs
         logic.setMaxUnfieldedExpansionThreshold(1);
         logic.setMaxValueExpansionThreshold(1);
@@ -717,6 +723,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         logic.setIvaratorFstHdfsBaseURIs(fstUri);
         logic.setCollapseUids(collapseUids);
         logic.setIvaratorCacheScanPersistThreshold(1);
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
     
     public static class TestIngestHelper extends ContentBaseIngestHelper {

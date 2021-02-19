@@ -6,12 +6,12 @@
 package datawave.query.util;
 
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
-
-import com.google.common.collect.Sets;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +24,9 @@ import java.util.Map;
  * 
   */
 public class TypeMetadataTest {
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     private static final Logger log = Logger.getLogger(TypeMetadataTest.class);
     
@@ -78,8 +81,7 @@ public class TypeMetadataTest {
     @Test
     public void testFileRoundTrip() throws Exception {
         Map<String,TypeMetadata> map = prepareTypeMetadataMap();
-        final File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
+        final File tempDir = temporaryFolder.newFolder();
         final File tempFile = new File(tempDir, "type_metadata_roundtrip_test");
         FileOutputStream fos = new FileOutputStream(tempFile);
         ObjectOutputStream oos = new ObjectOutputStream(fos);

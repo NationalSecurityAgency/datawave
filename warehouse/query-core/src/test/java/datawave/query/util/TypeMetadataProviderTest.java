@@ -2,16 +2,16 @@ package datawave.query.util;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import datawave.query.QueryTestTableHelper;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -29,6 +29,12 @@ public class TypeMetadataProviderTest {
     
     private static final Logger log = Logger.getLogger(TypeMetadataProviderTest.class);
     
+    @ClassRule
+    public static TemporaryFolder temporaryFolderClassRule = new TemporaryFolder();
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     @Inject
     private TypeMetadataProvider typeMetadataProvider;
     
@@ -37,34 +43,16 @@ public class TypeMetadataProviderTest {
     
     private Map<Set<String>,TypeMetadata> typeMetadataMap = Maps.newHashMap();
     
-    // the injection test (ONLY!) will use this directory and it needs it in the beforeclass method
-    // so that it will be substituted in the spring xml files at class loading time
-    private static final String tempDirForInjectionTest = "/tmp/TempDirForInjectionTest";
-    
     @BeforeClass
-    public static void beforeClass() {
+    public static void beforeClass() throws IOException {
         // this will get property substituted into the TypeMetadataBridgeContext.xml file
         // for the injection test (when this unit test is first created)
-        System.setProperty("type.metadata.dir", tempDirForInjectionTest);
-    }
-    
-    @AfterClass
-    public static void teardown() {
-        // maybe delete the temp folder here
-        File tempFolder = new File(tempDirForInjectionTest);
-        if (tempFolder.exists()) {
-            try {
-                FileUtils.forceDelete(tempFolder);
-            } catch (IOException ex) {
-                log.error(ex);
-            }
-        }
+        System.setProperty("type.metadata.dir", temporaryFolderClassRule.newFolder().toString());
     }
     
     @Before
-    public void prepareTypeMetadataMap() {
-        File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
+    public void prepareTypeMetadataMap() throws IOException {
+        File tempDir = temporaryFolder.newFolder();
         String val = tempDir.getAbsolutePath();
         System.setProperty("type.metadata.dir", val);
         log.info("using tempFolder " + tempDir);

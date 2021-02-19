@@ -7,10 +7,8 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -18,13 +16,13 @@ import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataHelper;
 import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -35,12 +33,13 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -55,7 +54,10 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.*;
+import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 
 /**
  * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others
@@ -63,16 +65,19 @@ import static datawave.query.QueryTestTableHelper.*;
  */
 public abstract class CompositeFunctionsTest {
     
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     @RunWith(Arquillian.class)
     public static class ShardRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
-        private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTestShardRange";
         
         @BeforeClass
         public static void setUp() throws Exception {
             // this will get property substituted into the TypeMetadataBridgeContext.xml file
             // for the injection test (when this unit test is first created)
-            System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
+            File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestShardRange");
+            System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
             connector = qtth.connector;
@@ -87,15 +92,6 @@ public abstract class CompositeFunctionsTest {
         
         @AfterClass
         public static void teardown() {
-            // maybe delete the temp folder here
-            File tempFolder = new File(tempDirForCompositeFunctionsTest);
-            if (tempFolder.exists()) {
-                try {
-                    FileUtils.forceDelete(tempFolder);
-                } catch (IOException ex) {
-                    log.error(ex);
-                }
-            }
             TypeRegistry.reset();
         }
         
@@ -108,13 +104,13 @@ public abstract class CompositeFunctionsTest {
     @RunWith(Arquillian.class)
     public static class DocumentRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
-        private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTestDocumentRange";
         
         @BeforeClass
         public static void setUp() throws Exception {
             // this will get property substituted into the TypeMetadataBridgeContext.xml file
             // for the injection test (when this unit test is first created)
-            System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
+            File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestDocumentRange");
+            System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
             connector = qtth.connector;
@@ -129,15 +125,6 @@ public abstract class CompositeFunctionsTest {
         
         @AfterClass
         public static void teardown() {
-            // maybe delete the temp folder here
-            File tempFolder = new File(tempDirForCompositeFunctionsTest);
-            if (tempFolder.exists()) {
-                try {
-                    FileUtils.forceDelete(tempFolder);
-                } catch (IOException ex) {
-                    log.error(ex);
-                }
-            }
             TypeRegistry.reset();
         }
         
@@ -222,8 +209,9 @@ public abstract class CompositeFunctionsTest {
             log.debug(entry.getKey() + " => " + d);
             
             Attribute<?> attr = d.get("UUID");
-            if (attr == null)
+            if (attr == null) {
                 attr = d.get("UUID.0");
+            }
             
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
             Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute

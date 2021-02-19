@@ -4,18 +4,19 @@ import datawave.helpers.PrintUtility;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.lf5.LogLevel;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -34,6 +35,9 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
  */
 public class RangeQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(RangeQueryTest.class);
     
     @BeforeClass
@@ -43,9 +47,9 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         generic.addIndexField(CityField.NUM.name());
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-        connector = helper.loadTables(log);
+        connector = accumuloSetup.loadTables(log);
     }
     
     public RangeQueryTest() {

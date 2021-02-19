@@ -1,6 +1,5 @@
 package datawave.mr.bulk;
 
-import com.google.common.io.Files;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
@@ -18,7 +17,9 @@ import org.apache.accumulo.core.iterators.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.powermock.reflect.Whitebox;
 
 import java.io.File;
@@ -33,10 +34,12 @@ import static org.junit.Assert.assertTrue;
 
 public class RecordIteratorTest {
     
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     @Before
     public void setup() throws Exception {
-        File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
+        File tempDir = temporaryFolder.newFolder();
         System.setProperty("hadoop.home.dir", tempDir.getCanonicalPath());
     }
     

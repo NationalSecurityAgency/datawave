@@ -1,25 +1,23 @@
 package datawave.query;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
-import org.apache.log4j.Level;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
@@ -32,9 +30,10 @@ import static org.junit.Assert.fail;
  */
 public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
     
-    private static final Logger log = Logger.getLogger(ExpansionThresholdQueryTest.class);
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
-    private final List<File> cacheFiles = new ArrayList<>();
+    private static final Logger log = Logger.getLogger(ExpansionThresholdQueryTest.class);
     
     @BeforeClass
     public static void filterSetup() throws Exception {
@@ -48,8 +47,8 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         }
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        connector = accumuloSetup.loadTables(log);
     }
     
     public ExpansionThresholdQueryTest() {

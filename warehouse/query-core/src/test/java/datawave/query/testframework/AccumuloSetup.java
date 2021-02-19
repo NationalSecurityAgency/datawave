@@ -35,40 +35,98 @@ import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.rules.ExternalResource;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Base class used to initialize the in memory instance of Accumulo. It can be used by any test cases.
- */
-public class AccumuloSetupHelper {
+public class AccumuloSetup extends ExternalResource {
     
-    private static final Logger log = Logger.getLogger(AccumuloSetupHelper.class);
-    
-    private final MockAccumuloRecordWriter recordWriter;
-    private final Collection<DataTypeHadoopConfig> dataTypes;
-    private final Set<String> shardIds;
-    private final FileType fileFormat;
-    
-    public AccumuloSetupHelper(final Collection<DataTypeHadoopConfig> types) {
-        this(types, FileType.CSV);
-    }
+    private static final Logger log = Logger.getLogger(AccumuloSetup.class);
     
     /**
-     * Allows loading of test data into Accumulo using multiple file formats.
-     * 
-     * @param types
-     *            datatypes for loading
-     * @param format
-     *            file format of data
+     * Setting this flag assures that no resources are left undeleted. Failure to fulfill the assurance results in failure of tests with an AssertionError.
      */
-    public AccumuloSetupHelper(final Collection<DataTypeHadoopConfig> types, FileType format) {
+    private final boolean assureTempFolderDeletion;
+    
+    /**
+     * The folder where any generated sequence files will be stored. This folder will be deleted at the end of tests.
+     */
+    private File tempFolder;
+    
+    private MockAccumuloRecordWriter recordWriter;
+    private Collection<DataTypeHadoopConfig> dataTypes;
+    private Set<String> shardIds;
+    private FileType fileFormat;
+    
+    public AccumuloSetup() {
+        this(false);
+    }
+    
+    public AccumuloSetup(boolean assureTempFolderDeletion) {
+        this.assureTempFolderDeletion = assureTempFolderDeletion;
+    }
+    
+    @Override
+    protected void before() throws Throwable {
+        createTempFolder();
+    }
+    
+    private void createTempFolder() {
+        File tmpDir = new File(System.getProperty("java.io.tmpdir"));
+        tempFolder = new File(tmpDir, UUID.randomUUID().toString());
+        if (!tempFolder.mkdir()) {
+            Assert.fail("Failed to create temporary folder " + tempFolder);
+        }
+    }
+    
+    @Override
+    protected void after() {
+        deleteTempFolder();
+    }
+    
+    private void deleteTempFolder() {
+        if (!tryDelete()) {
+            if (assureTempFolderDeletion) {
+                Assert.fail("Failed to delete temp folder " + tempFolder);
+            }
+        }
+    }
+    
+    private boolean tryDelete() {
+        if (tempFolder == null) {
+            return true;
+        }
+        return recursiveDelete(tempFolder);
+    }
+    
+    private boolean recursiveDelete(File file) {
+        // Try deleting file before assuming file is a directory to prevent following symbolic links.
+        if (file.delete()) {
+            return true;
+        }
+        File[] files = file.listFiles();
+        if (files != null) {
+            for (File each : files) {
+                if (!recursiveDelete(each)) {
+                    return false;
+                }
+            }
+        }
+        return file.delete();
+    }
+    
+    public void setData(FileType fileFormat, DataTypeHadoopConfig config) {
+        setData(fileFormat, Collections.singletonList(config));
+    }
+    
+    public void setData(FileType format, Collection<DataTypeHadoopConfig> types) {
         this.recordWriter = new MockAccumuloRecordWriter();
         this.dataTypes = types;
         this.shardIds = new HashSet<>();
@@ -111,26 +169,16 @@ public class AccumuloSetupHelper {
             Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
         }
         
-        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetupHelper.class.getName(), parentLog, teardown, interrupt);
+        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetup.class.getName(), parentLog, teardown, interrupt);
         final Connector connector = tableHelper.connector;
         tableHelper.configureTables(this.recordWriter);
         
         for (DataTypeHadoopConfig dt : this.dataTypes) {
             HadoopTestConfiguration hadoopConfig = new HadoopTestConfiguration(dt);
             TestFileLoader loader;
-            switch (this.fileFormat) {
-                case CSV:
-                    loader = new CSVTestFileLoader(dt.getIngestFile(), hadoopConfig);
-                    ingestTestData(hadoopConfig, loader);
-                    break;
-                case JSON:
-                    loader = new JsonTestFileLoader(dt.getIngestFile(), hadoopConfig);
-                    ingestTestData(hadoopConfig, loader);
-                    break;
-                case GROUPING:
-                    break;
-                default:
-                    throw new AssertionError("unknown file format: " + this.fileFormat.name());
+            if (this.fileFormat.hasFileLoader()) {
+                loader = this.fileFormat.getFileLoader(dt.getIngestFile(), hadoopConfig);
+                ingestTestData(hadoopConfig, loader);
             }
         }
         
@@ -150,8 +198,7 @@ public class AccumuloSetupHelper {
     private void ingestTestData(Configuration conf, TestFileLoader loader) throws IOException, InterruptedException {
         log.debug("------------- ingestTestData -------------");
         
-        File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-        Path tmpPath = new Path(tmpDir.toURI());
+        Path tmpPath = new Path(tempFolder.toURI());
         // To prevent periodic test cases failing, added "---" prefix for UUDID for test cases to support queries with _ANYFIELD_ starting with particular
         // letters.
         Path seqFile = new Path(tmpPath, "---" + UUID.randomUUID().toString());

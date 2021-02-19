@@ -3,13 +3,13 @@ package datawave.query.util;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.query.QueryTestTableHelper;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -30,6 +30,9 @@ import java.util.concurrent.Future;
 @ContextConfiguration({"classpath:/TypeMetadataBridgeContext.xml", "classpath:/TypeMetadataProviderContext.xml", "classpath:/TypeMetadataWriterContext.xml",})
 public class TypeMetadataProviderLoadingCacheTest {
     
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     private static final Logger log = Logger.getLogger(TypeMetadataProviderLoadingCacheTest.class);
     
     @Inject
@@ -38,28 +41,12 @@ public class TypeMetadataProviderLoadingCacheTest {
     @Inject
     private TypeMetadataWriter typeMetadataWriter;
     
-    // the injection test (ONLY!) will use this directory and it needs it in the beforeclass method
-    // so that it will be substituted in the spring xml files at class loading time
-    private static final String tempDirForThreadingTest = "/tmp/TempDirForThreadingTest";
-    
     @BeforeClass
-    public static void beforeClass() {
+    public static void beforeClass() throws IOException {
         // this will get property substituted into the TypeMetadataBridgeContext.xml file
         // for the injection test (when this unit test is first created)
-        System.setProperty("type.metadata.dir", tempDirForThreadingTest);
-    }
-    
-    @AfterClass
-    public static void teardown() {
-        // maybe delete the temp folder here
-        File tempFolder = new File(tempDirForThreadingTest);
-        if (tempFolder.exists()) {
-            try {
-                FileUtils.forceDelete(tempFolder);
-            } catch (IOException ex) {
-                log.error(ex);
-            }
-        }
+        File tempDir = temporaryFolder.newFolder("TempDirForThreadingTest");
+        System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
     }
     
     /**

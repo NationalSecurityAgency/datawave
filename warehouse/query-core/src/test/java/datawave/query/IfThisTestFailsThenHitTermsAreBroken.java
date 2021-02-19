@@ -3,7 +3,6 @@ package datawave.query;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.io.Files;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
@@ -45,7 +44,9 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.text.DateFormat;
@@ -63,7 +64,10 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.query.QueryTestTableHelper.*;
+import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 
 /**
  *
@@ -77,6 +81,10 @@ import static datawave.query.QueryTestTableHelper.*;
  * 
  */
 public class IfThisTestFailsThenHitTermsAreBroken {
+    
+    @ClassRule
+    // Temporary folders are not successfully deleted in this test with @Rule for some reason, but they are with @ClassRule.
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     enum WhatKindaRange {
         SHARD, DOCUMENT
@@ -136,8 +144,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     @Before
     public void setup() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
+        File tempDir = temporaryFolder.newFolder();
         System.setProperty("type.metadata.dir", tempDir.getAbsolutePath());
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
         log.info("using tempFolder " + tempDir);

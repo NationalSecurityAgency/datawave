@@ -1,7 +1,6 @@
 package datawave.query.testframework;
 
 import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NoOpType;
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.TypeRegistry;
@@ -16,7 +15,6 @@ import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
-import datawave.query.testframework.FileLoaderFactory.FileType;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
@@ -35,7 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static datawave.query.testframework.FileLoaderFactory.FileType.CSV;
+import static datawave.query.testframework.FileType.CSV;
 
 /**
  * Abstract base class that contains the configuration settings for test data types.

@@ -5,7 +5,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +15,10 @@ import java.util.Set;
 
 public class TabletLocationHashPartitionerTest {
     public static final int MAX_EXPECTED_COLLISIONS = 70;
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     int TOTAL_TSERVERS = 600;
     int SHARDS_PER_DAY = 170;
     int NUM_DAYS = 1500;
@@ -37,7 +43,7 @@ public class TabletLocationHashPartitionerTest {
     @Test
     public void testLocationHashPartitioner() throws Exception {
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
-        new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
+        new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
         TabletLocationHashPartitioner partitionerTwo = new TabletLocationHashPartitioner();
         partitionerTwo.setConf(conf);
         
