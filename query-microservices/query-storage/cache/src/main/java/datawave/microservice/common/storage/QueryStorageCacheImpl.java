@@ -16,7 +16,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     
     @Autowired
     private QueryQueueManager queue;
-
+    
     @Autowired
     private QueryStorageProperties properties;
     

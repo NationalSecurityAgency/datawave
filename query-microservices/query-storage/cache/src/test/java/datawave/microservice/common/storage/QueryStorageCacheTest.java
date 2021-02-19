@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory;
@@ -24,7 +23,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -33,9 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -60,19 +56,26 @@ public class QueryStorageCacheTest {
     @Autowired
     private QueryQueueManager queueManager;
     
-    @Autowired
-    private MessageConsumer messageConsumer;
+    private LocalQueryQueueManager.LocalQueueListener messageConsumer;
+    
+    private static final String LISTENER_ID = "QueryStorageCacheTestListener";
     
     @Before
     public void before() {
         // ensure our pool is created so we can start listening to it
         queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
-        queueManager.addQueueToListener(messageConsumer.getListenerId(), TEST_POOL);
-        cleanup();
+        messageConsumer = ((LocalQueryQueueManager) queueManager).createListener(LISTENER_ID);
+        queueManager.addQueueToListener(LISTENER_ID, TEST_POOL);
+        cleanupData();
     }
     
     @After
     public void cleanup() {
+        messageConsumer.stop();
+        cleanupData();
+    }
+    
+    public void cleanupData() {
         storageService.clear();
         clearQueue();
     }
@@ -384,50 +387,6 @@ public class QueryStorageCacheTest {
         
         public Exception getException() {
             return e;
-        }
-    }
-    
-    @Component
-    public static class MessageConsumer {
-        // using a listener with the same name as the queue to ensure we don't miss messages from that queue
-        // (automatically linked up when the message is sent)
-        private static final String LISTENER_ID = "QueryStorageCacheTestListener";
-        private static final long WAIT_MS_DEFAULT = 100;
-        
-        private Queue<QueryTaskNotification> notificationQueue = new ArrayBlockingQueue<>(10);
-        
-        @RabbitListener(id = LISTENER_ID, autoStartup = "true")
-        public void processMessage(QueryTaskNotification notification) {
-            notificationQueue.add(notification);
-        }
-        
-        public String getListenerId() {
-            return LISTENER_ID;
-        }
-        
-        public QueryTaskNotification receive() {
-            return receive(WAIT_MS_DEFAULT);
-        }
-        
-        public QueryTaskNotification receive(long waitMs) {
-            long start = System.currentTimeMillis();
-            int count = 0;
-            while (notificationQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
-                count++;
-                try {
-                    Thread.sleep(1L);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-            if (log.isTraceEnabled()) {
-                log.trace("Cycled " + count + " rounds looking for notification");
-            }
-            if (notificationQueue.isEmpty()) {
-                return null;
-            } else {
-                return notificationQueue.remove();
-            }
         }
     }
     

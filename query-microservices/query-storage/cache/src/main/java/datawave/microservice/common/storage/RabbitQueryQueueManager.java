@@ -53,7 +53,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * @param taskNotification
      *            The task notification to be sent
      */
-    @Override public void sendMessage(QueryTaskNotification taskNotification) {
+    @Override
+    public void sendMessage(QueryTaskNotification taskNotification) {
         ensureQueueCreated(taskNotification.getTaskKey().getQueryPool());
         
         String exchangeName = taskNotification.getTaskKey().getQueryPool().getName();
@@ -69,7 +70,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * @param listenerId
      * @param queueName
      */
-    @Override public void addQueueToListener(String listenerId, String queueName) {
+    @Override
+    public void addQueueToListener(String listenerId, String queueName) {
         if (log.isDebugEnabled()) {
             log.debug("adding queue : " + queueName + " to listener with id : " + listenerId);
         }
@@ -97,7 +99,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * @param listenerId
      * @param queueName
      */
-    @Override public void removeQueueFromListener(String listenerId, String queueName) {
+    @Override
+    public void removeQueueFromListener(String listenerId, String queueName) {
         if (log.isInfoEnabled()) {
             log.info("removing queue : " + queueName + " from listener : " + listenerId);
         }
@@ -164,7 +167,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      *
      * @param queryPool
      */
-    @Override public void ensureQueueCreated(QueryPool queryPool) {
+    @Override
+    public void ensureQueueCreated(QueryPool queryPool) {
         String exchangeQueueName = queryPool.getName();
         TaskKey taskKey = new TaskKey(null, queryPool, null, null);
         if (exchanges.get(queryPool) == null) {
