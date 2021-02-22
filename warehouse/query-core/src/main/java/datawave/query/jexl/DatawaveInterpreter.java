@@ -88,6 +88,7 @@ public class DatawaveInterpreter extends Interpreter {
         if (null != result) {
             return result;
         }
+        
         result = super.visit(node, data);
         
         if (this.arithmetic instanceof HitListArithmetic) {
@@ -181,23 +182,47 @@ public class DatawaveInterpreter extends Interpreter {
         Deque<JexlNode> stack = new ArrayDeque<>();
         stack.push(node);
         
+        boolean allIdentifiers = true;
+        
         // iterative depth-first traversal of tree to avoid stack
         // overflow when traversing large or'd lists
+        JexlNode current;
+        JexlNode child;
         while (!stack.isEmpty()) {
-            JexlNode currNode = stack.pop();
+            current = stack.pop();
             
-            if (currNode instanceof ASTOrNode) {
-                for (int i = currNode.jjtGetNumChildren() - 1; i >= 0; i--) {
-                    stack.push(JexlASTHelper.dereference(currNode.jjtGetChild(i)));
+            if (current instanceof ASTOrNode) {
+                for (int i = current.jjtGetNumChildren() - 1; i >= 0; i--) {
+                    child = JexlASTHelper.dereference(current.jjtGetChild(i));
+                    stack.push(child);
+                    if (allIdentifiers && !(child instanceof ASTIdentifier)) {
+                        allIdentifiers = false;
+                    }
                 }
             } else {
-                children.push(currNode);
+                children.push(current);
+                if (allIdentifiers && !(current instanceof ASTIdentifier)) {
+                    allIdentifiers = false;
+                }
             }
         }
         
+        // If all ASTIdentifiers, then traverse the whole queue. Otherwise we can attempt to short circuit.
         Object result = null;
-        while (!arithmetic.toBoolean(result) && !children.isEmpty())
-            result = interpretOr(children.pop().jjtAccept(this, data), result);
+        if (allIdentifiers) {
+            // Likely within a function and must visit every child in the stack.
+            // Failure to do so will short circuit value aggregation leading to incorrect function evaluation.
+            while (!children.isEmpty()) {
+                // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
+                result = interpretOr(children.pollLast().jjtAccept(this, data), result);
+            }
+        } else {
+            // We are likely within a normal union and can short circuit
+            while (!arithmetic.toBoolean(result) && !children.isEmpty()) {
+                // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
+                result = interpretOr(children.pollLast().jjtAccept(this, data), result);
+            }
+        }
         
         return result;
     }
