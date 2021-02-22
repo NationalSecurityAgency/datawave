@@ -45,7 +45,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
         
         // Evaluate the JexlContext against the Script
-        this.script = this.engine.createScript(query);
+        this.script = this.engine.createScript(this.query);
     }
     
     public JexlArithmetic getArithmetic() {
