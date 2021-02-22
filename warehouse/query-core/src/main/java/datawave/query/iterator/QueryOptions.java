@@ -17,6 +17,7 @@ import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
@@ -1196,7 +1197,7 @@ public class QueryOptions implements OptionDescriber {
                 Collections.addAll(this.whiteListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
-                this.whiteListedFields.add("HIT_TERM");
+                this.whiteListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
         
