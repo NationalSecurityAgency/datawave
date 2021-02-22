@@ -22,6 +22,8 @@ import datawave.query.util.Tuple3;
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
     
+    public static final String HIT_TERM_FIELD = "HIT_TERM";
+    
     private String query;
     private JexlArithmetic arithmetic;
     private DatawaveJexlEngine engine;
@@ -43,7 +45,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
         
         // Evaluate the JexlContext against the Script
-        this.script = this.engine.createScript(query);
+        this.script = this.engine.createScript(this.query);
     }
     
     public JexlArithmetic getArithmetic() {
@@ -94,7 +96,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                     }
                 }
                 if (attributes.size() > 0) {
-                    document.put("HIT_TERM", attributes);
+                    document.put(HIT_TERM_FIELD, attributes);
                 }
             }
             hitListArithmetic.clear();
