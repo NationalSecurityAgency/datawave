@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +25,7 @@ import java.util.TreeSet;
 
 import static datawave.query.Constants.NULL;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -324,6 +326,47 @@ public class TermFrequencyIteratorTest {
         assertEquals(20, count);
     }
     
+    // Roll through every field in the search space and assert proper hit count
+    @Test
+    public void testSearchEveryField() throws IOException {
+        // Full scan range
+        Key start = new Key("20200314_0", "tf", "datatype\0uid0");
+        Key end = new Key("20200314_0", "tf", "datatype\0uid9.9\uffff");
+        Range r = new Range(start, false, end, true);
+        
+        // Hit in every doc
+        Set<Key> keys = new TreeSet<>();
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid0")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid1.1")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid2.2")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid3.3")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid4.4")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid5.5")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid6.6")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid7.7")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid8.8")));
+        keys.add(new Key(new Text("20200314_0"), new Text("datatype\u0000uid9.9")));
+        
+        TreeMap<Key,Value> data = createData();
+        
+        for (char upper : uppers.toCharArray()) {
+            String field = "FIELD_" + upper;
+            Multimap<String,String> fieldValues = buildFieldValues(field, "value_a", "value_c");
+            TermFrequencyIterator tfIter = new TermFrequencyIterator(fieldValues, keys);
+            tfIter.init(createSourceFromData(data), null, null);
+            tfIter.seek(r, null, true);
+            
+            assertNotNull(tfIter);
+            assertTrue(tfIter.hasTop());
+            Set<Key> hits = new HashSet<>();
+            while (tfIter.hasTop()) {
+                hits.add(tfIter.getTopKey());
+                tfIter.next();
+            }
+            assertEquals("Expected to get 20 hits for field " + field + "but was " + hits.size(), 20, hits.size());
+        }
+    }
+    
     @Test
     public void testGetNextSeekRange() throws IOException {
         SortedKeyValueIterator<Key,Value> tfIter = buildIterAcrossValuesWithNulls();
@@ -384,7 +427,10 @@ public class TermFrequencyIteratorTest {
     
     // Create data iter.
     private SortedListKeyValueIterator createSource() {
-        TreeMap<Key,Value> data = createData();
+        return createSourceFromData(createData());
+    }
+    
+    private SortedListKeyValueIterator createSourceFromData(TreeMap<Key,Value> data) {
         return new SortedListKeyValueIterator(data);
     }
     

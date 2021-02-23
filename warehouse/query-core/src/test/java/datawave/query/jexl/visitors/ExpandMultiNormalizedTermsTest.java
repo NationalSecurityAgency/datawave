@@ -13,7 +13,9 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ExpandMultiNormalizedTermsTest {
     
+    private static final Logger log = Logger.getLogger(ExpandMultiNormalizedTermsTest.class);
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
     
@@ -440,15 +443,6 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms(original, original);
     }
     
-    private void expandTerms(String original, String expected) throws ParseException {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
-        ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script);
-        
-        String expandedQuery = JexlStringBuildingVisitor.buildQuery(expanded);
-        assertEquals(expected, expandedQuery);
-        assertTrue(JexlASTHelper.validateLineage(expanded, true));
-    }
-    
     @Test
     public void testQueryThatShouldMakeNoRanges() throws Exception {
         String query = "FOO == 125 " + " AND (BAR).getValuesForGroups(grouping:getGroupsForMatchesInGroup(FOO,'125')) >= 35"
@@ -466,6 +460,39 @@ public class ExpandMultiNormalizedTermsTest {
         
         assertEquals(originalRoundTrip, smashedRoundTrip);
         assertEquals(smashedRoundTrip, visitedRountTrip);
-        assertTrue(JexlASTHelper.validateLineage(script, true));
+        assertLineage(script);
+        
+        // Verify the original input script was not modified, and still has a valid lineage.
+        assertScriptEquality(queryTree, query);
+        assertLineage(queryTree);
+    }
+    
+    private void expandTerms(String original, String expected) throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
+        ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script);
+        
+        // Verify the resulting script is as expected, with a valid lineage.
+        assertScriptEquality(expanded, expected);
+        assertLineage(expanded);
+        
+        // Verify the original input script was not modified, and still has a valid lineage.
+        assertScriptEquality(script, original);
+        assertLineage(script);
+    }
+    
+    private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
+        ASTJexlScript actualScript = JexlASTHelper.parseJexlQuery(JexlStringBuildingVisitor.buildQuery(actual));
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
+        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
+        if (!equal) {
+            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
+            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
+        }
+        assertTrue(reason.reason, equal);
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
 }

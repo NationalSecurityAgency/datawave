@@ -27,6 +27,7 @@ import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
@@ -128,6 +129,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -989,9 +991,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // Fields in the data dictionary is always uppercase. Convert the unique fields to uppercase
             // so the comparisons are case insensitive
             List<String> fields = config.getUniqueFields().stream().map(field -> field.toUpperCase()).collect(Collectors.toList());
-            if (!allFields.containsAll(fields)) {
+            // for the unique fields we need to also look for any model aliases (forward or reverse) and fields generated post evaluation (e.g. HIT_TERM)
+            // this is because unique fields operate on the fields as returned to the user. We essentially leave all variants of the fields
+            // in the unique field list to ensure we catch everything
+            Set<String> uniqueFields = new HashSet<>(allFields);
+            if (queryModel != null) {
+                uniqueFields.addAll(queryModel.getForwardQueryMapping().keySet());
+                uniqueFields.addAll(queryModel.getReverseQueryMapping().values());
+            }
+            uniqueFields.add(JexlEvaluation.HIT_TERM_FIELD);
+            if (!uniqueFields.containsAll(fields)) {
                 Set<String> missingFields = Sets.newHashSet(config.getUniqueFields());
-                missingFields.removeAll(allFields);
+                missingFields.removeAll(uniqueFields);
                 nonexistentFields.addAll(missingFields);
             }
             
@@ -1194,6 +1205,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 innerStopwatch.stop();
                 
+                if (reduceQuery) {
+                    innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce after range expansion");
+                    
+                    // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+                    queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+                    
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after range expansion reduction:");
+                    }
+                    
+                    innerStopwatch.stop();
+                }
+                
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Prune GeoWave terms");
                 Multimap<String,String> prunedTerms = HashMultimap.create();
                 queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
@@ -1243,6 +1267,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                     config.isExpandValues());
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding ranges again:");
+                    }
+                    if (reduceQuery) {
+                        
+                        // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+                        queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+                        
+                        if (log.isDebugEnabled()) {
+                            logQuery(queryTree, "Query after range expansion reduction again:");
+                        }
+                        
                     }
                     queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                     config.setExpandAllTerms(expandAllTerms);

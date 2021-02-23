@@ -195,8 +195,8 @@ public abstract class GroupingTest {
         
         for (EventBase event : eventQueryResponse.getEvents()) {
             
-            String genderKey = "";
-            String ageKey = "";
+            String firstKey = "";
+            String secondKey = "";
             Integer value = null;
             for (Object field : event.getFields()) {
                 FieldBase fieldBase = (FieldBase) field;
@@ -205,28 +205,25 @@ public abstract class GroupingTest {
                         value = Integer.valueOf(fieldBase.getValueString());
                         break;
                     case "GENDER":
-                        genderKey = fieldBase.getValueString();
-                        break;
                     case "GEN":
-                        genderKey = fieldBase.getValueString();
+                    case "BIRTHDAY":
+                        firstKey = fieldBase.getValueString();
                         break;
                     case "AGE":
-                        ageKey = fieldBase.getValueString();
-                        break;
                     case "AG":
-                        ageKey = fieldBase.getValueString();
+                        secondKey = fieldBase.getValueString();
                         break;
                 }
             }
             
-            log.debug("mapping is " + genderKey + "-" + ageKey + " count:" + value);
+            log.debug("mapping is " + firstKey + "-" + secondKey + " count:" + value);
             String key;
-            if (!genderKey.isEmpty() && !ageKey.isEmpty()) {
-                key = genderKey + "-" + ageKey;
-            } else if (!genderKey.isEmpty()) {
-                key = genderKey;
+            if (!firstKey.isEmpty() && !secondKey.isEmpty()) {
+                key = firstKey + "-" + secondKey;
+            } else if (!firstKey.isEmpty()) {
+                key = firstKey;
             } else {
-                key = ageKey;
+                key = secondKey;
             }
             Assert.assertEquals(expected.get(key), value);
         }
@@ -420,6 +417,36 @@ public abstract class GroupingTest {
                 .put("MALE-20", 2)
                 .put("MALE-24", 1)
                 .put("MALE-22", 2)
+                .build();
+        // @formatter:on
+        logic.setParser(new LuceneToJexlQueryParser());
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+        logic.setParser(new JexlControlledQueryParser());
+    }
+    
+    @Test
+    public void testGroupingUsingLuceneFunctionWithDuplicateValues() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("group.fields.batch.size", "6");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "(UUID:CORLEONE) and #GROUPBY('AGE','BIRTHDAY')";
+        
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("4-18", 1)
+                .put("5-40", 1)
+                .put("3-20", 1)
+                .put("1-24", 1)
+                .put("2-22", 1)
+                .put("22-22", 1)
                 .build();
         // @formatter:on
         logic.setParser(new LuceneToJexlQueryParser());
