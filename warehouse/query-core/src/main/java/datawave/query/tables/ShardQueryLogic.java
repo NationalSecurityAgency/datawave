@@ -399,6 +399,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             
             currentQueryPlanner.setMetadataHelper(metadataHelper);
             currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
+            currentQueryPlanner.setFederatedQueryPlanner(federatedQueryPlanner);
             
             QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
             if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {

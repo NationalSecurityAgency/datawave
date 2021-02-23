@@ -279,7 +279,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * performance impact.
      */
     protected boolean showReducedQueryPrune = true;
-
+    
     protected FederatedQueryPlanner federatedQueryPlanner = null;
     
     public DefaultQueryPlanner() {
@@ -315,6 +315,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
+    }
+    
+    public FederatedQueryPlanner getFederatedQueryPlanner() {
+        return federatedQueryPlanner;
+    }
+    
+    public void setFederatedQueryPlanner(FederatedQueryPlanner federatedQueryPlanner) {
+        this.federatedQueryPlanner = federatedQueryPlanner;
     }
     
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
