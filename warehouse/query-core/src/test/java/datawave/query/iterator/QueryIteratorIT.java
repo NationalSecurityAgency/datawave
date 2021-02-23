@@ -9,6 +9,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.predicate.EventDataQueryFilter;
@@ -245,7 +246,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @Test
     public void indexOnly_documentSpecific_hitTerm_test() throws IOException {
-        options.put("HIT_TERM", "true");
+        options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
@@ -254,7 +255,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @Test
     public void indexOnly_shardRange_hitTerm_test() throws IOException {
-        options.put("HIT_TERM", "true");
+        options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "INDEX_ONLY_FIELD1 == 'apple'";
@@ -412,7 +413,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @Test
     public void event_documentSpecific_hitTerm_test() throws IOException {
-        options.put("HIT_TERM", "true");
+        options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD2 == 'b'";
@@ -421,7 +422,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @Test
     public void event_shardRange_hitTerm_test() throws IOException {
-        options.put("HIT_TERM", "true");
+        options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD2 == 'b'";
@@ -556,6 +557,17 @@ public class QueryIteratorIT extends EasyMockSupport {
         event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
+    @Test(expected = IOException.class)
+    public void event_bogusIvaratorCacheDir_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))";
+        
+        // setup a bogus ivarator cache dir for the config
+        options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(new IvaratorCacheDirConfig("hdfs://bogusPath")));
+        
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
     @Test
     public void index_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
@@ -574,7 +586,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @Test
     public void index_documentSpecific_hitTerm_test() throws IOException {
-        options.put("HIT_TERM", "true");
+        options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD4 == 'd'";
@@ -583,7 +595,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @Test
     public void index_shardRange_hitTerm_test() throws IOException {
-        options.put("HIT_TERM", "true");
+        options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD4 == 'd'";
@@ -1112,8 +1124,8 @@ public class QueryIteratorIT extends EasyMockSupport {
                             docSize);
             
             // validate the hitlist
-            assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get("HIT_TERM") != null), (d.getDictionary()
-                            .get("HIT_TERM") != null), isExpectHitTerm());
+            assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), (d
+                            .getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), isExpectHitTerm());
             
             // verify hits for each specified field
             for (String field : docKeys.keySet()) {
