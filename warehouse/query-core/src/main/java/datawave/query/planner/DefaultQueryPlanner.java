@@ -1206,6 +1206,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 innerStopwatch.stop();
                 
+                if (reduceQuery) {
+                    innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce after range expansion");
+                    
+                    // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+                    queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+                    
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after range expansion reduction:");
+                    }
+                    
+                    innerStopwatch.stop();
+                }
+                
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Prune GeoWave terms");
                 Multimap<String,String> prunedTerms = HashMultimap.create();
                 queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
@@ -1255,6 +1268,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                     config.isExpandValues());
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding ranges again:");
+                    }
+                    if (reduceQuery) {
+                        
+                        // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+                        queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+                        
+                        if (log.isDebugEnabled()) {
+                            logQuery(queryTree, "Query after range expansion reduction again:");
+                        }
+                        
                     }
                     queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                     config.setExpandAllTerms(expandAllTerms);
