@@ -7,13 +7,13 @@ import java.io.IOException;
 
 public interface QueryQueueListener {
     public static final long WAIT_MS = 100L;
-
+    
     String getListenerId();
-
+    
     default QueryTaskNotification receiveTaskNotification() throws IOException {
         return receiveTaskNotification(100L);
     }
-
+    
     default QueryTaskNotification receiveTaskNotification(long waitMs) throws IOException {
         Message message = receive(waitMs);
         if (message != null) {
@@ -21,14 +21,14 @@ public interface QueryQueueListener {
         }
         return null;
     }
-
+    
     default Message receive() {
         return receive(WAIT_MS);
     }
-
+    
     Message receive(long waitMs);
-
+    
     void start();
-
+    
     void stop();
 }

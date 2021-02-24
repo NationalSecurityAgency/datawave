@@ -25,9 +25,10 @@ public class LocalQueryQueueManager implements QueryQueueManager {
     
     private Map<String,Queue<Message>> queues = Collections.synchronizedMap(new HashMap<>());
     private Map<String,Set<String>> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
-
+    
     /**
      * Create a listener
+     * 
      * @param listenerId
      * @return a local queue listener
      */
@@ -37,7 +38,7 @@ public class LocalQueryQueueManager implements QueryQueueManager {
         listener.start();
         return listener;
     }
-
+    
     /**
      * Ensure a queue is created for a given pool
      *
@@ -49,7 +50,7 @@ public class LocalQueryQueueManager implements QueryQueueManager {
             queues.put(queryPool.getName(), new ArrayBlockingQueue<>(10));
         }
     }
-
+    
     /**
      * Passes task notifications to the messaging infrastructure.
      *
@@ -66,18 +67,18 @@ public class LocalQueryQueueManager implements QueryQueueManager {
         Message message = null;
         try {
             message = new Message(new ObjectMapper().writeValueAsBytes(taskNotification),
-                    MessagePropertiesBuilder.newInstance().setMessageId(taskNotification.getTaskKey().toKey()).build());
+                            MessagePropertiesBuilder.newInstance().setMessageId(taskNotification.getTaskKey().toKey()).build());
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Could not serialize a QueryTaskNotification", e);
         }
         queue.add(message);
     }
-
+    
     /**
-     * Ensure a queue is created for a query results queue.  This will create an exchange, a queue, and a binding between them
-     * for the results queue.
+     * Ensure a queue is created for a query results queue. This will create an exchange, a queue, and a binding between them for the results queue.
      *
-     * @param queryId the query ID
+     * @param queryId
+     *            the query ID
      */
     @Override
     public void ensureQueueCreated(UUID queryId) {
@@ -85,31 +86,32 @@ public class LocalQueryQueueManager implements QueryQueueManager {
             queues.put(queryId.toString(), new ArrayBlockingQueue<>(10));
         }
     }
-
+    
     /**
-     * This will send a result message.  This will call ensureQueueCreated before sending the message.
+     * This will send a result message. This will call ensureQueueCreated before sending the message.
      * <p>
      * TODO Should the result be more strongly typed?
      *
-     * @param queryId  the query ID
-     * @param resultId a unique id for the result
+     * @param queryId
+     *            the query ID
+     * @param resultId
+     *            a unique id for the result
      * @param result
      */
     @Override
     public void sendMessage(UUID queryId, String resultId, Object result) {
         ensureQueueCreated(queryId);
-
+        
         Queue<Message> queue = queues.get(queryId.toString());
         Message message = null;
         try {
-            message = new Message(new ObjectMapper().writeValueAsBytes(result),
-                    MessagePropertiesBuilder.newInstance().setMessageId(resultId).build());
+            message = new Message(new ObjectMapper().writeValueAsBytes(result), MessagePropertiesBuilder.newInstance().setMessageId(resultId).build());
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Could not serialize a QueryTaskNotification", e);
         }
         queue.add(message);
     }
-
+    
     /**
      * Add a queue to a listener
      *
@@ -152,12 +154,12 @@ public class LocalQueryQueueManager implements QueryQueueManager {
             this.listenerId = listenerId;
             new Thread(this).start();
         }
-
+        
         @Override
         public String getListenerId() {
             return listenerId;
         }
-
+        
         @Override
         public void start() {
             if (thread == null) {
@@ -165,7 +167,7 @@ public class LocalQueryQueueManager implements QueryQueueManager {
                 thread.start();
             }
         }
-
+        
         @Override
         public void stop() {
             Thread thread = this.thread;
@@ -194,12 +196,12 @@ public class LocalQueryQueueManager implements QueryQueueManager {
         public void message(Message message) {
             messageQueue.add(message);
         }
-
+        
         @Override
         public QueryTaskNotification receiveTaskNotification() throws IOException {
             return receiveTaskNotification(WAIT_MS_DEFAULT);
         }
-
+        
         @Override
         public QueryTaskNotification receiveTaskNotification(long waitMs) throws IOException {
             Message message = receive(waitMs);
@@ -208,12 +210,12 @@ public class LocalQueryQueueManager implements QueryQueueManager {
             }
             return null;
         }
-
+        
         @Override
         public Message receive() {
             return receive(WAIT_MS_DEFAULT);
         }
-
+        
         @Override
         public Message receive(long waitMs) {
             long start = System.currentTimeMillis();

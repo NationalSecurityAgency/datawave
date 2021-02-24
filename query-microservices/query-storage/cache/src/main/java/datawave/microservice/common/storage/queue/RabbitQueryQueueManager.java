@@ -43,7 +43,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     
     @Autowired
     private RabbitTemplate rabbitTemplate;
-
+    
     @Autowired
     private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
     
@@ -58,29 +58,32 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     
     @Autowired
     QueryStorageProperties properties;
-
+    
     /**
      * Create a listener for a specified listener id
      *
-     * @param listenerId The listener id
+     * @param listenerId
+     *            The listener id
      * @return a query queue listener
      */
     @Override
     public QueryQueueListener createListener(String listenerId) {
         return new RabbitQueueListener(listenerId);
     }
-
+    
     /**
      * Ensure a queue is created for a pool. This will create an exchange, a queue, and a binding between them for the query pool.
      *
-     * @param queryPool the query poll
+     * @param queryPool
+     *            the query poll
      */
     @Override
     public void ensureQueueCreated(QueryPool queryPool) {
-        QueryTaskNotification testMessage = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "NA"), QueryTask.QUERY_ACTION.TEST);
+        QueryTaskNotification testMessage = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "NA"),
+                        QueryTask.QUERY_ACTION.TEST);
         ensureQueueCreated(queryPool.getName(), testMessage.getTaskKey().toRoutingKey(), testMessage.getTaskKey().toKey());
     }
-
+    
     /**
      * Passes task notifications to the messaging infrastructure.
      *
@@ -97,38 +100,41 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         }
         rabbitTemplate.convertAndSend(exchangeName, taskNotification.getTaskKey().toKey(), taskNotification);
     }
-
+    
     /**
-     * Ensure a queue is created for a query results queue.  This will create an exchange, a queue, and a binding between them
-     * for the results queue.
+     * Ensure a queue is created for a query results queue. This will create an exchange, a queue, and a binding between them for the results queue.
      *
-     * @param queryId the query ID
+     * @param queryId
+     *            the query ID
      */
     @Override
     public void ensureQueueCreated(UUID queryId) {
         ensureQueueCreated(queryId.toString(), queryId.toString(), queryId.toString());
     }
-
+    
     /**
-     * This will send a result message.  This will call ensureQueueCreated before sending the message.
+     * This will send a result message. This will call ensureQueueCreated before sending the message.
      * <p>
      * TODO Should the result be more strongly typed?
      *
-     * @param queryId the query ID
-     * @param resultId a unique id for the result
-     * @param result the result
+     * @param queryId
+     *            the query ID
+     * @param resultId
+     *            a unique id for the result
+     * @param result
+     *            the result
      */
     @Override
     public void sendMessage(UUID queryId, String resultId, Object result) {
         ensureQueueCreated(queryId);
-
+        
         String exchangeName = queryId.toString();
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName);
         }
         rabbitTemplate.convertAndSend(exchangeName, resultId, result);
     }
-
+    
     /**
      * Add a queue to a listener
      *
@@ -231,11 +237,11 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * Ensure a queue is created for a given pool
      *
      * @param exchangeQueueName
-     *      The name of the exchange and the queue
+     *            The name of the exchange and the queue
      * @param routingPattern
-     *      The routing pattern used to bind the exchange to the queue
+     *            The routing pattern used to bind the exchange to the queue
      * @param routingKey
-     *      A routing key to use for a test message
+     *            A routing key to use for a test message
      */
     public void ensureQueueCreated(String exchangeQueueName, String routingPattern, String routingKey) {
         if (exchanges.get(exchangeQueueName) == null) {
@@ -283,9 +289,9 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         
         @Autowired
         private RabbitTemplate rabbitTemplate;
-
+        
         private AtomicInteger semaphore = new AtomicInteger(0);
-
+        
         @RabbitListener(id = LISTENER_ID, autoStartup = "true")
         public void processMessage(Message message) {
             String body = null;
@@ -328,7 +334,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             }
         }
     }
-
+    
     /**
      * A listener for local queues
      */
@@ -336,17 +342,17 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         private java.util.Queue<Message> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private Thread thread = null;
-
+        
         public RabbitQueueListener(String listenerId) {
             this.listenerId = listenerId;
             start();
         }
-
+        
         @Override
         public String getListenerId() {
             return listenerId;
         }
-
+        
         @Override
         public void start() {
             MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(this, "receiveMessage");
@@ -360,7 +366,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             listenerContainerFactory.setConnectionFactory(factory);
             rabbitListenerEndpointRegistry.registerListenerContainer(endpoint, listenerContainerFactory, true);
         }
-
+        
         @Override
         public void stop() {
             MessageListenerContainer container = rabbitListenerEndpointRegistry.getListenerContainer(getListenerId());
@@ -369,11 +375,11 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
                 rabbitListenerEndpointRegistry.unregisterListenerContainer(getListenerId());
             }
         }
-
+        
         public void receiveMessage(Message message) {
             messageQueue.add(message);
         }
-
+        
         @Override
         public Message receive(long waitMs) {
             long start = System.currentTimeMillis();
@@ -396,5 +402,5 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             }
         }
     }
-
+    
 }
