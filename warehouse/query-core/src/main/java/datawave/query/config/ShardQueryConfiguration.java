@@ -2093,6 +2093,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     @JsonIgnore
     public String getActiveQueryLogName() {
+        if (activeQueryLogNameSource == null) {
+            return "";
+        }
         switch (activeQueryLogNameSource) {
             case TABLE_NAME_SOURCE:
                 return getTableName();

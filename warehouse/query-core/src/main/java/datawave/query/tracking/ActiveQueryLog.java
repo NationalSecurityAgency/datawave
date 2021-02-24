@@ -103,8 +103,12 @@ public class ActiveQueryLog {
         ActiveQueryLog log = ActiveQueryLog.logCache.getIfPresent(name);
         if (log == null) {
             synchronized (ActiveQueryLog.logCacheLock) {
-                log = new ActiveQueryLog(conf, name);
-                ActiveQueryLog.logCache.put(name, log);
+                // Check again in case log was created for this name in another before lock was obtained.
+                log = ActiveQueryLog.logCache.getIfPresent(name);
+                if (log == null) {
+                    log = new ActiveQueryLog(conf, name);
+                    ActiveQueryLog.logCache.put(name, log);
+                }
             }
         }
         

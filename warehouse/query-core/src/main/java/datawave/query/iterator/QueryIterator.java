@@ -271,9 +271,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             ActiveQueryLog.setConfig(env.getConfig());
         }
         
-        // Get the ActiveQueryLog instance that should be used.
-        this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
-        
         DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());
         DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec());
         
@@ -320,7 +317,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     @Override
     public void next() throws IOException {
-        this.activeQueryLog.get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
+        getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
         Span s = Trace.start("QueryIterator.next()");
         if (log.isTraceEnabled()) {
             log.trace("next");
@@ -338,10 +335,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
-            this.activeQueryLog.get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.NEXT);
+            getActiveQueryLog().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.NEXT);
             if (this.key == null && this.value == null) {
                 // no entries to return
-                this.activeQueryLog.remove(getQueryId(), this.originalRange);
+                getActiveQueryLog().remove(getQueryId(), this.originalRange);
             }
         }
     }
@@ -351,7 +348,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         originalRange = range;
-        this.activeQueryLog.get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
+        getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         Span span = Trace.start("QueryIterator.seek");
         
         if (!this.isIncludeGroupingContext()
@@ -476,7 +473,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
                 // last chance before the documents are serialized
-                            this.activeQueryLog.get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
+                            getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
                             // Always return true since we just want to record data in the ActiveQueryLog
                             return true;
                         });
@@ -541,10 +538,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
-            this.activeQueryLog.get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.SEEK);
+            getActiveQueryLog().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.SEEK);
             if (this.key == null && this.value == null) {
                 // no entries to return
-                this.activeQueryLog.remove(getQueryId(), this.originalRange);
+                getActiveQueryLog().remove(getQueryId(), this.originalRange);
             }
         }
     }
@@ -1570,5 +1567,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
         return groupingTransform;
+    }
+    
+    protected ActiveQueryLog getActiveQueryLog() {
+        if (this.activeQueryLog == null) {
+            this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
+        }
+        return this.activeQueryLog;
     }
 }
