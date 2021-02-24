@@ -7,6 +7,7 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.*;
@@ -227,6 +228,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         throw new DatawaveFatalQueryException(String.format("New query is null! madeChange: %b, qid: %s", madeChange,
                                         setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
                     }
+                    
+                    // test the final script for thresholds
+                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config, false);
                     
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
