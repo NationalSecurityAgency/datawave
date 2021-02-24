@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import datawave.data.type.DiscreteIndexType;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.LiteralRange;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -16,6 +17,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,9 +32,9 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  */
 public class CompositeRange extends Composite {
     
-    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Sets.newHashSet(ASTNENode.class, ASTERNode.class);
-    public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Sets.newHashSet(ASTAndNode.class, ASTEQNode.class, ASTGTNode.class, ASTGENode.class,
-                    ASTLTNode.class, ASTLENode.class);
+    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTNENode.class, ASTERNode.class));
+    public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTAndNode.class, ASTEQNode.class, ASTGTNode.class,
+                    ASTGENode.class, ASTLTNode.class, ASTLENode.class));
     
     private final List<JexlNode> jexlNodeListLowerBound = new ArrayList<>();
     private final List<JexlNode> jexlNodeListUpperBound = new ArrayList<>();
@@ -57,8 +59,10 @@ public class CompositeRange extends Composite {
     @Override
     public void addComponent(JexlNode node) {
         List<JexlNode> nodes = new ArrayList<>();
-        if (node instanceof ASTAndNode) {
-            nodes.addAll(Arrays.asList(children(node)));
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
+            nodes.add(range.getLowerNode());
+            nodes.add(range.getUpperNode());
         } else if (node instanceof ASTEQNode) {
             String fieldName = JexlASTHelper.getIdentifier(node);
             String expression = JexlASTHelper.getLiteralValue(node).toString();
@@ -303,10 +307,10 @@ public class CompositeRange extends Composite {
     }
     
     public boolean contains(JexlNode node) {
-        boolean success = true;
-        if (node instanceof ASTAndNode)
-            for (int i = 0; i < node.jjtGetNumChildren(); i++)
-                success &= this.jexlNodeListLowerBound.contains(node.jjtGetChild(i)) || this.jexlNodeListUpperBound.contains(node.jjtGetChild(i));
+        boolean success;
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        if (range != null)
+            success = this.jexlNodeListLowerBound.contains(range.getLowerNode()) && this.jexlNodeListUpperBound.contains(range.getUpperNode());
         else if (node instanceof ASTEQNode)
             success = this.jexlNodeList.contains(node);
         else

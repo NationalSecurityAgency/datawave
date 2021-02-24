@@ -32,7 +32,7 @@ public class TimeoutExceptionIterator extends WrappingIterator {
     boolean exceededTime = false;
     
     // Exceeded timeout value exception marker
-    protected static Value EXCEPTEDVALUE = new Value(new byte[] {0x0d, 0x0e, 0x0a, 0x0d, 0x0b, 0x0e, 0x0e, 0x0f});
+    protected static final Value EXCEPTEDVALUE = new Value(new byte[] {0x0d, 0x0e, 0x0a, 0x0d, 0x0b, 0x0e, 0x0e, 0x0f});
     
     public static boolean exceededTimedValue(Entry<Key,Value> kv) {
         return kv.getValue().equals(EXCEPTEDVALUE);

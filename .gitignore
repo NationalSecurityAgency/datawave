@@ -41,6 +41,9 @@ target/
 **/target/
 **/logs/
 
+**/.factorypath
+.vscode
+
 .DS_Store
 web-services/geoserver/geoserver-application/overlays/
 

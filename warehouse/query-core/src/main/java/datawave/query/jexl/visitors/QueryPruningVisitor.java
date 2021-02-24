@@ -2,7 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -103,6 +103,10 @@ public class QueryPruningVisitor extends BaseVisitor {
         JexlNode copy = TreeFlatteningRebuildingVisitor.flatten(node);
         
         copy.jjtAccept(visitor, null);
+        
+        // Now since we could have removed children within AND/OR nodes,
+        // reflatten to remove boolean operators with single children
+        copy = TreeFlatteningRebuildingVisitor.flatten(copy);
         
         if (showPrune) {
             after = JexlStringBuildingVisitor.buildQuery(copy);

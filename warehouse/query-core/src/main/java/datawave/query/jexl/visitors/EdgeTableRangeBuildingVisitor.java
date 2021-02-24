@@ -514,10 +514,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             throw new IllegalArgumentException("Cannot perform has_all without specifying a pattern for the edge 'SOURCE'.");
         }
         
-        int numChildren = node.jjtGetNumChildren();
         StringBuilder sb = new StringBuilder();
-        String fieldName = null;
-        Set<String> edgeTypes = new HashSet<>();
         
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             if (0 == i) {

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>2.9.12-SNAPSHOT</version>
+    <version>3.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -33,13 +33,14 @@
         <version.accumulo>1.9.2</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
-        <version.avro>1.7.4</version.avro>
+        <version.avro>1.8.2</version.avro>
         <version.caffeine>2.7.0</version.caffeine>
-        <version.commons-beanutils>1.9.3</version.commons-beanutils>
+        <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.12</version.commons-codec>
         <version.commons-collections>4.3</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
+        <version.commons-configuration2>2.7</version.commons-configuration2>
         <version.commons-io>2.6</version.commons-io>
         <version.commons-jexl>2.1.1</version.commons-jexl>
         <version.commons-lang>2.6</version.commons-lang>
@@ -55,12 +56,12 @@
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
-        <version.hadoop>2.6.0-cdh5.9.1</version.hadoop>
+        <version.hadoop>3.0.0-cdh6.2.0</version.hadoop>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
-        <version.infinispan>9.4.14.Final</version.infinispan>
+        <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
@@ -69,7 +70,7 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.9.1</version.jjwt>
-        <version.junit>4.12</version.junit>
+        <version.junit>4.13.1</version.junit>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j>1.2.16</version.log4j>
@@ -87,7 +88,7 @@
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
         <version.microservice.type-utils>1.7</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
-        <version.mysql-connector>8.0.15</version.mysql-connector>
+        <version.mysql-connector>8.0.16</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
@@ -106,8 +107,10 @@
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
+        <version.woodstox-core>5.0.3</version.woodstox-core>
+        <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.0.SP02</version.xerces>
-        <version.zookeeper>3.4.5-cdh5.9.1</version.zookeeper>
+        <version.zookeeper>3.4.5-cdh6.3.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
     </properties>
@@ -152,6 +155,11 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-jaxb-annotations</artifactId>
                 <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${version.woodstox-core}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -507,6 +515,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>${version.commons-configuration2}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -876,6 +889,12 @@
                 <artifactId>picketbox-infinispan</artifactId>
                 <version>${version.picketbox}</version>
                 <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>dom4j</groupId>
+                        <artifactId>dom4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
@@ -1093,6 +1112,24 @@
                                 <goal>sort</goal>
                             </goals>
                             <phase>process-sources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>3.1.11</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>High</threshold>
+                        <xmlOutput>true</xmlOutput>
+                        <excludeFilterFile>${datawave.root}/spotbugs-exclude.xml</excludeFilterFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -1801,6 +1838,17 @@
                     <plugin>
                         <groupId>org.eclipse.m2e</groupId>
                         <artifactId>lifecycle-mapping</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>spotbugs</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>

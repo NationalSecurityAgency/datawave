@@ -9,13 +9,8 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
-import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
+import datawave.query.jexl.visitors.*;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
-import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
-import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.RangeDefinition;
@@ -238,8 +233,16 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     newOptions.addScanIterator(newIteratorSetting);
                     
                     if (log.isDebugEnabled()) {
-                        log.debug("VisitorFunction result: " + newSettings.getRanges() + " -> " + newQuery);
+                        log.debug("VisitorFunction result: " + newSettings.getRanges());
                     }
+                    
+                    if (log.isTraceEnabled()) {
+                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script), "VistorFunction::apply method");
+                    } else if (log.isDebugEnabled()) {
+                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
+                                        "VistorFunction::apply method");
+                    }
+                    
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
                 }

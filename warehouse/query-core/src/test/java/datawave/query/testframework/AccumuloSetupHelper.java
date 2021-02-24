@@ -62,7 +62,7 @@ public class AccumuloSetupHelper {
     }
     
     /**
-     * Allows loading of test data into Accumuo using multiple file formats.
+     * Allows loading of test data into Accumulo using multiple file formats.
      * 
      * @param types
      *            datatypes for loading
@@ -140,6 +140,11 @@ public class AccumuloSetupHelper {
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
         
+        // TODO: elsewhere?
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_TABLE_NAME);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_HASH_TABLE_NAME);
+        
         return connector;
     }
     
@@ -148,7 +153,9 @@ public class AccumuloSetupHelper {
         
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
         Path tmpPath = new Path(tmpDir.toURI());
-        Path seqFile = new Path(tmpPath, UUID.randomUUID().toString());
+        // To prevent periodic test cases failing, added "---" prefix for UUDID for test cases to support queries with _ANYFIELD_ starting with particular
+        // letters.
+        Path seqFile = new Path(tmpPath, "---" + UUID.randomUUID().toString());
         
         TaskAttemptID id = new TaskAttemptID("testJob", 0, TaskType.MAP, 0, 0);
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, id);

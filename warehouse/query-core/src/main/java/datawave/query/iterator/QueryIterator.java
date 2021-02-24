@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -38,6 +39,7 @@ import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.pipeline.PipelineFactory;
 import datawave.query.iterator.pipeline.PipelineIterator;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
@@ -94,7 +96,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.pool2.PooledObject;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -186,7 +189,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected boolean groupingContextAddedByMe = false;
     
     protected TypeMetadata typeMetadataWithNonIndexed = null;
-    protected TypeMetadata typeMetadata = null;
     
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
@@ -266,6 +268,34 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (env != null) {
             ActiveQueryLog.setConfig(env.getConfig());
         }
+        
+        DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());
+        DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec());
+        
+        pruneIvaratorCacheDirs();
+    }
+    
+    // this method will prune any ivarator cache directories that are not available on this node
+    private void pruneIvaratorCacheDirs() throws IOException {
+        ivaratorCacheDirConfigs.removeIf(this::pruneIvaratorCacheDir);
+    }
+    
+    private boolean pruneIvaratorCacheDir(IvaratorCacheDirConfig config) {
+        boolean fsExists = false;
+        
+        // first, make sure the cache configuration is valid
+        if (config.isValid()) {
+            Path basePath = new Path(config.getBasePathURI());
+            
+            try {
+                FileSystem fs = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                fsExists = fs.mkdirs(basePath) || fs.exists(basePath);
+            } catch (Exception e) {
+                log.debug("Ivarator Cache Dir does not exist: " + basePath);
+            }
+        }
+        
+        return !fsExists;
     }
     
     @Override
@@ -949,9 +979,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // getting an additional source deep copy for this function
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
             if (this.isTermFrequenciesRequired()) {
+                
+                // The TFFunction can only prune non index-only fields
+                Set<String> tfIndexOnlyFields = Sets.intersection(getTermFrequencyFields(), getIndexOnlyFields());
+                
                 Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction;
                 tfFunction = TFFactory.getFunction(getScript(documentSource), getContentExpansionFields(), getTermFrequencyFields(), this.getTypeMetadata(),
-                                super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment));
+                                super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment), tfIndexOnlyFields);
                 
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
@@ -960,7 +994,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             try {
                 IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
-                iteratorBuildingVisitor.setExceededOrEvaluationCache(exceededOrEvaluationCache);
                 Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor, script,
                                 getNonEventFields());
                 
@@ -1501,7 +1534,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected UniqueTransform getUniqueTransform() {
-        if (uniqueTransform == null && getUniqueFields() != null & !getUniqueFields().isEmpty()) {
+        if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
                     uniqueTransform = new UniqueTransform(getUniqueFields());
@@ -1512,7 +1545,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected GroupingTransform getGroupingTransform() {
-        if (groupingTransform == null && getGroupFields() != null & !getGroupFields().isEmpty()) {
+        if (groupingTransform == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
                 if (groupingTransform == null) {
                     groupingTransform = new GroupingTransform(null, getGroupFields(), true);

@@ -46,7 +46,6 @@ import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -315,7 +314,6 @@ public class QueryExecutorBean implements QueryExecutor {
         q.setExpirationDate(now);
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
-        ResultsPage emptyList = new ResultsPage();
         
         for (QueryLogic<?> l : logicList) {
             try {
@@ -670,6 +668,10 @@ public class QueryExecutorBean implements QueryExecutor {
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
                         }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                        }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
                         log.error("Error validating audit parameters", e);
@@ -848,6 +850,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1201,6 +1207,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -2027,6 +2037,11 @@ public class QueryExecutorBean implements QueryExecutor {
                 close(id);
                 closedQueryCache.add(id); // remember that we auto-closed this query
             } else {
+                try {
+                    close(id);
+                } catch (Exception ce) {
+                    log.error(qe, ce);
+                }
                 log.error(qe, e);
                 response.addException(qe.getBottomQueryException());
             }
@@ -2822,12 +2837,15 @@ public class QueryExecutorBean implements QueryExecutor {
                             maxResultsOverride, parameters);
             
             // Fire off an audit prior to updating
-            Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
-            cbAuths.retainAll(methodAuths);
             AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    auditor.audit(duplicate.toMap());
+                    MultivaluedMap<String,String> queryParameters = duplicate.toMap();
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                    }
+                    auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {
                     log.error("Error validating audit parameters", e);
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);

@@ -9,7 +9,6 @@ import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
-import datawave.query.UnindexType;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.index.lookup.IndexStream.StreamContext;
@@ -18,6 +17,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
@@ -115,7 +115,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected IndexStream queryStream;
     protected boolean limitScanners = false;
     protected Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass = CreateUidsIterator.class;
-    protected Class<? extends SortedKeyValueIterator<Key,Value>> createCondensedUidIteratorClass = CondensedUidIterator.class;
     protected Multimap<String,Type<?>> fieldDataTypes;
     
     protected BlockingQueue<Runnable> runnables;
@@ -137,17 +136,13 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     protected boolean collapseUids = false;
     
-    private boolean setCondenseUids = true;
-    
-    private boolean compressUidsInRangeStream = false;
-    
     protected Set<String> indexOnlyFields = Sets.newHashSet();
     
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
         this.scanners = scanners;
         this.metadataHelper = metadataHelper;
-        int maxLookup = (int) Math.max(Math.ceil(config.getNumIndexLookupThreads()), 1);
+        int maxLookup = (int) Math.max(config.getNumIndexLookupThreads(), 1);
         executor = Executors.newFixedThreadPool(maxLookup);
         runnables = new LinkedBlockingDeque<>();
         int executeLookupMin = (int) Math.max(maxLookup / 2, 1);
@@ -243,15 +238,12 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 
                 if (log.isDebugEnabled()) {
                     log.debug("Query returned a stream with a context of " + this.context);
-                    if (queryStream != null) {
-                        for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
-                            log.debug(line);
-                        }
+                    for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
+                        log.debug(line);
                     }
                 }
                 
-                this.itr = queryStream == null ? Collections.<QueryPlan> emptySet().iterator() : filter(
-                                concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), new EmptyPlanPruner());
+                this.itr = filter(concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), new EmptyPlanPruner());
             }
         } finally {
             // shut down the executor as all threads have completed
@@ -454,71 +446,30 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             int stackStart = config.getBaseIteratorPriority();
             
             if (limitScanners) {
+                // Setup the CreateUidsIterator
+                RangeStreamScanner scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
+                                config.getShardsPerDayThreshold());
+                scanSession.setMaxResults(config.getMaxIndexBatchSize());
+                scanSession.setExecutor(streamExecutor);
                 
-                if (setCondenseUids) {
-                    // Setup the CondenseUidsIterator
-                    Class<? extends SortedKeyValueIterator<Key,Value>> iterClazz = createCondensedUidIteratorClass;
-                    
-                    RangeStreamScanner scanSession = scanners.newCondensedRangeScanner(config.getIndexTableName(), config.getAuthorizations(),
-                                    config.getQuery(), config.getShardsPerDayThreshold());
-                    scanSession.setMaxResults(config.getMaxIndexBatchSize());
-                    scanSession.setExecutor(streamExecutor);
-                    
-                    if (log.isTraceEnabled()) {
-                        log.trace("Provided new object " + scanSession.hashCode());
-                    }
-                    SessionOptions options = new SessionOptions();
-                    options.fetchColumnFamily(new Text(fieldName));
-                    options.addScanIterator(makeDataTypeFilter(config, stackStart++));
-                    
-                    final IteratorSetting uidSetting = new IteratorSetting(stackStart++, iterClazz);
-                    // Set condense-specific options
-                    uidSetting.addOption(CondensedUidIterator.SHARDS_TO_EVALUATE, Integer.valueOf(config.getShardsPerDayThreshold()).toString());
-                    uidSetting.addOption(CondensedUidIterator.MAX_IDS, Integer.valueOf(MAX_MEDIAN).toString());
-                    uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.valueOf(compressUidsInRangeStream).toString());
-                    
-                    // Add TLD option, if applicable
-                    if (config.getParseTldUids()) {
-                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(config.getParseTldUids()).toString());
-                    }
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                    uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
-                    
-                    options.addScanIterator(uidSetting);
-                    String queryString = fieldName + "=='" + literal + "'";
-                    options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
-                    
-                    scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
-                    
-                    itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
-                    
-                } else {
-                    // Setup the CreateUidsIterator
-                    
-                    RangeStreamScanner scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                    config.getShardsPerDayThreshold());
-                    scanSession.setMaxResults(config.getMaxIndexBatchSize());
-                    scanSession.setExecutor(streamExecutor);
-                    
-                    if (log.isTraceEnabled()) {
-                        log.trace("Provided new object " + scanSession.hashCode());
-                    }
-                    SessionOptions options = new SessionOptions();
-                    options.fetchColumnFamily(new Text(fieldName));
-                    options.addScanIterator(makeDataTypeFilter(config, stackStart++));
-                    
-                    final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
-                    uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
-                    options.addScanIterator(uidSetting);
-                    
-                    String queryString = fieldName + "=='" + literal + "'";
-                    options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
-                    
-                    scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
-                    
-                    itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
+                if (log.isTraceEnabled()) {
+                    log.trace("Provided new object " + scanSession.hashCode());
                 }
+                SessionOptions options = new SessionOptions();
+                options.fetchColumnFamily(new Text(fieldName));
+                options.addScanIterator(makeDataTypeFilter(config, stackStart++));
+                
+                final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(collapseUids).toString());
+                uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
+                options.addScanIterator(uidSetting);
+                
+                String queryString = fieldName + "=='" + literal + "'";
+                options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
+                
+                scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
+                
+                itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
                 
             } else {
                 
@@ -644,17 +595,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return false;
     }
     
-    private boolean isWithinBoundedRange(JexlNode node) {
-        if (node.jjtGetParent() instanceof ASTAndNode) {
-            List<JexlNode> otherNodes = new ArrayList<>();
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) (node.jjtGetParent()), otherNodes, false);
-            if (ranges.size() == 1 && otherNodes.isEmpty()) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     @Override
     public Object visit(ASTLTNode node, Object data) {
         if (isUnOrNotFielded(node)) {
@@ -663,10 +603,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         
         if (isUnindexed(node)) {
             return ScannerStream.unindexed(node);
-        }
-        
-        if (isWithinBoundedRange(node)) {
-            return ScannerStream.noData(node);
         }
         
         return ScannerStream.delayedExpression(node);
@@ -682,10 +618,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
         
-        if (isWithinBoundedRange(node)) {
-            return ScannerStream.noData(node);
-        }
-        
         return ScannerStream.delayedExpression(node);
     }
     
@@ -699,10 +631,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
         
-        if (isWithinBoundedRange(node)) {
-            return ScannerStream.noData(node);
-        }
-        
         return ScannerStream.delayedExpression(node);
     }
     
@@ -714,10 +642,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         
         if (isUnindexed(node)) {
             return ScannerStream.unindexed(node);
-        }
-        
-        if (isWithinBoundedRange(node)) {
-            return ScannerStream.noData(node);
         }
         
         return ScannerStream.delayedExpression(node);
@@ -762,12 +686,9 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             
             // create a list of tuples for each shard
             if (log.isDebugEnabled()) {
-                Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRanges(node, config.getDatatypeFilter(), metadataHelper, null, true);
-                if (!ranges.isEmpty()) {
-                    for (LiteralRange<?> range : ranges.keySet()) {
-                        log.debug("{\"" + range.getFieldName() + "\": \"" + range.getLower() + " - " + range.getUpper()
-                                        + "\"} requires a full field index scan.");
-                    }
+                LiteralRange range = JexlASTHelper.findRange().indexedOnly(config.getDatatypeFilter(), metadataHelper).getRange(node);
+                if (range != null) {
+                    log.debug("{\"" + range.getFieldName() + "\": \"" + range.getLower() + " - " + range.getUpper() + "\"} requires a full field index scan.");
                 } else {
                     log.debug("{\"" + JexlASTHelper.getLiterals(node) + "\"} requires a full field index scan.");
                 }
@@ -776,6 +697,9 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         } else if (ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             return ScannerStream.ignored(node);
         } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
+            return ScannerStream.ignored(node);
+        } else if (BoundedRange.instanceOf(node)) {
+            // here we must have a bounded range that was not expanded, so it must not be expandable via the index
             return ScannerStream.ignored(node);
         } else {
             return descend(node, data);
@@ -819,17 +743,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     public static boolean isIndexed(String field, Multimap<String,Type<?>> ctx) {
         Collection<Type<?>> norms = ctx.get(field);
-        boolean isIndexed = !norms.isEmpty();
-        if (isIndexed) {
-            // if the dataTypes contain the UnindexedFieldNoOpType, then this is an unindexed field
-            for (Type<?> norm : norms) {
-                if (norm instanceof UnindexType) {
-                    isIndexed = false;
-                    break;
-                }
-            }
-        }
-        return isIndexed;
+        
+        return !norms.isEmpty();
     }
     
     public static boolean isIndexed(String field, Set<String> ctx) {
@@ -926,10 +841,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return this;
     }
     
-    public void setCreateCondensedUidIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> createCondensedUidIteratorClass) {
-        this.createCondensedUidIteratorClass = createCondensedUidIteratorClass;
-    }
-    
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
         return createUidsIteratorClass;
     }
@@ -988,13 +899,5 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public void close() {
         streamExecutor.shutdownNow();
         executor.shutdownNow();
-    }
-    
-    public void setCondenseUids(boolean setCondenseUids) {
-        this.setCondenseUids = setCondenseUids;
-    }
-    
-    public void setCompressUids(boolean compressUidsInRangeStream) {
-        this.compressUidsInRangeStream = compressUidsInRangeStream;
     }
 }

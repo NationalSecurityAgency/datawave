@@ -86,7 +86,6 @@ public class LookupUUIDTune implements Profile {
         if (planner instanceof DefaultQueryPlanner) {
             DefaultQueryPlanner dqp = DefaultQueryPlanner.class.cast(planner);
             dqp.setCacheDataTypes(enableCaching);
-            dqp.setCondenseUidsInRangeStream(false);
             
             if (transforms != null) {
                 dqp.setTransformRules(transforms);
@@ -97,7 +96,6 @@ public class LookupUUIDTune implements Profile {
                 dqp.setDisableBoundedLookup(true);
                 dqp.setDisableCompositeFields(true);
                 dqp.setDisableExpandIndexFunction(true);
-                dqp.setDisableRangeCoalescing(true);
                 dqp.setDisableTestNonExistentFields(true);
                 if (reduceResponse)
                     try {

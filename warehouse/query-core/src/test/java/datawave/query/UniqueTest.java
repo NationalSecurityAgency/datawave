@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.query.exceptions.InvalidQueryException;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
@@ -19,6 +20,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -231,6 +233,12 @@ public abstract class UniqueTest {
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "death_date,birth_date");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
     
     @Test
@@ -247,6 +255,12 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
         
         queryString = "UUID =~ '^[CS].*' && f:unique('DEATH_DATE','$BIRTH_DATE')";
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID =~ '^[CS].*' && f:unique('death_date','$birth_date')";
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -272,6 +286,57 @@ public abstract class UniqueTest {
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID:/^[CS].*/ AND #UNIQUE(death_date,birth_date)";
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
     
+    @Test(expected = InvalidQueryException.class)
+    public void testUniquenessWithBadField() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(FOO_BAR,$MAGIC)";
+        runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID:/^[CS].*/ AND #UNIQUE(foo_bar,$magic)";
+        runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testUniquenessWithHitTermField() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(HIT_TERM)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testUniquenessWithModelAliases() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(BOTH_NULL)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
 }
