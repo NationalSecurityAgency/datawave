@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 public class ActiveQueryLogTest {
     
@@ -95,27 +94,31 @@ public class ActiveQueryLogTest {
         }
     }
     
+    // Verify the default instance is returned for a null name.
     @Test
-    public void getInstance_givenNullName_returnDefaultInstance() {
+    public void testGetInstanceWithNullName() {
         ActiveQueryLog namedInstance = ActiveQueryLog.getInstance(null);
         assertSame(namedInstance, ActiveQueryLog.getInstance());
     }
     
+    // Verify the default instance is returned for a blank name.
     @Test
-    public void getInstance_givenBlankName_returnDefaultInstance() {
+    public void testGetInstanceWithBlankName() {
         ActiveQueryLog namedInstance = ActiveQueryLog.getInstance(" ");
         assertSame(namedInstance, ActiveQueryLog.getInstance());
     }
     
+    // Verify a new instance is returned for a new name.
     @Test
-    public void getInstance_givenNewName_returnNewInstance() {
+    public void testGetInstanceWithNewName() {
         ActiveQueryLog namedInstance = ActiveQueryLog.getInstance("name");
         assertNotNull(namedInstance);
         assertNotSame(namedInstance, ActiveQueryLog.getInstance());
     }
     
+    // Verify the associated existing instance is returned for an existing name.
     @Test
-    public void getInstance_givenExistingName_returnExistingInstance() {
+    public void testGetInstanceWithExistingName() {
         ActiveQueryLog firstInstance = ActiveQueryLog.getInstance("test");
         ActiveQueryLog secondInstance = ActiveQueryLog.getInstance("test");
         assertSame(firstInstance, secondInstance);
