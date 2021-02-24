@@ -55,7 +55,7 @@ public class ActiveQueryLog {
                 ActiveQueryLog.conf = conf;
             }
             // Do not allow access to the cache while updating each log's settings.
-            synchronized (logCacheLock) {
+            synchronized (ActiveQueryLog.logCacheLock) {
                 if (logCache != null) {
                     ConcurrentMap<String,ActiveQueryLog> logMap = logCache.asMap();
                     logMap.values().forEach(log -> log.checkSettings(conf, false));
@@ -91,21 +91,21 @@ public class ActiveQueryLog {
         }
         
         // Initialize the log cache if necessary.
-        if (logCache == null) {
+        if (ActiveQueryLog.logCache == null) {
             synchronized (ActiveQueryLog.class) {
-                if (logCache == null) {
-                    logCache = Caffeine.newBuilder().build();
+                if (ActiveQueryLog.logCache == null) {
+                    ActiveQueryLog.logCache = Caffeine.newBuilder().build();
                 }
             }
         }
         
         // If no log currently exists for the name, create one.
         ActiveQueryLog log;
-        synchronized (logCacheLock) {
-            log = logCache.getIfPresent(name);
+        synchronized (ActiveQueryLog.logCacheLock) {
+            log = ActiveQueryLog.logCache.getIfPresent(name);
             if (log == null) {
                 log = new ActiveQueryLog(conf, name);
-                logCache.put(name, log);
+                ActiveQueryLog.logCache.put(name, log);
             }
         }
         
