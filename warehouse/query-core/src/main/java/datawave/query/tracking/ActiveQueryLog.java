@@ -92,7 +92,7 @@ public class ActiveQueryLog {
         
         // Initialize the log cache if necessary.
         if (ActiveQueryLog.logCache == null) {
-            synchronized (ActiveQueryLog.class) {
+            synchronized (ActiveQueryLog.logCacheLock) {
                 if (ActiveQueryLog.logCache == null) {
                     ActiveQueryLog.logCache = Caffeine.newBuilder().build();
                 }
