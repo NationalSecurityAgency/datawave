@@ -20,7 +20,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import org.apache.accumulo.core.client.SampleNotPresentException;
-import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
@@ -199,7 +198,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                             mapping = new CustomColumnToClassMapping(priority, clazz);
                             myCombiner = mapping.getObject(CustomColumnToClassMapping.ALL_CF_KEY);
                             options.put("all", "true");
-                            myCombiner.init(null, options, new BaseIteratorEnvironment());
+                            myCombiner.init(null, options, new CustomColumnToClassMapping.StubbedIteratorEnvironment());
                         }
                         
                         list.add(mapping);
@@ -432,52 +431,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     
                     agg = clazz.newInstance();
                     // init with a stubbed-out class so that an upcoming call to env.getConfig in Combiner will not throw a NPE
-                    agg.init(null, clazzOptions.getKey(), new IteratorEnvironment() {
-                        @Override
-                        public AccumuloConfiguration getConfig() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
-                            return null;
-                        }
-                        
-                        @Override
-                        public IteratorUtil.IteratorScope getIteratorScope() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public boolean isFullMajorCompaction() {
-                            return false;
-                        }
-                        
-                        @Override
-                        public Authorizations getAuthorizations() {
-                            throw new UnsupportedOperationException();
-                        }
-                        
-                        @Override
-                        public IteratorEnvironment cloneWithSamplingEnabled() {
-                            throw new SampleNotPresentException();
-                        }
-                        
-                        @Override
-                        public boolean isSamplingEnabled() {
-                            return false;
-                        }
-                        
-                        @Override
-                        public SamplerConfiguration getSamplerConfiguration() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-                            
-                        }
-                    });
+                    agg.init(null, clazzOptions.getKey(), new StubbedIteratorEnvironment());
                     
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException e) {
                     throw new RuntimeException(e);
@@ -518,6 +472,53 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         @Override
         public int compareTo(CustomColumnToClassMapping o) {
             return priority.compareTo(o.priority);
+        }
+        
+        private static class StubbedIteratorEnvironment implements IteratorEnvironment {
+            @Override
+            public AccumuloConfiguration getConfig() {
+                return null;
+            }
+            
+            @Override
+            public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
+                return null;
+            }
+            
+            @Override
+            public IteratorUtil.IteratorScope getIteratorScope() {
+                return null;
+            }
+            
+            @Override
+            public boolean isFullMajorCompaction() {
+                return false;
+            }
+            
+            @Override
+            public Authorizations getAuthorizations() {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public IteratorEnvironment cloneWithSamplingEnabled() {
+                throw new SampleNotPresentException();
+            }
+            
+            @Override
+            public boolean isSamplingEnabled() {
+                return false;
+            }
+            
+            @Override
+            public SamplerConfiguration getSamplerConfiguration() {
+                return null;
+            }
+            
+            @Override
+            public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
+                
+            }
         }
     }
 }
