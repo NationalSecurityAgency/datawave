@@ -27,6 +27,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
@@ -42,7 +43,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-enabled", "send-notifications", "use-localqueues"})
+@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-enabled", "send-notifications", "use-rabbitmq"})
 @EnableRabbit
 public class QueryStorageCacheTest {
     private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);
@@ -57,42 +58,42 @@ public class QueryStorageCacheTest {
     @Autowired
     private QueryQueueManager queueManager;
     
-    private LocalQueryQueueManager.LocalQueueListener messageConsumer;
+    private QueryQueueListener messageConsumer;
     
     private static final String LISTENER_ID = "QueryStorageCacheTestListener";
     
     @Before
-    public void before() {
+    public void before() throws IOException {
         // ensure our pool is created so we can start listening to it
         queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
-        messageConsumer = ((LocalQueryQueueManager) queueManager).createListener(LISTENER_ID);
+        messageConsumer = queueManager.createListener(LISTENER_ID);
         queueManager.addQueueToListener(LISTENER_ID, TEST_POOL);
         cleanupData();
     }
     
     @After
-    public void cleanup() {
+    public void cleanup() throws IOException {
         messageConsumer.stop();
         cleanupData();
     }
     
-    public void cleanupData() {
+    public void cleanupData() throws IOException {
         storageService.clear();
         clearQueue();
     }
     
-    void clearQueue() {
-        QueryTaskNotification task;
-        task = messageConsumer.receive();
+    void clearQueue() throws IOException {
+        Object task;
+        task = messageConsumer.receiveTaskNotification();
         do {
-            task = messageConsumer.receive(0L);
+            task = messageConsumer.receiveTaskNotification(0L);
         } while (task != null);
     }
     
     @Test
-    public void testStoreQuery() throws ParseException, InterruptedException {
+    public void testStoreQuery() throws ParseException, InterruptedException, IOException {
         // ensure the message queue is empty
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
@@ -103,12 +104,12 @@ public class QueryStorageCacheTest {
         assertNotNull(key);
         
         // ensure we got a task notification
-        QueryTaskNotification notification = messageConsumer.receive();
+        QueryTaskNotification notification = messageConsumer.receiveTaskNotification();
         assertNotNull(notification);
         assertEquals(key, notification.getTaskKey());
         
         // ensure the message queue is empty again
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         QueryTask task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, task);
@@ -140,9 +141,9 @@ public class QueryStorageCacheTest {
     }
     
     @Test
-    public void testStoreTask() throws ParseException, InterruptedException {
+    public void testStoreTask() throws ParseException, InterruptedException, IOException {
         // ensure the message queue is empty
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -157,21 +158,21 @@ public class QueryStorageCacheTest {
         assertEquals(checkpoint.getQueryKey(), key);
         
         // ensure we got a task notification
-        QueryTaskNotification notification = messageConsumer.receive();
+        QueryTaskNotification notification = messageConsumer.receiveTaskNotification();
         assertNotNull(notification);
         assertEquals(key, notification.getTaskKey());
         
         // ensure the message queue is empty again
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         task = storageService.getTask(key);
         assertQueryTask(key, QueryTask.QUERY_ACTION.NEXT, query, task);
     }
     
     @Test
-    public void testCheckpointTask() throws InterruptedException, ParseException {
+    public void testCheckpointTask() throws InterruptedException, ParseException, IOException {
         // ensure the message queue is empty
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -201,9 +202,9 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = messageConsumer.receive();
+        QueryTaskNotification notification = messageConsumer.receiveTaskNotification();
         assertNotNull(notification);
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         // now update the task
         Map<String,Object> props = new HashMap<>();
@@ -212,16 +213,16 @@ public class QueryStorageCacheTest {
         storageService.checkpointTask(notification.getTaskKey(), checkpoint);
         
         // ensure we did not get another task notification
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         QueryTask task = storageService.getTask(notification.getTaskKey());
         assertEquals(checkpoint, task.getQueryCheckpoint());
     }
     
     @Test
-    public void testGetAndDeleteTask() throws ParseException, InterruptedException {
+    public void testGetAndDeleteTask() throws ParseException, InterruptedException, IOException {
         // ensure the message queue is empty
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -235,9 +236,9 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = messageConsumer.receive();
+        QueryTaskNotification notification = messageConsumer.receiveTaskNotification();
         assertNotNull(notification);
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         // ensure we can get a task
         QueryTask task = storageService.getTask(notification.getTaskKey());
@@ -247,7 +248,7 @@ public class QueryStorageCacheTest {
         storageService.deleteTask(notification.getTaskKey());
         
         // ensure we did not get another task notification
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         // ensure there is no more task stored
         task = storageService.getTask(notification.getTaskKey());
@@ -255,9 +256,9 @@ public class QueryStorageCacheTest {
     }
     
     @Test
-    public void testGetAndDeleteQueryTasks() throws ParseException, InterruptedException {
+    public void testGetAndDeleteQueryTasks() throws ParseException, InterruptedException, IOException {
         // ensure the message queue is empty
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -271,9 +272,9 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = messageConsumer.receive();
+        QueryTaskNotification notification = messageConsumer.receiveTaskNotification();
         assertNotNull(notification);
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         // not get the query tasks
         List<QueryTask> tasks = storageService.getTasks(queryId);
@@ -285,7 +286,7 @@ public class QueryStorageCacheTest {
         storageService.deleteQuery(queryId);
         
         // ensure we did not get another task notification
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         // make sure it deleted
         tasks = storageService.getTasks(queryId);
@@ -293,9 +294,9 @@ public class QueryStorageCacheTest {
     }
     
     @Test
-    public void testGetAndDeleteTypeTasks() throws ParseException, InterruptedException {
+    public void testGetAndDeleteTypeTasks() throws ParseException, InterruptedException, IOException {
         // ensure the message queue is empty
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
@@ -309,9 +310,9 @@ public class QueryStorageCacheTest {
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
-        QueryTaskNotification notification = messageConsumer.receive();
+        QueryTaskNotification notification = messageConsumer.receiveTaskNotification();
         assertNotNull(notification);
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         // not get the query tasks
         List<QueryTask> tasks = storageService.getTasks(queryPool);
@@ -323,7 +324,7 @@ public class QueryStorageCacheTest {
         storageService.deleteQueryPool(queryPool);
         
         // ensure we did not get another task notification
-        assertNull(messageConsumer.receive(0));
+        assertNull(messageConsumer.receiveTaskNotification(0));
         
         // make sure it deleted
         tasks = storageService.getTasks(queryPool);

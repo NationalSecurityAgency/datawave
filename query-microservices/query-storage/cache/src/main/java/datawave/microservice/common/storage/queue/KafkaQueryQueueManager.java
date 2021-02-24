@@ -1,6 +1,7 @@
 package datawave.microservice.common.storage.queue;
 
 import datawave.microservice.common.storage.QueryPool;
+import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
@@ -56,7 +57,32 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         
         // TODO: rabbitTemplate.convertAndSend(exchangeName, taskNotification.getTaskKey().toKey(), taskNotification);
     }
-    
+
+    /**
+     * Ensure a queue is created for a query results queue.  This will create an exchange, a queue, and a binding between them
+     * for the results queue.
+     *
+     * @param queryId the query ID
+     */
+    @Override
+    public void ensureQueueCreated(UUID queryId) {
+        // TODO
+    }
+
+    /**
+     * This will send a result message.  This will call ensureQueueCreated before sending the message.
+     * <p>
+     * TODO Should the result be more strongly typed?
+     *
+     * @param queryId  the query ID
+     * @param resultId a unique id for the result
+     * @param result
+     */
+    @Override
+    public void sendMessage(UUID queryId, String resultId, Object result) {
+        // TODO
+    }
+
     /**
      * Add a queue to a listener
      *
@@ -155,7 +181,18 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         // TODO return ((AbstractMessageListenerContainer) this.rabbitListenerEndpointRegistry.getListenerContainer(listenerId));
         return null;
     }
-    
+
+    /**
+     * Create a listener for a specified listener id
+     *
+     * @param listenerId The listener id
+     * @return a query queue listener
+     */
+    @Override
+    public QueryQueueListener createListener(String listenerId) {
+        return null;
+    }
+
     /**
      * Ensure a queue is created for a given pool
      *
