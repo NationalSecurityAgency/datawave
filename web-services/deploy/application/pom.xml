@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>3.1.7-SNAPSHOT</version>
+        <version>3.1.10-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
@@ -339,6 +339,92 @@
             on when the dist profile is active). We also pull in web-service-docs:war as a dependency and include it in
             the generated ear.
         -->
+        <profile>
+            <id>docker</id>
+            <activation>
+                <property>
+                    <name>docker-release</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>1.1.1</version>
+                        <configuration>
+                            <imageName>${docker.image.prefix}datawave/webservice-${build.env}</imageName>
+                            <forceTags>true</forceTags>
+                            <imageTags>
+                                <imageTag>latest</imageTag>
+                                <imageTag>${project.version}</imageTag>
+                            </imageTags>
+                            <dockerDirectory>${project.build.directory}/wildfly</dockerDirectory>
+                            <resources>
+                                <resource>
+                                    <targetPath>/</targetPath>
+                                    <directory>${project.build.directory}</directory>
+                                    <include>${project.build.finalName}-${build.env}.ear</include>
+                                </resource>
+                            </resources>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>tag-image</id>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-mysql-jar</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/wildfly/mysql</outputDirectory>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>mysql</groupId>
+                                            <artifactId>mysql-connector-java</artifactId>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-dockerfile</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/wildfly</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/docker</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>dist</id>
             <activation>
