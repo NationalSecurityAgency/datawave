@@ -60,6 +60,7 @@ public class EventFieldAggregator extends IdentityAggregator {
         for (int i = 0; i < cf.length(); i++) {
             if (cf.byteAt(i) == '\u0000') {
                 dataTypeEnd = i;
+                break;
             }
         }
         
@@ -111,8 +112,8 @@ public class EventFieldAggregator extends IdentityAggregator {
     private Set<String> getNormalizedValues(String dataType, String fieldName, String fieldValue) {
         Set<String> normalizedValues = new HashSet<>();
         
-        // fetch all Types for the field/dataType combination
-        Collection<String> typeClasses = typeMetadata.getTypeMetadata(fieldName, dataType);
+        // fetch all Types for the field/dataType combination, make a modifiable copy
+        Collection<String> typeClasses = new HashSet<>(typeMetadata.getTypeMetadata(fieldName, dataType));
         
         // if its not found add the default
         if (typeClasses.size() == 0) {
