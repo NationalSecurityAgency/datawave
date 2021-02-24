@@ -198,7 +198,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                             mapping = new CustomColumnToClassMapping(priority, clazz);
                             myCombiner = mapping.getObject(CustomColumnToClassMapping.ALL_CF_KEY);
                             options.put("all", "true");
-                            myCombiner.init(null, options, null);
+                            myCombiner.init(null, options, new IteratorEnvironment() {});
                         }
                         
                         list.add(mapping);
