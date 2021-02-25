@@ -1,25 +1,29 @@
 package datawave.ingest.table.aggregator;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
  * list of UIDs for events will be maintained in the global index for low cardinality terms.
- * 
- * 
- * 
  */
 public class GlobalIndexUidAggregator extends PropogatingCombiner {
-    private static final Logger log = Logger.getLogger(GlobalIndexUidAggregator.class);
+    private static final Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
+    private static final String MAX_UIDS_OPT = "maxuids";
     private Uid.List.Builder builder = Uid.List.newBuilder();
     
     /**
@@ -27,14 +31,6 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      * UID.
      */
     private HashSet<String> uids = new HashSet<>();
-    
-    public GlobalIndexUidAggregator(int max) {
-        this.maxUids = max;
-    }
-    
-    public GlobalIndexUidAggregator() {
-        this.maxUids = MAX;
-    }
     
     /**
      * List of UIDs to remove.
@@ -76,6 +72,14 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      */
     protected HashSet<String> tempSet;
     
+    public GlobalIndexUidAggregator(int max) {
+        this.maxUids = max;
+    }
+    
+    public GlobalIndexUidAggregator() {
+        this.maxUids = MAX;
+    }
+    
     public Value aggregate() {
         
         // as a backup, we remove the intersection of the UID sets
@@ -99,16 +103,14 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             uids.removeAll(quarantinedIds);
             
             if (!releasedUids.isEmpty()) {
-                if (log.isDebugEnabled())
-                    log.debug("Adding released UIDS");
+                log.debug("Adding released UIDS");
                 uids.addAll(releasedUids);
             }
             
             builder.addAllUID(uids);
         }
         
-        if (log.isDebugEnabled())
-            log.debug("Propogating: " + propogate);
+        log.debug("Propogating: {}", propogate);
         
         // clear all removals
         builder.clearREMOVEDUID();
@@ -118,8 +120,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             builder.addAllREMOVEDUID(uidsToRemove);
             builder.addAllQUARANTINEUID(quarantinedIds);
         }
-        if (log.isDebugEnabled())
-            log.debug("Building aggregate. Count is " + count + ", uids.size() is " + uids.size() + ". builder size is " + builder.getUIDList().size());
+        log.debug("Building aggregate. Count is {}, uids.size() is {}. builder size is {}", count, uids.size(), builder.getUIDList().size());
         return new Value(builder.build().toByteArray());
         
     }
@@ -138,7 +139,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     @Override
     public Value reduce(Key key, Iterator<Value> iter) {
         if (log.isTraceEnabled())
-            log.trace("has next ? " + iter.hasNext());
+            log.trace("has next ? {}", iter.hasNext());
         while (iter.hasNext()) {
             
             Value value = iter.next();
@@ -155,8 +156,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                  */
                 if (v.getIGNORE()) {
                     seenIgnore = true;
-                    if (log.isDebugEnabled())
-                        log.debug("SeenIgnore is true. Skipping collections");
+                    log.debug("SeenIgnore is true. Skipping collections");
                 }
                 
                 // if delta > 0, we are collecting the uid list
@@ -183,8 +183,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                         
                     }
                     
-                    if (log.isDebugEnabled())
-                        log.debug("Adding uids " + delta + " " + count);
+                    log.debug("Adding uids {} {}", delta, count);
                     
                     // if our delta is < 0, then we can remove, iff seenIgnore is false. If it is true, there is no need to proceed with removals
                 } else if (delta < 0 && !seenIgnore) {
@@ -229,8 +228,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     }
     
     public void reset() {
-        if (log.isDebugEnabled())
-            log.debug("Resetting GlobalIndexUidAggregator");
+        log.debug("Resetting GlobalIndexUidAggregator");
         count = 0;
         seenIgnore = false;
         builder = Uid.List.newBuilder();
@@ -258,7 +256,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         uidsCopy.removeAll(uidsToRemove);
         
         if (log.isDebugEnabled()) {
-            log.debug(count + " " + uids.size() + " " + uidsToRemove.size() + " " + uidsCopy.size() + " removing " + (count == 0 && uidsCopy.isEmpty()));
+            log.debug("{} {} {} {} removing {}", count, uids.size(), uidsToRemove.size(), uidsCopy.size(), (count == 0 && uidsCopy.isEmpty()));
         }
         
         // if <= 0 and uids is empty, we can safely remove
@@ -268,4 +266,44 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             return true;
     }
     
+    @Override
+    public IteratorOptions describeOptions() {
+        IteratorOptions io = super.describeOptions();
+        io.addNamedOption(MAX_UIDS_OPT, "The maximum number of UIDs to keep in the list. Default is " + MAX + ".");
+        return io;
+    }
+    
+    @Override
+    public boolean validateOptions(Map<String,String> options) {
+        boolean valid = super.validateOptions(options);
+        if (valid) {
+            if (options.containsKey(MAX_UIDS_OPT)) {
+                maxUids = Integer.parseInt(options.get(MAX_UIDS_OPT));
+                if (maxUids <= 0) {
+                    throw new IllegalArgumentException("Max UIDs must be greater than 0.");
+                }
+            }
+        }
+        return valid;
+    }
+    
+    @Override
+    public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
+        GlobalIndexUidAggregator copy = (GlobalIndexUidAggregator) super.deepCopy(env);
+        copy.maxUids = maxUids;
+        // Not copying other fields that are all cleared in the reset() method.
+        return copy;
+    }
+    
+    @Override
+    public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
+        super.init(source, options, env);
+        if (options.containsKey(MAX_UIDS_OPT)) {
+            maxUids = Integer.parseInt(options.get(MAX_UIDS_OPT));
+        }
+    }
+    
+    public static void setMaxUidsOpt(IteratorSetting is, int maxUids) {
+        is.addOption(MAX_UIDS_OPT, Integer.toString(maxUids));
+    }
 }
