@@ -55,8 +55,8 @@ public class ActiveQueryLog {
                 ActiveQueryLog.conf = conf;
             }
             // Do not allow access to the cache while updating each log's settings.
-            synchronized (ActiveQueryLog.logCacheLock) {
-                if (logCache != null) {
+            if (logCache != null) {
+                synchronized (ActiveQueryLog.logCacheLock) {
                     ConcurrentMap<String,ActiveQueryLog> logMap = logCache.asMap();
                     logMap.values().forEach(log -> log.checkSettings(conf, false));
                 }
