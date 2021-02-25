@@ -100,15 +100,12 @@ public class ActiveQueryLog {
         }
         
         // If no log currently exists for the name, create one.
-        ActiveQueryLog log = ActiveQueryLog.logCache.getIfPresent(name);
-        if (log == null) {
-            synchronized (ActiveQueryLog.logCacheLock) {
-                // Check again in case log was created for this name in another before lock was obtained.
-                log = ActiveQueryLog.logCache.getIfPresent(name);
-                if (log == null) {
-                    log = new ActiveQueryLog(conf, name);
-                    ActiveQueryLog.logCache.put(name, log);
-                }
+        ActiveQueryLog log;
+        synchronized (ActiveQueryLog.logCacheLock) {
+            log = ActiveQueryLog.logCache.getIfPresent(name);
+            if (log == null) {
+                log = new ActiveQueryLog(conf, name);
+                ActiveQueryLog.logCache.put(name, log);
             }
         }
         
