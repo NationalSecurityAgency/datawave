@@ -11,7 +11,7 @@
     <version>1.0-SNAPSHOT</version>
     <description>DATAWAVE Query Cache</description>
     <properties>
-        <version.kafka>2.6.6</version.kafka>
+        <version.kafka>2.2.14.RELEASE</version.kafka>
         <version.microservice.hazelcast-client>1.5</version.microservice.hazelcast-client>
         <version.microservice.query-storage-api>1.0-SNAPSHOT</version.microservice.query-storage-api>
         <version.microservice.starter>1.6.5</version.microservice.starter>

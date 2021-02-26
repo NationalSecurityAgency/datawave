@@ -1,5 +1,6 @@
 package datawave.microservice.common.storage.queue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import datawave.microservice.common.storage.QueryPool;
@@ -9,15 +10,12 @@ import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
@@ -32,14 +30,13 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static datawave.microservice.common.storage.queue.KafkaQueryQueueManager.TestMessageConsumer.TEST_MESSAGE;
+
 public class KafkaQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
     
     // TODO: inject the values
-    private Map<String,Object> config = ImmutableMap.of("bootstrap.servers", "http://localhost:50523", "group.id", "KafkaQueryQueueManager");
-    
-    @Autowired
-    private KafkaAdmin kafkaAdmin;
+    private Map<String,Object> config = ImmutableMap.of("bootstrap.servers", "http://localhost:9092", "group.id", "KafkaQueryQueueManager");
     
     @Autowired
     private KafkaTemplate kafkaTemplate;
@@ -90,7 +87,11 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName + " for " + taskNotification.getTaskKey().toKey());
         }
-        kafkaTemplate.send(exchangeName, taskNotification.getTaskKey().toKey(), taskNotification);
+        try {
+            kafkaTemplate.send(exchangeName, taskNotification.getTaskKey().toKey(), new ObjectMapper().writeValueAsBytes(taskNotification));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Unable to serialize QueryTaskNotification as json", e);
+        }
     }
     
     /**
@@ -144,7 +145,8 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                     if (log.isInfoEnabled()) {
                         log.debug("Creating topic " + queueName + " with routing pattern " + routingPattern);
                     }
-                    NewTopic topic = TopicBuilder.name(queueName).build();
+                    
+                    // should be created automatically when sending the message
                     
                     if (log.isInfoEnabled()) {
                         log.debug("Sending test message to verify topic " + queueName);
@@ -154,8 +156,10 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                     TestMessageConsumer testMessageConsumer = null;
                     try {
                         testMessageConsumer = new TestMessageConsumer(queueName);
-                        kafkaTemplate.send(queueName, routingKey, KafkaQueryQueueManager.TestMessageConsumer.TEST_MESSAGE);
+                        kafkaTemplate.send(queueName, routingKey, new ObjectMapper().writeValueAsBytes(TEST_MESSAGE));
                         received = testMessageConsumer.receiveTest();
+                    } catch (JsonProcessingException e) {
+                        throw new IllegalStateException("Unable to serialize a string as json?", e);
                     } finally {
                         if (testMessageConsumer != null) {
                             testMessageConsumer.stop();
@@ -174,6 +178,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     public class TestMessageConsumer extends KafkaQueueListener {
         private static final String LISTENER_ID = "KafkaQueryQueueManagerTestListener";
         public static final String TEST_MESSAGE = "TEST_MESSAGE";
+        
         private ConcurrentMessageListenerContainer container;
         private AtomicInteger semaphore = new AtomicInteger(0);
         

@@ -5,6 +5,9 @@ import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParametersImpl;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -23,6 +26,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.messaging.Message;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -81,11 +87,10 @@ public class QueryStorageCacheTest {
     }
     
     void clearQueue() throws IOException {
-        Object task;
-        task = messageConsumer.receiveTaskNotification();
-        do {
-            task = messageConsumer.receiveTaskNotification(0L);
-        } while (task != null);
+        Message<byte[]> msg = messageConsumer.receive();
+        while (msg != null) {
+            msg = messageConsumer.receive(0L);
+        }
     }
     
     @Test
@@ -372,6 +377,16 @@ public class QueryStorageCacheTest {
             SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
             factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
             return factory;
+        }
+        
+        @Bean
+        @Primary
+        public KafkaTemplate kafkaTemplate() {
+            Map<String,Object> config = new HashMap<>();
+            config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "http://localhost:9092");
+            config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+            config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+            return new KafkaTemplate(new DefaultKafkaProducerFactory<>(config));
         }
     }
     
