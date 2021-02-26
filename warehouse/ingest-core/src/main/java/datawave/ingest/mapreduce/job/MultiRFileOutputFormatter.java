@@ -19,6 +19,7 @@ import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
@@ -32,6 +33,7 @@ import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.file.rfile.bcfile.Compression;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -377,7 +379,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected void setTableIdsAndConfigs() throws IOException {
         tableConfigs = new HashMap<>();
         Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
-        try (AccumuloClient client = Accumulo.newClient().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS)).as(conf.get(USERNAME), conf.get(PASSWORD)).build()) {
+        try (AccumuloClient client = Accumulo.newClient().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
+                        .as(conf.get(USERNAME), new PasswordToken(Base64.decodeBase64(conf.get(PASSWORD)))).build()) {
             tableIds = client.tableOperations().tableIdMap();
             Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
             String compressionType = getCompressionType(conf);
