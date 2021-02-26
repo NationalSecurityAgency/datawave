@@ -376,7 +376,9 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             for (Entry<String,String> entry : opts.entrySet()) {
                 String column = entry.getKey();
                 
-                final String className = entry.getValue();
+                final String val = entry.getValue().trim();
+                int spaceIdx = val.indexOf(' ');
+                final String className = spaceIdx < 0 ? val : val.substring(0, spaceIdx);
                 
                 Pair<Text,Text> pcic;
                 if (ALL_CF_STR.equals(column)) {
@@ -391,6 +393,12 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
                     
                     agg = clazz.newInstance();
+                    
+                    if (spaceIdx > 0) {
+                        final String encodedOpts = val.substring(spaceIdx + 1);
+                        Map<String,String> aggOpts = Splitter.on(';').trimResults().withKeyValueSeparator('=').split(encodedOpts);
+                        agg.validateOptions(aggOpts);
+                    }
                     
                 } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                     throw new RuntimeException(e);
