@@ -40,7 +40,7 @@ if [[ COUNT -eq 0 ]]; then
                 if [[ ! -z $FILES_STUCK_LOADING ]]; then
                     for stuckFile in $FILES_STUCK_LOADING; do
                         echo "Resetting ${stuckFile}"
-                        moving_result=`INGEST_HADOOP_HOME/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1`
+                        moving_result=`$INGEST_HADOOP_HOME/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1`
                             if [[ ! -z $moving_result ]]; then
                                 echo "Error resetting file: $moving_result . Manually check for orphans."
                             fi
