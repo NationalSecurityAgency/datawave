@@ -42,7 +42,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-enabled", "send-notifications", "use-rabbitmq"})
+@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-enabled", "send-notifications", "use-localqueue"})
 @EnableRabbit
 public class QueryStorageCacheTest {
     private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);

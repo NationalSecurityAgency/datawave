@@ -6,7 +6,7 @@ import org.springframework.messaging.Message;
 import java.io.IOException;
 
 public interface QueryQueueListener {
-    public static final long WAIT_MS = 100L;
+    long WAIT_MS = 100L;
     
     /**
      * Get the listener id
@@ -48,7 +48,7 @@ public interface QueryQueueListener {
      * 
      * @return the message, or null if none available within WAIT_MS
      */
-    default Message receive() {
+    default Message<byte[]> receive() {
         return receive(WAIT_MS);
     }
     
@@ -58,7 +58,7 @@ public interface QueryQueueListener {
      * @param waitMs
      * @return the message, or null if none available within waitMs
      */
-    Message receive(long waitMs);
+    Message<byte[]> receive(long waitMs);
     
     /**
      * Stop the listener, effectively destroying the listener
