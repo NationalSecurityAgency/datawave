@@ -10,6 +10,7 @@ import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.MetadataHelper;
+import datawave.util.time.DateHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -24,6 +25,7 @@ import org.apache.log4j.Logger;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
@@ -44,23 +46,41 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     @Override
-    public CloseableIterable<QueryData> process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
+    public FederatedQueryDataIterable process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
-        if (config instanceof ShardQueryConfiguration) {
-            List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
-            List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
-            for (ValueIndexHole valueIndexHole : valueIndexHoles) {
-                for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
-                    if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
-                        System.out.println("The field index and value index overlap");
+        
+        FederatedQueryDataIterable returnQueryData = new FederatedQueryDataIterable();
+        Date originalEndDate = config.getEndDate();
+        Date originalStartDate = config.getBeginDate();
 
+        synchronized (config) {
+            if (config instanceof ShardQueryConfiguration) {
+                List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
+                List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
+                synchronized (valueIndexHoles) {
+                    for (ValueIndexHole valueIndexHole : valueIndexHoles) {
+                        synchronized (fieldIndexHoles) {
+                            for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
+                                if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
+                                    config.setBeginDate(DateHelper.parse(valueIndexHole.getStartDate()));
+                                    config.setEndDate(DateHelper.parse(valueIndexHole.getEndDate()));
+                                    CloseableIterable<QueryData> queryData = originalQueryPlanner.process(config, query, settings, scannerFactory);
+                                    returnQueryData.addDelegate(queryData);
+                                    // System.out.println("The field index and value index overlap");
+                                    // Build up the returnQueryData
+                                }
+                            }
+                        }
                     }
                 }
+
             }
-            
         }
         
-        return null;
+        config.setBeginDate(originalStartDate);
+        config.setEndDate(originalEndDate);
+        
+        return returnQueryData;
     }
     
     @Override

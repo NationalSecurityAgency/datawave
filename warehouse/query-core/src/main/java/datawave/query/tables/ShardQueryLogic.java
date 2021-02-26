@@ -448,13 +448,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (federatedQueryPlanner == null)
             federatedQueryPlanner = new FederatedQueryPlanner(getQueryPlanner(), this);
         
-        federatedQueryPlanner.process(config, jexlQueryString, settings, this.getScannerFactory());
+        FederatedQueryDataIterable federatedQueryDataIterable = federatedQueryPlanner.process(config, jexlQueryString, settings, this.getScannerFactory());
         
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
-        if (this.queries != null) {
+        if (federatedQueryDataIterable.iterator().hasNext())
+            config.setQueries(federatedQueryDataIterable.iterator());
+        else if (this.queries != null)
             config.setQueries(this.queries.iterator());
-        }
         
         config.setQueryString(getQueryPlanner().getPlannedScript());
         

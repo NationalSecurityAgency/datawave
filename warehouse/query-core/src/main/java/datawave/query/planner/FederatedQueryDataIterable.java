@@ -9,29 +9,27 @@ import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
 public class FederatedQueryDataIterable implements CloseableIterable<QueryData> {
-
+    
     private LinkedList<CloseableIterable<QueryData>> delegates = new LinkedList<>();
-
+    
     /**
      * Add another delegate to the mix
+     * 
      * @param delegate
      */
     public void addDelegate(CloseableIterable<QueryData> delegate) {
         this.delegates.add(delegate);
     }
-
+    
     /**
-     * Closes this stream and releases any system resources associated
-     * with it. If the stream is already closed then invoking this
-     * method has no effect.
+     * Closes this stream and releases any system resources associated with it. If the stream is already closed then invoking this method has no effect.
      *
-     * <p> As noted in {@link AutoCloseable#close()}, cases where the
-     * close may fail require careful attention. It is strongly advised
-     * to relinquish the underlying resources and to internally
-     * <em>mark</em> the {@code Closeable} as closed, prior to throwing
-     * the {@code IOException}.
+     * <p>
+     * As noted in {@link AutoCloseable#close()}, cases where the close may fail require careful attention. It is strongly advised to relinquish the underlying
+     * resources and to internally <em>mark</em> the {@code Closeable} as closed, prior to throwing the {@code IOException}.
      *
-     * @throws IOException if an I/O error occurs
+     * @throws IOException
+     *             if an I/O error occurs
      */
     @Override
     public void close() throws IOException {
@@ -40,7 +38,7 @@ public class FederatedQueryDataIterable implements CloseableIterable<QueryData> 
         }
         delegates.clear();
     }
-
+    
     /**
      * Returns an iterator over elements of type {@code T}.
      *
@@ -48,17 +46,18 @@ public class FederatedQueryDataIterable implements CloseableIterable<QueryData> 
      */
     @Override
     public Iterator<QueryData> iterator() {
-        return new Iterator<QueryData> () {
-
+        return new Iterator<QueryData>() {
+            
             Iterator<QueryData> current = getNextIterator();
-
+            
             /**
              * A method to get the next iterator that has something to offer
+             * 
              * @return The next query data iterator
              */
             private Iterator<QueryData> getNextIterator() {
                 Iterator<QueryData> next = null;
-                synchronized(delegates) {
+                synchronized (delegates) {
                     while ((next == null || !next.hasNext()) && !delegates.isEmpty()) {
                         next = delegates.removeFirst().iterator();
                     }
@@ -68,11 +67,10 @@ public class FederatedQueryDataIterable implements CloseableIterable<QueryData> 
                 }
                 return next;
             }
-
+            
             /**
-             * Returns {@code true} if the iteration has more elements.
-             * (In other words, returns {@code true} if {@link #next} would
-             * return an element rather than throwing an exception.)
+             * Returns {@code true} if the iteration has more elements. (In other words, returns {@code true} if {@link #next} would return an element rather
+             * than throwing an exception.)
              *
              * @return {@code true} if the iteration has more elements
              */
@@ -80,12 +78,13 @@ public class FederatedQueryDataIterable implements CloseableIterable<QueryData> 
             public boolean hasNext() {
                 return (current != null && current.hasNext());
             }
-
+            
             /**
              * Returns the next element in the iteration.
              *
              * @return the next element in the iteration
-             * @throws NoSuchElementException if the iteration has no more elements
+             * @throws NoSuchElementException
+             *             if the iteration has no more elements
              */
             @Override
             public QueryData next() throws NoSuchElementException {
