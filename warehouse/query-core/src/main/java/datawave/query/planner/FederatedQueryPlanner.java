@@ -1,7 +1,9 @@
 package datawave.query.planner;
 
 import datawave.query.CloseableIterable;
+import datawave.query.config.FieldIndexHole;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ValueIndexHole;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.CountingShardQueryLogic;
@@ -19,7 +21,10 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import java.awt.*;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     
@@ -41,6 +46,20 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
+        if (config instanceof ShardQueryConfiguration) {
+            List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
+            List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
+            for (ValueIndexHole valueIndexHole : valueIndexHoles) {
+                for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
+                    if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
+                        System.out.println("The field index and value index overlap");
+
+                    }
+                }
+            }
+            
+        }
+        
         return null;
     }
     

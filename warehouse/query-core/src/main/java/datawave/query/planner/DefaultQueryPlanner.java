@@ -1719,7 +1719,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @param fieldToDatatypeMap
      * @param config
      */
-    private void calculateFieldIndexHoles(MetadataHelper metadataHelper, Multimap<String,Type<?>> fieldToDatatypeMap, ShardQueryConfiguration config)
+    public void calculateFieldIndexHoles(MetadataHelper metadataHelper, Multimap<String,Type<?>> fieldToDatatypeMap, ShardQueryConfiguration config)
                     throws TableNotFoundException {
         
         IndexedDatesValue indexedDates;
