@@ -7,8 +7,9 @@ import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryTaskNotification;
 import org.apache.log4j.Logger;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessagePropertiesBuilder;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -23,19 +24,23 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class LocalQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
     
-    private Map<String,Queue<Message>> queues = Collections.synchronizedMap(new HashMap<>());
+    public static final String MESSAGE_KEY = "messageKey";
+    public static final String MESSAGE_ID = "messageId";
+    
+    private Map<String,Queue<Message<byte[]>>> queues = Collections.synchronizedMap(new HashMap<>());
     private Map<String,Set<String>> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
     
     /**
      * Create a listener
      * 
      * @param listenerId
+     * @param queueName
      * @return a local queue listener
      */
-    public QueryQueueListener createListener(String listenerId) {
+    public QueryQueueListener createListener(String listenerId, String queueName) {
         LocalQueueListener listener = new LocalQueueListener(listenerId);
         listenerToQueue.put(listener.getListenerId(), Collections.synchronizedSet(new HashSet<>()));
-        listener.start();
+        listenerToQueue.get(listenerId).add(queueName);
         return listener;
     }
     
@@ -63,11 +68,12 @@ public class LocalQueryQueueManager implements QueryQueueManager {
         
         ensureQueueCreated(pool);
         
-        Queue<Message> queue = queues.get(pool.getName());
-        Message message = null;
+        Queue<Message<byte[]>> queue = queues.get(pool.getName());
+        Message<byte[]> message = null;
         try {
-            message = new Message(new ObjectMapper().writeValueAsBytes(taskNotification),
-                            MessagePropertiesBuilder.newInstance().setMessageId(taskNotification.getTaskKey().toKey()).build());
+            MessageHeaderAccessor header = new MessageHeaderAccessor();
+            header.setHeader(MESSAGE_KEY, taskNotification.getTaskKey().toKey());
+            message = MessageBuilder.createMessage(new ObjectMapper().writeValueAsBytes(taskNotification), header.toMessageHeaders());
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Could not serialize a QueryTaskNotification", e);
         }
@@ -102,42 +108,17 @@ public class LocalQueryQueueManager implements QueryQueueManager {
     public void sendMessage(UUID queryId, String resultId, Object result) {
         ensureQueueCreated(queryId);
         
-        Queue<Message> queue = queues.get(queryId.toString());
-        Message message = null;
+        Queue<Message<byte[]>> queue = queues.get(queryId.toString());
+        Message<byte[]> message = null;
         try {
-            message = new Message(new ObjectMapper().writeValueAsBytes(result), MessagePropertiesBuilder.newInstance().setMessageId(resultId).build());
+            MessageHeaderAccessor header = new MessageHeaderAccessor();
+            header.setHeader(MESSAGE_KEY, queryId);
+            header.setHeader(MESSAGE_ID, resultId);
+            message = MessageBuilder.createMessage(new ObjectMapper().writeValueAsBytes(result), header.toMessageHeaders());
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Could not serialize a QueryTaskNotification", e);
         }
         queue.add(message);
-    }
-    
-    /**
-     * Add a queue to a listener
-     *
-     * @param listenerId
-     * @param queueName
-     */
-    @Override
-    public void addQueueToListener(String listenerId, String queueName) {
-        if (log.isDebugEnabled()) {
-            log.debug("adding queue : " + queueName + " to listener with id : " + listenerId);
-        }
-        listenerToQueue.get(listenerId).add(queueName);
-    }
-    
-    /**
-     * Remove a queue from a listener
-     *
-     * @param listenerId
-     * @param queueName
-     */
-    @Override
-    public void removeQueueFromListener(String listenerId, String queueName) {
-        if (log.isInfoEnabled()) {
-            log.info("removing queue : " + queueName + " from listener : " + listenerId);
-        }
-        listenerToQueue.get(listenerId).remove(queueName);
     }
     
     /**
@@ -146,26 +127,19 @@ public class LocalQueryQueueManager implements QueryQueueManager {
     public class LocalQueueListener implements Runnable, QueryQueueListener {
         private static final long WAIT_MS_DEFAULT = 100;
         
-        private Queue<Message> messageQueue = new ArrayBlockingQueue<>(100);
+        private Queue<Message<byte[]>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
-        private Thread thread = null;
+        private Thread thread;
         
         public LocalQueueListener(String listenerId) {
             this.listenerId = listenerId;
-            new Thread(this).start();
+            this.thread = new Thread(this);
+            this.thread.start();
         }
         
         @Override
         public String getListenerId() {
             return listenerId;
-        }
-        
-        @Override
-        public void start() {
-            if (thread == null) {
-                thread = new Thread(this);
-                thread.start();
-            }
         }
         
         @Override
@@ -180,20 +154,25 @@ public class LocalQueryQueueManager implements QueryQueueManager {
                     break;
                 }
             }
+            listenerToQueue.remove(listenerId);
         }
         
         public void run() {
             while (thread != null) {
-                for (String queue : listenerToQueue.get(listenerId)) {
-                    Message message = queues.get(queue).poll();
-                    if (message != null) {
-                        message(message);
+                if (listenerToQueue.containsKey(listenerId)) {
+                    for (String queue : listenerToQueue.get(listenerId)) {
+                        if (queues.containsKey(queue)) {
+                            Message message = queues.get(queue).poll();
+                            if (message != null) {
+                                message(message);
+                            }
+                        }
                     }
                 }
             }
         }
         
-        public void message(Message message) {
+        public void message(Message<byte[]> message) {
             messageQueue.add(message);
         }
         
@@ -204,20 +183,20 @@ public class LocalQueryQueueManager implements QueryQueueManager {
         
         @Override
         public QueryTaskNotification receiveTaskNotification(long waitMs) throws IOException {
-            Message message = receive(waitMs);
+            Message<byte[]> message = receive(waitMs);
             if (message != null) {
-                return new ObjectMapper().readerFor(QueryTaskNotification.class).readValue(message.getBody());
+                return new ObjectMapper().readerFor(QueryTaskNotification.class).readValue(message.getPayload());
             }
             return null;
         }
         
         @Override
-        public Message receive() {
+        public Message<byte[]> receive() {
             return receive(WAIT_MS_DEFAULT);
         }
         
         @Override
-        public Message receive(long waitMs) {
+        public Message<byte[]> receive(long waitMs) {
             long start = System.currentTimeMillis();
             int count = 0;
             while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {

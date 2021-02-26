@@ -11,7 +11,6 @@ import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.apache.log4j.Logger;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -22,10 +21,12 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.RabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
+import org.springframework.amqp.support.AmqpHeaders;
+import org.springframework.amqp.support.converter.MessagingMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -64,11 +65,15 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      *
      * @param listenerId
      *            The listener id
+     * @param queueName
+     *            The queue to listen to
      * @return a query queue listener
      */
     @Override
-    public QueryQueueListener createListener(String listenerId) {
-        return new RabbitQueueListener(listenerId);
+    public QueryQueueListener createListener(String listenerId, String queueName) {
+        QueryQueueListener listener = new RabbitQueueListener(listenerId);
+        addQueueToListener(listenerId, queueName);
+        return listener;
     }
     
     /**
@@ -141,8 +146,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * @param listenerId
      * @param queueName
      */
-    @Override
-    public void addQueueToListener(String listenerId, String queueName) {
+    private void addQueueToListener(String listenerId, String queueName) {
         if (log.isDebugEnabled()) {
             log.debug("adding queue : " + queueName + " to listener with id : " + listenerId);
         }
@@ -170,8 +174,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * @param listenerId
      * @param queueName
      */
-    @Override
-    public void removeQueueFromListener(String listenerId, String queueName) {
+    private void removeQueueFromListener(String listenerId, String queueName) {
         if (log.isInfoEnabled()) {
             log.info("removing queue : " + queueName + " from listener : " + listenerId);
         }
@@ -243,7 +246,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * @param routingKey
      *            A routing key to use for a test message
      */
-    public void ensureQueueCreated(String exchangeQueueName, String routingPattern, String routingKey) {
+    private void ensureQueueCreated(String exchangeQueueName, String routingPattern, String routingKey) {
         if (exchanges.get(exchangeQueueName) == null) {
             synchronized (exchanges) {
                 if (exchanges.get(exchangeQueueName) == null) {
@@ -293,10 +296,10 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         private AtomicInteger semaphore = new AtomicInteger(0);
         
         @RabbitListener(id = LISTENER_ID, autoStartup = "true")
-        public void processMessage(Message message) {
+        public void processMessage(Message<byte[]> message) {
             String body = null;
             try {
-                body = new ObjectMapper().readerFor(String.class).readValue(message.getBody());
+                body = new ObjectMapper().readerFor(String.class).readValue(message.getPayload());
             } catch (Exception e) {
                 // body is not a json string
             }
@@ -305,7 +308,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
                 semaphore.incrementAndGet();
             } else {
                 // requeue, this was not a test message
-                rabbitTemplate.send(message);
+                rabbitTemplate.convertAndSend(message.getHeaders().get(AmqpHeaders.RECEIVED_EXCHANGE).toString(),
+                                message.getHeaders().get(AmqpHeaders.RECEIVED_ROUTING_KEY).toString(), message.getPayload());
             }
         }
         
@@ -339,24 +343,14 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * A listener for local queues
      */
     public class RabbitQueueListener implements QueryQueueListener {
-        private java.util.Queue<Message> messageQueue = new ArrayBlockingQueue<>(100);
+        private java.util.Queue<org.springframework.messaging.Message<byte[]>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private Thread thread = null;
         
         public RabbitQueueListener(String listenerId) {
             this.listenerId = listenerId;
-            start();
-        }
-        
-        @Override
-        public String getListenerId() {
-            return listenerId;
-        }
-        
-        @Override
-        public void start() {
             MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(this, "receiveMessage");
-            listenerAdapter.setMessageConverter(null);
+            listenerAdapter.setMessageConverter(new MessagingMessageConverter());
             SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
             endpoint.setAdmin(rabbitAdmin);
             endpoint.setAutoStartup(true);
@@ -368,6 +362,11 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         }
         
         @Override
+        public String getListenerId() {
+            return listenerId;
+        }
+        
+        @Override
         public void stop() {
             MessageListenerContainer container = rabbitListenerEndpointRegistry.getListenerContainer(getListenerId());
             if (container != null) {
@@ -376,12 +375,12 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             }
         }
         
-        public void receiveMessage(Message message) {
+        public void receiveMessage(Message<byte[]> message) {
             messageQueue.add(message);
         }
         
         @Override
-        public Message receive(long waitMs) {
+        public Message<byte[]> receive(long waitMs) {
             long start = System.currentTimeMillis();
             int count = 0;
             while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {

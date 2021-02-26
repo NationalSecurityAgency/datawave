@@ -1,5 +1,7 @@
 package datawave.microservice.common.storage.queue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
@@ -7,38 +9,79 @@ import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
+import datawave.webservice.query.Query;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.log4j.Logger;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
+import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.MessageListener;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.converter.MessagingMessageConverter;
+import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class KafkaQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
     
-    // A mapping of query pools to routing keys
-    private Map<QueryPool,String> exchanges = new HashMap<>();
+    // TODO: inject the values
+    private Map<String,Object> config = ImmutableMap.of("bootstrap.servers", "http://localhost:50523", "group.id", "KafkaQueryQueueManager");
     
     @Autowired
-    TestMessageConsumer testMessageConsumer;
+    private KafkaAdmin kafkaAdmin;
+    
+    @Autowired
+    private KafkaTemplate kafkaTemplate;
+    
+    // A mapping of queue names to routing keys
+    private Map<String,String> queues = new HashMap<>();
     
     @Autowired
     QueryStorageProperties properties;
+    
+    /**
+     * Create a listener for a specified listener id
+     *
+     * @param listenerId
+     *            The listener id
+     * @return a query queue listener
+     */
+    @Override
+    public QueryQueueListener createListener(String listenerId, String topicId) {
+        QueryQueueListener listener = new KafkaQueryQueueManager.KafkaQueueListener(listenerId, topicId);
+        return listener;
+    }
+    
+    /**
+     * Ensure a queue is created for a pool. This will create an exchange, a queue, and a binding between them for the query pool.
+     *
+     * @param queryPool
+     *            the query poll
+     */
+    @Override
+    public void ensureQueueCreated(QueryPool queryPool) {
+        QueryTaskNotification testMessage = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "NA"),
+                        QueryTask.QUERY_ACTION.TEST);
+        ensureQueueCreated(queryPool.getName(), testMessage.getTaskKey().toRoutingKey(), testMessage.getTaskKey().toKey());
+    }
     
     /**
      * Passes task notifications to the messaging infrastructure.
@@ -54,8 +97,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName + " for " + taskNotification.getTaskKey().toKey());
         }
-        
-        // TODO: rabbitTemplate.convertAndSend(exchangeName, taskNotification.getTaskKey().toKey(), taskNotification);
+        kafkaTemplate.send(exchangeName, taskNotification.getTaskKey().toKey(), taskNotification);
     }
     
     /**
@@ -66,7 +108,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void ensureQueueCreated(UUID queryId) {
-        // TODO
+        ensureQueueCreated(queryId.toString(), queryId.toString(), queryId.toString());
     }
     
     /**
@@ -79,211 +121,227 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      * @param resultId
      *            a unique id for the result
      * @param result
+     *            the result
      */
     @Override
     public void sendMessage(UUID queryId, String resultId, Object result) {
-        // TODO
-    }
-    
-    /**
-     * Add a queue to a listener
-     *
-     * @param listenerId
-     * @param queueName
-     */
-    @Override
-    public void addQueueToListener(String listenerId, String queueName) {
+        ensureQueueCreated(queryId);
+        
+        String exchangeName = queryId.toString();
         if (log.isDebugEnabled()) {
-            log.debug("adding queue : " + queueName + " to listener with id : " + listenerId);
+            log.debug("Publishing message to " + exchangeName);
         }
-        if (!checkQueueExistOnListener(listenerId, queueName)) {
-            AbstractMessageListenerContainer listener = getMessageListenerContainerById(listenerId);
-            if (listener != null) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Found listener for " + listenerId);
-                }
-                listener.addQueueNames(queueName);
-                if (log.isTraceEnabled()) {
-                    log.trace("added queue : " + queueName + " to listener with id : " + listenerId);
-                }
-            }
-        } else {
-            if (log.isTraceEnabled()) {
-                log.trace("given queue name : " + queueName + " already exists on given listener id : " + listenerId);
-            }
-        }
-    }
-    
-    /**
-     * Remove a queue from a listener
-     *
-     * @param listenerId
-     * @param queueName
-     */
-    @Override
-    public void removeQueueFromListener(String listenerId, String queueName) {
-        if (log.isInfoEnabled()) {
-            log.info("removing queue : " + queueName + " from listener : " + listenerId);
-        }
-        if (checkQueueExistOnListener(listenerId, queueName)) {
-            this.getMessageListenerContainerById(listenerId).removeQueueNames(queueName);
-        } else {
-            if (log.isTraceEnabled()) {
-                log.trace("given queue name : " + queueName + " not exist on given listener id : " + listenerId);
-            }
-        }
-    }
-    
-    /**
-     * Check whether a queue exists on a listener
-     *
-     * @param listenerId
-     * @param queueName
-     * @return true if listening, false if not
-     */
-    private boolean checkQueueExistOnListener(String listenerId, String queueName) {
-        try {
-            if (log.isTraceEnabled()) {
-                log.trace("checking queueName : " + queueName + " exist on listener id : " + listenerId);
-            }
-            AbstractMessageListenerContainer container = this.getMessageListenerContainerById(listenerId);
-            String[] queueNames = (container == null ? null : container.getQueueNames());
-            if (queueNames != null) {
-                if (log.isTraceEnabled()) {
-                    log.trace("checking " + queueName + " exist on active queues " + Arrays.toString(queueNames));
-                }
-                for (String name : queueNames) {
-                    if (name.equals(queueName)) {
-                        log.trace("queue name exist on listener, returning true");
-                        return true;
-                    }
-                }
-                log.trace("queue name does not exist on listener, returning false");
-                return false;
-            } else {
-                log.trace("there is no queue exist on listener");
-                return false;
-            }
-        } catch (Exception e) {
-            log.error("Error on checking queue exist on listener", e);
-            return false;
-        }
-    }
-    
-    /**
-     * Get the listener given a listener id
-     *
-     * @param listenerId
-     * @return the listener
-     */
-    private AbstractMessageListenerContainer getMessageListenerContainerById(String listenerId) {
-        if (log.isTraceEnabled()) {
-            log.trace("getting message listener container by id : " + listenerId);
-        }
-        // TODO return ((AbstractMessageListenerContainer) this.rabbitListenerEndpointRegistry.getListenerContainer(listenerId));
-        return null;
-    }
-    
-    /**
-     * Create a listener for a specified listener id
-     *
-     * @param listenerId
-     *            The listener id
-     * @return a query queue listener
-     */
-    @Override
-    public QueryQueueListener createListener(String listenerId) {
-        return null;
+        kafkaTemplate.send(exchangeName, resultId, result);
     }
     
     /**
      * Ensure a queue is created for a given pool
      *
-     * @param queryPool
+     * @param queueName
+     *            The name of the queue
+     * @param routingPattern
+     *            The routing pattern used to bind the exchange to the queue
+     * @param routingKey
+     *            A routing key to use for a test message
      */
-    @Override
-    public void ensureQueueCreated(QueryPool queryPool) {
-        String exchangeQueueName = queryPool.getName();
-        TaskKey taskKey = new TaskKey(null, queryPool, null, null);
-        if (exchanges.get(queryPool) == null) {
-            synchronized (exchanges) {
-                if (exchanges.get(queryPool) == null) {
+    private void ensureQueueCreated(String queueName, String routingPattern, String routingKey) {
+        if (queues.get(queueName) == null) {
+            synchronized (queues) {
+                if (queues.get(queueName) == null) {
                     if (log.isInfoEnabled()) {
-                        log.debug("Creating exchange/queue " + exchangeQueueName + " with routing key " + taskKey.toRoutingKey());
+                        log.debug("Creating topic " + queueName + " with routing pattern " + routingPattern);
                     }
-                    // TopicExchange exchange = new TopicExchange(exchangeQueueName, properties.isSynchStorage(), false);
-                    // Queue queue = new Queue(exchangeQueueName, properties.isSynchStorage(), false, false);
-                    // Binding binding = BindingBuilder.bind(queue).to(exchange).with(taskKey.toRoutingKey());
-                    // // TODO rabbitAdmin.declareExchange(exchange);
-                    // // TODO rabbitAdmin.declareQueue(queue);
-                    // // TODO rabbitAdmin.declareBinding(binding);
-                    //
-                    // if (log.isInfoEnabled()) {
-                    // log.debug("Sending test message to verify exchange/queue " + exchangeQueueName);
-                    // }
-                    // // add our test listener to the queue and wait for a test message
-                    // addQueueToListener(testMessageConsumer.getListenerId(), exchangeQueueName);
-                    //// QueryTaskNotification testNotification = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(),
-                    // "None"),
-                    //// QueryTask.QUERY_ACTION.TEST);
-                    // // TODO rabbitTemplate.convertAndSend(exchangeQueueName, testNotification.getTaskKey().toKey(), testNotification);
-                    // QueryTaskNotification notification = testMessageConsumer.receive();
-                    // removeQueueFromListener(testMessageConsumer.getListenerId(), exchangeQueueName);
-                    // if (notification == null) {
-                    // throw new RuntimeException("Unable to verify that queue and exchange were created for " + exchangeQueueName);
-                    // }
+                    NewTopic topic = TopicBuilder.name(queueName).build();
                     
-                    exchanges.put(queryPool, taskKey.toRoutingKey());
+                    if (log.isInfoEnabled()) {
+                        log.debug("Sending test message to verify topic " + queueName);
+                    }
+                    // add our test listener to the queue and wait for a test message
+                    boolean received = false;
+                    TestMessageConsumer testMessageConsumer = null;
+                    try {
+                        testMessageConsumer = new TestMessageConsumer(queueName);
+                        kafkaTemplate.send(queueName, routingKey, KafkaQueryQueueManager.TestMessageConsumer.TEST_MESSAGE);
+                        received = testMessageConsumer.receiveTest();
+                    } finally {
+                        if (testMessageConsumer != null) {
+                            testMessageConsumer.stop();
+                        }
+                    }
+                    if (!received) {
+                        throw new RuntimeException("Unable to verify that queue and exchange were created for " + queueName);
+                    }
+                    
+                    queues.put(queueName, routingPattern);
                 }
             }
         }
     }
     
-    @Component
-    public static class TestMessageConsumer {
+    public class TestMessageConsumer extends KafkaQueueListener {
         private static final String LISTENER_ID = "KafkaQueryQueueManagerTestListener";
+        public static final String TEST_MESSAGE = "TEST_MESSAGE";
+        private ConcurrentMessageListenerContainer container;
+        private AtomicInteger semaphore = new AtomicInteger(0);
         
         // default wait for 1 minute
         private static final long WAIT_MS_DEFAULT = 60L * 1000L;
         
-        @Autowired
-        private RabbitTemplate rabbitTemplate;
+        public TestMessageConsumer(String topicId) {
+            super(LISTENER_ID, topicId);
+        }
         
-        private java.util.Queue<QueryTaskNotification> notificationQueue = new ArrayBlockingQueue<>(10);
-        
-        @RabbitListener(id = LISTENER_ID, autoStartup = "true")
-        public void processMessage(QueryTaskNotification notification) {
+        @Override
+        public void onMessage(ConsumerRecord<byte[],byte[]> data) {
+            String body = null;
+            try {
+                body = new ObjectMapper().readerFor(String.class).readValue(data.value());
+            } catch (Exception e) {
+                // body is not a json string
+            }
             // determine if this is a test message
-            if (notification.getAction().equals(QueryTask.QUERY_ACTION.TEST)) {
-                notificationQueue.add(notification);
+            if (TEST_MESSAGE.equals(body)) {
+                semaphore.incrementAndGet();
             } else {
                 // requeue, this was not a test message
-                rabbitTemplate.convertAndSend(notification.getTaskKey().getQueryPool().getName(), notification.getTaskKey().toKey(), notification);
+                MessagingMessageConverter converter = new MessagingMessageConverter();
+                Message message = converter.toMessage(data, null, null, byte[].class);
+                kafkaTemplate.send(message);
             }
         }
         
-        public String getListenerId() {
-            return LISTENER_ID;
+        public boolean receiveTest() {
+            return receiveTest(WAIT_MS_DEFAULT);
         }
         
-        public QueryTaskNotification receive() {
-            return receive(WAIT_MS_DEFAULT);
-        }
-        
-        public QueryTaskNotification receive(long waitMs) {
+        public boolean receiveTest(long waitMs) {
             long start = System.currentTimeMillis();
-            while (notificationQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
+            while ((semaphore.get() == 0) && ((System.currentTimeMillis() - start) < waitMs)) {
                 try {
                     Thread.sleep(1L);
                 } catch (InterruptedException e) {
                     break;
                 }
             }
-            if (notificationQueue.isEmpty()) {
+            if (semaphore.get() > 0) {
+                semaphore.decrementAndGet();
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+    
+    /**
+     * A listener for local queues
+     */
+    public class KafkaQueueListener implements QueryQueueListener, MessageListener<byte[],byte[]> {
+        private java.util.Queue<Message> messageQueue = new ArrayBlockingQueue<>(100);
+        private final String listenerId;
+        private ConcurrentMessageListenerContainer container;
+        
+        public KafkaQueueListener(String listenerId, String topicId) {
+            this.listenerId = listenerId;
+            
+            DefaultKafkaConsumerFactory<byte[],byte[]> kafkaConsumerFactory = new DefaultKafkaConsumerFactory<>(config, new ByteArrayDeserializer(),
+                            new ByteArrayDeserializer());
+            
+            ContainerProperties props = new ContainerProperties(topicId);
+            props.setMessageListener(this);
+            
+            container = new ConcurrentMessageListenerContainer<>(kafkaConsumerFactory, props);
+            
+            container.start();
+            
+        }
+        
+        @Override
+        public String getListenerId() {
+            return listenerId;
+        }
+        
+        @Override
+        public void stop() {
+            container.stop();
+        }
+        
+        @Override
+        public Message<byte[]> receive(long waitMs) {
+            long start = System.currentTimeMillis();
+            int count = 0;
+            while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
+                count++;
+                try {
+                    Thread.sleep(1L);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("Cycled " + count + " rounds looking for message");
+            }
+            if (messageQueue.isEmpty()) {
                 return null;
             } else {
-                return notificationQueue.remove();
+                return messageQueue.remove();
             }
+        }
+        
+        /**
+         * Invoked with data from kafka.
+         *
+         * @param data
+         *            the data to be processed.
+         */
+        @Override
+        public void onMessage(ConsumerRecord<byte[],byte[]> data) {
+            MessagingMessageConverter converter = new MessagingMessageConverter();
+            Message message = converter.toMessage(data, null, null, byte[].class);
+            messageQueue.add(message);
+        }
+        
+        /**
+         * Invoked with data from kafka. The default implementation throws {@link UnsupportedOperationException}.
+         *
+         * @param data
+         *            the data to be processed.
+         * @param acknowledgment
+         *            the acknowledgment.
+         */
+        @Override
+        public void onMessage(ConsumerRecord<byte[],byte[]> data, Acknowledgment acknowledgment) {
+            onMessage(data);
+            acknowledgment.acknowledge();
+        }
+        
+        /**
+         * Invoked with data from kafka and provides access to the {@link Consumer}. The default implementation throws {@link UnsupportedOperationException}.
+         *
+         * @param data
+         *            the data to be processed.
+         * @param consumer
+         *            the consumer.
+         * @since 2.0
+         */
+        @Override
+        public void onMessage(ConsumerRecord<byte[],byte[]> data, Consumer<?,?> consumer) {
+            onMessage(data);
+        }
+        
+        /**
+         * Invoked with data from kafka and provides access to the {@link Consumer}. The default implementation throws {@link UnsupportedOperationException}.
+         *
+         * @param data
+         *            the data to be processed.
+         * @param acknowledgment
+         *            the acknowledgment.
+         * @param consumer
+         *            the consumer.
+         * @since 2.0
+         */
+        @Override
+        public void onMessage(ConsumerRecord<byte[],byte[]> data, Acknowledgment acknowledgment, Consumer<?,?> consumer) {
+            onMessage(data, acknowledgment);
         }
     }
     

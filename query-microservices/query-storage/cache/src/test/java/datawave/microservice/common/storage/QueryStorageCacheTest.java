@@ -2,7 +2,6 @@ package datawave.microservice.common.storage;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.cache.HazelcastCacheManager;
-import datawave.microservice.common.storage.queue.LocalQueryQueueManager;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParametersImpl;
@@ -43,7 +42,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-enabled", "send-notifications", "use-localqueue"})
+@ActiveProfiles({"QueryStorageCacheTest", "QueryStorageConfig", "sync-enabled", "send-notifications", "use-rabbitmq"})
 @EnableRabbit
 public class QueryStorageCacheTest {
     private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);
@@ -66,8 +65,7 @@ public class QueryStorageCacheTest {
     public void before() throws IOException {
         // ensure our pool is created so we can start listening to it
         queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
-        messageConsumer = queueManager.createListener(LISTENER_ID);
-        queueManager.addQueueToListener(LISTENER_ID, TEST_POOL);
+        messageConsumer = queueManager.createListener(LISTENER_ID, TEST_POOL);
         cleanupData();
     }
     

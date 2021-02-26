@@ -13,6 +13,7 @@
         <version.datawave>3.1.5-SNAPSHOT</version.datawave>
         <version.jaxrs>3.7.0.Final</version.jaxrs>
         <version.lang3>3.3.2</version.lang3>
+        <version.spring.messaging>5.1.14.RELEASE</version.spring.messaging>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -41,6 +42,11 @@
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-jaxrs</artifactId>
                 <version>${version.jaxrs}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-messaging</artifactId>
+                <version>${version.spring.messaging}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
@@ -89,10 +95,8 @@
             <artifactId>resteasy-jaxrs</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.amqp</groupId>
-            <artifactId>spring-amqp</artifactId>
-            <version>2.1.13.RELEASE</version>
-            <scope>compile</scope>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-messaging</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

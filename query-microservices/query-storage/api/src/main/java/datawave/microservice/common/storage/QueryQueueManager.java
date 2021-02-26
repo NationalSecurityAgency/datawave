@@ -12,9 +12,11 @@ public interface QueryQueueManager {
      *
      * @param listenerId
      *            The listener id
+     * @param queueName
+     *            The queue to listen to
      * @return a query queue listener
      */
-    QueryQueueListener createListener(String listenerId);
+    QueryQueueListener createListener(String listenerId, String queueName);
     
     /**
      * Ensure a queue is created for a pool. This will create an exchange, a queue, and a binding between them for the query pool.
@@ -53,25 +55,4 @@ public interface QueryQueueManager {
      *            the result
      */
     void sendMessage(UUID queryId, String resultId, Object result);
-    
-    /**
-     * Add a queue to a listener specified by the listener id. It is presumed that a listener was created and registered previously. For example by adding the
-     * notation @RabbitListener(id = LISTENER_ID, autoStartup = "true") to a method.
-     *
-     * @param listenerId
-     *            the listener id
-     * @param queueName
-     *            the queue name
-     */
-    void addQueueToListener(String listenerId, String queueName);
-    
-    /**
-     * Remove a queue from a listener specified by the listener id
-     *
-     * @param listenerId
-     *            the listener id
-     * @param queueName
-     *            the queue name
-     */
-    void removeQueueFromListener(String listenerId, String queueName);
 }
