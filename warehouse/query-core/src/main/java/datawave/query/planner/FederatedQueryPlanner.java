@@ -59,11 +59,10 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         if (config instanceof ShardQueryConfiguration) {
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
-            if (valueIndexHoles != null && fieldIndexHoles != null)
-                if (fieldIndexHoles.size() == 0 || valueIndexHoles.size() == 0) {
-                    returnQueryData.addDelegate(queryData);
-                    return returnQueryData;
-                }
+            if (valueIndexHoles == null || fieldIndexHoles == null) {
+                returnQueryData.addDelegate(queryData);
+                return returnQueryData;
+            }
             
             for (ValueIndexHole valueIndexHole : valueIndexHoles) {
                 
