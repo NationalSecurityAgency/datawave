@@ -54,27 +54,24 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         Date originalStartDate = config.getBeginDate();
         CloseableIterable<QueryData> queryData = originalQueryPlanner.process(config, query, settings, scannerFactory);
         if (originalQueryPlanner instanceof DefaultQueryPlanner)
-            originalQueryPlanner.setDoCalculateFieldIndexHoles(false);
-
+            ((DefaultQueryPlanner) originalQueryPlanner).setDoCalculateFieldIndexHoles(false);
+        
         if (config instanceof ShardQueryConfiguration) {
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
             if (valueIndexHoles != null && fieldIndexHoles != null)
-            if (fieldIndexHoles.size() == 0 || valueIndexHoles.size() == 0)
-            {
-                returnQueryData.addDelegate(queryData);
-                return returnQueryData;
-            }
-
-
-
+                if (fieldIndexHoles.size() == 0 || valueIndexHoles.size() == 0) {
+                    returnQueryData.addDelegate(queryData);
+                    return returnQueryData;
+                }
+            
             for (ValueIndexHole valueIndexHole : valueIndexHoles) {
-
+                
                 for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
                     if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
                         config.setBeginDate(DateHelper.parse(valueIndexHole.getStartDate()));
                         config.setEndDate(DateHelper.parse(valueIndexHole.getEndDate()));
-
+                        
                         returnQueryData.addDelegate(queryData);
                         System.out.println("The field index and value index overlap");
                         // Build up the returnQueryData
@@ -82,10 +79,6 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
                 }
             }
         }
-
-
-
-
         
         config.setBeginDate(originalStartDate);
         config.setEndDate(originalEndDate);

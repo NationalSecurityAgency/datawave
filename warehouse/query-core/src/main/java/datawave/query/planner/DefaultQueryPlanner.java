@@ -158,19 +158,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
-
+    
     private boolean doCalculateFieldIndexHoles = true;
-
+    
     protected boolean limitScanners = false;
-
+    
     public boolean calculateFieldIndexHoles() {
         return doCalculateFieldIndexHoles;
     }
-
+    
     public void setDoCalculateFieldIndexHoles(boolean doCalculateFieldIndexHoles) {
         this.doCalculateFieldIndexHoles = doCalculateFieldIndexHoles;
     }
-
+    
     /**
      * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
      */
