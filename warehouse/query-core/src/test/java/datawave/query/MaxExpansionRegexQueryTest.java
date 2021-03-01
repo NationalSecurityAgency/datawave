@@ -1,6 +1,11 @@
 package datawave.query;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.index.lookup.RangeStream;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.planner.ThreadedRangeBundler;
+import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -12,10 +17,12 @@ import java.io.File;
 import java.net.URI;
 import java.util.List;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import sun.rmi.runtime.Log;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -249,13 +256,16 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testMaxIvaratorResultsFailsQuery() throws Exception {
         log.info("------  testMaxIvaratorResultsFailsQuery  ------");
+        
         String regex = RE_OP + "'b.*'";
         String query = Constants.ANY_FIELD + regex;
         
         String anyRegex = this.dataManager.convertAnyField(regex);
         String expect = anyRegex;
         
-        List<String> dirs = ivaratorConfig();
+        List<String> dirs;
+
+        dirs = ivaratorConfig();
         // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
         this.logic.setCollapseUids(true);
         // force the regex lookup into an ivarator
@@ -266,9 +276,10 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
         // verify that the ivarators ran and completed
         assertTrue(countComplete(dirs) >= 1);
-        
+
+        dirs.clear();
         // now get a new set of ivarator directories
-        dirs = ivaratorConfig();
+        //dirs = ivaratorConfig();
         // set the max ivarator results to 1
         this.logic.setMaxIvaratorResults(1);
         try {

@@ -153,7 +153,7 @@ public class AccumuloSetupHelper {
         
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
         Path tmpPath = new Path(tmpDir.toURI());
-        Path seqFile = new Path(tmpPath, UUID.randomUUID().toString());
+        Path seqFile = new Path(tmpPath, "---" + UUID.randomUUID().toString());
         
         TaskAttemptID id = new TaskAttemptID("testJob", 0, TaskType.MAP, 0, 0);
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, id);

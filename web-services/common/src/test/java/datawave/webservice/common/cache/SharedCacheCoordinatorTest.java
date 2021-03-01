@@ -21,6 +21,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.powermock.reflect.Whitebox;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Tests functionality in the {@link SharedCacheCoordinator}.
  */
@@ -79,6 +82,8 @@ public class SharedCacheCoordinatorTest {
     
     @Test
     public void testSharedCounterUpdateAfterReconnect() throws Exception {
+
+       // Logger.getLogger(.class).setLevel(Level.INFO);
         final String COUNTER = "testCounter";
         final ConnectionState[] state = new ConnectionState[] {ConnectionState.CONNECTED};
         final int[] count = new int[] {1};
@@ -112,7 +117,7 @@ public class SharedCacheCoordinatorTest {
             }
             assertEquals("Counter never updated.", newCount, count[0]);
             assertTrue("Counter never updated.", cacheCoordinator.checkCounter(COUNTER, newCount));
-            
+
             testingZooKeeperServer.restart();
             
             for (int i = 0; i < 50; ++i) {
