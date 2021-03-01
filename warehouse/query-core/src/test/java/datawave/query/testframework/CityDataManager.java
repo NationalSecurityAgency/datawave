@@ -32,7 +32,7 @@ public class CityDataManager extends AbstractDataManager {
     
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
-
+        
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader, ',', '\"', '\0')) {
             String[] data;
             int count = 0;
@@ -45,9 +45,10 @@ public class CityDataManager extends AbstractDataManager {
             this.rawData.put(datatype, cityData);
             this.rawDataIndex.put(datatype, indexes);
             log.info("city test data(" + file + ") count(" + count + ")");
-
+            
         }
     }
+    
     @Override
     public List<String> getHeaders() {
         return CityField.headers();

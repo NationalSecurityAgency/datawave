@@ -115,7 +115,7 @@ public class SharedCacheCoordinatorTest {
             }
             assertEquals("Counter never updated.", newCount, count[0]);
             assertTrue("Counter never updated.", cacheCoordinator.checkCounter(COUNTER, newCount));
-
+            
             testingZooKeeperServer.restart();
             
             for (int i = 0; i < 50; ++i) {
