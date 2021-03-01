@@ -40,7 +40,6 @@ public class FederatedQueryPlanner {
     }
     
     public FederatedQueryPlanner(QueryPlanner original, ShardQueryLogic logic) {
-        // originalQueryPlanner.metadataHelper.getAllFieldMetadataHelper().getIndexDates();
         originalQueryPlanner = original;
         originalShardedQueryLogic = logic;
     }
@@ -59,11 +58,9 @@ public class FederatedQueryPlanner {
                         && ((ShardQueryConfiguration) config).getFieldIndexHoles().size() > 0) {
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
-            if (valueIndexHoles == null || fieldIndexHoles == null) {
-                returnQueryData.addDelegate(queryData);
+            if (valueIndexHoles == null || fieldIndexHoles == null || valueIndexHoles.size() == 0 || fieldIndexHoles.size() == 0) {
                 return returnQueryData;
             }
-            
             // TODO Need to iterate from originalEndDate to originalStartDate
             for (ValueIndexHole valueIndexHole : valueIndexHoles) {
                 for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
@@ -75,6 +72,7 @@ public class FederatedQueryPlanner {
                         log.debug("The field index and value index overlap");
                         log.debug("FieldIndexHole " + fieldIndexHole);
                         log.debug("ValueIndexHole " + valueIndexHole);
+                        
                         // Build up the returnQueryData
                     }
                 }
@@ -83,6 +81,8 @@ public class FederatedQueryPlanner {
         
         config.setBeginDate(originalStartDate);
         config.setEndDate(originalEndDate);
+        if (originalQueryPlanner instanceof DefaultQueryPlanner)
+            ((DefaultQueryPlanner) originalQueryPlanner).setDoCalculateFieldIndexHoles(true);
         
         return returnQueryData;
     }
