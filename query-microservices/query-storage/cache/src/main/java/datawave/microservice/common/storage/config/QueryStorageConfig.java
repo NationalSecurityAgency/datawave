@@ -32,7 +32,6 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
 
 @Configuration
 @EnableCaching
-@Profile("QueryStorageConfig")
 @EnableConfigurationProperties(QueryStorageProperties.class)
 public class QueryStorageConfig implements RabbitListenerConfigurer {
     private static final Logger log = Logger.getLogger(QueryStorageConfig.class);
