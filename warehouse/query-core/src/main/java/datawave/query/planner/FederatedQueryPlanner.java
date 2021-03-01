@@ -52,9 +52,11 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         FederatedQueryDataIterable returnQueryData = new FederatedQueryDataIterable();
         Date originalEndDate = config.getEndDate();
         Date originalStartDate = config.getBeginDate();
-        CloseableIterable<QueryData> queryData = originalQueryPlanner.process(config, query, settings, scannerFactory);
+        
         if (originalQueryPlanner instanceof DefaultQueryPlanner)
             ((DefaultQueryPlanner) originalQueryPlanner).setDoCalculateFieldIndexHoles(false);
+        
+        CloseableIterable<QueryData> queryData = originalQueryPlanner.process(config, query, settings, scannerFactory);
         
         if (config instanceof ShardQueryConfiguration) {
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
@@ -65,14 +67,15 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
             }
             
             for (ValueIndexHole valueIndexHole : valueIndexHoles) {
-                
                 for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
                     if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
-                        config.setBeginDate(DateHelper.parse(valueIndexHole.getStartDate()));
-                        config.setEndDate(DateHelper.parse(valueIndexHole.getEndDate()));
+                        config.setBeginDate(DateHelper.parse(fieldIndexHole.getStartDate()));
+                        config.setEndDate(DateHelper.parse(fieldIndexHole.getEndDate()));
                         queryData = originalQueryPlanner.process(config, query, settings, scannerFactory);
                         returnQueryData.addDelegate(queryData);
-                        System.out.println("The field index and value index overlap");
+                        log.debug("The field index and value index overlap");
+                        log.debug("FieldIndexHole " + fieldIndexHole);
+                        log.debug("ValueIndexHole " + valueIndexHole);
                         // Build up the returnQueryData
                     }
                 }
