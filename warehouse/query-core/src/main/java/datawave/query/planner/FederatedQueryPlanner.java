@@ -70,7 +70,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
                     if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
                         config.setBeginDate(DateHelper.parse(valueIndexHole.getStartDate()));
                         config.setEndDate(DateHelper.parse(valueIndexHole.getEndDate()));
-                        
+                        queryData = originalQueryPlanner.process(config, query, settings, scannerFactory);
                         returnQueryData.addDelegate(queryData);
                         System.out.println("The field index and value index overlap");
                         // Build up the returnQueryData
