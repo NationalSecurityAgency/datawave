@@ -19,6 +19,10 @@ findProvenanceJar (){
 findAccumuloJar (){
   ls -1 $WAREHOUSE_ACCUMULO_LIB/$1-[0-9]*.jar | sort | tail -1
 }
+findZookeeperJar(){
+  result=$(ls -1 $ZOOKEEPER_HOME/zookeeper-*.jar 2>/dev/null | head -1)
+  [[ -f $result ]] || result=$(ls -1 $ZOOKEEPER_HOME/lib/zookeeper-*.jar | head -1)
+}
 
 
 CONF_DIR=../../config
@@ -83,7 +87,7 @@ INFINISPAN_CORE_JAR=$(findJar infinispan-core)
 INFINISPAN_COMMONS_JAR=$(findJar infinispan-commons)
 JBOSS_LOGGING_JAR=$(findJar jboss-logging)
 JGROUPS_JAR=$(findJar jgroups)
-ZOOKEEPER_JAR=$ZOOKEEPER_HOME/zookeeper-$ZOOKEEPER_VERSION.jar
+ZOOKEEPER_JAR=$(findZookeeperJar)
 DATAWAVE_QUERY_CORE_JAR=$(findJar datawave-query-core)
 COMMONS_JEXL_JAR=$(findJar commons-jexl)
 PROTOSTUFF_API_JAR=$(findJar protostuff-api)

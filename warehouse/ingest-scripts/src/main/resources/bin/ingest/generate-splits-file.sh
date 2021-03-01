@@ -12,9 +12,8 @@ cd $THIS_DIR
 
 export ACCUMULO_OTHER_OPTS="${ACCUMULO_OTHER_OPTS} $HADOOP_INGEST_OPTS"
 
-ADDJARS="$( cd ../../lib && pwd )/*"
-
-CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_HOME/bin/accumulo \
+export CLASSPATH
+$WAREHOUSE_ACCUMULO_HOME/bin/accumulo \
   datawave.ingest.util.GenerateSplitsFile \
   -u $USERNAME \
   -p $PASSWORD \
