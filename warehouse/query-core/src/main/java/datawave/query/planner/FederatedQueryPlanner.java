@@ -66,6 +66,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
                 return returnQueryData;
             }
             
+            //TODO Need to iterate from originalEndDate to originalStartDate
             for (ValueIndexHole valueIndexHole : valueIndexHoles) {
                 for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
                     if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
