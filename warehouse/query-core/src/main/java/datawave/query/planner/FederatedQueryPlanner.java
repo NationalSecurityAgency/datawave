@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
+public class FederatedQueryPlanner {
     
     QueryPlanner originalQueryPlanner;
     ShardQueryLogic originalShardedQueryLogic;
@@ -45,9 +45,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         originalShardedQueryLogic = logic;
     }
     
-    @Override
-    public FederatedQueryDataIterable process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
-                    throws DatawaveQueryException {
+    public FederatedQueryDataIterable process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory,
+                    CloseableIterable<QueryData> queryData) throws DatawaveQueryException {
         
         FederatedQueryDataIterable returnQueryData = new FederatedQueryDataIterable();
         Date originalEndDate = config.getEndDate();
@@ -56,9 +55,8 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         if (originalQueryPlanner instanceof DefaultQueryPlanner)
             ((DefaultQueryPlanner) originalQueryPlanner).setDoCalculateFieldIndexHoles(false);
         
-        CloseableIterable<QueryData> queryData = originalQueryPlanner.process(config, query, settings, scannerFactory);
-        
-        if (config instanceof ShardQueryConfiguration) {
+        if (config instanceof ShardQueryConfiguration && ((ShardQueryConfiguration) config).getFieldIndexHoles().size() > 0
+                        && ((ShardQueryConfiguration) config).getFieldIndexHoles().size() > 0) {
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
             if (valueIndexHoles == null || fieldIndexHoles == null) {
@@ -66,7 +64,7 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
                 return returnQueryData;
             }
             
-            //TODO Need to iterate from originalEndDate to originalStartDate
+            // TODO Need to iterate from originalEndDate to originalStartDate
             for (ValueIndexHole valueIndexHole : valueIndexHoles) {
                 for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
                     if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
@@ -87,51 +85,6 @@ public class FederatedQueryPlanner extends QueryPlanner implements Cloneable {
         config.setEndDate(originalEndDate);
         
         return returnQueryData;
-    }
-    
-    @Override
-    public long maxRangesPerQueryPiece() {
-        return 0;
-    }
-    
-    @Override
-    public void close(GenericQueryConfiguration config, Query settings) {
-        
-    }
-    
-    @Override
-    public void setQueryIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> clazz) {
-        
-    }
-    
-    @Override
-    public Class<? extends SortedKeyValueIterator<Key,Value>> getQueryIteratorClass() {
-        return null;
-    }
-    
-    @Override
-    public String getPlannedScript() {
-        return null;
-    }
-    
-    @Override
-    public QueryPlanner clone() {
-        return null;
-    }
-    
-    @Override
-    public void setRules(Collection<PushDownRule> rules) {
-        
-    }
-    
-    @Override
-    public Collection<PushDownRule> getRules() {
-        return null;
-    }
-    
-    @Override
-    public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
-        return null;
     }
     
     public CountingShardQueryLogic getOriginalcountingShardQueryLogic() {
