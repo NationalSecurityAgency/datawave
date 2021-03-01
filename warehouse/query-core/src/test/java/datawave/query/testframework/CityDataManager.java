@@ -32,26 +32,22 @@ public class CityDataManager extends AbstractDataManager {
     
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
-        if (datatype.equals(this.rawData.containsKey(datatype))) {
-            Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
-        }
-                try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader, ',', '\"', '\0')) {
-                    String[] data;
-                    int count = 0;
-                    Set<RawData> cityData = new HashSet<>();
-                    while (null != (data = csv.readNext())) {
-                        final RawData raw = new CityRawData(datatype, data);
-                        cityData.add(raw);
-                        count++;
-                    }
-                    this.rawData.put(datatype, cityData);
-                    this.rawDataIndex.put(datatype, indexes);
-                    log.info("city test data(" + file + ") count(" + count + ")");
-                }
+
+        try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader, ',', '\"', '\0')) {
+            String[] data;
+            int count = 0;
+            Set<RawData> cityData = new HashSet<>();
+            while (null != (data = csv.readNext())) {
+                final RawData raw = new CityRawData(datatype, data);
+                cityData.add(raw);
+                count++;
             }
+            this.rawData.put(datatype, cityData);
+            this.rawDataIndex.put(datatype, indexes);
+            log.info("city test data(" + file + ") count(" + count + ")");
 
-
-
+        }
+    }
     @Override
     public List<String> getHeaders() {
         return CityField.headers();

@@ -264,7 +264,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String expect = anyRegex;
         
         List<String> dirs;
-
+        
         dirs = ivaratorConfig();
         // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
         this.logic.setCollapseUids(true);
@@ -276,10 +276,10 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
         // verify that the ivarators ran and completed
         assertTrue(countComplete(dirs) >= 1);
-
+        
         dirs.clear();
         // now get a new set of ivarator directories
-        //dirs = ivaratorConfig();
+        // dirs = ivaratorConfig();
         // set the max ivarator results to 1
         this.logic.setMaxIvaratorResults(1);
         try {

@@ -99,32 +99,32 @@ public class BooksDataManager extends AbstractDataManager {
      *            uri of CSV file
      */
     public void loadGroupingData(final URI file) {
-                   Assert.assertFalse("datatype has already been configured(" + this.datatype + ")", this.rawData.containsKey(this.datatype));
-
-                try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
-                    GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloClient, this.cfgData.getDateField(), this.fieldIndex,
+        Assert.assertFalse("datatype has already been configured(" + this.datatype + ")", this.rawData.containsKey(this.datatype));
+        
+        try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
+            GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloClient, this.cfgData.getDateField(), this.fieldIndex,
                             this.cfgData);
-
-                    Set<RawData> bookData = new HashSet<>();
-                    List<Map.Entry<Multimap<String, String>, UID>> loadData = new ArrayList<>();
-
-                    int count = 0;
-                    String[] data;
-                    while (null != (data = csv.readNext())) {
-                        RawData rawEntry = new BooksRawData(this.datatype, this.getHeaders(), this.metadata, data);
-                        bookData.add(rawEntry);
-
-                        final Multimap<String, String> mm = ((BooksRawData) rawEntry).toMultimap();
-                        UID uid = UID.builder().newId(mm.toString().getBytes(), "");
-                        loadData.add(Maps.immutableEntry(mm, uid));
-                        count++;
-                    }
-                    this.rawData.put(this.datatype, bookData);
-                    writer.addData(loadData);
-                } catch (IOException | MutationsRejectedException | TableNotFoundException e) {
-                    throw new AssertionError(e);
-                }
+            
+            Set<RawData> bookData = new HashSet<>();
+            List<Map.Entry<Multimap<String,String>,UID>> loadData = new ArrayList<>();
+            
+            int count = 0;
+            String[] data;
+            while (null != (data = csv.readNext())) {
+                RawData rawEntry = new BooksRawData(this.datatype, this.getHeaders(), this.metadata, data);
+                bookData.add(rawEntry);
+                
+                final Multimap<String,String> mm = ((BooksRawData) rawEntry).toMultimap();
+                UID uid = UID.builder().newId(mm.toString().getBytes(), "");
+                loadData.add(Maps.immutableEntry(mm, uid));
+                count++;
             }
+            this.rawData.put(this.datatype, bookData);
+            writer.addData(loadData);
+        } catch (IOException | MutationsRejectedException | TableNotFoundException e) {
+            throw new AssertionError(e);
+        }
+    }
     
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {

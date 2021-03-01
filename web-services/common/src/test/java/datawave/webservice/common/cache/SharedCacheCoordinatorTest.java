@@ -82,8 +82,6 @@ public class SharedCacheCoordinatorTest {
     
     @Test
     public void testSharedCounterUpdateAfterReconnect() throws Exception {
-
-       // Logger.getLogger(.class).setLevel(Level.INFO);
         final String COUNTER = "testCounter";
         final ConnectionState[] state = new ConnectionState[] {ConnectionState.CONNECTED};
         final int[] count = new int[] {1};
