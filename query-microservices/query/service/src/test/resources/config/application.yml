@@ -1,8 +1,4 @@
 spring:
-
-  application:
-    name: query
-
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
@@ -15,6 +11,11 @@ spring:
         - "cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us<cn=testcorp ca, ou=security, o=testcorp, c=us>"
 
 hazelcast.client.enabled: false
+
+query:
+  storage:
+    backend:
+      LOCAL
 
 server:
   port: 0

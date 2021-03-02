@@ -5,5 +5,4 @@ import org.springframework.context.annotation.Configuration;
 
 @EnableConfigurationProperties(QueryProperties.class)
 @Configuration
-public class QueryServiceConfig {
-}
+public class QueryServiceConfig {}

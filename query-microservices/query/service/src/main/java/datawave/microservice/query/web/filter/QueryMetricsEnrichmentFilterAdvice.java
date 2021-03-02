@@ -26,25 +26,26 @@ import java.util.UUID;
 
 @ControllerAdvice
 public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter implements ResponseBodyAdvice<Object> {
-
+    
     private final Logger log = Logger.getLogger(this.getClass());
-
+    
     private final QueryProperties queryProperties;
-
+    
     private final QueryCache queryCache;
-
+    
     private final QueryMetrics queryMetrics;
-
+    
     public QueryMetricsEnrichmentFilterAdvice(QueryProperties queryProperties, QueryCache queryCache, QueryMetrics queryMetrics) {
         this.queryProperties = queryProperties;
         this.queryCache = queryCache;
         this.queryMetrics = queryMetrics;
     }
-
+    
     @Override
     public boolean supports(MethodParameter returnType, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
         boolean supports = false;
-        EnrichQueryMetrics annotation = (EnrichQueryMetrics) Arrays.stream(returnType.getMethodAnnotations()).filter(EnrichQueryMetrics.class::isInstance).findAny().orElse(null);
+        EnrichQueryMetrics annotation = (EnrichQueryMetrics) Arrays.stream(returnType.getMethodAnnotations()).filter(EnrichQueryMetrics.class::isInstance)
+                        .findAny().orElse(null);
         if (annotation != null) {
             try {
                 Class<?> returnClass = Objects.requireNonNull(returnType.getMethod()).getReturnType();
@@ -56,22 +57,22 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
                     QueryMetricsEnrichmentContext.setMethodType(annotation.methodType());
                 } else {
                     log.error("Unexpected response class for metrics annotated query method " + returnType.getMethod().getName() + ". Response class was "
-                            + returnClass.toString());
+                                    + returnClass.toString());
                 }
             } catch (NullPointerException e) {
                 // do nothing
             }
         }
-
+        
         return supports;
     }
-
+    
     @Override
     public Object beforeBodyWrite(Object body, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
-                                  @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType, @NonNull ServerHttpRequest request,
-                                  @NonNull ServerHttpResponse response) {
+                    @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType, @NonNull ServerHttpRequest request,
+                    @NonNull ServerHttpResponse response) {
         System.out.println("QueryMetricsEnrichmentFilterAdvice writing metrics");
-
+        
         if (body instanceof GenericResponse) {
             @SuppressWarnings({"unchecked", "rawtypes"})
             GenericResponse<String> genericResponse = (GenericResponse) body;
@@ -80,10 +81,10 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
             BaseQueryResponse baseResponse = (BaseQueryResponse) body;
             QueryMetricsEnrichmentContext.setQueryId(baseResponse.getQueryId());
         }
-
+        
         return body;
     }
-
+    
     @Override
     public void postProcess(ResponseMethodStats responseStats) {
         String queryId = QueryMetricsEnrichmentContext.getQueryId();
@@ -123,7 +124,7 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
                                 }
                                 break;
                         }
-
+                        
                         if (queryMetrics != null)
                             queryMetrics.updateMetric(metric);
                         else
@@ -139,34 +140,34 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
             }
         }
     }
-
+    
     @Override
     public void destroy() {
         super.destroy();
         QueryMetricsEnrichmentContext.remove();
     }
-
+    
     public static class QueryMetricsEnrichmentContext {
-
+        
         private static final ThreadLocal<String> queryId = new ThreadLocal<>();
         private static final ThreadLocal<EnrichQueryMetrics.MethodType> methodType = new ThreadLocal<>();
-
+        
         public static String getQueryId() {
             return queryId.get();
         }
-
+        
         public static void setQueryId(String queryId) {
             QueryMetricsEnrichmentContext.queryId.set(queryId);
         }
-
+        
         public static EnrichQueryMetrics.MethodType getMethodType() {
             return methodType.get();
         }
-
+        
         public static void setMethodType(EnrichQueryMetrics.MethodType methodType) {
             QueryMetricsEnrichmentContext.methodType.set(methodType);
         }
-
+        
         private static void remove() {
             queryId.remove();
         }

@@ -12,15 +12,15 @@ import java.util.Map;
 @EnableConfigurationProperties(QueryProperties.class)
 @ConfigurationProperties(prefix = "query")
 public class QueryProperties {
-
+    
     @Valid
-    private Map<String, QueryLogicConfig> logic;
-
-    public Map<String, QueryLogicConfig> getLogic() {
+    private Map<String,QueryLogicConfig> logic;
+    
+    public Map<String,QueryLogicConfig> getLogic() {
         return logic;
     }
-
-    public void setLogic(Map<String, QueryLogicConfig> logic) {
+    
+    public void setLogic(Map<String,QueryLogicConfig> logic) {
         this.logic = logic;
     }
 }
