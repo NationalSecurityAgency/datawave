@@ -178,7 +178,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
-    private FederatedQueryPlanner federatedQueryPlanner = null;
     private QueryParser parser = null;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
@@ -399,7 +398,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             
             currentQueryPlanner.setMetadataHelper(metadataHelper);
             currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
-            currentQueryPlanner.setFederatedQueryPlanner(federatedQueryPlanner);
             
             QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
             if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
@@ -445,17 +443,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
         }
         
-        if (federatedQueryPlanner == null)
-            federatedQueryPlanner = new FederatedQueryPlanner(getQueryPlanner(), this);
-        
-        FederatedQueryDataIterable federatedQueryDataIterable = federatedQueryPlanner.process(config, jexlQueryString, settings, this.getScannerFactory(),
-                        this.queries);
-        
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
-        if (federatedQueryDataIterable.iterator().hasNext())
-            config.setQueries(federatedQueryDataIterable.iterator());
-        else if (this.queries != null)
+        if (this.queries != null)
             config.setQueries(this.queries.iterator());
         
         config.setQueryString(getQueryPlanner().getPlannedScript());
@@ -1733,7 +1723,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
-            planner = new DefaultQueryPlanner();
+            planner = new FederatedQueryPlanner();
         }
         
         return planner;
@@ -1741,10 +1731,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setQueryPlanner(QueryPlanner planner) {
         this.planner = planner;
-    }
-    
-    public void setFederatedQueryPlanner(QueryPlanner planner) {
-        this.federatedQueryPlanner = new FederatedQueryPlanner(planner, this);
     }
     
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
@@ -2105,16 +2091,16 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return getConfig().getValueIndexHoles();
     }
     
+    public void setValueIndexHoles(List<ValueIndexHole> indexHoles) {
+        getConfig().setValueIndexHoles(indexHoles);
+    }
+    
     public List<FieldIndexHole> getFieldIndexHoles() {
         return getConfig().getFieldIndexHoles();
     }
     
-    public void setValueIndexHoles(List<ValueIndexHole> valueIndexHoles) {
-        getConfig().setValueIndexHoles(valueIndexHoles);
-    }
-    
-    public void setFieldIndexHoles(List<FieldIndexHole> fieldIndexHoles) {
-        getConfig().setFieldIndexHoles(fieldIndexHoles);
+    public void setFieldIndexHoles(List<FieldIndexHole> indexHoles) {
+        getConfig().setFieldIndexHoles(indexHoles);
     }
     
     public CardinalityConfiguration getCardinalityConfiguration() {
@@ -2267,12 +2253,5 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public Set<String> getEvaluationOnlyFields() {
         return getConfig().getEvaluationOnlyFields();
-    }
-    
-    public FederatedQueryPlanner getFederatedQueryPlanner() {
-        if (federatedQueryPlanner == null)
-            return new FederatedQueryPlanner(planner, this);
-        else
-            return federatedQueryPlanner;
     }
 }

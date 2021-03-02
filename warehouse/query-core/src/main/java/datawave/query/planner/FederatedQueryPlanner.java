@@ -6,9 +6,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.config.ValueIndexHole;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.planner.pushdown.rules.PushDownRule;
-import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.MetadataHelper;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -22,57 +20,52 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import java.awt.*;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-public class FederatedQueryPlanner {
-    
-    QueryPlanner originalQueryPlanner;
-    ShardQueryLogic originalShardedQueryLogic;
-    CountingShardQueryLogic originalcountingShardQueryLogic;
+public class FederatedQueryPlanner extends DefaultQueryPlanner {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
     {
         log.setLevel(Level.DEBUG);
     }
     
-    public FederatedQueryPlanner(QueryPlanner original, ShardQueryLogic logic) {
-        originalQueryPlanner = original;
-        originalShardedQueryLogic = logic;
+    public FederatedQueryPlanner() {
+        super();
     }
     
-    public FederatedQueryDataIterable process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory,
-                    CloseableIterable<QueryData> queryData) throws DatawaveQueryException {
+    @Override
+    public FederatedQueryDataIterable process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
+                    throws DatawaveQueryException {
         
         FederatedQueryDataIterable returnQueryData = new FederatedQueryDataIterable();
         Date originalEndDate = config.getEndDate();
         Date originalStartDate = config.getBeginDate();
         
-        if (originalQueryPlanner instanceof DefaultQueryPlanner)
-            ((DefaultQueryPlanner) originalQueryPlanner).setDoCalculateFieldIndexHoles(false);
+        CloseableIterable<QueryData> queryData = super.process(config, query, settings, scannerFactory);
         
-        if (config instanceof ShardQueryConfiguration && ((ShardQueryConfiguration) config).getFieldIndexHoles().size() > 0
-                        && ((ShardQueryConfiguration) config).getFieldIndexHoles().size() > 0) {
+        setDoCalculateFieldIndexHoles(false);
+        
+        if (config instanceof ShardQueryConfiguration) {
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
             if (valueIndexHoles == null || fieldIndexHoles == null || valueIndexHoles.size() == 0 || fieldIndexHoles.size() == 0) {
+                returnQueryData.addDelegate(queryData);
                 return returnQueryData;
             }
+            
             // TODO Need to iterate from originalEndDate to originalStartDate
             for (ValueIndexHole valueIndexHole : valueIndexHoles) {
                 for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
                     if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
                         config.setBeginDate(DateHelper.parse(fieldIndexHole.getStartDate()));
                         config.setEndDate(DateHelper.parse(fieldIndexHole.getEndDate()));
-                        queryData = originalQueryPlanner.process(config, query, settings, scannerFactory);
+                        queryData = super.process(config, query, settings, scannerFactory);
                         returnQueryData.addDelegate(queryData);
                         log.debug("The field index and value index overlap");
                         log.debug("FieldIndexHole " + fieldIndexHole);
                         log.debug("ValueIndexHole " + valueIndexHole);
-                        
                         // Build up the returnQueryData
                     }
                 }
@@ -81,18 +74,53 @@ public class FederatedQueryPlanner {
         
         config.setBeginDate(originalStartDate);
         config.setEndDate(originalEndDate);
-        if (originalQueryPlanner instanceof DefaultQueryPlanner)
-            ((DefaultQueryPlanner) originalQueryPlanner).setDoCalculateFieldIndexHoles(true);
         
         return returnQueryData;
     }
     
-    public CountingShardQueryLogic getOriginalcountingShardQueryLogic() {
-        return originalcountingShardQueryLogic;
+    @Override
+    public long maxRangesPerQueryPiece() {
+        return super.maxRangesPerQueryPiece();
     }
     
-    public void setOriginalcountingShardQueryLogic(CountingShardQueryLogic originalcountingShardQueryLogic) {
-        this.originalcountingShardQueryLogic = originalcountingShardQueryLogic;
+    @Override
+    public void close(GenericQueryConfiguration config, Query settings) {
+        super.close(config, settings);
+    }
+    
+    @Override
+    public void setQueryIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> clazz) {
+        super.setQueryIteratorClass(clazz);
+    }
+    
+    @Override
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getQueryIteratorClass() {
+        return super.getQueryIteratorClass();
+    }
+    
+    @Override
+    public String getPlannedScript() {
+        return super.getPlannedScript();
+    }
+    
+    @Override
+    public DefaultQueryPlanner clone() {
+        return super.clone();
+    }
+    
+    @Override
+    public void setRules(Collection<PushDownRule> rules) {
+        super.setRules(rules);
+    }
+    
+    @Override
+    public Collection<PushDownRule> getRules() {
+        return super.getRules();
+    }
+    
+    @Override
+    public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
+        return super.applyRules(queryTree, scannerFactory, metadataHelper, config);
     }
     
 }
