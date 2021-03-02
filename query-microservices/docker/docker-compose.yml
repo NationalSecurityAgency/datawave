@@ -96,7 +96,7 @@ services:
         condition: service_healthy
 
   query-state:
-    image: datawave/query-state
+    image: datawave/query-state-storage
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose
@@ -130,14 +130,14 @@ services:
         condition: service_healthy
 
   query:
-    image: datawave/query
+    image: datawave/query-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose
+      - --spring.profiles.active=consul,compose,remoteauth
       - --spring.cloud.consul.host=discovery
     ports:
-      - "8080"
-      - "8443"
+      - "8080:8080"
+      - "8443:8443"
     networks:
       - demo
     healthcheck:

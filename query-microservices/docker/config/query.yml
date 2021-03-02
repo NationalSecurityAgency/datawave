@@ -1,0 +1,14 @@
+# Authorization requires a client certificate
+server:
+  ssl:
+    client-auth: NEED
+
+query:
+  storage:
+    sendNotifications: true
+    syncStorage: true
+    backend: RABBITMQ
+
+logging:
+  level:
+    datawave.microservice.query: DEBUG
