@@ -8,6 +8,7 @@ import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.YearMonthDay;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -20,9 +21,7 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class FederatedQueryPlanner extends DefaultQueryPlanner {
     
@@ -42,6 +41,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         FederatedQueryDataIterable returnQueryData = new FederatedQueryDataIterable();
         Date originalEndDate = config.getEndDate();
         Date originalStartDate = config.getBeginDate();
+        TreeSet<YearMonthDay> holeDates = new TreeSet<>();
         
         CloseableIterable<QueryData> queryData = super.process(config, query, settings, scannerFactory);
         
@@ -50,7 +50,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         if (config instanceof ShardQueryConfiguration) {
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
-            if (valueIndexHoles == null || fieldIndexHoles == null || valueIndexHoles.size() == 0 || fieldIndexHoles.size() == 0) {
+            if ((valueIndexHoles == null && fieldIndexHoles == null) || (valueIndexHoles.size() == 0 && fieldIndexHoles.size() == 0)) {
                 returnQueryData.addDelegate(queryData);
                 return returnQueryData;
             }
@@ -59,9 +59,11 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             for (ValueIndexHole valueIndexHole : valueIndexHoles) {
                 for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
                     if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
-                        config.setBeginDate(DateHelper.parse(fieldIndexHole.getStartDate()));
-                        config.setEndDate(DateHelper.parse(fieldIndexHole.getEndDate()));
-                        queryData = super.process(config, query, settings, scannerFactory);
+                        
+                        ShardQueryConfiguration tempConfig = new ShardQueryConfiguration((ShardQueryConfiguration) config);
+                        tempConfig.setBeginDate(DateHelper.parse(fieldIndexHole.getStartDate()));
+                        tempConfig.setEndDate(DateHelper.parse(fieldIndexHole.getEndDate()));
+                        queryData = super.process(tempConfig, query, settings, scannerFactory);
                         returnQueryData.addDelegate(queryData);
                         log.debug("The field index and value index overlap");
                         log.debug("FieldIndexHole " + fieldIndexHole);
@@ -72,8 +74,8 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             }
         }
         
-        config.setBeginDate(originalStartDate);
-        config.setEndDate(originalEndDate);
+        if (!returnQueryData.iterator().hasNext())
+            returnQueryData.addDelegate(queryData);
         
         return returnQueryData;
     }
