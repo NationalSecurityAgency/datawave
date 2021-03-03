@@ -13,6 +13,7 @@ import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -36,7 +37,8 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
     
     // TODO: inject the values
-    private Map<String,Object> config = ImmutableMap.of("bootstrap.servers", "http://localhost:9092", "group.id", "KafkaQueryQueueManager");
+    private Map<String,Object> config = ImmutableMap.of("bootstrap.servers", "http://localhost:9092", "group.id", "KafkaQueryQueueManager", "auto.offset.reset",
+                    "latest");
     
     @Autowired
     private KafkaTemplate kafkaTemplate;
@@ -190,7 +192,10 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         }
         
         @Override
-        public void onMessage(ConsumerRecord<byte[],byte[]> data) {
+        public void onMessage(ConsumerRecord<String,byte[]> data) {
+            if (log.isTraceEnabled()) {
+                log.trace("Test Listener " + getListenerId() + " got message " + data.key());
+            }
             String body = null;
             try {
                 body = new ObjectMapper().readerFor(String.class).readValue(data.value());
@@ -199,12 +204,10 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
             }
             // determine if this is a test message
             if (TEST_MESSAGE.equals(body)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Test Listener " + getListenerId() + " got a test message");
+                }
                 semaphore.incrementAndGet();
-            } else {
-                // requeue, this was not a test message
-                MessagingMessageConverter converter = new MessagingMessageConverter();
-                Message message = converter.toMessage(data, null, null, byte[].class);
-                kafkaTemplate.send(message);
             }
         }
         
@@ -233,15 +236,17 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     /**
      * A listener for local queues
      */
-    public class KafkaQueueListener implements QueryQueueListener, MessageListener<byte[],byte[]> {
+    public class KafkaQueueListener implements QueryQueueListener, MessageListener<String,byte[]> {
         private java.util.Queue<Message> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
+        private final String topicId;
         private ConcurrentMessageListenerContainer container;
         
         public KafkaQueueListener(String listenerId, String topicId) {
             this.listenerId = listenerId;
+            this.topicId = topicId;
             
-            DefaultKafkaConsumerFactory<byte[],byte[]> kafkaConsumerFactory = new DefaultKafkaConsumerFactory<>(config, new ByteArrayDeserializer(),
+            DefaultKafkaConsumerFactory<String,byte[]> kafkaConsumerFactory = new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(),
                             new ByteArrayDeserializer());
             
             ContainerProperties props = new ContainerProperties(topicId);
@@ -256,6 +261,10 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         @Override
         public String getListenerId() {
             return listenerId;
+        }
+        
+        public String getTopicId() {
+            return topicId;
         }
         
         @Override
@@ -292,7 +301,10 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          *            the data to be processed.
          */
         @Override
-        public void onMessage(ConsumerRecord<byte[],byte[]> data) {
+        public void onMessage(ConsumerRecord<String,byte[]> data) {
+            if (log.isTraceEnabled()) {
+                log.trace("Listener " + getListenerId() + " got message " + data.key());
+            }
             MessagingMessageConverter converter = new MessagingMessageConverter();
             Message message = converter.toMessage(data, null, null, byte[].class);
             messageQueue.add(message);
@@ -307,7 +319,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          *            the acknowledgment.
          */
         @Override
-        public void onMessage(ConsumerRecord<byte[],byte[]> data, Acknowledgment acknowledgment) {
+        public void onMessage(ConsumerRecord<String,byte[]> data, Acknowledgment acknowledgment) {
             onMessage(data);
             acknowledgment.acknowledge();
         }
@@ -322,7 +334,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          * @since 2.0
          */
         @Override
-        public void onMessage(ConsumerRecord<byte[],byte[]> data, Consumer<?,?> consumer) {
+        public void onMessage(ConsumerRecord<String,byte[]> data, Consumer<?,?> consumer) {
             onMessage(data);
         }
         
@@ -338,7 +350,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          * @since 2.0
          */
         @Override
-        public void onMessage(ConsumerRecord<byte[],byte[]> data, Acknowledgment acknowledgment, Consumer<?,?> consumer) {
+        public void onMessage(ConsumerRecord<String,byte[]> data, Acknowledgment acknowledgment, Consumer<?,?> consumer) {
             onMessage(data, acknowledgment);
         }
     }

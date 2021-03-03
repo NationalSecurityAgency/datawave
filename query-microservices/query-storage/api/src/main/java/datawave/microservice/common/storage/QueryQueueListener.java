@@ -38,7 +38,8 @@ public interface QueryQueueListener {
     default QueryTaskNotification receiveTaskNotification(long waitMs) throws IOException {
         Message<byte[]> message = receive(waitMs);
         if (message != null) {
-            return new ObjectMapper().readerFor(QueryTaskNotification.class).readValue(message.getPayload());
+            QueryTaskNotification task = new ObjectMapper().readerFor(QueryTaskNotification.class).readValue(message.getPayload());
+            return task;
         }
         return null;
     }
