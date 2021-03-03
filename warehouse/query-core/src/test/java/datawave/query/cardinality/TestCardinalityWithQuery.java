@@ -190,7 +190,6 @@ public class TestCardinalityWithQuery {
         
     }
     
-    @Ignore
     @Test
     public void runQuery() throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");

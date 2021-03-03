@@ -62,8 +62,6 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             Boolean firstIteration = true;
             Date startDate, endDate;
             
-            queryData = null;
-            
             for (Iterator<YearMonthDay> it = holeDates.iterator(); it.hasNext();) {
                 if (firstIteration) {
                     firstIteration = false;
@@ -80,30 +78,28 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                         endDate = originalEndDate;
                     }
                 }
-                ShardQueryConfiguration tempConfig = new ShardQueryConfiguration((ShardQueryConfiguration) config);
-                tempConfig.setBeginDate(startDate);
-                tempConfig.setEndDate(endDate);
-                queryData = super.process(tempConfig, query, settings, scannerFactory);
+                
+                queryData = getQueryData((ShardQueryConfiguration) config, query, settings, scannerFactory, startDate, endDate);
                 returnQueryData.addDelegate(queryData);
                 
             }
             
-            /*
-             * // TODO Need to iterate from originalEndDate to originalStartDate for (ValueIndexHole valueIndexHole : valueIndexHoles) { for (FieldIndexHole
-             * fieldIndexHole : fieldIndexHoles) { if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
-             * 
-             * ShardQueryConfiguration tempConfig = new ShardQueryConfiguration((ShardQueryConfiguration) config);
-             * tempConfig.setBeginDate(DateHelper.parse(fieldIndexHole.getStartDate())); tempConfig.setEndDate(DateHelper.parse(fieldIndexHole.getEndDate()));
-             * queryData = super.process(tempConfig, query, settings, scannerFactory); returnQueryData.addDelegate(queryData);
-             * log.debug("The field index and value index overlap"); log.debug("FieldIndexHole " + fieldIndexHole); log.debug("ValueIndexHole " +
-             * valueIndexHole); // Build up the returnQueryData } } }
-             */
         }
         
         if (!returnQueryData.iterator().hasNext())
             returnQueryData.addDelegate(queryData);
         
         return returnQueryData;
+    }
+    
+    private CloseableIterable<QueryData> getQueryData(ShardQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory,
+                    Date startDate, Date endDate) throws DatawaveQueryException {
+        CloseableIterable<QueryData> queryData;
+        ShardQueryConfiguration tempConfig = new ShardQueryConfiguration(config);
+        tempConfig.setBeginDate(startDate);
+        tempConfig.setEndDate(endDate);
+        queryData = super.process(tempConfig, query, settings, scannerFactory);
+        return queryData;
     }
     
     @Override
@@ -152,21 +148,32 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
     }
     
     private TreeSet<YearMonthDay> generateStartAndEndDates(ShardQueryConfiguration configuration) {
+        
+        String startDate = DateHelper.format(configuration.getBeginDate().getTime());
+        String endDate = DateHelper.format(configuration.getEndDate().getTime());
+        
+        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, true, endDate, true);
+        
         TreeSet<YearMonthDay> queryDates = new TreeSet<>();
         for (ValueIndexHole valueIndexHole : configuration.getValueIndexHoles()) {
-            queryDates.add(new YearMonthDay(valueIndexHole.getStartDate()));
-            queryDates.add(new YearMonthDay(valueIndexHole.getEndValue()));
+            addDatesToSet(bounds, queryDates, valueIndexHole.getStartDate());
+            addDatesToSet(bounds, queryDates, valueIndexHole.getEndDate());
         }
         
         for (FieldIndexHole fieldIndexHole : configuration.getFieldIndexHoles()) {
             // TODO remove comparison below. calculateFieldHoles needs to be fixed.
             if (fieldIndexHole.getStartDate().compareTo(fieldIndexHole.getEndDate()) <= 0) {
-                queryDates.add(new YearMonthDay(fieldIndexHole.getStartDate()));
-                queryDates.add(new YearMonthDay(fieldIndexHole.getEndDate()));
+                addDatesToSet(bounds, queryDates, fieldIndexHole.getStartDate());
+                addDatesToSet(bounds, queryDates, fieldIndexHole.getEndDate());
             }
         }
         
         return queryDates;
+    }
+    
+    private void addDatesToSet(YearMonthDay.Bounds bounds, TreeSet<YearMonthDay> queryDates, String strDate) {
+        if (bounds.withinBounds(strDate))
+            queryDates.add(new YearMonthDay(strDate));
     }
     
 }
