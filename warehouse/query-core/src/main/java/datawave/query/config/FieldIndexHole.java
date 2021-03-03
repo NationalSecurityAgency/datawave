@@ -1,8 +1,18 @@
 package datawave.query.config;
 
+import datawave.query.planner.DefaultQueryPlanner;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import java.io.Serializable;
 
 public class FieldIndexHole implements Serializable, Comparable<FieldIndexHole> {
+    
+    private static final Logger log = ThreadConfigurableLogger.getLogger(FieldIndexHole.class);
+    {
+        log.setLevel(Level.DEBUG);
+    }
     
     private static final long serialVersionUID = -6778479621810682281L;
     
@@ -74,6 +84,8 @@ public class FieldIndexHole implements Serializable, Comparable<FieldIndexHole> 
     
     public void setEndDate(String endDate) {
         this.endDate = endDate;
+        if (endDate.compareTo(startDate) < 0)
+            log.warn("End date " + endDate + " came before start date " + startDate);
     }
     
     @Override

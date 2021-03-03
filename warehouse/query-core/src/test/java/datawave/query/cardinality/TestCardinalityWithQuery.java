@@ -1,5 +1,31 @@
 package datawave.query.cardinality;
 
+
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.io.Files;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.hadoop.io.Text;
+import org.junit.*;
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
@@ -164,6 +190,7 @@ public class TestCardinalityWithQuery {
         
     }
     
+    @Ignore
     @Test
     public void runQuery() throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");

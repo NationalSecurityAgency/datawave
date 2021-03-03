@@ -17,6 +17,7 @@ import datawave.webservice.query.configuration.QueryData;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -41,8 +42,10 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         FederatedQueryDataIterable returnQueryData = new FederatedQueryDataIterable();
         Date originalEndDate = config.getEndDate();
         Date originalStartDate = config.getBeginDate();
-        TreeSet<YearMonthDay> holeDates = new TreeSet<>();
+        TreeSet<YearMonthDay> holeDates;
         
+        // The DefaultQueryPlanner.process needs to be called so that the FieldIndexHoles can be calculated
+        // and the queryData returned will be used if there are no index holes of any kind.
         CloseableIterable<QueryData> queryData = super.process(config, query, settings, scannerFactory);
         
         setDoCalculateFieldIndexHoles(false);
@@ -55,23 +58,46 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                 return returnQueryData;
             }
             
-            // TODO Need to iterate from originalEndDate to originalStartDate
-            for (ValueIndexHole valueIndexHole : valueIndexHoles) {
-                for (FieldIndexHole fieldIndexHole : fieldIndexHoles) {
-                    if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
-                        
-                        ShardQueryConfiguration tempConfig = new ShardQueryConfiguration((ShardQueryConfiguration) config);
-                        tempConfig.setBeginDate(DateHelper.parse(fieldIndexHole.getStartDate()));
-                        tempConfig.setEndDate(DateHelper.parse(fieldIndexHole.getEndDate()));
-                        queryData = super.process(tempConfig, query, settings, scannerFactory);
-                        returnQueryData.addDelegate(queryData);
-                        log.debug("The field index and value index overlap");
-                        log.debug("FieldIndexHole " + fieldIndexHole);
-                        log.debug("ValueIndexHole " + valueIndexHole);
-                        // Build up the returnQueryData
+            holeDates = generateStartAndEndDates((ShardQueryConfiguration) config);
+            Boolean firstIteration = true;
+            Date startDate, endDate;
+            
+            queryData = null;
+            
+            for (Iterator<YearMonthDay> it = holeDates.iterator(); it.hasNext();) {
+                if (firstIteration) {
+                    firstIteration = false;
+                    startDate = originalStartDate;
+                    if (it.hasNext()) {
+                        endDate = DateHelper.parse(it.next().getYyyymmdd());
+                    } else
+                        endDate = originalEndDate;
+                } else {
+                    startDate = DateHelper.parse(it.next().getYyyymmdd());
+                    if (it.hasNext())
+                        endDate = DateHelper.parse(it.next().getYyyymmdd());
+                    else {
+                        endDate = originalEndDate;
                     }
                 }
+                ShardQueryConfiguration tempConfig = new ShardQueryConfiguration((ShardQueryConfiguration) config);
+                tempConfig.setBeginDate(startDate);
+                tempConfig.setEndDate(endDate);
+                queryData = super.process(tempConfig, query, settings, scannerFactory);
+                returnQueryData.addDelegate(queryData);
+                
             }
+            
+            /*
+             * // TODO Need to iterate from originalEndDate to originalStartDate for (ValueIndexHole valueIndexHole : valueIndexHoles) { for (FieldIndexHole
+             * fieldIndexHole : fieldIndexHoles) { if (fieldIndexHole.overlaps(valueIndexHole.getStartDate(), valueIndexHole.getEndDate())) {
+             * 
+             * ShardQueryConfiguration tempConfig = new ShardQueryConfiguration((ShardQueryConfiguration) config);
+             * tempConfig.setBeginDate(DateHelper.parse(fieldIndexHole.getStartDate())); tempConfig.setEndDate(DateHelper.parse(fieldIndexHole.getEndDate()));
+             * queryData = super.process(tempConfig, query, settings, scannerFactory); returnQueryData.addDelegate(queryData);
+             * log.debug("The field index and value index overlap"); log.debug("FieldIndexHole " + fieldIndexHole); log.debug("ValueIndexHole " +
+             * valueIndexHole); // Build up the returnQueryData } } }
+             */
         }
         
         if (!returnQueryData.iterator().hasNext())
@@ -123,6 +149,24 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
     @Override
     public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
         return super.applyRules(queryTree, scannerFactory, metadataHelper, config);
+    }
+    
+    private TreeSet<YearMonthDay> generateStartAndEndDates(ShardQueryConfiguration configuration) {
+        TreeSet<YearMonthDay> queryDates = new TreeSet<>();
+        for (ValueIndexHole valueIndexHole : configuration.getValueIndexHoles()) {
+            queryDates.add(new YearMonthDay(valueIndexHole.getStartDate()));
+            queryDates.add(new YearMonthDay(valueIndexHole.getEndValue()));
+        }
+        
+        for (FieldIndexHole fieldIndexHole : configuration.getFieldIndexHoles()) {
+            // TODO remove comparison below. calculateFieldHoles needs to be fixed.
+            if (fieldIndexHole.getStartDate().compareTo(fieldIndexHole.getEndDate()) <= 0) {
+                queryDates.add(new YearMonthDay(fieldIndexHole.getStartDate()));
+                queryDates.add(new YearMonthDay(fieldIndexHole.getEndDate()));
+            }
+        }
+        
+        return queryDates;
     }
     
 }

@@ -1168,6 +1168,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
+        // TODO move this to the process function in the FederatedQueryPlanner
         try {
             if (doCalculateFieldIndexHoles)
                 calculateFieldIndexHoles(metadataHelper, fieldToDatatypeMap, config);
