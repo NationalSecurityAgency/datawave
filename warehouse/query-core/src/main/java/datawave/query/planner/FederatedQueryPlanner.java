@@ -43,8 +43,9 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
     public FederatedQueryPlanner() {
         super();
     }
-    
-    public FederatedQueryDataIterable process2(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
+
+    @Override
+    public FederatedQueryDataIterable process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
         
         FederatedQueryDataIterable returnQueryData = new FederatedQueryDataIterable();
@@ -52,10 +53,10 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         Date originalStartDate = config.getBeginDate();
         TreeSet<YearMonthDay> holeDates;
         MetadataHelper metadataHelper = getMetadataHelper();
-
+        
         final QueryData queryData = new QueryData();
         CloseableIterable<QueryData> results;
-
+        
         if (config instanceof ShardQueryConfiguration) {
             ASTJexlScript queryTree = null;
             try {
@@ -78,7 +79,6 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                             ((ShardQueryConfiguration) config).getDatatypeFilter(), queryTree, false);
             
             try {
-                
                 calculateFieldIndexHoles(metadataHelper, fieldToDatatypeMap, (ShardQueryConfiguration) config);
             } catch (TableNotFoundException e) {
                 log.error("metadata table was not found " + e.getMessage());
@@ -87,6 +87,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
             if ((valueIndexHoles == null && fieldIndexHoles == null) || (valueIndexHoles.size() == 0 && fieldIndexHoles.size() == 0)) {
+                results = super.process(config, query, settings, scannerFactory);
                 returnQueryData.addDelegate(results);
                 return returnQueryData;
             }
@@ -117,11 +118,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                 
             }
             
-        }else {
-            results = super.process(config, query, settings, scannerFactory);
-            returnQueryData.addDelegate(results);
         }
-        
         
         return returnQueryData;
     }
@@ -164,14 +161,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         if (bounds.withinBounds(strDate))
             queryDates.add(new YearMonthDay(strDate));
     }
-    
-    @Override
-    public FederatedQueryDataIterable process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
-                    throws DatawaveQueryException {
-        
-        return process2(config, query, settings, scannerFactory);
-    }
-    
+
     @Override
     public long maxRangesPerQueryPiece() {
         return super.maxRangesPerQueryPiece();
