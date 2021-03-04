@@ -1168,14 +1168,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
-        // TODO move this to the process function in the FederatedQueryPlanner
-        try {
-            if (doCalculateFieldIndexHoles)
-                calculateFieldIndexHoles(metadataHelper, fieldToDatatypeMap, config);
-        } catch (TableNotFoundException e) {
-            log.error("metadata table was not found " + e.getMessage());
-        }
-        
         // if we have any index holes, then mark em
         if (!config.getValueIndexHoles().isEmpty()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Mark Index Holes");
@@ -1722,110 +1714,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
             }
         }
-    }
-    
-    /**
-     * Calculate the FieldIndexHoles and add them to the ShardedQueryConfiguaration
-     *
-     * @param metadataHelper
-     * @param fieldToDatatypeMap
-     * @param config
-     */
-    public void calculateFieldIndexHoles(MetadataHelper metadataHelper, Multimap<String,Type<?>> fieldToDatatypeMap, ShardQueryConfiguration config)
-                    throws TableNotFoundException {
-        
-        IndexedDatesValue indexedDates;
-        String startDate = DateHelper.format(config.getBeginDate().getTime());
-        String endDate = DateHelper.format(config.getEndDate().getTime());
-        String holeStart = startDate;
-        String lastHoleEndate = null;
-        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, true, endDate, true);
-        FieldIndexHole newHole = null;
-        boolean firstHole = true;
-        boolean foundHolesInDateBounds = false;
-        String previousDay, nextDay = null;
-        log.debug("startDate is: " + startDate + " and endDate is " + endDate);
-        
-        for (String field : fieldToDatatypeMap.keySet()) {
-            indexedDates = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
-            if (indexedDates != null && !(indexedDates.getIndexedDatesSet().size() == 0)) {
-                for (YearMonthDay entry : indexedDates.getIndexedDatesSet()) {
-                    // Only create a hole if the indexed field are within date bounds
-                    if (bounds.withinBounds(entry)) {
-                        foundHolesInDateBounds = true;
-                        if (firstHole && holeStart.compareTo(entry.getYyyymmdd()) < 0) {
-                            // create the FieldIndexHole for the dates the field was not indexed before the first
-                            // time in the date range that it was indexed.
-                            FieldIndexHole firstIndexHole = new FieldIndexHole(field, startDate);
-                            previousDay = previousDay(entry.getYyyymmdd());
-                            nextDay = nextDay(entry.getYyyymmdd());
-                            log.debug("The date in the entry is: " + entry.getYyyymmdd());
-                            log.debug("The previous day is: " + previousDay);
-                            log.debug("The next day is: " + nextDay);
-                            firstIndexHole.setEndDate(previousDay);
-                            config.addFieldIndexHole(firstIndexHole);
-                            holeStart = nextDay(entry.getYyyymmdd());
-                            firstHole = false;
-                        }
-                        
-                        // The end date of the last hole processed depends on the next date the field was indexed
-                        if (newHole != null) {
-                            lastHoleEndate = previousDay(entry.getYyyymmdd());
-                            newHole.setEndDate(lastHoleEndate);
-                        } else {
-                            lastHoleEndate = nextDay(entry.getYyyymmdd());
-                            if (lastHoleEndate.compareTo(endDate) > 0)
-                                lastHoleEndate = endDate;
-                        }
-                        
-                        /*
-                         * If the start of the next potential hole is the same as the date indexed field there is no need to start creating and index hole
-                         * starting on that date so increment the holeStart and find the next indexed date.
-                         */
-                        if (holeStart.equals(entry.getYyyymmdd())) {
-                            holeStart = nextDay(entry.getYyyymmdd());
-                            continue;
-                        }
-                        
-                        // At this point, create a new FieldIndexHole
-                        if (bounds.withinBounds(holeStart)) {
-                            newHole = new FieldIndexHole();
-                            newHole.setFieldName(field);
-                            newHole.setStartDate(holeStart);
-                            // you have to see next date the the field was indexed in the next iteration
-                            // before you can set the end date. That may get done outside the loop on line 1698
-                            // or on 1669 with the previous day of the next date the field was indexed
-                            config.addFieldIndexHole(newHole);
-                        }
-                    }
-                    holeStart = nextDay(entry.getYyyymmdd());
-                }
-            }
-            
-            if (newHole != null)
-                newHole.setEndDate(lastHoleEndate);
-            
-            if (foundHolesInDateBounds && bounds.withinBounds(holeStart)) {
-                FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {holeStart, endDate});
-                config.addFieldIndexHole(trailingHole);
-            }
-            
-            if (!foundHolesInDateBounds) {
-                FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {startDate, endDate});
-                config.addFieldIndexHole(trailingHole);
-            }
-            
-            if (!config.getFieldIndexHoles().isEmpty()) {
-                log.debug("Found Field index holes for field: " + field + " within date bounds");
-                for (FieldIndexHole hole : config.getFieldIndexHoles()) {
-                    log.debug(hole.toString());
-                }
-            } else {
-                log.debug("No fieldHoles created.");
-            }
-            
-        }
-        
     }
     
     private static String previousDay(String day) {
