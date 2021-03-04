@@ -1,29 +1,24 @@
 package datawave.query.discovery;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
 import org.junit.Before;
@@ -42,9 +37,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.query.discovery.IndexMatchingIterator.CONF;
-import static datawave.query.discovery.IndexMatchingIterator.REVERSE_INDEX;
-import static datawave.query.discovery.IndexMatchingIterator.gson;
 import static org.junit.Assert.assertEquals;
 
 public class DiscoveryLogicTest {
@@ -96,8 +88,8 @@ public class DiscoveryLogicTest {
         insertReverseModel("occupation", "job");
         
         logic = new DiscoveryLogic();
-        logic.setIndexTableName(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
-        logic.setReverseIndexTableName(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        logic.setIndexTableName(TableName.SHARD_INDEX);
+        logic.setReverseIndexTableName(TableName.SHARD_RINDEX);
         logic.setModelTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
         logic.setModelName("DATAWAVE");
         logic.setFullTableScanEnabled(false);
@@ -133,7 +125,7 @@ public class DiscoveryLogicTest {
             writer.addMutation(m);
         }
         
-        try (BatchWriter writer = connector.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, config)) {
+        try (BatchWriter writer = connector.createBatchWriter(TableName.SHARD_INDEX, config)) {
             Mutation m = new Mutation(valueField.getValue0().toLowerCase());
             int numShards = 10;
             for (int i = 0; i < numShards; i++) {
@@ -146,7 +138,7 @@ public class DiscoveryLogicTest {
             writer.addMutation(m);
         }
         
-        try (BatchWriter writer = connector.createBatchWriter(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME, config)) {
+        try (BatchWriter writer = connector.createBatchWriter(TableName.SHARD_RINDEX, config)) {
             Mutation m = new Mutation(new StringBuilder().append(valueField.getValue0().toLowerCase()).reverse().toString());
             int numShards = 10;
             for (int i = 0; i < numShards; i++) {

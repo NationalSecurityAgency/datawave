@@ -22,6 +22,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -79,8 +80,8 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             
             MoreTestData.writeItAll(connector, MoreTestData.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("A", "B", "C", "D");
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
         }
         
@@ -102,8 +103,8 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             
             MoreTestData.writeItAll(connector, MoreTestData.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("A", "B", "C", "D");
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
         }
         
@@ -146,9 +147,9 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         
         logic = new ShardQueryLogic();
         logic.setMetadataTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
-        logic.setTableName(QueryTestTableHelper.SHARD_TABLE_NAME);
-        logic.setIndexTableName(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
-        logic.setReverseIndexTableName(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        logic.setTableName(TableName.SHARD);
+        logic.setIndexTableName(TableName.SHARD_INDEX);
+        logic.setReverseIndexTableName(TableName.SHARD_RINDEX);
         logic.setMaxResults(5000);
         logic.setMaxWork(25000);
         logic.setModelTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
@@ -318,7 +319,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             
             try {
                 // write the shard table :
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD, bwConfig);
                 mutation = new Mutation(shard);
                 // NAME.0 gets NAME0 and NAME.1 gets NAME1
                 mutation.put(datatype + "\u0000" + firstUID, "NAME.0" + "\u0000" + "NAME0", columnVisibility, timeStamp, emptyValue);
@@ -353,61 +354,61 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             
             try {
                 // write shard index table:
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("First"));
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("Second"));
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(secondUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("Third"));
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("Haiqu"));
                 mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID, secondUID, thirdUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("NAME0"));
                 mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID, secondUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("NAME1"));
                 mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID, secondUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("NAME8"));
                 mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("NAME9"));
                 mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("BAR"));
                 mutation.put("BAR".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(secondUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("BAZ"));
                 mutation.put("BAR".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
@@ -422,19 +423,19 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             try {
                 
                 // write the reverse index table:
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("First")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("Second")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(secondUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("Third")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
@@ -449,7 +450,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             try {
                 
                 // write the field index table:
-                bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD, bwConfig);
                 mutation = new Mutation(shard);
                 
                 mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("First") + "\u0000" + datatype + "\u0000" + firstUID, columnVisibility,

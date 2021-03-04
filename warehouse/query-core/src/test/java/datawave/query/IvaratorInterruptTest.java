@@ -8,6 +8,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -15,6 +16,7 @@ import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataHelper;
 import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -54,12 +56,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-
-import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
-import static datawave.query.iterator.QueryOptions.SORTED_UIDS;
 
 public abstract class IvaratorInterruptTest {
     private static final Logger log = Logger.getLogger(IvaratorInterruptTest.class);
@@ -103,10 +99,10 @@ public abstract class IvaratorInterruptTest {
         
         WiseGuysIngest.writeItAll(connector, range);
         Authorizations auths = new Authorizations("ALL");
-        PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-        PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-        PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
-        PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+        PrintUtility.printTable(connector, auths, TableName.SHARD);
+        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
     
     @AfterClass
@@ -182,9 +178,10 @@ public abstract class IvaratorInterruptTest {
         logic.setupQuery(config);
         
         TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, MODEL_TABLE_NAME, authSet, false);
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, QueryTestTableHelper.MODEL_TABLE_NAME,
+                        authSet, false);
         Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
+        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, QueryTestTableHelper.MODEL_TABLE_NAME);
         
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
@@ -240,7 +237,7 @@ public abstract class IvaratorInterruptTest {
         Map<String,String> params = new HashMap<>();
         
         // both required in order to force ivarator to call fillSets
-        params.put(SORTED_UIDS, "true");
+        params.put(QueryOptions.SORTED_UIDS, "true");
         logic.getConfig().setUnsortedUIDsEnabled(false);
         
         String query = "UUID =~ '^[CS].*'";

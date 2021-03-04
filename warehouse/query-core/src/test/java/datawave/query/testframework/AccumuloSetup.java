@@ -9,6 +9,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -183,9 +184,9 @@ public class AccumuloSetup extends ExternalResource {
         }
         
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_INDEX);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
         
         // TODO: elsewhere?
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_TABLE_NAME);

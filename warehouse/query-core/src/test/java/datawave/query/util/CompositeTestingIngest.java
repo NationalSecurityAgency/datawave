@@ -11,8 +11,9 @@ import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.protobuf.Uid;
-import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -81,7 +82,7 @@ public class CompositeTestingIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + oneUUID, "COLOR.0" + "\u0000" + "red", columnVisibility, timeStamp, emptyValue);
@@ -112,7 +113,7 @@ public class CompositeTestingIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             // Ones
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("One"));
@@ -249,7 +250,7 @@ public class CompositeTestingIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             // corleones

@@ -11,6 +11,7 @@ import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -84,13 +85,13 @@ class GroupingAccumuloWriter {
         
         writeMetaData(bwConfig, data);
         writeShardKeys(bwConfig, data);
-        writeShardIndexKeys(bwConfig, data, QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, false);
-        writeShardIndexKeys(bwConfig, data, QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME, true);
+        writeShardIndexKeys(bwConfig, data, TableName.SHARD_INDEX, false);
+        writeShardIndexKeys(bwConfig, data, TableName.SHARD_RINDEX, true);
         
         PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
-        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_TABLE_NAME);
-        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_INDEX);
+        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
+        PrintUtility.printTable(this.conn, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
     }
     
     private void writeMetaData(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException,
@@ -130,7 +131,7 @@ class GroupingAccumuloWriter {
     private void writeShardKeys(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException,
                     TableNotFoundException {
         Map<String,RawMetaData> meta = this.cfgData.getMetadata();
-        try (BatchWriter bw = this.conn.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig)) {
+        try (BatchWriter bw = this.conn.createBatchWriter(TableName.SHARD, bwConfig)) {
             for (Map.Entry<Multimap<String,String>,UID> entry : data) {
                 UID uid = entry.getValue();
                 Multimap<String,String> rawData = entry.getKey();

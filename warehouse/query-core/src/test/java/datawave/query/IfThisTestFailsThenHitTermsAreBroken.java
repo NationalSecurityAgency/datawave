@@ -26,6 +26,7 @@ import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataHelper;
 import datawave.query.util.TypeMetadataWriter;
 import datawave.security.util.ScannerHelper;
+import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -63,11 +64,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 
 /**
  *
@@ -150,13 +146,13 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         log.info("using tempFolder " + tempDir);
         
         logic = new ShardQueryLogic();
-        logic.setMetadataTableName(MODEL_TABLE_NAME);
-        logic.setTableName(SHARD_TABLE_NAME);
-        logic.setIndexTableName(SHARD_INDEX_TABLE_NAME);
-        logic.setReverseIndexTableName(SHARD_RINDEX_TABLE_NAME);
+        logic.setMetadataTableName(QueryTestTableHelper.MODEL_TABLE_NAME);
+        logic.setTableName(TableName.SHARD);
+        logic.setIndexTableName(TableName.SHARD_INDEX);
+        logic.setReverseIndexTableName(TableName.SHARD_RINDEX);
         logic.setMaxResults(5000);
         logic.setMaxWork(25000);
-        logic.setModelTableName(MODEL_TABLE_NAME);
+        logic.setModelTableName(QueryTestTableHelper.MODEL_TABLE_NAME);
         logic.setQueryPlanner(new DefaultQueryPlanner());
         logic.setIncludeGroupingContext(true);
         logic.setMarkingFunctions(new MarkingFunctions.Default());
@@ -198,9 +194,10 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setupQuery(config);
         
         TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, MODEL_TABLE_NAME, authSet, false);
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, QueryTestTableHelper.MODEL_TABLE_NAME,
+                        authSet, false);
         Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
+        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, QueryTestTableHelper.MODEL_TABLE_NAME);
         
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
@@ -294,9 +291,9 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         MoreTestData.writeItAll(connector, WhatKindaRange.SHARD);
         if (log.isDebugEnabled()) {
             log.debug("testWithShardRange");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         doIt();
         doItWithProjection();
@@ -311,9 +308,9 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         MoreTestData.writeItAll(connector, WhatKindaRange.DOCUMENT);
         if (log.isDebugEnabled()) {
             log.debug("testWithDocumentRange");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         doIt();
         doItWithProjection();
@@ -442,7 +439,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             
             try {
                 // write the shard table :
-                bw = con.createBatchWriter(SHARD_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD, bwConfig);
                 mutation = new Mutation(shard);
                 // NAME.0 gets NAME0 and NAME.1 gets NAME1
                 mutation.put(datatype + "\u0000" + firstUID, "NAME.0" + "\u0000" + "NAME0", columnVisibility, timeStamp, emptyValue);
@@ -477,19 +474,19 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             
             try {
                 // write shard index table:
-                bw = con.createBatchWriter(SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("First"));
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("Second"));
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(secondUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(SHARD_INDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("Third"));
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
@@ -504,19 +501,19 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             try {
                 
                 // write the reverse index table:
-                bw = con.createBatchWriter(SHARD_RINDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("First")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(SHARD_RINDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("Second")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(secondUID));
                 bw.addMutation(mutation);
                 
-                bw = con.createBatchWriter(SHARD_RINDEX_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("Third")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
@@ -531,7 +528,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             try {
                 
                 // write the field index table:
-                bw = con.createBatchWriter(SHARD_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(TableName.SHARD, bwConfig);
                 mutation = new Mutation(shard);
                 
                 mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("First") + "\u0000" + datatype + "\u0000" + firstUID, columnVisibility,
@@ -552,7 +549,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             
             try {
                 // write metadata table:
-                bw = con.createBatchWriter(MODEL_TABLE_NAME, bwConfig);
+                bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
                 
                 mutation = new Mutation("NAME");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);

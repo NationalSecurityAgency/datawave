@@ -6,6 +6,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -51,7 +52,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + myUID, "FOO_1.FOO.1.0" + "\u0000" + "yawn", columnVisibility, timeStamp, emptyValue);
@@ -88,7 +89,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             
             mutation = new Mutation(lcNoDiacriticsType.normalize("abcd"));
             mutation.put("FOO_3".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
@@ -150,7 +151,7 @@ public class LimitFieldsTestingIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             
