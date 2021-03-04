@@ -20,6 +20,20 @@ import org.slf4j.LoggerFactory;
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
  * list of UIDs for events will be maintained in the global index for low cardinality terms.
+ *
+ * Although this combiner allows the max UIDs kept to be configured, anyone using this feature should consider the impact of using it once data has been loaded
+ * into the system. Decreasing the max size will likely cause UID lists to be purged as they exceed the new max UID count. Increasing the max UID could is also
+ * unlikely to work as one would expect since any lists that already had their UIDs purged and the ignore flag set won't start collecting UIDs even if the
+ * previous count is less than the new max UID count. In practice, the main intent for this feature is to configure a new cluster with a different max UID count
+ * (without having to re-compile the code). With the caveats mentioned, it could be used on a system with data loaded, for example if a new data type becomes
+ * available and one wished to increase the max UID count while data for other data types is relatively stable or the side effects of the change don't matter.
+ *
+ * When this class is used with {@link datawave.iterators.PropogatingIterator}, one must be aware that this class is not actually used as a combiner but rather
+ * is only used for its {@link #reset()} and {@link #aggregate()} methods. PropogatingIterator allows combiner options to be passed, which means when this class
+ * is used with PropogatingIterator one could change the max UID count. However, if that option is used it should be noted that the base
+ * {@link org.apache.accumulo.core.iterators.Combiner} option validation is used and therefore the option "all" must also be set to "true" or the "columns" must
+ * be set in order to pass option validation. While set, the "all" or "columns" option will have no effect when used with PropogatingIterator since only the
+ * {@link #reset()} and {@link #aggregate()} methods are invoked.
  */
 public class GlobalIndexUidAggregator extends PropogatingCombiner {
     private static final Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
