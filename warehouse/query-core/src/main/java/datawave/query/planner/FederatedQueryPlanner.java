@@ -52,14 +52,10 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         Date originalStartDate = config.getBeginDate();
         TreeSet<YearMonthDay> holeDates;
         MetadataHelper metadataHelper = getMetadataHelper();
-        
-        // The DefaultQueryPlanner.process needs to be called so that the FieldIndexHoles can be calculated
-        // and the queryData returned will be used if there are no index holes of any kind.
+
         final QueryData queryData = new QueryData();
         CloseableIterable<QueryData> results;
-        
-        results = super.process(config, query, settings, scannerFactory);
-        
+
         if (config instanceof ShardQueryConfiguration) {
             ASTJexlScript queryTree = null;
             try {
@@ -121,10 +117,11 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                 
             }
             
+        }else {
+            results = super.process(config, query, settings, scannerFactory);
+            returnQueryData.addDelegate(results);
         }
         
-        if (!returnQueryData.iterator().hasNext())
-            returnQueryData.addDelegate(results);
         
         return returnQueryData;
     }
