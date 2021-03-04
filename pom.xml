@@ -18,7 +18,6 @@
         <module>common-test</module>
         <module>web-services</module>
         <module>warehouse</module>
-        <module>type-metadata-hdfs</module>
     </modules>
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>

@@ -47,7 +47,6 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.util.TypeMetadata;
-import datawave.query.util.TypeMetadataProvider;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
@@ -136,7 +135,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
-    public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -366,8 +364,6 @@ public class QueryOptions implements OptionDescriber {
     
     protected Queue<Entry<Range,String>> batchStack;
     
-    protected TypeMetadataProvider typeMetadataProvider;
-    
     protected int batchedQueries = 0;
     
     protected String metadataTableName;
@@ -389,7 +385,6 @@ public class QueryOptions implements OptionDescriber {
         this.disableEvaluation = other.disableEvaluation;
         this.disableIndexOnlyDocuments = other.disableIndexOnlyDocuments;
         this.typeMetadata = other.typeMetadata;
-        this.typeMetadataProvider = other.typeMetadataProvider;
         this.typeMetadataAuthsKey = other.typeMetadataAuthsKey;
         this.metadataTableName = other.metadataTableName;
         this.compositeMetadata = other.compositeMetadata;
@@ -537,40 +532,10 @@ public class QueryOptions implements OptionDescriber {
     }
     
     public TypeMetadata getTypeMetadata() {
-        
         // first, we will see it the query passed over the serialized TypeMetadata.
         // If it did, use that.
         if (this.typeMetadata != null && !this.typeMetadata.isEmpty()) {
-            
             return this.typeMetadata;
-            
-            // if the query did not contain the TypeMetadata in its options,
-            // (the TypeMetadata class member is empty) we will attempt to
-            // use the hdfs typeMetadata from the TypeMetadataProvider. The query will have sent
-            // us the auths to use as a key:
-        } else if (this.metadataTableName != null && this.typeMetadataAuthsKey != null) {
-            log.debug("the query did not pass the typeMetadata");
-            // lazily create a typeMetadataProvider if we don't already have one
-            if (this.typeMetadataProvider == null) {
-                try {
-                    this.typeMetadataProvider = TypeMetadataProvider.Factory.createTypeMetadataProvider();
-                    if (log.isTraceEnabled()) {
-                        log.trace("made a typeMetadataProvider:" + typeMetadataProvider);
-                    }
-                } catch (Throwable th) {
-                    // for now, do not allow problems with the TypeMetadataProvider to affect instantiation.
-                    log.info("was unable to create a TypeMetadataProvider from its Factory: ", th);
-                }
-            }
-            if (this.typeMetadataProvider != null) {
-                TypeMetadata typeMetadata = this.typeMetadataProvider.getTypeMetadata(this.metadataTableName, this.typeMetadataAuthsKey);
-                if (typeMetadata != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("got a typeMetadata from hdfs and the bridge uri is " + typeMetadataProvider.getBridge().getUri());
-                    }
-                    return typeMetadata;
-                }
-            }
         }
         log.debug("making a nothing typeMetadata");
         return new TypeMetadata();
