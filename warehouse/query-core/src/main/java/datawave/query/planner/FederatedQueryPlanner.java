@@ -43,7 +43,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
     public FederatedQueryPlanner() {
         super();
     }
-
+    
     @Override
     public FederatedQueryDataIterable process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
@@ -125,6 +125,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
     
     private CloseableIterable<QueryData> getQueryData(ShardQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory,
                     Date startDate, Date endDate) throws DatawaveQueryException {
+        log.debug("getQueryData in the FederatedQueryPlanner is called ");
         CloseableIterable<QueryData> queryData;
         ShardQueryConfiguration tempConfig = new ShardQueryConfiguration(config);
         tempConfig.setBeginDate(startDate);
@@ -161,7 +162,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         if (bounds.withinBounds(strDate))
             queryDates.add(new YearMonthDay(strDate));
     }
-
+    
     @Override
     public long maxRangesPerQueryPiece() {
         return super.maxRangesPerQueryPiece();
@@ -222,7 +223,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         String endDate = DateHelper.format(config.getEndDate().getTime());
         String holeStart = startDate;
         String lastHoleEndate = null;
-        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, true, endDate, true);
+        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, false, endDate, false);
         FieldIndexHole newHole = null;
         boolean firstHole = true;
         boolean foundHolesInDateBounds = false;
@@ -231,7 +232,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         
         for (String field : fieldToDatatypeMap.keySet()) {
             indexedDates = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
-            if (indexedDates != null && !(indexedDates.getIndexedDatesSet().size() == 0)) {
+            if (indexedDates != null && indexedDates.getIndexedDatesSet().size() > 0) {
                 for (YearMonthDay entry : indexedDates.getIndexedDatesSet()) {
                     // Only create a hole if the indexed field are within date bounds
                     if (bounds.withinBounds(entry)) {
@@ -283,6 +284,10 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                     }
                     holeStart = nextDay(entry.getYyyymmdd());
                 }
+            } else {
+                newHole = null;
+                continue;
+                
             }
             
             if (newHole != null)
@@ -293,7 +298,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                 config.addFieldIndexHole(trailingHole);
             }
             
-            if (!foundHolesInDateBounds) {
+            if (foundHolesInDateBounds) {
                 FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {startDate, endDate});
                 config.addFieldIndexHole(trailingHole);
             }
