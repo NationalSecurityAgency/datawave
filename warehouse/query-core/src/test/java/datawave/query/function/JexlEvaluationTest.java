@@ -69,12 +69,12 @@ public class JexlEvaluationTest {
         // Case 1: Single fielded filter function, field is present
         evaluate(query, d);
         
-        query = "ANCHOR == 'a' && filter:includeRegex((FOO||FOO2), 'baz.*')";
-        String orderMattersQuery = "ANCHOR == 'a' && filter:includeRegex((FOO2||FOO), 'baz.*')";
+        query = "ANCHOR == 'a' && filter:includeRegex((FOO||FOO2||FOO3), 'baz.*')";
+        String orderMattersQuery = "ANCHOR == 'a' && filter:includeRegex((FOO3||FOO2||FOO), 'baz.*')";
         d = new Document();
         d.put("ANCHOR", new Content("a", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
-        d.put("FOO2", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
+        d.put("FOO3", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
         
         // Case 2: Multi-fielded filter function, both fields present
         evaluate(query, d);
@@ -83,7 +83,7 @@ public class JexlEvaluationTest {
         d = new Document();
         d.put("ANCHOR", new Content("a", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
-        d.put("FOO2", new Content("nohit", new Key("shard", "datatype\0uid"), true));
+        d.put("FOO3", new Content("nohit", new Key("shard", "datatype\0uid"), true));
         
         // Case 3: Multi-fielded filter function, only first field is present
         evaluate(query, d);
@@ -92,7 +92,7 @@ public class JexlEvaluationTest {
         d = new Document();
         d.put("ANCHOR", new Content("a", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Content("nohit", new Key("shard", "datatype\0uid"), true));
-        d.put("FOO2", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
+        d.put("FOO3", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
         
         // Case 4: Multi-fielded filter function, only second field is present
         evaluate(query, d);
@@ -104,7 +104,7 @@ public class JexlEvaluationTest {
         JexlEvaluation evaluation = new JexlEvaluation(query);
         
         DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Arrays.asList("ANCHOR", "FOO", "FOO2"), context);
+        d.visit(Arrays.asList("ANCHOR", "FOO", "FOO2", "FOO3"), context);
         
         boolean result = evaluation.apply(new Tuple3<>(new Key("shard", "datatype\0uid"), d, context));
         assertTrue(result);
