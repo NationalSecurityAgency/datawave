@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
@@ -27,6 +28,8 @@ import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.configuration.QueryData;
+import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -332,6 +335,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     private List<String> contentFieldNames = Collections.emptyList();
     
+    private Key lastResult;
+    private QueryData lastRange;
+    
     /**
      * Default constructor
      */
@@ -506,6 +512,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
+    }
+    
+    public ShardQueryConfiguration(Map<String,Object> properties) {
+        // TODO
+    }
+    
+    public Map<String,Object> toMap() {
+        Map<String,Object> props = new HashMap<String,Object>();
+        // TODO
+        return props;
     }
     
     /**

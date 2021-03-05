@@ -8,6 +8,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.microservice.common.storage.QueryCheckpoint;
+import datawave.microservice.common.storage.QueryKey;
+import datawave.microservice.common.storage.QueryPool;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -56,6 +59,7 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.CheckpointableQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -154,7 +158,7 @@ import java.util.concurrent.TimeUnit;
  * 
  * @see datawave.query.enrich
  */
-public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
+public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
     
     public static final String NULL_BYTE = "\0";
     public static final Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
@@ -2269,5 +2273,44 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public Set<String> getEvaluationOnlyFields() {
         return getConfig().getEvaluationOnlyFields();
+    }
+    
+    /**
+     * After calling initialize, one can get the checkpoint to store for later use using this method
+     *
+     * @param queryKey
+     *            - the query key to include in the checkpoint
+     * @param config
+     *            - configuration returned from intialize call
+     * @return The query checkpoint
+     */
+    @Override
+    public QueryCheckpoint checkpoint(QueryKey queryKey, GenericQueryConfiguration config) {
+        return new QueryCheckpoint(queryKey, ((ShardQueryConfiguration) config).toMap());
+    }
+    
+    /**
+     * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
+     * any.
+     *
+     * @param checkpoint
+     *            Encapsulates all information needed to run a portion of the query.
+     */
+    @Override
+    public void setupQuery(QueryCheckpoint checkpoint) throws Exception {
+        setupQuery(new ShardQueryConfiguration(checkpoint.getProperties()));
+    }
+    
+    /**
+     * This can be called at any point to get a checkpoint such that this query logic instance can be torn down to be rebuilt later. At a minimum this should be
+     * called after the getTransformIterator is depleted of results.
+     *
+     * @param queryKey
+     *            The query key to include in the checkpoint
+     * @return The query checkpoint
+     */
+    @Override
+    public QueryCheckpoint checkpoint(QueryKey queryKey) {
+        return checkpoint(queryKey, this.config);
     }
 }
