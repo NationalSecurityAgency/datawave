@@ -21,8 +21,8 @@ Configuration:
 
     RollingFile:
       - name: File
-        fileName: "${sys:logDir}/query-api-service.log"
-        filePattern: "${sys:logDir}/query-api-service.log.%d{yyyy-MM-dd}-%i.gz"
+        fileName: "${sys:logDir}/query-service.log"
+        filePattern: "${sys:logDir}/query-service.log.%d{yyyy-MM-dd}-%i.gz"
         append: true
         bufferedIO: true
         bufferSize: 8192

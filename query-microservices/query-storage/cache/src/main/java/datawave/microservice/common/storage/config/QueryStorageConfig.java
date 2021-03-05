@@ -5,10 +5,10 @@ import datawave.microservice.cached.CacheInspector;
 import datawave.microservice.cached.LockableCacheInspector;
 import datawave.microservice.cached.LockableHazelcastCacheInspector;
 import datawave.microservice.cached.UniversalLockableCacheInspector;
-import datawave.microservice.common.storage.queue.KafkaQueryQueueManager;
-import datawave.microservice.common.storage.queue.LocalQueryQueueManager;
 import datawave.microservice.common.storage.QueryCache;
 import datawave.microservice.common.storage.QueryQueueManager;
+import datawave.microservice.common.storage.queue.KafkaQueryQueueManager;
+import datawave.microservice.common.storage.queue.LocalQueryQueueManager;
 import datawave.microservice.common.storage.queue.RabbitQueryQueueManager;
 import org.apache.log4j.Logger;
 import org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurer;
@@ -26,7 +26,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 
@@ -69,7 +68,6 @@ public class QueryStorageConfig implements RabbitListenerConfigurer {
         return new RabbitListenerEndpointRegistry();
     }
     
-    @Bean
     public DefaultMessageHandlerMethodFactory messageHandlerMethodFactory() {
         DefaultMessageHandlerMethodFactory factory = new DefaultMessageHandlerMethodFactory();
         factory.setMessageConverter(consumerJackson2MessageConverter());
