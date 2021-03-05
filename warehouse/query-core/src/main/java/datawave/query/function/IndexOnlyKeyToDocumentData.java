@@ -160,7 +160,8 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             Key docKey = getDocKey(from.getKey());
             
             // Ensure that we have a non-empty colqual
-            final Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString() + '\uffff');
+            final Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString(), from.getKey().getColumnQualifier()
+                            .toString() + '\u0000' + '\uffff');
             
             // Create the primary range
             final Range keyRange = new Range(from.getKey(), true, stopKey, true);
