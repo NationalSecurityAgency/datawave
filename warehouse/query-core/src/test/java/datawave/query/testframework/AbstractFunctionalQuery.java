@@ -168,7 +168,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setMarkingFunctions(new Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new FederatedQueryPlanner());
-        this.logic.setQueryPlanner(new FederatedQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         
         this.logic.setCollectTimingDetails(true);
