@@ -159,17 +159,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
     
-    private boolean doCalculateFieldIndexHoles = true;
-    
     protected boolean limitScanners = false;
-    
-    public boolean calculateFieldIndexHoles() {
-        return doCalculateFieldIndexHoles;
-    }
-    
-    public void setDoCalculateFieldIndexHoles(boolean doCalculateFieldIndexHoles) {
-        this.doCalculateFieldIndexHoles = doCalculateFieldIndexHoles;
-    }
     
     /**
      * Allows developers to disable bounded lookup of ranges and regexes. This will be optimized in future releases.
@@ -290,8 +280,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
     
-    protected FederatedQueryPlanner federatedQueryPlanner = null;
-    
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
     }
@@ -325,14 +313,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
-    }
-    
-    public FederatedQueryPlanner getFederatedQueryPlanner() {
-        return federatedQueryPlanner;
-    }
-    
-    public void setFederatedQueryPlanner(FederatedQueryPlanner federatedQueryPlanner) {
-        this.federatedQueryPlanner = federatedQueryPlanner;
     }
     
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
