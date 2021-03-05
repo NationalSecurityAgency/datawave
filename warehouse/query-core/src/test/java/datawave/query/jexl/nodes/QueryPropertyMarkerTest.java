@@ -41,7 +41,7 @@ public class QueryPropertyMarkerTest {
         
         JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
         String delayedString = JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode);
-        assertEquals(delayedString, "((DP = true) && (FOO == 'bar'))");
+        assertEquals(delayedString, "((_Delayed_ = true) && (FOO == 'bar'))");
         
         JexlNode parsedSource = QueryPropertyMarker.getQueryPropertySource(delayedNode, ASTDelayedPredicate.class);
         assertEquals(sourceNode, parsedSource);

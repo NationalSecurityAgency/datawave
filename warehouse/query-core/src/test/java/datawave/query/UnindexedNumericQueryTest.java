@@ -96,7 +96,7 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
         String max = "122";
         String ohio = "'ohio'";
         String iowa = "'iowa'";
-        String query = "(" + CityField.STATE.name() + EQ_OP + ohio + OR_OP + CityField.STATE.name() + EQ_OP + iowa + ")" + AND_OP + "((BR = true) && ("
+        String query = "(" + CityField.STATE.name() + EQ_OP + ohio + OR_OP + CityField.STATE.name() + EQ_OP + iowa + ")" + AND_OP + "((_Bounded_ = true) && ("
                         + CityField.NUM.name() + GT_OP + min + AND_OP + CityField.NUM.name() + LT_OP + max + "))";
         
         ShardQueryConfiguration config = (ShardQueryConfiguration) setupConfig(query);

@@ -459,7 +459,7 @@ public class QueryPruningVisitorTest {
     }
     
     public void propertyMarkerTest() throws ParseException {
-        String query = "((EVTM = true) && (FIELD = 'x'))";
+        String query = "((_Value_ = true) && (FIELD = 'x'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         JexlNode newScript = QueryPruningVisitor.reduce(script, false);

@@ -8,7 +8,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
  */
 public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
     
-    private static final String LABEL = "EVTM";
+    private static final String LABEL = "_Value_";
     
     public static String label() {
         return LABEL;

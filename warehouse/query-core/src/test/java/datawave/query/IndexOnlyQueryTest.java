@@ -97,7 +97,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
             String query = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name().toLowerCase() + " == 'none')" + " and "
                             +
                             // NOTE: the ASTDelayedPredicate will not normalize the value - convert to lower case before query
-                            "((DP = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'" + "))" + " and "
+                            "((_Delayed_ = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'" + "))" + " and "
                             + CityField.STATE.name() + EQ_OP + state;
             String expectQuery = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name() + " == 'none')" + " and " + "("
                             + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "')" + " and " + CityField.STATE.name() + EQ_OP + state;
@@ -110,7 +110,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         log.info("------  testOneDelayedPredicate  ------");
         for (final TestCities city : TestCities.values()) {
             // NOTE: the ASTDelayedPredicate will not normalize the value - convert to lower case before query
-            String query = "((DP = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'))";
+            String query = "((_Delayed_ = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'))";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'";
             runTest(query, expectQuery);
         }

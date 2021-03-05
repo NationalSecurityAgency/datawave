@@ -66,20 +66,20 @@ public class QueryPropertyMarkerVisitorTest {
     
     @Test
     public void testInstanceOfAny() throws ParseException {
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((IOM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((DP = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((IOM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((EO = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((EOTM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((ETTM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((EVTM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((BR = true) && (FOO > 1 && FOO < 5))")));
+        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Hole_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Delayed_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Hole_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Eval_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_List_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Term_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Value_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("((_Bounded_ = true) && (FOO > 1 && FOO < 5))")));
         assertFalse(QueryPropertyMarkerVisitor.instanceOfAny(parseJexlQuery("FOO == 'a'")));
     }
     
     @Test
     public void testInstanceOf() throws ParseException {
-        JexlNode node = parseJexlQuery("((BR = true) && (FOO > 1 && FOO < 5))");
+        JexlNode node = parseJexlQuery("((_Bounded_ = true) && (FOO > 1 && FOO < 5))");
         assertTrue(QueryPropertyMarkerVisitor.instanceOf(node, BoundedRange.class));
         assertFalse(QueryPropertyMarkerVisitor.instanceOf(node, ASTDelayedPredicate.class));
         assertTrue(QueryPropertyMarkerVisitor.instanceOf(node, Collections.singleton(BoundedRange.class)));
@@ -88,7 +88,7 @@ public class QueryPropertyMarkerVisitorTest {
     
     @Test
     public void testInstanceOfAnyExcept() throws ParseException {
-        JexlNode node = parseJexlQuery("((BR = true) && (FOO > 1 && FOO < 5))");
+        JexlNode node = parseJexlQuery("((_Bounded_ = true) && (FOO > 1 && FOO < 5))");
         assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, ASTDelayedPredicate.class));
         assertFalse(QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, BoundedRange.class));
         assertTrue(QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singleton(ASTDelayedPredicate.class)));
@@ -97,13 +97,13 @@ public class QueryPropertyMarkerVisitorTest {
     
     @Test
     public void testIsDelayedPredicate() throws ParseException {
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((IOM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((DP = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((IOM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((EO = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((EOTM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((ETTM = true) && (FOO == 'a'))")));
-        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((EVTM = true) && (FOO == 'a'))")));
-        assertFalse(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((BR = true) && (FOO > 1 && FOO < 5))")));
+        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Hole_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Delayed_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Hole_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Eval_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_List_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Term_ = true) && (FOO == 'a'))")));
+        assertTrue(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Value_ = true) && (FOO == 'a'))")));
+        assertFalse(QueryPropertyMarkerVisitor.isDelayedPredicate(parseJexlQuery("((_Bounded_ = true) && (FOO > 1 && FOO < 5))")));
     }
 }

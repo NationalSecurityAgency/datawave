@@ -247,7 +247,7 @@ public class CompoundJexlQueryTest extends AbstractFunctionalQuery {
     public void testNumericAndRange() throws Exception {
         log.info("------  testNumericAndRange  ------");
         String query = "(" + CityField.NUM.name() + GTE_OP + "30)" + AND_OP + "(" + CityField.NUM.name() + LTE_OP + "105)";
-        runTest("((BR = true) && (" + query + "))", query);
+        runTest("((_Bounded_ = true) && (" + query + "))", query);
     }
     
     @Test

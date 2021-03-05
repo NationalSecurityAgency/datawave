@@ -197,8 +197,8 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((BR = true) && (FOO > '1' && FOO < '10'))";
-        String expected = "((BR = true) && (FOO > '+aE1' && FOO < '+bE1'))";
+        String original = "((_Bounded_ = true) && (FOO > '1' && FOO < '10'))";
+        String expected = "((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))";
         expandTerms(original, expected);
     }
     
@@ -229,8 +229,8 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((BR = true) && (FOO > 1 && FOO < 10))";
-        String expected = "((((BR = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((BR = true) && (FOO > '1' && FOO < '10'))))";
+        String original = "((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((_Bounded_ = true) && (FOO > '1' && FOO < '10'))))";
         expandTerms(original, expected);
     }
     
@@ -255,8 +255,8 @@ public class ExpandMultiNormalizedTermsTest {
         helper.setIndexedFields(dataTypes.keySet());
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "NEW == 'boo' && ((BR = true) && (NEW > '1' && NEW < '10'))";
-        String expected = "NEW == 'boo' && ((BR = true) && (NEW > '1' && NEW < '10'))";
+        String original = "NEW == 'boo' && ((_Bounded_ = true) && (NEW > '1' && NEW < '10'))";
+        String expected = "NEW == 'boo' && ((_Bounded_ = true) && (NEW > '1' && NEW < '10'))";
         expandTerms(original, expected);
     }
     
@@ -279,8 +279,8 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((BR = true) && (NEW > '0' && NEW < '9')) && ((BR = true) && (FOO > 1 && FOO < 10))";
-        String expected = "((BR = true) && (NEW > '0' && NEW < '9')) && ((BR = true) && (FOO > 1 && FOO < 10))";
+        String original = "((_Bounded_ = true) && (NEW > '0' && NEW < '9')) && ((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((_Bounded_ = true) && (NEW > '0' && NEW < '9')) && ((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
         expandTerms(original, expected);
     }
     
@@ -428,7 +428,7 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((EVTM = true) && (FOO =~ 'bar.*'))";
+        String original = "((_Value_ = true) && (FOO =~ 'bar.*'))";
         expandTerms(original, original);
     }
     
@@ -439,7 +439,7 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((EVTM = true) && (FOO > '1' && FOO < '10'))";
+        String original = "((_Value_ = true) && (FOO > '1' && FOO < '10'))";
         expandTerms(original, original);
     }
     

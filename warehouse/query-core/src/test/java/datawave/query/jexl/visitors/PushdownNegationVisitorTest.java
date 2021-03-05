@@ -151,74 +151,75 @@ public class PushdownNegationVisitorTest {
     
     @Test
     public void testDelayedPropertyMarkerPropagate() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((DP = true) && (F1 == 'v1' || F2 == 'v2'))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Delayed_ = true) && (F1 == 'v1' || F2 == 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((DP = true) && ((!(F1 == 'v1') && !(F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("((_Delayed_ = true) && ((!(F1 == 'v1') && !(F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testEvaluationOnlyPropertyMarkerPropagate() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((EO = true) && (F1 == 'v1' || F2 == 'v2'))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Eval_ = true) && (F1 == 'v1' || F2 == 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((EO = true) && ((!(F1 == 'v1') && !(F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("((_Eval_ = true) && ((!(F1 == 'v1') && !(F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testExceededOrPropertyMarkerPropagate() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((EOTM = true) && (F1 == 'v1' || F2 == 'v2'))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_List_ = true) && (F1 == 'v1' || F2 == 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("!((EOTM = true) && (F1 == 'v1' || F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("!((_List_ = true) && (F1 == 'v1' || F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testExceededValuePropertyMarkerPropagate() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((EVTM = true) && (F1 == 'v1' || F2 == 'v2'))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Value_ = true) && (F1 == 'v1' || F2 == 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("!((EVTM = true) && (F1 == 'v1' || F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("!((_Value_ = true) && (F1 == 'v1' || F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testExceededTermPropertyMarkerPropagate() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((ETTM = true) && (F1 == 'v1' || F2 == 'v2'))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Term_ = true) && (F1 == 'v1' || F2 == 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("!((ETTM = true) && (F1 == 'v1' || F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("!((_Term_ = true) && (F1 == 'v1' || F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testBoundedRangeNoPropagation() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("F3 == 'v3' || !((BR = true) && (F1 >= 'v1' && F1 <= 'v2'))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("F3 == 'v3' || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("F3 == 'v3' || !((BR = true) && (F1 >= 'v1' && F1 <= 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("F3 == 'v3' || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testPartialBoundedRangePropagation() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("F3 == 'v3' || !((BR = true) && (F1 >= 'v1' && F2 <= 'v2'))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("F3 == 'v3' || !((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("F3 == 'v3' || !((BR = true) && (F1 >= 'v1' && F2 <= 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("F3 == 'v3' || !((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testMixedBoundedRanges() throws ParseException {
         ASTJexlScript query = JexlASTHelper
-                        .parseJexlQuery("(F3 == 'v3' || !(((BR = true) && (F1 >= 'v1' && F2 <= 'v2')) || !((BR = true) && (F1 >= 'v1' && F1 <= 'v2'))))");
+                        .parseJexlQuery("(F3 == 'v3' || !(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2')) || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("(F3 == 'v3' || ((!(((BR = true) && (F1 >= 'v1' && F2 <= 'v2'))) && (((BR = true) && (F1 >= 'v1' && F1 <= 'v2'))))))",
+        Assert.assertEquals(
+                        "(F3 == 'v3' || ((!(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2'))) && (((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))))",
                         JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testMixedMarkers() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((DP = true) && (F1 == 'v1' && ((ETTM = true) && (F2 == 'v2'))))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Delayed_ = true) && (F1 == 'v1' && ((_Term_ = true) && (F2 == 'v2'))))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((DP = true) && ((!(F1 == 'v1') || !(((ETTM = true) && (F2 == 'v2'))))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("((_Delayed_ = true) && ((!(F1 == 'v1') || !(((_Term_ = true) && (F2 == 'v2'))))))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testMixedMarkersInverted() throws ParseException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((ETTM = true) && (F1 == 'v1' && ((DP = true) && (F2 == 'v2'))))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Term_ = true) && (F1 == 'v1' && ((_Delayed_ = true) && (F2 == 'v2'))))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("!((ETTM = true) && (F1 == 'v1' && ((DP = true) && (F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("!((_Term_ = true) && (F1 == 'v1' && ((_Delayed_ = true) && (F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test

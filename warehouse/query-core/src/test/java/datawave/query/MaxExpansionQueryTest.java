@@ -206,7 +206,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testMaxValueRangeOne() throws Exception {
         log.info("------  testMaxValueRangeOne  ------");
-        String query = "((BR = true) && (" + CityField.STATE.name() + LTE_OP + "'m~'" + AND_OP + CityField.STATE.name() + GTE_OP + "'m'))";
+        String query = "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP + "'m~'" + AND_OP + CityField.STATE.name() + GTE_OP + "'m'))";
         
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, query);
@@ -228,7 +228,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testMaxValueRangeTwo() throws Exception {
         log.info("------  testMaxValueRangeTwo  ------");
-        String query = "((BR = true) && (" + CityField.STATE.name() + LTE_OP + "'n'" + AND_OP + CityField.STATE.name() + GTE_OP + "'m'))";
+        String query = "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP + "'n'" + AND_OP + CityField.STATE.name() + GTE_OP + "'m'))";
         
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, query);
@@ -250,7 +250,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testMaxValueRangeMutiHdfsLocations() throws Exception {
         log.info("------  testMaxValueRangeMultiHdfsLocations  ------");
-        String query = "((BR = true) && (" + CityField.STATE.name() + LTE_OP + "'n'" + AND_OP + CityField.STATE.name() + GTE_OP + "'m'))";
+        String query = "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP + "'n'" + AND_OP + CityField.STATE.name() + GTE_OP + "'m'))";
         
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, query);
@@ -274,7 +274,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         log.info("------  testMaxValueRangeIndexOnly  ------");
         // should match france and italy
         String cont = "'europe'";
-        String query = CityField.CONTINENT.name() + EQ_OP + cont + AND_OP + "((BR = true) && (" + CityField.COUNTRY.name() + " >= 'f' and "
+        String query = CityField.CONTINENT.name() + EQ_OP + cont + AND_OP + "((_Bounded_ = true) && (" + CityField.COUNTRY.name() + " >= 'f' and "
                         + CityField.COUNTRY.name() + " <= 'j'))";
         
         this.logic.setMaxValueExpansionThreshold(3);
@@ -341,7 +341,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testNumericRange() throws Exception {
-        String query = "((BR = true) && (" + CityField.NUM.name() + GTE_OP + "99" + AND_OP + CityField.NUM.name() + LTE_OP + "131))";
+        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + GTE_OP + "99" + AND_OP + CityField.NUM.name() + LTE_OP + "131))";
         // should expand to EQNODES for 100, 110, 120, 130
         this.logic.setMaxValueExpansionThreshold(20);
         runTest(query, query);

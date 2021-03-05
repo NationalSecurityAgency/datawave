@@ -10,7 +10,7 @@ public class ASTEvaluationOnly extends QueryPropertyMarker {
     
     private static final String CLASS_NAME = ASTEvaluationOnly.class.getSimpleName();
     
-    private static final String LABEL = "EO";
+    private static final String LABEL = "_Eval_";
     
     public static String label() {
         return LABEL;

@@ -11,19 +11,19 @@ public class TermCountingVisitorTest {
     
     @Test
     public void testRange() throws ParseException {
-        String query = "((BR = true) && (NUM >= '+aE1' && NUM <= '+aE4'))";
+        String query = "((_Bounded_ = true) && (NUM >= '+aE1' && NUM <= '+aE4'))";
         testCounts(query, 1);
     }
     
     @Test
     public void testNegatedRange() throws ParseException {
-        String query = "!((BR = true) && (NUM >= '+aE1' && NUM <= '+aE4'))";
+        String query = "!((_Bounded_ = true) && (NUM >= '+aE1' && NUM <= '+aE4'))";
         testCounts(query, 1);
     }
     
     @Test
     public void testRangePlusTerm() throws ParseException {
-        String query = "((BR = true) && (NUM >= '+aE1' && NUM <= '+aE4')) && FOO == 'bar'";
+        String query = "((_Bounded_ = true) && (NUM >= '+aE1' && NUM <= '+aE4')) && FOO == 'bar'";
         testCounts(query, 2);
     }
     
@@ -41,14 +41,14 @@ public class TermCountingVisitorTest {
     
     @Test
     public void testTwoRangesForTheSameTerm() throws ParseException {
-        String query = "((BR = true) && (NUM >= '+aE1' && NUM <= '+aE4')) || ((BR = true) && (NUM >= '+aE7' && NUM <= '+aE9'))";
+        String query = "((_Bounded_ = true) && (NUM >= '+aE1' && NUM <= '+aE4')) || ((_Bounded_ = true) && (NUM >= '+aE7' && NUM <= '+aE9'))";
         // When the same term is present in two distinct ranges, it should be counted as two separate terms.
         testCounts(query, 2);
     }
     
     @Test
     public void testTwoRangesPlusTerm() throws ParseException {
-        String query = "((BR = true) && (NUM >= '+aE1' && NUM <= '+aE4')) && FOO == 'bar' && ((BR = true) && (NUM2 >= '+aE7' && NUM2 <= '+aE9'))";
+        String query = "((_Bounded_ = true) && (NUM >= '+aE1' && NUM <= '+aE4')) && FOO == 'bar' && ((_Bounded_ = true) && (NUM2 >= '+aE7' && NUM2 <= '+aE9'))";
         testCounts(query, 3);
     }
     
@@ -60,19 +60,19 @@ public class TermCountingVisitorTest {
     
     @Test
     public void testNestedRangeWithinConjunction() throws ParseException {
-        String query = "((BR = true) && (NUM >= '+aE1' && NUM <= '+aE4')) && (FOO == 'bar' || ((BR = true) && (NUM2 >= '+aE7' && NUM2 <= '+aE9')))";
+        String query = "((_Bounded_ = true) && (NUM >= '+aE1' && NUM <= '+aE4')) && (FOO == 'bar' || ((_Bounded_ = true) && (NUM2 >= '+aE7' && NUM2 <= '+aE9')))";
         testCounts(query, 3);
     }
     
     @Test
     public void testNestedRangeWithinDisjunction() throws ParseException {
-        String query = "((BR = true) && (NUM >= '+aE1' && NUM <= '+aE4')) || (FOO == 'bar' && ((BR = true) && (NUM2 >= '+aE7' && NUM2 <= '+aE9')))";
+        String query = "((_Bounded_ = true) && (NUM >= '+aE1' && NUM <= '+aE4')) || (FOO == 'bar' && ((_Bounded_ = true) && (NUM2 >= '+aE7' && NUM2 <= '+aE9')))";
         testCounts(query, 3);
     }
     
     @Test
     public void testQueryWithFunction() throws ParseException {
-        String query = "((BR = true) && (NUM >= '+aE1' && NUM <= '+aE4')) || filter:includeRegex(FOO, '.*bar.*')";
+        String query = "((_Bounded_ = true) && (NUM >= '+aE1' && NUM <= '+aE4')) || filter:includeRegex(FOO, '.*bar.*')";
         testCounts(query, 2);
     }
     

@@ -9,7 +9,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
  */
 public class BoundedRange extends QueryPropertyMarker {
     
-    private static final String LABEL = "BR";
+    private static final String LABEL = "_Bounded_";
     
     public static String label() {
         return LABEL;

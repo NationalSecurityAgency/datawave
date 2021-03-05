@@ -245,7 +245,7 @@ public class JexlASTHelperTest {
     
     @Test
     public void testFindRange() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((BR = true) && (A < 'b' && A > 'a')) && !(FOO == 'bar')");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 'b' && A > 'a')) && !(FOO == 'bar')");
         
         LiteralRange range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
@@ -257,7 +257,7 @@ public class JexlASTHelperTest {
         
         Assert.assertNull(range);
         
-        script = JexlASTHelper.parseJexlQuery("((BR = true) && (A < 5 && A > 1))");
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 5 && A > 1))");
         
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
@@ -269,7 +269,7 @@ public class JexlASTHelperTest {
         Assert.assertFalse(range.isLowerInclusive());
         Assert.assertFalse(range.isUpperInclusive());
         
-        script = JexlASTHelper.parseJexlQuery("((BR = true) && (A <= 5 && A >= 1))");
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A <= 5 && A >= 1))");
         
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
@@ -284,13 +284,13 @@ public class JexlASTHelperTest {
     
     @Test
     public void testFindDelayedRange() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((DP = true) && ((BR = true) && (A < 'b' && A > 'a'))) && !(FOO == 'bar')");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a'))) && !(FOO == 'bar')");
         
         LiteralRange range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
         Assert.assertNull(range);
         
-        script = JexlASTHelper.parseJexlQuery("((DP = true) && ((BR = true) && (A < 'b' && A > 'a')))");
+        script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a')))");
         
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
@@ -305,13 +305,13 @@ public class JexlASTHelperTest {
     
     @Test
     public void testFindNotDelayedRange() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((DP = true) && ((BR = true) && (A < 'b' && A > 'a')))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a')))");
         
         LiteralRange range = JexlASTHelper.findRange().notDelayed().getRange(script.jjtGetChild(0));
         
         Assert.assertNull(range);
         
-        script = JexlASTHelper.parseJexlQuery("((BR = true) && (A < 5 && A > 1))");
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 5 && A > 1))");
         
         range = JexlASTHelper.findRange().notDelayed().getRange(script.jjtGetChild(0));
         
@@ -329,7 +329,7 @@ public class JexlASTHelperTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(Collections.singleton("A"));
         
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((BR = true) && (A < 'b' && A > 'a'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 'b' && A > 'a'))");
         
         LiteralRange range = JexlASTHelper.findRange().indexedOnly(null, helper).getRange(script.jjtGetChild(0));
         

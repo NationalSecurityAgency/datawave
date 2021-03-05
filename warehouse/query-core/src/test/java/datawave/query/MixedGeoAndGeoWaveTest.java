@@ -312,7 +312,7 @@ public class MixedGeoAndGeoWaveTest {
     
     @Test
     public void withinSmallBoundingBoxEvaluationOnlyTest() throws Exception {
-        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '2_0.5', '10_1.5') && ((EO = true) && geo:within_bounding_box(" + GEO_FIELD
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '2_0.5', '10_1.5') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
                         + ", '2_0.5', '10_1.5'))";
         
         List<DefaultEvent> events = getQueryResults(query);
@@ -364,7 +364,7 @@ public class MixedGeoAndGeoWaveTest {
     
     @Test
     public void withinLargeBoundingBoxEvaluationOnlyTest() throws Exception {
-        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_-180', '90_180') && ((EO = true) && geo:within_bounding_box(" + GEO_FIELD
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_-180', '90_180') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
                         + ", '-90_-180', '90_180'))";
         
         List<DefaultEvent> events = getQueryResults(query);
@@ -417,7 +417,7 @@ public class MixedGeoAndGeoWaveTest {
     
     @Test
     public void withinLargeCircleEvaluationOnlyTest() throws Exception {
-        String query = "geo:within_circle(" + GEO_FIELD + ", '0_0', 90) && ((EO = true) && geo:within_circle(" + GEO_FIELD + ", '0_0', 90))";
+        String query = "geo:within_circle(" + GEO_FIELD + ", '0_0', 90) && ((_Eval_ = true) && geo:within_circle(" + GEO_FIELD + ", '0_0', 90))";
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(12, events.size());
@@ -469,7 +469,7 @@ public class MixedGeoAndGeoWaveTest {
     
     @Test
     public void withinLargeBoundingBoxAcrossAntimeridianEvaluationOnlyTest() throws Exception {
-        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_0.01', '90_-0.01') && ((EO = true) && geo:within_bounding_box(" + GEO_FIELD
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_0.01', '90_-0.01') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
                         + ", '-90_0.01', '90_-0.01'))";
         
         List<DefaultEvent> events = getQueryResults(query);

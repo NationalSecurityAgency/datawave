@@ -80,7 +80,7 @@ public class ValidComparisonVisitorTest {
     
     @Test(expected = DatawaveFatalQueryException.class)
     public void testInvalidAssignment() throws ParseException {
-        String queryString = "'EO' = true";
+        String queryString = "'_Eval_' = true";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         ValidComparisonVisitor.check(script);
     }

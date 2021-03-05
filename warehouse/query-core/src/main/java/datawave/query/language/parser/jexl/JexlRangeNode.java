@@ -40,7 +40,7 @@ public class JexlRangeNode extends JexlNode {
         boolean isBounded = !lowerWildcard && !upperWildcard;
         
         if (isBounded) {
-            sb.append("((BR = true) && ");
+            sb.append("((_Bounded_ = true) && ");
         }
         
         sb.append("(");

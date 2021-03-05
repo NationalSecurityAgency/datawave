@@ -33,7 +33,7 @@ public class EvaluationOnly extends JexlQueryFunction {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("((EO = true) && ");
+        sb.append("((_Eval_ = true) && ");
         List<String> params = getParameterList();
         if (params.size() != 1) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));

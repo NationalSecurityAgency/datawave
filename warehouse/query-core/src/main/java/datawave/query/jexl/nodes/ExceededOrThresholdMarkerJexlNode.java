@@ -34,7 +34,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     public static final String EXCEEDED_OR_FIELD = "field";
     public static final String EXCEEDED_OR_PARAMS = "params";
     
-    private static final String LABEL = "EOTM";
+    private static final String LABEL = "_List_";
     
     public static String label() {
         return LABEL;
@@ -50,9 +50,9 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     
     /**
      * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:EOTM True node (the one specified
+     * Assignment Reference Identifier:_List_ True node (the one specified
      * 
-     * Hence the resulting expression will be ((EOTM = True) AND {specified node})
+     * Hence the resulting expression will be ((_List_ = True) AND {specified node})
      * 
      * @param node
      */
