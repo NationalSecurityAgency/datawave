@@ -35,4 +35,5 @@ public interface CheckpointableQueryLogic {
      * @return The query checkpoint
      */
     QueryCheckpoint checkpoint(QueryKey queryKey);
+    
 }

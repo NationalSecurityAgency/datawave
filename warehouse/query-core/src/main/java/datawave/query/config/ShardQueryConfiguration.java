@@ -1,6 +1,8 @@
 package datawave.query.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -30,8 +32,12 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.PropertyAccessorFactory;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -42,6 +48,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -335,8 +342,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     private List<String> contentFieldNames = Collections.emptyList();
     
-    private Key lastResult;
-    private QueryData lastRange;
+    // The list of plans to process. Moved to lastResults once being processed
+    private LinkedList<QueryData> plans;
+    // set to true once we have discovered all of the possible query plans
+    private boolean gotAllPlans = false;
+    // The list of plans being processed mapped to the last result returned. QueryData removed once complete.
+    private Map<QueryData,Key> lastResult;
     
     /**
      * Default constructor
@@ -515,12 +526,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public ShardQueryConfiguration(Map<String,Object> properties) {
-        // TODO
+        Map<String,Object> setProperties = new HashMap<>(properties);
+        // TODO Fix properties as needed
+        BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(this);
+        wrapper.setPropertyValues(setProperties);
     }
     
     public Map<String,Object> toMap() {
-        Map<String,Object> props = new HashMap<String,Object>();
-        // TODO
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String,Object> props = mapper.convertValue(this, Map.class);
+        // TODO Fix unserialiable this if needed
         return props;
     }
     
@@ -2084,4 +2099,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setGeneratePlanOnly(boolean generatePlanOnly) {
         this.generatePlanOnly = generatePlanOnly;
     }
+    
+    public List<QueryData> getPlans() {
+        return plans;
+    }
+    
+    public void setPlans(LinkedList<QueryData> plans) {
+        this.plans = plans;
+    }
+    
+    public boolean isGotAllPlans() {
+        return gotAllPlans;
+    }
+    
+    public void setGotAllPlans(boolean gotAllPlans) {
+        this.gotAllPlans = gotAllPlans;
+    }
+    
+    public Map<QueryData,Key> getLastResult() {
+        return lastResult;
+    }
+    
+    public void setLastResult(Map<QueryData,Key> lastResult) {
+        this.lastResult = lastResult;
+    }
+    
 }
