@@ -7,8 +7,9 @@ spring:
     datawave:
       jwt.ttl: 3600
       issuers-required: true
+      enforce-allowed-callers: false
       allowed-callers:
-        - "cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us<cn=testcorp ca, ou=security, o=testcorp, c=us>"
+        - "cn=test keystore, ou=my department, o=my company, st=some-state, c=us<cn=test keystore, ou=my department, o=my company, st=some-state, c=us>"
 
 hazelcast.client.enabled: false
 
@@ -23,12 +24,12 @@ server:
   servlet.context-path: /query
   ssl:
     client-auth: NEED
-    trust-store: classpath:ssl/rootCA.p12
+    trust-store: 'classpath:testCA.p12'
     trust-store-type: PKCS12
-    trust-store-password: LetMeIn
-    key-store: classpath:ssl/host.p12
+    trust-store-password: 'ChangeIt'
+    key-store: 'classpath:testServer.p12'
     key-store-type: PKCS12
-    key-store-password: LetMeIn
+    key-store-password: 'ChangeIt'
   outbound-ssl:
     key-store: ${server.ssl.key-store}
     key-store-password: ${server.ssl.key-store-password}
