@@ -35,7 +35,7 @@ services:
         condition: service_started
 
   configuration:
-    image: datawave/config-service
+    image: datawave/config-service:1.4
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -56,7 +56,7 @@ services:
         condition: service_started
 
   cache:
-    image: datawave/hazelcast-service
+    image: datawave/hazelcast-service:1.6
     scale: 3
     command:
       - --spring.profiles.active=consul,compose
@@ -79,7 +79,7 @@ services:
         condition: service_started
 
   authorization:
-    image: datawave/authorization-service
+    image: datawave/authorization-service:1.9
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose
@@ -113,7 +113,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: datawave/audit-service
+    image: datawave/audit-service:1.9
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose
