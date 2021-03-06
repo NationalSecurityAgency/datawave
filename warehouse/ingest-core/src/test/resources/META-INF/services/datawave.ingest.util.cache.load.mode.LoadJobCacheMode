@@ -1,0 +1,2 @@
+datawave.ingest.util.cache.load.mode.ClasspathMode
+datawave.ingest.util.cache.load.mode.FilePatternMode
