@@ -38,8 +38,8 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
         private enum ParseTokenType {
             SEPARATION("[\\s\\n,]+"),
             STRLITERAL("\"(?:[^\\\"]|\\.)*\""),
-            WORD("(?:[a-z]{6,})"),
-            STRLITERAL2("[\\w]{6,}"),
+            WORD("^[a-z]{3,}"),
+            STRLITERAL2("[\\w]*\\="),
             COLON(":"),
             EQUALS("="),
             NUMBER("[0-9]+"),
@@ -106,7 +106,12 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                             }
                             foundMatch = true;
                             if (type != ParseTokenType.SEPARATION && type != ParseTokenType.WORD) {
-                                result.add(new ParseToken(type, input.substring(curPos, curPos + m.end()), curPos));
+                                if (type == ParseTokenType.STRLITERAL2) {
+                                    result.add(new ParseToken(type, input.substring(curPos, curPos + m.end() - 1), curPos));
+                                    result.add(new ParseToken(ParseTokenType.EQUALS, input.substring(curPos + m.end() - 1, curPos + m.end()), curPos + m.end() - 1));
+                                } else {
+                                    result.add(new ParseToken(type, input.substring(curPos, curPos + m.end()), curPos));
+                                }
                             }
                             curPos += m.end();
                             break nextToken;
