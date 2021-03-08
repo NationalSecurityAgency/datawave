@@ -86,13 +86,13 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
-            if ((valueIndexHoles == null && fieldIndexHoles == null) || (valueIndexHoles.size() == 0 && fieldIndexHoles.size() == 0)) {
+            holeDates = generateStartAndEndDates((ShardQueryConfiguration) config);
+            if ((valueIndexHoles == null && fieldIndexHoles == null) || (valueIndexHoles.size() == 0 && fieldIndexHoles.size() == 0) || holeDates.size() == 0) {
                 results = super.process(config, query, settings, scannerFactory);
                 returnQueryData.addDelegate(results);
                 return returnQueryData;
             }
             
-            holeDates = generateStartAndEndDates((ShardQueryConfiguration) config);
             Boolean firstIteration = true;
             Date startDate, endDate;
             
@@ -139,7 +139,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         String startDate = DateHelper.format(configuration.getBeginDate().getTime());
         String endDate = DateHelper.format(configuration.getEndDate().getTime());
         
-        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, true, endDate, true);
+        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, false, endDate, false);
         
         TreeSet<YearMonthDay> queryDates = new TreeSet<>();
         for (ValueIndexHole valueIndexHole : configuration.getValueIndexHoles()) {
@@ -149,7 +149,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         
         for (FieldIndexHole fieldIndexHole : configuration.getFieldIndexHoles()) {
             // TODO remove comparison below. calculateFieldHoles needs to be fixed.
-            if (fieldIndexHole.getStartDate().compareTo(fieldIndexHole.getEndDate()) <= 0) {
+            if (fieldIndexHole.getStartDate().compareTo(fieldIndexHole.getEndDate()) == 0) {
                 addDatesToSet(bounds, queryDates, fieldIndexHole.getStartDate());
                 addDatesToSet(bounds, queryDates, fieldIndexHole.getEndDate());
             }

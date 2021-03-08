@@ -182,7 +182,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         countLogic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         countLogic.setMarkingFunctions(new Default());
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());
-        countLogic.setQueryPlanner(new DefaultQueryPlanner());
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         
         QueryTestTableHelper.configureLogicToScanTables(countLogic);
