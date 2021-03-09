@@ -182,6 +182,7 @@ public abstract class CompositeFunctionsTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
+        logic.setMaxDepthThreshold(6);
         deserializer = new KryoDocumentDeserializer();
     }
     

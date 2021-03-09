@@ -154,6 +154,7 @@ public abstract class ExecutableExpansionVisitorTest {
         
         logic.setFullTableScanEnabled(false);
         logic.setMaxDepthThreshold(11);
+        logic.setMaxTermThreshold(12);
         deserializer = new KryoDocumentDeserializer();
     }
     
