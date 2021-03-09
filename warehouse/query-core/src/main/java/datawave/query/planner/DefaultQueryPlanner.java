@@ -506,7 +506,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFieldsAsString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
-        addOption(cfg, QueryOptions.TYPE_METADATA_IN_HDFS, Boolean.toString(config.isTypeMetadataInHdfs()), true);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), true);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
@@ -582,9 +581,32 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
     
+    /**
+     * NOT THREAD SAFE -- relies on QueryStopwatch is not thread safe
+     * 
+     * @param lastOperation
+     * @param queryTree
+     * @param config
+     */
     public static void validateQuerySize(String lastOperation, JexlNode queryTree, ShardQueryConfiguration config) {
-        final QueryStopwatch timers = config.getTimers();
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Validate against term and depth thresholds");
+        validateQuerySize(lastOperation, queryTree, config, true);
+    }
+    
+    /**
+     * NOT THREAD SAFE when called with timed=true
+     * 
+     * @param lastOperation
+     * @param queryTree
+     * @param config
+     * @param timed
+     */
+    public static void validateQuerySize(String lastOperation, JexlNode queryTree, ShardQueryConfiguration config, boolean timed) {
+        TraceStopwatch stopwatch = null;
+        
+        if (timed) {
+            final QueryStopwatch timers = config.getTimers();
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Validate against term and depth thresholds");
+        }
         
         // check the query depth (up to config.getMaxDepthThreshold() + 1)
         int depth = DepthVisitor.getDepth(queryTree, config.getMaxDepthThreshold());
@@ -601,7 +623,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             "{0} > {1}, last operation: {2}", termCount, config.getMaxTermThreshold(), lastOperation));
             throw new DatawaveFatalQueryException(qe);
         }
-        stopwatch.stop();
+        
+        if (timed) {
+            stopwatch.stop();
+        }
     }
     
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
@@ -1889,11 +1914,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
             }
             addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
-            if (config.isTypeMetadataInHdfs() == false) {
-                addOption(cfg, QueryOptions.TYPE_METADATA, typeMetadataString, false);
-            }
+            addOption(cfg, QueryOptions.TYPE_METADATA, typeMetadataString, false);
             addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
-            
             addOption(cfg, QueryOptions.METADATA_TABLE_NAME, config.getMetadataTableName(), false);
             
         } catch (TableNotFoundException | IOException e) {
