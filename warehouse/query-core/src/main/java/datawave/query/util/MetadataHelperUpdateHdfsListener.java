@@ -29,7 +29,6 @@ public class MetadataHelperUpdateHdfsListener {
     private final String zookeepers;
     private final TypeMetadataHelper.Factory typeMetadataHelperFactory;
     private final Set<Authorizations> allMetadataAuths;
-    private TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
     
     private final String instance;
     private final String username;
@@ -120,7 +119,6 @@ public class MetadataHelperUpdateHdfsListener {
                         try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(username, password).build()) {
                             TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(client, metadataTableName,
                                             allMetadataAuths, false);
-                            typeMetadataWriter.writeTypeMetadataMap(typeMetadataHelper.getTypeMetadataMap(this.allMetadataAuths), metadataTableName);
                         }
                         if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);

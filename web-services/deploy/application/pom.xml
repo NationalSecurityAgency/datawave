@@ -45,11 +45,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-type-metadata-hdfs</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-accumulo</artifactId>
             <version>${project.version}</version>
