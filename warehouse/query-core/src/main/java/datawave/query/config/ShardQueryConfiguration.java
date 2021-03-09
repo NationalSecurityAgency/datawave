@@ -230,7 +230,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private String limitFieldsField = null;
     private boolean hitList = false;
-    private boolean typeMetadataInHdfs = false;
     private boolean dateIndexTimeTravel = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
@@ -456,7 +455,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
-        this.setTypeMetadataInHdfs(other.isTypeMetadataInHdfs());
         this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
         this.setBeginDateCap(other.getBeginDateCap());
         this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
@@ -581,9 +579,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             String value = parameter.getParameterValue();
             if (name.equals(QueryParameters.HIT_LIST)) {
                 config.setHitList(Boolean.parseBoolean(value));
-            }
-            if (name.equals(QueryParameters.TYPE_METADATA_IN_HDFS)) {
-                config.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
             }
             if (name.equals(QueryParameters.DATE_INDEX_TIME_TRAVEL)) {
                 config.setDateIndexTimeTravel(Boolean.parseBoolean(value));
@@ -1553,14 +1548,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setHitList(boolean hitList) {
         this.hitList = hitList;
-    }
-    
-    public boolean isTypeMetadataInHdfs() {
-        return typeMetadataInHdfs;
-    }
-    
-    public void setTypeMetadataInHdfs(boolean typeMetadataInHdfs) {
-        this.typeMetadataInHdfs = typeMetadataInHdfs;
     }
     
     public boolean isRawTypes() {
