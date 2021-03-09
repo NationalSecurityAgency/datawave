@@ -10,13 +10,9 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.TypeMetadata;
-import datawave.query.util.TypeMetadataHelper;
-import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -207,11 +203,6 @@ public abstract class CompositeFunctionsTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, MODEL_TABLE_NAME, authSet, false);
-        Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
-        
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
         resultSet = new HashSet<>();
@@ -289,10 +280,10 @@ public abstract class CompositeFunctionsTest {
         // @formatter:off
         String[] queryStrings = {
                 "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY') "+
-                        "AND f:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')",
+                        "AND f:options('include.grouping.context','true','hit.list','true')",
 
                 "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY') "+
-                        "OR f:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')"
+                        "OR f:options('include.grouping.context','true','hit.list','true')"
         };
 
         @SuppressWarnings("unchecked")
