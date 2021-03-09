@@ -1064,12 +1064,14 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         try {
-            long lStart = getTime(start);
-            long lEnd = getTime(end, true) - 1;
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o), lStart, lEnd)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+            if (fieldValue != null) {
+                long lStart = getTime(start);
+                long lEnd = getTime(end, true) - 1;
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o), lStart, lEnd)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                        break;
+                    }
                 }
             }
         } catch (ParseException pe) {

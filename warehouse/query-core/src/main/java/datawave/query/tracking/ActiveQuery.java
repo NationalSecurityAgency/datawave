@@ -5,6 +5,7 @@ import com.codahale.metrics.Timer;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.profile.QuerySpan;
 import org.apache.accumulo.core.data.Range;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
@@ -17,7 +18,8 @@ public class ActiveQuery {
     
     private static Logger log = Logger.getLogger(ActiveQuery.class);
     
-    private String queryId = null;
+    private final String queryId;
+    private final String activeQueryLogName;
     private long initTs = 0;
     private long lastSourceCount = 0;
     private long lastNextCount = 0;
@@ -35,15 +37,17 @@ public class ActiveQuery {
     private Map<CallType,Integer> inCallMap = new HashMap<>();
     private Set<Range> activeRanges = new HashSet<>();
     
-    public ActiveQuery(String queryId, int windowSize) {
+    public ActiveQuery(String queryId, int windowSize, String activeQueryLogName) {
         this.queryId = queryId;
         this.windowSize = windowSize;
+        this.activeQueryLogName = StringUtils.isNotBlank(activeQueryLogName) ? activeQueryLogName : "";
         this.initTs = System.currentTimeMillis();
     }
     
     synchronized public ActiveQuerySnapshot snapshot() {
-        return new ActiveQuerySnapshot(this.queryId, this.lastSourceCount, this.lastNextCount, this.lastSeekCount, this.documentSizeBytes,
-                        this.activeRanges.size(), this.totalElapsedTime(), this.isInCall(), this.currentCallTime(), this.numCallsMap, this.timerMap);
+        return new ActiveQuerySnapshot(this.activeQueryLogName, this.queryId, this.lastSourceCount, this.lastNextCount, this.lastSeekCount,
+                        this.documentSizeBytes, this.activeRanges.size(), this.totalElapsedTime(), this.isInCall(), this.currentCallTime(), this.numCallsMap,
+                        this.timerMap);
     }
     
     synchronized public void beginCall(Range range, CallType type) {
@@ -135,7 +139,7 @@ public class ActiveQuery {
             newNumCalls = numCalls.intValue() - 1;
         }
         if (newNumCalls < 0) {
-            log.warn("inCall count for callType:" + type.toString() + "=" + newNumCalls + ", resetting to 0");
+            log.warn(activeQueryLogName + ": inCall count for callType:" + type.toString() + "=" + newNumCalls + ", resetting to 0");
             newNumCalls = 0;
         }
         this.inCallMap.put(type, newNumCalls);
