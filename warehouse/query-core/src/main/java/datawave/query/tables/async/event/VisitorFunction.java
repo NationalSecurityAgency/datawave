@@ -33,10 +33,12 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -204,7 +206,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     } else {
                         if (!evaluatedPreviously) {
                             // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
-                            if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
+                            if (canIvarate(config, setting)) {
                                 if (null == script)
                                     script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                                 try {
@@ -213,6 +215,69 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 } catch (IOException ioe) {
                                     log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
                                 }
+                            }
+                        }
+                    }
+                    
+                    int termCount = TermCountingVisitor.countTerms(script);
+                    if (termCount > config.getMaxTermThreshold()) {
+                        if (canIvarate(config, setting)) {
+                            // copy the config and set minimum thresholds for collapsing Ors
+                            ShardQueryConfiguration reduceConfig = new ShardQueryConfiguration(config);
+                            reduceConfig.setMaxOrExpansionThreshold(2);
+                            reduceConfig.setMaxOrRangeThreshold(2);
+                            
+                            if (null == script) {
+                                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                            }
+                            
+                            try {
+                                Query settings = config.getQuery();
+                                
+                                if (config.canHandleExceededValueThreshold()) {
+                                    URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
+                                    SortedMap<Integer,List<String>> pushdownCapacity;
+                                    FileSystem fs = null;
+                                    String fstHdfsUri = null;
+                                    if (hdfsQueryCacheUri != null) {
+                                        fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
+                                        fstHdfsUri = hdfsQueryCacheUri.toString();
+                                    }
+                                    
+                                    pushdownCapacity = PushdownLargeFieldedListsVisitor.getPushdownCapacity(reduceConfig, script, fs, fstHdfsUri);
+                                    
+                                    // determine if its possible to reduce enough to meet the threshold
+                                    int capacitySum = 0;
+                                    for (Integer capacity : pushdownCapacity.keySet()) {
+                                        capacitySum += capacity * pushdownCapacity.get(capacity).size();
+                                    }
+                                    
+                                    if (termCount - capacitySum <= config.getMaxTermThreshold()) {
+                                        // sort from largest to smallest reductions and make reductions until under the threshold
+                                        Set<String> fieldsToReduce = new HashSet<>();
+                                        int toReduce = termCount - config.getMaxTermThreshold();
+                                        while (toReduce > 0) {
+                                            // get the highest value field out of the map
+                                            Integer reduction = pushdownCapacity.lastKey();
+                                            List<String> fields = pushdownCapacity.get(reduction);
+                                            
+                                            // take the first field
+                                            String field = fields.remove(0);
+                                            fieldsToReduce.add(field);
+                                            toReduce -= reduction;
+                                            
+                                            // if there are no more reductions of this size remove the reduction from pushdown capacity
+                                            if (fields.size() == 0) {
+                                                pushdownCapacity.remove(reduction);
+                                            }
+                                        }
+                                        // execute the reduction
+                                        script = PushdownLargeFieldedListsVisitor.pushdown(reduceConfig, script, fs, fstHdfsUri, null, fieldsToReduce);
+                                        madeChange = true;
+                                    }
+                                }
+                            } catch (IOException e) {
+                                log.error("Unable to reduce query by pushing down large fielded lists and bounded ranges... leaving in expanded form", e);
                             }
                         }
                     }
@@ -252,6 +317,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
         newSettings.setOptions(newOptions);
         return newSettings;
+    }
+    
+    private boolean canIvarate(ShardQueryConfiguration config, IteratorSetting setting) {
+        return (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null);
     }
     
     private boolean previouslyExecutable(String query) {
