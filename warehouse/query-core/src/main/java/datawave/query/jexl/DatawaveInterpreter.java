@@ -200,9 +200,6 @@ public class DatawaveInterpreter extends Interpreter {
                 for (int i = current.jjtGetNumChildren() - 1; i >= 0; i--) {
                     child = JexlASTHelper.dereference(current.jjtGetChild(i));
                     stack.push(child);
-                    if (allIdentifiers && !(child instanceof ASTIdentifier)) {
-                        allIdentifiers = false;
-                    }
                 }
             } else {
                 children.push(current);

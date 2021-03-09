@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>3.1.10-SNAPSHOT</version>
+        <version>3.1.11-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
@@ -42,11 +42,6 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-type-metadata-hdfs</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

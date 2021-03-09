@@ -126,7 +126,6 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.isLimitFieldsPreQueryEvaluation());
         Assert.assertNull(config.getLimitFieldsField());
         Assert.assertFalse(config.isHitList());
-        Assert.assertFalse(config.isTypeMetadataInHdfs());
         Assert.assertFalse(config.isDateIndexTimeTravel());
         Assert.assertEquals(-1L, config.getBeginDateCap());
         Assert.assertTrue(config.isFailOutsideValidDateRange());
@@ -437,7 +436,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 176;
+        int expectedObjectCount = 175;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
