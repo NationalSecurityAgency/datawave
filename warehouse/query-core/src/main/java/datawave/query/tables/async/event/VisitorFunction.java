@@ -225,10 +225,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                             reduceConfig.setMaxOrExpansionThreshold(2);
                             reduceConfig.setMaxOrRangeThreshold(2);
                             
-                            if (null == script) {
-                                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-                            }
-                            
                             try {
                                 Query settings = config.getQuery();
                                 
