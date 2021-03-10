@@ -1,9 +1,5 @@
 package datawave.webservice.query.logic;
 
-import java.security.Principal;
-import java.util.List;
-import java.util.Set;
-
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.validation.ParameterValidator;
@@ -15,11 +11,15 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-
 import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
+
+import java.security.Principal;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidator {
     
@@ -297,4 +297,35 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     Set<String> getExampleQueries();
     
+    /**
+     * Return the DNs authorized access to this query logic.
+     * 
+     * @return the set of DNs authorized access to this query logic, possibly null or empty
+     */
+    Set<String> getAuthorizedDNs();
+    
+    /**
+     * Set the DNs authorized access to this query logic.
+     * 
+     * @param allowedDNs
+     *            the DNs authorized access
+     */
+    void setAuthorizedDNs(Set<String> allowedDNs);
+    
+    /**
+     * Return whether or not the provided collection of DNs contains at least oneDN that is authorized for access to this query logic. This will return true in
+     * the following cases:
+     * <ul>
+     * <li>The set of authorized DNs for this query logic is null or empty.</li>
+     * <li>The set of authorized DNs is not empty, and the provided collection contains a DN that is also found within the set of authorized DNs.</li>
+     * </ul>
+     * 
+     * @param dns
+     *            the DNs to determine access rights for
+     * @return true if the collection contains at least one DN that has access to this query logic, or false otherwise
+     */
+    default boolean containsDNWithAccess(Collection<String> dns) {
+        Set<String> authorizedDNs = getAuthorizedDNs();
+        return authorizedDNs == null || authorizedDNs.isEmpty() || (dns != null && dns.stream().anyMatch(authorizedDNs::contains));
+    }
 }
