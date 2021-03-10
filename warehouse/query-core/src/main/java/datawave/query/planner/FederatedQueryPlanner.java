@@ -89,8 +89,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             holeDates = generateStartAndEndDates((ShardQueryConfiguration) config);
             if ((valueIndexHoles == null && fieldIndexHoles == null) || (valueIndexHoles.size() == 0 && fieldIndexHoles.size() == 0) || holeDates.size() == 0) {
                 results = super.process(config, query, settings, scannerFactory);
-                returnQueryData.addDelegate(results);
-                return returnQueryData;
+                return results;
             }
             
             Boolean firstIteration = true;
@@ -163,51 +162,6 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
     private void addDatesToSet(YearMonthDay.Bounds bounds, TreeSet<YearMonthDay> queryDates, String strDate) {
         if (bounds.withinBounds(strDate))
             queryDates.add(new YearMonthDay(strDate));
-    }
-    
-    @Override
-    public long maxRangesPerQueryPiece() {
-        return super.maxRangesPerQueryPiece();
-    }
-    
-    @Override
-    public void close(GenericQueryConfiguration config, Query settings) {
-        super.close(config, settings);
-    }
-    
-    @Override
-    public void setQueryIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> clazz) {
-        super.setQueryIteratorClass(clazz);
-    }
-    
-    @Override
-    public Class<? extends SortedKeyValueIterator<Key,Value>> getQueryIteratorClass() {
-        return super.getQueryIteratorClass();
-    }
-    
-    @Override
-    public String getPlannedScript() {
-        return super.getPlannedScript();
-    }
-    
-    @Override
-    public DefaultQueryPlanner clone() {
-        return super.clone();
-    }
-    
-    @Override
-    public void setRules(Collection<PushDownRule> rules) {
-        super.setRules(rules);
-    }
-    
-    @Override
-    public Collection<PushDownRule> getRules() {
-        return super.getRules();
-    }
-    
-    @Override
-    public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
-        return super.applyRules(queryTree, scannerFactory, metadataHelper, config);
     }
     
     /**

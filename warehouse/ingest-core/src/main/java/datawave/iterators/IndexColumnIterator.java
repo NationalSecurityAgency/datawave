@@ -47,7 +47,7 @@ public class IndexColumnIterator extends TransformingIterator {
     protected void transformRange(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator, KVBuffer kvBuffer) throws IOException {
         Long numRecords = 0L;
         indexedDatesValue = new IndexedDatesValue(null);
-        IndexedDatesValue tempFrequencyFamilyCounter;
+        IndexedDatesValue tempIndexedDates;
         
         if (log.isTraceEnabled())
             log.trace("Transforming range for key " + sortedKeyValueIterator.getTopKey().getRow().toString(), new Exception());
@@ -77,7 +77,7 @@ public class IndexColumnIterator extends TransformingIterator {
             if (startingNewRange) {
                 startingNewRange = false;
                 // TODO The two lines below may need some reevaluation
-                if (topValue.toString().isEmpty())
+                if (topValue.getSize() == 0)
                     indexedDatesValue.addIndexedDate(new YearMonthDay(DateHelper.format(topKey.getTimestamp())));
                 else
                     indexedDatesValue = IndexedDatesValue.deserialize(topValue);
@@ -103,9 +103,9 @@ public class IndexColumnIterator extends TransformingIterator {
                 }
                 
             } else {
-                tempFrequencyFamilyCounter = IndexedDatesValue.deserialize(topValue);
+                tempIndexedDates = IndexedDatesValue.deserialize(topValue);
                 
-                for (YearMonthDay entry : tempFrequencyFamilyCounter.getIndexedDatesSet()) {
+                for (YearMonthDay entry : tempIndexedDates.getIndexedDatesSet()) {
                     if (ageOffDate.compareTo(entry.getYyyymmdd()) < 0)
                         indexedDatesValue.addIndexedDate(new YearMonthDay(entry.getYyyymmdd()));
                     // SummingCombiner.VAR_LEN_ENCODER.decode(topValue.get()).intValue()
@@ -153,7 +153,7 @@ public class IndexColumnIterator extends TransformingIterator {
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions io = super.describeOptions();
-        io.addNamedOption("ageOffDate", "Frequencies before this date are not aggregated.");
+        io.addNamedOption("ageOffDate", "Indexed dates before this date are not aggregated.");
         io.setName("ageOffDate");
         io.setDescription("TransformColumnIterator removes entries with dates that occurred before <ageOffDate>");
         return io;
