@@ -7,7 +7,13 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
  */
 public class ASTDelayedPredicate extends QueryPropertyMarker {
     
+    private static final String LABEL = "_Delayed_";
+    
     private static final String CLASS_NAME = ASTDelayedPredicate.class.getSimpleName();
+    
+    public static String label() {
+        return LABEL;
+    }
     
     public ASTDelayedPredicate(int id) {
         super(id);
@@ -19,6 +25,11 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
     
     public ASTDelayedPredicate(JexlNode source) {
         super(source);
+    }
+    
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
     
     /** Accept the visitor. **/
