@@ -8,10 +8,8 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -29,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 public class EventFieldAggregator extends IdentityAggregator {
     // speedy cache loading for types, duplicated from AttributeFactory with caching of types rather than classes
-    protected static LoadingCache<String,Type<?>> typeCache = CacheBuilder.newBuilder().maximumSize(128).expireAfterAccess(1, TimeUnit.HOURS)
+    protected static final LoadingCache<String,Type<?>> typeCache = CacheBuilder.newBuilder().maximumSize(128).expireAfterAccess(1, TimeUnit.HOURS)
                     .build(new CacheLoader<String,Type<?>>() {
                         @Override
                         public Type<?> load(String clazz) throws Exception {
