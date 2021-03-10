@@ -9,14 +9,14 @@ THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
 
 #
-# Get the job cache directory
-#
-. ./job-cache-env.sh
-
-#
 # Get the classpath
 #
 . ./ingest-libs.sh
+
+#
+# Get the job cache directory
+#
+. ./job-cache-env.sh
 
 if [[ -z $DATAWAVE_INGEST_HOME ]]; then
   export DATAWAVE_INGEST_HOME=$THIS_DIR/../..
