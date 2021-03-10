@@ -16,11 +16,11 @@ import datawave.query.index.lookup.RangeStream;
 import datawave.query.index.stats.IndexStatsClient;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
@@ -72,7 +72,6 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
@@ -1527,7 +1526,7 @@ public class JexlASTHelper {
      * @return true if an instanceof an ivarator typed QueryPropertyMarker, false otherwise
      */
     public static boolean isIvaratorMarker(ASTAndNode node) {
-        return QueryPropertyMarkerVisitor.instanceOf(node, IVARATOR_PROPERTY_MARKER_CLASSES, null);
+        return QueryPropertyMarkerVisitor.instanceOf(node, IVARATOR_PROPERTY_MARKER_CLASSES);
     }
     
     private JexlASTHelper() {}
