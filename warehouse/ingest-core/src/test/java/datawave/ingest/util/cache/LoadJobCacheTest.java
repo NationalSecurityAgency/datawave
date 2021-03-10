@@ -1,7 +1,6 @@
 package datawave.ingest.util.cache;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import datawave.common.io.FilesFinder;
 import java.io.File;
@@ -9,15 +8,14 @@ import java.io.IOException;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -32,9 +30,10 @@ import static datawave.ingest.util.cache.LoadJobCacheLauncher.JOB_CACHE_FORMATER
 
 public class LoadJobCacheTest {
     private static final File TEMP_DIR = Files.createTempDir();
-    private static final Map<org.apache.hadoop.fs.Path,FileSystem> PATH_TO_FS = Maps.newHashMap();
     private static final String JOB_CACHE_DIR = "jobCache_" + JOB_CACHE_FORMATER.format(LocalDateTime.now());
     private static final String FILE_PREFIX = "File";
+    
+    private static Collection<FileSystemPath> CACHE_PATHS = Lists.newArrayList();
     private static Collection<String> FILES_TO_LOAD = Lists.newArrayList();
     
     @BeforeClass
@@ -46,10 +45,14 @@ public class LoadJobCacheTest {
                                         createTemporaryFile(TEMP_DIR.getAbsolutePath(), 1, FILE_PREFIX, "xml"),
                                         createTemporaryFile(TEMP_DIR.getAbsolutePath(), 2, FILE_PREFIX, "xml")).map(File::getAbsolutePath)
                         .collect(Collectors.toList());
-        // @formatter: on
         
-        PATH_TO_FS.put(new org.apache.hadoop.fs.Path(TEMP_DIR.getCanonicalPath() + File.separator + "output1"), FileSystem.get(new Configuration()));
-        PATH_TO_FS.put(new org.apache.hadoop.fs.Path(TEMP_DIR.getCanonicalPath() + File.separator + "output2"), FileSystem.get(new Configuration()));
+        Collection<Configuration> confs = Stream.of(new Configuration()).collect(Collectors.toList());
+        
+        CACHE_PATHS = Stream
+                        .of(new org.apache.hadoop.fs.Path(TEMP_DIR.getAbsolutePath() + File.separator + "output1"),
+                                        new org.apache.hadoop.fs.Path(TEMP_DIR.getAbsolutePath() + File.separator + "output2"))
+                        .map(path -> new FileSystemPath(path, confs)).collect(Collectors.toList());
+        // @formatter: on
     }
     
     @AfterClass
@@ -59,20 +62,20 @@ public class LoadJobCacheTest {
     
     @After
     public void tearDown() throws IOException {
-        for (org.apache.hadoop.fs.Path delPath : PATH_TO_FS.keySet()) {
-            deletePath(delPath.toString());
+        for (FileSystemPath delPath : CACHE_PATHS) {
+            deletePath(delPath.getOutputPath().toString());
         }
     }
     
     @Test
     public void testLoadJobCache() throws IOException {
-        LoadJobCache.load(PATH_TO_FS, FILES_TO_LOAD, true, (short) 3, 2, JOB_CACHE_DIR, "");
+        LoadJobCache.load(CACHE_PATHS, FILES_TO_LOAD, true, (short) 3, 2, JOB_CACHE_DIR, "");
         verifyResults(getOutputPaths(""));
     }
     
     @Test
     public void testLoadJobCacheWithSubDir() throws IOException {
-        LoadJobCache.load(PATH_TO_FS, FILES_TO_LOAD, true, (short) 3, 2, JOB_CACHE_DIR, "subDir");
+        LoadJobCache.load(CACHE_PATHS, FILES_TO_LOAD, true, (short) 3, 2, JOB_CACHE_DIR, "subDir");
         verifyResults(getOutputPaths("subDir"));
     }
     
@@ -80,7 +83,7 @@ public class LoadJobCacheTest {
     public void testCacheCleanupOnError() {
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         try {
-            LoadJobCache.load(PATH_TO_FS, true, getLoadCacheConsumer(FILES_TO_LOAD, executorService, JOB_CACHE_DIR, "", (short) 3),
+            LoadJobCache.load(CACHE_PATHS, true, getLoadCacheConsumer(FILES_TO_LOAD, executorService, JOB_CACHE_DIR, "", (short) 3),
                             getFinalizerThatThrowsError(), getDeleteCacheConsumer(JOB_CACHE_DIR));
         } finally {
             executorService.shutdown();
@@ -88,8 +91,8 @@ public class LoadJobCacheTest {
         Assert.assertTrue(getOutputPaths("").stream().map(File::new).noneMatch(File::exists));
     }
     
-    private static Consumer<Map.Entry<org.apache.hadoop.fs.Path,FileSystem>> getFinalizerThatThrowsError() {
-        return (Map.Entry<org.apache.hadoop.fs.Path,FileSystem> entrySet) -> {
+    private static Consumer<FileSystemPath> getFinalizerThatThrowsError() {
+        return (FileSystemPath fsPath) -> {
             throw new RuntimeException("Test exception check");
         };
     }
@@ -103,11 +106,23 @@ public class LoadJobCacheTest {
     }
     
     private Collection<String> getExpectedOutput(String outputPath) {
-        return FILES_TO_LOAD.stream().map(path -> path.substring(path.lastIndexOf("/"))).map(fileName -> new File(outputPath, fileName))
-                        .map(File::getAbsolutePath).collect(Collectors.toList());
+        // @formatter:off
+        return FILES_TO_LOAD
+                .stream()
+                .map(path -> path.substring(path.lastIndexOf("/")))
+                .map(fileName -> new File(outputPath, fileName))
+                .map(File::getAbsolutePath)
+                .collect(Collectors.toList());
+        // @formatter:on
     }
     
     private Collection<String> getOutputPaths(String optionalSubDir) {
-        return PATH_TO_FS.keySet().stream().map(outputPath -> outputPath + "/" + JOB_CACHE_DIR + "/" + optionalSubDir).collect(Collectors.toList());
+        // @formatter:off
+        return CACHE_PATHS
+                .stream()
+                .map(FileSystemPath::getOutputPath)
+                .map(outputPath -> outputPath + "/" + JOB_CACHE_DIR + "/" + optionalSubDir)
+                .collect(Collectors.toList());
+        // @formatter:on
     }
 }

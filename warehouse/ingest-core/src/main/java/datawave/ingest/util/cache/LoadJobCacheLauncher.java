@@ -3,8 +3,7 @@ package datawave.ingest.util.cache;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import com.google.common.collect.Maps;
-import datawave.common.io.HadoopFileSystemUtils;
+import com.google.common.collect.Lists;
 import datawave.ingest.util.ConfigurationFileHelper;
 import datawave.ingest.util.cache.converter.HadoopPathConverter;
 import datawave.ingest.util.cache.converter.ShortConverter;
@@ -12,8 +11,8 @@ import datawave.ingest.util.cache.mode.ClasspathMode;
 import datawave.ingest.util.cache.mode.LoadJobCacheMode;
 import datawave.ingest.util.cache.converter.ModeConverter;
 import datawave.ingest.util.cache.mode.ModeOptions;
+import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +23,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
-/** Load job cache launcher will copy local configuration and jars file to a configurable timestamped location in hdfs */
+/**
+ * Load job cache launcher will copy local configuration and jars file to a configurable timestamped location in hdfs
+ */
 public class LoadJobCacheLauncher {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadJobCacheLauncher.class);
     
@@ -67,24 +68,38 @@ public class LoadJobCacheLauncher {
      *            Mode options that will determine the files to load to cache
      */
     public void run(ModeOptions options) {
-        Map<Path,FileSystem> pathToFileSystem = Maps.newHashMap();
+        LOGGER.info("Converting hadoop dirs to configuration objects");
+        Collection<FileSystemPath> fsPaths = Lists.newArrayList();
         Collection<Configuration> hadoopConfs = ConfigurationFileHelper.getHadoopConfs(hadoopConfDirs);
         
         try {
-            pathToFileSystem = HadoopFileSystemUtils.getPathToFileSystemMapping(hadoopConfs, outputPaths);
+            LOGGER.info("Constructing file system paths");
+            fsPaths = getFileSystemPaths(outputPaths, hadoopConfs);
+            LOGGER.info("Finding files to load");
             Collection<String> filesToUpload = loadMode.getFilesToLoad(options);
-            
             if (!filesToUpload.isEmpty()) {
-                LoadJobCache.load(pathToFileSystem, filesToUpload, finalizeLoad, cacheReplicationCnt, executorThreadCnt, timestampDir, subDir);
+                LOGGER.info("Loading job cache with timestamp {}", timestampDir);
+                LoadJobCache.load(fsPaths, filesToUpload, finalizeLoad, cacheReplicationCnt, executorThreadCnt, timestampDir, subDir);
             } else {
                 LOGGER.warn("No files were found to load cache for mode {} with options {} ", loadMode.getMode(), options);
             }
         } finally {
-            HadoopFileSystemUtils.close(pathToFileSystem.values());
+            LOGGER.info("Closing file system objects");
+            fsPaths.forEach(FileSystemPath::close);
         }
     }
     
+    private Collection<FileSystemPath> getFileSystemPaths(Collection<Path> paths, Collection<Configuration> confs) {
+        // @formatter:off
+        return paths
+                .stream()
+                .map(path -> new FileSystemPath(path, confs))
+                .collect(Collectors.toList());
+        // @formatter:on
+    }
+    
     public static void main(String[] args) throws Exception {
+        LOGGER.info("Starting load job cache utility");
         LoadJobCacheLauncher launcher = new LoadJobCacheLauncher();
         ModeOptions modeOptions = new ModeOptions();
         
@@ -101,5 +116,6 @@ public class LoadJobCacheLauncher {
             jCommander.usage();
             System.exit(-1);
         }
+        LOGGER.info("Finished load job cache utility");
     }
 }

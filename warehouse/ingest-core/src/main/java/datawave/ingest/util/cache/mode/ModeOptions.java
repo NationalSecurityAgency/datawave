@@ -7,8 +7,11 @@ public class ModeOptions {
     
     private static final String DATAWAVE_HOME = System.getenv().getOrDefault("DATAWAVE_HOME", "/opt/datawave-ingest/current/");
     
-    @Parameter(names = {"--classpath-base-dir"}, description = "Base directory for relative classpath entries.")
+    @Parameter(names = {"--classpath-base-dir"}, description = "Base directory for relative pathclasspath entries.")
     String classpathBaseDir = DATAWAVE_HOME + "bin/ingest";
+    
+    @Parameter(names = {"--classpath"}, description = "Classpath value.")
+    String classpath;
     
     @Parameter(names = {"--file-pattern"}, description = "In file pattern mode, the pattern of files to upload.")
     String filePattern = "**";
@@ -21,6 +24,10 @@ public class ModeOptions {
     
     public String getClasspathBaseDir() {
         return classpathBaseDir;
+    }
+    
+    public String getClasspath() {
+        return classpath;
     }
     
     public String getFilePattern() {

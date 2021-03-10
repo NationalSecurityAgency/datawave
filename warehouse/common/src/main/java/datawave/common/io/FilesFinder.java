@@ -19,19 +19,17 @@ public class FilesFinder {
     private static final String RELATIVE_PATH_PREFIX = "../";
     
     /**
-     * Reads the environment variable, resolves relative paths and returns a list of paths
+     * Takes a classpath's value and resolves relative paths and returns a list of paths
      *
-     * @param envVar
-     *            Environment variable to read to gather file paths
+     * @param classpath
+     *            Classpath value to read to gather file paths
      * @param baseDir
      *            Base directory to use to resolve relative paths.
      * @param delim
      *            Delimiter to use to split environment variable value.
      * @return A collection of files
      */
-    public static Collection<String> getFilesFromEnvironment(String envVar, String baseDir, String delim) {
-        String classpath = Args.notNull(System.getenv(envVar), envVar + " was not set");
-        
+    public static Collection<String> getFilesFromClasspath(String classpath, String baseDir, String delim) {
         // @formatter:off
         return Arrays
                 .stream(classpath.split(delim))
@@ -57,7 +55,7 @@ public class FilesFinder {
         Path dirPath = Paths.get(Args.notBlank(path, "Path must not be null or blank"));
         
         if (!java.nio.file.Files.isDirectory(dirPath, LinkOption.NOFOLLOW_LINKS)) {
-            throw new IllegalArgumentException("Input path " + path + "must be a directory");
+            throw new IllegalArgumentException("Input path " + path + " must be a directory");
         }
         
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + filePattern);

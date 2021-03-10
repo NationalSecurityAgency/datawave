@@ -7,13 +7,14 @@ import java.util.Collection;
 
 /** This mode will find files to load based on the classpath and a relative path resolver */
 public class ClasspathMode implements LoadJobCacheMode {
-    public static final String JAVA_CLASSPATH_ENV_VAR = "CLASSPATH";
-    public static final String JAVA_CLASSPATH_DELIM = ":";
+    public static final String CLASSPATH_DELIM = ":";
     
     @Override
     public Collection<String> getFilesToLoad(ModeOptions options) {
-        String baseDir = Args.notNull(options.getClasspathBaseDir(), "Classpath working directory can not be null");
-        return FilesFinder.getFilesFromEnvironment(JAVA_CLASSPATH_ENV_VAR, baseDir, JAVA_CLASSPATH_DELIM);
+        String baseDir = Args.notNull(options.getClasspathBaseDir(), "Classpath base directory can not be null");
+        String classpath = Args.notNull(options.getClasspath(), "Classpath can not be null");
+        
+        return FilesFinder.getFilesFromClasspath(classpath, baseDir, CLASSPATH_DELIM);
     }
     
     @Override

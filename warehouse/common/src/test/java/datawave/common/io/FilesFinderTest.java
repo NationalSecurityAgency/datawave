@@ -12,14 +12,9 @@ import org.junit.contrib.java.lang.system.EnvironmentVariables;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static datawave.common.test.utils.FileUtils.createTemporaryFile;
@@ -27,7 +22,6 @@ import static datawave.common.test.utils.FileUtils.createTemporaryFile;
 public class FilesFinderTest {
     private static final File TEMP_DIR = Files.createTempDir();
     private static final String COLON_DELIMITER = ":";
-    private static final String TEST_PATH_ENV_VAR = "TEST_PATH_ENV_VAR";
     private static final String FILE_PREFIX = "File";
     
     private static File TEST_LEVEL0_PROP_FILE;
@@ -52,28 +46,24 @@ public class FilesFinderTest {
     public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
     
     @Test
-    public void testGetFilesFromEnvironment() {
+    public void testGetFilesFromClasspath() {
         Collection<String> expectedFiles = Stream.of(TEST_LEVEL1_XML_FILE.getAbsolutePath(), TEST_LEVEL2_XML_FILE.getAbsolutePath()).collect(
                         Collectors.toList());
         StringJoiner joiner = new StringJoiner(COLON_DELIMITER);
-        
         expectedFiles.forEach(joiner::add);
-        environmentVariables.set(TEST_PATH_ENV_VAR, joiner.toString());
         
-        Collection<String> filesFound = FilesFinder.getFilesFromEnvironment(TEST_PATH_ENV_VAR, "", COLON_DELIMITER);
+        Collection<String> filesFound = FilesFinder.getFilesFromClasspath(joiner.toString(), "", COLON_DELIMITER);
         Assert.assertEquals(expectedFiles, filesFound);
     }
     
     @Test
-    public void testGetFilesFromEnvironmentWithRelativePaths() {
+    public void testGetFilesFromClasspathWithRelativePaths() {
         Collection<String> expectedFiles = Stream.of(TEST_LEVEL0_PROP_FILE.getAbsolutePath(), TEST_LEVEL1_JAR_FILE.getAbsolutePath()).collect(
                         Collectors.toList());
         String baseDir = TEMP_DIR.getAbsolutePath() + "/1/2";
         String testPaths = "../../" + FILE_PREFIX + "0.properties:../../1/" + FILE_PREFIX + "1.jar";
         
-        environmentVariables.set(TEST_PATH_ENV_VAR, testPaths);
-        
-        Collection<String> filesFound = FilesFinder.getFilesFromEnvironment(TEST_PATH_ENV_VAR, baseDir, COLON_DELIMITER);
+        Collection<String> filesFound = FilesFinder.getFilesFromClasspath(testPaths, baseDir, COLON_DELIMITER);
         Assert.assertEquals(expectedFiles, filesFound);
     }
     

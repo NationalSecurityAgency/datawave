@@ -1,5 +1,6 @@
 package datawave.ingest.util.cache;
 
+import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -8,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,8 +24,8 @@ public class LoadJobCache {
     /**
      * Create a timestamped hdfs directory and copy local files to it.
      *
-     * @param pathToFileSystem
-     *            A map of output paths to their file system
+     * @param fileSystemPaths
+     *            An object that contains the path and its associated file system
      * @param filesToLoad
      *            A collection of files to load cache
      * @param finalizeLoad
@@ -39,16 +39,16 @@ public class LoadJobCache {
      * @param optionalSubDir
      *            Optional subdirectory to provide a more granular cache structure
      */
-    public static void load(Map<Path,FileSystem> pathToFileSystem, Collection<String> filesToLoad, boolean finalizeLoad, short cacheReplicationCnt,
+    public static void load(Collection<FileSystemPath> fileSystemPaths, Collection<String> filesToLoad, boolean finalizeLoad, short cacheReplicationCnt,
                     int executorThreads, String timestampDir, String optionalSubDir) {
         ExecutorService executorService = Executors.newFixedThreadPool(executorThreads);
         
-        Consumer<Map.Entry<Path,FileSystem>> loadCache = getLoadCacheConsumer(filesToLoad, executorService, timestampDir, optionalSubDir, cacheReplicationCnt);
-        Consumer<Map.Entry<Path,FileSystem>> finalizeCache = getFinalizeCacheConsumer(timestampDir);
-        Consumer<Map.Entry<Path,FileSystem>> deleteCache = getDeleteCacheConsumer(timestampDir);
+        Consumer<FileSystemPath> loadCache = getLoadCacheConsumer(filesToLoad, executorService, timestampDir, optionalSubDir, cacheReplicationCnt);
+        Consumer<FileSystemPath> finalizeCache = getFinalizeCacheConsumer(timestampDir);
+        Consumer<FileSystemPath> deleteCache = getDeleteCacheConsumer(timestampDir);
         
         try {
-            load(pathToFileSystem, finalizeLoad, loadCache, finalizeCache, deleteCache);
+            load(fileSystemPaths, finalizeLoad, loadCache, finalizeCache, deleteCache);
         } finally {
             executorService.shutdown();
         }
@@ -58,8 +58,8 @@ public class LoadJobCache {
     /**
      * Create a timestamped hdfs directory and copy local files to it.
      *
-     * @param pathToFileSystem
-     *            A map of output paths to their file system
+     * @param fileSystemPaths
+     *            An object that contains the path and its associated file system
      * @param finalizeLoad
      *            A boolean to determine if the cache should be finalized
      * @param loadCache
@@ -69,18 +69,16 @@ public class LoadJobCache {
      * @param deleteCache
      *            A Consumer method that will delete the cache on error
      */
-    public static void load(Map<Path,FileSystem> pathToFileSystem, boolean finalizeLoad, Consumer<Map.Entry<Path,FileSystem>> loadCache,
-                    Consumer<Map.Entry<Path,FileSystem>> finalizeCache, Consumer<Map.Entry<Path,FileSystem>> deleteCache) {
+    public static void load(Collection<FileSystemPath> fileSystemPaths, boolean finalizeLoad, Consumer<FileSystemPath> loadCache,
+                    Consumer<FileSystemPath> finalizeCache, Consumer<FileSystemPath> deleteCache) {
         try {
-            pathToFileSystem.entrySet().forEach(loadCache);
-            LOGGER.info("Finished loading local files to cachhe for {}", pathToFileSystem.keySet());
+            fileSystemPaths.forEach(loadCache);
             if (finalizeLoad) {
-                pathToFileSystem.entrySet().forEach(finalizeCache);
-                LOGGER.info("Finished finalizing {}", pathToFileSystem.keySet());
+                fileSystemPaths.forEach(finalizeCache);
             }
         } catch (Exception e) {
             LOGGER.error("Unable to load job cache. Deleting temporary directories. ", e);
-            pathToFileSystem.entrySet().forEach(deleteCache);
+            fileSystemPaths.forEach(deleteCache);
         }
     }
     
@@ -91,10 +89,10 @@ public class LoadJobCache {
      *            A timestamp directory that will reflect when the cache was loaded
      * @return A consumer that will delete the cache.
      */
-    static Consumer<Map.Entry<Path,FileSystem>> getDeleteCacheConsumer(String timestampDir) {
-        return (Map.Entry<Path,FileSystem> entrySet) -> {
-            Path uploadWorkingDir = new Path(entrySet.getKey(), LOADING_PREFIX + timestampDir);
-            FileSystem cacheFs = entrySet.getValue();
+    static Consumer<FileSystemPath> getDeleteCacheConsumer(String timestampDir) {
+        return (FileSystemPath fsPath) -> {
+            Path uploadWorkingDir = new Path(fsPath.getOutputPath(), LOADING_PREFIX + timestampDir);
+            FileSystem cacheFs = fsPath.getFileSystem();
             
             try {
                 cacheFs.delete(uploadWorkingDir, true);
@@ -111,14 +109,15 @@ public class LoadJobCache {
      *            A timestamp directory that will reflect when the cache was loaded
      * @return A consumer that will finalize the cache
      */
-    static Consumer<Map.Entry<Path,FileSystem>> getFinalizeCacheConsumer(String timestampDir) {
-        return (Map.Entry<Path,FileSystem> entrySet) -> {
-            Path jobCacheDir = new Path(entrySet.getKey(), timestampDir);
+    static Consumer<FileSystemPath> getFinalizeCacheConsumer(String timestampDir) {
+        return (FileSystemPath fsPath) -> {
+            Path jobCacheDir = new Path(fsPath.getOutputPath(), timestampDir);
             Path uploadWorkingDir = new Path(jobCacheDir.getParent(), LOADING_PREFIX + jobCacheDir.getName());
-            FileSystem cacheFs = entrySet.getValue();
+            FileSystem cacheFs = fsPath.getFileSystem();
             
             try {
                 cacheFs.rename(uploadWorkingDir, jobCacheDir);
+                LOGGER.info("Finalize timestamp directory {}", jobCacheDir);
             } catch (IOException e) {
                 throw new RuntimeException("Unable to rename " + uploadWorkingDir + "  to " + jobCacheDir, e);
             }
@@ -138,13 +137,13 @@ public class LoadJobCache {
      *            The replication count for each file in the cache
      * @return A consumer that will load the cache.
      */
-    static Consumer<Map.Entry<Path,FileSystem>> getLoadCacheConsumer(Collection<String> filesToLoad, ExecutorService executorService, String timestampDir,
+    static Consumer<FileSystemPath> getLoadCacheConsumer(Collection<String> filesToLoad, ExecutorService executorService, String timestampDir,
                     String optionalSubDir, short cacheReplicationCnt) {
-        return (Map.Entry<Path,FileSystem> entrySet) -> {
-            Path jobCacheDir = new Path(entrySet.getKey(), timestampDir);
+        return (FileSystemPath fsPath) -> {
+            Path jobCacheDir = new Path(fsPath.getOutputPath(), timestampDir);
             Path uploadWorkingDir = new Path(jobCacheDir.getParent(), LOADING_PREFIX + jobCacheDir.getName());
             Path loadingDir = StringUtils.isBlank(optionalSubDir) ? uploadWorkingDir : new Path(uploadWorkingDir, optionalSubDir);
-            FileSystem cacheFs = entrySet.getValue();
+            FileSystem cacheFs = fsPath.getFileSystem();
             
             try {
                 cacheFs.mkdirs(loadingDir);
@@ -159,6 +158,8 @@ public class LoadJobCache {
                     .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
                     .forEach(CompletableFuture::join);
             // @formatter:on
+            
+            LOGGER.info("Loaded files to {}", loadingDir);
         };
     }
 }

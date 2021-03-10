@@ -5,22 +5,25 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class HadoopFileSystemUtilsTest {
     private static final Configuration TEST_CONF_A = getConfiguration("A");
     private static final Configuration TEST_CONF_B = getConfiguration("B");
-    private static final Map<Configuration,FileSystem> CONF_TO_FS = Maps.newHashMap();
     private static final Path TEST_PATH_A = new HadoopTestPath("A/file/path");
     private static final Path TEST_PATH_B = new HadoopTestPath("B/file/path");
     private static final String HADOOP_TEST_SCHEME_KEY = "SCHEME";
+    
+    private static final Map<Configuration,FileSystem> CONF_TO_FS = Maps.newHashMap();
     
     @BeforeClass
     public static void setup() throws IOException {
@@ -30,7 +33,9 @@ public class HadoopFileSystemUtilsTest {
     
     @AfterClass
     public static void tearDown() throws IOException {
-        HadoopFileSystemUtils.close(CONF_TO_FS.values());
+        for (FileSystem fs : CONF_TO_FS.values()) {
+            fs.close();
+        }
     }
     
     /**
@@ -48,18 +53,25 @@ public class HadoopFileSystemUtilsTest {
     
     @Test
     public void testWhenPathsFindAMatchingFileSystem() {
-        Collection<Path> testPaths = Stream.of(TEST_PATH_B, TEST_PATH_A).collect(Collectors.toList());
         Collection<Configuration> testConfs = Stream.of(TEST_CONF_A, TEST_CONF_B).collect(Collectors.toList());
         
-        HadoopFileSystemUtils.getPathToFileSystemMapping(testConfs, testPaths);
+        // @formatter:off
+        Assert.assertTrue(Stream.of(TEST_PATH_B, TEST_PATH_A)
+                .map(path -> HadoopFileSystemUtils.getFileSystem(testConfs, path))
+                .allMatch(Optional::isPresent));
+        // @formatter:on
+        
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNoFileSystemFoundForPath() {
-        Collection<Path> testPaths = Stream.of(TEST_PATH_A, TEST_PATH_B).collect(Collectors.toList());
         Collection<Configuration> testConfs = Stream.of(TEST_CONF_A).collect(Collectors.toList());
         
-        HadoopFileSystemUtils.getPathToFileSystemMapping(testConfs, testPaths);
+        // @formatter:off
+        Assert.assertTrue(Stream.of(TEST_PATH_B)
+                .map(path -> HadoopFileSystemUtils.getFileSystem(testConfs, path))
+                .noneMatch(Optional::isPresent));
+        // @formatter:on
     }
     
     /** A test helper class to simulate assigning filesystem objects by scheme of output path */
