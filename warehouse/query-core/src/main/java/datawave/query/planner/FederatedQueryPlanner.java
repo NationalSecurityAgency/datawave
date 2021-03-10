@@ -130,7 +130,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         ShardQueryConfiguration tempConfig = new ShardQueryConfiguration(config);
         tempConfig.setBeginDate(startDate);
         tempConfig.setEndDate(endDate);
-        //TODO: I think it is unnecessary to clone the DefaultQueryPlanner but I think it was requested.
+        // TODO: I think it is unnecessary to clone the DefaultQueryPlanner but I think it was requested.
         DefaultQueryPlanner tempPlanner = new DefaultQueryPlanner(this);
         queryData = tempPlanner.process(tempConfig, query, settings, scannerFactory);
         return queryData;

@@ -13,7 +13,6 @@ import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.query.util.FrequencyFamilyCounter;
 import datawave.query.util.IndexedDatesValue;
 import datawave.query.util.YearMonthDay;
 import datawave.util.TextUtil;
