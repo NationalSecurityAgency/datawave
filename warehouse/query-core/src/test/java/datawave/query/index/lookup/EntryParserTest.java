@@ -96,7 +96,7 @@ public class EntryParserTest {
         assertNotNull(tuple);
         assertEquals("20190314", tuple.first());
         assertEquals(0, tuple.second().uids().size());
-        assertEquals("((ASTDelayedPredicate = true) && (hello == 'world'))", JexlStringBuildingVisitor.buildQuery(tuple.second().getNode()));
+        assertEquals("((_Delayed_ = true) && (hello == 'world'))", JexlStringBuildingVisitor.buildQuery(tuple.second().getNode()));
     }
     
     /**
