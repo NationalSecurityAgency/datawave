@@ -1,17 +1,14 @@
-package datawave.webservice.query;
-
-import java.util.Date;
-
-import javax.ws.rs.core.MultivaluedMap;
+package datawave.microservice.query;
 
 import datawave.validation.ParameterValidator;
+import org.springframework.util.MultiValueMap;
+
+import java.util.Date;
 
 /**
  * QueryParameters passed in from a client, they are validated and passed through to the iterator stack as QueryOptions.
  *
  */
-// TODO: This has been moved to query-api and should be removed.
-@Deprecated
 public interface QueryParameters extends ParameterValidator {
     
     String QUERY_STRING = "query";
@@ -83,11 +80,11 @@ public interface QueryParameters extends ParameterValidator {
     
     void setLogicName(String logicName);
     
-    MultivaluedMap<String,String> getRequestHeaders();
+    MultiValueMap<String,String> getRequestHeaders();
     
-    void setRequestHeaders(MultivaluedMap<String,String> requestHeaders);
-    
-    MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters);
+    void setRequestHeaders(MultiValueMap<String,String> requestHeaders);
+
+    MultiValueMap<String,String> getUnknownParameters(MultiValueMap<String,String> allQueryParameters);
     
     void clear();
     

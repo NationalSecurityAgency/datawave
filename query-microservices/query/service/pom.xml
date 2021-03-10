@@ -15,6 +15,7 @@
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
         <version.microservice.query-cache>1.0-SNAPSHOT</version.microservice.query-cache>
         <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
+        <version.microservice.starter-audit>1.2</version.microservice.starter-audit>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -32,6 +33,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
                 <version>${version.microservice.starter}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-audit</artifactId>
+                <version>${version.microservice.starter-audit}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
@@ -59,6 +65,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-audit</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>

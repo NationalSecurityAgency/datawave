@@ -9,11 +9,24 @@
     </parent>
     <artifactId>query-api</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <properties />
+    <properties>
+        <version.microservice.base-rest-responses>1.2</version.microservice.base-rest-responses>
+    </properties>
     <dependencyManagement>
-        <dependencies />
+        <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>base-rest-responses</artifactId>
+                <version>${version.microservice.base-rest-responses}</version>
+            </dependency>
+        </dependencies>
     </dependencyManagement>
-    <dependencies />
+    <dependencies>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+    </dependencies>
     <repositories>
         <repository>
             <!--

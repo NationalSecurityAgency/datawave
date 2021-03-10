@@ -14,6 +14,8 @@ RabbitMQ v3.7.7 is a prepacked docker image used for messaging between the vario
 
 [Datawave Config Service v1.4](https://github.com/NationalSecurityAgency/datawave-config-service/releases/tag/1.4) is Datawave's customized Spring Cloud config service.
 
+Sample configuration files can be found in the config folder.
+
 You will need to build the docker image for this service on your local machine following the instructions in the config service README.
 
 ### Cache
