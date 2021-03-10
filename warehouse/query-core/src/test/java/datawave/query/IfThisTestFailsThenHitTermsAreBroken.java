@@ -22,9 +22,6 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.query.util.TypeMetadata;
-import datawave.query.util.TypeMetadataHelper;
-import datawave.query.util.TypeMetadataWriter;
 import datawave.security.util.ScannerHelper;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
@@ -193,12 +190,6 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, QueryTestTableHelper.MODEL_TABLE_NAME,
-                        authSet, false);
-        Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, QueryTestTableHelper.MODEL_TABLE_NAME);
-        
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
         resultSet = new HashSet<>();
@@ -319,7 +310,6 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     private void doIt() throws Exception {
         
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("type.metadata.in.hdfs", "true");
         extraParameters.put("hit.list", "true");
         // @formatter:off
         String[] queryStrings = {
@@ -368,7 +358,6 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     private void doItWithProjection() throws Exception {
         
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("type.metadata.in.hdfs", "true");
         extraParameters.put("hit.list", "true");
         extraParameters.put("return.fields", "*");
         // @formatter:off

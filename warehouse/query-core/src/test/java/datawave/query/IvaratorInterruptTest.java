@@ -12,9 +12,6 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.TypeMetadata;
-import datawave.query.util.TypeMetadataHelper;
-import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -176,12 +173,6 @@ public abstract class IvaratorInterruptTest {
         
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
-        
-        TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper(connector, QueryTestTableHelper.MODEL_TABLE_NAME,
-                        authSet, false);
-        Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, QueryTestTableHelper.MODEL_TABLE_NAME);
         
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;

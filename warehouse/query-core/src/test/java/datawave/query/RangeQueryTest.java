@@ -60,7 +60,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
     public void testSingleValue() throws Exception {
         log.info("------  testSingleValue  ------");
         for (final TestCities city : TestCities.values()) {
-            String query = "((BoundedRange = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP
+            String query = "((_Bounded_ = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP
                             + "'" + city.name() + "'))";
             
             // Test the plan with all expansions
@@ -69,7 +69,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
             assertPlanEquals(expected, plan);
             
             // Test the plan sans value expansion
-            expected = "((BoundedRange = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP
+            expected = "((_Bounded_ = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP
                             + "'" + city.name() + "'))";
             plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
@@ -88,7 +88,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testRangeWithTerm() throws Exception {
         for (final TestCities city : TestCities.values()) {
-            String query = "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100))" + AND_OP
+            String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100))" + AND_OP
                             + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'";
             
             // Test the plan with all expansions
@@ -97,7 +97,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
             assertPlanEquals(expected, plan);
             
             // Test the plan sans value expansion
-            expected = "(((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "'+cE1')" + JEXL_AND_OP + "(" + CityField.NUM.name() + GTE_OP
+            expected = "(((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "'+cE1')" + JEXL_AND_OP + "(" + CityField.NUM.name() + GTE_OP
                             + "'+cE1')))" + JEXL_AND_OP + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'";
             plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
@@ -116,8 +116,8 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testSingleValueAndMultiFieldWithParens() throws Exception {
         for (final TestCities city : TestCities.values()) {
-            String query = "((BoundedRange = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP
-                            + "'" + city.name() + "'))" + AND_OP + "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "20" + AND_OP
+            String query = "((_Bounded_ = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP
+                            + "'" + city.name() + "'))" + AND_OP + "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "20" + AND_OP
                             + CityField.NUM.name() + GTE_OP + "20))";
             
             // Test the plan with all expansions
@@ -126,8 +126,8 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
             assertPlanEquals(expected, plan);
             
             // Test the plan sans value expansion
-            expected = "((BoundedRange = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP
-                            + "'" + city.name() + "'))" + AND_OP + "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "'+bE2'" + JEXL_AND_OP
+            expected = "((_Bounded_ = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP
+                            + "'" + city.name() + "'))" + AND_OP + "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "'+bE2'" + JEXL_AND_OP
                             + CityField.NUM.name() + GTE_OP + "'+bE2'))";
             plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
@@ -178,8 +178,8 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
     public void testSingleValueOrMultiFieldWithParens() throws Exception {
         log.info("------  testSingleValueOrMultiFieldWithParens  ------");
         for (final TestCities city : TestCities.values()) {
-            String query = "((BoundedRange = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP
-                            + "'" + city.name() + "'))" + OR_OP + "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "100" + AND_OP
+            String query = "((_Bounded_ = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP
+                            + "'" + city.name() + "'))" + OR_OP + "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "100" + AND_OP
                             + CityField.NUM.name() + GTE_OP + "100))";
             
             // Test the plan with all expansions
@@ -188,8 +188,8 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
             assertPlanEquals(expected, plan);
             
             // Test the plan sans value expansion
-            expected = "((BoundedRange = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP
-                            + "'" + city.name() + "'))" + OR_OP + "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP
+            expected = "((_Bounded_ = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP
+                            + "'" + city.name() + "'))" + OR_OP + "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP
                             + CityField.NUM.name() + GTE_OP + "'+cE1'))";
             plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
@@ -210,13 +210,13 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
         log.info("------  testMultiFieldsNoResults  ------");
         String state = "'ohio'";
-        String qState = "((BoundedRange = true) && (" + CityField.STATE.name() + LTE_OP + state + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
+        String qState = "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP + state + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
         
         String cont = "'europe'";
-        String qCont = "((BoundedRange = true) && (" + CityField.CONTINENT.name() + LTE_OP + cont + AND_OP + CityField.CONTINENT.name() + GTE_OP + cont + "))";
-        String qNum = "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100))";
+        String qCont = "((_Bounded_ = true) && (" + CityField.CONTINENT.name() + LTE_OP + cont + AND_OP + CityField.CONTINENT.name() + GTE_OP + cont + "))";
+        String qNum = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100))";
         for (final TestCities city : TestCities.values()) {
-            String query = "((BoundedRange = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP
+            String query = "((_Bounded_ = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + AND_OP + CityField.CITY.name() + GTE_OP
                             + "'" + city.name() + "'))" + AND_OP + qState + AND_OP + qCont + AND_OP + qNum;
             
             // Test the plan with all expansions
@@ -226,13 +226,13 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
             assertPlanEquals(expected, plan);
             
             // Test the plan sans value expansion
-            String expectedState = "((BoundedRange = true) && (" + CityField.STATE.name() + LTE_OP + state + JEXL_AND_OP + CityField.STATE.name() + GTE_OP
-                            + state + "))";
-            String expectedCont = "((BoundedRange = true) && (" + CityField.CONTINENT.name() + LTE_OP + cont + JEXL_AND_OP + CityField.CONTINENT.name()
-                            + GTE_OP + cont + "))";
-            String expectedNum = "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP
+            String expectedState = "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP + state + JEXL_AND_OP + CityField.STATE.name() + GTE_OP + state
+                            + "))";
+            String expectedCont = "((_Bounded_ = true) && (" + CityField.CONTINENT.name() + LTE_OP + cont + JEXL_AND_OP + CityField.CONTINENT.name() + GTE_OP
+                            + cont + "))";
+            String expectedNum = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP
                             + "'+cE1'))";
-            expected = "((BoundedRange = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP
+            expected = "((_Bounded_ = true) && (" + CityField.CITY.name() + LTE_OP + "'" + city.name() + "'" + JEXL_AND_OP + CityField.CITY.name() + GTE_OP
                             + "'" + city.name() + "'))" + AND_OP + expectedState + AND_OP + expectedCont + AND_OP + expectedNum;
             plan = getPlan(query, true, false);
             assertPlanEquals(expected, plan);
@@ -288,7 +288,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
     public void testRangeInOut() throws Exception {
         log.info("------  testRangeInOut  ------");
         String city = TestCities.rome.name();
-        String query = "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100))";
+        String query = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "100" + AND_OP + CityField.NUM.name() + GTE_OP + "100))";
         this.logic.setMaxValueExpansionThreshold(2);
         
         // Test the plan with all expansions
@@ -297,7 +297,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         assertPlanEquals(expected, plan);
         
         // Test the plan sans value expansion
-        expected = "((BoundedRange = true) && (" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP + "'+cE1'))";
+        expected = "((_Bounded_ = true) && (" + CityField.NUM.name() + LTE_OP + "'+cE1'" + JEXL_AND_OP + CityField.NUM.name() + GTE_OP + "'+cE1'))";
         plan = getPlan(query, true, false);
         assertPlanEquals(expected, plan);
         
@@ -319,7 +319,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         String end = "'r'";
         for (final TestCities city : TestCities.values()) {
             String query = "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + OR_OP + CityField.CITY.name() + EQ_OP + "'" + city.name()
-                            + "-extra')" + AND_OP + "((BoundedRange = true) && (" + CityField.STATE.name() + GTE_OP + start + AND_OP + CityField.STATE.name()
+                            + "-extra')" + AND_OP + "((_Bounded_ = true) && (" + CityField.STATE.name() + GTE_OP + start + AND_OP + CityField.STATE.name()
                             + LTE_OP + end + "))";
             
             // test running the query
@@ -349,8 +349,8 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         }
         
         // Test the plan sans value expansion
-        String expected = CityField.NUM.name() + LTE_OP + "'+cE1'" + AND_OP + "((ASTDelayedPredicate = true) && (" + CityField.CITY.name() + EQ_OP + "'" + city
-                        + "'" + OR_OP + CityField.NUM.name() + GTE_OP + "'+cE1'))";
+        String expected = CityField.NUM.name() + LTE_OP + "'+cE1'" + AND_OP + "((_Delayed_ = true) && (" + CityField.CITY.name() + EQ_OP + "'" + city + "'"
+                        + OR_OP + CityField.NUM.name() + GTE_OP + "'+cE1'))";
         String plan = getPlan(query, true, false);
         assertPlanEquals(expected, plan);
         

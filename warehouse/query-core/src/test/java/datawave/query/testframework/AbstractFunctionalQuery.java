@@ -93,7 +93,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
     
-    protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.class.getSimpleName();
+    protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.label();
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
