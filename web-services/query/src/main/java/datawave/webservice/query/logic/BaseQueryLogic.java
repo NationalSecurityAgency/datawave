@@ -28,6 +28,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
     private AuditType auditType = null;
+    private Map<String,Long> dnResultLimits = null;
     protected long maxResults = -1L;
     protected ScannerBase scanner;
     @SuppressWarnings("unchecked")
@@ -333,5 +334,15 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public void setAuthorizedDNs(Set<String> authorizedDNs) {
         this.authorizedDNs = authorizedDNs;
+    }
+    
+    @Override
+    public void setDnResultLimits(Map<String,Long> dnResultLimits) {
+        this.dnResultLimits = dnResultLimits;
+    }
+    
+    @Override
+    public Map<String,Long> getDnResultLimits() {
+        return dnResultLimits;
     }
 }
