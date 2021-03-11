@@ -315,37 +315,37 @@ public class NodeTypeCountVisitorTest {
     
     @Test
     public void testASTDelayedPredicate() throws ParseException {
-        assertEquals(1, count("((ASTDelayedPredicate = true) && (FOO == 1 && FOO == 3))").getTotal(ASTDelayedPredicate.class));
+        assertEquals(1, count("((_Delayed_ = true) && (FOO == 1 && FOO == 3))").getTotal(ASTDelayedPredicate.class));
     }
     
     @Test
     public void testASTEvaluationOnly() throws ParseException {
-        assertEquals(1, count("((ASTEvaluationOnly = true) && (FOO == 1 && FOO == 3))").getTotal(ASTEvaluationOnly.class));
+        assertEquals(1, count("((_Eval_ = true) && (FOO == 1 && FOO == 3))").getTotal(ASTEvaluationOnly.class));
     }
     
     @Test
     public void testBoundedRange() throws ParseException {
-        assertEquals(1, count("((BoundedRange = true) && (FOO > 1 && FOO < 5))").getTotal(BoundedRange.class));
+        assertEquals(1, count("((_Bounded_ = true) && (FOO > 1 && FOO < 5))").getTotal(BoundedRange.class));
     }
     
     @Test
     public void testExceededOrThresholdMarkerJexlNode() throws ParseException {
-        assertEquals(1, count("((ExceededOrThresholdMarkerJexlNode = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededOrThresholdMarkerJexlNode.class));
+        assertEquals(1, count("((_List_ = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededOrThresholdMarkerJexlNode.class));
     }
     
     @Test
     public void testExceededTermThresholdMarkerJexlNode() throws ParseException {
-        assertEquals(1, count("((ExceededTermThresholdMarkerJexlNode = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededTermThresholdMarkerJexlNode.class));
+        assertEquals(1, count("((_Term_ = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededTermThresholdMarkerJexlNode.class));
     }
     
     @Test
     public void testExceededValueThresholdMarkerJexlNode() throws ParseException {
-        assertEquals(1, count("((ExceededValueThresholdMarkerJexlNode = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededValueThresholdMarkerJexlNode.class));
+        assertEquals(1, count("((_Value_ = true) && (FOO == 1 && FOO == 3))").getTotal(ExceededValueThresholdMarkerJexlNode.class));
     }
     
     @Test
     public void testIndexHoleMarkerJexlNode() throws ParseException {
-        assertEquals(1, count("((IndexHoleMarkerJexlNode = true) && (FOO == 1 && FOO == 3))").getTotal(IndexHoleMarkerJexlNode.class));
+        assertEquals(1, count("((_Hole_ = true) && (FOO == 1 && FOO == 3))").getTotal(IndexHoleMarkerJexlNode.class));
     }
     
     private NodeTypeCount count(String query) throws ParseException {
