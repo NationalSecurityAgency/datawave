@@ -31,7 +31,6 @@ public class MetadataHelperUpdateHdfsListener {
     private final String zookeepers;
     private final TypeMetadataHelper.Factory typeMetadataHelperFactory;
     private final Set<Authorizations> allMetadataAuths;
-    private TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
     
     private final String instance;
     private final String username;
@@ -126,7 +125,6 @@ public class MetadataHelperUpdateHdfsListener {
                         Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
                         TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(connector, metadataTableName,
                                         allMetadataAuths, false);
-                        typeMetadataWriter.writeTypeMetadataMap(typeMetadataHelper.getTypeMetadataMap(this.allMetadataAuths), metadataTableName);
                         if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
                         }

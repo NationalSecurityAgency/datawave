@@ -24,7 +24,9 @@ import java.util.Set;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
 public class TestBaseQueryLogic {
@@ -69,6 +71,35 @@ public class TestBaseQueryLogic {
         assertEquals("Incorrect max page size", 25, result1);
         assertEquals("Incorrect page byte trigger", 1024L, result2);
         assertNotNull("Iterator should not be null", result3);
+    }
+    
+    @Test
+    public void testContainsDnWithAccess() {
+        Set<String> dns = Sets.newHashSet("dn=user", "dn=user chain 1", "dn=user chain 2");
+        BaseQueryLogic<Object> logic = new TestQueryLogic<>();
+        
+        // Assert cases given allowedDNs == null. Access should not be blocked at all.
+        assertTrue(logic.containsDNWithAccess(dns));
+        assertTrue(logic.containsDNWithAccess(null));
+        assertTrue(logic.containsDNWithAccess(Collections.emptySet()));
+        
+        // Assert cases given allowedDNs == empty set. Access should not be blocked at all.
+        logic.setAuthorizedDNs(Collections.emptySet());
+        assertTrue(logic.containsDNWithAccess(dns));
+        assertTrue(logic.containsDNWithAccess(null));
+        assertTrue(logic.containsDNWithAccess(Collections.emptySet()));
+        
+        // Assert cases given allowedDNs == non-empty set with matching DN. Access should only be granted where DN is present.
+        logic.setAuthorizedDNs(Sets.newHashSet("dn=user", "dn=other user"));
+        assertTrue(logic.containsDNWithAccess(dns));
+        assertFalse(logic.containsDNWithAccess(null));
+        assertFalse(logic.containsDNWithAccess(Collections.emptySet()));
+        
+        // Assert cases given allowedDNs == non-empty set with no matching DN. All access should be blocked.
+        logic.setAuthorizedDNs(Sets.newHashSet("dn=other user", "dn=other user chain"));
+        assertFalse(logic.containsDNWithAccess(dns));
+        assertFalse(logic.containsDNWithAccess(null));
+        assertFalse(logic.containsDNWithAccess(Collections.emptySet()));
     }
     
     @Test

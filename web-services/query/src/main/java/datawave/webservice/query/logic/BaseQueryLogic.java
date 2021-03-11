@@ -37,6 +37,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private long pageByteTrigger = 0;
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
+    private Set<String> authorizedDNs;
     protected Principal principal;
     protected RoleManager roleManager;
     protected MarkingFunctions markingFunctions;
@@ -323,6 +324,16 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public SelectorExtractor getSelectorExtractor() {
         return selectorExtractor;
+    }
+    
+    @Override
+    public Set<String> getAuthorizedDNs() {
+        return authorizedDNs;
+    }
+    
+    @Override
+    public void setAuthorizedDNs(Set<String> authorizedDNs) {
+        this.authorizedDNs = authorizedDNs;
     }
     
     @Override

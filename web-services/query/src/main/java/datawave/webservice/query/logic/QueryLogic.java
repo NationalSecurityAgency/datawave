@@ -299,6 +299,38 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     Set<String> getExampleQueries();
     
     /**
+     * Return the DNs authorized access to this query logic.
+     *
+     * @return the set of DNs authorized access to this query logic, possibly null or empty
+     */
+    Set<String> getAuthorizedDNs();
+    
+    /**
+     * Set the DNs authorized access to this query logic.
+     *
+     * @param allowedDNs
+     *            the DNs authorized access
+     */
+    void setAuthorizedDNs(Set<String> allowedDNs);
+    
+    /**
+     * Return whether or not the provided collection of DNs contains at least oneDN that is authorized for access to this query logic. This will return true in
+     * the following cases:
+     * <ul>
+     * <li>The set of authorized DNs for this query logic is null or empty.</li>
+     * <li>The set of authorized DNs is not empty, and the provided collection contains a DN that is also found within the set of authorized DNs.</li>
+     * </ul>
+     *
+     * @param dns
+     *            the DNs to determine access rights for
+     * @return true if the collection contains at least one DN that has access to this query logic, or false otherwise
+     */
+    default boolean containsDNWithAccess(Collection<String> dns) {
+        Set<String> authorizedDNs = getAuthorizedDNs();
+        return authorizedDNs == null || authorizedDNs.isEmpty() || (dns != null && dns.stream().anyMatch(authorizedDNs::contains));
+    }
+    
+    /**
      * Set the map of DNs to query result limits. This should override the default limit returned by {@link #getMaxResults()} for any included DNs.
      *
      * @param dnResultLimits
@@ -317,7 +349,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * Return the maximum number of results to include for the query for any DN present in the specified collection. If limits are found for multiple DNs in the
      * collection, the smallest value will be returned. If the provided collection is null or empty, or if no limits are found for any DN, the value of
      * {@link #getMaxResults()} will be returned.
-     * 
+     *
      * @param dns
      *            the DNs to determine the maximum number of results to include for the query. It's expected that this list represents all the DNs in the DN
      *            chain for an individual user.

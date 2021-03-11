@@ -230,7 +230,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private String limitFieldsField = null;
     private boolean hitList = false;
-    private boolean typeMetadataInHdfs = false;
     private boolean dateIndexTimeTravel = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
@@ -344,6 +343,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String activeQueryLogNameSource;
     
     /**
+     * Remove redundant AND'd terms within ORs. False by default.
+     */
+    private boolean enforceUniqueConjunctionsWithinExpression = false;
+    
+    /**
+     * Remove redundant OR'd terms within ANDs. False by default.
+     */
+    private boolean enforceUniqueDisjunctionsWithinExpression = false;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -446,7 +455,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
-        this.setTypeMetadataInHdfs(other.isTypeMetadataInHdfs());
         this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
         this.setBeginDateCap(other.getBeginDateCap());
         this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
@@ -518,6 +526,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
         this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
+        this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
+        this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
+        
     }
     
     /**
@@ -568,9 +579,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             String value = parameter.getParameterValue();
             if (name.equals(QueryParameters.HIT_LIST)) {
                 config.setHitList(Boolean.parseBoolean(value));
-            }
-            if (name.equals(QueryParameters.TYPE_METADATA_IN_HDFS)) {
-                config.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
             }
             if (name.equals(QueryParameters.DATE_INDEX_TIME_TRAVEL)) {
                 config.setDateIndexTimeTravel(Boolean.parseBoolean(value));
@@ -1542,14 +1550,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.hitList = hitList;
     }
     
-    public boolean isTypeMetadataInHdfs() {
-        return typeMetadataInHdfs;
-    }
-    
-    public void setTypeMetadataInHdfs(boolean typeMetadataInHdfs) {
-        this.typeMetadataInHdfs = typeMetadataInHdfs;
-    }
-    
     public boolean isRawTypes() {
         return this.rawTypes;
     }
@@ -2112,5 +2112,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setGeneratePlanOnly(boolean generatePlanOnly) {
         this.generatePlanOnly = generatePlanOnly;
+    }
+    
+    public boolean getEnforceUniqueConjunctionsWithinExpression() {
+        return enforceUniqueConjunctionsWithinExpression;
+    }
+    
+    public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        this.enforceUniqueConjunctionsWithinExpression = enforceUniqueConjunctionsWithinExpression;
+    }
+    
+    public boolean getEnforceUniqueDisjunctionsWithinExpression() {
+        return enforceUniqueDisjunctionsWithinExpression;
+    }
+    
+    public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueDisjunctionsWithinExpression) {
+        this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
     }
 }
