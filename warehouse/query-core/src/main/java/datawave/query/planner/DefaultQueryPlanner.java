@@ -1262,9 +1262,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         logQuery(queryTree, "Query after expanding regex:");
                     }
                     innerStopwatch.stop();
-                    
-                    // The query tree was modified. Recount nodes.
-                    nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                 }
                 
                 // Check if there are any bounded ranges to expand.
@@ -1299,9 +1296,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                     + prunedTerms.entries().stream().map(x -> x.getKey() + "==" + x.getValue()).collect(Collectors.joining(",")) + "]");
                 }
                 innerStopwatch.stop();
-                
-                // The query tree was modified. Recount nodes.
-                nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                 
                 // Check if there are functions that can be pushed into exceeded value ranges.
                 if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
@@ -1338,15 +1332,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // predicates based on cost...
                     config.setExpandAllTerms(true);
                     
+                    // Check if there is any regex to expand after pulling up delayed predicates.
                     nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
-                    // Check if there is any regex to expand.
                     if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                         queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding regex again:");
                         }
-                        // The query tree was modified. Recount nodes.
-                        nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                     }
                     
                     // Check if there are any bounded ranges to expand.
@@ -1356,8 +1348,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding ranges again:");
                         }
-                        // The query tree was modified. Recount nodes.
-                        nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                     }
                     
                     if (reduceQuery) {
