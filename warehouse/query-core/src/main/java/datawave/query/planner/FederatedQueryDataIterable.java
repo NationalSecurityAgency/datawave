@@ -59,7 +59,11 @@ public class FederatedQueryDataIterable implements CloseableIterable<QueryData> 
                 Iterator<QueryData> next = null;
                 synchronized (delegates) {
                     while ((next == null || !next.hasNext()) && !delegates.isEmpty()) {
-                        next = delegates.removeFirst().iterator();
+                        try {
+                            next = delegates.removeFirst().iterator();
+                        } catch (NullPointerException npe) {
+                            next = null;
+                        }
                     }
                 }
                 if (next != null && !next.hasNext()) {

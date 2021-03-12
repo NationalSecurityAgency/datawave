@@ -89,7 +89,8 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             holeDates = generateStartAndEndDates((ShardQueryConfiguration) config);
             if ((valueIndexHoles == null && fieldIndexHoles == null) || (valueIndexHoles.size() == 0 && fieldIndexHoles.size() == 0) || holeDates.size() == 0) {
                 results = super.process(config, query, settings, scannerFactory);
-                return results;
+                returnQueryData.addDelegate(results);
+                return returnQueryData;
             }
             
             Boolean firstIteration = true;
