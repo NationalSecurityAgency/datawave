@@ -1149,7 +1149,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
         
         // if we have any index holes, then mark em
-        if (!config.getValueIndexHoles().isEmpty()) {
+        if (!config.getValueIndexHoles().isEmpty() || !config.getFieldIndexHoles().isEmpty()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Mark Index Holes");
             
             queryTree = PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(queryTree, config, metadataHelper);
