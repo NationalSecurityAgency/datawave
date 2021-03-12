@@ -16,24 +16,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FilesFinder {
-    private static final String RELATIVE_PATH_PREFIX = "../";
     
     /**
      * Takes a classpath's value and resolves relative paths and returns a list of paths
      *
      * @param classpath
      *            Classpath value to read to gather file paths
-     * @param baseDir
-     *            Base directory to use to resolve relative paths.
      * @param delim
      *            Delimiter to use to split environment variable value.
      * @return A collection of files
      */
-    public static Collection<String> getFilesFromClasspath(String classpath, String baseDir, String delim) {
+    public static Collection<String> getFilesFromClasspath(String classpath, String delim) {
         // @formatter:off
         return Arrays
                 .stream(classpath.split(delim))
-                .map(classpathEntry -> convertToCanonicalPath(classpathEntry, baseDir ))
+                .filter(path -> !path.isEmpty())
+                .map(FilesFinder::convertToCanonicalPath)
                 .collect(Collectors.toList());
         // @formatter:on
     }
@@ -72,22 +70,23 @@ public class FilesFinder {
     }
     
     /**
-     * Resolve relative paths if necessary
+     * Verify absolute path
      *
      * @param pathEntry
      *            Path entry
-     * @param basePath
-     *            Base directory to use to resolve relative paths.
      * @return Resolved path entry
      */
-    private static String convertToCanonicalPath(String pathEntry, String basePath) {
-        pathEntry = pathEntry.startsWith(RELATIVE_PATH_PREFIX) ? basePath + File.separator + pathEntry : pathEntry;
+    private static String convertToCanonicalPath(String pathEntry) {
+        File filePath = new File(pathEntry);
         
-        try {
-            return new File(pathEntry).getCanonicalPath();
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to convert " + pathEntry + " to a canonical path", e);
+        if (!filePath.exists()) {
+            throw new IllegalArgumentException(pathEntry + " does not exist on file system.");
         }
         
+        try {
+            return filePath.getCanonicalPath();
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to convert " + pathEntry + " to a canonical path.", e);
+        }
     }
 }

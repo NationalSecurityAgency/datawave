@@ -16,7 +16,7 @@ public class HadoopFileSystemUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(HadoopFileSystemUtils.class);
     
     private HadoopFileSystemUtils() {}
-
+    
     /**
      * Find the hadoop file system associated with the file path
      *
@@ -37,7 +37,6 @@ public class HadoopFileSystemUtils {
         return Optional.empty();
     }
     
-    // TODO: NEEDS CLASSPATH
     /**
      * Returns a runnable method for copying files to hdfs
      *

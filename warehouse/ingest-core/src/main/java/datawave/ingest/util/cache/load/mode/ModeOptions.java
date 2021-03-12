@@ -1,4 +1,4 @@
-package datawave.ingest.util.cache.mode;
+package datawave.ingest.util.cache.load.mode;
 
 import com.beust.jcommander.Parameter;
 
@@ -6,9 +6,6 @@ import com.beust.jcommander.Parameter;
 public class ModeOptions {
     
     private static final String DATAWAVE_HOME = System.getenv().getOrDefault("DATAWAVE_HOME", "/opt/datawave-ingest/current/");
-    
-    @Parameter(names = {"--classpath-base-dir"}, description = "Base directory for relative pathclasspath entries.")
-    String classpathBaseDir = DATAWAVE_HOME + "bin/ingest";
     
     @Parameter(names = {"--classpath"}, description = "Classpath value.")
     String classpath;
@@ -21,10 +18,6 @@ public class ModeOptions {
     
     @Parameter(names = {"--max-depth"}, description = "In file pattern mode, the maximum depth for a directory search.")
     int maxDepth = Integer.MAX_VALUE;
-    
-    public String getClasspathBaseDir() {
-        return classpathBaseDir;
-    }
     
     public String getClasspath() {
         return classpath;

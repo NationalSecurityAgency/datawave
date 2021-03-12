@@ -1,8 +1,8 @@
-package datawave.ingest.util.cache.converter;
+package datawave.ingest.util.cache.load.converter;
 
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.ParameterException;
-import datawave.ingest.util.cache.mode.LoadJobCacheMode;
+import datawave.ingest.util.cache.load.mode.LoadJobCacheMode;
 
 import java.util.Arrays;
 import java.util.Optional;

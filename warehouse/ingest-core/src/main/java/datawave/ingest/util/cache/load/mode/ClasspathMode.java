@@ -1,4 +1,4 @@
-package datawave.ingest.util.cache.mode;
+package datawave.ingest.util.cache.load.mode;
 
 import datawave.common.io.FilesFinder;
 import org.apache.http.util.Args;
@@ -11,10 +11,8 @@ public class ClasspathMode implements LoadJobCacheMode {
     
     @Override
     public Collection<String> getFilesToLoad(ModeOptions options) {
-        String baseDir = Args.notNull(options.getClasspathBaseDir(), "Classpath base directory can not be null");
         String classpath = Args.notNull(options.getClasspath(), "Classpath can not be null");
-        
-        return FilesFinder.getFilesFromClasspath(classpath, baseDir, CLASSPATH_DELIM);
+        return FilesFinder.getFilesFromClasspath(classpath, CLASSPATH_DELIM);
     }
     
     @Override

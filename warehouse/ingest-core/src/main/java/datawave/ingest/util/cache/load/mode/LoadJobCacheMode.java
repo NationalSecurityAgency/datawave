@@ -1,4 +1,4 @@
-package datawave.ingest.util.cache.mode;
+package datawave.ingest.util.cache.load.mode;
 
 import java.util.Collection;
 import java.util.Optional;

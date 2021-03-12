@@ -1,4 +1,4 @@
-package datawave.ingest.util.cache;
+package datawave.ingest.util.cache.load;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -24,9 +24,9 @@ import org.junit.Test;
 
 import static datawave.common.test.utils.FileUtils.createTemporaryFile;
 import static datawave.common.test.utils.FileUtils.deletePath;
-import static datawave.ingest.util.cache.LoadJobCache.getDeleteCacheConsumer;
-import static datawave.ingest.util.cache.LoadJobCache.getLoadCacheConsumer;
-import static datawave.ingest.util.cache.LoadJobCacheLauncher.JOB_CACHE_FORMATER;
+import static datawave.ingest.util.cache.load.LoadJobCache.getDeleteCacheConsumer;
+import static datawave.ingest.util.cache.load.LoadJobCache.getLoadCacheConsumer;
+import static datawave.ingest.util.cache.load.LoadJobCacheLauncher.JOB_CACHE_FORMATER;
 
 public class LoadJobCacheTest {
     private static final File TEMP_DIR = Files.createTempDir();
@@ -99,7 +99,13 @@ public class LoadJobCacheTest {
     
     private void verifyResults(Collection<String> outputPaths) throws IOException {
         for (String outputPath : outputPaths) {
-            Collection<String> filesFound = FilesFinder.getFilesFromPattern(outputPath, "**", Integer.MAX_VALUE);
+            // @formatter:off
+            Collection<String> filesFound =
+                    FilesFinder.getFilesFromPattern(outputPath, "**", Integer.MAX_VALUE)
+                    .stream()
+                    .sorted()
+                    .collect(Collectors.toList());
+            // @formatter:on
             Collection<String> filesExpected = getExpectedOutput(outputPath);
             Assert.assertEquals(filesExpected, filesFound);
         }

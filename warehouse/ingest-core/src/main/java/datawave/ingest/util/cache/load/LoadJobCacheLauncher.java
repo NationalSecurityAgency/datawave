@@ -1,16 +1,16 @@
-package datawave.ingest.util.cache;
+package datawave.ingest.util.cache.load;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.Lists;
 import datawave.ingest.util.ConfigurationFileHelper;
-import datawave.ingest.util.cache.converter.HadoopPathConverter;
-import datawave.ingest.util.cache.converter.ShortConverter;
-import datawave.ingest.util.cache.mode.ClasspathMode;
-import datawave.ingest.util.cache.mode.LoadJobCacheMode;
-import datawave.ingest.util.cache.converter.ModeConverter;
-import datawave.ingest.util.cache.mode.ModeOptions;
+import datawave.ingest.util.cache.load.converter.HadoopPathConverter;
+import datawave.ingest.util.cache.load.converter.ShortConverter;
+import datawave.ingest.util.cache.load.mode.ClasspathMode;
+import datawave.ingest.util.cache.load.mode.LoadJobCacheMode;
+import datawave.ingest.util.cache.load.converter.ModeConverter;
+import datawave.ingest.util.cache.load.mode.ModeOptions;
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -68,23 +68,19 @@ public class LoadJobCacheLauncher {
      *            Mode options that will determine the files to load to cache
      */
     public void run(ModeOptions options) {
-        LOGGER.info("Converting hadoop dirs to configuration objects");
         Collection<FileSystemPath> fsPaths = Lists.newArrayList();
         Collection<Configuration> hadoopConfs = ConfigurationFileHelper.getHadoopConfs(hadoopConfDirs);
         
         try {
-            LOGGER.info("Constructing file system paths");
             fsPaths = getFileSystemPaths(outputPaths, hadoopConfs);
-            LOGGER.info("Finding files to load");
             Collection<String> filesToUpload = loadMode.getFilesToLoad(options);
             if (!filesToUpload.isEmpty()) {
-                LOGGER.info("Loading job cache with timestamp {}", timestampDir);
+                LOGGER.info("Loading job cache with timestamp directory {}", timestampDir);
                 LoadJobCache.load(fsPaths, filesToUpload, finalizeLoad, cacheReplicationCnt, executorThreadCnt, timestampDir, subDir);
             } else {
                 LOGGER.warn("No files were found to load cache for mode {} with options {} ", loadMode.getMode(), options);
             }
         } finally {
-            LOGGER.info("Closing file system objects");
             fsPaths.forEach(FileSystemPath::close);
         }
     }

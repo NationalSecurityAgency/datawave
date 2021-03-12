@@ -17,7 +17,7 @@ import org.apache.hadoop.fs.Path;
  */
 public class ConfigurationFileHelper {
     private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(ConfigurationFileHelper.class);
-    private static final String HADOOP_CONF_SUFFIX = ".xml";
+    private static final String HADOOP_CONF_SUFFIX = "-site.xml";
     
     /**
      * Create hadoop configuration from hadoop configuration directory

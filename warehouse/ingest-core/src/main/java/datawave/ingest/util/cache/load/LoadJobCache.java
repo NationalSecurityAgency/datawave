@@ -1,4 +1,4 @@
-package datawave.ingest.util.cache;
+package datawave.ingest.util.cache.load;
 
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.commons.lang3.StringUtils;
@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static datawave.common.io.HadoopFileSystemUtils.getCopyFromLocalFileRunnable;
 
@@ -41,7 +42,7 @@ public class LoadJobCache {
      */
     public static void load(Collection<FileSystemPath> fileSystemPaths, Collection<String> filesToLoad, boolean finalizeLoad, short cacheReplicationCnt,
                     int executorThreads, String timestampDir, String optionalSubDir) {
-        ExecutorService executorService = Executors.newFixedThreadPool(executorThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.min(filesToLoad.size(), executorThreads));
         
         Consumer<FileSystemPath> loadCache = getLoadCacheConsumer(filesToLoad, executorService, timestampDir, optionalSubDir, cacheReplicationCnt);
         Consumer<FileSystemPath> finalizeCache = getFinalizeCacheConsumer(timestampDir);
@@ -117,7 +118,6 @@ public class LoadJobCache {
             
             try {
                 cacheFs.rename(uploadWorkingDir, jobCacheDir);
-                LOGGER.info("Finalize timestamp directory {}", jobCacheDir);
             } catch (IOException e) {
                 throw new RuntimeException("Unable to rename " + uploadWorkingDir + "  to " + jobCacheDir, e);
             }
@@ -152,13 +152,13 @@ public class LoadJobCache {
             }
             
             // @formatter:off
-            filesToLoad
+            Collection<CompletableFuture<Void>> loadFileFutures = filesToLoad
                     .stream()
                     .map(path -> getCopyFromLocalFileRunnable(cacheFs, new Path(path), loadingDir, cacheReplicationCnt))
                     .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
-                    .forEach(CompletableFuture::join);
+                    .collect(Collectors.toList());
             // @formatter:on
-            
+            loadFileFutures.forEach(CompletableFuture::join);
             LOGGER.info("Loaded files to {}", loadingDir);
         };
     }

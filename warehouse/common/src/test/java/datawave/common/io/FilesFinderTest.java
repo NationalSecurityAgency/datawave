@@ -6,9 +6,7 @@ import datawave.common.test.utils.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +19,7 @@ import static datawave.common.test.utils.FileUtils.createTemporaryFile;
 
 public class FilesFinderTest {
     private static final File TEMP_DIR = Files.createTempDir();
-    private static final String COLON_DELIMITER = ":";
+    private static final String CLASSPATH_DELIMITER = ":";
     private static final String FILE_PREFIX = "File";
     
     private static File TEST_LEVEL0_PROP_FILE;
@@ -42,17 +40,14 @@ public class FilesFinderTest {
         FileUtils.deletePath(TEMP_DIR.getAbsolutePath());
     }
     
-    @Rule
-    public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
-    
     @Test
     public void testGetFilesFromClasspath() {
         Collection<String> expectedFiles = Stream.of(TEST_LEVEL1_XML_FILE.getAbsolutePath(), TEST_LEVEL2_XML_FILE.getAbsolutePath()).collect(
                         Collectors.toList());
-        StringJoiner joiner = new StringJoiner(COLON_DELIMITER);
+        StringJoiner joiner = new StringJoiner(CLASSPATH_DELIMITER);
         expectedFiles.forEach(joiner::add);
         
-        Collection<String> filesFound = FilesFinder.getFilesFromClasspath(joiner.toString(), "", COLON_DELIMITER);
+        Collection<String> filesFound = FilesFinder.getFilesFromClasspath(joiner.toString(), CLASSPATH_DELIMITER);
         Assert.assertEquals(expectedFiles, filesFound);
     }
     
@@ -60,15 +55,25 @@ public class FilesFinderTest {
     public void testGetFilesFromClasspathWithRelativePaths() {
         Collection<String> expectedFiles = Stream.of(TEST_LEVEL0_PROP_FILE.getAbsolutePath(), TEST_LEVEL1_JAR_FILE.getAbsolutePath()).collect(
                         Collectors.toList());
-        String baseDir = TEMP_DIR.getAbsolutePath() + "/1/2";
+        String baseDir = TEMP_DIR.getAbsolutePath() + "/1/2/";
+        String testPaths = baseDir + "../../" + FILE_PREFIX + "0.properties:" + baseDir + "../../1/" + FILE_PREFIX + "1.jar";
+        
+        Collection<String> filesFound = FilesFinder.getFilesFromClasspath(testPaths, CLASSPATH_DELIMITER);
+        Assert.assertEquals(expectedFiles, filesFound);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetFilesFromClasspathWithRelativePathFailures() {
+        Collection<String> expectedFiles = Stream.of(TEST_LEVEL0_PROP_FILE.getAbsolutePath(), TEST_LEVEL1_JAR_FILE.getAbsolutePath()).collect(
+                        Collectors.toList());
         String testPaths = "../../" + FILE_PREFIX + "0.properties:../../1/" + FILE_PREFIX + "1.jar";
         
-        Collection<String> filesFound = FilesFinder.getFilesFromClasspath(testPaths, baseDir, COLON_DELIMITER);
+        Collection<String> filesFound = FilesFinder.getFilesFromClasspath(testPaths, CLASSPATH_DELIMITER);
         Assert.assertEquals(expectedFiles, filesFound);
     }
     
     @Test
-    public void testGetFilesFromPatternByPattern() throws IOException {
+    public void testGetFilesFromPattern() throws IOException {
         Collection<String> expectedFiles = Stream.of(TEST_LEVEL1_XML_FILE.getAbsolutePath(), TEST_LEVEL2_XML_FILE.getAbsolutePath()).collect(
                         Collectors.toList());
         Collection<String> filesFound = FilesFinder.getFilesFromPattern(TEMP_DIR.getAbsolutePath(), "**.xml", Integer.MAX_VALUE);
