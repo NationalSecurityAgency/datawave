@@ -214,16 +214,17 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                         } else {
                             if (origEndDate.compareTo(entry.getYyyymmdd()) < 0) { // origEndDate came before the indexed date
                                 holeStart = origStartDate;
-                                firstHole = true;
+                                firstHole = false;
                                 break;
                             } else if (origEndDate.compareTo(entry.getYyyymmdd()) == 0) {
                                 FieldIndexHole nextIndexHole = new FieldIndexHole(field, holeStart, previousDay(origEndDate));
                                 holeStart = origStartDate;
                                 addFieldIndexHoleToConfig(config, nextIndexHole);
-                                firstHole = true;
+                                firstHole = false;
                                 break;
                             } else {
                                 holeStart = nextDay(entry.getYyyymmdd());
+                                firstHole = false;
                                 if (entry.getYyyymmdd().compareTo(holeStart) == 0)
                                     continue;
                                 else {
@@ -254,10 +255,16 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             }
             
         }
+
+        firstHole = false;
         
     }
     
     private void addFieldIndexHoleToConfig(ShardQueryConfiguration configuration, FieldIndexHole fieldIndexHole) {
+        if (fieldIndexHole.getEndDate().compareTo(fieldIndexHole.getEndDate()) > 0) {
+            log.error("End date came before start date");
+            return;
+        }
         configuration.addFieldIndexHole(fieldIndexHole);
     }
     
