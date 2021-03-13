@@ -20,7 +20,7 @@ public class FieldIndexHole implements Serializable, Comparable<FieldIndexHole> 
     private String startDate;
     private String endDate;
     public static int NOT_SAME_FIELD = Integer.MAX_VALUE;
-
+    
     public FieldIndexHole(String name, String start, String end) {
         fieldName = name;
         startDate = start;
