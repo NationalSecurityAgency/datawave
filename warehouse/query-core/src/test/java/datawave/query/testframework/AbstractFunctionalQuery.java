@@ -254,7 +254,12 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         int total = 0;
         String test = plan;
         do {
-            idx = test.indexOf(subStr);
+            try {
+                idx = test.indexOf(subStr);
+            } catch (NullPointerException npe) {
+                idx = -1;
+            }
+            
             if (-1 < idx) {
                 total++;
                 test = test.substring(idx + subStr.length());

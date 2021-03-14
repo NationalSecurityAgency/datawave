@@ -255,8 +255,9 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             }
             
         }
-
+        
         firstHole = false;
+        holeStart = origStartDate;
         
     }
     
