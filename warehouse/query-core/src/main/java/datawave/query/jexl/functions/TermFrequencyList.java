@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.ingest.protobuf.TermWeightPosition;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 
 import com.google.common.base.Predicate;
@@ -81,17 +82,31 @@ public class TermFrequencyList {
     }
     
     /**
-     * Get an event id from the term frequency key
+     * Get an event id from the term frequency key. Assumes the key is valid, i.e., not missing a column qualifier and column qualifier is properly formatted.
+     *
+     * Transform a TF key like 'shard:tf:datatype\0uid\0value\0FIELD' into 'shard\0datatype\0uid'
      * 
      * @param key
+     *            a TermFrequency key
      */
     public static String getEventId(Key key) {
         StringBuilder eventId = new StringBuilder();
         eventId.append(key.getRow()).append('\0');
-        String cq = key.getColumnQualifier().toString();
-        int index = cq.indexOf('\0');
-        index = cq.indexOf('\0', index + 1);
-        eventId.append(cq, 0, index);
+        
+        int index = 0;
+        ByteSequence backing = key.getColumnQualifierData();
+        for (int i = backing.offset(); i < backing.length(); i++) {
+            if (backing.byteAt(i) == '\u0000') {
+                if (index == 0) {
+                    index = i; // first null byte
+                } else {
+                    index = i; // second null byte
+                    break;
+                }
+            }
+        }
+        
+        eventId.append(new String(backing.getBackingArray(), backing.offset(), index));
         return eventId.toString();
     }
     

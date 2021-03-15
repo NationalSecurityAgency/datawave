@@ -59,6 +59,23 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
     
     @Test
+    public void expandContentFunctionWithRepeatedValues() throws ParseException {
+        Set<String> fields = Sets.newHashSet("FOO");
+        
+        // Configure the mock metadata helper.
+        MockMetadataHelper mockMetadataHelper = new MockMetadataHelper();
+        mockMetadataHelper.setIndexedFields(fields);
+        mockMetadataHelper.addTermFrequencyFields(fields);
+        this.metadataHelper = mockMetadataHelper;
+        
+        // Execute the test.
+        String original = "content:phrase(termOffsetMap, 'run', 'spot', 'run')";
+        String expected = "(content:phrase(termOffsetMap, 'run', 'spot', 'run') && (FOO == 'run' && FOO == 'spot'))";
+        
+        runTest(original, expected);
+    }
+    
+    @Test
     public void expandDateIndex() throws Exception {
         // Set the default TimeZone.
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));

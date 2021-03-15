@@ -1601,6 +1601,27 @@ public class ContentFunctionsTest {
         Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 10, termList, terms));
     }
     
+    // Validate intersection of event ids is working properly
+    @Test
+    public void testAdjacentHitsAcrossChildDocuments() {
+        TreeMultimap<Zone,TermWeightPosition> multimap = TreeMultimap.create();
+        
+        Map<String,TermFrequencyList> termList = Maps.newHashMap();
+        
+        multimap.put(new Zone("BODY", true, "shard\u0000dt\u0000uid0.1"), getPosition(5));
+        termList.put("blue", new TermFrequencyList(multimap));
+        
+        multimap = TreeMultimap.create();
+        multimap.put(new Zone("BODY", true, "shard\u0000dt\u0000uid0.2"), getPosition(6));
+        termList.put("fish", new TermFrequencyList(multimap));
+        
+        // full terms list
+        Assert.assertNotNull(termList.get("blue"));
+        Assert.assertNotNull(termList.get("fish"));
+        String[] terms = new String[] {"blue", "fish"};
+        Assert.assertFalse(ContentFunctions.phrase("BODY", termList, terms));
+    }
+    
     private Zone genTestZone() {
         return new Zone("BODY", true, "shard\u0000dt\u0000uid");
     }

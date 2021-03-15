@@ -1,6 +1,5 @@
 package datawave.core.iterators.key;
 
-import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.Key;
 
 import java.util.ArrayList;
@@ -83,9 +82,13 @@ public class TFKey {
     }
     
     public String getUidAndValue() {
-        if (uidAndValue == null) {
+        if (uidAndValue == null && getUid() != null && getValue() != null) {
             uidAndValue = getUid() + '\u0000' + getValue();
         }
         return uidAndValue;
+    }
+    
+    public boolean isValid() {
+        return backing != null && nulls.size() >= 3;
     }
 }

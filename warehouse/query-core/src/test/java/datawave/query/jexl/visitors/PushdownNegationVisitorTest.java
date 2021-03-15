@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.postprocessing.tf.TermOffsetFunction;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -281,5 +282,15 @@ public class PushdownNegationVisitorTest {
         JexlNode or = JexlNodeFactory.createUnwrappedOrNode(children);
         JexlNode result = PushdownNegationVisitor.applyDeMorgans(or, true);
         Assert.assertEquals("!((!(f1 == 'v1') && !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
+    }
+    
+    @Test
+    public void testPushdownNegationIntoContentFunction() throws ParseException {
+        String query = "FOO == 'few' && !(content:phrase('TEXT', termOffsetMap, 'bar', 'baz') && (TEXT == 'bar' && TEXT == 'baz'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        
+        JexlNode pushed = PushdownNegationVisitor.pushdownNegations(script);
+        String expected = "FOO == 'few' && ((!(content:phrase('TEXT', termOffsetMap, 'bar', 'baz')) || !(TEXT == 'bar') || !(TEXT == 'baz')))";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(pushed));
     }
 }
