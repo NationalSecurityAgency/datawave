@@ -153,9 +153,6 @@ import java.util.stream.Collectors;
 public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
-    {
-        log.setLevel(Level.DEBUG);
-    }
     
     public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
     

@@ -254,10 +254,10 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                 log.debug("No fieldHoles created.");
             }
             
+            firstHole = false;
+            holeStart = origStartDate;
+            
         }
-        
-        firstHole = false;
-        holeStart = origStartDate;
         
     }
     

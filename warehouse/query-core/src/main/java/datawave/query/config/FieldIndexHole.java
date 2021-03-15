@@ -10,9 +10,6 @@ import java.io.Serializable;
 public class FieldIndexHole implements Serializable, Comparable<FieldIndexHole> {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(FieldIndexHole.class);
-    {
-        log.setLevel(Level.DEBUG);
-    }
     
     private static final long serialVersionUID = -6778479621810682281L;
     
