@@ -146,6 +146,11 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         if (field != null) {
             for (FieldIndexHole indexHole : fieldIndexHoles) {
                 
+                if (indexHole.getStartDate().compareTo(indexHole.getEndDate()) > 0) {
+                    log.error("Bad FieldIndexHole was calculated");
+                    continue;
+                }
+                
                 if (indexHole.getFieldName().equals(field)) {
                     overlaps = indexHole.overlaps(beginDate, endDate);
                     foundFieldHole = true;

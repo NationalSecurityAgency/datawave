@@ -36,9 +36,6 @@ import java.util.*;
 public class FederatedQueryPlanner extends DefaultQueryPlanner {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
-    {
-        log.setLevel(Level.DEBUG);
-    }
     
     public FederatedQueryPlanner() {
         super();
@@ -85,6 +82,8 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             }
             
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
+            if (log.isDebugEnabled() && log.getLevel().equals(Level.DEBUG))
+                checkForErrorsInFieldIndexHoles((ShardQueryConfiguration) config);
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
             holeDates = generateStartAndEndDates((ShardQueryConfiguration) config);
             if ((valueIndexHoles == null && fieldIndexHoles == null) || (valueIndexHoles.size() == 0 && fieldIndexHoles.size() == 0) || holeDates.size() == 0) {
@@ -121,6 +120,15 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         }
         
         return returnQueryData;
+    }
+    
+    private void checkForErrorsInFieldIndexHoles(ShardQueryConfiguration config) {
+        for (FieldIndexHole fieldIndexHole : config.getFieldIndexHoles()) {
+            if (fieldIndexHole.getStartDate().compareTo(fieldIndexHole.getEndDate()) > 0) {
+                log.error("There was a problem calculating the FieldIndexHole " + fieldIndexHole);
+                log.error("End date in feild Index hole can't come before start date.");
+            }
+        }
     }
     
     private CloseableIterable<QueryData> getQueryData(ShardQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory,
@@ -204,7 +212,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                             log.debug("The previous day is: " + previousDay);
                             log.debug("The next day is: " + nextDay);
                             firstIndexHole.setEndDate(previousDay);
-                            config.addFieldIndexHole(firstIndexHole);
+                            addFieldIndexHoleToConfig(config, firstIndexHole);
                             holeStart = nextDay(entry.getYyyymmdd());
                             firstHole = false;
                         }
@@ -236,7 +244,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                             // you have to see next date the the field was indexed in the next iteration
                             // before you can set the end date. That may get done outside the loop on line 1698
                             // or on 1669 with the previous day of the next date the field was indexed
-                            config.addFieldIndexHole(newHole);
+                            addFieldIndexHoleToConfig(config, newHole);
                         }
                     }
                     holeStart = nextDay(entry.getYyyymmdd());
@@ -252,12 +260,12 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             
             if (foundHolesInDateBounds && bounds.withinBounds(holeStart)) {
                 FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {holeStart, endDate});
-                config.addFieldIndexHole(trailingHole);
+                addFieldIndexHoleToConfig(config, trailingHole);
             }
             
             if (foundHolesInDateBounds) {
                 FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {startDate, endDate});
-                config.addFieldIndexHole(trailingHole);
+                addFieldIndexHoleToConfig(config, trailingHole);
             }
             
             if (!config.getFieldIndexHoles().isEmpty()) {
@@ -271,6 +279,10 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             
         }
         
+    }
+    
+    private void addFieldIndexHoleToConfig(ShardQueryConfiguration config, FieldIndexHole fieldIndexHole) {
+        config.addFieldIndexHole(fieldIndexHole);
     }
     
     private static String previousDay(String day) {
