@@ -36,9 +36,6 @@ import java.util.*;
 public class FederatedQueryPlanner extends DefaultQueryPlanner {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(FederatedQueryPlanner.class);
-    {
-        log.setLevel(Level.DEBUG);
-    }
     
     public FederatedQueryPlanner() {
         super();
