@@ -200,8 +200,8 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, false, endDate, false);
         FieldIndexHole newHole = null;
         boolean firstHole = true;
-        boolean foundHolesInDateBounds = false;
-        String previousDay, nextDay = null;
+        boolean foundHolesInDateBounds;
+        String previousDay, nextDay;
         log.debug("startDate is: " + startDate + " and endDate is " + endDate);
         
         for (String field : fieldToDatatypeMap.keySet()) {
@@ -274,7 +274,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             if (foundHolesInDateBounds && bounds.withinBounds(holeStart)) {
                 FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {holeStart, endDate});
                 addFieldIndexHoleToConfig(config, trailingHole);
-            }
+            } else
             
             if (foundHolesInDateBounds) {
                 FieldIndexHole trailingHole = new FieldIndexHole(field, new String[] {startDate, endDate});
