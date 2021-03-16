@@ -29,9 +29,6 @@ public class QueryOptionsSwitch {
                     String[] lf = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setLimitFields(Sets.newHashSet(lf));
                     break;
-                case QueryParameters.TYPE_METADATA_IN_HDFS:
-                    config.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
-                    break;
                 case QueryParameters.GROUP_FIELDS:
                     String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setGroupFields(Sets.newHashSet(groups));
