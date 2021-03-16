@@ -1,13 +1,10 @@
 package datawave.query.iterator;
 
-import com.google.common.io.Files;
-import datawave.data.type.NoOpType;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -24,19 +21,18 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.w3c.dom.Attr;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +66,10 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class QueryIteratorIT extends EasyMockSupport {
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     protected QueryIterator iterator;
     protected SortedListKeyValueIterator baseIterator;
     protected Map<String,String> options;
@@ -83,13 +83,13 @@ public class QueryIteratorIT extends EasyMockSupport {
     // Default if test does not specify a datatype
     protected static final String DEFAULT_DATATYPE = "dataType1";
     
-    public Path temporaryFolder;
+    public Path tempPath;
     
     @Before
     public void setup() throws IOException {
         iterator = new QueryIterator();
         options = new HashMap<>();
-        temporaryFolder = Paths.get(Files.createTempDir().toURI());
+        tempPath = temporaryFolder.newFolder().toPath();
         
         // global options
         
@@ -109,7 +109,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(QUERY_ID, "000001");
         
         // setup ivarator settings
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig("file://" + temporaryFolder.toAbsolutePath().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig("file://" + tempPath.toAbsolutePath().toString());
         options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(config));
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         options.put(HDFS_SITE_CONFIG_URLS, hdfsSiteConfig.toExternalForm());
@@ -137,7 +137,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @After
     public void cleanUp() {
-        temporaryFolder.toFile().deleteOnExit();
+        tempPath.toFile().deleteOnExit();
     }
     
     private List<Map.Entry<Key,Value>> addEvent(long eventTime, String uid) {

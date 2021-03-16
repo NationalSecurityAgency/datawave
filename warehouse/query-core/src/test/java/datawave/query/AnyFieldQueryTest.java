@@ -9,22 +9,22 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.rules.RegexPushdownTransformRule;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.RawDataManager;
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
@@ -38,18 +38,20 @@ import static org.junit.Assert.fail;
 
 public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(AnyFieldQueryTest.class);
     
     @BeforeClass
     public static void filterSetup() throws Exception {
-        Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
         generic.addReverseIndexField(CityField.STATE.name());
         generic.addReverseIndexField(CityField.CONTINENT.name());
-        dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
+        DataTypeHadoopConfig dataType = new CitiesDataType(CityEntry.generic, generic);
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataType);
+        connector = accumuloSetup.loadTables(log);
     }
     
     public AnyFieldQueryTest() {

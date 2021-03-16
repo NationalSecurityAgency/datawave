@@ -1,15 +1,17 @@
 package datawave.query;
 
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GroupsDataType;
 import datawave.query.testframework.GroupsDataType.GroupField;
 import datawave.query.testframework.GroupsDataType.GroupsEntry;
 import datawave.query.testframework.GroupsIndexConfiguration;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -23,6 +25,9 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 
 public class GroupsQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(GroupsQueryTest.class);
     
     @BeforeClass
@@ -30,8 +35,9 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig fields = new GroupsIndexConfiguration();
         dataTypes.add(new GroupsDataType(GroupsEntry.cities, fields));
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        connector = accumuloSetup.loadTables(log);
     }
     
     public GroupsQueryTest() {
