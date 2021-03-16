@@ -92,7 +92,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                 return returnQueryData;
             }
             
-            Boolean firstIteration = true;
+            boolean firstIteration = true;
             Date startDate, endDate;
             
             for (Iterator<YearMonthDay> it = holeDates.iterator(); it.hasNext();) {
@@ -111,7 +111,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                         endDate = originalEndDate;
                     }
                 }
-                
+
                 results = getQueryData((ShardQueryConfiguration) config, query, settings, scannerFactory, startDate, endDate);
                 returnQueryData.addDelegate(results);
                 
