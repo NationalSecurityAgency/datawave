@@ -390,37 +390,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             config.setEndDate(endDate);
         }
         
-        MetadataHelper metadataHelper = prepareMetadataHelper(connection, this.getMetadataTableName(), auths, config.isRawTypes());
-        
-        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(connection, this.getDateIndexTableName(), auths);
-        if (config.isDateIndexTimeTravel()) {
-            dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
-        }
-        
-        QueryPlanner queryPlanner = getQueryPlanner();
-        if (queryPlanner instanceof DefaultQueryPlanner) {
-            DefaultQueryPlanner currentQueryPlanner = (DefaultQueryPlanner) queryPlanner;
-            
-            currentQueryPlanner.setMetadataHelper(metadataHelper);
-            currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
-            
-            QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
-            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
-            }
-            
-            if (null != queryModelProvider.getQueryModel()) {
-                queryModel = queryModelProvider.getQueryModel();
-                
-            }
-        }
-        
-        if (this.queryModel == null)
-            loadQueryModel(metadataHelper, config);
-        
-        getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
-        getQueryPlanner().setUidIntersector(uidIntersector);
+        setupQueryPlanner(config);
         
         validateConfiguration(config);
         
@@ -457,6 +427,43 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         config.setQueryString(getQueryPlanner().getPlannedScript());
         
         stopwatch.stop();
+    }
+    
+    private void setupQueryPlanner(ShardQueryConfiguration config) throws TableNotFoundException, ExecutionException, InstantiationException,
+                    IllegalAccessException {
+        MetadataHelper metadataHelper = prepareMetadataHelper(config.getConnector(), this.getMetadataTableName(), config.getAuthorizations(),
+                        config.isRawTypes());
+        
+        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(config.getConnector(), this.getDateIndexTableName(), config.getAuthorizations());
+        if (config.isDateIndexTimeTravel()) {
+            dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
+        }
+        
+        QueryPlanner queryPlanner = getQueryPlanner();
+        if (queryPlanner instanceof DefaultQueryPlanner) {
+            DefaultQueryPlanner currentQueryPlanner = (DefaultQueryPlanner) queryPlanner;
+            
+            currentQueryPlanner.setMetadataHelper(metadataHelper);
+            currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
+            
+            QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
+            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
+                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
+            }
+            
+            if (null != queryModelProvider.getQueryModel()) {
+                queryModel = queryModelProvider.getQueryModel();
+                
+            }
+        }
+        
+        if (this.queryModel == null)
+            loadQueryModel(metadataHelper, config);
+        
+        getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
+        getQueryPlanner().setUidIntersector(uidIntersector);
+        
     }
     
     /**
@@ -1555,7 +1562,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
     
     public void setUnevaluatedFields(String unevaluatedFieldList) {
-        getConfig().setUnevaluatedFields(unevaluatedFieldList);
+        getConfig().setUnevaluatedFieldsAsString(unevaluatedFieldList);
     }
     
     public void setUnevaluatedFields(Collection<String> unevaluatedFields) {
@@ -1939,7 +1946,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
     
     public boolean isExpansionLimitedToModelContents() {
-        return getConfig().isExpansionLimitedToModelContents();
+        return getConfig().isLimitTermExpansionToModel();
     }
     
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
@@ -2275,29 +2282,21 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
     
     /**
-     * After calling initialize, one can get the checkpoint to store for later use using this method
-     *
-     * @param queryKey
-     *            - the query key to include in the checkpoint
-     * @param config
-     *            - configuration returned from intialize call
-     * @return The query checkpoint
-     */
-    @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey, GenericQueryConfiguration config) {
-        return new QueryCheckpoint(queryKey, ((ShardQueryConfiguration) config).toMap());
-    }
-    
-    /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
      * any.
      *
+     * @param connection
+     *            The accumulo connection
      * @param checkpoint
      *            Encapsulates all information needed to run a portion of the query.
      */
     @Override
-    public void setupQuery(QueryCheckpoint checkpoint) throws Exception {
-        setupQuery(new ShardQueryConfiguration(checkpoint.getProperties()));
+    public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
+        ShardQueryConfiguration config = new ShardQueryConfiguration(checkpoint.getProperties());
+        config.setConnector(connection);
+        setScannerFactory(new ScannerFactory(config));
+        
+        setupQuery(config);
     }
     
     /**
@@ -2312,4 +2311,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public QueryCheckpoint checkpoint(QueryKey queryKey) {
         return checkpoint(queryKey, this.config);
     }
+    
+    public QueryCheckpoint checkpoint(QueryKey queryKey, GenericQueryConfiguration config) {
+        return new QueryCheckpoint(queryKey, ((ShardQueryConfiguration) config).toMap());
+    }
+    
 }

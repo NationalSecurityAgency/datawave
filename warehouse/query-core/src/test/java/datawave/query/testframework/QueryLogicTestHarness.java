@@ -1,6 +1,9 @@
 package datawave.query.testframework;
 
 import datawave.data.type.Type;
+import datawave.microservice.common.storage.QueryCheckpoint;
+import datawave.microservice.common.storage.QueryKey;
+import datawave.microservice.common.storage.QueryPool;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
@@ -10,6 +13,9 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.CheckpointableQueryLogic;
+import datawave.webservice.query.logic.QueryLogicFactory;
+import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
@@ -17,6 +23,7 @@ import org.junit.Assert;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,12 +69,15 @@ public class QueryLogicTestHarness {
      * 
      * @param logic
      *            key/value response data
+     * @param factory
+     *            a logic factory for teardown/rebuilds if the logic is checkpointable
      * @param expected
      *            list of key values expected within response data
      * @param checkers
      *            list of additional validation methods
      */
-    public void assertLogicResults(BaseQueryLogic<Map.Entry<Key,Value>> logic, Collection<String> expected, List<DocumentChecker> checkers) {
+    public void assertLogicResults(BaseQueryLogic<Map.Entry<Key,Value>> logic, QueryLogicFactory factory, Collection<String> expected,
+                    List<DocumentChecker> checkers) {
         Set<String> actualResults = new HashSet<>();
         
         if (log.isDebugEnabled()) {
@@ -77,54 +87,31 @@ public class QueryLogicTestHarness {
             }
         }
         
-        for (Map.Entry<Key,Value> entry : logic) {
-            if (FinalDocumentTrackingIterator.isFinalDocumentKey(entry.getKey())) {
-                continue;
-            }
-            
-            final Document document = this.deserializer.apply(entry).getValue();
-            
-            // check all of the types to ensure that all are keepers as defined in the
-            // AttributeFactory class
-            int count = 0;
-            for (Attribute<? extends Comparable<?>> attribute : document.getAttributes()) {
-                if (attribute instanceof TimingMetadata) {
-                    // ignore
-                } else if (attribute instanceof Attributes) {
-                    Attributes attrs = (Attributes) attribute;
-                    Collection<Class<?>> types = new HashSet<>();
-                    for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
-                        count++;
-                        if (attr instanceof TypeAttribute) {
-                            Type<? extends Comparable<?>> type = ((TypeAttribute<?>) attr).getType();
-                            if (Objects.nonNull(type)) {
-                                types.add(type.getClass());
-                            }
-                        }
-                    }
-                    Assert.assertEquals(AttributeFactory.getKeepers(types), types);
-                } else {
-                    count++;
+        boolean disableCheckpoint = true;
+        if (!disableCheckpoint && logic instanceof CheckpointableQueryLogic && factory != null) {
+            Iterator<Map.Entry<Key,Value>> iter = logic.iterator();
+            while (iter.hasNext()) {
+                actualResults = processResult(actualResults, iter.next(), checkers);
+                QueryKey queryKey = new QueryKey(new QueryPool("default"), logic.getConfig().getQuery().getId(), logic.getLogicName());
+                QueryCheckpoint cp = ((CheckpointableQueryLogic) logic).checkpoint(queryKey);
+                Connector connection = logic.getConfig().getConnector();
+                // create a new instance of the logic
+                try {
+                    logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName(), logic.getPrincipal());
+                } catch (CloneNotSupportedException e) {
+                    Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
                 }
+                // now reset the logic given the checkpoint
+                try {
+                    ((CheckpointableQueryLogic) logic).setupQuery(connection, cp);
+                } catch (Exception e) {
+                    Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());
+                }
+                iter = logic.iterator();
             }
-            
-            // ignore empty documents (possible when only passing FinalDocument back)
-            if (count == 0) {
-                continue;
-            }
-            
-            // parse the document
-            String extractedResult = this.parser.parse(entry.getKey(), document);
-            log.debug("result(" + extractedResult + ") key(" + entry.getKey() + ") document(" + document + ")");
-            
-            // verify expected results
-            Assert.assertNotNull("extracted result", extractedResult);
-            Assert.assertFalse("duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")", actualResults.contains(extractedResult));
-            actualResults.add(extractedResult);
-            
-            // perform any custom assert checks on document
-            for (final DocumentChecker check : checkers) {
-                check.assertValid(document);
+        } else {
+            for (Map.Entry<Key,Value> entry : logic) {
+                actualResults = processResult(actualResults, entry, checkers);
             }
         }
         
@@ -149,4 +136,65 @@ public class QueryLogicTestHarness {
         Assert.assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
         Assert.assertTrue("expected and actual values do not match", actualResults.containsAll(expected));
     }
+    
+    /**
+     * Given an entry off of the logic iterator, deserialize and check its validity and add to the actualResults
+     * 
+     * @param actualResults
+     * @param entry
+     * @param checkers
+     */
+    private Set<String> processResult(Set<String> actualResults, Map.Entry<Key,Value> entry, List<DocumentChecker> checkers) {
+        if (FinalDocumentTrackingIterator.isFinalDocumentKey(entry.getKey())) {
+            return actualResults;
+        }
+        
+        final Document document = this.deserializer.apply(entry).getValue();
+        
+        // check all of the types to ensure that all are keepers as defined in the
+        // AttributeFactory class
+        int count = 0;
+        for (Attribute<? extends Comparable<?>> attribute : document.getAttributes()) {
+            if (attribute instanceof TimingMetadata) {
+                // ignore
+            } else if (attribute instanceof Attributes) {
+                Attributes attrs = (Attributes) attribute;
+                Collection<Class<?>> types = new HashSet<>();
+                for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
+                    count++;
+                    if (attr instanceof TypeAttribute) {
+                        Type<? extends Comparable<?>> type = ((TypeAttribute<?>) attr).getType();
+                        if (Objects.nonNull(type)) {
+                            types.add(type.getClass());
+                        }
+                    }
+                }
+                Assert.assertEquals(AttributeFactory.getKeepers(types), types);
+            } else {
+                count++;
+            }
+        }
+        
+        // ignore empty documents (possible when only passing FinalDocument back)
+        if (count == 0) {
+            return actualResults;
+        }
+        
+        // parse the document
+        String extractedResult = this.parser.parse(entry.getKey(), document);
+        log.debug("result(" + extractedResult + ") key(" + entry.getKey() + ") document(" + document + ")");
+        
+        // verify expected results
+        Assert.assertNotNull("extracted result", extractedResult);
+        Assert.assertFalse("duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")", actualResults.contains(extractedResult));
+        
+        // perform any custom assert checks on document
+        for (final DocumentChecker check : checkers) {
+            check.assertValid(document);
+        }
+        
+        actualResults.add(extractedResult);
+        return actualResults;
+    }
+    
 }

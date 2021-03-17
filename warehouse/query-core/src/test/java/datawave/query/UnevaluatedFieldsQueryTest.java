@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
@@ -95,8 +96,13 @@ public class UnevaluatedFieldsQueryTest extends AbstractFunctionalQuery {
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
         this.documentKey = CityField.EVENT_ID.name();
-        
-        this.logic.setUnevaluatedFields(UnevaluatedCityFields.indexOnly);
+    }
+    
+    @Override
+    public ShardQueryLogic createShardQueryLogic() {
+        ShardQueryLogic logic = super.createShardQueryLogic();
+        logic.setUnevaluatedFields(UnevaluatedCityFields.indexOnly);
+        return logic;
     }
     
     // ============================================

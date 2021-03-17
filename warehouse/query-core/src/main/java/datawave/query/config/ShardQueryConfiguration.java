@@ -2,14 +2,13 @@ package datawave.query.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.BeanUtil;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
@@ -32,13 +31,12 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -325,7 +323,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // limit expanded terms to only those fields that are defined in the chosen
     // model. drop others
     private boolean shouldLimitTermExpansionToModel = false;
-    private Query query = null;
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
     private boolean compositeFilterFunctionsEnabled = false;
@@ -354,7 +351,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     public ShardQueryConfiguration() {
         super();
-        query = new QueryImpl();
+        setQuery(new QueryImpl());
     }
     
     /**
@@ -510,7 +507,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setQueryModel(null == other.getQueryModel() ? null : new QueryModel(other.getQueryModel()));
         this.setModelName(other.getModelName());
         this.setModelTableName(other.getModelTableName());
-        this.setLimitTermExpansionToModel(other.isExpansionLimitedToModelContents());
+        this.setLimitTermExpansionToModel(other.isLimitTermExpansionToModel());
         this.setQuery(null == other.getQuery() ? null : other.getQuery().duplicate(other.getQuery().getQueryName()));
         this.setCompressServerSideResults(other.isCompressServerSideResults());
         this.setIndexOnlyFilterFunctionsEnabled(other.isIndexOnlyFilterFunctionsEnabled());
@@ -529,14 +526,33 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         Map<String,Object> setProperties = new HashMap<>(properties);
         // TODO Fix properties as needed
         BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(this);
+        
         wrapper.setPropertyValues(setProperties);
     }
     
     public Map<String,Object> toMap() {
         ObjectMapper mapper = new ObjectMapper();
         Map<String,Object> props = mapper.convertValue(this, Map.class);
-        // TODO Fix unserialiable this if needed
+        
+        // fix elements that are converted incorrectly
+        putConditionally(props, "endDate", getEndDate());
+        putConditionally(props, "beginDate", getBeginDate());
+        putConditionally(props, "queryFieldsDatatypes", getQueryFieldsDatatypes());
+        putConditionally(props, "compositeToFieldMap", getCompositeToFieldMap());
+        putConditionally(props, "dataTypes", getDataTypes());
+        putConditionally(props, "queries", getQueries());
+        putConditionally(props, "query", getQuery());
+        putConditionally(props, "normalizedFieldsDatatypes", getNormalizedFieldsDatatypes());
+        putConditionally(props, "authorizations", getAuthorizations());
+        putConditionally(props, "fstCount", getFstCount());
+        
         return props;
+    }
+    
+    private void putConditionally(Map<String,Object> map, String prop, Object value) {
+        if (value != null) {
+            map.put(prop, value);
+        }
     }
     
     /**
@@ -763,6 +779,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fullTableScanEnabled = fullTableScanEnabled;
     }
     
+    @JsonIgnore
+    @XmlTransient
     public SimpleDateFormat getShardDateFormatter() {
         return shardDateFormatter;
     }
@@ -771,6 +789,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardDateFormatter = shardDateFormatter;
     }
     
+    public String getShardDateFormatterAsString() {
+        return (shardDateFormatter == null ? null : shardDateFormatter.toPattern());
+    }
+    
+    public void setShardDateFormatterAsString(String pattern) {
+        this.shardDateFormatter = (pattern == null ? null : new SimpleDateFormat(pattern));
+    }
+    
+    @JsonIgnore
+    @XmlTransient
     public Set<String> getDatatypeFilter() {
         return datatypeFilter;
     }
@@ -783,6 +811,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
     
+    public void setDatatypeFilterAsString(String typeFilter) {
+        this.setDatatypeFilter(typeFilter == null ? null : new HashSet<>(Arrays.asList(typeFilter.split(PARAM_VALUE_SEP_STR))));
+    }
+    
     private Set<String> deconstruct(Collection<String> fields) {
         return fields == null ? null : fields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
     }
@@ -791,6 +823,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return projectFields;
     }
     
+    @JsonIgnore
+    @XmlTransient
     public void setProjectFields(Set<String> projectFields) {
         this.projectFields = deconstruct(projectFields);
     }
@@ -799,6 +833,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
     
+    public void setProjectFieldsAsString(String fields) {
+        this.setProjectFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
+    }
+    
+    @JsonIgnore
+    @XmlTransient
     public Set<String> getBlacklistedFields() {
         return blacklistedFields;
     }
@@ -811,6 +851,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getBlacklistedFields(), Constants.PARAM_VALUE_SEP);
     }
     
+    public void setBlacklistedFieldsAsString(String fields) {
+        this.setBlacklistedFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
+    }
+    
     public Boolean getUseEnrichers() {
         return useEnrichers;
     }
@@ -819,6 +863,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.useEnrichers = useEnrichers;
     }
     
+    @JsonIgnore
+    @XmlTransient
     public List<String> getEnricherClassNames() {
         return enricherClassNames;
     }
@@ -829,6 +875,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public String getEnricherClassNamesAsString() {
         return StringUtils.join(this.getEnricherClassNames(), Constants.PARAM_VALUE_SEP);
+    }
+    
+    public void setEnricherClassNamesAsString(String names) {
+        this.setEnricherClassNames(names == null ? null : Arrays.asList(names.split(PARAM_VALUE_SEP_STR)));
     }
     
     public boolean isTldQuery() {
@@ -966,6 +1016,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return Collections.unmodifiableMap(filterOptions);
     }
     
+    public void setFilterOptions(Map<String,String> options) {
+        this.filterOptions.clear();
+        this.filterOptions.putAll(options);
+    }
+    
     public List<String> getFilterClassNames() {
         return filterClassNames;
     }
@@ -984,6 +1039,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @see QueryIterator
      * @see TLDQueryIterator
      */
+    @JsonIgnore
+    @XmlTransient
     public List<String> getIndexFilteringClassNames() {
         return indexFilteringClassNames;
     }
@@ -1000,8 +1057,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.EMPTY_LIST));
     }
     
-    public String getFilterClassNamesAsString() {
+    public String getIndexFilteringClassNamesAsString() {
         return StringUtils.join(this.getFilterClassNames(), Constants.PARAM_VALUE_SEP);
+    }
+    
+    public void setIndexFilteringClassNamesAsString(String names) {
+        this.setIndexFilteringClassNames(names == null ? null : Arrays.asList(names.split(PARAM_VALUE_SEP_STR)));
     }
     
     public Class<? extends Type<?>> getDefaultType() {
@@ -1021,6 +1082,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
     
+    @JsonIgnore
+    @XmlTransient
     public Set<String> getNonEventKeyPrefixes() {
         return nonEventKeyPrefixes;
     }
@@ -1037,6 +1100,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getNonEventKeyPrefixes(), Constants.PARAM_VALUE_SEP);
     }
     
+    public void setNonEventKeyPrefixesAsString(String prefixes) {
+        this.setNonEventKeyPrefixes(prefixes == null ? null : Arrays.asList(prefixes.split(PARAM_VALUE_SEP_STR)));
+    }
+    
+    @JsonIgnore
+    @XmlTransient
     public Set<String> getUnevaluatedFields() {
         return unevaluatedFields;
     }
@@ -1054,12 +1123,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *
      * @return
      */
+    
     public String getUnevaluatedFieldsAsString() {
         return StringUtils.join(this.unevaluatedFields, Constants.PARAM_VALUE_SEP);
     }
     
-    public void setUnevaluatedFields(String unevaluatedFieldList) {
-        this.setUnevaluatedFields(Arrays.asList(unevaluatedFieldList.split(PARAM_VALUE_SEP_STR)));
+    public void setUnevaluatedFieldsAsString(String unevaluatedFieldList) {
+        this.setUnevaluatedFields(unevaluatedFieldList == null ? null : Arrays.asList(unevaluatedFieldList.split(PARAM_VALUE_SEP_STR)));
     }
     
     public int getEventPerDayThreshold() {
@@ -1332,6 +1402,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *
      * @return FIELDNAME1:normalizer.class;FIELDNAME2:normalizer.class;
      */
+    @JsonIgnore
+    @XmlTransient
     public String getIndexedFieldDataTypesAsString() {
         
         if (null == this.getIndexedFields() || this.getIndexedFields().isEmpty()) {
@@ -1350,6 +1422,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return sb.toString();
     }
     
+    @JsonIgnore
+    @XmlTransient
     public String getNormalizedFieldNormalizersAsString() {
         
         if (null == this.getNormalizedFields() || this.getNormalizedFields().isEmpty()) {
@@ -1465,6 +1539,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.normalizedFields = Sets.newHashSet(this.normalizedFieldsDatatypes.keySet());
     }
     
+    @JsonIgnore
+    @XmlTransient
     public Set<String> getLimitFields() {
         return limitFields;
     }
@@ -1475,6 +1551,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public String getLimitFieldsAsString() {
         return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
+    }
+    
+    public void setLimitFieldsAsString(String fields) {
+        this.setLimitFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
     }
     
     public boolean isLimitFieldsPreQueryEvaluation() {
@@ -1517,6 +1597,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
     
+    @JsonIgnore
+    @XmlTransient
     public Set<String> getGroupFields() {
         return groupFields;
     }
@@ -1529,6 +1611,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
     }
     
+    public void setGroupFieldsAsString(String fields) {
+        this.setGroupFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
+    }
+    
+    @JsonIgnore
+    @XmlTransient
     public int getGroupFieldsBatchSize() {
         return groupFieldsBatchSize;
     }
@@ -1541,6 +1629,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return "" + groupFieldsBatchSize;
     }
     
+    public void setGroupFieldsBatchSizeAsString(String size) {
+        setGroupFieldsBatchSize(size == null ? 0 : Integer.parseInt(size));
+    }
+    
+    @JsonIgnore
+    @XmlTransient
     public Set<String> getUniqueFields() {
         return uniqueFields;
     }
@@ -1551,6 +1645,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public String getUniqueFieldsAsString() {
         return StringUtils.join(this.getUniqueFields(), Constants.PARAM_VALUE_SEP);
+    }
+    
+    public void setUniqueFieldsAsString(String fields) {
+        this.setUniqueFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
     }
     
     public boolean isHitList() {
@@ -1777,14 +1875,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return timers;
     }
     
-    public Query getQuery() {
-        return query;
-    }
-    
-    public void setQuery(Query query) {
-        this.query = query;
-    }
-    
     public boolean isCompressServerSideResults() {
         return compressServerSideResults;
     }
@@ -1850,7 +1940,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shouldLimitTermExpansionToModel = shouldLimitTermExpansionToModel;
     }
     
-    public boolean isExpansionLimitedToModelContents() {
+    public boolean isLimitTermExpansionToModel() {
         return shouldLimitTermExpansionToModel;
     }
     

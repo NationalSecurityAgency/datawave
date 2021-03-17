@@ -2,11 +2,13 @@ package datawave.webservice.query.configuration;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.UUID;
 import java.util.Iterator;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.util.TableName;
+import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.BaseQueryLogic;
 
 import org.apache.accumulo.core.client.BatchScanner;
@@ -14,6 +16,8 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
 import com.google.common.collect.Iterators;
+
+import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * <p>
@@ -29,6 +33,9 @@ import com.google.common.collect.Iterators;
 public abstract class GenericQueryConfiguration {
     private Connector connector = null;
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
+    
+    private Query query = null;
+    
     // Leave in a top-level query for backwards-compatibility purposes
     private String queryString = null;
     
@@ -95,12 +102,22 @@ public abstract class GenericQueryConfiguration {
         this.queries = queries;
     }
     
+    @JsonIgnore
+    @XmlTransient
     public Connector getConnector() {
         return connector;
     }
     
     public void setConnector(Connector connector) {
         this.connector = connector;
+    }
+    
+    public Query getQuery() {
+        return query;
+    }
+    
+    public void setQuery(Query query) {
+        this.query = query;
     }
     
     public void setQueryString(String query) {

@@ -6,13 +6,14 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 public class ChainedQueryConfiguration extends GenericQueryConfiguration {
     
     private static final long serialVersionUID = 444695916607959066L;
-    private Query query = null;
     
+    // for backward compatability
     public void setQueryImpl(Query query) {
-        this.query = query;
+        setQuery(query);
     }
     
+    // for backward capatability
     public Query getQueryImpl() {
-        return this.query;
+        return getQuery();
     }
 }

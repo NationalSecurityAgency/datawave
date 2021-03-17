@@ -42,7 +42,6 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     
     private List<? extends Type<?>> dataTypes;
     private int numQueryThreads;
-    private Query query;
     private boolean protobufEdgeFormat = true;
     
     // to be backwards compatible, by default we want to return
@@ -145,14 +144,6 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
             }
         }
         return this;
-    }
-    
-    public Query getQuery() {
-        return query;
-    }
-    
-    public void setQuery(Query query) {
-        this.query = query;
     }
     
     public long getMaxQueryTerms() {

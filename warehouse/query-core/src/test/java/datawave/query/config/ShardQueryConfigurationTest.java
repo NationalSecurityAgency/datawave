@@ -181,7 +181,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertNull(config.getQueryModel());
         Assert.assertNull(config.getModelName());
         Assert.assertEquals(TableName.METADATA, config.getModelTableName());
-        Assert.assertFalse(config.isExpansionLimitedToModelContents());
+        Assert.assertFalse(config.isLimitTermExpansionToModel());
         Assert.assertEquals(new QueryImpl(), config.getQuery());
         Assert.assertFalse(config.isCompressServerSideResults());
         Assert.assertFalse(config.isIndexOnlyFilterFunctionsEnabled());
@@ -437,7 +437,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 179;
+        int expectedObjectCount = 165;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

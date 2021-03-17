@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -31,6 +32,8 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -67,6 +70,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -136,8 +140,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected final RawDataManager dataManager;
     protected Authorizations auths;
     protected String documentKey;
+    protected QueryLogicFactory logicFactory;
     protected ShardQueryLogic logic;
-    private CountingShardQueryLogic countLogic = new CountingShardQueryLogic();
+    private CountingShardQueryLogic countLogic;
     protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
@@ -153,30 +158,27 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         return new ShardQueryLogic();
     }
     
-    @Before
-    public void querySetUp() throws IOException {
-        temporaryFolder = Paths.get(Files.createTempDir().toURI());
+    protected ShardQueryLogic createShardQueryLogic() {
+        ShardQueryLogic logic = createQueryLogic();
+        QueryTestTableHelper.configureLogicToScanTables(logic);
         
-        log.debug("---------  querySetUp  ---------");
+        logic.setFullTableScanEnabled(false);
+        logic.setIncludeDataTypeAsField(true);
         
-        this.logic = createQueryLogic();
-        QueryTestTableHelper.configureLogicToScanTables(this.logic);
-        
-        this.logic.setFullTableScanEnabled(false);
-        this.logic.setIncludeDataTypeAsField(true);
-        
-        this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        this.logic.setMarkingFunctions(new Default());
-        this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        this.logic.setQueryPlanner(new DefaultQueryPlanner());
-        this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        
-        this.logic.setCollectTimingDetails(true);
-        this.logic.setLogTimingDetails(true);
-        this.logic.setMinimumSelectivity(0.03D);
-        this.logic.setMaxIndexScanTimeMillis(5000);
-        
-        // count logic
+        logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
+        logic.setMarkingFunctions(new Default());
+        logic.setMetadataHelperFactory(new MetadataHelperFactory());
+        logic.setQueryPlanner(new DefaultQueryPlanner());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        logic.setCollectTimingDetails(true);
+        logic.setLogTimingDetails(true);
+        logic.setMinimumSelectivity(0.03D);
+        logic.setMaxIndexScanTimeMillis(5000);
+        return logic;
+    }
+    
+    protected CountingShardQueryLogic createCountingShardQueryLogic() {
+        CountingShardQueryLogic countLogic = new CountingShardQueryLogic();
         countLogic.setIncludeDataTypeAsField(true);
         countLogic.setFullTableScanEnabled(false);
         
@@ -187,6 +189,52 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         
         QueryTestTableHelper.configureLogicToScanTables(countLogic);
+        return countLogic;
+    }
+    
+    private class TestQueryLogicFactory implements QueryLogicFactory {
+        
+        /**
+         * @param name
+         *            name of query logic
+         * @param principal
+         * @return new instance of QueryLogic class
+         * @throws IllegalArgumentException
+         *             if query logic name does not exist
+         */
+        @Override
+        public QueryLogic<?> getQueryLogic(String name, Principal principal) throws IllegalArgumentException, CloneNotSupportedException {
+            QueryLogic<?> logic = null;
+            if (name.equals("EventQuery")) {
+                logic = createShardQueryLogic();
+            } else if (name.equals("CountQuery")) {
+                logic = createCountingShardQueryLogic();
+            } else {
+                throw new IllegalArgumentException("Unknown query logic " + name);
+            }
+            logic.setPrincipal(principal);
+            logic.setLogicName(name);
+            return logic;
+        }
+        
+        @Override
+        public List<QueryLogic<?>> getQueryLogicList() {
+            try {
+                List<QueryLogic<?>> list = new ArrayList<>();
+                list.add(getQueryLogic("EventQuery", null));
+                list.add(getQueryLogic("CountQuery", null));
+                return list;
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create query logic list");
+            }
+        }
+    }
+    
+    @Before
+    public void querySetUp() throws IOException {
+        temporaryFolder = Paths.get(Files.createTempDir().toURI());
+        
+        log.debug("---------  querySetUp  ---------");
         
         // init must set auths
         testInit();
@@ -198,7 +246,16 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
         this.principal = new DatawavePrincipal(Collections.singleton(user));
+        
         this.testHarness = new QueryLogicTestHarness(this);
+        
+        this.logicFactory = new TestQueryLogicFactory();
+        try {
+            this.logic = (ShardQueryLogic) (logicFactory.getQueryLogic("EventQuery", principal));
+            this.countLogic = (CountingShardQueryLogic) (logicFactory.getQueryLogic("CountQuery", principal));
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Unable to create query logics", e);
+        }
     }
     
     @After
@@ -411,7 +468,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         if (log.isDebugEnabled()) {
             log.debug("Plan: " + config.getQueryString());
         }
-        testHarness.assertLogicResults(this.logic, expected, checkers);
+        testHarness.assertLogicResults(this.logic, this.logicFactory, expected, checkers);
     }
     
     /**

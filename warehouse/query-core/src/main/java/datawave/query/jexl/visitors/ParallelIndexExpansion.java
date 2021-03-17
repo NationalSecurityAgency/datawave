@@ -109,7 +109,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         this.allTypes = helper.getAllDatatypes();
         
-        if (config.isExpansionLimitedToModelContents()) {
+        if (config.isLimitTermExpansionToModel()) {
             try {
                 QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
                 this.onlyUseThese = queryModel.getForwardQueryMapping().values();
