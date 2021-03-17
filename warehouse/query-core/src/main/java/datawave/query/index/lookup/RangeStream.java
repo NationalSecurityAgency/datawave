@@ -17,6 +17,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
@@ -83,7 +84,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -594,17 +594,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return false;
     }
     
-    private boolean isWithinBoundedRange(JexlNode node) {
-        if (node.jjtGetParent() instanceof ASTAndNode) {
-            List<JexlNode> otherNodes = new ArrayList<>();
-            Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) (node.jjtGetParent()), otherNodes, false);
-            if (ranges.size() == 1 && otherNodes.isEmpty()) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     @Override
     public Object visit(ASTLTNode node, Object data) {
         if (isUnOrNotFielded(node)) {
@@ -613,10 +602,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         
         if (isUnindexed(node)) {
             return ScannerStream.unindexed(node);
-        }
-        
-        if (isWithinBoundedRange(node)) {
-            return ScannerStream.noData(node);
         }
         
         return ScannerStream.delayedExpression(node);
@@ -632,10 +617,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
         
-        if (isWithinBoundedRange(node)) {
-            return ScannerStream.noData(node);
-        }
-        
         return ScannerStream.delayedExpression(node);
     }
     
@@ -649,10 +630,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
         
-        if (isWithinBoundedRange(node)) {
-            return ScannerStream.noData(node);
-        }
-        
         return ScannerStream.delayedExpression(node);
     }
     
@@ -664,10 +641,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         
         if (isUnindexed(node)) {
             return ScannerStream.unindexed(node);
-        }
-        
-        if (isWithinBoundedRange(node)) {
-            return ScannerStream.noData(node);
         }
         
         return ScannerStream.delayedExpression(node);
@@ -712,12 +685,9 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             
             // create a list of tuples for each shard
             if (log.isDebugEnabled()) {
-                Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRanges(node, config.getDatatypeFilter(), metadataHelper, null, true);
-                if (!ranges.isEmpty()) {
-                    for (LiteralRange<?> range : ranges.keySet()) {
-                        log.debug("{\"" + range.getFieldName() + "\": \"" + range.getLower() + " - " + range.getUpper()
-                                        + "\"} requires a full field index scan.");
-                    }
+                LiteralRange range = JexlASTHelper.findRange().indexedOnly(config.getDatatypeFilter(), metadataHelper).getRange(node);
+                if (range != null) {
+                    log.debug("{\"" + range.getFieldName() + "\": \"" + range.getLower() + " - " + range.getUpper() + "\"} requires a full field index scan.");
                 } else {
                     log.debug("{\"" + JexlASTHelper.getLiterals(node) + "\"} requires a full field index scan.");
                 }
@@ -726,6 +696,9 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         } else if (ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             return ScannerStream.ignored(node);
         } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
+            return ScannerStream.ignored(node);
+        } else if (BoundedRange.instanceOf(node)) {
+            // here we must have a bounded range that was not expanded, so it must not be expandable via the index
             return ScannerStream.ignored(node);
         } else {
             return descend(node, data);
@@ -904,9 +877,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         Iterator<ASTIdentifier> iter = identifiers.iterator();
         while (iter.hasNext()) {
             ASTIdentifier id = iter.next();
-            if (ExceededValueThresholdMarkerJexlNode.class.getSimpleName().equals(id.image)
-                            || ExceededTermThresholdMarkerJexlNode.class.getSimpleName().equals(id.image)
-                            || ExceededOrThresholdMarkerJexlNode.class.getSimpleName().equals(id.image)) {
+            if (ExceededValueThresholdMarkerJexlNode.label().equals(id.image) || ExceededTermThresholdMarkerJexlNode.label().equals(id.image)
+                            || ExceededOrThresholdMarkerJexlNode.label().equals(id.image)) {
                 iter.remove();
             }
         }

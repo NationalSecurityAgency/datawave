@@ -2,12 +2,12 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.config.IndexHole;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -17,13 +17,9 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -72,17 +68,15 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        List<JexlNode> leaves = new ArrayList<>();
-        Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRanges(node, this.dataTypeFilter, this.helper, leaves, false);
+        LiteralRange range = JexlASTHelper.findRange().indexedOnly(this.dataTypeFilter, this.helper).notDelayed().getRange(node);
         
-        JexlNode andNode = JexlNodes.newInstanceOfType(node);
-        andNode.image = node.image;
-        andNode.jjtSetParent(node.jjtGetParent());
-        
-        // We have a bounded range completely inside of an AND/OR
-        if (!ranges.isEmpty()) {
-            andNode = delayIndexBoundedRange(ranges, leaves, node, andNode, data);
+        if (range != null) {
+            return delayBoundedIndexHole(range, node, data);
         } else {
+            JexlNode andNode = JexlNodes.newInstanceOfType(node);
+            andNode.image = node.image;
+            andNode.jjtSetParent(node.jjtGetParent());
+            
             // We have no bounded range to replace, just proceed as normal
             JexlNodes.ensureCapacity(andNode, node.jjtGetNumChildren());
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -90,60 +84,27 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
                 andNode.jjtAddChild(newChild, i);
                 newChild.jjtSetParent(andNode);
             }
+            return andNode;
         }
-        
-        return andNode;
     }
     
     /**
      * Delay the ranges that overlap holes. The range map is expected to only be indexed ranges.
      */
-    protected JexlNode delayIndexBoundedRange(Map<LiteralRange<?>,List<JexlNode>> ranges, List<JexlNode> leaves, ASTAndNode currentNode, JexlNode newNode,
-                    Object data) {
-        // Add all children in this AND/OR which are not a part of the range
-        JexlNodes.ensureCapacity(newNode, leaves.size() + ranges.size());
-        int index = 0;
-        for (; index < leaves.size(); index++) {
-            log.debug(leaves.get(index).image);
-            // Add each child which is not a part of the bounded range, visiting them first
-            JexlNode visitedChild = (JexlNode) leaves.get(index).jjtAccept(this, null);
-            newNode.jjtAddChild(visitedChild, index);
-            visitedChild.jjtSetParent(newNode);
+    protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode, Object data) {
+        
+        if (missingIndexRange(range)) {
+            return IndexHoleMarkerJexlNode.create(currentNode);
+        } else {
+            return currentNode;
         }
         
-        for (Map.Entry<LiteralRange<?>,List<JexlNode>> range : ranges.entrySet()) {
-            // If we have any terms that we expanded, wrap them in parens and add them to the parent
-            ASTAndNode rangeNodes = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-            
-            JexlNodes.ensureCapacity(rangeNodes, range.getValue().size());
-            for (int i = 0; i < range.getValue().size(); i++) {
-                rangeNodes.jjtAddChild(range.getValue().get(i), i);
-            }
-            
-            JexlNode child = rangeNodes;
-            if (missingIndexRange(range.getKey())) {
-                child = IndexHoleMarkerJexlNode.create(rangeNodes);
-            } else {
-                child = JexlNodes.wrap(rangeNodes);
-            }
-            
-            newNode.jjtAddChild(child, index++);
-            child.jjtSetParent(newNode);
-        }
-        
-        // If we had no other nodes than this bounded range, we can strip out the original parent
-        if (newNode.jjtGetNumChildren() == 1) {
-            newNode.jjtGetChild(0).jjtSetParent(newNode.jjtGetParent());
-            return newNode.jjtGetChild(0);
-        }
-        
-        return newNode;
     }
     
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarker.instanceOf(node, null)) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, BoundedRange.class)) {
             return super.visit(node, data);
         }
         return node;
@@ -152,7 +113,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarker.instanceOf(node, null)) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, BoundedRange.class)) {
             return super.visit(node, data);
         }
         return node;

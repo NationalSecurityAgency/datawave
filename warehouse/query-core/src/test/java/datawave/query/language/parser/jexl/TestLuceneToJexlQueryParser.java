@@ -276,14 +276,14 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testRanges() throws ParseException {
-        Assert.assertEquals("(fieldName >= 'aaa' && fieldName <= 'bbb')", parseQuery("fieldName:[aaa TO bbb]"));
-        Assert.assertEquals("(fieldName > 'aaa' && fieldName < 'bbb')", parseQuery("fieldName:{aaa TO bbb}"));
-        Assert.assertEquals("fieldName1 == 'value1' && (fieldName2 >= 'aaa' && fieldName2 <= 'bbb') && fieldName3 == 'value3'",
+        Assert.assertEquals("((_Bounded_ = true) && (fieldName >= 'aaa' && fieldName <= 'bbb'))", parseQuery("fieldName:[aaa TO bbb]"));
+        Assert.assertEquals("((_Bounded_ = true) && (fieldName > 'aaa' && fieldName < 'bbb'))", parseQuery("fieldName:{aaa TO bbb}"));
+        Assert.assertEquals("fieldName1 == 'value1' && ((_Bounded_ = true) && (fieldName2 >= 'aaa' && fieldName2 <= 'bbb')) && fieldName3 == 'value3'",
                         parseQuery("fieldName1:value1 AND fieldName2:[aaa TO bbb] AND fieldName3:value3"));
-        Assert.assertEquals("(F >= 'A' && F <= 'B')", parseQuery("F:[A TO B]"));
-        Assert.assertEquals("(F >= 'A\\\\*' && F <= 'B')", parseQuery("F:[A\\\\\\* TO B]"));
-        Assert.assertEquals("(F > 'lower' && F <= 'upper')", parseQuery("F:{lower TO upper]"));
-        Assert.assertEquals("(F >= 'lower' && F < 'upper')", parseQuery("F:[lower TO upper}"));
+        Assert.assertEquals("((_Bounded_ = true) && (F >= 'A' && F <= 'B'))", parseQuery("F:[A TO B]"));
+        Assert.assertEquals("((_Bounded_ = true) && (F >= 'A\\\\*' && F <= 'B'))", parseQuery("F:[A\\\\\\* TO B]"));
+        Assert.assertEquals("((_Bounded_ = true) && (F > 'lower' && F <= 'upper'))", parseQuery("F:{lower TO upper]"));
+        Assert.assertEquals("((_Bounded_ = true) && (F >= 'lower' && F < 'upper'))", parseQuery("F:[lower TO upper}"));
     }
     
     @Test
@@ -322,7 +322,7 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("A =~ '11\\'22.*?'", parseQuery("A:11'22*"));
         //
         // // F:[A'\\\* TO B'], searching from A'\\* ("A" followed by a single quote, a backslash, and an asterisk to "B" followed by a single quote
-        Assert.assertEquals("(F >= 'A\\'\\\\*' && F <= 'B\\'')", parseQuery("F:[A'\\\\\\* TO B']"));
+        Assert.assertEquals("((_Bounded_ = true) && (F >= 'A\\'\\\\*' && F <= 'B\\''))", parseQuery("F:[A'\\\\\\* TO B']"));
         //
         // // space escapes
         Assert.assertEquals(anyField + " == 'joh.nny chicken'", parseQuery("joh.nny\\ chicken"));
@@ -353,7 +353,7 @@ public class TestLuceneToJexlQueryParser {
                         "(content:phrase(TOKFIELD, termOffsetMap, 'johnny\\'s', 'chicken') || content:phrase(TOKFIELD, termOffsetMap, 'johnny', 'chicken'))",
                         parseQuery("TOKFIELD:\"johnny's chicken\""));
         Assert.assertEquals("TOKFIELD =~ '11\\'22.*?'", parseQuery("TOKFIELD:11'22*"));
-        Assert.assertEquals("(TOKFIELD >= 'A\\'\\\\*' && TOKFIELD <= 'B\\'')", parseQuery("TOKFIELD:[A'\\\\\\* TO B']"));
+        Assert.assertEquals("((_Bounded_ = true) && (TOKFIELD >= 'A\\'\\\\*' && TOKFIELD <= 'B\\''))", parseQuery("TOKFIELD:[A'\\\\\\* TO B']"));
         
         // space escapes
         Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
@@ -553,7 +553,7 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testNumericRange() throws ParseException {
-        Assert.assertEquals("(FOO >= '1' && FOO <= '5000')", parser.parse("FOO:[1 TO 5000]").getOriginalQuery());
+        Assert.assertEquals("((_Bounded_ = true) && (FOO >= '1' && FOO <= '5000'))", parser.parse("FOO:[1 TO 5000]").getOriginalQuery());
     }
     
     @Test

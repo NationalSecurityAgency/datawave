@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import datawave.marking.MarkingFunctions;
 
@@ -116,13 +117,13 @@ public class ResultCountingIterator extends WrappingIterator {
         Stopwatch consumeSW = null, processResultSW = null, ioWaitSW = null;
         
         if (log.isTraceEnabled()) {
-            consumeSW = new Stopwatch();
-            processResultSW = new Stopwatch();
-            ioWaitSW = new Stopwatch();
+            consumeSW = Stopwatch.createUnstarted();
+            processResultSW = Stopwatch.createUnstarted();
+            ioWaitSW = Stopwatch.createUnstarted();
         } else {
-            consumeSW = new Stopwatch(zeroTicker);
-            processResultSW = new Stopwatch(zeroTicker);
-            ioWaitSW = new Stopwatch(zeroTicker);
+            consumeSW = Stopwatch.createUnstarted(zeroTicker);
+            processResultSW = Stopwatch.createUnstarted(zeroTicker);
+            ioWaitSW = Stopwatch.createUnstarted(zeroTicker);
         }
         
         consumeSW.start();
@@ -172,9 +173,9 @@ public class ResultCountingIterator extends WrappingIterator {
         }
         
         if (log.isTraceEnabled()) {
-            log.trace(threadName + ": Total consume() time: " + consumeSW.elapsedMillis());
-            log.trace(threadName + ": Total next()/hasNext() time: " + ioWaitSW.elapsedMillis());
-            log.trace(threadName + ": Total internal time: " + processResultSW.elapsedMillis());
+            log.trace(threadName + ": Total consume() time: " + consumeSW.elapsed(TimeUnit.MILLISECONDS));
+            log.trace(threadName + ": Total next()/hasNext() time: " + ioWaitSW.elapsed(TimeUnit.MILLISECONDS));
+            log.trace(threadName + ": Total internal time: " + processResultSW.elapsed(TimeUnit.MILLISECONDS));
         }
     }
     
@@ -198,9 +199,9 @@ public class ResultCountingIterator extends WrappingIterator {
         
         if (log.isTraceEnabled()) {
             log.trace(threadName + ": getTopValue()");
-            sw = new Stopwatch();
+            sw = Stopwatch.createUnstarted();
         } else {
-            sw = new Stopwatch(zeroTicker);
+            sw = Stopwatch.createUnstarted(zeroTicker);
         }
         
         sw.start();
@@ -222,7 +223,7 @@ public class ResultCountingIterator extends WrappingIterator {
         
         sw.stop();
         if (log.isTraceEnabled()) {
-            log.trace(threadName + ": Elapsed getTopValue(): " + sw.elapsedMillis());
+            log.trace(threadName + ": Elapsed getTopValue(): " + sw.elapsed(TimeUnit.MILLISECONDS));
         }
         
         return new Value(baos.toByteArray());

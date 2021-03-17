@@ -121,7 +121,7 @@ function overrideBuildProperties() {
     # See services/datawave/bootstrap.sh, setBuildPropertyOverrides function
 
     export DW_ROOT_DIRECTORY_OVERRIDE=/opt/datawave
-    export DW_JAVA_HOME_OVERRIDE=/usr/lib/jvm/java-1.8-openjdk
+    export DW_JAVA_HOME_OVERRIDE=/usr/lib/jvm/java-1.8.0-openjdk
 }
 
 function prepareBuildContext() {

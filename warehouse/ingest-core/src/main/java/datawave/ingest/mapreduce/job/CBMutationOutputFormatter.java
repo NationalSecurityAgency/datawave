@@ -2,12 +2,9 @@ package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
@@ -17,12 +14,6 @@ import java.io.IOException;
 public class CBMutationOutputFormatter extends AccumuloOutputFormat {
     
     private static final Logger log = Logger.getLogger(CBMutationOutputFormatter.class);
-    
-    public static void setOutputInfo(Job job, String user, byte[] passwd, boolean createTables, String defaultTable) throws AccumuloSecurityException {
-        AccumuloOutputFormat.setConnectorInfo(job, user, new PasswordToken(passwd));
-        AccumuloOutputFormat.setCreateTables(job, createTables);
-        AccumuloOutputFormat.setDefaultTableName(job, defaultTable);
-    }
     
     @Override
     public RecordWriter<Text,Mutation> getRecordWriter(TaskAttemptContext attempt) throws IOException {

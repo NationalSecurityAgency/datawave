@@ -33,8 +33,8 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  */
 public class GeoWavePruningVisitor extends RebuildingVisitor {
     
-    private Multimap<String,String> prunedTerms;
-    private MetadataHelper metadataHelper;
+    private final Multimap<String,String> prunedTerms;
+    private final MetadataHelper metadataHelper;
     
     private GeoWavePruningVisitor(Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
         this.prunedTerms = prunedTerms;

@@ -104,7 +104,14 @@ public class ValidPatternVisitor extends BaseVisitor {
      */
     public void parseAndPutPattern(JexlNode node) {
         // Catch the situation where a user might enter FIELD1 !~ VALUE1
-        Object literalValue = JexlASTHelper.getLiteralValue(node);
+        Object literalValue;
+        try {
+            literalValue = JexlASTHelper.getLiteralValue(node);
+        } catch (Exception e) {
+            // in this case there was no literal (e.g. FIELD1 !~ FIELD2)
+            return;
+        }
+        
         if (literalValue != null && String.class.equals(literalValue.getClass())) {
             String literalString = (String) literalValue;
             try {

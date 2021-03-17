@@ -35,7 +35,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public MaxExpansionIndexOnlyQueryTest() {

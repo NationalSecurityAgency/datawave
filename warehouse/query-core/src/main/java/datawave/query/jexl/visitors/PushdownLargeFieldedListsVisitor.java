@@ -7,6 +7,8 @@ import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -216,15 +218,10 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     }
     
     protected Range rangeNodeToRange(JexlNode node) {
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
-            return rangeNodeToRange(ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(node));
-        } else if ((node.jjtGetNumChildren() == 1) && (node instanceof ASTReferenceExpression || node instanceof ASTReference || node instanceof ASTAndNode)) {
-            return rangeNodeToRange(node.jjtGetChild(0));
-        } else if ((node.jjtGetNumChildren() == 2) && node instanceof ASTAndNode) {
-            JexlNode leftChild = node.jjtGetChild(0);
-            JexlNode rightChild = node.jjtGetChild(1);
-            return new Range(new Key(String.valueOf(JexlASTHelper.getLiteralValue(leftChild))), leftChild instanceof ASTGENode, new Key(
-                            String.valueOf(JexlASTHelper.getLiteralValue(rightChild))), rightChild instanceof ASTLENode);
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
+            return new Range(new Key(String.valueOf(range.getLower())), range.isLowerInclusive(), new Key(String.valueOf(range.getUpper())),
+                            range.isUpperInclusive());
         } else {
             return null;
         }
@@ -241,26 +238,15 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     protected void assignNodeByField(JexlNode origNode, JexlNode subNode, Multimap<String,JexlNode> eqNodes, Multimap<String,JexlNode> rangeNodes,
                     List<JexlNode> otherNodes) {
         if (subNode instanceof ASTEQNode) {
-            eqNodes.put(JexlASTHelper.getIdentifier(subNode), origNode);
+            eqNodes.put(JexlASTHelper.getIdentifier(subNode, false), origNode);
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(subNode)) {
             assignNodeByField(origNode, ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(subNode), eqNodes, rangeNodes, otherNodes);
+        } else if (BoundedRange.instanceOf(subNode)) {
+            LiteralRange range = JexlASTHelper.findRange().getRange(subNode);
+            rangeNodes.put(JexlASTHelper.rebuildIdentifier(range.getFieldName()), origNode);
         } else if ((subNode.jjtGetNumChildren() == 1)
                         && (subNode instanceof ASTReferenceExpression || subNode instanceof ASTReference || subNode instanceof ASTAndNode)) {
             assignNodeByField(origNode, subNode.jjtGetChild(0), eqNodes, rangeNodes, otherNodes);
-        } else if ((subNode.jjtGetNumChildren() == 2) && subNode instanceof ASTAndNode) {
-            JexlNode leftChild = subNode.jjtGetChild(0);
-            JexlNode rightChild = subNode.jjtGetChild(1);
-            if ((leftChild instanceof ASTGTNode || leftChild instanceof ASTGENode) && (rightChild instanceof ASTLTNode || rightChild instanceof ASTLENode)) {
-                String leftField = JexlASTHelper.getIdentifier(leftChild);
-                String rightField = JexlASTHelper.getIdentifier(rightChild);
-                if (leftField != null && rightField != null && leftField.equals(rightField)) {
-                    rangeNodes.put(leftField, origNode);
-                } else {
-                    otherNodes.add(origNode);
-                }
-            } else {
-                otherNodes.add(origNode);
-            }
         } else {
             otherNodes.add(origNode);
         }

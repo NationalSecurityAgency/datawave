@@ -216,8 +216,6 @@ public class AndIteratorTest {
         
         Assert.assertFalse(iterator.isContextRequired());
         Assert.assertTrue(unsourcedIterator.isContextRequired());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
         Assert.assertFalse(iterator.hasNext());
     }
     

@@ -1,6 +1,6 @@
 package datawave.webservice.common.connection;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.log4j.Logger;
 
@@ -24,16 +24,16 @@ public class EmbeddedAccumuloConnectionFactory implements AccumuloConnectionFact
     @ConfigProperty(name = "dw.warehouse.password")
     private String password;
     
-    private AccumuloConnectionPool pool;
+    private AccumuloClientPool pool;
     
     @PostConstruct
     private void initialize() {
-        pool = createConnectionPool(10);
+        pool = createClientPool(10);
     }
     
-    private AccumuloConnectionPool createConnectionPool(int limit) {
-        AccumuloConnectionPoolFactory factory = new AccumuloConnectionPoolFactory(this.userName, this.password, this.zookeepers, this.instanceName);
-        AccumuloConnectionPool pool = new AccumuloConnectionPool(factory);
+    private AccumuloClientPool createClientPool(int limit) {
+        AccumuloClientPoolFactory factory = new AccumuloClientPoolFactory(this.userName, this.password, this.zookeepers, this.instanceName);
+        AccumuloClientPool pool = new AccumuloClientPool(factory);
         pool.setTestOnBorrow(true);
         pool.setTestOnReturn(true);
         pool.setMaxTotal(limit);
@@ -54,18 +54,18 @@ public class EmbeddedAccumuloConnectionFactory implements AccumuloConnectionFact
     }
     
     @Override
-    public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception {
+    public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
         return pool.borrowObject(trackingMap);
     }
     
     @Override
-    public Connector getConnection(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception {
+    public AccumuloClient getClient(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception {
         return pool.borrowObject(trackingMap);
     }
     
     @Override
-    public void returnConnection(Connector connection) throws Exception {
-        pool.returnObject(connection);
+    public void returnClient(AccumuloClient client) throws Exception {
+        pool.returnObject(client);
     }
     
     @Override

@@ -3,7 +3,6 @@ package datawave.ingest.mapreduce.handler.facet;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.clearspring.analytics.stream.cardinality.ICardinality;
 import com.clearspring.analytics.stream.frequency.CountMinSketch;
-import com.clearspring.analytics.util.Lists;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -23,6 +22,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -32,11 +32,14 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
+import org.geotools.feature.type.DateUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,13 +54,13 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     /* Global configuration properties */
     
     public static final String FACET_TABLE_NAME = "facet.table.name";
-    public static final String FACET_LPRIORITY = "facet.table.loader.priority";
+    public static final String FACET_TABLE_LOADER_PRIORITY = "facet.table.loader.priority";
     
     public static final String FACET_METADATA_TABLE_NAME = "facet.metadata.table.name";
-    public static final String FACET_METADATA_LPRIORITY = "facet.metadata.table.loader.priority";
+    public static final String FACET_METADATA_TABLE_LOADER_PRIORITY = "facet.metadata.table.loader.priority";
     
     public static final String FACET_HASH_TABLE_NAME = "facet.hash.table.name";
-    public static final String FACET_HASH_TABLE_LPRIORITY = "facet.hash.table.loader.priority";
+    public static final String FACET_HASH_TABLE_LOADER_PRIORITY = "facet.hash.table.loader.priority";
     
     /* Per-datatype configuration properties */
     
@@ -70,9 +73,9 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     
     public static final String DEFAULT_FACET_CATEGORY_DELIMITER = ";";
     
-    private static final Text PV = new Text("pv");
-    private static final String NULL = "\0";
-    private static final Value EMPTY_VALUE = new Value(new byte[] {});
+    protected static final Text PV = new Text("pv");
+    protected static final String NULL = "\0";
+    protected static final Value EMPTY_VALUE = new Value(new byte[] {});
     
     /* Global configuration fields */
     
@@ -91,8 +94,13 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     protected ShardIdFactory shardIdFactory;
     protected TaskAttemptContext taskAttemptContext;
     
-    protected Predicate<String> fieldFilter = null;
+    protected Predicate<String> fieldSelectionPredicate = new TokenPredicate();
+    protected Predicate<String> fieldFilterPredicate = null;
     protected Multimap<String,String> pivotMap;
+    
+    public void setFieldSelectionPredicate(Predicate<String> predicate) {
+        this.fieldSelectionPredicate = predicate;
+    }
     
     @Override
     public void setup(TaskAttemptContext context) {
@@ -132,7 +140,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                 // Will throw RuntimeException if class can't be coerced into Predicate<String>
                 @SuppressWarnings("unchecked")
                 Class<Predicate<String>> projClazz = (Class<Predicate<String>>) Class.forName(predClazzStr).asSubclass(Predicate.class);
-                fieldFilter = projClazz.newInstance();
+                fieldFilterPredicate = projClazz.newInstance();
             } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -147,44 +155,18 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     
     @Override
     public String[] getTableNames(Configuration conf) {
-        final List<String> tableNames = new ArrayList<>();
-        
-        String tableName = conf.get(FACET_TABLE_NAME, null);
-        if (null != tableName)
-            tableNames.add(tableName);
-        
-        tableName = conf.get(FACET_METADATA_TABLE_NAME, null);
-        if (null != tableName)
-            tableNames.add(tableName);
-        
-        tableName = conf.get(FACET_HASH_TABLE_NAME, null);
-        if (null != tableName)
-            tableNames.add(tableName);
-        
-        return tableNames.toArray(new String[0]);
+        return getNonNullTableNames(conf, FACET_TABLE_NAME, FACET_METADATA_TABLE_NAME, FACET_HASH_TABLE_NAME);
     }
     
     @Override
     public int[] getTableLoaderPriorities(Configuration conf) {
-        int[] priorities = new int[2];
-        int index = 0;
-        String tableName = conf.get(FACET_TABLE_NAME, null);
-        if (null != tableName)
-            priorities[index++] = conf.getInt(FACET_LPRIORITY, 40);
-        
-        tableName = conf.get(FACET_METADATA_TABLE_NAME, null);
-        if (null != tableName)
-            priorities[index++] = conf.getInt(FACET_METADATA_LPRIORITY, 40);
-        
-        tableName = conf.get(FACET_HASH_TABLE_NAME, null);
-        if (null != tableName)
-            priorities[index++] = conf.getInt(FACET_HASH_TABLE_LPRIORITY, 40);
-        
-        if (index != priorities.length) {
-            return Arrays.copyOf(priorities, index);
-        } else {
-            return priorities;
-        }
+        // @formatter:off
+        return getNonNullTableLoaderPriorities(
+                conf, 40,
+                FACET_TABLE_NAME, FACET_TABLE_LOADER_PRIORITY,
+                FACET_METADATA_TABLE_NAME, FACET_METADATA_TABLE_LOADER_PRIORITY,
+                FACET_HASH_TABLE_NAME, FACET_HASH_TABLE_LOADER_PRIORITY);
+        // @formatter:on
     }
     
     @Override
@@ -218,121 +200,302 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                     throws IOException, InterruptedException {
         
         final String shardId = shardIdFactory.getShardId(event);
-        final String shardDate = ShardIdFactory.getDateString(shardId);
-        Text dateColumnQualifier = new Text(shardDate);
-        
-        HyperLogLogPlus cardinality = new HyperLogLogPlus(10);
-        cardinality.offer(event.getId().toString());
+        final String shardDateString = ShardIdFactory.getDateString(shardId);
+        final Text dateColumnQualifier = new Text(shardDateString);
+        final Date shardDate = DateHelper.parse(shardDateString);
+        final long timestamp = shardDate.getTime();
         
         Text cv = new Text(flatten(event.getVisibility()));
         
-        final HashTableFunction<KEYIN,KEYOUT,VALUEOUT> func = new HashTableFunction<>(contextWriter, context, facetHashTableName, facetHashThreshold,
-                        event.getDate());
-        Multimap<String,NormalizedContentInterface> eventFields = hashEventFields(fields, func);
-        
-        Stream<String> eventFieldKeyStream = eventFields.keySet().stream().filter(new TokenPredicate());
-        if (fieldFilter != null) {
-            eventFieldKeyStream = eventFieldKeyStream.filter(fieldFilter);
+        // filter out event fields that are generated as the result of tokenization.
+        Stream<String> fieldKeyStream = fields.keySet().stream().filter(fieldSelectionPredicate);
+        if (fieldFilterPredicate != null) {
+            fieldKeyStream = fieldKeyStream.filter(fieldFilterPredicate);
         }
-        Set<String> keySet = eventFieldKeyStream.collect(Collectors.toSet());
-        List<Set<String>> keySetList = Lists.newArrayList();
-        keySetList.add(keySet);
-        keySetList.add(keySet);
+        final Set<String> filteredFieldSet = fieldKeyStream.collect(Collectors.toSet());
+        Set<String> pivotFieldSet = new HashSet<>(filteredFieldSet);
+        Set<String> facetFieldSet = new HashSet<>(filteredFieldSet);
+        
+        // fields with a large number of values are hashed. See HashTableFunction for details
+        // @formatter:off
+        final HashTableFunction<KEYIN,KEYOUT,VALUEOUT> func = new HashTableFunction<>(
+                contextWriter, context, facetHashTableName, facetHashThreshold, timestamp);
+        final Multimap<String,NormalizedContentInterface> eventFields = filterAndHashEventFields(fields, filteredFieldSet, func);
+        // @formatter:on
         
         long countWritten = 0;
         
-        Value sharedValue = new Value(cardinality.getBytes());
-        Multimap<BulkIngestKey,Value> results = ArrayListMultimap.create();
+        // the event id offered to the cardinality is a uid based on the 'EVENT_ID',
+        // so it's helpful to have that around for tracing when logging about the
+        // facet keys that are created.
+        String eventId = null;
+        if (log.isTraceEnabled()) {
+            StringBuilder b = new StringBuilder();
+            for (NormalizedContentInterface f : eventFields.get("EVENT_ID")) {
+                b.append(f.getEventFieldValue());
+            }
+            eventId = b.toString();
+        }
+        
+        // compute the cardinality based on the uid, this becomes the value shared
+        // across each facet row generated.
+        final HyperLogLogPlus cardinality = new HyperLogLogPlus(10);
+        final String id = shardId + "/" + event.getDataType().typeName() + "/" + event.getId().toString();
+        cardinality.offer(id);
+        final Value sharedValue = new Value(cardinality.getBytes());
+        
+        final Multimap<BulkIngestKey,Value> results = ArrayListMultimap.create();
         
         for (String pivotFieldName : pivotMap.keySet()) {
-            Text reflexiveCf = createColumnFamily(pivotFieldName, pivotFieldName);
+            if (!pivotFieldSet.contains(pivotFieldName))
+                continue;
+            
+            final Text reflexiveCf = createColumnFamily(pivotFieldName, pivotFieldName);
+            
             for (NormalizedContentInterface pivotTypes : eventFields.get(pivotFieldName)) {
                 if (HashTableFunction.isReduced(pivotTypes))
                     continue;
                 
+                // Generate the pivot entry.
+                // @formatter:off
+                final BulkIngestKey pivotIngestKey = generateFacetIngestKey(
+                        pivotTypes.getIndexedFieldValue(),
+                        pivotTypes.getIndexedFieldValue(),
+                        event.getDataType(),
+                        reflexiveCf,
+                        dateColumnQualifier,
+                        cv,
+                        timestamp);
+
+                results.put(pivotIngestKey, sharedValue);
+
+                if (log.isTraceEnabled()) {
+                    log.trace("created BulkIngestKey (pivot): " + pivotIngestKey.getKey() +
+                            " for " + event.getId().toString() +
+                            " in " + event.getRawFileName() +
+                            " event " + eventId);
+                }
+                // @formatter:on
+                
+                // Generate the facet entries.
                 for (String facetFieldName : pivotMap.get(pivotFieldName)) {
                     if (pivotFieldName.equals(facetFieldName))
                         continue;
+                    if (!facetFieldSet.contains(facetFieldName))
+                        continue;
                     
-                    Text generatedCf = createColumnFamily(pivotFieldName, facetFieldName);
-                    Text myCf = generatedCf;
+                    final Text generatedCf = createColumnFamily(pivotFieldName, facetFieldName);
                     
                     for (NormalizedContentInterface facetTypes : eventFields.get(facetFieldName)) {
+                        Text facetCf = new Text(generatedCf);
+                        
                         if (HashTableFunction.isReduced(facetTypes)) {
-                            myCf.append(HashTableFunction.FIELD_APPEND_BYTES, 0, HashTableFunction.FIELD_APPEND_BYTES.length);
+                            facetCf.append(HashTableFunction.FIELD_APPEND_BYTES, 0, HashTableFunction.FIELD_APPEND_BYTES.length);
                         }
                         
-                        Text row = createFieldValuePair(pivotTypes.getIndexedFieldValue(), facetTypes.getIndexedFieldValue(), event.getDataType());
-                        Key result = new Key(row, myCf, dateColumnQualifier, cv, event.getDate());
-                        results.put(new BulkIngestKey(facetTableName, result), sharedValue);
+                        // @formatter:off
+                        final BulkIngestKey facetIngestKey = generateFacetIngestKey(
+                                pivotTypes.getIndexedFieldValue(),
+                                facetTypes.getIndexedFieldValue(),
+                                event.getDataType(),
+                                facetCf,
+                                dateColumnQualifier,
+                                cv,
+                                timestamp);
+
+                        results.put(facetIngestKey, sharedValue);
+
+                        if (log.isDebugEnabled()) {
+                            log.debug("created BulkIngestKey (facet): " + facetIngestKey.getKey() +
+                                    " for " + event.getId().toString() +
+                                    " in " + event.getRawFileName() +
+                                    " event " + eventId);
+                        }
+                        // @formatter:on
                         
                         countWritten++;
                     }
-                    
-                    myCf = generatedCf;
                 }
-                
-                Text row = createFieldValuePair(pivotTypes.getIndexedFieldValue(), pivotTypes.getIndexedFieldValue(), event.getDataType());
-                Key result = new Key(row, reflexiveCf, dateColumnQualifier, cv, event.getDate());
-                results.put(new BulkIngestKey(facetTableName, result), sharedValue);
             }
         }
         
-        for (Map.Entry<String,String> pivot : pivotMap.entries()) {
-            Key result = new Key(new Text(pivot.getKey() + NULL + pivot.getValue()), PV);
-            results.put(new BulkIngestKey(facetMetadataTableName, result), EMPTY_VALUE);
+        // metadata for each pivot field - maps to itself
+        for (String pivot : pivotMap.keySet()) {
+            if (!pivotFieldSet.contains(pivot))
+                continue;
+            results.put(generateFacetMetadataIngestKey(pivot, pivot, timestamp), EMPTY_VALUE);
             countWritten++;
         }
+        
+        // metadata mapping each pivot field to their facet fields.
+        for (Map.Entry<String,String> facet : pivotMap.entries()) {
+            if (!pivotFieldSet.contains(facet.getKey()) || !facetFieldSet.contains(facet.getValue()))
+                continue;
+            results.put(generateFacetMetadataIngestKey(facet.getKey(), facet.getValue(), timestamp), EMPTY_VALUE);
+            countWritten++;
+        }
+        
         contextWriter.write(results, context);
         return countWritten;
     }
     
-    private Multimap<String,NormalizedContentInterface> hashEventFields(Multimap<String,NormalizedContentInterface> fields,
-                    HashTableFunction<KEYIN,KEYOUT,VALUEOUT> func) {
+    /**
+     * Filter the source data and apply the supplied HashTableFunction to the fields provided. The results are collected and returned. This is commonly used
+     * where there are a large number of values for a field.
+     *
+     * @param fields
+     *            The source data to process.
+     * @param filteredFieldSet
+     *            The names of fields to keep.
+     * @param func
+     *            The function to apply to hash fields if necessary.
+     * @return The modified set of fields after hashing.
+     */
+    private Multimap<String,NormalizedContentInterface> filterAndHashEventFields(Multimap<String,NormalizedContentInterface> fields,
+                    Set<String> filteredFieldSet, HashTableFunction<KEYIN,KEYOUT,VALUEOUT> func) {
         Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
         for (Map.Entry<String,Collection<NormalizedContentInterface>> entry : fields.asMap().entrySet()) {
-            Collection<NormalizedContentInterface> coll = func.apply(entry.getValue());
-            if (coll != null && !coll.isEmpty()) {
-                eventFields.putAll(entry.getKey(), coll);
+            if (filteredFieldSet.contains(entry.getKey())) {
+                Collection<NormalizedContentInterface> coll = func.apply(entry.getValue());
+                if (coll != null && !coll.isEmpty()) {
+                    eventFields.putAll(entry.getKey(), coll);
+                }
             }
         }
         return eventFields;
     }
     
     /**
+     * Generate the entry for the facet table in the form of a BulkIngestKey
+     *
+     * @param pivotFieldValue
+     *            the value of the pivot field - actual value depends on facet type
+     * @param facetFieldValue
+     *            the value of the facet field - actual value depends on facet type
+     * @param dataType
+     *            the datatype for the data from which the facet was generated
+     * @param cf
+     *            the column family for the facet. This encodes the field names the facet originated from, possibly modified if we need to hash the field
+     *            values.
+     * @param dateCq
+     *            the date for the column qualifier.
+     * @param cv
+     *            the column visibility for this facet entry.
+     * @param ts
+     *            the timestamp use for the facet key
+     * @return A bulk ingest key for this facet entry.
+     */
+    public BulkIngestKey generateFacetIngestKey(String pivotFieldValue, String facetFieldValue, Type dataType, Text cf, Text dateCq, Text cv, long ts) {
+        final Text facetRow = createFieldValuePair(pivotFieldValue, facetFieldValue, dataType);
+        final Key facetResult = new Key(facetRow, cf, dateCq, cv, ts);
+        return new BulkIngestKey(facetTableName, facetResult);
+    }
+    
+    public BulkIngestKey generateFacetMetadataIngestKey(String from, String to, long ts) {
+        final Key facetMetadataResult = new Key(new Text(from + NULL + to), PV, new Text(""), ts);
+        return new BulkIngestKey(facetMetadataTableName, facetMetadataResult);
+    }
+    
+    /**
      * Create the column qualifier that includes pivotFieldValue, facetFieldValue and datatype.
      * 
      * @param pivotFieldValue
+     *            the value of the pivot field
      * @param facetFieldValue
+     *            the value of the facet field
      * @param dataType
-     * @return
+     *            the data type of the pivot/facet pair
+     * @return a properly formed column-qualifier containing pivot and facet values + datatype.
      */
     protected Text createFieldValuePair(String pivotFieldValue, String facetFieldValue, Type dataType) {
         return new Text(pivotFieldValue + NULL + facetFieldValue + NULL + dataType.typeName());
     }
     
     /**
-     * Create the column family consisting of pivotFieldName and facetFieldName
+     * Create the column family consisting of pivotFieldName and facetFieldName.
      * 
      * @param pivotFieldName
+     *            the name of the pivot field
      * @param facetFieldName
-     * @return
+     *            the name of the facet field
+     * @return a properly formed column-family containing the pivot and facet field names.
      */
     protected Text createColumnFamily(String pivotFieldName, String facetFieldName) {
         return new Text(pivotFieldName + NULL + facetFieldName);
     }
     
+    /**
+     * Return an array of table loader priorities extracted from the specified configuration based on the property names supplied, where those properties are
+     * present in the configuration.
+     * 
+     * @param conf
+     *            the configuration to extract the priority values from
+     * @param defaultPriority
+     *            the defailt priority to use if none is specified.
+     * @param properties
+     *            the properties to read from the configuration, must be an even number organized based on table name property name, table priority property
+     *            name.
+     * @return an array of the table priorities loaded from the configuration the length of this will be based on the number of the specified table name
+     *         properties present in the configuration.
+     */
+    protected int[] getNonNullTableLoaderPriorities(Configuration conf, int defaultPriority, String... properties) {
+        if (properties.length % 2 != 0) {
+            throw new IllegalArgumentException("Received an odd number of properties, expected an even number, "
+                            + "each table name property should be followed by the table priority property");
+        }
+        
+        int[] priorities = new int[properties.length / 2];
+        int index = 0;
+        
+        for (int i = 0; i < properties.length; i += 2) {
+            final String tableNameProp = properties[i];
+            final String tablePriorityProp = properties[i + 1];
+            final String tableName = conf.get(tableNameProp, null);
+            if (null != tableName)
+                priorities[index++] = conf.getInt(tablePriorityProp, defaultPriority);
+        }
+        
+        if (index != priorities.length) {
+            return Arrays.copyOf(priorities, index);
+        } else {
+            return priorities;
+        }
+    }
+    
+    /**
+     * Return an array of table names extracted from the specified configuration based on the property names supplied, where those properties are present in the
+     * configuration.
+     * 
+     * @param conf
+     *            the configuration to extract the table names from.
+     * @param properties
+     *            the properties to read from the configuration in order to obtain table names
+     * @return an array of the table priorities loaded from the configuration. The length of this will be dependent on the number of specified properties
+     *         present in the configuration.
+     */
+    protected String[] getNonNullTableNames(Configuration conf, String... properties) {
+        final List<String> tableNames = new ArrayList<>();
+        
+        for (final String p : properties) {
+            final String tableName = conf.get(p, null);
+            if (null != tableName)
+                tableNames.add(tableName);
+        }
+        
+        return tableNames.toArray(new String[0]);
+    }
+    
     @Override
     public FacetValue estimate(RawRecordContainer input) {
         // precision value: 10, sparse set disabled.
-        HyperLogLogPlus card = new HyperLogLogPlus(10);
-        card.offer(input.getId().toString());
+        final HyperLogLogPlus card = new HyperLogLogPlus(10);
+        final String id = shardIdFactory.getShardId(input) + "/" + input.getDataType() + "/" + input.getId().toString();
+        card.offer(id);
         
         return new FacetValue(card, new CountMinSketch(10, 1, 1));
     }
     
     /** A predicate used to ignore values that are generated via tokenization */
-    // TODO: make configurable
     public static class TokenPredicate implements Predicate<String> {
         @Override
         public boolean test(String input) {
@@ -348,7 +511,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
      *
      * @return The cardinality extracted, otherwise -1L if no cardinality is present -2L if there's en error extracting
      */
-    public static final long extractCardinality(Value v) {
+    public static long extractCardinality(Value v) {
         if (v == null) {
             return -1L;
         } else if (v.getSize() > 0) {

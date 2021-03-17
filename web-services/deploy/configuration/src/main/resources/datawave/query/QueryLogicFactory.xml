@@ -44,6 +44,9 @@
         <bean class="datawave.query.language.functions.jexl.Geowave.Intersects"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Overlaps"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Within"/>
+        <bean class="datawave.query.language.functions.jexl.EvaluationOnly">
+            <property name="parser" ref="LuceneToJexlQueryParser"/>
+        </bean>
     </util:list>
 
     <!-- Fields we should not tokenize in a tokenized query. In non-tokenized 

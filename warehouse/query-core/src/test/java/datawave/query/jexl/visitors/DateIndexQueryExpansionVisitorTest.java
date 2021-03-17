@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.helpers.PrintUtility;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -11,14 +12,13 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
@@ -42,7 +42,7 @@ public class DateIndexQueryExpansionVisitorTest {
     
     Authorizations auths = new Authorizations("HUSH");
     
-    private static Connector connector = null;
+    private static AccumuloClient client = null;
     
     protected ShardQueryLogic logic = null;
     
@@ -52,18 +52,18 @@ public class DateIndexQueryExpansionVisitorTest {
     public static void before() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         InMemoryInstance i = new InMemoryInstance(DateIndexQueryExpansionVisitorTest.class.getName());
-        connector = i.getConnector("root", new PasswordToken(""));
+        client = new InMemoryAccumuloClient("root", i);
     }
     
     @Before
     public void setupTests() throws Exception {
         
-        this.helper = new MetadataHelperFactory().createMetadataHelper(connector, TableName.DATE_INDEX, Collections.singleton(auths));
+        this.helper = new MetadataHelperFactory().createMetadataHelper(client, TableName.DATE_INDEX, Collections.singleton(auths));
         
         this.createTables();
         
-        DateIndexTestIngest.writeItAll(connector);
-        PrintUtility.printTable(connector, auths, TableName.DATE_INDEX);
+        DateIndexTestIngest.writeItAll(client);
+        PrintUtility.printTable(client, auths, TableName.DATE_INDEX);
     }
     
     @Test
@@ -78,8 +78,8 @@ public class DateIndexQueryExpansionVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
-        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
-                        Collections.singleton(auths), 2, 0.9f);
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths),
+                        2, 0.9f);
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         
         String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
@@ -100,8 +100,8 @@ public class DateIndexQueryExpansionVisitorTest {
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
         
-        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
-                        Collections.singleton(auths), 2, 0.9f);
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths),
+                        2, 0.9f);
         helper2.setTimeTravel(true);
         
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
@@ -123,8 +123,8 @@ public class DateIndexQueryExpansionVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
-        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
-                        Collections.singleton(auths), 2, 0.9f);
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths),
+                        2, 0.9f);
         
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         
@@ -144,8 +144,8 @@ public class DateIndexQueryExpansionVisitorTest {
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
-        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX,
-                        Collections.singleton(auths), 2, 0.9f);
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths),
+                        2, 0.9f);
         
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         
@@ -155,7 +155,7 @@ public class DateIndexQueryExpansionVisitorTest {
     }
     
     private void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
-        TableOperations tops = connector.tableOperations();
+        TableOperations tops = client.tableOperations();
         deleteAndCreateTable(tops, TableName.DATE_INDEX);
     }
     

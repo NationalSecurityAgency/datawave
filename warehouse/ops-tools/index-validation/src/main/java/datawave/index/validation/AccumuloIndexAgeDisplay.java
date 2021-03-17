@@ -1,12 +1,11 @@
 package datawave.index.validation;
 
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -34,28 +33,35 @@ import java.util.Map;
  * Created on 8/10/16. This class will scan an accumulo table for all or a specified number of columns. The number of results for rows old than A,B,C,D... days
  * will be displayed. The user can enter a list of days to check
  */
-public class AccumuloIndexAgeDisplay {
+public class AccumuloIndexAgeDisplay implements AutoCloseable {
     private static final Logger log = Logger.getLogger(AccumuloIndexAgeDisplay.class);
     private static final long MILLIS_IN_DAY = 86400000;
     
-    private Connector conn = null;
+    private AccumuloClient accumuloClient = null;
     
     private String tableName = null;
     private String columns = null;
-    private String userName = null;
     
     private Integer buckets[] = {180, 90, 60, 30, 14, 7, 2};
     
     private ArrayList<String>[] dataBuckets;
     
-    public AccumuloIndexAgeDisplay(Instance instance, String tableName, String columns, String userName, PasswordToken password, Integer[] buckets)
-                    throws AccumuloException, AccumuloSecurityException {
+    public AccumuloIndexAgeDisplay(AccumuloClient accumuloClient, String tableName, String columns, Integer[] buckets) {
         this.tableName = tableName;
         setColumns(columns);
-        this.userName = userName;
         setBuckets(buckets);
         
-        conn = instance.getConnector(userName, password);
+        this.accumuloClient = accumuloClient;
+    }
+    
+    public AccumuloIndexAgeDisplay(String instanceName, String zookeepers, String tableName, String columns, String userName, PasswordToken password,
+                    Integer[] buckets) {
+        this(Accumulo.newClient().to(instanceName, zookeepers).as(userName, password).build(), tableName, columns, buckets);
+    }
+    
+    @Override
+    public void close() {
+        accumuloClient.close();
     }
     
     /**
@@ -165,8 +171,8 @@ public class AccumuloIndexAgeDisplay {
         Scanner scanner = null;
         
         try {
-            Authorizations userAuthorizations = conn.securityOperations().getUserAuthorizations(userName);
-            scanner = conn.createScanner(tableName, userAuthorizations);
+            Authorizations userAuthorizations = accumuloClient.securityOperations().getUserAuthorizations(accumuloClient.whoami());
+            scanner = accumuloClient.createScanner(tableName, userAuthorizations);
             scanner = addColumnsToScanner(scanner);
             Range range = new Range();
             scanner.setRange(range);
@@ -354,8 +360,7 @@ public class AccumuloIndexAgeDisplay {
         CommandLineParser parser = new BasicParser();
         CommandLine cmd;
         
-        Instance instance = null;
-        String zooKeepers = null, tableName = null, columns = null, userName = null, fileName = null;
+        String instanceName = null, zooKeepers = null, tableName = null, columns = null, userName = null, fileName = null;
         PasswordToken password;
         Integer[] bucket;
         try {
@@ -367,7 +372,7 @@ public class AccumuloIndexAgeDisplay {
                 usage();
             }
             if (cmd.hasOption("i")) {
-                instance = new ZooKeeperInstance(cmd.getOptionValue("i"), zooKeepers);
+                instanceName = cmd.getOptionValue("i");
             } else {
                 usage();
             }
@@ -401,15 +406,16 @@ public class AccumuloIndexAgeDisplay {
                 bucket = new Integer[0];
             }
             
-            AccumuloIndexAgeDisplay aiad = new AccumuloIndexAgeDisplay(instance, tableName, columns, userName, password, bucket);
-            aiad.extractDataFromAccumulo();
-            aiad.logAgeSummary();
-            aiad.createAccumuloShellScript(fileName);
+            try (AccumuloIndexAgeDisplay aiad = new AccumuloIndexAgeDisplay(instanceName, zooKeepers, tableName, columns, userName, password, bucket)) {
+                aiad.extractDataFromAccumulo();
+                aiad.logAgeSummary();
+                aiad.createAccumuloShellScript(fileName);
+            }
             
             /*
              * Running with maven will display the following exception: java.lang.InterruptedException: sleep interrupted at java.lang.Thread.sleep(Native
-             * Method) at org.apache.accumulo.core.client.impl.ThriftTransportPool$Closer.closeConnections(ThriftTransportPool.java:138) at
-             * org.apache.accumulo.core.client.impl.ThriftTransportPool$Closer.run(ThriftTransportPool.java:148) at java.lang.Thread.run(Thread.java:745)
+             * Method) at org.apache.accumulo.core.clientImpl.ThriftTransportPool$Closer.closeConnections(ThriftTransportPool.java:138) at
+             * org.apache.accumulo.core.clientImpl.ThriftTransportPool$Closer.run(ThriftTransportPool.java:148) at java.lang.Thread.run(Thread.java:745)
              * 
              * From mail-archives.apache.org This appears to be a known issue with ZooKeeper and Thrift resources that are not cleaned up. The main thread
              * finishes, but before the exec plugin stopped the application, it tried and failed to interrupt the other non-daemon threads that were still
@@ -418,11 +424,6 @@ public class AccumuloIndexAgeDisplay {
             
         } catch (ParseException pe) {
             log.error("Failed to parse command line.");
-        } catch (AccumuloException ae) {
-            log.error("Accumulo Exception!");
-        } catch (AccumuloSecurityException ase) {
-            log.error("Accumulo Security Exception");
-            ase.printStackTrace(); // Called from main()
         }
     }
 }

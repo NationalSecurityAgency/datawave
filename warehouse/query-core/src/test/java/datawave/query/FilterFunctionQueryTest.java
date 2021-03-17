@@ -45,7 +45,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.nullState, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        client = helper.loadTables(log);
     }
     
     public FilterFunctionQueryTest() {
@@ -95,6 +95,18 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + anyRegex;
             runTest(query, expectQuery);
         }
+    }
+    
+    // Order of fields should not affect the number of results
+    @Test
+    public void testExerciseBugWithHowOrNodesAreHandled() throws Exception {
+        String orig = "CITY == 'london' and filter:includeRegex(STATE||NUM,'110')";
+        String next = "CITY == 'london' and (STATE =~ '110' or NUM =~ '110')";
+        runTest(orig, next);
+        
+        orig = "CITY == 'london' and filter:includeRegex(NUM||STATE,'110')";
+        next = "CITY == 'london' and (NUM =~ '110' or STATE =~ '110')";
+        runTest(orig, next);
     }
     
     @Test

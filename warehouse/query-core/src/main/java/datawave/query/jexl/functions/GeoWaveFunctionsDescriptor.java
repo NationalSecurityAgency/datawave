@@ -13,6 +13,7 @@ import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.GeoWaveUtils;
@@ -285,7 +286,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName,
                                 AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getEnd()));
                 // now link em up
-                return JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
+                return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
             }
         }
         

@@ -5,9 +5,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 public class TableConfigCacheGenerator {
-    protected static Configuration config = new Configuration();
+    protected static final Configuration config = new Configuration();
     
-    protected static Logger log = Logger.getLogger(TableConfigCache.class);
+    protected static final Logger log = Logger.getLogger(TableConfigCache.class);
     
     public static void main(String[] args) {
         

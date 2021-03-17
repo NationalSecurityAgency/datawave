@@ -6,6 +6,8 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -73,7 +75,13 @@ public class FacetTableConfigHelper extends AbstractTableConfigHelper {
     }
     
     protected void configureFacetTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        // TODO:
+        // Add the facet cardinality aggregator
+        for (IteratorUtil.IteratorScope scope : IteratorUtil.IteratorScope.values()) {
+            String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "UIDAggregator");
+            setPropertyIfNecessary(tableName, stem, "19,datawave.iterators.TotalAggregatingIterator", tops, log);
+            stem += ".opt.";
+            setPropertyIfNecessary(tableName, stem + "*", "datawave.ingest.table.aggregator.CardinalityAggregator", tops, log);
+        }
     }
     
     protected void configureFacetMetadataTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {

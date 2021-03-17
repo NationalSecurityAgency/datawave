@@ -127,12 +127,21 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
      * @return true if the field name ends with the FIELD_APPEND_BYTES suffix.
      */
     public static boolean isReduced(NormalizedContentInterface pivotTypes) {
-        byte[] fieldNameBytes = pivotTypes.getIndexedFieldName().getBytes();
+        final byte[] fieldNameBytes = pivotTypes.getIndexedFieldName().getBytes();
         if (fieldNameBytes.length > FIELD_APPEND_BYTES.length) {
-            return WritableComparator.compareBytes(fieldNameBytes, (fieldNameBytes.length - FIELD_APPEND.length()), fieldNameBytes.length, FIELD_APPEND_BYTES,
-                            0, FIELD_APPEND_BYTES.length) == 0;
+            // @formatter:off
+            final int cmp = WritableComparator.compareBytes(
+                    fieldNameBytes,
+                    fieldNameBytes.length - FIELD_APPEND.length(), // start
+                    fieldNameBytes.length - (fieldNameBytes.length - FIELD_APPEND.length()), // length
+                    FIELD_APPEND_BYTES,
+                    0, // start
+                    FIELD_APPEND_BYTES.length // length
+            );
+            // @formatter:on
+            
+            return cmp == 0;
         }
-        
         return false;
     }
 }

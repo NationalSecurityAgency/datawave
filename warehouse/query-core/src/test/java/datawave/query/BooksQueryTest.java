@@ -47,8 +47,8 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             dataTypes.add(books);
             
             final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes, FileLoaderFactory.FileType.GROUPING);
-            connector = helper.loadTables(log);
-            BooksDataManager mgr = new BooksDataManager(BooksEntry.tech.getDataType(), connector, indexes, cfgData);
+            client = helper.loadTables(log);
+            BooksDataManager mgr = new BooksDataManager(BooksEntry.tech.getDataType(), client, indexes, cfgData);
             mgr.loadGroupingData(books.getIngestFile());
             return mgr;
         } catch (Exception e) {

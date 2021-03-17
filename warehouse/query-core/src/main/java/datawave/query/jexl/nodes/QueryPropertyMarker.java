@@ -1,26 +1,25 @@
 package datawave.query.jexl.nodes;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import datawave.query.jexl.JexlNodeFactory;
-
 import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
-import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This is a node that can be put in place of an underlying reference node to place a property on an underlying query sub-tree (e.g. ExceededValueThreshold)
  */
-public class QueryPropertyMarker extends ASTReference {
+public abstract class QueryPropertyMarker extends ASTReference {
     
-    private static final Logger log = Logger.getLogger(QueryPropertyMarker.class);
+    public static String label() {
+        throw new IllegalStateException("Label hasn't been configured in subclass.");
+    }
     
     public QueryPropertyMarker() {
         this(ParserTreeConstants.JJTREFERENCE);
@@ -36,9 +35,9 @@ public class QueryPropertyMarker extends ASTReference {
     
     /**
      * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:(this class' simple name) True Reference Reference Expression source (the one specified)
+     * Assignment Reference Identifier:(the class' label) True Reference Reference Expression source (the one specified)
      * 
-     * Hence the resulting expression will be (({class name} = True) AND ({specified node}))
+     * Hence the resulting expression will be (({label} = True) AND ({specified node}))
      * 
      * @param source
      */
@@ -48,13 +47,20 @@ public class QueryPropertyMarker extends ASTReference {
         setupSource(source);
     }
     
+    /**
+     * Return the identifier to use when marking a node as a specific {@link QueryPropertyMarker} type. This method must be overridden by all sub-types.
+     * 
+     * @return the short label
+     */
+    public abstract String getLabel();
+    
     protected void setupSource(JexlNode source) {
         this.jjtSetParent(source.jjtGetParent());
         
-        // create the assignment using the class name wrapped in an expression
-        JexlNode refNode1 = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(getClass().getSimpleName(), true));
+        // create the assignment using the label wrapped in an expression
+        JexlNode refNode1 = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(getLabel(), true));
         
-        // wrap the source in an expression
+        // wrap the source in an expression, but only if needed
         JexlNode refNode2 = JexlNodeFactory.createExpression(source);
         
         // wrap the assignment and source in an AND node
@@ -81,7 +87,7 @@ public class QueryPropertyMarker extends ASTReference {
      * @return true if this and node is a query marker
      */
     public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type) {
-        return QueryPropertyMarkerVisitor.instanceOf(node, type, null);
+        return QueryPropertyMarkerVisitor.instanceOf(node, type);
     }
     
     /**

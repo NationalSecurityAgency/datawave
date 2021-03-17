@@ -59,8 +59,8 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -252,7 +252,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
@@ -260,12 +260,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(true);
         this.config.setExpandValues(true);
-        initialize(config, connection, settings, auths);
+        initialize(config, client, settings, auths);
         return config;
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
+    public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
         
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
@@ -273,7 +273,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(expandFields);
         this.config.setExpandValues(expandValues);
-        initialize(config, connection, settings, auths);
+        // if we are not generating the full plan, then set the flag such that we avoid checking for final executability/full table scan
+        if (!expandFields || !expandValues) {
+            this.config.setGeneratePlanOnly(true);
+        }
+        initialize(config, client, settings, auths);
         return config.getQueryString();
     }
     
@@ -349,9 +353,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return queryString;
     }
     
-    public void initialize(ShardQueryConfiguration config, Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public void initialize(ShardQueryConfiguration config, AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         // Set the connector and the authorizations into the config object
-        config.setConnector(connection);
+        config.setClient(client);
         config.setAuthorizations(auths);
         config.setMaxScannerBatchSize(getMaxScannerBatchSize());
         config.setMaxIndexBatchSize(getMaxIndexBatchSize());
@@ -383,9 +387,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setEndDate(endDate);
         }
         
-        MetadataHelper metadataHelper = prepareMetadataHelper(connection, this.getMetadataTableName(), auths, config.isRawTypes());
+        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
         
-        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(connection, this.getDateIndexTableName(), auths);
+        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(client, this.getDateIndexTableName(), auths);
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
@@ -443,7 +447,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
-        config.setQueries(this.queries.iterator());
+        if (this.queries != null) {
+            config.setQueries(this.queries.iterator());
+        }
         
         config.setQueryString(getQueryPlanner().getPlannedScript());
         
@@ -463,14 +469,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
     }
     
-    protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
-        return prepareMetadataHelper(connection, metadataTableName, auths, false);
+    protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
+        return prepareMetadataHelper(client, metadataTableName, auths, false);
     }
     
-    protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths, boolean rawTypes) {
+    protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths, boolean rawTypes) {
         if (log.isTraceEnabled())
-            log.trace("prepareMetadataHelper with " + connection);
-        return metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths, rawTypes);
+            log.trace("prepareMetadataHelper with " + client);
+        return metadataHelperFactory.createMetadataHelper(client, metadataTableName, auths, rawTypes);
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {
@@ -492,9 +498,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.dateIndexHelperFactory = dateIndexHelperFactory;
     }
     
-    private DateIndexHelper prepareDateIndexHelper(Connector connection, String dateIndexTableName, Set<Authorizations> auths) {
+    private DateIndexHelper prepareDateIndexHelper(AccumuloClient client, String dateIndexTableName, Set<Authorizations> auths) {
         DateIndexHelper dateIndexHelper = this.dateIndexHelperFactory.createDateIndexHelper();
-        return dateIndexHelper.initialize(connection, dateIndexTableName, auths, getDateIndexThreads(), getCollapseDatePercentThreshold());
+        return dateIndexHelper.initialize(client, dateIndexTableName, auths, getDateIndexThreads(), getCollapseDatePercentThreshold());
     }
     
     @Override
@@ -761,13 +767,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setHitList(hitListBool);
         }
         
-        // Get the TYPE_METADATA_IN_HDFS parameter if given
-        String typeMetadataInHdfsString = settings.findParameter(QueryParameters.TYPE_METADATA_IN_HDFS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(typeMetadataInHdfsString)) {
-            Boolean typeMetadataInHdfsBool = Boolean.parseBoolean(typeMetadataInHdfsString);
-            config.setTypeMetadataInHdfs(typeMetadataInHdfsBool);
-        }
-        
         // Get the BYPASS_ACCUMULO parameter if given
         String bypassAccumuloString = settings.findParameter(BYPASS_ACCUMULO).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(bypassAccumuloString)) {
@@ -787,11 +786,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang.StringUtils.isNotBlank(rawTypesString)) {
             Boolean rawTypesBool = Boolean.parseBoolean(rawTypesString);
             config.setRawTypes(rawTypesBool);
-            // if raw types are going to be replaced in the type metadata, we cannot use the hdfs-cached typemetadata
-            // these properties are mutually exclusive
-            if (rawTypesBool) {
-                config.setTypeMetadataInHdfs(false);
-            }
         }
         
         // Get the FILTER_MASKED_VALUES spring setting
@@ -1259,14 +1253,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setHitList(boolean hitList) {
         getConfig().setHitList(hitList);
-    }
-    
-    public boolean isTypeMetadataInHdfs() {
-        return getConfig().isTypeMetadataInHdfs();
-    }
-    
-    public void setTypeMetadataInHdfs(boolean typeMetadataInHdfs) {
-        getConfig().setTypeMetadataInHdfs(typeMetadataInHdfs);
     }
     
     public int getEventPerDayThreshold() {
@@ -1876,7 +1862,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryOptions.POSTPROCESSING_CLASSES);
         optionalParams.add(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS);
         optionalParams.add(QueryOptions.HIT_LIST);
-        optionalParams.add(QueryOptions.TYPE_METADATA_IN_HDFS);
         optionalParams.add(QueryOptions.DATE_INDEX_TIME_TRAVEL);
         optionalParams.add(QueryParameters.LIMIT_FIELDS);
         optionalParams.add(QueryParameters.GROUP_FIELDS);
