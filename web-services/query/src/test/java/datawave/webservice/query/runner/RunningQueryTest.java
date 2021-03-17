@@ -110,6 +110,8 @@ public class RunningQueryTest {
         TransformIterator iter = new TransformIterator();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         expect(logic.getTransformIterator(settings)).andReturn(iter);
+        expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
+        expect(logic.getMaxResults()).andReturn(-1L);
         replay(logic);
         
         RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -126,6 +128,11 @@ public class RunningQueryTest {
         AccumuloClient client = null;
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+        
+        expect(logic.getCollectQueryMetrics()).andReturn(false);
+        expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
+        expect(logic.getMaxResults()).andReturn(-1L);
+        replay(logic);
         
         RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
         
