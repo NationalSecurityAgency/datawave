@@ -87,7 +87,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_leadingWildcard_documentSpecific_tld_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*r'))";
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*r'))";
         Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
         List<String> tfField1Hits = new ArrayList<>();
         tfField1Hits.add("a,, b,,, c,,");
@@ -124,7 +124,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_leadingWildcard_shardRange_tld_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*r'))";
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*r'))";
         Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
         List<String> tfField1Hits = new ArrayList<>();
         tfField1Hits.add("a,, b,,, c,,");
@@ -138,7 +138,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_negated_leadingWildcard_documentSpecific_tld_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))";
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
         tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
     }
     
@@ -146,7 +146,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_negated_leadingWildcard_shardRange_tld_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))";
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
         tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
     }
     
@@ -154,7 +154,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'r.*'))";
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'r.*'))";
         Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
         List<String> tfField1Hits = new ArrayList<>();
         tfField1Hits.add("a,, b,,, c,,");
@@ -168,7 +168,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_trailingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'r.*'))";
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'r.*'))";
         Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
         List<String> tfField1Hits = new ArrayList<>();
         tfField1Hits.add("a,, b,,, c,,");
