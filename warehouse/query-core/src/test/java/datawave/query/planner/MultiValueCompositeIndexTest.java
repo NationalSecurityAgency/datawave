@@ -23,6 +23,7 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -55,7 +56,9 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
@@ -86,6 +89,9 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 @RunWith(Arquillian.class)
 public class MultiValueCompositeIndexTest {
     
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
@@ -108,6 +114,8 @@ public class MultiValueCompositeIndexTest {
     private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
     
     private static final Configuration conf = new Configuration();
+    
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     
     private static class TestData {
         public TestData(List<String> wktData, List<Integer> numData) {
@@ -244,6 +252,8 @@ public class MultiValueCompositeIndexTest {
         connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
         writeKeyValues(connector, keyValues);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static void setupConfiguration(Configuration conf) {
@@ -283,8 +293,9 @@ public class MultiValueCompositeIndexTest {
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
-            if (!tops.exists(tableName))
+            if (!tops.exists(tableName)) {
                 tops.create(tableName);
+            }
             
             final BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
@@ -454,6 +465,7 @@ public class MultiValueCompositeIndexTest {
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
         
         if (useIvarator)
             setupIvarator(logic);

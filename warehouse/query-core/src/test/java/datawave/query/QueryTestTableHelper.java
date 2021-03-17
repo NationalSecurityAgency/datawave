@@ -37,11 +37,6 @@ import java.util.concurrent.TimeUnit;
 public final class QueryTestTableHelper {
     
     public static final String METADATA_TABLE_NAME = "metadata";
-    public static final String DATE_INDEX_TABLE_NAME = TableName.DATE_INDEX;
-    public static final String LOAD_DATES_METADATA_TABLE_NAME = TableName.LOAD_DATES;
-    public static final String SHARD_TABLE_NAME = TableName.SHARD;
-    public static final String SHARD_INDEX_TABLE_NAME = TableName.SHARD_INDEX;
-    public static final String SHARD_RINDEX_TABLE_NAME = TableName.SHARD_RINDEX;
     public static final String SHARD_DICT_INDEX_NAME = "shardTermDictionary";
     public static final String MODEL_TABLE_NAME = "DatawaveMetadata";
     
@@ -81,11 +76,11 @@ public final class QueryTestTableHelper {
     public void dumpTables(Authorizations auths) {
         try {
             dumpTable(METADATA_TABLE_NAME, auths);
-            dumpTable(DATE_INDEX_TABLE_NAME, auths);
-            dumpTable(LOAD_DATES_METADATA_TABLE_NAME, auths);
-            dumpTable(SHARD_TABLE_NAME, auths);
-            dumpTable(SHARD_INDEX_TABLE_NAME, auths);
-            dumpTable(SHARD_RINDEX_TABLE_NAME, auths);
+            dumpTable(TableName.DATE_INDEX, auths);
+            dumpTable(TableName.LOAD_DATES, auths);
+            dumpTable(TableName.SHARD, auths);
+            dumpTable(TableName.SHARD_INDEX, auths);
+            dumpTable(TableName.SHARD_RINDEX, auths);
             dumpTable(SHARD_DICT_INDEX_NAME, auths);
             dumpTable(MODEL_TABLE_NAME, auths);
             
@@ -115,11 +110,11 @@ public final class QueryTestTableHelper {
     private void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
         TableOperations tops = connector.tableOperations();
         deleteAndCreateTable(tops, METADATA_TABLE_NAME);
-        deleteAndCreateTable(tops, DATE_INDEX_TABLE_NAME);
-        deleteAndCreateTable(tops, LOAD_DATES_METADATA_TABLE_NAME);
-        deleteAndCreateTable(tops, SHARD_TABLE_NAME);
-        deleteAndCreateTable(tops, SHARD_INDEX_TABLE_NAME);
-        deleteAndCreateTable(tops, SHARD_RINDEX_TABLE_NAME);
+        deleteAndCreateTable(tops, TableName.DATE_INDEX);
+        deleteAndCreateTable(tops, TableName.LOAD_DATES);
+        deleteAndCreateTable(tops, TableName.SHARD);
+        deleteAndCreateTable(tops, TableName.SHARD_INDEX);
+        deleteAndCreateTable(tops, TableName.SHARD_RINDEX);
         deleteAndCreateTable(tops, SHARD_DICT_INDEX_NAME);
         deleteAndCreateTable(tops, MODEL_TABLE_NAME);
         
@@ -148,9 +143,9 @@ public final class QueryTestTableHelper {
      */
     public void configureTables(MockAccumuloRecordWriter writer) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         configureAShardRelatedTable(writer, new MetadataTableConfigHelper(), ShardedDataTypeHandler.METADATA_TABLE_NAME, METADATA_TABLE_NAME);
-        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_TNAME, SHARD_TABLE_NAME);
-        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GIDX_TNAME, SHARD_INDEX_TABLE_NAME);
-        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GRIDX_TNAME, SHARD_RINDEX_TABLE_NAME);
+        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
+        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
+        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_DINDX_NAME, SHARD_DICT_INDEX_NAME);
         
         // TODO: move this elsewhere?
@@ -175,17 +170,17 @@ public final class QueryTestTableHelper {
         for (IteratorUtil.IteratorScope scope : IteratorUtil.IteratorScope.values()) {
             String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "UIDAggregator");
             // Override the UidAggregator with a mock aggregator to lower the UID.List MAX uid limit.
-            connector.tableOperations().setProperty(SHARD_INDEX_TABLE_NAME, stem + ".opt.*", "datawave.query.util.InMemoryGlobalIndexUidAggregator");
-            connector.tableOperations().setProperty(SHARD_RINDEX_TABLE_NAME, stem + ".opt.*", "datawave.query.util.InMemoryGlobalIndexUidAggregator");
+            connector.tableOperations().setProperty(TableName.SHARD_INDEX, stem + ".opt.*", "datawave.query.util.InMemoryGlobalIndexUidAggregator");
+            connector.tableOperations().setProperty(TableName.SHARD_RINDEX, stem + ".opt.*", "datawave.query.util.InMemoryGlobalIndexUidAggregator");
         }
     }
     
     public static void configureLogicToScanTables(ShardQueryLogic logic) {
         logic.setMetadataTableName(METADATA_TABLE_NAME);
-        logic.setDateIndexTableName(DATE_INDEX_TABLE_NAME);
-        logic.setTableName(SHARD_TABLE_NAME);
-        logic.setIndexTableName(SHARD_INDEX_TABLE_NAME);
-        logic.setReverseIndexTableName(SHARD_RINDEX_TABLE_NAME);
+        logic.setDateIndexTableName(TableName.DATE_INDEX);
+        logic.setTableName(TableName.SHARD);
+        logic.setIndexTableName(TableName.SHARD_INDEX);
+        logic.setReverseIndexTableName(TableName.SHARD_RINDEX);
         logic.setModelTableName(MODEL_TABLE_NAME);
         logic.setMaxResults(5000);
         logic.setMaxWork(25000);

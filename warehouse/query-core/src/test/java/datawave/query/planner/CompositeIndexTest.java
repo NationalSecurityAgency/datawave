@@ -26,6 +26,7 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -59,7 +60,9 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
@@ -68,6 +71,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -87,6 +91,9 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
 @RunWith(Arquillian.class)
 public class CompositeIndexTest {
+    
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -179,6 +186,8 @@ public class CompositeIndexTest {
     ShardQueryLogic logic;
     
     private static InMemoryInstance instance;
+    
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -274,6 +283,8 @@ public class CompositeIndexTest {
         connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
         writeKeyValues(connector, keyValues);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static void setupConfiguration(Configuration conf) {
@@ -516,6 +527,7 @@ public class CompositeIndexTest {
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
         
         if (useIvarator)
             setupIvarator(logic);
