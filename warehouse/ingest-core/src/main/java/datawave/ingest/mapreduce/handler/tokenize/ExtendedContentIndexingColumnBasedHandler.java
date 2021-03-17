@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -55,7 +56,6 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.bloom.BloomFilter;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.CharArraySet;
-import org.infinispan.commons.util.Base64;
 
 import com.google.common.collect.Multimap;
 
@@ -544,13 +544,13 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                         this.ingestHelper.getDeleteMode());
         
         ByteArrayOutputStream baos = null;
-        Base64.OutputStream b64os = null;
+        OutputStream b64os = null;
         GZIPOutputStream gzos = null;
         Value value = null;
         try {
             baos = new ByteArrayOutputStream(Math.max(rawValue.length / 2, 1024));
             if (useBase64Encoding) {
-                b64os = new Base64.OutputStream(baos, Base64.ENCODE);
+                b64os = Base64.getEncoder().wrap(baos);
             }
             gzos = new GZIPOutputStream(useBase64Encoding ? b64os : baos);
             

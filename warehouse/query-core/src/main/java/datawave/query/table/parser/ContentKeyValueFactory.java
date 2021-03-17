@@ -3,6 +3,7 @@ package datawave.query.table.parser;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.zip.GZIPInputStream;
 
 import datawave.marking.MarkingFunctions;
@@ -13,7 +14,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.infinispan.commons.util.Base64;
 
 public class ContentKeyValueFactory {
     
@@ -39,36 +39,19 @@ public class ContentKeyValueFactory {
             c.setViewName(field[2]);
         
         if (value.get().length > 0) {
-            
-            /*
-             * We are storing 'documents' in this column gzip'd and base64 encoded. Base64.decode detects and handles compression.
-             */
             try {
-                c.setContents(Base64.decode(new String(value.get())));
-            } catch (IllegalStateException e) {
+                c.setContents(decode(new String(value.get())));
+            } catch (Exception e) {
                 // Thrown when data is not Base64 encoded. Try GZIP
-                ByteArrayInputStream bais = new ByteArrayInputStream(value.get());
-                GZIPInputStream gzip = null;
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try {
-                    gzip = new GZIPInputStream(bais);
-                    byte[] buf = new byte[4096];
-                    int length = 0;
-                    while ((length = gzip.read(buf)) >= 0) {
-                        baos.write(buf, 0, length);
+                if (isGzip(value.get())) {
+                    try {
+                        c.setContents(gunzip(value.get()));
+                    } catch (IOException ioe) {
+                        // Not GZIP, now what?
+                        c.setContents(value.get());
                     }
-                    c.setContents(baos.toByteArray());
-                } catch (IOException ioe) {
-                    // Not GZIP, now what?
+                } else {
                     c.setContents(value.get());
-                } finally {
-                    if (null != gzip) {
-                        try {
-                            gzip.close();
-                        } catch (IOException e1) {
-                            log.error("Error closing GZIPInputStream", e1);
-                        }
-                    }
                 }
             }
         }
@@ -76,6 +59,38 @@ public class ContentKeyValueFactory {
         EventKeyValueFactory.parseColumnVisibility(c, key, auths, markingFunctions);
         
         return c;
+    }
+
+    private static boolean isGzip(byte[] bytes) {
+        if (bytes == null || bytes.length < 4) {
+            return false;
+        }
+        int head = ((int) bytes[0] & 0xff) | ((bytes[1] << 8) & 0xff00);
+        return java.util.zip.GZIPInputStream.GZIP_MAGIC == head;
+    }
+
+    private static byte[] gunzip(byte[] gzip) throws IOException {
+        byte[] buffer = new byte[4096];
+        ByteArrayInputStream bais = new ByteArrayInputStream(gzip);
+        try (GZIPInputStream gzis = new GZIPInputStream(bais);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            int length;
+            while((length = gzis.read(buffer)) >= 0) {
+                baos.write(buffer, 0, length);
+            }
+            return baos.toByteArray();
+        }
+    }
+
+    /**
+     * Decodes the given 'document', which should be gzip'd and base64 encoded
+     */
+    private static byte[] decode(String doc) throws Exception {
+        byte[] bytes = Base64.getDecoder().decode(doc);
+        if (isGzip(bytes)) {
+            bytes = gunzip(bytes);
+        }
+        return bytes;
     }
     
     public static class ContentKeyValue extends EventKeyValue {
