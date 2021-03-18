@@ -1,13 +1,19 @@
 package datawave.iterators;
 
 import datawave.query.util.*;
+import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.*;
+
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.temporal.ChronoUnit;
 import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.Year;
 import java.util.*;
 
 public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
@@ -16,6 +22,7 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
     
     private HashMap<String,IndexedDatesValue> rowIdToCompressedIndexedDatesToCQMap = new HashMap<>();
     private String ageOffDate = "19000101";
+    private Calendar cal = Calendar.getInstance();
     
     public IndexColumnIterator() {}
     
@@ -26,8 +33,8 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
     
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
-        //TODO implement the function call below.
-        //super.setColumns(IteratorSetting is, List< IteratorSetting.Column > columns);
+        // TODO implement the function call below.
+        // super.setColumns(IteratorSetting is, List< IteratorSetting.Column > columns);
         super.init(source, options, env);
         setEncoder(new IndexedDatesValueEncoder());
         if (options.get("ageOffDate") != null)
@@ -47,22 +54,95 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
      */
     @Override
     public IndexedDatesValue typedReduce(Key key, Iterator<IndexedDatesValue> iterator) {
-        
-        IndexedDatesValue indexedDatesValue = null;
+        // The records are coming in in reverse chronological order during testing so I am
+        // assuming they can come in any order in the general case.
+        IndexedDatesValue aggregatedIndexedDatesValue = new IndexedDatesValue();
+        IndexedDatesValue tempIndexedDatesValue;
+        BitSet accumulatedDatesBitset;
+        TreeSet<IndexedDatesValue> orderedStartDatesAndBitsets = new TreeSet<>();
         
         if (log.isTraceEnabled())
             log.trace("IndexColumnIterator combining dates for range for key " + key.getRow().toString(), new Exception());
         
         while (iterator.hasNext()) {
-            indexedDatesValue = iterator.next();
-            
-            iterator.next();
+            tempIndexedDatesValue = iterator.next();
+            if (tempIndexedDatesValue == null) {
+                log.info("The timestamp is " + DateHelper.format(key.getTimestamp()));
+                // Add the date that is not in a IndexDatesValue
+            } else {
+                log.info("The start date and size of the bitset is" + tempIndexedDatesValue.getStartDay() + " size of bitset: "
+                                + tempIndexedDatesValue.getIndexedDatesSet().size());
+                orderedStartDatesAndBitsets.add(tempIndexedDatesValue);
+            }
         }
         
-        if (indexedDatesValue == null)
-            return new IndexedDatesValue();
-        else
-            return indexedDatesValue;
+        YearMonthDay firstStartDay, lastStartDay;
+        firstStartDay = orderedStartDatesAndBitsets.first().getStartDay();
+        lastStartDay = orderedStartDatesAndBitsets.last().getStartDay();
+        // Need to figure out how many days span the indexed dates so the BitSet can be sized exactly
+        // Length Of Aggregated Bitset (spanOfDays) = NumberOfDays(firstStartDay, lastStartDay) + lastBitset.length
+        LocalDate dateBefore = LocalDate.of(firstStartDay.getYear(), firstStartDay.getMonth(), firstStartDay.getDay());
+        LocalDate dateAfter = LocalDate.of(lastStartDay.getYear(), lastStartDay.getMonth(), lastStartDay.getDay());
+        long numOfDaysBetween = ChronoUnit.DAYS.between(dateBefore, dateAfter);
+        
+        long spanOfDays = numOfDaysBetween + Long.valueOf(orderedStartDatesAndBitsets.first().getIndexedDatesBitSet().length());
+        int sizeOfBitset;
+        if (spanOfDays > Integer.MAX_VALUE) {
+            log.error("Date span is too long create bitset for indexes - this should not happen");
+            sizeOfBitset = Integer.MAX_VALUE;
+        } else {
+            sizeOfBitset = (int) spanOfDays;
+        }
+        
+        accumulatedDatesBitset = new BitSet(sizeOfBitset);
+        IndexedDatesValue nextIndexedDatesValue;
+        int aggregatedBitSetIndex = 0;
+        YearMonthDay nextDateToContinueBitset, endDateOfLastBitset;
+        
+        // This iteration transfers the bits from individual bits sets to the aggregated one.
+        for (Iterator<IndexedDatesValue> bitSetIterator = orderedStartDatesAndBitsets.iterator(); bitSetIterator.hasNext();) {
+            
+            nextIndexedDatesValue = bitSetIterator.next();
+            nextDateToContinueBitset = nextIndexedDatesValue.getStartDay();
+            int numDaysRepresentedInBitset = nextIndexedDatesValue.getIndexedDatesBitSet().length();
+            
+            for (int dayIndex = 0; dayIndex < numDaysRepresentedInBitset; dayIndex++) {
+                if (nextIndexedDatesValue.getIndexedDatesBitSet().get(dayIndex)) {
+                    accumulatedDatesBitset.set(dayIndex + aggregatedBitSetIndex);
+                }
+                nextDateToContinueBitset = YearMonthDay.nextDay(nextDateToContinueBitset.getYyyymmdd());
+                aggregatedBitSetIndex++;
+            }
+            
+            if (bitSetIterator.hasNext()) {
+                nextIndexedDatesValue = bitSetIterator.next();
+                numDaysRepresentedInBitset = nextIndexedDatesValue.getIndexedDatesBitSet().length();
+            } else {
+                break;
+            }
+            
+            // Increment the aggregatedBitSetIndex to where you need to start setting bits again in aggregated bitset
+            while (nextDateToContinueBitset.compareTo(nextIndexedDatesValue.getStartDay()) < 0) {
+                aggregatedBitSetIndex++;
+                nextDateToContinueBitset = YearMonthDay.nextDay(nextDateToContinueBitset.getYyyymmdd());
+            }
+            
+            for (int dayIndex = 0; dayIndex < numDaysRepresentedInBitset; dayIndex++) {
+                if (nextIndexedDatesValue.getIndexedDatesBitSet().get(dayIndex)) {
+                    accumulatedDatesBitset.set(dayIndex + aggregatedBitSetIndex);
+                }
+                nextDateToContinueBitset = YearMonthDay.nextDay(nextDateToContinueBitset.getYyyymmdd());
+                aggregatedBitSetIndex++;
+            }
+            
+        }
+        
+        aggregatedIndexedDatesValue.setStartDay(firstStartDay);
+        aggregatedIndexedDatesValue.setIndexedDatesBitSet(accumulatedDatesBitset);
+        
+        log.info("The start date and size of the bitset is" + aggregatedIndexedDatesValue.getStartDay() + " size of bitset: "
+                        + aggregatedIndexedDatesValue.getIndexedDatesSet().size());
+        return aggregatedIndexedDatesValue;
     }
     
     public static class IndexedDatesValueEncoder implements Encoder<IndexedDatesValue> {
@@ -87,8 +167,6 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
     public IteratorOptions describeOptions() {
         IteratorOptions io = super.describeOptions();
         io.addNamedOption("ageOffDate", "Indexed dates before this date are not aggregated.");
-        io.setName("ageOffDate");
-        io.setDescription("IndexColumnIterator removes entries with dates that occurred before <ageOffDate>");
         return io;
     }
     

@@ -56,6 +56,7 @@ public class IndexColumnIteratorTest {
         HashMap<String,String> propertiesIt = new HashMap<>();
         propertiesIt.put("ageOffDate", "20100101");
         propertiesIt.put("type", "VARLEN");
+        propertiesIt.put("columns", ColumnFamilyConstants.COLF_I.toString());
         IteratorSetting settings = new IteratorSetting(19, IndexColumnIterator.class, propertiesIt);
         EnumSet<IteratorUtil.IteratorScope> scopes = EnumSet.allOf(IteratorUtil.IteratorScope.class);
         connector.tableOperations().attachIterator(METADATA_TABLE_NAME, settings, scopes);
@@ -264,7 +265,6 @@ public class IndexColumnIteratorTest {
     private void checkFrequencyCompressedData(int numEntries, HashMap<String,IndexedDatesValue> counterHashMap) {
         // Also verifies AgeOff
         Assert.assertTrue(numEntries == 3);
-        // Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20090426"))));
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190101"))));
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190102"))));
         Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190103"))));
