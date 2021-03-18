@@ -7,6 +7,7 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.data.Mutation;
@@ -51,7 +52,7 @@ public class CommonalityTokenTestDataIngest {
         
         try {
             // write the shard table :
-            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + myUID, "CAT.PET.0" + "\u0000" + "tabby", columnVisibility, timeStamp, emptyValue);
@@ -104,7 +105,7 @@ public class CommonalityTokenTestDataIngest {
         
         try {
             // write shard index table:
-            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             
             // all the cats
             mutation = new Mutation(lcNoDiacriticsType.normalize("tabby"));
@@ -252,7 +253,7 @@ public class CommonalityTokenTestDataIngest {
             
             // write the field index table:
             
-            bw = client.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             // cats

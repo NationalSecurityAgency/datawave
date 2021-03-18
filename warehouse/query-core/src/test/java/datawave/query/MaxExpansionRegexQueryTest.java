@@ -2,10 +2,11 @@ package datawave.query;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -38,6 +40,9 @@ import static org.junit.Assert.fail;
  */
 public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
     
     @BeforeClass
@@ -47,8 +52,8 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        client = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public MaxExpansionRegexQueryTest() {

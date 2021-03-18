@@ -128,7 +128,7 @@ public class FlattenDataType extends AbstractDataTypeConfig {
      */
     public FlattenDataType(final String datatype, final String ingestFile, final FieldConfig fieldConfig, final FlattenData flattenData) throws IOException,
                     URISyntaxException {
-        super(datatype, ingestFile, FileLoaderFactory.FileType.JSON, fieldConfig, manager.get(flattenData.getMode()));
+        super(datatype, ingestFile, FileType.JSON, fieldConfig, manager.get(flattenData.getMode()));
         
         this.flatData = flattenData;
         

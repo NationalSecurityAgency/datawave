@@ -1,13 +1,10 @@
 package datawave.query.iterator;
 
-import com.google.common.io.Files;
-import datawave.data.type.NoOpType;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -24,19 +21,18 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.w3c.dom.Attr;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +66,10 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class QueryIteratorIT extends EasyMockSupport {
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     protected QueryIterator iterator;
     protected SortedListKeyValueIterator baseIterator;
     protected Map<String,String> options;
@@ -83,13 +83,13 @@ public class QueryIteratorIT extends EasyMockSupport {
     // Default if test does not specify a datatype
     protected static final String DEFAULT_DATATYPE = "dataType1";
     
-    public Path temporaryFolder;
+    public Path tempPath;
     
     @Before
     public void setup() throws IOException {
         iterator = new QueryIterator();
         options = new HashMap<>();
-        temporaryFolder = Paths.get(Files.createTempDir().toURI());
+        tempPath = temporaryFolder.newFolder().toPath();
         
         // global options
         
@@ -109,7 +109,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(QUERY_ID, "000001");
         
         // setup ivarator settings
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig("file://" + temporaryFolder.toAbsolutePath().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig("file://" + tempPath.toAbsolutePath().toString());
         options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(config));
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         options.put(HDFS_SITE_CONFIG_URLS, hdfsSiteConfig.toExternalForm());
@@ -124,8 +124,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         typeMetadata.put("EVENT_FIELD4", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("EVENT_FIELD6", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("TF_FIELD0", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("TF_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
-        typeMetadata.put("TF_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
+        typeMetadata.put("TF_FIELD1", DEFAULT_DATATYPE, CommaFreeType.class.getName());
+        typeMetadata.put("TF_FIELD2", DEFAULT_DATATYPE, CommaFreeType.class.getName());
         typeMetadata.put("INDEX_ONLY_FIELD1", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("INDEX_ONLY_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("INDEX_ONLY_FIELD3", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
@@ -137,7 +137,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     
     @After
     public void cleanUp() {
-        temporaryFolder.toFile().deleteOnExit();
+        tempPath.toFile().deleteOnExit();
     }
     
     private List<Map.Entry<Key,Value>> addEvent(long eventTime, String uid) {
@@ -163,7 +163,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "EVENT_FIELD6", "f", dataType, uid, eventTime), new Value()));
         
         // add some indexed TF fields
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a b c", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTime), new Value()));
@@ -172,7 +172,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTime), getTFValue(1)));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTime), getTFValue(2)));
         
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTime), new Value()));
@@ -780,6 +780,20 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
     
     @Test
+    public void tf_exceededValue_negated_leadingWildcard_multiTerm_documentSpecific_test() throws IOException {
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b c'))";
+        tf_test(seekRange, query, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void tf_exceededValue_negated_leadingWildcard_multiTerm_shardRange_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*b c'))";
+        tf_test(seekRange, query, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
+    @Test
     public void tf_exceededValue_negated_leadingWildcard_shardRange_test() throws IOException {
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
@@ -1083,8 +1097,9 @@ public class QueryIteratorIT extends EasyMockSupport {
         expectedDocument.put("EVENT_FIELD5", Arrays.asList(new String[] {"e"}));
         expectedDocument.put("EVENT_FIELD6", Arrays.asList(new String[] {"f"}));
         
-        expectedDocument.put("TF_FIELD1", Arrays.asList(new String[] {"a b c"}));
-        expectedDocument.put("TF_FIELD2", Arrays.asList(new String[] {"x y z"}));
+        // non-normalized form
+        expectedDocument.put("TF_FIELD1", Arrays.asList(new String[] {"a,, b,,, c,,"}));
+        expectedDocument.put("TF_FIELD2", Arrays.asList(new String[] {",x, ,y, ,z,"}));
         
         return new AbstractMap.SimpleEntry<>(hitKey, expectedDocument);
     }
@@ -1169,7 +1184,8 @@ public class QueryIteratorIT extends EasyMockSupport {
                                     + "\nexpected: " + expected, dictSet.size(), expected.size());
                     Iterator<Attribute> dictIterator = dictSet.iterator();
                     while (dictIterator.hasNext()) {
-                        assertTrue(expected.remove(dictIterator.next().getData().toString()));
+                        String foundString = dictIterator.next().getData().toString();
+                        assertTrue("could not find " + foundString + " in results! Still had " + expected, expected.remove(foundString));
                     }
                     // verify that the expected set is now empty
                     assertEquals(0, expected.size());

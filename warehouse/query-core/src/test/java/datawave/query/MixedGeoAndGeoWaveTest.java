@@ -26,6 +26,7 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -59,7 +60,9 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
@@ -68,6 +71,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -85,6 +89,9 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
 @RunWith(Arquillian.class)
 public class MixedGeoAndGeoWaveTest {
+    
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     private static final int NUM_SHARDS = 100;
     private static final String DATA_TYPE_NAME = "MixedGeo";
@@ -163,6 +170,8 @@ public class MixedGeoAndGeoWaveTest {
     
     private static InMemoryInstance instance;
     
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
+    
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap
@@ -189,6 +198,8 @@ public class MixedGeoAndGeoWaveTest {
         recNum = ingestData(conf, GEO_FIELD, geoData, recNum, BEGIN_DATE);
         recNum = ingestData(conf, POINT_FIELD, pointData, recNum, MID_DATE);
         ingestData(conf, POLY_POINT_FIELD, polyData, recNum, MID_DATE);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static int ingestData(Configuration conf, String fieldName, String[] data, int startRecNum, String ingestDate) throws Exception {
@@ -567,6 +578,7 @@ public class MixedGeoAndGeoWaveTest {
         logic.setMaxUnfieldedExpansionThreshold(1);
         logic.setMaxValueExpansionThreshold(1);
         logic.setIvaratorCacheScanPersistThreshold(1);
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
     
     public static class TestIngestHelper extends ContentBaseIngestHelper {
