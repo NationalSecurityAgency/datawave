@@ -1,7 +1,5 @@
 package datawave.query.tables;
 
-import com.google.common.io.Files;
-import datawave.mr.bulk.RfileResource;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -22,7 +20,9 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -40,6 +40,10 @@ import java.util.TreeSet;
  * simplifications that in the past have masked bugs
  */
 public class ScannerSessionTest {
+    
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     private static final String PASSWORD = "";
     
     private static MiniAccumuloCluster instance;
@@ -49,7 +53,7 @@ public class ScannerSessionTest {
     @BeforeClass
     public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
                     InterruptedException {
-        instance = new MiniAccumuloCluster(Files.createTempDir(), PASSWORD);
+        instance = new MiniAccumuloCluster(temporaryFolder.newFolder(), PASSWORD);
         instance.start();
         
         connector = instance.getConnector("root", PASSWORD);
