@@ -305,45 +305,53 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 }
                 
                 if (termCount - capacitySum <= config.getMaxTermThreshold()) {
-                    // copy the config and set minimum thresholds for collapsing Ors
-                    ShardQueryConfiguration reduceConfig = new ShardQueryConfiguration(config);
-                    reduceConfig.setMaxOrExpansionThreshold(2);
-                    reduceConfig.setMaxOrRangeThreshold(2);
+                    // preserve the original config and set minimum thresholds for collapsing Ors, do not use FST for performance reasons
+                    int originalMaxOrExpansionThreshold = config.getMaxOrExpansionThreshold();
+                    int originalMaxOrRangeThreshold = config.getMaxOrRangeThreshold();
                     
-                    // invert pushdownCapacity to get the largest payoffs first
-                    SortedMap<Integer,List<String>> sortedMap = new TreeMap<>();
-                    for (String fieldName : pushdownCapacity.keySet()) {
-                        Integer reduction = pushdownCapacity.get(fieldName);
-                        List<String> fields = sortedMap.computeIfAbsent(reduction, k -> new ArrayList<>());
-                        fields.add(fieldName);
-                    }
+                    config.setMaxOrExpansionThreshold(2);
+                    config.setMaxOrRangeThreshold(2);
                     
-                    // sort from largest to smallest reductions and make reductions until under the threshold
-                    Set<String> fieldsToReduce = new HashSet<>();
-                    int toReduce = termCount - config.getMaxTermThreshold();
-                    while (toReduce > 0) {
-                        // get the highest value field out of the map
-                        Integer reduction = sortedMap.lastKey();
-                        List<String> fields = sortedMap.get(reduction);
-                        
-                        // take the first field
-                        String field = fields.remove(0);
-                        fieldsToReduce.add(field);
-                        toReduce -= reduction;
-                        
-                        // if there are no more reductions of this size remove the reduction from pushdown capacity
-                        if (fields.size() == 0) {
-                            sortedMap.remove(reduction);
+                    try {
+                        // invert pushdownCapacity to get the largest payoffs first
+                        SortedMap<Integer,List<String>> sortedMap = new TreeMap<>();
+                        for (String fieldName : pushdownCapacity.keySet()) {
+                            Integer reduction = pushdownCapacity.get(fieldName);
+                            List<String> fields = sortedMap.computeIfAbsent(reduction, k -> new ArrayList<>());
+                            fields.add(fieldName);
                         }
-                    }
-                    
-                    // execute the reduction
-                    if (hdfsQueryCacheUri != null) {
-                        FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
-                        // Find large lists of values against the same field and push down into an Ivarator
-                        script = PushdownLargeFieldedListsVisitor.pushdown(reduceConfig, script, fs, hdfsQueryCacheUri.toString(), null, fieldsToReduce);
-                    } else {
-                        script = PushdownLargeFieldedListsVisitor.pushdown(reduceConfig, script, null, null, null, fieldsToReduce);
+                        
+                        // sort from largest to smallest reductions and make reductions until under the threshold
+                        Set<String> fieldsToReduce = new HashSet<>();
+                        int toReduce = termCount - config.getMaxTermThreshold();
+                        while (toReduce > 0) {
+                            // get the highest value field out of the map
+                            Integer reduction = sortedMap.lastKey();
+                            List<String> fields = sortedMap.get(reduction);
+                            
+                            // take the first field
+                            String field = fields.remove(0);
+                            fieldsToReduce.add(field);
+                            toReduce -= reduction;
+                            
+                            // if there are no more reductions of this size remove the reduction from pushdown capacity
+                            if (fields.size() == 0) {
+                                sortedMap.remove(reduction);
+                            }
+                        }
+                        
+                        // execute the reduction
+                        if (hdfsQueryCacheUri != null) {
+                            FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
+                            // Find large lists of values against the same field and push down into an Ivarator
+                            script = PushdownLargeFieldedListsVisitor.pushdown(config, script, fs, hdfsQueryCacheUri.toString(), null, fieldsToReduce);
+                        } else {
+                            script = PushdownLargeFieldedListsVisitor.pushdown(config, script, null, null, null, fieldsToReduce);
+                        }
+                    } finally {
+                        // reset config thresholds
+                        config.setMaxOrExpansionThreshold(originalMaxOrExpansionThreshold);
+                        config.setMaxOrRangeThreshold(originalMaxOrRangeThreshold);
                     }
                 }
             }

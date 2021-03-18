@@ -22,7 +22,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -38,8 +37,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     private MetadataHelper helper;
     
     @Before
-    public void setup() throws MalformedURLException {
-        // config = createMock(ShardQueryConfiguration.class);
+    public void setup() {
         config = new ShardQueryConfiguration();
         helper = createMock(MetadataHelper.class);
     }
@@ -116,7 +114,6 @@ public class VisitorFunctionTest extends EasyMockSupport {
         Query mockQuery = createMock(Query.class);
         config.setQuery(mockQuery);
         EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
-        EasyMock.expect(mockQuery.getQueryName()).andReturn("testQuery1");
         EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
         
         // set thresholds

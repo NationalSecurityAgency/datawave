@@ -207,8 +207,11 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
      * If data is set update it for the given field to include the new possible reduction, otherwise do nothing
      * 
      * @param data
+     *            the data object to store the reduction per field in, may be null
      * @param field
+     *            the field that can be reduced
      * @param reduction
+     *            the reduction to the query term count
      */
     private void track(Object data, String field, int reduction) {
         if (data instanceof Map) {
