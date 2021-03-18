@@ -1,6 +1,5 @@
 package datawave.query.util.sortedset;
 
-import com.google.common.io.Files;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import org.apache.hadoop.conf.Configuration;
@@ -9,7 +8,9 @@ import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -19,10 +20,12 @@ import java.util.List;
 
 public class HdfsBackedSortedSetTest {
     
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     @Test
     public void persistReloadTest() throws Exception {
-        File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
+        File tempDir = temporaryFolder.newFolder();
         
         File smallDir = new File(tempDir, "small");
         Assert.assertTrue(smallDir.mkdirs());
@@ -77,8 +80,7 @@ public class HdfsBackedSortedSetTest {
     
     @Test
     public void persistCompactReloadTest() throws Exception {
-        File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
+        File tempDir = temporaryFolder.newFolder();
         
         File[] dirs = new File[] {new File(tempDir, "first"), new File(tempDir, "second"), new File(tempDir, "third")};
         
