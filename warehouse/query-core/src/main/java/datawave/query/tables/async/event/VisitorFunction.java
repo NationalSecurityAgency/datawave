@@ -305,7 +305,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 }
                 
                 if (termCount - capacitySum <= config.getMaxTermThreshold()) {
-                    // preserve the original config and set minimum thresholds for collapsing Ors, do not use FST for performance reasons
+                    // preserve the original config and set minimum thresholds for creating Value and Range ivarators
                     int originalMaxOrExpansionThreshold = config.getMaxOrExpansionThreshold();
                     int originalMaxOrRangeThreshold = config.getMaxOrRangeThreshold();
                     

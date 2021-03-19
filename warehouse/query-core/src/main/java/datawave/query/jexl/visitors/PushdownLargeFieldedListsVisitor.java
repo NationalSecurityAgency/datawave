@@ -155,9 +155,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                         TreeMap<Range,JexlNode> ranges = new TreeMap<>();
                         rangeNodes.forEach(rangeNode -> ranges.put(rangeNodeToRange(rangeNode), rangeNode));
                         
-                        int numBatches = (int) Math.ceil(rangeNodes.size() / (double) Math.max(1, config.getMaxRangesPerRangeIvarator()));
-                        numBatches = Math.min(Math.max(1, config.getMaxOrRangeIvarators()), numBatches);
-                        
+                        int numBatches = getBatchCount(rangeNodes.size());
                         List<List<Map.Entry<Range,JexlNode>>> batchedRanges = batchRanges(ranges, numBatches);
                         
                         rangeNodes = new ArrayList<>();
@@ -194,13 +192,24 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 // recurse on the range children in this subset
                 copyChildren(rangeNodes, children, data);
                 
-                int numBatches = (int) Math.ceil(rangeNodes.size() / (double) Math.max(1, config.getMaxRangesPerRangeIvarator()));
-                numBatches = Math.min(Math.max(1, config.getMaxOrRangeIvarators()), numBatches);
+                int numBatches = getBatchCount(rangeNodes.size());
                 track(data, field, rangeNodes.size() - numBatches);
             }
         }
         
         return children(newNode, children.toArray(new JexlNode[children.size()]));
+    }
+    
+    /**
+     * Given a number of ranges to combine into ivarators return the number of batches that should be used.
+     * 
+     * @param ranges
+     *            the number of ranges to combine into ivarators
+     * @return one or more batches the ranges should be split into for ivarating
+     */
+    private int getBatchCount(int ranges) {
+        int numBatches = (int) Math.ceil(ranges / (double) Math.max(1, config.getMaxRangesPerRangeIvarator()));
+        return Math.min(Math.max(1, config.getMaxOrRangeIvarators()), numBatches);
     }
     
     /**
