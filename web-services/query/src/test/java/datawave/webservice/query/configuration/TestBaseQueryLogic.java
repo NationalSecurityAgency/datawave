@@ -1,20 +1,13 @@
 package datawave.webservice.query.configuration;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.HashSet;
-import java.util.Set;
-
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.logic.RoleManager;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.EasyRoleManager;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.logic.RoleManager;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -23,6 +16,12 @@ import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.Set;
+
+import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(PowerMockRunner.class)
 public class TestBaseQueryLogic {

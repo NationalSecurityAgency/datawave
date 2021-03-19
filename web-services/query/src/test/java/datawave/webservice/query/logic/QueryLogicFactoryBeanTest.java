@@ -1,22 +1,8 @@
 package datawave.webservice.query.logic;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.ejb.EJBContext;
-
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
-
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
@@ -34,6 +20,20 @@ import org.powermock.reflect.Whitebox;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import javax.ejb.EJBContext;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 @RunWith(EasyMockRunner.class)
 public class QueryLogicFactoryBeanTest extends EasyMockSupport {

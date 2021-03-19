@@ -4,6 +4,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
+import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.logic.RoleManager;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -18,37 +26,30 @@ import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.QueryExpirationConfiguration;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.QueryTraceCache.CacheListener;
 import datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.DatawaveRoleManager;
 import datawave.webservice.query.logic.EasyRoleManager;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.logic.RoleManager;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.GetUUIDCriteria;
 import datawave.webservice.query.util.LookupUUIDUtil;
+import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -77,6 +78,8 @@ import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import javax.ejb.EJBContext;
 import javax.enterprise.concurrent.ManagedExecutorService;
@@ -232,7 +235,7 @@ public class ExtendedQueryExecutorBeanTest {
     @Mock
     UriInfo uriInfo;
     
-    QueryExpirationConfiguration queryExpirationConf;
+    QueryExpirationProperties queryExpirationConf;
     
     @BeforeClass
     public static void setup() throws Exception {}
@@ -242,7 +245,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         queryLogic2 = PowerMock.createMock(QuerySyntaxParserQueryLogic.class);
         
-        queryExpirationConf = new QueryExpirationConfiguration();
+        queryExpirationConf = new QueryExpirationProperties();
         queryExpirationConf.setPageSizeShortCircuitCheckTime(45);
         queryExpirationConf.setPageShortCircuitTimeout(58);
         queryExpirationConf.setCallTime(60);
@@ -400,7 +403,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -712,20 +715,20 @@ public class ExtendedQueryExecutorBeanTest {
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
         
-        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
-        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-        queryParameters.putSingle("valid", "param");
+        MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>();
+        queryParameters.add(QueryParameters.QUERY_STRING, query);
+        queryParameters.add(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.add(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.add(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        queryParameters.add(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        queryParameters.add(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.add(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.add(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.add(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+        queryParameters.add(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.add(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.add(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.add("valid", "param");
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -733,11 +736,11 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultiValueMap<String,String> op = qp.getUnknownParameters(queryParameters);
         // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
-        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+        op.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.add(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.add(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -752,7 +755,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.NONE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
+        expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(MapUtils.toMultivaluedMap(op)))).andReturn(
+                        this.query);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
@@ -838,7 +842,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
@@ -847,7 +851,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
-        BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
+        BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, MapUtils.toMultivaluedMap(queryParameters));
         PowerMock.verifyAll();
         
         // Verify results
@@ -906,7 +910,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
@@ -1012,7 +1016,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
@@ -1073,7 +1077,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.ACTIVE.name());
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
@@ -1123,7 +1127,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, marking);
@@ -1192,7 +1196,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
@@ -1313,7 +1317,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, ClosedQueryCache.class, closedCache);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-            setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+            setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
             setInternalState(subject, AuditBean.class, auditor);
             setInternalState(subject, QueryMetricsBean.class, metrics);
             setInternalState(subject, Multimap.class, traceInfos);
@@ -1442,7 +1446,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
@@ -1462,7 +1466,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -1508,7 +1512,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, EJBContext.class, context);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
@@ -1646,7 +1650,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
@@ -1681,7 +1685,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, EJBContext.class, context);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-            setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+            setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
             setInternalState(subject, Multimap.class, traceInfos);
             setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
             setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
@@ -1795,7 +1799,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogic1.getClass().getSimpleName());
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDN);
@@ -1853,7 +1857,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
@@ -1906,7 +1910,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
@@ -1982,7 +1986,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
@@ -2222,7 +2226,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryTraceCache.class, traceCache);
         setInternalState(subject, LookupUUIDConfiguration.class, lookupUUIDConfiguration);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
         try {
@@ -2282,7 +2286,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         QueryImplListResponse result1 = subject.list(queryName);
@@ -2385,7 +2389,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         QueryLogicResponse result1 = subject.listQueryLogic();
         subject.close();
@@ -2814,7 +2818,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
@@ -2867,7 +2871,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -2921,7 +2925,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -3027,7 +3031,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate,
@@ -3106,7 +3110,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
@@ -3163,7 +3167,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
@@ -3209,7 +3213,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
@@ -3243,7 +3247,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
@@ -3302,7 +3306,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
@@ -3366,7 +3370,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
@@ -3431,7 +3435,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
@@ -3506,7 +3510,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactoryImpl.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
@@ -3587,7 +3591,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(executor, ClosedQueryCache.class, closedCache);
         setInternalState(executor, Persister.class, persister);
         setInternalState(executor, QueryLogicFactoryImpl.class, queryLogicFactory);
-        setInternalState(executor, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(executor, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(executor, AuditBean.class, auditor);
         setInternalState(executor, QueryMetricsBean.class, metrics);
         setInternalState(executor, Multimap.class, traceInfos);
@@ -3679,7 +3683,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -3773,7 +3777,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         

@@ -1,8 +1,8 @@
 package datawave.query.planner;
 
+import datawave.microservice.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.junit.Rule;
 import org.junit.Test;

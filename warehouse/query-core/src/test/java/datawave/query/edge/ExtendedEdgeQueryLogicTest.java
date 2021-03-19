@@ -1,24 +1,22 @@
 package datawave.query.edge;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.inject.Inject;
-
 import datawave.configuration.spring.SpringBean;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.tables.edge.EdgeQueryFunctionalTest;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Test;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     

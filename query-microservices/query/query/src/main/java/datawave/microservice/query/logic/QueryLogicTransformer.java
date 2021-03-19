@@ -1,9 +1,8 @@
-package datawave.webservice.query.logic;
+package datawave.microservice.query.logic;
 
+import datawave.microservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.result.BaseQueryResponse;
-
 import org.apache.commons.collections4.Transformer;
 
 public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {

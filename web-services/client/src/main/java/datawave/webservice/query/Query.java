@@ -1,5 +1,15 @@
 package datawave.webservice.query;
 
+import datawave.microservice.query.QueryParameters;
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -10,16 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlSeeAlso;
-
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(QueryImpl.class)

@@ -1,4 +1,4 @@
-package datawave.webservice.query.logic;
+package datawave.microservice.query.logic;
 
 import java.security.Principal;
 import java.util.List;
@@ -11,7 +11,7 @@ import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -44,7 +44,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * Implementations create a configuration using the connection, settings, and runtimeQueryAuthorizations.
-     * 
+     *
      * @param connection
      *            - Accumulo connector to use for this query
      * @param settings
@@ -67,7 +67,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * Implementations use the configuration to run their query. It is expected that initialize has already been called.
-     * 
+     *
      * @param configuration
      *            Encapsulates all information needed to run a query (whether the query is a BatchScanner, a MapReduce job, etc)
      */
@@ -100,7 +100,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * Allows for the customization of handling query results, e.g. allows for aggregation of query results before returning to the client.
-     * 
+     *
      * @param settings
      *            The query settings object
      * @return Return a TransformIterator for the QueryLogic implementation
@@ -143,7 +143,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * Returns the base iterator priority.
-     * 
+     *
      * @return base iterator priority
      */
     int getBaseIteratorPriority();
@@ -187,7 +187,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * Sets the base iterator priority
-     * 
+     *
      * @param priority
      *            base iterator priority
      */
@@ -248,7 +248,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * List of parameters that can be used in the 'params' parameter to Query/create
-     * 
+     *
      * @return the supported parameters
      */
     Set<String> getOptionalQueryParameters();
@@ -264,7 +264,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * Check that the user has one of the required roles principal my be null when there is no intent to control access to QueryLogic
-     * 
+     *
      * @param principal
      * @return true/false
      */
@@ -286,13 +286,13 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * List of parameters that must be passed from the client for this query logic to work
-     * 
+     *
      * @return the required parameters
      */
     Set<String> getRequiredQueryParameters();
     
     /**
-     * 
+     *
      * @return set of example queries
      */
     Set<String> getExampleQueries();

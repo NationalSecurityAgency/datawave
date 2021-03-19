@@ -1,14 +1,15 @@
 package datawave.webservice.query.logic;
 
-import java.util.Set;
-
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Ignore;
+
+import java.util.Set;
 
 @Ignore
 public class TestQueryLogic<T> extends BaseQueryLogic<T> {

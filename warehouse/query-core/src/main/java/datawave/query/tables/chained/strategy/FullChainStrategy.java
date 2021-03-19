@@ -1,15 +1,14 @@
 package datawave.query.tables.chained.strategy;
 
-import java.util.Iterator;
-import java.util.Set;
-
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.QueryLogic;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
+
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Defines the logic to collect all of the results from the former query logic and issue one query against the latter query logic
@@ -17,9 +16,9 @@ import org.apache.log4j.Logger;
  * 
  * 
  * @param <T1>
- *            Type of former {@link datawave.webservice.query.logic.QueryLogic}
+ *            Type of former {@link datawave.microservice.query.logic.QueryLogic}
  * @param <T2>
- *            Type of latter {@link datawave.webservice.query.logic.QueryLogic}
+ *            Type of latter {@link datawave.microservice.query.logic.QueryLogic}
  */
 public abstract class FullChainStrategy<T1,T2> implements ChainStrategy<T1,T2> {
     protected final Logger log = Logger.getLogger(FullChainStrategy.class);

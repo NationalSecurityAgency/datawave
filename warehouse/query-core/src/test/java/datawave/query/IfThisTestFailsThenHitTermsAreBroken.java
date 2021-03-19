@@ -12,6 +12,7 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -27,7 +28,6 @@ import datawave.query.util.TypeMetadataHelper;
 import datawave.query.util.TypeMetadataWriter;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -62,7 +62,10 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.query.QueryTestTableHelper.*;
+import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 
 /**
  *

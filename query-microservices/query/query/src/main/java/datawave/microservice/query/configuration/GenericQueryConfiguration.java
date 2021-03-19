@@ -1,34 +1,30 @@
-package datawave.webservice.query.configuration;
-
-import java.util.Collections;
-import java.util.Date;
-import java.util.UUID;
-import java.util.Iterator;
-import java.util.Set;
+package datawave.microservice.query.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.collect.Iterators;
+import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.util.TableName;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.BaseQueryLogic;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
-import com.google.common.collect.Iterators;
-
 import javax.xml.bind.annotation.XmlTransient;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * <p>
  * A basic query configuration object that contains the information needed to run a query.
  * </p>
- * 
+ *
  * <p>
  * Provides some "expected" default values for parameters. This configuration object also encapsulates iterators and their options that would be set on a
  * {@link BatchScanner}.
  * </p>
- * 
+ *
  */
 public abstract class GenericQueryConfiguration {
     private Connector connector = null;
@@ -50,7 +46,7 @@ public abstract class GenericQueryConfiguration {
     // Table name
     private String tableName = TableName.SHARD;
     
-    private Iterator<QueryData> queries = Iterators.emptyIterator();
+    private Iterator<QueryData> queries = Collections.emptyIterator();
     
     protected boolean bypassAccumulo;
     
@@ -63,7 +59,7 @@ public abstract class GenericQueryConfiguration {
     
     /**
      * Pulls the table name, max query results, and max rows to scan from the provided argument
-     * 
+     *
      * @param configuredLogic
      *            A pre-configured BaseQueryLogic to initialize the Configuration with
      */
@@ -86,7 +82,7 @@ public abstract class GenericQueryConfiguration {
     
     /**
      * Return the configured {@code Iterator<QueryData>}
-     * 
+     *
      * @return
      */
     public Iterator<QueryData> getQueries() {
@@ -95,7 +91,7 @@ public abstract class GenericQueryConfiguration {
     
     /**
      * Set the queries to be run.
-     * 
+     *
      * @param queries
      */
     public void setQueries(Iterator<QueryData> queries) {
@@ -186,7 +182,7 @@ public abstract class GenericQueryConfiguration {
     
     /**
      * Checks for non-null, sane values for the configured values
-     * 
+     *
      * @return True if all of the encapsulated values have legitimate values, otherwise false
      */
     public boolean canRunQuery() {

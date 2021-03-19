@@ -1,15 +1,17 @@
 package datawave.query.scheduler;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
-
+import com.google.common.base.Function;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import datawave.microservice.query.configuration.QueryData;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
+import datawave.query.tables.SessionOptions;
+import datawave.query.tables.async.ScannerChunk;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Instance;
@@ -18,30 +20,26 @@ import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.impl.ClientContext;
+import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.master.state.tables.TableState;
-import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.tables.SessionOptions;
-import datawave.query.tables.async.ScannerChunk;
-import datawave.webservice.query.configuration.QueryData;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> {
     

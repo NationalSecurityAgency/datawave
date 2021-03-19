@@ -4,17 +4,17 @@ import com.google.common.collect.Sets;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CommonalityTokenTestDataIngest;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -46,7 +46,9 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.*;
+import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with

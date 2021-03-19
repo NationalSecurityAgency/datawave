@@ -1,5 +1,7 @@
 package datawave.webservice.query.logic;
 
+import datawave.microservice.query.logic.QueryLogic;
+
 import java.security.Principal;
 import java.util.List;
 

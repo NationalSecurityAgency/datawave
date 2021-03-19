@@ -1,13 +1,13 @@
 package datawave.query.config;
 
-import java.util.List;
-
 import datawave.data.type.Type;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+
+import java.util.List;
 
 /**
  * Created with IntelliJ IDEA. To change this template use File | Settings | File Templates.

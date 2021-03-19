@@ -1,10 +1,13 @@
 package datawave.query.planner;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import datawave.microservice.query.configuration.QueryData;
+import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -14,14 +17,9 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-
-import datawave.query.iterator.QueryIterator;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.configuration.QueryData;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Base representation of a query plan

@@ -34,7 +34,6 @@ import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -73,14 +72,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.webservice.query.QueryParameters.QUERY_END;
-import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.webservice.query.QueryParameters.QUERY_STRING;
+import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
+import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
+import static datawave.microservice.query.QueryParameters.QUERY_END;
+import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
+import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 
 @RunWith(Arquillian.class)
 public class MixedGeoAndGeoWaveTest {
@@ -522,7 +521,7 @@ public class MixedGeoAndGeoWaveTest {
         params.putSingle(QUERY_BEGIN, BEGIN_DATE);
         params.putSingle(QUERY_END, END_DATE);
         
-        QueryParameters queryParams = new QueryParametersImpl();
+        datawave.microservice.query.QueryParameters queryParams = new QueryParametersImpl();
         queryParams.validate(params);
         
         Set<Authorizations> auths = new HashSet<>();

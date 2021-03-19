@@ -1,9 +1,10 @@
 package datawave.webservice.query.logic;
 
-import java.util.List;
-
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.result.BaseQueryResponse;
+
+import java.util.List;
 
 public abstract class AbstractQueryLogicTransformer<I,O> implements QueryLogicTransformer<I,O> {
     public static final String PARTIAL_RESULTS = "Partial/incomplete page of results returned probably due to memory constraints";

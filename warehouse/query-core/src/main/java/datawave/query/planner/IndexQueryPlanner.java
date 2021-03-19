@@ -1,5 +1,6 @@
 package datawave.query.planner;
 
+import datawave.microservice.query.configuration.QueryData;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
@@ -11,7 +12,6 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.IteratorSetting;

@@ -1,13 +1,6 @@
-package datawave.webservice.query.cache;
+package datawave.microservice.query.config;
 
-import datawave.configuration.RefreshableScope;
-
-/**
- * Configuration file is located at: datawave/query/QueryExpiration.xml
- */
-@RefreshableScope
-public class QueryExpirationConfiguration {
-    
+public class QueryExpirationProperties {
     public static final int PAGE_TIMEOUT_MIN_DEFAULT = 60;
     public static final int IDLE_TIME_MIN_DEFAULT = 15;
     
@@ -79,5 +72,4 @@ public class QueryExpirationConfiguration {
     public void setPageShortCircuitTimeoutMinutes(long pageShortCircuitTimeoutMinutes) {
         this.pageShortCircuitTimeoutMinutes = pageShortCircuitTimeoutMinutes;
     }
-    
 }

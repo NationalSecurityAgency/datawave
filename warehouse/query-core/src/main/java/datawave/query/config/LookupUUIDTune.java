@@ -1,12 +1,7 @@
 package datawave.query.config;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.query.Constants;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -15,11 +10,15 @@ import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class LookupUUIDTune implements Profile {
     

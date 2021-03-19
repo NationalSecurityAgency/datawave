@@ -1,6 +1,7 @@
 package datawave.webservice.query.logic;
 
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 
 public abstract class BaseQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements QueryLogicTransformer<I,O> {
     

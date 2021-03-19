@@ -1,12 +1,8 @@
 package datawave.query.transformer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import datawave.data.hash.UID;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.query.Constants;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic.Tuple;
 import datawave.util.TextUtil;
@@ -14,20 +10,23 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.event.Metadata;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<Entry<String,Tuple>,EventBase> implements CacheableLogic {
     

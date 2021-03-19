@@ -1,14 +1,21 @@
 package datawave.webservice.query.runner;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.UUID;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
+import datawave.query.data.UUIDType;
+import datawave.resteasy.util.DateFormatter;
+import datawave.security.util.AuthorizationsUtil;
+import datawave.webservice.query.configuration.IdTranslatorConfiguration;
+import datawave.webservice.result.BaseQueryResponse;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -32,24 +39,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MultivaluedMap;
-
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.spring.SpringBean;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.query.data.UUIDType;
-import datawave.resteasy.util.DateFormatter;
-import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryPersistence;
-import datawave.webservice.query.configuration.IdTranslatorConfiguration;
-import datawave.webservice.result.BaseQueryResponse;
-
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.UUID;
 
 @Path("/Query")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

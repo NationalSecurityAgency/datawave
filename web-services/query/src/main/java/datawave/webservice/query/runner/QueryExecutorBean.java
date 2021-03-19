@@ -20,6 +20,11 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
+import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
@@ -35,13 +40,10 @@ import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.QueryExpirationConfiguration;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.ResultsPage;
@@ -55,9 +57,7 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
@@ -67,6 +67,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.query.util.GetUUIDCriteria;
 import datawave.webservice.query.util.LookupUUIDUtil;
+import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.query.util.NextContentCriteria;
 import datawave.webservice.query.util.PostUUIDCriteria;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -95,6 +96,7 @@ import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
@@ -208,7 +210,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private QueryLogicFactory queryLogicFactory;
     
     @Inject
-    private QueryExpirationConfiguration queryExpirationConf;
+    private QueryExpirationProperties queryExpirationConf;
     
     @Inject
     private Persister persister;
@@ -250,7 +252,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private ClosedQueryCache closedQueryCache;
     
     private final int PAGE_TIMEOUT_MIN = 1;
-    private final int PAGE_TIMEOUT_MAX = QueryExpirationConfiguration.PAGE_TIMEOUT_MIN_DEFAULT;
+    private final int PAGE_TIMEOUT_MAX = QueryExpirationProperties.PAGE_TIMEOUT_MIN_DEFAULT;
     
     @Inject
     private QueryParameters qp;
@@ -405,7 +407,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         log.debug(queryParameters);
         qp.clear();
-        qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
+        qp.setRequestHeaders(httpHeaders != null ? MapUtils.toMultiValueMap(httpHeaders.getRequestHeaders()) : null);
         
         // Pull "params" values into individual query parameters for validation on the query logic.
         // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
@@ -550,8 +552,8 @@ public class QueryExecutorBean implements QueryExecutor {
         Span defineSpan = null;
         RunningQuery rq;
         try {
-            MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
-            Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
+            MultiValueMap<String,String> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
+            Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
             response.setResult(q.getId().toString());
             
             // If we're supposed to trace this query, then turn tracing on and set information about the query
@@ -651,8 +653,8 @@ public class QueryExecutorBean implements QueryExecutor {
             
             AuditType auditType = qd.logic.getAuditType(null);
             try {
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
-                q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
+                MultiValueMap<String,String> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
+                q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
                 auditType = qd.logic.getAuditType(q);
             } finally {
                 queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
@@ -833,8 +835,8 @@ public class QueryExecutorBean implements QueryExecutor {
             
             AuditType auditType = qd.logic.getAuditType(null);
             try {
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
-                q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
+                MultiValueMap<String,String> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
+                q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
                 auditType = qd.logic.getAuditType(q);
             } finally {
                 queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
@@ -955,8 +957,8 @@ public class QueryExecutorBean implements QueryExecutor {
         if (predictor != null) {
             try {
                 qp.setPersistenceMode(QueryPersistence.TRANSIENT);
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
-                Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
+                MultiValueMap<String,String> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
+                Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
                 
                 BaseQueryMetric metric = metricFactory.createMetric();
                 q.populateMetric(metric);
@@ -2747,7 +2749,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param parameters
      *            - optional parameters to the query, a semi-colon separated list name=value pairs (optional, auditing required if changed)
      * @see datawave.webservice.query.runner.QueryExecutorBean#updateQuery(String, String, String, String, java.util.Date, java.util.Date, String,
-     *      java.util.Date, Integer, Integer, Long, datawave.webservice.query.QueryPersistence, String)
+     *      java.util.Date, Integer, Integer, Long, datawave.microservice.query.QueryPersistence, String)
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy

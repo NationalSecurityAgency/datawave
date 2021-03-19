@@ -1,14 +1,15 @@
 package datawave.webservice.query.logic;
 
+import com.google.common.collect.Sets;
+import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.RoleManager;
+import datawave.security.authorization.DatawavePrincipal;
+
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import datawave.security.authorization.DatawavePrincipal;
-
-import com.google.common.collect.Sets;
 
 public class DatawaveRoleManager implements RoleManager {
     

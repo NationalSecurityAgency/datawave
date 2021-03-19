@@ -4,10 +4,10 @@ import java.util.List;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import datawave.microservice.query.QueryParameters;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import datawave.query.data.UUIDType;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.util.LookupUUIDConstants;
 
 /**

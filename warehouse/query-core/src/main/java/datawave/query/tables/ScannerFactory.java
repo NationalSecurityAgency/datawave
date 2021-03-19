@@ -1,11 +1,8 @@
 package datawave.query.tables;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
+import com.google.common.base.Preconditions;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.mr.bulk.RfileScanner;
@@ -14,8 +11,6 @@ import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
 import datawave.webservice.common.connection.WrappedConnector;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
@@ -25,7 +20,10 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 

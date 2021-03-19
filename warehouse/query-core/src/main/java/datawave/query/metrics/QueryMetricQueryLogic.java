@@ -1,20 +1,18 @@
 package datawave.query.metrics;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Set;
-
-import javax.inject.Inject;
-
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * Extension to the query logic that enforces the current user is equal to the USER field in the QueryMetrics <br>

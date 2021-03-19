@@ -1,6 +1,9 @@
 package datawave.query.tables.shard;
 
 import datawave.core.iterators.filter.CsvKeyFilter;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardQueryConfiguration;
@@ -12,10 +15,7 @@ import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.AbstractQueryLogicTransformer;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.istat.FieldStat;
 import datawave.webservice.query.result.istat.IndexStatsResponse;
 import datawave.webservice.result.BaseQueryResponse;

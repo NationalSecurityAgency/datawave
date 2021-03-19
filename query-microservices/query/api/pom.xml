@@ -11,6 +11,7 @@
     <version>1.0-SNAPSHOT</version>
     <properties>
         <version.microservice.base-rest-responses>1.2</version.microservice.base-rest-responses>
+        <version.validation-api>2.0.1.Final</version.validation-api>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -19,12 +20,21 @@
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.microservice.base-rest-responses}</version>
             </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${version.validation-api}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
         </dependency>
     </dependencies>
     <repositories>

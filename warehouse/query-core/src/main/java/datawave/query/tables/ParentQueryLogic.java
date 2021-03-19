@@ -1,20 +1,18 @@
 package datawave.query.tables;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
-
+import com.google.common.collect.Iterators;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.iterator.ParentQueryIterator;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.tld.DedupeColumnFamilies;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.ParentDocumentTransformer;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
-import com.google.common.collect.Iterators;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 public class ParentQueryLogic extends ShardQueryLogic {
     public ParentQueryLogic() {}

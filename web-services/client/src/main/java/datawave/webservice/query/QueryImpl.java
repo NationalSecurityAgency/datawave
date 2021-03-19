@@ -1,5 +1,6 @@
 package datawave.webservice.query;
 
+import datawave.microservice.query.QueryParameters;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;

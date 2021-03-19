@@ -2,12 +2,12 @@ package datawave.query.transformer;
 
 import com.google.common.base.Preconditions;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.exception.EmptyObjectException;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.Flushable;
 import datawave.query.attributes.Document;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.Flushable;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
 import datawave.webservice.query.result.event.EventBase;

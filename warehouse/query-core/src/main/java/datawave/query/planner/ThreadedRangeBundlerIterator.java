@@ -1,16 +1,16 @@
 package datawave.query.planner;
 
 import com.google.common.collect.Lists;
+import datawave.common.util.MultiComparator;
 import datawave.common.util.concurrent.BoundedBlockingQueue;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
+import datawave.microservice.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
-import datawave.common.util.MultiComparator;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;

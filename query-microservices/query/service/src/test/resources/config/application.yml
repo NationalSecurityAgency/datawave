@@ -17,6 +17,82 @@ query:
   storage:
     backend:
       LOCAL
+  logic:
+    baseEventQuery:
+      accumuloPassword: "value"
+      tableName: "value"
+      dateIndexTableName: "value"
+      dateIndexHelperFactory: "someRef"
+      defaultDateTypeName: "value"
+      metadataTableName: "value"
+      metadataHelperFactory: "someRef"
+      indexTableName: "value"
+      reverseIndexTableName: "value"
+      maxResults: "value"
+      queryThreads: "value"
+      indexLookupThreads: "value"
+      dateIndexThreads: "value"
+      fullTableScanEnabled: "value"
+      includeDataTypeAsField: "value"
+      disableIndexOnlyDocuments: "value"
+      indexOnlyFilterFunctionsEnabled: "value"
+      includeHierarchyFields: "value"
+      hierarchyFieldOptions: "someRef"
+      baseIteratorPriority: "value"
+      maxIndexScanTimeMillis: "value"
+      collapseUids: "value"
+      collapseUidsThreshold: "value"
+      useEnrichers: "true"
+      contentFieldNames:
+        - "CONTENT"
+      realmSuffixExclusionPatterns:
+        - "<.*>$"
+      minimumSelectivity: ".2"
+      enricherClassNames:
+        - "datawave.query.enrich.DatawaveTermFrequencyEnricher"
+      useFilters: "value"
+      filterClassNames:
+        - "value"
+      filterOptions: "someRef"
+      auditType: "NONE"
+      logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+      eventPerDayThreshold: "40000"
+      shardsPerDayThreshold: "value"
+      maxTermThreshold: "value"
+      maxDepthThreshold: "value"
+      maxUnfieldedExpansionThreshold: "value"
+      maxValueExpansionThreshold: "value"
+      maxOrExpansionThreshold: "value"
+      maxOrRangeThreshold: "value"
+      maxOrExpansionFstThreshold: "value"
+      maxFieldIndexRangeSplit: "value"
+      maxIvaratorSources: "value"
+      maxEvaluationPipelines: "value"
+      maxPipelineCachedResults: "value"
+      hdfsSiteConfigURLs: "value"
+      zookeeperConfig: "value"
+      ivaratorCacheDirConfigs: "someRef"
+      ivaratorFstHdfsBaseURIs: "value"
+      ivaratorCacheBufferSize: "10000"
+      ivaratorMaxOpenFiles: "value"
+      ivaratorCacheScanPersistThreshold: "100000"
+      ivaratorCacheScanTimeoutMinutes: "value"
+      eventQueryDatqeDecoratorTransformer: "someRef"
+      modelTableName: "value"
+      modelName: "DATAWAVE"
+      querySyntaxParsers:
+        "JEXL": null
+        "LUCENE": "value-ref"
+        "LUCENE-UUID": "value-ref"
+        "TOKENIZED-LUCENE": "value-ref"
+      queryPlanner: "someRef"
+      sendTimingToStatsd: "false"
+      collectQueryMetrics: "true"
+      logTimingDetails: "false"
+      statsdHost: "localhost"
+      statsdPort: "8125"
+      selectorExtractor: "someRef"
+      evaluationOnlyFields: "value"
 
 server:
   port: 0
@@ -47,3 +123,8 @@ logging:
   level:
     datawave.microservice.query-api: DEBUG
     io.undertow.request: FATAL
+
+audit-client:
+  discovery:
+    enabled: false
+  uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'

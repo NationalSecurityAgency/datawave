@@ -1,14 +1,13 @@
 package datawave.query.config;
 
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.data.Range;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TreeSet;
-
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-
-import org.apache.accumulo.core.data.Range;
 
 /**
  * Thin wrapper around GenericQueryConfiguration for use by the {@link datawave.query.tables.content.ContentQueryTable}

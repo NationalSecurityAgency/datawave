@@ -10,6 +10,9 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditBean;
@@ -24,11 +27,9 @@ import datawave.webservice.common.exception.PreConditionFailedException;
 import datawave.webservice.common.exception.QueryCanceledException;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.cache.CachedResultsQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.QueryExpirationConfiguration;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
@@ -43,7 +44,6 @@ import datawave.webservice.query.exception.QueryCanceledQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
@@ -222,7 +222,7 @@ public class CachedResultsBean {
     
     @Inject
     @SpringBean(refreshable = true)
-    private QueryExpirationConfiguration queryExpirationConf;
+    private QueryExpirationProperties queryExpirationConf;
     
     @Inject
     private QueryMetricFactory metricFactory;

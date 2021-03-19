@@ -10,6 +10,10 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -54,12 +58,8 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.CheckpointableQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -1904,12 +1904,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> requiredParams = new TreeSet<>();
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_STRING);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_NAME);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_STRING);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_NAME);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_BEGIN);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_END);
         return requiredParams;
     }
     

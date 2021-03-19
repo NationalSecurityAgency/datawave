@@ -1,5 +1,8 @@
 package datawave.webservice.query.logic;
 
+import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.RoleManager;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;

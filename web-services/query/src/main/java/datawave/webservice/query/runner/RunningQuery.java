@@ -1,5 +1,31 @@
 package datawave.webservice.query.runner;
 
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.QueryLogic;
+import datawave.security.util.AuthorizationsUtil;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.AbstractRunningQuery;
+import datawave.webservice.query.cache.QueryMetricFactory;
+import datawave.webservice.query.cache.QueryMetricFactoryImpl;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.WritesQueryMetrics;
+import datawave.webservice.query.logic.WritesResultCardinalities;
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
+import datawave.webservice.query.metric.QueryMetric;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.trace.thrift.TInfo;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
+import org.jboss.logging.NDC;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,33 +37,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.WritesQueryMetrics;
-import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
-import org.jboss.logging.NDC;
 
 /**
  * Object that encapsulates a running query

@@ -1,14 +1,13 @@
 package datawave.webservice.query.dashboard;
 
-import java.text.ParseException;
-import java.util.Date;
-
+import datawave.microservice.query.QueryPersistence;
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.runner.QueryExecutor;
-
 import org.apache.commons.lang.time.DateUtils;
+
+import java.text.ParseException;
+import java.util.Date;
 
 public class DashboardQuery {
     

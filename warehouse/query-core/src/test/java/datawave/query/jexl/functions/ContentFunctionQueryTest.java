@@ -2,7 +2,6 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -25,17 +24,17 @@ import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -67,31 +66,28 @@ import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
+import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
+import static datawave.microservice.query.QueryParameters.QUERY_END;
+import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
+import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
-import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.webservice.query.QueryParameters.QUERY_END;
-import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.webservice.query.QueryParameters.QUERY_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.webservice.query.QueryParameters.QUERY_STRING;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 
 @RunWith(Arquillian.class)
 public class ContentFunctionQueryTest {

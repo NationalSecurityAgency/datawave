@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.result.VoidResponse;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;

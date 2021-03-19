@@ -54,6 +54,10 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-storage-api</artifactId>
         </dependency>
         <dependency>

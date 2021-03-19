@@ -13,12 +13,12 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.resteasy.interceptor.BaseMethodStatsInterceptor;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.annotation.EnrichQueryMetrics.MethodType;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;

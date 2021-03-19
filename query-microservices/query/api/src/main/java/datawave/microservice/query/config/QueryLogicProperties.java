@@ -2,10 +2,11 @@ package datawave.microservice.query.config;
 
 import org.springframework.validation.annotation.Validated;
 
-// TODO: This will be a common property file used by multiple services, so we will eventually need to move it out
+import javax.validation.Valid;
+
 @Validated
-public class QueryLogicConfig {
-    
+public class QueryLogicProperties {
+    @Valid
     private boolean metricsEnabled = false;
     
     public boolean isMetricsEnabled() {

@@ -1,5 +1,8 @@
 package datawave.webservice.mr.configuration;
 
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
@@ -11,12 +14,9 @@ import datawave.webservice.mr.bulkresults.map.BulkResultsTableOutputMapper;
 import datawave.webservice.mr.bulkresults.map.SerializationFormat;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.runner.RunningQuery;
 import org.apache.accumulo.core.client.AccumuloSecurityException;

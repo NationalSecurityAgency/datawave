@@ -1,15 +1,14 @@
 package datawave.query.transformer;
 
-import java.util.List;
-
+import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.model.QueryModel;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.commons.collections4.Transformer;
+
+import java.util.List;
 
 public interface EventQueryTransformerInterface<Q> extends QueryLogicTransformer {
     

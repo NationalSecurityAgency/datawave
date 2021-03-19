@@ -1,10 +1,9 @@
 package datawave.query.config;
 
-import org.apache.accumulo.core.data.Range;
-
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
+import org.apache.accumulo.core.data.Range;
 
 public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration {
     

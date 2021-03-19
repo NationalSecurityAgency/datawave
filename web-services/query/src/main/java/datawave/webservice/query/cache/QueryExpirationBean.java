@@ -2,6 +2,7 @@ package datawave.webservice.query.cache;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -47,7 +48,7 @@ public class QueryExpirationBean {
     
     @Inject
     @SpringBean(refreshable = true)
-    private QueryExpirationConfiguration conf;
+    private QueryExpirationProperties conf;
     
     @Inject
     private AccumuloConnectionFactory connectionFactory;

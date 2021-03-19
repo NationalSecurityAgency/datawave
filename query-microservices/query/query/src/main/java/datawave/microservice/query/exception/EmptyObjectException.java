@@ -1,4 +1,4 @@
-package datawave.webservice.query.exception;
+package datawave.microservice.query.exception;
 
 // used when a transformer gets a non-null empty object
 // and the TransformIterator should call next instead of returning null

@@ -1,14 +1,13 @@
-package datawave.webservice.query.configuration;
+package datawave.microservice.query.configuration;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Range;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.data.Range;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 /**
  * Class to encapsulate all required information to run a query.

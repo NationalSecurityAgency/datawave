@@ -2,9 +2,13 @@ package datawave.webservice.query;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.text.ParseException;
@@ -35,7 +39,7 @@ public class QueryParametersImpl implements QueryParameters {
     protected Date endDate;
     protected String visibility;
     protected String logicName;
-    protected MultivaluedMap<String,String> requestHeaders;
+    protected MultiValueMap<String,String> requestHeaders;
     
     public QueryParametersImpl() {
         clear();
@@ -484,18 +488,18 @@ public class QueryParametersImpl implements QueryParameters {
     }
     
     @Override
-    public MultivaluedMap<String,String> getRequestHeaders() {
+    public MultiValueMap<String,String> getRequestHeaders() {
         return requestHeaders;
     }
     
     @Override
-    public void setRequestHeaders(MultivaluedMap<String,String> requestHeaders) {
+    public void setRequestHeaders(MultiValueMap<String,String> requestHeaders) {
         this.requestHeaders = requestHeaders;
     }
     
     @Override
-    public MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters) {
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+    public MultiValueMap<String,String> getUnknownParameters(MultiValueMap<String,String> allQueryParameters) {
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         for (String key : allQueryParameters.keySet()) {
             if (!KNOWN_PARAMS.contains(key)) {
                 for (String value : allQueryParameters.get(key)) {

@@ -12,6 +12,7 @@
     <description>DATAWAVE Query Microservice</description>
     <properties>
         <version.datawave>3.1.5-SNAPSHOT</version.datawave>
+        <version.microservice.query>1.0-SNAPSHOT</version.microservice.query>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
         <version.microservice.query-cache>1.0-SNAPSHOT</version.microservice.query-cache>
         <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
@@ -19,6 +20,16 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-query-core</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>query</artifactId>
+                <version>${version.microservice.query}</version>
+            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
@@ -55,6 +66,14 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-query-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-api</artifactId>
         </dependency>
@@ -69,10 +88,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave-audit</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-client</artifactId>
         </dependency>
     </dependencies>
     <repositories>

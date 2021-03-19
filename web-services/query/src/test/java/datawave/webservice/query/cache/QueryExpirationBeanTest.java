@@ -1,11 +1,10 @@
 package datawave.webservice.query.cache;
 
 import com.google.common.cache.Cache;
-
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -69,11 +68,11 @@ public class QueryExpirationBeanTest {
     private QueryExpirationBean createBean(int expireTime) throws IllegalArgumentException, IllegalAccessException {
         QueryExpirationBean bean = new QueryExpirationBean();
         
-        QueryExpirationConfiguration expirationConfiguration = new QueryExpirationConfiguration();
+        QueryExpirationProperties expirationConfiguration = new QueryExpirationProperties();
         setInternalState(expirationConfiguration, "idleTimeMinutes", expireTime);
         setInternalState(expirationConfiguration, "callTimeMinutes", expireTime);
         
-        setInternalState(bean, QueryExpirationConfiguration.class, expirationConfiguration);
+        setInternalState(bean, QueryExpirationProperties.class, expirationConfiguration);
         setInternalState(bean, QueryCache.class, queryCache);
         setInternalState(bean, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(bean, AccumuloConnectionFactory.class, connFactory);

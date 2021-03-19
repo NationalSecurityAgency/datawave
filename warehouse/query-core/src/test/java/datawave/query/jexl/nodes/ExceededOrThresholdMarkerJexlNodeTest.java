@@ -22,6 +22,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -35,7 +36,6 @@ import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -52,8 +52,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -77,14 +75,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.webservice.query.QueryParameters.QUERY_END;
-import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.webservice.query.QueryParameters.QUERY_STRING;
+import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
+import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
+import static datawave.microservice.query.QueryParameters.QUERY_END;
+import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
+import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 
 @RunWith(Arquillian.class)
 public class ExceededOrThresholdMarkerJexlNodeTest {

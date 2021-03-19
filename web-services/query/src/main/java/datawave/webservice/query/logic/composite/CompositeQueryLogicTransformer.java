@@ -2,12 +2,12 @@ package datawave.webservice.query.logic.composite;
 
 import java.util.List;
 
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.AbstractQueryLogicTransformer;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;
 
 import org.apache.log4j.Logger;

@@ -1,14 +1,13 @@
 package datawave.query.tables;
 
 import datawave.core.iterators.ResultCountingIterator;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.shard.CountAggregatingIterator;
 import datawave.query.transformer.ShardQueryCountTableTransformer;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;

@@ -6,13 +6,13 @@ import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
-import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.result.BaseQueryResponse;
@@ -21,7 +21,6 @@ import datawave.webservice.result.QueryWizardResultResponse;
 import datawave.webservice.result.QueryWizardStep1Response;
 import datawave.webservice.result.QueryWizardStep2Response;
 import datawave.webservice.result.QueryWizardStep3Response;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
@@ -31,7 +30,6 @@ import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
-
 import javax.ejb.EJBContext;
 import javax.ejb.LocalBean;
 import javax.ejb.SessionContext;
@@ -42,7 +40,6 @@ import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -53,10 +50,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import java.lang.reflect.Method;
 import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.*;
-
-import datawave.security.util.AuthorizationsUtil;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Path("/BasicQuery")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})

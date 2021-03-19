@@ -3,14 +3,13 @@ package datawave.query;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -18,8 +17,8 @@ import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataHelper;
 import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -55,7 +54,10 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.*;
+import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 
 /**
  * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others

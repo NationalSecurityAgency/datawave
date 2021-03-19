@@ -6,6 +6,12 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
+import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -23,24 +29,18 @@ import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.QueryExpirationConfiguration;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.QueryTraceCache;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.metric.BaseQueryMetric;
@@ -48,6 +48,7 @@ import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
 import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.GenericResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -139,7 +140,7 @@ public class QueryExecutorBeanTest {
     private AuditService auditService;
     private QueryMetricsBean metrics;
     private QueryLogicFactoryImpl queryLogicFactory;
-    private QueryExpirationConfiguration queryExpirationConf;
+    private QueryExpirationProperties queryExpirationConf;
     private Persister persister;
     private QueryPredictor predictor;
     private EJBContext ctx;
@@ -172,7 +173,7 @@ public class QueryExecutorBeanTest {
         predictor = createStrictMock(QueryPredictor.class);
         ctx = createStrictMock(EJBContext.class);
         qlCache = new CreatedQueryLogicCacheBean();
-        queryExpirationConf = new QueryExpirationConfiguration();
+        queryExpirationConf = new QueryExpirationProperties();
         queryExpirationConf.setPageSizeShortCircuitCheckTime(45);
         queryExpirationConf.setPageShortCircuitTimeout(58);
         queryExpirationConf.setCallTime(60);
@@ -186,7 +187,7 @@ public class QueryExecutorBeanTest {
         setInternalState(bean, AuditBean.class, auditor);
         setInternalState(bean, QueryMetricsBean.class, metrics);
         setInternalState(bean, QueryLogicFactory.class, queryLogicFactory);
-        setInternalState(bean, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(bean, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(bean, Persister.class, persister);
         setInternalState(bean, QueryPredictor.class, predictor);
         setInternalState(bean, EJBContext.class, ctx);
@@ -250,7 +251,7 @@ public class QueryExecutorBeanTest {
     
     private MultivaluedMap createNewQueryParameters(QueryImpl q, MultivaluedMap p) {
         QueryParameters qp = new QueryParametersImpl();
-        MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
+        MultivaluedMap<String,String> optionalParameters = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(p)));
         optionalParameters.putSingle(PrivateAuditConstants.USER_DN, userDN.toLowerCase());
         optionalParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, "PRIVATE|PUBLIC");
         optionalParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, q.getQueryLogicName());
@@ -344,7 +345,7 @@ public class QueryExecutorBeanTest {
         Connector c = instance.getConnector("root", new PasswordToken(""));
         
         QueryParameters qp = new QueryParametersImpl();
-        MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
+        MultivaluedMap<String,String> optionalParameters = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(p)));
         
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"), UserType.USER,
                         Arrays.asList(auths), null, null, 0L);

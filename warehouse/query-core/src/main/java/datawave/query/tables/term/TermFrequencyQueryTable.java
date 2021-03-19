@@ -1,15 +1,18 @@
 package datawave.query.tables.term;
 
-import java.util.Map.Entry;
-
 import com.google.common.collect.ImmutableSet;
-
-import java.util.Collections;
-import java.util.Set;
-
+import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
+import datawave.query.QueryParameters;
 import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.QueryScannerHelper;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;
@@ -22,15 +25,9 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.query.QueryParameters;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
+import java.util.Collections;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import static datawave.query.Constants.NULL;
 

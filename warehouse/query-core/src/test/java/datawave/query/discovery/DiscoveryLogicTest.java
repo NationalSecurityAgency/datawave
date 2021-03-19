@@ -1,29 +1,23 @@
 package datawave.query.discovery;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
 import org.junit.Before;
@@ -42,9 +36,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.query.discovery.IndexMatchingIterator.CONF;
-import static datawave.query.discovery.IndexMatchingIterator.REVERSE_INDEX;
-import static datawave.query.discovery.IndexMatchingIterator.gson;
 import static org.junit.Assert.assertEquals;
 
 public class DiscoveryLogicTest {

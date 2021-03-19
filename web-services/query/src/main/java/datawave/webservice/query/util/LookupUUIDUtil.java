@@ -1,22 +1,7 @@
 package datawave.webservice.query.util;
 
-import java.security.Principal;
-import java.text.ParseException;
-import java.time.format.DateTimeParseException;
-import java.util.UUID;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Map;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import javax.ejb.EJBContext;
-import javax.ejb.EJBException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.StreamingOutput;
-
+import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.util.time.DateHelper;
@@ -24,23 +9,37 @@ import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.common.exception.PreConditionFailedException;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.event.Metadata;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.QueryExecutor;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
-
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.ejb.EJBContext;
+import javax.ejb.EJBException;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.StreamingOutput;
+import java.security.Principal;
+import java.text.ParseException;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Utility for performing optimized queries based on UUIDs

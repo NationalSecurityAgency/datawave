@@ -1,38 +1,15 @@
 package datawave.query.metrics;
 
-import java.io.IOException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDBuilder;
-import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -40,6 +17,7 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
@@ -56,11 +34,10 @@ import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
+import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.BaseQueryMetricListResponse;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricListResponse;
@@ -74,7 +51,6 @@ import datawave.webservice.query.util.QueryUtil;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.EventQueryResponseBase;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -102,6 +78,27 @@ import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @ApplicationScoped
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)

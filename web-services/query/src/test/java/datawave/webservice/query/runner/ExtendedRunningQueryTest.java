@@ -1,23 +1,7 @@
 package datawave.webservice.query.runner;
 
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -28,12 +12,9 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
@@ -45,6 +26,24 @@ import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
 public class ExtendedRunningQueryTest {

@@ -1,5 +1,6 @@
 package datawave.webservice.query.cache;
 
+import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.webservice.query.runner.RunningQuery.RunningQueryTiming;
 
 public class RunningQueryTimingImpl implements RunningQueryTiming {
@@ -10,7 +11,7 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     // The time after which will we prematurely return if we have results.
     private long pageShortCircuitTimeoutMs = 58 * 60 * 1000;
     
-    public RunningQueryTimingImpl(QueryExpirationConfiguration conf, int pageTimeout) {
+    public RunningQueryTimingImpl(QueryExpirationProperties conf, int pageTimeout) {
         this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS());
         
         if (pageTimeout > 0) {

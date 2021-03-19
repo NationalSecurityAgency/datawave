@@ -5,6 +5,10 @@ import com.google.common.collect.Lists;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.data.type.Type;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
@@ -26,10 +30,6 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -677,8 +677,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> optionalParams = new TreeSet<>();
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_BEGIN);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_END);
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
         optionalParams.add(EdgeQueryConfiguration.INCLUDE_STATS);
         optionalParams.add(EdgeQueryConfiguration.DATE_RANGE_TYPE);
@@ -720,11 +720,11 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> requiredParams = new TreeSet<>();
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_STRING);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_NAME);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_PAGESIZE);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
-        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_STRING);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_NAME);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_PAGESIZE);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
+        requiredParams.add(datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME);
         return requiredParams;
     }
     

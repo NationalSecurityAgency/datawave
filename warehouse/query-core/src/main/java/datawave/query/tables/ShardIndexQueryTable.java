@@ -7,6 +7,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import datawave.data.type.Type;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
@@ -31,10 +34,7 @@ import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -719,8 +719,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
         optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_BEGIN);
+        optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_END);
         return optionalParams;
     }
     
