@@ -5,19 +5,17 @@ import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
@@ -27,16 +25,16 @@ import static org.junit.Assert.assertEquals;
 
 public class LuceneQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(LuceneQueryTest.class);
     
     @BeforeClass
     public static void filterSetup() throws Exception {
-        Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
-        dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, new CitiesDataType(CityEntry.generic, generic));
+        connector = accumuloSetup.loadTables(log);
     }
     
     public LuceneQueryTest() {

@@ -3,7 +3,6 @@ package datawave.query.testframework;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
@@ -54,10 +53,11 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -89,6 +89,9 @@ import java.util.stream.Collectors;
  * </ul>
  */
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.label();
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
@@ -140,8 +143,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
-    protected Path temporaryFolder;
-    
     private final Set<Authorizations> authSet = new HashSet<>();
     
     protected AbstractFunctionalQuery(final RawDataManager mgr) {
@@ -154,8 +155,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     @Before
     public void querySetUp() throws IOException {
-        temporaryFolder = Paths.get(Files.createTempDir().toURI());
-        
         log.debug("---------  querySetUp  ---------");
         
         this.logic = createQueryLogic();
@@ -198,11 +197,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
         this.principal = new DatawavePrincipal(Collections.singleton(user));
         this.testHarness = new QueryLogicTestHarness(this);
-    }
-    
-    @After
-    public void cleanUp() {
-        temporaryFolder.toFile().deleteOnExit();
     }
     
     // ============================================
@@ -554,10 +548,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         final List<String> dirs = new ArrayList<>();
         final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
-            Path ivCache = Paths.get(Files.createTempDir().toURI());
+            Path ivCache = Paths.get(temporaryFolder.newFolder().toURI());
             dirs.add(ivCache.toUri().toString());
             if (fst) {
-                ivCache = Paths.get(Files.createTempDir().toURI());
+                ivCache = Paths.get(temporaryFolder.newFolder().toURI());
                 fstDirs.add(ivCache.toAbsolutePath().toString());
             }
         }

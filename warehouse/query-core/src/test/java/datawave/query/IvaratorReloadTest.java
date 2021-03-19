@@ -1,7 +1,6 @@
 package datawave.query;
 
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 import datawave.core.iterators.DatawaveFieldIndexRangeIteratorJexl;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
@@ -20,7 +19,9 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.util.AbstractMap;
@@ -40,6 +41,9 @@ public class IvaratorReloadTest {
     public static List<Map.Entry<Key,Value>> sourceList = new ArrayList<>();
     public static SortedKeyValueIterator source = new SortedListKeyValueIterator(sourceList);
     
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     /**
      * Basically create an ivarator, seek it and verify it persisted. Then create a second ivarator against the same directory, and verify it reused the same
      * files by verifying the files were not overwritten or changed.
@@ -50,8 +54,7 @@ public class IvaratorReloadTest {
     public void reloadTest() throws Exception {
         setupKeyValues();
         
-        File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
+        File tempDir = temporaryFolder.newFolder();
         
         LocalFileSystem fs = new LocalFileSystem();
         fs.initialize(tempDir.toURI(), new Configuration());
