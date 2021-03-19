@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -15,6 +16,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.result.event.HasMarkings;
 
+import datawave.webservice.query.result.event.MapSchema;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.time.DateUtils;
@@ -369,6 +371,9 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                 }
             }
             
+            if (message.markings != null) {
+                output.writeObject(37, message.markings, MapSchema.SCHEMA, false);
+            }
         }
         
         public void mergeFrom(Input input, QueryMetric message) throws IOException {
@@ -501,6 +506,10 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                         }
                         message.predictions.add(input.mergeObject(null, Prediction.getSchema()));
                         break;
+                    case 37:
+                        message.markings = new HashMap<>();
+                        input.mergeObject(message.markings, MapSchema.SCHEMA);
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -583,6 +592,8 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     return "loginTime";
                 case 36:
                     return "predictions";
+                case 37:
+                    return "markings";
                 default:
                     return null;
             }
@@ -632,6 +643,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             fieldMap.put("plan", 34);
             fieldMap.put("loginTime", 35);
             fieldMap.put("predictions", 36);
+            fieldMap.put("markings", 37);
         }
     };
     

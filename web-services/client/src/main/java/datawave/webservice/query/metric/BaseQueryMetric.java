@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -553,6 +554,8 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElement
     protected String columnVisibility = null;
     @XmlElement
+    protected Map<String,String> markings = null;
+    @XmlElement
     protected String queryLogic = null;
     @XmlElement
     protected long numPages = 0;
@@ -905,6 +908,10 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
+        if (this.markings == null) {
+            this.markings = new HashMap<>();
+        }
+        this.markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, columnVisibility);
     }
     
     public String getQueryLogic() {
@@ -941,13 +948,17 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     @Override
     public void setMarkings(Map<String,String> markings) {
-        // TODO: We need only the columnVisibility piece here....create separate implementations?
-        this.columnVisibility = MarkingFunctions.Encoding.toString(markings);
+        if (markings == null || markings.isEmpty()) {
+            this.columnVisibility = null;
+        } else {
+            this.columnVisibility = markings.get(MarkingFunctions.Default.COLUMN_VISIBILITY);
+        }
+        this.markings = markings;
     }
     
     @Override
     public Map<String,String> getMarkings() {
-        return MarkingFunctions.Encoding.fromString(this.columnVisibility);
+        return markings;
     }
     
     public Schema<? extends BaseQueryMetric> geteSchemaInstance() {
