@@ -6,10 +6,37 @@ summary: This page provides troubleshooting help for the DataWave Quickstart
 
 ## DataWave-Specific Issues
 
+Take a moment to search [previously reported issues](https://github.com/NationalSecurityAgency/datawave/issues) for key terms associated with any errors that you're observing
+
 ### Check Query/Web Logs for Errors
+
 ```bash
   $ cd QUICKSTART_DIR/wildfly/standalone/log/
 ```
+
+Typically, the earliest sign of a web service deployment problem will be output as shown here, indicating that DataWave's EJB-based services are failing to deploy within the Wildfly container...
+```
+$ datawaveWebStart
+[DW-INFO] - Starting Wildfly
+[DW-INFO] - Polling for EAR deployment status every 4 seconds (15 attempts max)
+-- Wildfly process not found (1/15)
++- Wildfly up (12345). EAR deployment pending (2/15)
++- Wildfly up (12345). EAR deployment pending (3/15)
++- Wildfly up (12345). EAR deployment pending (4/15)
++- Wildfly up (12345). EAR deployment pending (5/15)
++- Wildfly up (12345). EAR deployment pending (6/15)
++- Wildfly up (12345). EAR deployment pending (7/15)
++- Wildfly up (12345). EAR deployment pending (8/15)
++- Wildfly up (12345). EAR deployment pending (9/15)
++- Wildfly up (12345). EAR deployment pending (10/15)
++- Wildfly up (12345). EAR deployment pending (11/15)
++- Wildfly up (12345). EAR deployment pending (12/15)
++- Wildfly up (12345). EAR deployment pending (13/15)
++- Wildfly up (12345). EAR deployment pending (14/15)
++- Wildfly up (12345). EAR deployment pending (15/15)
+```
+In this case, the root cause of the issue can usually be determined by noting the first occurrence of errors in `$WILDFLY_HOME/standalone/log/server.log`.
+Subsequent errors in `server.log` tend to be less relevant
 
 ### Check Ingest Job/Yarn Logs for Errors
 ```bash
