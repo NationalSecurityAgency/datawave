@@ -111,7 +111,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                         endDate = originalEndDate;
                     }
                 }
-
+                
                 results = getQueryData((ShardQueryConfiguration) config, query, settings, scannerFactory, startDate, endDate);
                 returnQueryData.addDelegate(results);
                 

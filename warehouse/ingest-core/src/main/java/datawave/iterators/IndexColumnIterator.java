@@ -131,7 +131,7 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
             
         }
         
-        if (aggregatedBitSetIndex != sizeOfBitset)
+        if (aggregatedBitSetIndex + 1 != sizeOfBitset)
             log.error("Aggregated bitset index should be equal to size of bitset at this point");
         
         log.info("The start date and size of the bitset is" + aggregatedIndexedDatesValue.getStartDay() + " size of bitset: "
