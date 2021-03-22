@@ -69,9 +69,16 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
             } else {
                 log.info("The start date and size of the bitset is" + tempIndexedDatesValue.getStartDay() + " size of bitset: "
                                 + tempIndexedDatesValue.getIndexedDatesSet().size());
-                orderedStartDatesAndBitsets.add(tempIndexedDatesValue);
+                // AllFieldMetadataHelper.getNumField can return an null indexDatesValue and deserialize can return a temporary
+                // Object that does not get fully initialized.
+                // TODO fixed the logic in metadata-utils to remove the if statement below.
+                if (tempIndexedDatesValue != null && tempIndexedDatesValue.getStartDay() != null)
+                    orderedStartDatesAndBitsets.add(tempIndexedDatesValue);
             }
         }
+        
+        if (orderedStartDatesAndBitsets.size() == 0)
+            return new IndexedDatesValue();
         
         YearMonthDay firstStartDay, lastStartDay;
         firstStartDay = orderedStartDatesAndBitsets.first().getStartDay();
