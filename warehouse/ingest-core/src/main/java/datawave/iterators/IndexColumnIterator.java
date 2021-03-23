@@ -158,17 +158,22 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
         
         @Override
         public byte[] encode(IndexedDatesValue indexedDatesValue) {
-            return indexedDatesValue.serialize().get();
+            byte[] bytes = indexedDatesValue.serialize().get();
+            Value emptyValue = new Value();
+            if (bytes == null || emptyValue.get() == bytes)
+                return new byte[0];
+            else
+                return bytes;
         }
         
         @Override
         public IndexedDatesValue decode(byte[] bytes) throws ValueFormatException {
             
             if (bytes == null || bytes.length == 0)
-                return new IndexedDatesValue();
+                return null;
             else
                 // TODO Just deserialize with creating a Value object
-                return IndexedDatesValue.deserialize(new Value(bytes));
+                return IndexedDatesValue.deserialize(bytes);
         }
     }
     
