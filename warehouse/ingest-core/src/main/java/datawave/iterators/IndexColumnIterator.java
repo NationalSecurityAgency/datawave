@@ -61,24 +61,27 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
         if (log.isTraceEnabled())
             log.trace("IndexColumnIterator combining dates for range for key " + key.getRow().toString(), new Exception());
         
+        // Iterate to put the IndexedDateValue objects in order of their start days. They come in out of order
         while (iterator.hasNext()) {
             tempIndexedDatesValue = iterator.next();
-            if (tempIndexedDatesValue == null) {
-                log.info("The timestamp is " + DateHelper.format(key.getTimestamp()));
-                // Add the date that is not in a IndexDatesValue
-            } else {
-                log.info("The start date and size of the bitset is" + tempIndexedDatesValue.getStartDay() + " size of bitset: "
-                                + tempIndexedDatesValue.getIndexedDatesSet().size());
+            if (tempIndexedDatesValue != null) {
+                if (tempIndexedDatesValue.getStartDay() != null)
+                    log.info("The start date and size of the bitset is" + tempIndexedDatesValue.getStartDay() + " size of bitset: "
+                                    + tempIndexedDatesValue.getIndexedDatesSet().size());
+                else
+                    log.warn("IndexedDatesValue startDay should not be null at this point");
                 // AllFieldMetadataHelper.getNumField can return an null indexDatesValue and deserialize can return a temporary
                 // Object that does not get fully initialized.
                 // TODO fixed the logic in metadata-utils to remove the if statement below.
-                if (tempIndexedDatesValue != null && tempIndexedDatesValue.getStartDay() != null)
+                if (tempIndexedDatesValue.getStartDay() != null)
                     orderedStartDatesAndBitsets.add(tempIndexedDatesValue);
             }
         }
-        
+
+        // Returning an IndexDatesValue constructed with the timestamp of the key gets the project to compile
+        // but it is probably wron
         if (orderedStartDatesAndBitsets.size() == 0)
-            return new IndexedDatesValue();
+            return new IndexedDatesValue(new YearMonthDay(DateHelper.format(key.getTimestamp())));
         
         YearMonthDay firstStartDay, lastStartDay;
         firstStartDay = orderedStartDatesAndBitsets.first().getStartDay();
@@ -172,7 +175,6 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
             if (bytes == null || bytes.length == 0)
                 return null;
             else
-                // TODO Just deserialize with creating a Value object
                 return IndexedDatesValue.deserialize(bytes);
         }
     }
