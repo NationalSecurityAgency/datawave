@@ -1,6 +1,7 @@
 package datawave.webservice.query.metric;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -9,6 +10,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -17,6 +22,7 @@ import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.locationtech.jts.util.Assert;
 
 public class QueryMetricTest {
     
@@ -32,6 +38,7 @@ public class QueryMetricTest {
         queryMetric = new QueryMetric();
         markings = new HashMap<String,String>();
         markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "PUBLIC");
+        queryMetric.setMarkings(markings);
         negativeSelectors = new ArrayList<String>();
         negativeSelectors.add("negativeSelector1");
         positiveSelectors = new ArrayList<String>();
@@ -117,5 +124,17 @@ public class QueryMetricTest {
         assertEquals(0, queryMetric.getSetupTime());
         assertEquals("user", queryMetric.getUser());
         assertEquals("userDN", queryMetric.getUserDN());
+    }
+    
+    @Test
+    public void testSerialization() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+//        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+//        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        String metricAsBytes = objectMapper.writeValueAsString(queryMetric);
+        QueryMetric deserializedMetric = objectMapper.readValue(metricAsBytes, QueryMetric.class);
+        assertEquals(queryMetric.getColumnVisibility(), deserializedMetric.getColumnVisibility());
+        assertNotNull(deserializedMetric.getMarkings());
+        assertEquals(queryMetric.getMarkings(), deserializedMetric.getMarkings());
     }
 }

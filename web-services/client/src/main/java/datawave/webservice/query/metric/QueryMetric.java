@@ -13,6 +13,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.result.event.HasMarkings;
 
@@ -635,7 +636,8 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             fieldMap.put("predictions", 36);
         }
     };
-    
+
+    @JsonIgnore
     public Schema<? extends BaseQueryMetric> getSchemaInstance() {
         return getSchema();
     }

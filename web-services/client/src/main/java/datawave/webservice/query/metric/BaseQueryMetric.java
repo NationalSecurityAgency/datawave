@@ -1,5 +1,6 @@
 package datawave.webservice.query.metric;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -582,9 +583,10 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElementWrapper(name = "predictions")
     @XmlElement(name = "prediction")
     protected Set<Prediction> predictions = new HashSet<Prediction>();
+    
     protected int lastWrittenHash = 0;
     protected long numUpdates = 0;
-    protected Map<String,String> markings = new HashMap<>();
+    protected Map<String,String> markings = null; // new HashMap<>();
     
     public enum Lifecycle {
         
@@ -646,7 +648,8 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     public long getNumPages() {
         return numPages;
     }
-    
+
+    @JsonIgnore
     @XmlElement(name = "elapsedTime")
     public long getElapsedTime() {
         if (lastUpdated != null && createDate != null) {
@@ -836,6 +839,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
      *
      * @return true if lifecycle represents a final status, false otherwise
      */
+    @JsonIgnore
     public boolean isLifecycleFinal() {
         return Lifecycle.CLOSED == lifecycle || Lifecycle.CANCELLED == lifecycle || Lifecycle.MAXRESULTS == lifecycle || Lifecycle.NEXTTIMEOUT == lifecycle
                         || Lifecycle.TIMEOUT == lifecycle || Lifecycle.SHUTDOWN == lifecycle;
@@ -957,15 +961,16 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     @Override
     public Map<String,String> getMarkings() {
-        if (this.markings == null && this.columnVisibility == null) {
-            return this.markings;
-        } else {
-            if (this.markings == null) {
-                this.markings = new HashMap<>();
-            }
-            this.markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility);
-            return this.markings;
-        }
+        return markings;
+        // if (this.markings == null && this.columnVisibility == null) {
+        // return this.markings;
+        // } else {
+        // if (this.markings == null) {
+        // this.markings = new HashMap<>();
+        // }
+        // this.markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility);
+        // return this.markings;
+        // }
     }
     
     public Schema<? extends BaseQueryMetric> getSchemaInstance() {
