@@ -12,6 +12,7 @@ import java.util.concurrent.locks.LockSupport;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -78,7 +79,7 @@ public class PropogatingIteratorTest {
         private boolean major;
         
         public MockIteratorEnvironment(boolean major) {
-            this.conf = AccumuloConfiguration.getDefaultConfiguration();
+            this.conf = DefaultConfiguration.getInstance();
             this.major = major;
         }
         

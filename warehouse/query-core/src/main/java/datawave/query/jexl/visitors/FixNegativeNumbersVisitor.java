@@ -11,8 +11,8 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 public class FixNegativeNumbersVisitor extends RebuildingVisitor {
     
     public static ASTJexlScript fix(JexlNode root) {
-        FixNegativeNumbersVisitor vis = new FixNegativeNumbersVisitor();
-        return (ASTJexlScript) root.jjtAccept(vis, null);
+        FixNegativeNumbersVisitor visitor = new FixNegativeNumbersVisitor();
+        return (ASTJexlScript) root.jjtAccept(visitor, null);
     }
     
     @Override

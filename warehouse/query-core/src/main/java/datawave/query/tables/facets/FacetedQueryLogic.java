@@ -14,6 +14,7 @@ import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.serializer.DocumentSerializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.planner.FacetedQueryPlanner;
+import datawave.query.planner.QueryPlanner;
 import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.Constants;
 import datawave.query.transformer.FacetedTransformer;
@@ -24,7 +25,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -45,7 +46,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
     public FacetedQueryLogic() {
         super();
         facetedConfig = new FacetedConfiguration();
-        this.setQueryPlanner(new FacetedQueryPlanner(facetedConfig));
+        super.setQueryPlanner(new FacetedQueryPlanner(facetedConfig));
     }
     
     public FacetedQueryLogic(FacetedQueryLogic other) {
@@ -62,7 +63,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
     }
     
     @Override
-    public QueryLogicTransformer getTransformer(Query settings) {
+    public QueryLogicTransformer<?,?> getTransformer(Query settings) {
         
         boolean reducedInSettings = false;
         String reducedResponseStr = settings.findParameter(QueryOptions.REDUCED_RESPONSE).getParameterValue().trim();
@@ -79,7 +80,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         facetedConfig = ((FacetedQueryPlanner) getQueryPlanner()).getConfiguration();
         
@@ -97,13 +98,13 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         
         final String limitFieldsString = settings.findParameter(QueryParameters.LIMIT_FIELDS).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsString)) {
-            Boolean limitFields = Boolean.parseBoolean(limitFieldsString);
+            boolean limitFields = Boolean.parseBoolean(limitFieldsString);
             facetedConfig.setHasFieldLimits(limitFields);
         }
         
         final String streamingEnabledStr = settings.findParameter(FacetedConfiguration.STREAMING_ENABLED).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(streamingEnabledStr)) {
-            Boolean streamingEnabled = Boolean.parseBoolean(streamingEnabledStr);
+            boolean streamingEnabled = Boolean.parseBoolean(streamingEnabledStr);
             facetedConfig.setStreamingMode(streamingEnabled);
         }
         
@@ -122,7 +123,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
             facetedConfig.setMinimumCount(Integer.parseInt(minimumCount));
         }
         
-        return super.initialize(connection, settings, auths);
+        return super.initialize(client, settings, auths);
         
     }
     
@@ -131,7 +132,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         
         super.setupQuery(configuration);
         
-        /**
+        /*
          * A few required components for document serialization and deserialization to be used later
          */
         final Query myQuery = ((ShardQueryConfiguration) configuration).getQuery();
@@ -150,13 +151,13 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         
         filterList.add(filter);
         
-        iterator = new MergedReadAhead<>(facetedConfig, iterator, new FacetedFunction(deserializer, serializer, functionList), filterList);
+        iterator = new MergedReadAhead<>(facetedConfig.isStreaming, iterator, new FacetedFunction(deserializer, serializer, functionList), filterList);
         
     }
     
-    protected class EmptyValueFunction implements Predicate<Entry<Key,Value>> {
-        private EmptyDocumentFilter filter;
-        private DocumentDeserializer deserializer;
+    protected static class EmptyValueFunction implements Predicate<Entry<Key,Value>> {
+        private final EmptyDocumentFilter filter;
+        private final DocumentDeserializer deserializer;
         
         public EmptyValueFunction(DocumentDeserializer deserializer) {
             filter = new EmptyDocumentFilter();
@@ -182,23 +183,15 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         return optionalParams;
     }
     
-    /**
-     * 
-     */
-    protected void setConfiguration() {
-        getPlanner().setConfiguration(facetedConfig);
-        
-    }
-    
     @Override
     public void setFullTableScanEnabled(boolean fullTableScanEnabled) {
         Preconditions.checkArgument(!fullTableScanEnabled, "The FacetedQueryLogic does not support full-table scans");
-        
-        super.setFullTableScanEnabled(fullTableScanEnabled);
+        super.setFullTableScanEnabled(false);
     }
     
     /**
      * @param i
+     *            minimum facet count
      */
     public void setMinimumFacet(final int i) {
         facetedConfig.setMinimumCount(i);
@@ -208,12 +201,29 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         facetedConfig.setMaximumFacetGroupCount(maxGroup);
     }
     
+    public void setFacetTableName(String facetTableName) {
+        facetedConfig.setFacetTableName(facetTableName);
+    }
+    
+    public void setFacetMetadataTableName(String facetMetadataTableName) {
+        facetedConfig.setFacetMetadataTableName(facetMetadataTableName);
+    }
+    
+    public void setFacetHashTableName(String facetHashTableName) {
+        facetedConfig.setFacetHashTableName(facetHashTableName);
+    }
+    
+    public void setQueryPlanner(QueryPlanner planner) {
+        log.debug("Intercepting call to setQueryPlanner() an translating to a no-op to retain FacetedQueryPlanner");
+    }
+    
     protected FacetedQueryPlanner getPlanner() {
         return (FacetedQueryPlanner) this.getQueryPlanner();
     }
     
     /**
      * @param facet
+     *            a field name for faceting
      */
     public void addFacet(String facet) {
         facetedConfig.addFacetedField(facet);
@@ -221,6 +231,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
     
     /**
      * @param isStreaming
+     *            whether the query will stream results
      */
     public void setStreaming(boolean isStreaming) {
         facetedConfig.setStreamingMode(isStreaming);

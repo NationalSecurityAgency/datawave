@@ -105,9 +105,15 @@ public class NegationFilterTest {
     // A wrapper around a java.util.Iterator
     static class Itr<K extends Comparable<K>> implements NestedIterator<K> {
         private Iterator<K> i;
+        private boolean contextRequired;
+        
+        public Itr(Iterable<K> it, boolean contextRequired) {
+            i = it.iterator();
+            this.contextRequired = contextRequired;
+        }
         
         public Itr(Iterable<K> it) {
-            i = it.iterator();
+            this(it, false);
         }
         
         @Override
@@ -156,7 +162,17 @@ public class NegationFilterTest {
         
         @Override
         public Document document() {
-            return null;
+            return new Document();
+        }
+        
+        @Override
+        public boolean isContextRequired() {
+            return contextRequired;
+        }
+        
+        @Override
+        public void setContext(K context) {
+            // no-op
         }
     }
 }

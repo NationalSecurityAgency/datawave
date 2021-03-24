@@ -49,10 +49,7 @@ public class AttributeToCardinality implements Function<Entry<Key,Document>,Entr
         for (Entry<?,?> attrE : dictionary.entrySet()) {
             
             Entry<String,Attribute<?>> attr = (Entry<String,Attribute<?>>) attrE;
-            if (attr.getKey().equals(Document.DOCKEY_FIELD_NAME)) {
-                // do nothing
-            } else {
-                
+            if (!attr.getKey().equals(Document.DOCKEY_FIELD_NAME)) {
                 Attribute<?> attribute = attr.getValue();
                 
                 if (attribute instanceof Attributes) {

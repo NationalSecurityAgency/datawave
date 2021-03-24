@@ -60,7 +60,11 @@ import java.util.stream.Collectors;
  * Webservice QueryTable and apply them to this configuration object
  */
 public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable {
+    
     public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
+    public static final String TABLE_NAME_SOURCE = "tableName";
+    public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
+    
     @SuppressWarnings("unused")
     private static final long serialVersionUID = -4354990715046146110L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
@@ -93,6 +97,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int statsdMaxQueueSize = 500;
     private boolean limitAnyFieldLookups = false;
     private boolean bypassExecutabilityCheck = false;
+    /**
+     * Usually we are planning for the purposes of running the query. This can be set if only generating a plan (i.e. don't start generating ranges)
+     */
+    private boolean generatePlanOnly = false;
     /**
      * Allows for back off of scanners.
      */
@@ -133,6 +141,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Used to determine the maximum number of query ranges to generate when performing a geowave query against a PointType field.
      */
     private int pointMaxExpansion = 32;
+    /**
+     * Used during geowave range optimization to determine the minimum number of sub-ranges we should split a range into.
+     */
+    private int geoWaveRangeSplitThreshold = 16;
+    /**
+     * Used during geowave range optimization to determine whether or not a large range should be split into smaller ranges - expressed as a float between 0 and
+     * 1.0
+     */
+    private double geoWaveMaxRangeOverlap = 0.25;
+    /**
+     * Determines whether or not we should attempt to optimize the GeoWave ranges which are produced.
+     */
+    private boolean optimizeGeoWaveRanges = true;
     /**
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
@@ -209,7 +230,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private String limitFieldsField = null;
     private boolean hitList = false;
-    private boolean typeMetadataInHdfs = false;
     private boolean dateIndexTimeTravel = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
@@ -316,6 +336,23 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<String> contentFieldNames = Collections.emptyList();
     
     /**
+     * The source to use as the active query log name for all query iterators in scans generated for the shard query logic. If the value
+     * {@value #TABLE_NAME_SOURCE} is supplied, the shard table name will be used. If {@value #QUERY_LOGIC_NAME_SOURCE} is supplied, the name of the shard query
+     * logic class will be used. Otherwise, no custom name will be supplied.
+     */
+    private String activeQueryLogNameSource;
+    
+    /**
+     * Remove redundant AND'd terms within ORs. False by default.
+     */
+    private boolean enforceUniqueConjunctionsWithinExpression = false;
+    
+    /**
+     * Remove redundant OR'd terms within ANDs. False by default.
+     */
+    private boolean enforceUniqueDisjunctionsWithinExpression = false;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -366,6 +403,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
         this.setGeometryMaxExpansion(other.getGeometryMaxExpansion());
         this.setPointMaxExpansion(other.getPointMaxExpansion());
+        this.setGeoWaveRangeSplitThreshold(other.getGeoWaveRangeSplitThreshold());
+        this.setGeoWaveMaxRangeOverlap(other.getGeoWaveMaxRangeOverlap());
+        this.setOptimizeGeoWaveRanges(other.isOptimizeGeoWaveRanges());
         this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
         this.setShardTableName(other.getShardTableName());
         this.setIndexTableName(other.getIndexTableName());
@@ -415,7 +455,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
-        this.setTypeMetadataInHdfs(other.isTypeMetadataInHdfs());
         this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
         this.setBeginDateCap(other.getBeginDateCap());
         this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
@@ -486,6 +525,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
+        this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
+        this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
+        this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
+        
     }
     
     /**
@@ -536,9 +579,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             String value = parameter.getParameterValue();
             if (name.equals(QueryParameters.HIT_LIST)) {
                 config.setHitList(Boolean.parseBoolean(value));
-            }
-            if (name.equals(QueryParameters.TYPE_METADATA_IN_HDFS)) {
-                config.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
             }
             if (name.equals(QueryParameters.DATE_INDEX_TIME_TRAVEL)) {
                 config.setDateIndexTimeTravel(Boolean.parseBoolean(value));
@@ -842,6 +882,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setPointMaxExpansion(int pointMaxExpansion) {
         this.pointMaxExpansion = pointMaxExpansion;
+    }
+    
+    public int getGeoWaveRangeSplitThreshold() {
+        return geoWaveRangeSplitThreshold;
+    }
+    
+    public void setGeoWaveRangeSplitThreshold(int geoWaveRangeSplitThreshold) {
+        this.geoWaveRangeSplitThreshold = geoWaveRangeSplitThreshold;
+    }
+    
+    public double getGeoWaveMaxRangeOverlap() {
+        return geoWaveMaxRangeOverlap;
+    }
+    
+    public void setGeoWaveMaxRangeOverlap(double geoWaveMaxRangeOverlap) {
+        this.geoWaveMaxRangeOverlap = geoWaveMaxRangeOverlap;
+    }
+    
+    public boolean isOptimizeGeoWaveRanges() {
+        return optimizeGeoWaveRanges;
+    }
+    
+    public void setOptimizeGeoWaveRanges(boolean optimizeGeoWaveRanges) {
+        this.optimizeGeoWaveRanges = optimizeGeoWaveRanges;
     }
     
     public int getGeoWaveMaxEnvelopes() {
@@ -1486,14 +1550,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.hitList = hitList;
     }
     
-    public boolean isTypeMetadataInHdfs() {
-        return typeMetadataInHdfs;
-    }
-    
-    public void setTypeMetadataInHdfs(boolean typeMetadataInHdfs) {
-        this.typeMetadataInHdfs = typeMetadataInHdfs;
-    }
-    
     public boolean isRawTypes() {
         return this.rawTypes;
     }
@@ -2015,5 +2071,62 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public Set<String> getEvaluationOnlyFields() {
         return this.evaluationOnlyFields;
+    }
+    
+    public String getActiveQueryLogNameSource() {
+        return activeQueryLogNameSource;
+    }
+    
+    public void setActiveQueryLogNameSource(String activeQueryLogNameSource) {
+        this.activeQueryLogNameSource = activeQueryLogNameSource;
+    }
+    
+    /**
+     * Returns the name to use for the active query log for query iterators, derived from the value {@link #activeQueryLogNameSource}. Cases:
+     * <ul>
+     * <li>{@value TABLE_NAME_SOURCE}: returns the shard table name</li>
+     * <li>{@value QUERY_LOGIC_NAME_SOURCE}: returns the name of the shard query logic class</li>
+     * <li>otherwise returns a blank value</li>
+     * </ul>
+     *
+     * @return the custom active query name to use, or a blank value if the default active query log should be used
+     */
+    @JsonIgnore
+    public String getActiveQueryLogName() {
+        if (activeQueryLogNameSource == null) {
+            return "";
+        }
+        switch (activeQueryLogNameSource) {
+            case TABLE_NAME_SOURCE:
+                return getTableName();
+            case QUERY_LOGIC_NAME_SOURCE:
+                return this.getClass().getSimpleName();
+            default:
+                return "";
+        }
+    }
+    
+    public boolean isGeneratePlanOnly() {
+        return generatePlanOnly;
+    }
+    
+    public void setGeneratePlanOnly(boolean generatePlanOnly) {
+        this.generatePlanOnly = generatePlanOnly;
+    }
+    
+    public boolean getEnforceUniqueConjunctionsWithinExpression() {
+        return enforceUniqueConjunctionsWithinExpression;
+    }
+    
+    public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
+        this.enforceUniqueConjunctionsWithinExpression = enforceUniqueConjunctionsWithinExpression;
+    }
+    
+    public boolean getEnforceUniqueDisjunctionsWithinExpression() {
+        return enforceUniqueDisjunctionsWithinExpression;
+    }
+    
+    public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueDisjunctionsWithinExpression) {
+        this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
     }
 }

@@ -214,7 +214,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                 
                 SortedKeyValueIterator<Key,Value> sourceDeepCopy = source.deepCopy(myEnvironment);
                 
-                documents = getEvaluation(sourceDeepCopy, documents, compositeMetadata, typeMetadata);
+                documents = getEvaluation(sourceDeepCopy, documents, compositeMetadata, typeMetadata, columnFamilies, inclusive);
                 
                 // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
                 // which do not fall within the expected time range
@@ -238,11 +238,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
-        } catch (ConfigException e) {
-            throw new IOException("Unable to create document iterator", e);
-        } catch (IllegalAccessException e) {
-            throw new IOException("Unable to create document iterator", e);
-        } catch (InstantiationException e) {
+        } catch (ConfigException | IllegalAccessException | InstantiationException e) {
             throw new IOException("Unable to create document iterator", e);
         }
         

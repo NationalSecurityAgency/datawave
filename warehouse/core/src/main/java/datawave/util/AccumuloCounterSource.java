@@ -7,24 +7,22 @@ import java.util.Map.Entry;
 import datawave.util.CounterDump.CounterSource;
 import datawave.util.cli.PasswordConverter;
 
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 
 import com.google.common.collect.Lists;
 
 public class AccumuloCounterSource extends CounterSource {
     
-    protected Connector connector;
+    protected AccumuloClient client;
     
     Collection<Range> ranges = Lists.newArrayList();
     
@@ -42,8 +40,7 @@ public class AccumuloCounterSource extends CounterSource {
     
     public AccumuloCounterSource(String instanceStr, String zookeepers, String username, String password, String table) throws AccumuloException,
                     AccumuloSecurityException {
-        ZooKeeperInstance instance = new ZooKeeperInstance(instanceStr, zookeepers);
-        connector = instance.getConnector(username, new PasswordToken(password));
+        client = Accumulo.newClient().to(instanceStr, zookeepers).as(username, password).build();
         queryTable = table;
         this.username = username;
     }
@@ -63,7 +60,7 @@ public class AccumuloCounterSource extends CounterSource {
         
         if (null == iterator) {
             try {
-                BatchScanner scanner = connector.createBatchScanner(queryTable, connector.securityOperations().getUserAuthorizations(username), 100);
+                BatchScanner scanner = client.createBatchScanner(queryTable, client.securityOperations().getUserAuthorizations(username), 100);
                 
                 scanner.setRanges(ranges);
                 for (String cf : cfs) {

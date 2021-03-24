@@ -2,22 +2,22 @@ package datawave.ingest.nyctlc;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.util.GeometricShapeFactory;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import org.apache.hadoop.conf.Configuration;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.util.GeometricShapeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
-import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
 import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
+import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
 import static datawave.ingest.data.config.CSVHelper.PROCESS_EXTRA_FIELDS;
 
 /**

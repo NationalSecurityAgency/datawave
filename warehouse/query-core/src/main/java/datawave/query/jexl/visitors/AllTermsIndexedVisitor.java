@@ -27,26 +27,33 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.Node;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
 import java.util.NoSuchElementException;
 
+import static org.apache.commons.jexl2.parser.JexlNodes.promote;
+
 /**
- * 
+ * This visitor examines a JEXL tree and verifies that it satisfies all of the following conditions:
+ * <ul>
+ * <li>The query contains no binary equality nodes that are comparing two literals.</li>
+ * <li>All terms are indexed, with the exception of {@value Constants#ANY_FIELD} or {@value Constants#NO_FIELD} terms.</li>
+ * <li>The query does not contain assignments, functions, or any of the following operators: &lt;, &lt;=, &gt;, &gt;=, =~, !~.</li>
+ * </ul>
+ *
+ * In the case where the tree fails to meet a condition, an exception will be thrown.
  */
 public class AllTermsIndexedVisitor extends RebuildingVisitor {
+    
     private static final Logger log = Logger.getLogger(AllTermsIndexedVisitor.class);
     
-    protected final ShardQueryConfiguration config;
-    protected final MetadataHelper helper;
+    private final ShardQueryConfiguration config;
+    private final MetadataHelper helper;
     
     public AllTermsIndexedVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
-        Preconditions.checkNotNull(config);
-        Preconditions.checkNotNull(helper);
+        Preconditions.checkNotNull(config, "ShardQueryConfiguration must not be null");
+        Preconditions.checkNotNull(helper, "MetadataHelper must not be null");
         
         this.config = config;
         this.helper = helper;
@@ -54,7 +61,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
     
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T isIndexed(T script, ShardQueryConfiguration config, MetadataHelper helper) {
-        Preconditions.checkNotNull(script);
+        Preconditions.checkNotNull(script, "JEXL script must not be null");
         
         AllTermsIndexedVisitor visitor = new AllTermsIndexedVisitor(config, helper);
         
@@ -63,108 +70,39 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        ASTJexlScript newNode = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
-        newNode.image = node.image;
+        JexlNode copy = (JexlNode) super.visit(node, data);
         
-        int newIndex = 0;
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            Node newChild = (Node) node.jjtGetChild(i).jjtAccept(this, data);
-            
-            if (newChild != null) {
-                // When we have an AND or OR
-                if ((newChild instanceof ASTOrNode || newChild instanceof ASTAndNode)) {
-                    // Only add that node if it actually has children
-                    if (0 < newChild.jjtGetNumChildren()) {
-                        newNode.jjtAddChild(newChild, newIndex);
-                        newIndex++;
-                    }
-                } else {
-                    // Otherwise, we want to add the child regardless
-                    newNode.jjtAddChild(newChild, newIndex);
-                    newIndex++;
-                }
-            }
-        }
-        
-        if (newNode.jjtGetNumChildren() == 0) {
+        if (copy.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_ANYFIELD_EXPANSION_MATCH);
             log.warn(qe);
             throw new EmptyUnfieldedTermExpansionException(qe);
         }
         
-        return newNode;
+        return copy;
     }
     
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        ASTOrNode newNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-        newNode.image = node.image;
-        
-        int newIndex = 0;
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            Node newChild = (Node) node.jjtGetChild(i).jjtAccept(this, data);
-            
-            if (newChild != null) {
-                // When we have an AND or OR
-                if ((newChild instanceof ASTOrNode || newChild instanceof ASTAndNode)) {
-                    // Only add that node if it actually has children
-                    if (0 < newChild.jjtGetNumChildren()) {
-                        newNode.jjtAddChild(newChild, newIndex);
-                        newIndex++;
-                    }
-                } else {
-                    // Otherwise, we want to add the child regardless
-                    newNode.jjtAddChild(newChild, newIndex);
-                    newIndex++;
-                }
-            }
-        }
-        
-        switch (newNode.jjtGetNumChildren()) {
-            case 0:
-                return null;
-            case 1:
-                JexlNode child = newNode.jjtGetChild(0);
-                JexlNodes.promote(newNode, child);
-                return child;
-            default:
-                return newNode;
-        }
+        JexlNode copy = (JexlNode) super.visit(node, data);
+        return visitJunctionNode(copy);
     }
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        ASTAndNode newNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-        newNode.image = node.image;
-        
-        int newIndex = 0;
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            Node newChild = (Node) node.jjtGetChild(i).jjtAccept(this, data);
-            
-            if (newChild != null) {
-                // When we have an AND or OR
-                if ((newChild instanceof ASTOrNode || newChild instanceof ASTAndNode)) {
-                    // Only add that node if it actually has children
-                    if (0 < newChild.jjtGetNumChildren()) {
-                        newNode.jjtAddChild(newChild, newIndex);
-                        newIndex++;
-                    }
-                } else {
-                    // Otherwise, we want to add the child regardless
-                    newNode.jjtAddChild(newChild, newIndex);
-                    newIndex++;
-                }
-            }
-        }
-        switch (newNode.jjtGetNumChildren()) {
+        JexlNode copy = (JexlNode) super.visit(node, data);
+        return visitJunctionNode(copy);
+    }
+    
+    private Object visitJunctionNode(JexlNode copy) {
+        switch (copy.jjtGetNumChildren()) {
             case 0:
                 return null;
             case 1:
-                JexlNode child = newNode.jjtGetChild(0);
-                JexlNodes.promote(newNode, child);
+                JexlNode child = copy.jjtGetChild(0);
+                promote(copy, child);
                 return child;
             default:
-                return newNode;
+                return copy;
         }
     }
     
@@ -179,29 +117,32 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
     }
     
     /**
-     * Determine, for a binary equality node, if the field name is indexed
-     * 
+     * Determine, for a binary equality node, if the field name is indexed.
+     *
      * @param node
+     *            the node to verify the indexed status of
      * @param data
-     * @return
+     *            the node data
+     * @return a copy of the node
      */
     protected JexlNode equalityVisitor(JexlNode node, Object data) {
-        String fieldName = null;
+        String fieldName;
         try {
             fieldName = JexlASTHelper.getIdentifier(node);
         } catch (NoSuchElementException e) {
-            // We only have literals
+            // We only have literals.
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.EQUALS_NODE_TWO_LITERALS, e, MessageFormat.format(
                             "Node: {0}", PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
             throw new InvalidFieldIndexQueryFatalQueryException(qe);
         }
         try {
-            // in the case of an ANY_FIELD or NO_FIELD, the query could not be exapnded against the index and hence this
+            // In the case of an ANY_FIELD or NO_FIELD, the query could not be expanded against the index and hence this
             // term has no results. Leave it in the query as such.
             if (Constants.ANY_FIELD.equals(fieldName) || Constants.NO_FIELD.equals(fieldName)) {
                 return copy(node);
             }
             
+            // Verify that the term is indexed.
             if (!this.helper.isIndexed(fieldName, config.getDatatypeFilter())) {
                 PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_NOT_INDEXED, MessageFormat.format(
                                 "Fieldname: {0}", fieldName));
@@ -211,10 +152,19 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
             QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
             throw new DatawaveFatalQueryException(qe);
         }
-        return copy(node);
         
+        return copy(node);
     }
     
+    /**
+     * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the node data
+     * @return nothing
+     */
     @Override
     public Object visit(ASTERNode node, Object data) {
         QueryException qe = new QueryException(DatawaveErrorCode.EQUALS_REGEX_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
@@ -222,6 +172,15 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
+    /**
+     * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the node data
+     * @return nothing
+     */
     @Override
     public Object visit(ASTNRNode node, Object data) {
         QueryException qe = new QueryException(DatawaveErrorCode.NOT_EQUALS_REGEX_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
@@ -229,6 +188,15 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
+    /**
+     * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the node data
+     * @return nothing
+     */
     @Override
     public Object visit(ASTLTNode node, Object data) {
         QueryException qe = new QueryException(DatawaveErrorCode.LT_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
@@ -236,6 +204,15 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
+    /**
+     * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the node data
+     * @return nothing
+     */
     @Override
     public Object visit(ASTGTNode node, Object data) {
         QueryException qe = new QueryException(DatawaveErrorCode.GT_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
@@ -243,6 +220,15 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
+    /**
+     * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the node data
+     * @return nothing
+     */
     @Override
     public Object visit(ASTLENode node, Object data) {
         QueryException qe = new QueryException(DatawaveErrorCode.LTE_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
@@ -250,6 +236,15 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
+    /**
+     * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the node data
+     * @return nothing
+     */
     @Override
     public Object visit(ASTGENode node, Object data) {
         QueryException qe = new QueryException(DatawaveErrorCode.GTE_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
@@ -257,6 +252,15 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
+    /**
+     * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the node data
+     * @return nothing
+     */
     @Override
     public Object visit(ASTAssignment node, Object data) {
         QueryException qe = new QueryException(DatawaveErrorCode.ASSIGNMENT_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
@@ -264,6 +268,16 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
     
+    /**
+     * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
+     *
+     * @param node
+     *            the node
+     * @param data
+     *            the node data
+     * @return nothing
+     */
+    @Override
     public Object visit(ASTFunctionNode node, Object data) {
         QueryException qe = new QueryException(DatawaveErrorCode.FUNCTION_NODE_PROCESSING_ERROR, MessageFormat.format("Node: {0}", PrintingVisitor
                         .formattedQueryString(node).replace('\n', ' ')));

@@ -6,6 +6,8 @@ on:
     branches:
     - 'master'
     - 'release/version*'
+    - 'feature/accumulo-2.0'
+    - 'feature/hadoop3'
   pull_request:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
 

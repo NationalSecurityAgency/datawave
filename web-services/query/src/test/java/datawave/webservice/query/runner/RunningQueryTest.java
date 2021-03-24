@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -36,9 +37,8 @@ import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Assert;
@@ -101,7 +101,7 @@ public class RunningQueryTest {
         
         // setup mock connector
         InMemoryInstance instance = new InMemoryInstance("test instance");
-        Connector connector = instance.getConnector("root", new PasswordToken(""));
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         
         // setup mock logic, handles the setConnection method
         SampleGenericQueryConfiguration config = new SampleGenericQueryConfiguration();
@@ -110,32 +110,39 @@ public class RunningQueryTest {
         TransformIterator iter = new TransformIterator();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         expect(logic.getTransformIterator(settings)).andReturn(iter);
+        expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
+        expect(logic.getMaxResults()).andReturn(-1L);
         replay(logic);
         
-        RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
+        RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
         
         verify(logic);
         
         // extra tests to verify setConnection worked. Would rather mock and don't really like multiple asserts per test, but there is too much setup
-        assertEquals(connector, query.getConnection());
+        assertEquals(client, query.getClient());
         assertEquals(iter, query.getTransformIterator());
     }
     
     @Test
     public void testConstructorWithNullConnector() throws Exception {
-        Connector connector = null;
+        AccumuloClient client = null;
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         
-        RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
+        expect(logic.getCollectQueryMetrics()).andReturn(false);
+        expect(logic.getResultLimit(settings.getDnList())).andReturn(-1L);
+        expect(logic.getMaxResults()).andReturn(-1L);
+        replay(logic);
         
-        assertEquals(connector, query.getConnection());
+        RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
+        
+        assertEquals(client, query.getClient());
     }
     
     @Test(expected = IllegalArgumentException.class)
     public void testConstructorShouldNotMergeAuths() throws Exception {
         // setup
-        Connector connector = null;
+        AccumuloClient client = null;
         methodAuths = "A,B,C";
         
         // expected merged auths
@@ -146,7 +153,7 @@ public class RunningQueryTest {
         
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
-        RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
+        RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
         
         assertEquals(expected, query.getCalculatedAuths());
     }
@@ -155,7 +162,7 @@ public class RunningQueryTest {
     public void testWithCompositeQueryLogic() throws Exception {
         // setup
         InMemoryInstance instance = new InMemoryInstance("test instance");
-        Connector connector = instance.getConnector("root", new PasswordToken(""));
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         
         // expected merged auths
         String[] auths = new String[2];
@@ -180,7 +187,7 @@ public class RunningQueryTest {
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         try {
-            RunningQuery query = new RunningQuery(connector, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
+            RunningQuery query = new RunningQuery(client, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
         } catch (NullPointerException npe) {
             Assert.fail("NullPointer encountered. This could be caused by configuration being null. Check logic.initialize() ");
         }

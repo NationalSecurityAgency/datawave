@@ -1,11 +1,18 @@
 package datawave.query.jexl.nodes;
 
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 
 /**
  * This is a node that can be put in place of an ASTERNode to denote that the value threshold was exceeded preventing expansion into a conjunction of terms
  */
 public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
+    
+    private static final String LABEL = "_Value_";
+    
+    public static String label() {
+        return LABEL;
+    }
     
     public ExceededValueThresholdMarkerJexlNode(int id) {
         super(id);
@@ -25,6 +32,11 @@ public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
      */
     public ExceededValueThresholdMarkerJexlNode(JexlNode node) {
         super(node);
+    }
+    
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
     
     /**
@@ -48,4 +60,16 @@ public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
         return QueryPropertyMarker.getQueryPropertySource(node, ExceededValueThresholdMarkerJexlNode.class);
     }
     
+    public static ExceededValueThresholdMarkerJexlNode create(JexlNode node) {
+        
+        JexlNode parent = node.jjtGetParent();
+        
+        ExceededValueThresholdMarkerJexlNode expr = new ExceededValueThresholdMarkerJexlNode(node);
+        
+        if (parent != null) {
+            JexlNodes.replaceChild(parent, node, expr);
+        }
+        
+        return expr;
+    }
 }

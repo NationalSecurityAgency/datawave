@@ -1,7 +1,7 @@
-20151010,exp-a-all-10,city-a;a-1,state-a,cty-a,cont-a,code-a,ct-a,130
-20151010,exp-a3-10,city-a;a-1,state-a,cty-a,cont-a,a-code,ct-a,130
-20151010,exp-a2-b1-10,b-city;a-1;b-1;b-2,a-state;a-s2;state-a,cty-a,cont-a,code-a,ct-a,130
-20151010,exp-a1-b2-10,b-city;a-1;b-1;b-2,b-state;ba-s2,cty-a,cont-a,code-a,ct-a,130
-20151010,exp-b-all-10,b-city;a-1;b-1,b-state,b-cty,b-cont,b-code,b-ct,130
-20151010,exp-b2-10,b-city;b2-city,b-state;bi-s;b2-state,not-b-cty,not-b-cont,b2-code,not-b-ct,130
-20151010,exp-b3-10,b-city;b3-city,b-state;bi-s;b3-state,not-b-cty,not-b-cont,b3-code,not-b-ct,130
+20151010,exp-a-all-10,city-a;a-1,state-a,cty-a,cont-a,code-a,ct-a,130,0_0
+20151010,exp-a3-10,city-a;a-1,state-a,cty-a,cont-a,a-code,ct-a,130,0_0
+20151010,exp-a2-b1-10,b-city;a-1;b-1;b-2,a-state;a-s2;state-a,cty-a,cont-a,code-a,ct-a,130,0_0
+20151010,exp-a1-b2-10,b-city;a-1;b-1;b-2,b-state;ba-s2,cty-a,cont-a,code-a,ct-a,130,0_0
+20151010,exp-b-all-10,b-city;a-1;b-1,b-state,b-cty,b-cont,b-code,b-ct,130,0_0
+20151010,exp-b2-10,b-city;b2-city,b-state;bi-s;b2-state,not-b-cty,not-b-cont,b2-code,not-b-ct,130,0_0
+20151010,exp-b3-10,b-city;b3-city,b-state;bi-s;b3-state,not-b-cty,not-b-cont,b3-code,not-b-ct,130,0_0

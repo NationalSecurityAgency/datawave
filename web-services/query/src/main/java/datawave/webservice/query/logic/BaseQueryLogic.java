@@ -7,19 +7,21 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.springframework.beans.factory.annotation.Required;
+
+import javax.inject.Inject;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.inject.Inject;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.springframework.beans.factory.annotation.Required;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
@@ -27,6 +29,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
     private AuditType auditType = null;
+    private Map<String,Long> dnResultLimits = null;
     protected long maxResults = -1L;
     protected ScannerBase scanner;
     @SuppressWarnings("unchecked")
@@ -35,6 +38,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private long pageByteTrigger = 0;
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
+    private Set<String> authorizedDNs;
     protected Principal principal;
     protected RoleManager roleManager;
     protected MarkingFunctions markingFunctions;
@@ -83,7 +87,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+    public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         // for many query logics, the query is what it is
         return settings.getQuery();
@@ -321,5 +325,25 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public SelectorExtractor getSelectorExtractor() {
         return selectorExtractor;
+    }
+    
+    @Override
+    public Set<String> getAuthorizedDNs() {
+        return authorizedDNs;
+    }
+    
+    @Override
+    public void setAuthorizedDNs(Set<String> authorizedDNs) {
+        this.authorizedDNs = authorizedDNs;
+    }
+    
+    @Override
+    public void setDnResultLimits(Map<String,Long> dnResultLimits) {
+        this.dnResultLimits = dnResultLimits;
+    }
+    
+    @Override
+    public Map<String,Long> getDnResultLimits() {
+        return dnResultLimits;
     }
 }

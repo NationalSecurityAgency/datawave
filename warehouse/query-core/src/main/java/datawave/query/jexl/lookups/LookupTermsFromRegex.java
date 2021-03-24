@@ -70,7 +70,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         Multimap<String,Range> forwardMap = ArrayListMultimap.create(), reverseMap = ArrayListMultimap.create();
         
         // Loop over all the patterns, classifying them as forward or reverse index satisfiable
-        Iterator<Entry<Key,Value>> iter = Iterators.emptyIterator();
+        Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
         
         Collection<ScannerSession> sessions = Lists.newArrayList();
         

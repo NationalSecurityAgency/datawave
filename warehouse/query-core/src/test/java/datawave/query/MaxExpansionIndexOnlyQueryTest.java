@@ -2,14 +2,16 @@ package datawave.query;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -23,6 +25,9 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
     
     @BeforeClass
@@ -34,8 +39,8 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public MaxExpansionIndexOnlyQueryTest() {

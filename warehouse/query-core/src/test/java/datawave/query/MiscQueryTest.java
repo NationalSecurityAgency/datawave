@@ -5,19 +5,21 @@ import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ShardIdValues;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -40,6 +42,9 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class MiscQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(MiscQueryTest.class);
     
     @BeforeClass
@@ -54,8 +59,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         }
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public MiscQueryTest() {
@@ -208,8 +213,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         log.info("------  testTermThreshold  ------");
         String state = "'ohio'";
         for (TestCities city : TestCities.values()) {
-            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.STATE.name() + LTE_OP + state + AND_OP
-                            + CityField.STATE.name() + GTE_OP + state + ")";
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "((_Bounded_ = true) && (" + CityField.STATE.name() + LTE_OP
+                            + state + AND_OP + CityField.STATE.name() + GTE_OP + state + "))";
             
             this.logic.setMaxTermThreshold(3);
             runTest(query, query);

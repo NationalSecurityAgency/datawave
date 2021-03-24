@@ -6,23 +6,23 @@ import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
 import datawave.query.util.AllFieldMetadataHelper;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
@@ -30,6 +30,9 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class RegexQueryTest extends AbstractFunctionalQuery {
+    
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
     private static final Logger log = Logger.getLogger(RegexQueryTest.class);
     
@@ -43,8 +46,8 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         generic.addReverseIndexField(CityField.CONTINENT.name());
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public RegexQueryTest() {

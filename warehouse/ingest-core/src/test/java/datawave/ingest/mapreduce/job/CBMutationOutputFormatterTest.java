@@ -4,38 +4,27 @@ import datawave.common.test.logging.CommonTestAppender;
 import datawave.ingest.data.TypeRegistry;
 import datawave.data.hash.UID;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.mapreduce.AccumuloOutputFormat;
-import org.apache.accumulo.core.client.mapreduce.lib.impl.ConfiguratorBase.TokenSource;
-import org.apache.accumulo.core.client.mapreduce.lib.util.OutputConfigurator.Features;
-import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.commons.codec.binary.Base64;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
+import org.apache.accumulo.hadoopImpl.mapreduce.AccumuloRecordWriter;
+import org.apache.accumulo.hadoopImpl.mapreduce.lib.OutputConfigurator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class CBMutationOutputFormatterTest {
     
@@ -44,8 +33,6 @@ public class CBMutationOutputFormatterTest {
     protected Level testDriverLevel;
     protected Level uutLevel;
     protected CommonTestAppender uutAppender;
-    
-    protected static Map<String,String> mockedConfiguration = new HashMap<>();
     
     protected boolean processOutputContains(List<String> output, String message) {
         boolean results = false;
@@ -63,100 +50,6 @@ public class CBMutationOutputFormatterTest {
         return results;
     }
     
-    protected boolean wasPropertySet(String prefix, String expectedValue) {
-        
-        boolean results = false;
-        
-        for (String key : CBMutationOutputFormatterTest.mockedConfiguration.keySet()) {
-            
-            if (key.startsWith(prefix)) {
-                
-                String value = CBMutationOutputFormatterTest.mockedConfiguration.get(key);
-                
-                results = value.equalsIgnoreCase(expectedValue);
-                
-                if (results) {
-                    
-                    break;
-                }
-            }
-            
-        }
-        
-        return results;
-    }
-    
-    protected Configuration createMockConfiguration() {
-        
-        Configuration mocked = PowerMock.createMock(Configuration.class);
-        
-        mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
-            
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            String value = (String) EasyMock.getCurrentArguments()[1];
-            
-            if (CBMutationOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                
-                value = CBMutationOutputFormatterTest.mockedConfiguration.get(key);
-            }
-            
-            return value;
-        }).anyTimes();
-        
-        mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
-            
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            String value = (String) EasyMock.getCurrentArguments()[1];
-            
-            CBMutationOutputFormatterTest.mockedConfiguration.put(key, value);
-            
-            return null;
-        }).anyTimes();
-        
-        mocked.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(() -> {
-            
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            boolean value = (Boolean) EasyMock.getCurrentArguments()[1];
-            
-            if (CBMutationOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                
-                value = Boolean.parseBoolean(CBMutationOutputFormatterTest.mockedConfiguration.get(key));
-            }
-            
-            return value;
-        }).anyTimes();
-        
-        mocked.setBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(() -> {
-            
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            String value = EasyMock.getCurrentArguments()[1].toString();
-            
-            CBMutationOutputFormatterTest.mockedConfiguration.put(key, value);
-            
-            return null;
-        }).anyTimes();
-        
-        PowerMock.replay(mocked);
-        
-        return mocked;
-    }
-    
-    protected Job createMockJob() {
-        
-        Job mocked = PowerMock.createMock(Job.class);
-        
-        mocked.getConfiguration();
-        EasyMock.expectLastCall().andAnswer(this::createMockConfiguration).anyTimes();
-        
-        PowerMock.replay(mocked);
-        
-        return mocked;
-    }
-    
     @Before
     public void setup() {
         
@@ -170,6 +63,8 @@ public class CBMutationOutputFormatterTest {
         uutLogger.addAppender(uutAppender);
         
         Logger.getLogger(AccumuloOutputFormat.class).addAppender(uutAppender);
+        Logger.getLogger(AccumuloRecordWriter.class).setLevel(Level.ALL);
+        Logger.getLogger(AccumuloRecordWriter.class).addAppender(uutAppender);
         
         TypeRegistry.reset();
     }
@@ -181,73 +76,6 @@ public class CBMutationOutputFormatterTest {
         Logger.getLogger(CBMutationOutputFormatter.class).removeAppender(uutAppender);
         Logger.getLogger(AccumuloOutputFormat.class).removeAppender(uutAppender);
         CBMutationOutputFormatterTest.logger.setLevel(testDriverLevel);
-    }
-    
-    @Test
-    public void testSetZooKeeperInstance() {
-        
-        CBMutationOutputFormatterTest.logger.info("testSetZooKeeperInstance called...");
-        
-        try {
-            
-            Job job = createMockJob();
-            String instanceName = "localhost";
-            String zooKeepers = "zookeeper";
-            
-            CBMutationOutputFormatter.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-            
-            Assert.assertTrue("CBMutationOutputFormatter#setZooKeeperInstance failed to set 'Type'",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue("ZooKeeperInstance"));
-            Assert.assertTrue("CBMutationOutputFormatter#setZooKeeperInstance failed to set 'Type'",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), "ZooKeeperInstance"));
-            
-        } finally {
-            
-            CBMutationOutputFormatterTest.logger.info("testSetZooKeeperInstance completed.");
-        }
-    }
-    
-    @Test
-    public void testSetOutputInfo() throws AccumuloSecurityException {
-        
-        CBMutationOutputFormatterTest.logger.info("testSetOutputInfo called...");
-        
-        try {
-            
-            Job job = createMockJob();
-            String user = "user";
-            byte[] passwd = "passw0rd".getBytes();
-            boolean createTables = false;
-            String defaultTable = "default-table";
-            
-            CBMutationOutputFormatter.setOutputInfo(job, user, passwd, createTables, defaultTable);
-            
-            PasswordToken pt = new PasswordToken(passwd);
-            String ptStr = TokenSource.INLINE.prefix() + PasswordToken.class.getName() + ":"
-                            + Base64.encodeBase64String(AuthenticationToken.AuthenticationTokenSerializer.serialize(pt));
-            
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set 'username'",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue(user));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set credential token",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue(ptStr));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set default table name",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue(defaultTable));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set create table value",
-                            CBMutationOutputFormatterTest.mockedConfiguration.containsValue("false"));
-            
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set 'username'",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), user));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set credential token",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), ptStr));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set default table name",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), defaultTable));
-            Assert.assertTrue("CBMutationOutputFormatter#setOutputInfo failed to set create table",
-                            this.wasPropertySet(AccumuloOutputFormat.class.getSimpleName(), "false"));
-            
-        } finally {
-            
-            CBMutationOutputFormatterTest.logger.info("testSetOutputInfo completed.");
-        }
     }
     
     @Test
@@ -280,11 +108,7 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
-            
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
             
@@ -318,11 +142,7 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
-            
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
             
@@ -362,11 +182,7 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
-            
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
             
@@ -408,11 +224,8 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -455,11 +268,8 @@ public class CBMutationOutputFormatterTest {
             
             Configuration conf = new Configuration();
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -515,11 +325,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -575,11 +382,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -635,11 +439,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -697,11 +498,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -759,11 +557,8 @@ public class CBMutationOutputFormatterTest {
             
             TypeRegistry.getInstance(conf);
             
-            String simulationKey = String.format("%s.%s.%s", AccumuloOutputFormat.class.getSimpleName(), Features.SIMULATION_MODE.getDeclaringClass()
-                            .getSimpleName(), StringUtils.camelize(Features.SIMULATION_MODE.name().toLowerCase()));
+            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
             
-            conf.set(simulationKey, Boolean.TRUE.toString());
-            conf.setInt("AccumuloOutputFormat.GeneralOpts.LogLevel", Level.ALL.toInt());
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
             
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());

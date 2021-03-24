@@ -8,6 +8,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import datawave.query.iterator.NestedIterator;
 
 import com.google.common.collect.HashMultimap;
+import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * Provides semantics for adding sources to a nested iterator but deferring the creation of iterator. This is meant to be used in a visitor.
@@ -23,6 +24,8 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     protected boolean inANot;
     
     protected boolean sortedUIDs;
+    
+    protected JexlNode node;
     
     protected String queryId;
     
@@ -94,6 +97,14 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     
     public String getValue() {
         return this.value;
+    }
+    
+    public void setNode(JexlNode node) {
+        this.node = node;
+    }
+    
+    public JexlNode getNode() {
+        return node;
     }
     
     public String getQueryId() {

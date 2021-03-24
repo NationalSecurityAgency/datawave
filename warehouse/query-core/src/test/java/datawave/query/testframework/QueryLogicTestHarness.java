@@ -8,6 +8,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -77,6 +78,10 @@ public class QueryLogicTestHarness {
         }
         
         for (Map.Entry<Key,Value> entry : logic) {
+            if (FinalDocumentTrackingIterator.isFinalDocumentKey(entry.getKey())) {
+                continue;
+            }
+            
             final Document document = this.deserializer.apply(entry).getValue();
             
             // check all of the types to ensure that all are keepers as defined in the

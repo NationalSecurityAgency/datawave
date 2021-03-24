@@ -78,6 +78,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(100, config.getRangeBufferPollMillis());
         Assert.assertEquals(8, config.getGeometryMaxExpansion());
         Assert.assertEquals(32, config.getPointMaxExpansion());
+        Assert.assertEquals(16, config.getGeoWaveRangeSplitThreshold());
+        Assert.assertEquals(0.25, config.getGeoWaveMaxRangeOverlap(), 0.0);
+        Assert.assertTrue(config.isOptimizeGeoWaveRanges());
         Assert.assertEquals(4, config.getGeoWaveMaxEnvelopes());
         Assert.assertEquals(TableName.SHARD, config.getShardTableName());
         Assert.assertEquals(TableName.SHARD_INDEX, config.getIndexTableName());
@@ -123,7 +126,6 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.isLimitFieldsPreQueryEvaluation());
         Assert.assertNull(config.getLimitFieldsField());
         Assert.assertFalse(config.isHitList());
-        Assert.assertFalse(config.isTypeMetadataInHdfs());
         Assert.assertFalse(config.isDateIndexTimeTravel());
         Assert.assertEquals(-1L, config.getBeginDateCap());
         Assert.assertTrue(config.isFailOutsideValidDateRange());
@@ -190,6 +192,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getCacheModel());
         Assert.assertTrue(config.isTrackSizes());
         Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
+        Assert.assertNull(config.getActiveQueryLogNameSource());
+        Assert.assertEquals("", config.getActiveQueryLogName());
     }
     
     /**
@@ -434,7 +438,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 172;
+        int expectedObjectCount = 178;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
@@ -446,5 +450,33 @@ public class ShardQueryConfigurationTest {
         }
         
         Assert.assertEquals("New variable was added to or removed from the ShardQueryConfiguration", expectedObjectCount, objectCount);
+    }
+    
+    @Test
+    public void whenRetrievingActiveQueryLogName_givenTableNameSource_thenReturnsTableName() {
+        ShardQueryConfiguration configuration = new ShardQueryConfiguration();
+        configuration.setTableName("shardTable");
+        configuration.setActiveQueryLogNameSource(ShardQueryConfiguration.TABLE_NAME_SOURCE);
+        Assert.assertEquals("shardTable", configuration.getActiveQueryLogName());
+    }
+    
+    @Test
+    public void whenRetrievingActiveQueryLogName_givenQueryLogicNameSource_thenReturnsQueryLogicName() {
+        ShardQueryConfiguration configuration = new ShardQueryConfiguration();
+        configuration.setActiveQueryLogNameSource(ShardQueryConfiguration.QUERY_LOGIC_NAME_SOURCE);
+        Assert.assertEquals(ShardQueryConfiguration.class.getSimpleName(), configuration.getActiveQueryLogName());
+    }
+    
+    @Test
+    public void whenRetrievingActiveQueryLogName_givenNoActiveQueryLogNameValue_thenReturnsBlankString() {
+        ShardQueryConfiguration configuration = new ShardQueryConfiguration();
+        Assert.assertEquals("", configuration.getActiveQueryLogName());
+    }
+    
+    @Test
+    public void whenRetrievingActiveQueryLogName_givenOtherValue_thenReturnsBlankString() {
+        ShardQueryConfiguration configuration = new ShardQueryConfiguration();
+        configuration.setActiveQueryLogNameSource("nonMatchingValue");
+        Assert.assertEquals("", configuration.getActiveQueryLogName());
     }
 }

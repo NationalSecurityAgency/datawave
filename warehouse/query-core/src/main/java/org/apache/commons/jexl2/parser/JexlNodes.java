@@ -1,8 +1,10 @@
 package org.apache.commons.jexl2.parser;
 
-import java.lang.reflect.Constructor;
-
 import com.google.common.base.Preconditions;
+
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A utility class that can introspect JexlNodes for useful things like raw access to the children array and type ID. This makes cloning and mutation easier.
@@ -198,5 +200,56 @@ public class JexlNodes {
         ASTNumberLiteral l = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
         l.literal = n;
         return l;
+    }
+    
+    /**
+     * Remove childToRemove from parent, updating all references on both the parent and childToRemove to be consistent
+     * 
+     * @param parent
+     *            the parent to remove from
+     * @param childToRemove
+     *            the child to remove from parent
+     * @return true if childToRemove was successfully found and removed from parent, false otherwise
+     */
+    public static boolean removeFromParent(JexlNode parent, JexlNode childToRemove) {
+        // sanity check
+        if (childToRemove == null || parent == null) {
+            return false;
+        }
+        
+        boolean found = false;
+        // at most as many children as currently exist
+        List<JexlNode> children = new ArrayList<>(parent.jjtGetNumChildren());
+        JexlNode[] nodeArray = new JexlNode[0];
+        
+        for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
+            JexlNode child = parent.jjtGetChild(i);
+            if (child != childToRemove) {
+                children.add(child);
+            } else {
+                // clear the parent of the node that is removed
+                childToRemove.jjtSetParent(null);
+                found = true;
+            }
+        }
+        
+        // update the children references if they changed
+        if (found) {
+            // reset the children on the parent node to remove this one
+            JexlNodes.children(parent, children.toArray(nodeArray));
+        }
+        
+        return found;
+    }
+    
+    /**
+     * Return whether or not the node has at least one child.
+     * 
+     * @param node
+     *            the node
+     * @return true if the node is not null and has at least one child, or false otherwise.
+     */
+    public static boolean isNotChildless(JexlNode node) {
+        return node != null && node.jjtGetNumChildren() > 0;
     }
 }

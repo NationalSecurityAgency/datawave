@@ -4,16 +4,18 @@ import datawave.query.config.IndexHole;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.ShardIdValues;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -30,6 +32,9 @@ import static datawave.query.testframework.RawDataManager.EQ_OP;
  * The index hole provides the means of using the entries in the event when indexes are missing for a range.
  */
 public class IndexHoleQueryTest extends AbstractFunctionalQuery {
+    
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
     private static final Logger log = Logger.getLogger(IndexHoleQueryTest.class);
     
@@ -52,8 +57,8 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         FieldConfig holes = new HoleFields();
         dataTypes.add(new CitiesDataType(CityEntry.hole, holes));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public IndexHoleQueryTest() {

@@ -96,7 +96,6 @@ public class LookupUUIDTune implements Profile {
                 dqp.setDisableBoundedLookup(true);
                 dqp.setDisableCompositeFields(true);
                 dqp.setDisableExpandIndexFunction(true);
-                dqp.setDisableRangeCoalescing(true);
                 dqp.setDisableTestNonExistentFields(true);
                 if (reduceResponse)
                     try {

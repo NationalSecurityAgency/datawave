@@ -11,6 +11,7 @@ import org.apache.hadoop.io.WritableComparable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -26,6 +27,15 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
     private boolean inclusive;
     
     private boolean initiated = false;
+    
+    public SortedListKeyValueIterator(Iterator<Map.Entry<Key,Value>> sourceIterator) {
+        this.sourceList = new ArrayList<>();
+        while (sourceIterator.hasNext()) {
+            sourceList.add(sourceIterator.next());
+        }
+        this.sourceList.sort(Map.Entry.comparingByKey());
+        currentIndex = 0;
+    }
     
     /**
      *

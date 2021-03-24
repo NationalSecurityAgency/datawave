@@ -64,4 +64,18 @@ public class ValidPatternVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         ValidPatternVisitor.check(script);
     }
+    
+    @Test
+    public void testValidDoubleSidedEr() throws ParseException {
+        String queryString = "A =~ B";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
+        ValidPatternVisitor.check(script);
+    }
+    
+    @Test
+    public void testValidDoubleSidedNr() throws ParseException {
+        String queryString = "A !~ B";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
+        ValidPatternVisitor.check(script);
+    }
 }

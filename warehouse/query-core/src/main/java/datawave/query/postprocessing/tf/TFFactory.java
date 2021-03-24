@@ -26,7 +26,7 @@ public class TFFactory {
     
     public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(ASTJexlScript query,
                     Set<String> contentExpansionFields, Set<String> termFrequencyFields, TypeMetadata typeMetadata, Equality equality,
-                    EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceCopy) {
+                    EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceCopy, Set<String> tfIndexOnlyFields) {
         
         Multimap<String,Class<? extends Type<?>>> fieldMappings = LinkedListMultimap.create();
         for (Entry<String,String> dataType : typeMetadata.fold().entries()) {
@@ -40,7 +40,7 @@ public class TFFactory {
             
         }
         
-        return getFunction(query, contentExpansionFields, termFrequencyFields, fieldMappings, equality, evaluationFilter, sourceCopy);
+        return getFunction(query, contentExpansionFields, termFrequencyFields, fieldMappings, equality, evaluationFilter, sourceCopy, tfIndexOnlyFields);
     }
     
     /**
@@ -53,7 +53,7 @@ public class TFFactory {
      */
     public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(ASTJexlScript query,
                     Set<String> contentExpansionFields, Set<String> termFrequencyFields, Multimap<String,Class<? extends Type<?>>> dataTypes,
-                    Equality equality, EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceDeepCopy) {
+                    Equality equality, EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceDeepCopy, Set<String> tfIndexOnlyFields) {
         
         Multimap<String,String> termFrequencyFieldValues = TermOffsetPopulator.getTermFrequencyFieldValues(query, contentExpansionFields, termFrequencyFields,
                         dataTypes);
@@ -61,7 +61,8 @@ public class TFFactory {
         if (termFrequencyFieldValues.isEmpty()) {
             return new EmptyTermFrequencyFunction();
         } else {
-            return new TermOffsetFunction(new TermOffsetPopulator(termFrequencyFieldValues, contentExpansionFields, evaluationFilter, sourceDeepCopy));
+            return new TermOffsetFunction(new TermOffsetPopulator(termFrequencyFieldValues, contentExpansionFields, evaluationFilter, sourceDeepCopy),
+                            tfIndexOnlyFields);
         }
     }
 }

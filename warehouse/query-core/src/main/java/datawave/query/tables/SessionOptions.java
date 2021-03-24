@@ -5,8 +5,8 @@ import java.util.Collection;
 import datawave.query.config.ShardQueryConfiguration;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.impl.ScannerOptions;
-import org.apache.accumulo.core.data.thrift.IterInfo;
+import org.apache.accumulo.core.clientImpl.ScannerOptions;
+import org.apache.accumulo.core.dataImpl.thrift.IterInfo;
 
 import com.google.common.collect.Lists;
 

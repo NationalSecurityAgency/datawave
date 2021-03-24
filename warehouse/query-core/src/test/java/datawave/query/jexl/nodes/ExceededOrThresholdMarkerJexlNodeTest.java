@@ -3,7 +3,7 @@ package datawave.query.jexl.nodes;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
-import com.google.common.io.Files;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.data.type.GeometryType;
@@ -24,6 +24,7 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
@@ -39,9 +40,9 @@ import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -60,16 +61,19 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
-import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -87,11 +91,15 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 @RunWith(Arquillian.class)
 public class ExceededOrThresholdMarkerJexlNodeTest {
     
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     private static final int NUM_SHARDS = 1;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     
-    private static final String GEO_FIELD = "GEO";
+    private static final String GEO_FIELD = "0GEO";
+    private static final String GEO_QUERY_FIELD = JexlASTHelper.rebuildIdentifier(GEO_FIELD);
     
     private static final String PASSWORD = "";
     private static final String AUTHS = "ALL";
@@ -107,6 +115,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     
     private static String fstUri;
     
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
+    
     private static final Configuration conf = new Configuration();
     
     private static final String POINT_1 = "POINT (0 0)";
@@ -121,6 +131,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private static final String POINT_10 = "POINT (1 3)";
     private static final String POINT_11 = "POINT (2 0)";
     private static final String POINT_12 = "POINT (1 0)";
+    private static final String POINT_13 = "POINT (20 20);POINT (20 30)";
     
     private static final String INDEX_1 = "1f0aaaaaaaaaaaaaaa";
     private static final String INDEX_2 = "1f1ffc54fefc54fefc";
@@ -134,6 +145,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private static final String INDEX_10 = "1f200398c60112ee03";
     private static final String INDEX_11 = "1f35553ac3ffb0ebff";
     private static final String INDEX_12 = "1f35554eb0ffec3aff";
+    private static final String INDEX_13_1 = "1f202a02a02a02a02a";
+    private static final String INDEX_13_2 = "1f2088888888888888";
     
     // @formatter:off
     private static final String[] wktData = {
@@ -148,7 +161,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             POINT_9,
             POINT_10,
             POINT_11,
-            POINT_12};
+            POINT_12,
+            POINT_13};
     // @formatter:on
     
     private int maxOrExpansionThreshold = 1;
@@ -156,6 +170,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private int maxOrRangeThreshold = 1;
     private int maxOrRangeIvarators = 1;
     private int maxRangesPerRangeIvarator = 1;
+    private boolean collapseUids = true;
     
     @Inject
     @SpringBean(name = "EventQuery")
@@ -181,9 +196,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     public static void setupClass() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         
-        File tempDir = Files.createTempDir();
-        tempDir.deleteOnExit();
-        fstUri = tempDir.toURI().toString();
+        fstUri = temporaryFolder.newFolder().toURI().toString();
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
         
         setupConfiguration(conf);
         
@@ -225,10 +239,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         // write these values to their respective tables
         instance = new InMemoryInstance();
-        Connector connector = instance.getConnector("root", PASSWORD);
-        connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+        client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
-        writeKeyValues(connector, keyValues);
+        writeKeyValues(client, keyValues);
     }
     
     public static void setupConfiguration(Configuration conf) {
@@ -258,15 +272,16 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         conf.set("partitioner.category.member." + TableName.SHARD, "shardedTables");
     }
     
-    private static void writeKeyValues(Connector connector, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
-        final TableOperations tops = connector.tableOperations();
+    private static void writeKeyValues(AccumuloClient client, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
+        final TableOperations tops = client.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
-            if (!tops.exists(tableName))
+            if (!tops.exists(tableName)) {
                 tops.create(tableName);
+            }
             
-            final BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig());
+            final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
                 mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), biKey.getKey()
@@ -280,9 +295,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void combinedRangesOneIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_3 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_5 + "' && " + GEO_FIELD + " <= '" + INDEX_7 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_9 + "' && " + GEO_FIELD + " <= '" + INDEX_11 + "')";
+        String query = "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_3 + "')) || " +
+                "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_5 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_7 + "')) || " +
+                "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_9 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_11 + "'))";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -294,29 +309,33 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         List<String> queryRanges = getQueryRanges(query);
         
         Assert.assertEquals(1, queryRanges.size());
-        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6, queryRanges.get(0).indexOf("') && (field = 'GEO')"));
+        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
+                        queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
         Assert.assertEquals(
-                        "((ExceededOrThresholdMarkerJexlNode = true) && (((id = '"
+                        "((_List_ = true) && ((id = '"
                                         + id
-                                        + "') && (field = 'GEO') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}'))))",
+                                        + "') && (field = '"
+                                        + GEO_QUERY_FIELD
+                                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}')))",
                         queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(9, events.size());
+        Assert.assertEquals(10, events.size());
         
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
+        pointList.addAll(Arrays.asList(POINT_13.split(";")));
         
         for (DefaultEvent event : events) {
-            String wkt = null;
+            List<String> wkt = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.remove(wkt));
+            Assert.assertTrue(pointList.removeAll(wkt));
         }
         
         Assert.assertEquals(0, pointList.size());
@@ -325,9 +344,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void combinedRangesTwoIvaratorsTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_3 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_5 + "' && " + GEO_FIELD + " <= '" + INDEX_7 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_9 + "' && " + GEO_FIELD + " <= '" + INDEX_11 + "')";
+        String query = "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_3 + "')) || " +
+                "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_5 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_7 + "')) || " +
+                "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_9 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_11 + "'))";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -339,29 +358,37 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         List<String> queryRanges = getQueryRanges(query);
         
         Assert.assertEquals(1, queryRanges.size());
-        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6, queryRanges.get(0).indexOf("') && (field = 'GEO')"));
+        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
+                        queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
         Assert.assertEquals(
-                        "(((((ExceededValueThresholdMarkerJexlNode = true) && (GEO >= '1f200364bda9c63d03' && GEO <= '1f35553ac3ffb0ebff'))))) || ((ExceededOrThresholdMarkerJexlNode = true) && (((id = '"
+                        "((_Value_ = true) && ((_Bounded_ = true) && ("
+                                        + GEO_QUERY_FIELD
+                                        + " >= '1f200364bda9c63d03' && "
+                                        + GEO_QUERY_FIELD
+                                        + " <= '1f35553ac3ffb0ebff'))) || ((_List_ = true) && ((id = '"
                                         + id
-                                        + "') && (field = 'GEO') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}'))))",
+                                        + "') && (field = '"
+                                        + GEO_QUERY_FIELD
+                                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}')))",
                         queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(9, events.size());
+        Assert.assertEquals(10, events.size());
         
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
+        pointList.addAll(Arrays.asList(POINT_13.split(";")));
         
         for (DefaultEvent event : events) {
-            String wkt = null;
+            List<String> wkt = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.remove(wkt));
+            Assert.assertTrue(pointList.removeAll(wkt));
         }
         
         Assert.assertEquals(0, pointList.size());
@@ -370,10 +397,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void combinedRangesWithNegationTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_12 + "') && " +
-                "not((" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_3 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_5 + "' && " + GEO_FIELD + " <= '" + INDEX_7 + "') || " +
-                "(" + GEO_FIELD + " >= '" + INDEX_9 + "' && " + GEO_FIELD + " <= '" + INDEX_11 + "'))";
+        String query = "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_12 + "')) && " +
+                "not(((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_3 + "')) || " +
+                "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_5 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_7 + "')) || " +
+                "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_9 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_11 + "')))";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -389,15 +416,15 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
         
         for (DefaultEvent event : events) {
-            String wkt = null;
+            List<String> wkt = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.remove(wkt));
+            Assert.assertTrue(pointList.removeAll(wkt));
         }
         
         Assert.assertEquals(0, pointList.size());
@@ -406,9 +433,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void valueListTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " == '" + INDEX_1 + "' || " + GEO_FIELD + " == '" + INDEX_2 + "' || " + GEO_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_5 + "' || " + GEO_FIELD + " == '" + INDEX_6 + "' || " + GEO_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_9 + "' || " + GEO_FIELD + " == '" + INDEX_10 + "' || " + GEO_FIELD + " == '" + INDEX_11 + "')";
+        String query = "(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 1;
@@ -424,15 +451,49 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
         
         for (DefaultEvent event : events) {
-            String wkt = null;
+            List<String> wkt = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.remove(wkt));
+            Assert.assertTrue(pointList.removeAll(wkt));
+        }
+        
+        Assert.assertEquals(0, pointList.size());
+    }
+    
+    @Test
+    public void docSpecificValueListTest() throws Exception {
+        // @formatter:off
+        String query = "(" + GEO_QUERY_FIELD + " == '" + INDEX_13_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_13_2 + "')";
+        // @formatter:on
+        
+        maxOrExpansionThreshold = 1;
+        maxOrFstThreshold = 100;
+        maxOrRangeThreshold = 100;
+        maxOrRangeIvarators = 1;
+        maxRangesPerRangeIvarator = 1;
+        collapseUids = false;
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(1, events.size());
+        
+        List<String> pointList = new ArrayList<>();
+        pointList.addAll(Arrays.asList(POINT_13.split(";")));
+        
+        for (DefaultEvent event : events) {
+            List<String> wkt = new ArrayList<>();
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD))
+                    wkt.add(field.getValueString());
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(pointList.removeAll(wkt));
         }
         
         Assert.assertEquals(0, pointList.size());
@@ -441,10 +502,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void valueListWithNegationTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_12 + "') && " +
-                "not(" + GEO_FIELD + " == '" + INDEX_1 + "' || " + GEO_FIELD + " == '" + INDEX_2 + "' || " + GEO_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_5 + "' || " + GEO_FIELD + " == '" + INDEX_6 + "' || " + GEO_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_9 + "' || " + GEO_FIELD + " == '" + INDEX_10 + "' || " + GEO_FIELD + " == '" + INDEX_11 + "')";
+        String query = "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_12 + "')) && " +
+                "not(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 1;
@@ -454,21 +515,22 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(3, events.size());
+        Assert.assertEquals(4, events.size());
         
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
+        pointList.addAll(Arrays.asList(POINT_13.split(";")));
         
         for (DefaultEvent event : events) {
-            String wkt = null;
+            List<String> wkt = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.remove(wkt));
+            Assert.assertTrue(pointList.removeAll(wkt));
         }
         
         Assert.assertEquals(0, pointList.size());
@@ -477,9 +539,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void fstTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " == '" + INDEX_1 + "' || " + GEO_FIELD + " == '" + INDEX_2 + "' || " + GEO_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_5 + "' || " + GEO_FIELD + " == '" + INDEX_6 + "' || " + GEO_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_9 + "' || " + GEO_FIELD + " == '" + INDEX_10 + "' || " + GEO_FIELD + " == '" + INDEX_11 + "')";
+        String query = "(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -495,15 +557,15 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
         
         for (DefaultEvent event : events) {
-            String wkt = null;
+            List<String> wkt = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.remove(wkt));
+            Assert.assertTrue(pointList.removeAll(wkt));
         }
         
         Assert.assertEquals(0, pointList.size());
@@ -512,10 +574,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     @Test
     public void fstWithNegationTest() throws Exception {
         // @formatter:off
-        String query = "(" + GEO_FIELD + " >= '" + INDEX_1 + "' && " + GEO_FIELD + " <= '" + INDEX_12 + "') && " +
-                "not(" + GEO_FIELD + " == '" + INDEX_1 + "' || " + GEO_FIELD + " == '" + INDEX_2 + "' || " + GEO_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_5 + "' || " + GEO_FIELD + " == '" + INDEX_6 + "' || " + GEO_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_FIELD + " == '" + INDEX_9 + "' || " + GEO_FIELD + " == '" + INDEX_10 + "' || " + GEO_FIELD + " == '" + INDEX_11 + "')";
+        String query = "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_12 + "')) && " +
+                "not(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
         
         maxOrExpansionThreshold = 100;
@@ -525,21 +587,22 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxRangesPerRangeIvarator = 1;
         
         List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(3, events.size());
+        Assert.assertEquals(4, events.size());
         
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
+        pointList.addAll(Arrays.asList(POINT_13.split(";")));
         
         for (DefaultEvent event : events) {
-            String wkt = null;
+            List<String> wkt = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
             }
             
             // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.remove(wkt));
+            Assert.assertTrue(pointList.removeAll(wkt));
         }
         
         Assert.assertEquals(0, pointList.size());
@@ -587,7 +650,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
-        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
+        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
         
         logic.setupQuery(config);
         
@@ -625,14 +688,14 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
-        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
+        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
         
         logic.setupQuery(config);
         
         return logic.getTransformIterator(query);
     }
     
-    private ShardQueryLogic getShardQueryLogic() {
+    private ShardQueryLogic getShardQueryLogic() throws IOException {
         ShardQueryLogic logic = new ShardQueryLogic(this.logic);
         
         // increase the depth threshold
@@ -649,7 +712,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         return logic;
     }
     
-    private void setupIvarator(ShardQueryLogic logic) {
+    private void setupIvarator(ShardQueryLogic logic) throws IOException {
         // Set these to ensure ivarator runs
         logic.setMaxUnfieldedExpansionThreshold(1);
         logic.setMaxValueExpansionThreshold(1);
@@ -659,15 +722,20 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         logic.setMaxOrRangeIvarators(maxOrRangeIvarators);
         logic.setMaxRangesPerRangeIvarator(maxRangesPerRangeIvarator);
         logic.setIvaratorFstHdfsBaseURIs(fstUri);
+        logic.setCollapseUids(collapseUids);
         logic.setIvaratorCacheScanPersistThreshold(1);
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
     
     public static class TestIngestHelper extends ContentBaseIngestHelper {
         @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer record) {
             Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
-            NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(GEO_FIELD, new String(record.getRawData()));
-            eventFields.put(GEO_FIELD, geo_nci);
+            String rawRecord = new String(record.getRawData());
+            for (String value : rawRecord.split(";")) {
+                NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(GEO_FIELD, value);
+                eventFields.put(GEO_FIELD, geo_nci);
+            }
             return normalizeMap(eventFields);
         }
     }

@@ -2,6 +2,7 @@ package datawave.query.tld;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.DatawaveKey;
@@ -9,6 +10,8 @@ import datawave.query.iterator.builder.AbstractIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.functions.EventFieldAggregator;
+import datawave.query.jexl.functions.TLDEventFieldAggregator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
@@ -50,6 +53,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
         builder.setTimeFilter(timeFilter);
+        builder.setNode(node);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -143,6 +147,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.setNode(node);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -181,6 +186,11 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         return null;
+    }
+    
+    @Override
+    protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
+        return new TLDEventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
     }
     
     /**

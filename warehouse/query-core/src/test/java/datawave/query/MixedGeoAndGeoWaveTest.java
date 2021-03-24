@@ -3,6 +3,7 @@ package datawave.query;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.data.type.GeoType;
@@ -25,6 +26,7 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -38,9 +40,9 @@ import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -58,7 +60,9 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
@@ -67,6 +71,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -85,6 +90,9 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 @RunWith(Arquillian.class)
 public class MixedGeoAndGeoWaveTest {
     
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     private static final int NUM_SHARDS = 100;
     private static final String DATA_TYPE_NAME = "MixedGeo";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
@@ -93,7 +101,6 @@ public class MixedGeoAndGeoWaveTest {
     private static final String POINT_FIELD = "POINT";
     private static final String POLY_POINT_FIELD = "POLY_POINT";
     
-    private static final String PASSWORD = "";
     private static final String AUTHS = "ALL";
     
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
@@ -163,6 +170,8 @@ public class MixedGeoAndGeoWaveTest {
     
     private static InMemoryInstance instance;
     
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
+    
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap
@@ -189,6 +198,8 @@ public class MixedGeoAndGeoWaveTest {
         recNum = ingestData(conf, GEO_FIELD, geoData, recNum, BEGIN_DATE);
         recNum = ingestData(conf, POINT_FIELD, pointData, recNum, MID_DATE);
         ingestData(conf, POLY_POINT_FIELD, polyData, recNum, MID_DATE);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static int ingestData(Configuration conf, String fieldName, String[] data, int startRecNum, String ingestDate) throws Exception {
@@ -227,10 +238,10 @@ public class MixedGeoAndGeoWaveTest {
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
         
         // write these values to their respective tables
-        Connector connector = instance.getConnector("root", PASSWORD);
-        connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+        client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
-        writeKeyValues(connector, keyValues);
+        writeKeyValues(client, keyValues);
         
         return recNum;
     }
@@ -266,15 +277,15 @@ public class MixedGeoAndGeoWaveTest {
         conf.set("partitioner.category.member." + TableName.SHARD, "shardedTables");
     }
     
-    private static void writeKeyValues(Connector connector, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
-        final TableOperations tops = connector.tableOperations();
+    private static void writeKeyValues(AccumuloClient client, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
+        final TableOperations tops = client.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
             if (!tops.exists(tableName))
                 tops.create(tableName);
             
-            final BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig());
+            final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
                 mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), biKey.getKey()
@@ -311,8 +322,61 @@ public class MixedGeoAndGeoWaveTest {
     }
     
     @Test
+    public void withinSmallBoundingBoxEvaluationOnlyTest() throws Exception {
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '2_0.5', '10_1.5') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
+                        + ", '2_0.5', '10_1.5'))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(2, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(GEO_6, POINT_4));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
     public void withinLargeBoundingBoxTest() throws Exception {
         String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_-180', '90_180')";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void withinLargeBoundingBoxEvaluationOnlyTest() throws Exception {
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_-180', '90_180') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
+                        + ", '-90_-180', '90_180'))";
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(12, events.size());
@@ -363,8 +427,61 @@ public class MixedGeoAndGeoWaveTest {
     }
     
     @Test
+    public void withinLargeCircleEvaluationOnlyTest() throws Exception {
+        String query = "geo:within_circle(" + GEO_FIELD + ", '0_0', 90) && ((_Eval_ = true) && geo:within_circle(" + GEO_FIELD + ", '0_0', 90))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
     public void withinLargeBoundingBoxAcrossAntimeridianTest() throws Exception {
         String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_0.01', '90_-0.01')";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(8, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(GEO_5, GEO_6));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void withinLargeBoundingBoxAcrossAntimeridianEvaluationOnlyTest() throws Exception {
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_0.01', '90_-0.01') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
+                        + ", '-90_0.01', '90_-0.01'))";
         
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(8, events.size());
@@ -432,7 +549,7 @@ public class MixedGeoAndGeoWaveTest {
         queryModel.addTermToModel(GEO_FIELD, POINT_FIELD);
         config.setQueryModel(queryModel);
         
-        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
+        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
         
         logic.setupQuery(config);
         
@@ -461,6 +578,7 @@ public class MixedGeoAndGeoWaveTest {
         logic.setMaxUnfieldedExpansionThreshold(1);
         logic.setMaxValueExpansionThreshold(1);
         logic.setIvaratorCacheScanPersistThreshold(1);
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
     
     public static class TestIngestHelper extends ContentBaseIngestHelper {

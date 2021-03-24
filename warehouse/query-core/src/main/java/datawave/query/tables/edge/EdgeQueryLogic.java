@@ -16,6 +16,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.contexts.VisitationContext;
@@ -29,8 +30,8 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -119,13 +120,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         currentIteratorPriority = super.getBaseIteratorPriority() + 30;
         
         EdgeQueryConfiguration cfg = setUpConfig(settings);
         
-        cfg.setConnector(connection);
+        cfg.setClient(client);
         cfg.setAuthorizations(auths);
         
         String queryString = settings.getQuery();
@@ -137,7 +138,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         cfg.setBeginDate(settings.getBeginDate());
         cfg.setEndDate(settings.getEndDate());
         
-        scannerFactory = new ScannerFactory(connection);
+        scannerFactory = new ScannerFactory(client);
         
         return cfg;
     }
@@ -167,15 +168,15 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * Get an instance of MetadataHelper for the given params
      * 
-     * @param connection
+     * @param client
      * @param metadataTableName
      * @param auths
      * @return MetadataHelper
      */
-    protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
+    protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
         if (log.isTraceEnabled())
-            log.trace("prepareMetadataHelper with " + connection);
-        return metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths);
+            log.trace("prepareMetadataHelper with " + client);
+        return metadataHelperFactory.createMetadataHelper(client, metadataTableName, auths);
     }
     
     /**
@@ -234,6 +235,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } catch (TokenMgrError | Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
+        
+        script = TreeFlatteningRebuildingVisitor.flatten(script);
         
         EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(config.includeStats(), dataTypes, config.getMaxQueryTerms(), regexDataTypes);
         

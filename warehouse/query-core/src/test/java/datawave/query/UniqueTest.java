@@ -5,19 +5,20 @@ import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.exceptions.InvalidQueryException;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
@@ -48,10 +49,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
-
 /**
  * Applies uniqueness to queries
  * 
@@ -62,7 +59,7 @@ public abstract class UniqueTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends UniqueTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         private static Authorizations auths = new Authorizations("ALL");
         
         @BeforeClass
@@ -73,24 +70,24 @@ public abstract class UniqueTest {
             // different keys.
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log,
                             RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
         protected void runTestQueryWithUniqueness(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                         throws Exception {
-            super.runTestQueryWithUniqueness(expected, querystr, startDate, endDate, extraParms, connector);
+            super.runTestQueryWithUniqueness(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends UniqueTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         private static Authorizations auths = new Authorizations("ALL");
         
         @BeforeClass
@@ -101,19 +98,19 @@ public abstract class UniqueTest {
             // different keys.
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log,
                             RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+            WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
         protected void runTestQueryWithUniqueness(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                         throws Exception {
-            super.runTestQueryWithUniqueness(expected, querystr, startDate, endDate, extraParms, connector);
+            super.runTestQueryWithUniqueness(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
     
@@ -162,7 +159,7 @@ public abstract class UniqueTest {
                     throws Exception;
     
     protected void runTestQueryWithUniqueness(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Connector connector) throws Exception {
+                    AccumuloClient client) throws Exception {
         log.debug("runTestQueryWithUniqueness");
         
         QueryImpl settings = new QueryImpl();
@@ -177,7 +174,7 @@ public abstract class UniqueTest {
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
@@ -232,6 +229,12 @@ public abstract class UniqueTest {
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "death_date,birth_date");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
     
     @Test
@@ -248,6 +251,12 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
         
         queryString = "UUID =~ '^[CS].*' && f:unique('DEATH_DATE','$BIRTH_DATE')";
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID =~ '^[CS].*' && f:unique('death_date','$birth_date')";
         expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
@@ -273,6 +282,12 @@ public abstract class UniqueTest {
         expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID:/^[CS].*/ AND #UNIQUE(death_date,birth_date)";
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
     
     @Test(expected = InvalidQueryException.class)
@@ -286,6 +301,38 @@ public abstract class UniqueTest {
         
         String queryString = "UUID:/^[CS].*/ AND #UNIQUE(FOO_BAR,$MAGIC)";
         runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
+        
+        queryString = "UUID:/^[CS].*/ AND #UNIQUE(foo_bar,$magic)";
+        runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
     }
     
+    @Test
+    public void testUniquenessWithHitTermField() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(HIT_TERM)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testUniquenessWithModelAliases() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(BOTH_NULL)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
 }

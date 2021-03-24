@@ -8,14 +8,16 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CommonalityTokenTestDataIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -46,8 +48,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.*;
-
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
  * the field that hit on the query. This test uses a dot delimited token in the event field name as a 'commonality token'
@@ -57,49 +57,49 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
+            CommonalityTokenTestDataIngest.writeItAll(client, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                         throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+            super.runTestQuery(client, queryString, startDate, endDate, extraParms, goodResults);
         }
     }
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
-        protected static Connector connector = null;
+        protected static AccumuloClient client = null;
         
         @BeforeClass
         public static void setUp() throws Exception {
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
-            connector = qtth.connector;
+            client = qtth.client;
             
-            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
+            CommonalityTokenTestDataIngest.writeItAll(client, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(client, auths, TableName.SHARD);
+            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                         throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+            super.runTestQuery(client, queryString, startDate, endDate, extraParms, goodResults);
         }
     }
     
@@ -149,7 +149,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                     throws Exception;
     
-    protected void runTestQuery(Connector connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
+    protected void runTestQuery(AccumuloClient client, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> goodResults) throws Exception {
         
         QueryImpl settings = new QueryImpl();
@@ -164,7 +164,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         Set<Document> docs = new HashSet<>();
@@ -173,7 +173,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             log.trace(entry.getKey() + " => " + d);
             docs.add(d);
             
-            Attribute hitAttribute = d.get("HIT_TERM");
+            Attribute hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
             
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
