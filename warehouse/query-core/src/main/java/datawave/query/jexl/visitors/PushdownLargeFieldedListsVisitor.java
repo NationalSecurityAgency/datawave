@@ -124,11 +124,17 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             
             // if "_ANYFIELD_" or "_NOFIELD_", then simply add the subset back into the children list
             // if past our threshold, then add a ExceededValueThresholdMarker with an OR of this subset to the children list
-            if (canReduce
-                            && !Constants.ANY_FIELD.equals(field)
-                            && !Constants.NO_FIELD.equals(field)
-                            && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold() || eqNodes.size() >= config.getMaxOrExpansionThreshold() || rangeNodes
-                                            .size() >= config.getMaxOrRangeThreshold()) && isIndexed(field)) {
+            // @formatter:off
+            if (canReduce &&
+                    !Constants.ANY_FIELD.equals(field) &&
+                    !Constants.NO_FIELD.equals(field) &&
+                    (eqNodes.size() >= config.getMaxOrExpansionFstThreshold() ||
+                            eqNodes.size() >= config.getMaxOrExpansionThreshold() ||
+                            rangeNodes.size() >= config.getMaxOrRangeThreshold()
+                    ) &&
+                    isIndexed(field)) {
+                // @formatter:on
+                
                 log.info("Pushing down large (" + eqNodes.size() + "|" + rangeNodes.size() + ") fielded list for " + field);
                 
                 // turn the subset of children into a list of values
@@ -224,6 +230,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
      */
     private void track(Object data, String field, int reduction) {
         if (data instanceof Map) {
+            @SuppressWarnings("unchecked")
             Map<String,Integer> trackingMap = (Map<String,Integer>) data;
             Integer count = 0;
             if (trackingMap.get(field) != null) {
