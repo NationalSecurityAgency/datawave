@@ -24,6 +24,7 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -36,19 +37,6 @@ import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -70,8 +58,24 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+
+import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedMap;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
@@ -86,6 +90,9 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
 @RunWith(Arquillian.class)
 public class MultiValueCompositeIndexTest {
+    
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -108,6 +115,8 @@ public class MultiValueCompositeIndexTest {
     private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
     
     private static final Configuration conf = new Configuration();
+    
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     
     private static class TestData {
         public TestData(List<String> wktData, List<Integer> numData) {
@@ -244,6 +253,8 @@ public class MultiValueCompositeIndexTest {
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
         writeKeyValues(client, keyValues);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static void setupConfiguration(Configuration conf) {
@@ -283,8 +294,9 @@ public class MultiValueCompositeIndexTest {
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
-            if (!tops.exists(tableName))
+            if (!tops.exists(tableName)) {
                 tops.create(tableName);
+            }
             
             final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
@@ -300,10 +312,10 @@ public class MultiValueCompositeIndexTest {
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312'))" + JEXL_AND_OP +
+        String query = "(((_Bounded_ = true) && (" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312'))" + JEXL_AND_OP +
                 WKT_BYTE_LENGTH_FIELD + " == 15)" + JEXL_OR_OP +
                 "(" + GEO_FIELD + " == '1f20aaaaaaaaaaaaaa'" + JEXL_AND_OP +
-                "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " <= 61)))" + JEXL_OR_OP +
+                "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " <= 61)))" + JEXL_OR_OP +
                 "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
         // @formatter:on
         
@@ -334,10 +346,10 @@ public class MultiValueCompositeIndexTest {
     @Test
     public void compositeWithIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312'))" + JEXL_AND_OP +
+        String query = "(((_Bounded_ = true) && (" + GEO_FIELD + " >= '0311'" + JEXL_AND_OP + GEO_FIELD + " <= '0312'))" + JEXL_AND_OP +
                        WKT_BYTE_LENGTH_FIELD + " == 15)" + JEXL_OR_OP +
                        "(" + GEO_FIELD + " == '1f20aaaaaaaaaaaaaa'" + JEXL_AND_OP +
-                       "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " <= 61)))" + JEXL_OR_OP +
+                       "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 59" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " <= 61)))" + JEXL_OR_OP +
                        "(" + GEO_FIELD + " == '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " >= 22)";
         // @formatter:on
         
@@ -454,6 +466,7 @@ public class MultiValueCompositeIndexTest {
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
         
         if (useIvarator)
             setupIvarator(logic);

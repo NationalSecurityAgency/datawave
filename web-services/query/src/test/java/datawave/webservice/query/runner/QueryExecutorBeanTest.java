@@ -225,6 +225,7 @@ public class QueryExecutorBeanTest {
         q.setQueryAuthorizations(StringUtils.join(auths, ","));
         q.setQueryLogicName(queryLogicName);
         q.setUserDN(userDN);
+        q.setDnList(Collections.singletonList(userDN));
         q.setId(UUID.randomUUID());
         
         return q;
@@ -280,9 +281,11 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL);
+        EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
-        
+        EasyMock.expect(logic.getResultLimit(q.getDnList())).andReturn(-1L);
+        EasyMock.expect(logic.getMaxResults()).andReturn(-1L);
         PowerMock.replayAll();
         
         bean.defineQuery(queryLogicName, p);
@@ -360,6 +363,7 @@ public class QueryExecutorBeanTest {
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getAuditType(EasyMock.<Query> anyObject())).andReturn(AuditType.ACTIVE).anyTimes();
         EasyMock.expect(logic.getSelectors(anyObject())).andReturn(null);
@@ -417,6 +421,7 @@ public class QueryExecutorBeanTest {
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         
         QueryMetric metric = new QueryMetricFactoryImpl().createMetric();
@@ -679,9 +684,12 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL).atLeastOnce();
+        EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getAuditType(q)).andReturn(AuditType.NONE);
         EasyMock.expect(logic.getConnPoolName()).andReturn("connPool1");
+        EasyMock.expect(logic.getResultLimit(eq(q.getDnList()))).andReturn(-1L).anyTimes();
+        EasyMock.expect(logic.getMaxResults()).andReturn(-1L).anyTimes();
         
         EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false).anyTimes();
         connectionFactory.returnClient(EasyMock.isA(AccumuloClient.class));

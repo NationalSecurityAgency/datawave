@@ -4,10 +4,9 @@ import datawave.data.normalizer.Normalizer;
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
-import datawave.query.testframework.DataTypeHadoopConfig;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.FileLoaderFactory;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.FlattenData;
 import datawave.query.testframework.FlattenDataType;
 import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
@@ -15,11 +14,11 @@ import datawave.query.testframework.RawDataManager;
 import datawave.query.testframework.RawMetaData;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +38,9 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
  * Test cases for flatten mode {@link FlattenMode@GROUPED}.
  */
 public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
+    
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
     private static final Logger log = Logger.getLogger(GroupedFlattenQueryTest.class);
     
@@ -60,11 +62,8 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
     
     @BeforeClass
     public static void filterSetup() throws Exception {
-        Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
-        dataTypes.add(flatten);
-        
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes, FileLoaderFactory.FileType.JSON);
-        client = helper.loadTables(log);
+        accumuloSetup.setData(FileType.JSON, flatten);
+        client = accumuloSetup.loadTables(log);
     }
     
     public GroupedFlattenQueryTest() {
@@ -132,7 +131,7 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
         String start = "1850";
         String end = "1860";
         String city = "'AuStiN'";
-        String query = GroupedField.CITY.name() + EQ_OP + city + AND_OP + "((BoundedRange = true) && (" + GroupedField.FOUNDED.name() + GT_OP + start + AND_OP
+        String query = GroupedField.CITY.name() + EQ_OP + city + AND_OP + "((_Bounded_ = true) && (" + GroupedField.FOUNDED.name() + GT_OP + start + AND_OP
                         + GroupedField.FOUNDED.name() + LT_OP + end + "))";
         runTest(query, query);
     }

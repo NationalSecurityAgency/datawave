@@ -8,6 +8,12 @@ import org.apache.commons.jexl2.parser.JexlNodes;
  */
 public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
     
+    private static final String LABEL = "_Value_";
+    
+    public static String label() {
+        return LABEL;
+    }
+    
     public ExceededValueThresholdMarkerJexlNode(int id) {
         super(id);
     }
@@ -26,6 +32,11 @@ public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
      */
     public ExceededValueThresholdMarkerJexlNode(JexlNode node) {
         super(node);
+    }
+    
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
     
     /**

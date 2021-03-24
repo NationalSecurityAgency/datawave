@@ -8,6 +8,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
@@ -87,8 +88,8 @@ public class DiscoveryLogicTest {
         insertReverseModel("occupation", "job");
         
         logic = new DiscoveryLogic();
-        logic.setIndexTableName(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
-        logic.setReverseIndexTableName(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        logic.setIndexTableName(TableName.SHARD_INDEX);
+        logic.setReverseIndexTableName(TableName.SHARD_RINDEX);
         logic.setModelTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
         logic.setModelName("DATAWAVE");
         logic.setFullTableScanEnabled(false);
@@ -124,7 +125,7 @@ public class DiscoveryLogicTest {
             writer.addMutation(m);
         }
         
-        try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, config)) {
+        try (BatchWriter writer = client.createBatchWriter(TableName.SHARD_INDEX, config)) {
             Mutation m = new Mutation(valueField.getValue0().toLowerCase());
             int numShards = 10;
             for (int i = 0; i < numShards; i++) {
@@ -137,7 +138,7 @@ public class DiscoveryLogicTest {
             writer.addMutation(m);
         }
         
-        try (BatchWriter writer = client.createBatchWriter(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME, config)) {
+        try (BatchWriter writer = client.createBatchWriter(TableName.SHARD_RINDEX, config)) {
             Mutation m = new Mutation(new StringBuilder().append(valueField.getValue0().toLowerCase()).reverse().toString());
             int numShards = 10;
             for (int i = 0; i < numShards; i++) {

@@ -2,7 +2,6 @@ package datawave.query.cardinality;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -13,7 +12,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.io.Files;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -28,10 +26,11 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
-
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
@@ -65,6 +64,9 @@ public class TestCardinalityWithQuery {
     static String SHARD_TABLE_NAME = "shard";
     static String SHARD_INDEX_TABLE_NAME = "shardIndex";
     
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
+    
     private DatawavePrincipal datawavePrincipal;
     private Authorizations auths = new Authorizations("STUFF,THINGS");
     
@@ -90,7 +92,7 @@ public class TestCardinalityWithQuery {
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        temporaryFolder = Paths.get(Files.createTempDir().toURI());
+        temporaryFolder = tempDir.newFolder().toPath();
         
         logic = new ShardQueryLogic();
         logic.setMarkingFunctions(new MarkingFunctions.Default());
