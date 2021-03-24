@@ -78,8 +78,9 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
             }
         }
 
-        // Returning an IndexDatesValue constructed with the timestamp of the key gets the project to compile
-        // but it is probably wrong
+        //TODO Not instantiate the IndexedDatesValue with the timestamp of key.
+        // Returning an IndexDatesValue constructed with the timestamp of the key gets the project to pass all tests
+        // but might be wrong and have other side effects not know now.
         if (orderedStartDatesAndBitsets.size() == 0)
             return new IndexedDatesValue(new YearMonthDay(DateHelper.format(key.getTimestamp())));
         
