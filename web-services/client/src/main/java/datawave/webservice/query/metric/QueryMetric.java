@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -17,7 +16,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.result.event.HasMarkings;
 
-import datawave.webservice.query.result.event.MapSchema;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.time.DateUtils;
@@ -636,7 +634,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             fieldMap.put("predictions", 36);
         }
     };
-
+    
     @JsonIgnore
     public Schema<? extends BaseQueryMetric> getSchemaInstance() {
         return getSchema();

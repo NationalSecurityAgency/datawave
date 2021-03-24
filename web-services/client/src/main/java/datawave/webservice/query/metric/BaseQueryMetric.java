@@ -586,8 +586,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     protected int lastWrittenHash = 0;
     protected long numUpdates = 0;
-    protected Map<String,String> markings = null; // new HashMap<>();
-    
+
     public enum Lifecycle {
         
         NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN, MAXWORK
@@ -648,7 +647,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     public long getNumPages() {
         return numPages;
     }
-
+    
     @JsonIgnore
     @XmlElement(name = "elapsedTime")
     public long getElapsedTime() {
@@ -911,10 +910,6 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
-        if (this.markings == null) {
-            this.markings = new HashMap<>();
-        }
-        this.markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, columnVisibility);
     }
     
     public String getQueryLogic() {
@@ -956,21 +951,13 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
         } else {
             this.columnVisibility = markings.get(MarkingFunctions.Default.COLUMN_VISIBILITY);
         }
-        this.markings = markings;
     }
     
     @Override
     public Map<String,String> getMarkings() {
+        Map<String, String> markings = new HashMap<>();
+        markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility);
         return markings;
-        // if (this.markings == null && this.columnVisibility == null) {
-        // return this.markings;
-        // } else {
-        // if (this.markings == null) {
-        // this.markings = new HashMap<>();
-        // }
-        // this.markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility);
-        // return this.markings;
-        // }
     }
     
     public Schema<? extends BaseQueryMetric> getSchemaInstance() {
