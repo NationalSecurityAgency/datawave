@@ -2,6 +2,7 @@ package datawave.query.util;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
+import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
@@ -27,6 +28,7 @@ public class LimitFieldsTestingIngest {
         SHARD, DOCUMENT;
     }
     
+    private static final Type<?> dateType = new DateType();
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
     
     protected static final String datatype = "test";
@@ -59,6 +61,7 @@ public class LimitFieldsTestingIngest {
             mutation.put(datatype + "\u0000" + myUID, "FOO_3.FOO.3.0" + "\u0000" + "abcd", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_3_BAR.FOO.0" + "\u0000" + "abcd<cat>", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_1_BAR.FOO.0" + "\u0000" + "yawn<cat>", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "FOO_1_BAR_1.FOO.0" + "\u0000" + "Wed Mar 24 12:00:00 EDT 2021", columnVisibility, timeStamp, emptyValue);
             
             mutation.put(datatype + "\u0000" + myUID, "FOO_1.FOO.1.1" + "\u0000" + "yawn", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_4.FOO.4.1" + "\u0000" + "purr", columnVisibility, timeStamp, emptyValue);
@@ -225,6 +228,12 @@ public class LimitFieldsTestingIngest {
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            bw.addMutation(mutation);
+            
+            mutation = new Mutation("FOO_1_BAR_1");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
             
         } finally {
