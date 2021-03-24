@@ -67,7 +67,7 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
             if (tempIndexedDatesValue != null) {
                 if (tempIndexedDatesValue.getStartDay() != null)
                     log.info("The start date and size of the bitset is" + tempIndexedDatesValue.getStartDay() + " size of bitset: "
-                                    + tempIndexedDatesValue.getIndexedDatesSet().size());
+                                    + tempIndexedDatesValue.getIndexedDatesBitSet().size());
                 else
                     log.warn("IndexedDatesValue startDay should not be null at this point");
                 // AllFieldMetadataHelper.getNumField can return an null indexDatesValue and deserialize can return a temporary
@@ -77,12 +77,15 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
                     orderedStartDatesAndBitsets.add(tempIndexedDatesValue);
             }
         }
-
-        //TODO Not instantiate the IndexedDatesValue with the timestamp of key.
+        
+        // TODO Not instantiate the IndexedDatesValue with the timestamp of key.
         // Returning an IndexDatesValue constructed with the timestamp of the key gets the project to pass all tests
         // but might be wrong and have other side effects not know now.
         if (orderedStartDatesAndBitsets.size() == 0)
             return new IndexedDatesValue(new YearMonthDay(DateHelper.format(key.getTimestamp())));
+        
+        if (orderedStartDatesAndBitsets.size() == 1)
+            return orderedStartDatesAndBitsets.first();
         
         YearMonthDay firstStartDay, lastStartDay;
         firstStartDay = orderedStartDatesAndBitsets.first().getStartDay();
@@ -146,7 +149,7 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
             log.error("Aggregated bitset index should be equal to size of bitset at this point");
         
         log.info("The start date and size of the bitset is" + aggregatedIndexedDatesValue.getStartDay() + " size of bitset: "
-                        + aggregatedIndexedDatesValue.getIndexedDatesSet().size());
+                        + aggregatedIndexedDatesValue.getIndexedDatesBitSet().size());
         return aggregatedIndexedDatesValue;
     }
     
