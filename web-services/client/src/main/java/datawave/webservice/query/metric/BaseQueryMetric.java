@@ -554,8 +554,6 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElement
     protected String columnVisibility = null;
     @XmlElement
-    protected Map<String,String> markings = null;
-    @XmlElement
     protected String queryLogic = null;
     @XmlElement
     protected long numPages = 0;
@@ -586,6 +584,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     protected Set<Prediction> predictions = new HashSet<Prediction>();
     protected int lastWrittenHash = 0;
     protected long numUpdates = 0;
+    protected Map<String,String> markings = new HashMap<>();
     
     public enum Lifecycle {
         
@@ -958,10 +957,18 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     @Override
     public Map<String,String> getMarkings() {
-        return markings;
+        if (this.markings == null && this.columnVisibility == null) {
+            return this.markings;
+        } else {
+            if (this.markings == null) {
+                this.markings = new HashMap<>();
+            }
+            this.markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility);
+            return this.markings;
+        }
     }
     
-    public Schema<? extends BaseQueryMetric> geteSchemaInstance() {
+    public Schema<? extends BaseQueryMetric> getSchemaInstance() {
         return null;
     }
     

@@ -370,10 +370,6 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
-            if (message.markings != null) {
-                output.writeObject(37, message.markings, MapSchema.SCHEMA, false);
-            }
         }
         
         public void mergeFrom(Input input, QueryMetric message) throws IOException {
@@ -506,10 +502,6 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                         }
                         message.predictions.add(input.mergeObject(null, Prediction.getSchema()));
                         break;
-                    case 37:
-                        message.markings = new HashMap<>();
-                        input.mergeObject(message.markings, MapSchema.SCHEMA);
-                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -592,8 +584,6 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     return "loginTime";
                 case 36:
                     return "predictions";
-                case 37:
-                    return "markings";
                 default:
                     return null;
             }
@@ -643,7 +633,6 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             fieldMap.put("plan", 34);
             fieldMap.put("loginTime", 35);
             fieldMap.put("predictions", 36);
-            fieldMap.put("markings", 37);
         }
     };
     
