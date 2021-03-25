@@ -586,7 +586,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     protected int lastWrittenHash = 0;
     protected long numUpdates = 0;
-
+    
     public enum Lifecycle {
         
         NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN, MAXWORK
@@ -955,7 +955,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     @Override
     public Map<String,String> getMarkings() {
-        Map<String, String> markings = new HashMap<>();
+        Map<String,String> markings = new HashMap<>();
         markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, this.columnVisibility);
         return markings;
     }
