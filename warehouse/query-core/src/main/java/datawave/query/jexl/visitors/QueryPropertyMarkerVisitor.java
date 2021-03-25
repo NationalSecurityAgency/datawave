@@ -68,8 +68,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     private static final List<Class<? extends QueryPropertyMarker>> IVARATOR_TYPES = ImmutableList.of(
             ExceededOrThresholdMarkerJexlNode.class,
             ExceededTermThresholdMarkerJexlNode.class,
-            ExceededValueThresholdMarkerJexlNode.class,
-            BoundedRange.class);
+            ExceededValueThresholdMarkerJexlNode.class);
     // @formatter:on
     
     private final Set<String> allowedTypes;
