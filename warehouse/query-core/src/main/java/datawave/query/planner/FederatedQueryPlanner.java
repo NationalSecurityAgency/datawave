@@ -193,29 +193,55 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                     throws TableNotFoundException {
         
         IndexedDatesValue indexedDates;
-        String startDate = DateHelper.format(config.getBeginDate().getTime());
-        String endDate = DateHelper.format(config.getEndDate().getTime());
-        String holeStart = startDate;
-        String lastHoleEndate = null;
-        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(startDate, false, endDate, false);
-        FieldIndexHole newHole = null;
-        boolean firstHole = true;
-        boolean foundHolesInDateBounds;
-        String previousDay, nextDay;
-        log.debug("startDate is: " + startDate + " and endDate is " + endDate);
+        String queryStartDate = DateHelper.format(config.getBeginDate().getTime());
+        String queryEndDate = DateHelper.format(config.getEndDate().getTime());
+        String holeStart = queryStartDate;
+        YearMonthDay.Bounds bounds = new YearMonthDay.Bounds(queryStartDate, false, queryEndDate, false);
+        long diffBetweenQueryStartAndIndexStart;
+        int bitSetStartIndex;
+        log.debug("startDate is: " + queryStartDate + " and endDate is " + queryEndDate);
         
         for (String field : fieldToDatatypeMap.keySet()) {
             indexedDates = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
             if (indexedDates != null && indexedDates.getIndexedDatesBitSet() != null) {
                 if (indexedDates != null && indexedDates.getIndexedDatesBitSet().size() > 0) {
-                    for (int bitSetIndex = 0; bitSetIndex < indexedDates.getIndexedDatesBitSet().length(); bitSetIndex++) {
+                    
+                    // Create a hole from the start date to the first date the field was indexed
+                    int dateComparison = queryStartDate.compareTo(indexedDates.getStartDay().getYyyymmdd());
+                    if (dateComparison < 0) {
+                        diffBetweenQueryStartAndIndexStart = YearMonthDay.getNumOfDaysBetween(new YearMonthDay(queryStartDate), indexedDates.getStartDay());
+                        if (diffBetweenQueryStartAndIndexStart > Integer.MAX_VALUE) {
+                            log.error("Date span is too long create bitset for indexes - this should not happen");
+                            log.error("Will not attempt to create FieldIndexHoles for field: " + field);
+                            continue;
+                        } else {
+                            bitSetStartIndex = (int) diffBetweenQueryStartAndIndexStart;
+                        }
+                    } else if (dateComparison > 0)//
+                    {
+                        diffBetweenQueryStartAndIndexStart = YearMonthDay.getNumOfDaysBetween(indexedDates.getStartDay(), new YearMonthDay(queryStartDate));
+                        if (diffBetweenQueryStartAndIndexStart > Integer.MAX_VALUE) {
+                            log.error("Date span is too long create bitset for indexes - this should not happen");
+                            log.error("Will not attempt to create FieldIndexHoles for field: " + field);
+                            continue;
+                        } else {
+                            bitSetStartIndex = (int) diffBetweenQueryStartAndIndexStart;
+                        }
                         
+                    } else {
+                        bitSetStartIndex = 0;
+                    }
+                    
+                    /*
+                     * for (int dayIndex = 0; dayIndex < numDaysRepresentedInBitset; dayIndex++) { if
+                     * (nextIndexedDatesValue.getIndexedDatesBitSet().get(dayIndex)) { accumulatedDatesBitset.set(dayIndex + aggregatedBitSetIndex); }
+                     * nextDateToContinueBitset = YearMonthDay.nextDay(nextDateToContinueBitset.getYyyymmdd()); aggregatedBitSetIndex++; }
+                     */
+                    
+                    for (int bitSetIndex = bitSetStartIndex; bitSetIndex < indexedDates.getIndexedDatesBitSet().length(); bitSetIndex++) {
+                        // Create the FieldIndexHoles and put them in the config.
                     }
                 }
-                
-                holeStart = startDate;
-                foundHolesInDateBounds = false;
-                
             }
             
         }

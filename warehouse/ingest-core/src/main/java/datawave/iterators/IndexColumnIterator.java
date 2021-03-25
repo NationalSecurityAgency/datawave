@@ -93,7 +93,7 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
         // Need to figure out how many days span the indexed dates so the BitSet can be sized exactly
         // Length Of Aggregated Bitset (spanOfDays) = NumberOfDays(firstStartDay, lastStartDay) + lastBitset.length
         long numOfDaysBetween;
-        numOfDaysBetween = getNumOfDaysBetween(firstStartDay, lastStartDay);
+        numOfDaysBetween = YearMonthDay.getNumOfDaysBetween(firstStartDay, lastStartDay);
         
         long spanOfDays = numOfDaysBetween + Long.valueOf(orderedStartDatesAndBitsets.first().getIndexedDatesBitSet().length()) + 2;
         int sizeOfBitset;
@@ -130,7 +130,7 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
             } else {
                 // Advance the aggregatedBitSetIndex by the time span between the last indexed date set
                 // by the previous IndexedDatesValue and this one you are now copying the bitset from
-                numOfDaysBetween = getNumOfDaysBetween(nextDateToContinueBitset, nextIndexedDatesValue.getStartDay());
+                numOfDaysBetween = YearMonthDay.getNumOfDaysBetween(nextDateToContinueBitset, nextIndexedDatesValue.getStartDay());
                 aggregatedBitSetIndex += numOfDaysBetween;
                 nextDateToContinueBitset = nextIndexedDatesValue.getStartDay();
             }
@@ -151,14 +151,6 @@ public class IndexColumnIterator extends TypedValueCombiner<IndexedDatesValue> {
         log.info("The start date and size of the bitset is" + aggregatedIndexedDatesValue.getStartDay() + " size of bitset: "
                         + aggregatedIndexedDatesValue.getIndexedDatesBitSet().size());
         return aggregatedIndexedDatesValue;
-    }
-    
-    private long getNumOfDaysBetween(YearMonthDay firstStartDay, YearMonthDay lastStartDay) {
-        long numOfDaysBetween;
-        LocalDate dateBefore = LocalDate.of(firstStartDay.getYear(), firstStartDay.getMonth(), firstStartDay.getDay());
-        LocalDate dateAfter = LocalDate.of(lastStartDay.getYear(), lastStartDay.getMonth(), lastStartDay.getDay());
-        numOfDaysBetween = ChronoUnit.DAYS.between(dateBefore, dateAfter);
-        return numOfDaysBetween;
     }
     
     public static class IndexedDatesValueEncoder implements Encoder<IndexedDatesValue> {
