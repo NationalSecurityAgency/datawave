@@ -106,46 +106,68 @@ public class IndexColumnIteratorTest {
         bw.addMutation(m);
         
         m = new Mutation("NAME_FIELD");
-        putMutatation(m, "20190101");
         putMutatation(m, "20190102");
         putMutatation(m, "20190103");
-        putMutatation(m, "20190201");
+        putMutatation(m, "20190104");
         putMutatation(m, "20190202");
         putMutatation(m, "20190203");
-        putMutatation(m, "20190301");
+        putMutatation(m, "20190204");
         putMutatation(m, "20190302");
         putMutatation(m, "20190303");
-        putMutatation(m, "20190401");
+        putMutatation(m, "20190304");
         putMutatation(m, "20190402");
         putMutatation(m, "20190403");
         putMutatation(m, "20190404");
         putMutatation(m, "20190405");
-        putMutatation(m, "20190501");
+        putMutatation(m, "20190406");
         putMutatation(m, "20190502");
         putMutatation(m, "20190503");
         putMutatation(m, "20190504");
+        putMutatation(m, "20190505");
         bw.addMutation(m);
         
         m = new Mutation("PUB_FIELD");
-        putMutatation(m, "20190101");
-        putMutatation(m, "20190102");
         putMutatation(m, "20190103");
-        putMutatation(m, "20190201");
-        putMutatation(m, "20190202");
+        putMutatation(m, "20190104");
+        putMutatation(m, "20190105");
         putMutatation(m, "20190203");
-        putMutatation(m, "20190301");
-        putMutatation(m, "20190302");
+        putMutatation(m, "20190204");
+        putMutatation(m, "20190205");
         putMutatation(m, "20190303");
-        putMutatation(m, "20190401");
-        putMutatation(m, "20190402");
+        putMutatation(m, "20190304");
+        putMutatation(m, "20190305");
         putMutatation(m, "20190403");
         putMutatation(m, "20190404");
         putMutatation(m, "20190405");
-        putMutatation(m, "20190501");
-        putMutatation(m, "20190502");
+        putMutatation(m, "20190406");
+        putMutatation(m, "20190407");
         putMutatation(m, "20190503");
         putMutatation(m, "20190504");
+        putMutatation(m, "20190505");
+        putMutatation(m, "20190506");
         bw.addMutation(m);
+        
+        m = new Mutation("SPAN_TWO_YEARS_FIELD");
+        putMutatation(m, "20190103");
+        putMutatation(m, "20190104");
+        putMutatation(m, "20190105");
+        putMutatation(m, "20190203");
+        putMutatation(m, "20190204");
+        putMutatation(m, "20190205");
+        putMutatation(m, "20190303");
+        putMutatation(m, "20190304");
+        putMutatation(m, "20190305");
+        putMutatation(m, "20190403");
+        putMutatation(m, "20190404");
+        putMutatation(m, "20190405");
+        putMutatation(m, "20190406");
+        putMutatation(m, "20190407");
+        putMutatation(m, "20200503");
+        putMutatation(m, "20200504");
+        putMutatation(m, "20200505");
+        putMutatation(m, "20200506");
+        bw.addMutation(m);
+        
         bw.close();
         
     }
@@ -280,8 +302,27 @@ public class IndexColumnIteratorTest {
     }
     
     private void checkFrequencyCompressedData(int numEntries, HashMap<String,IndexedDatesValue> counterHashMap) {
-        // Also verifies AgeOff
-        Assert.assertTrue(numEntries == 3);
+        // TODO Do a more convincing check of inserted dates but until then IndexedDatesValue.toString will have to
+        // suffice since I have remove TreeSet<YearMonthDay> from IndexedDatesValue class.
+        Assert.assertTrue(numEntries == 4);
+        Assert.assertTrue(counterHashMap
+                        .get("BAR_FIELD")
+                        .toString()
+                        .equals("Start date: String date: 20190101 ordinal day: 1 Bitset:"
+                                        + " {0, 1, 2, 3, 32, 33, 34, 60, 61, 62, 91, 92, 93, 94, 95, 121, 122, 123, 124}"));
+        Assert.assertTrue(counterHashMap
+                        .get("NAME_FIELD")
+                        .toString()
+                        .equals("Start date: String date: 20190102 ordinal day: 2 Bitset:"
+                                        + " {0, 1, 2, 3, 32, 33, 34, 60, 61, 62, 91, 92, 93, 94, 95, 121, 122, 123, 124}"));
+        Assert.assertTrue(counterHashMap
+                        .get("PUB_FIELD")
+                        .toString()
+                        .equals("Start date: String date: 20190103 ordinal day: 3 Bitset:"
+                                        + " {0, 1, 2, 3, 32, 33, 34, 60, 61, 62, 91, 92, 93, 94, 95, 121, 122, 123, 124}"));
+        
+        Assert.assertTrue((counterHashMap.get("SPAN_TWO_YEARS_FIELD").toString().equals("Start date: String date: 20190103 ordinal day: 3 Bitset:"
+                        + " {0, 1, 2, 3, 32, 33, 34, 60, 61, 62, 91, 92, 93, 94, 95, 487, 488, 489, 490}")));
         /*
          * Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190101"))));
          * Assert.assertTrue((counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20190102"))));
@@ -308,7 +349,7 @@ public class IndexColumnIteratorTest {
     }
     
     private void checkFrequencyCompressedDataForAgeOff(int numEntries, HashMap<String,IndexedDatesValue> counterHashMap) {
-        Assert.assertTrue(numEntries == 3);
+        Assert.assertTrue(numEntries == 4);
         /*
          * Assert.assertTrue(!(counterHashMap.get("BAR_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20090426"))));
          * Assert.assertTrue(!(counterHashMap.get("NAME_FIELD").getIndexedDatesSet().contains(new YearMonthDay("20090526"))));
