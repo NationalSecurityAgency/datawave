@@ -49,6 +49,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private static final short DEFAULT_MAX_SPLIT_DECREASE = 42;
     private static final double DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE = .5;
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
+    private static final String NO_LOCATION = "noloc";
     
     private static final Logger log = Logger.getLogger(MetadataTableSplits.class);
     
@@ -70,7 +71,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 if (log.isDebugEnabled()) {
                     log.debug("tablet location for " + entry.getKey() + " is null");
                 }
-                continue;
+                value = NO_LOCATION;
             }
             if (entry.getKey().getEndRow() != null) {
                 tabletLocationsByEndRow.put(entry.getKey().getEndRow(), value);
