@@ -6,7 +6,10 @@ import datawave.microservice.cached.LockableCacheInspector;
 import datawave.microservice.cached.LockableHazelcastCacheInspector;
 import datawave.microservice.cached.UniversalLockableCacheInspector;
 import datawave.microservice.common.storage.QueryCache;
+import datawave.microservice.common.storage.QueryLockManager;
 import datawave.microservice.common.storage.QueryQueueManager;
+import datawave.microservice.common.storage.lock.LocalQueryLockManager;
+import datawave.microservice.common.storage.lock.ZooQueryLockManager;
 import datawave.microservice.common.storage.queue.KafkaQueryQueueManager;
 import datawave.microservice.common.storage.queue.LocalQueryQueueManager;
 import datawave.microservice.common.storage.queue.RabbitQueryQueueManager;
@@ -113,6 +116,18 @@ public class QueryStorageConfig implements RabbitListenerConfigurer {
                 return new LocalQueryQueueManager();
             default:
                 throw new IllegalArgumentException("Unknown queue backend " + properties.getBackend());
+        }
+    }
+    
+    @Bean
+    public QueryLockManager lockManager() {
+        switch (properties.getLockManager()) {
+            case ZOO:
+                return new ZooQueryLockManager(properties.getZookeeperConnectionString());
+            case LOCAL:
+                return new LocalQueryLockManager();
+            default:
+                throw new IllegalArgumentException("Unknown lock manager " + properties.getLockManager());
         }
     }
 }

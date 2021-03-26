@@ -87,18 +87,18 @@ public class QueryStorageStateServiceTest {
     }
     
     @Test
-    public void testStateStorageService() throws ParseException, InterruptedException {
+    public void testStateStorageService() throws ParseException, InterruptedException, TaskLockException {
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
         query.setQueryLogicName("EventQuery");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         QueryPool queryPool = new QueryPool(TEST_POOL);
-        TaskKey key = storageService.storeQuery(queryPool, query);
+        TaskKey key = storageService.storeQuery(queryPool, query, 3);
         assertNotNull(key);
-        QueryTask storedTask = storageService.getTask(key);
+        QueryTask storedTask = storageService.getTask(key, 0);
         assertNotNull(storedTask);
-        List<QueryTask> storedTasks = storageService.getTasks(key.getQueryId());
+        List<TaskKey> storedTasks = storageService.getTasks(key.getQueryId());
         assertNotNull(storedTasks);
         assertEquals(1, storedTasks.size());
         
@@ -118,9 +118,6 @@ public class QueryStorageStateServiceTest {
         List<TaskDescription> tasks = storageStateService.getTasks(key.getQueryId().toString());
         assertEquals(1, tasks.size());
         assertQueryCreate(key.getQueryId(), queryPool, query, tasks.get(0));
-        
-        QueryTask task = storageService.getTask(key);
-        assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, task);
     }
     
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {

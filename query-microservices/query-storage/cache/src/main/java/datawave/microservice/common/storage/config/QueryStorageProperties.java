@@ -13,14 +13,24 @@ public class QueryStorageProperties {
         KAFKA, RABBITMQ, LOCAL
     }
     
+    public enum LOCKMGR implements Serializable {
+        ZOO, LOCAL
+    }
+    
     // should storage be synched to disk on every call
     private boolean synchStorage;
     
     // should task notifications be sent
     private boolean sendNotifications;
     
+    // the zookeeper connection string if needed
+    private String zookeeperConnectionString;
+    
     // which backend should be used
     private BACKEND backend = BACKEND.LOCAL;
+    
+    // which lock manager should be used
+    private LOCKMGR lockManager = LOCKMGR.LOCAL;
     
     public boolean isSynchStorage() {
         return synchStorage;
@@ -44,5 +54,21 @@ public class QueryStorageProperties {
     
     public void setBackend(BACKEND backend) {
         this.backend = backend;
+    }
+    
+    public LOCKMGR getLockManager() {
+        return lockManager;
+    }
+    
+    public void setLockManager(LOCKMGR lockmanager) {
+        this.lockManager = lockmanager;
+    }
+    
+    public String getZookeeperConnectionString() {
+        return zookeeperConnectionString;
+    }
+    
+    public void setZookeeperConnectionString(String zoo) {
+        this.zookeeperConnectionString = zoo;
     }
 }
