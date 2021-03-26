@@ -24,6 +24,7 @@ abc	dw==	r1n2:9997
 abc	eA==	r2n1:9998
 abc	eQ==	r1n1:9998
 abc	eg==	r1n1:9997
+abc	ejE=	noloc
 someTableName	[B@57c8b24d	r1n1:9997
 someTableName	[B@39320a41	r2n1:9998
 someTableName	[B@43f4ebd	r1n1:9998

@@ -114,10 +114,10 @@ public class SortedTabletLocationPartitionerTest {
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
         Assert.assertEquals(numPartitions, numberTimesPartitionSeen.size());
         
-        Assert.assertEquals(6, numberTimesPartitionSeen.get(0).intValue());
-        Assert.assertEquals(7, numberTimesPartitionSeen.get(1).intValue());
+        Assert.assertEquals(7, numberTimesPartitionSeen.get(0).intValue());
+        Assert.assertEquals(6, numberTimesPartitionSeen.get(1).intValue());
         Assert.assertEquals(7, numberTimesPartitionSeen.get(2).intValue());
-        Assert.assertEquals(6, numberTimesPartitionSeen.get(3).intValue());
+        Assert.assertEquals(7, numberTimesPartitionSeen.get(3).intValue());
         
         int resultRow1 = partitioner.getPartition(getBulkIngestKey("a"), new Value(), numPartitions);
         int resultRow2 = partitioner.getPartition(getBulkIngestKey("p"), new Value(), numPartitions);
@@ -128,6 +128,9 @@ public class SortedTabletLocationPartitionerTest {
         Assert.assertEquals(resultRow3, resultRow4);
         
         Assert.assertNotEquals(resultRow1, resultRow4);
+        
+        int resultRow5 = partitioner.getPartition(getBulkIngestKey("z1"), new Value(), numPartitions);
+        Assert.assertEquals(0, resultRow5);
         
     }
     
@@ -141,9 +144,9 @@ public class SortedTabletLocationPartitionerTest {
         
         Map<Integer,Integer> numberTimesPartitionSeen = new TreeMap<>();
         
-        // number of locations = 8
+        // number of locations = 9
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
-        Assert.assertEquals(8, numberTimesPartitionSeen.size());
+        Assert.assertEquals(9, numberTimesPartitionSeen.size());
         
         int resultRow1 = partitioner.getPartition(getBulkIngestKey("a"), new Value(), numPartitions);
         int resultRow2 = partitioner.getPartition(getBulkIngestKey("p"), new Value(), numPartitions);
@@ -158,8 +161,8 @@ public class SortedTabletLocationPartitionerTest {
     }
     
     public void countPartitions(Map<Integer,Integer> timesSeenOrderedByPartition, int numPartitions, MultiTableRangePartitioner partitioner) {
-        // first split is a, last is z
-        for (int i = 0; i < 26; i++) {
+        // first split is a, last is z1
+        for (int i = 0; i < 27; i++) {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int resultRow = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
             updateCounter(timesSeenOrderedByPartition, resultRow);
