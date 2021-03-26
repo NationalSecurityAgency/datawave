@@ -8,6 +8,8 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
@@ -32,6 +34,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -60,6 +63,11 @@ public class ShardedTableMapFileTest {
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD);
     }
     
+    @AfterClass
+    public static void cleanup() {
+        
+    }
+    
     @Test
     public void testWriteSplitsToFileAndReadThem() throws Exception {
         Configuration conf = new Configuration();
@@ -80,6 +88,26 @@ public class ShardedTableMapFileTest {
         TreeMap<Text,String> result = ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
         Assert.assertEquals("location2_1234", result.get(new Text("zEndRow")).toString());
         Assert.assertEquals(1, result.size());
+    }
+    
+    @Test
+    public void testUsingSplitsCache() throws Exception {
+        Configuration conf = new Configuration();
+        URL url = ShardedTableMapFileTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
+        conf.set(FileSystem.FS_DEFAULT_NAME_KEY, URI.create("file:///").toString());
+        conf.setLong("fs.local.block.size", 32 * 1024 * 1024);
+        
+        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard1,shard,someOtherTableName");
+        
+        String[] tableNames = new String[] {TABLE_NAME};
+        conf.set(ShardedTableMapFile.TABLE_NAMES, "shard1,shard,someOtherTableName");
+        
+        setWorkingDirectory(conf);
+        ShardedTableMapFile.setupFile(conf);
+        TreeMap<Text,String> result = ShardedTableMapFile.getShardIdToLocations(conf, "shard");
+        Assert.assertEquals(5, result.size());
+        
     }
     
     @Test(timeout = 240000)

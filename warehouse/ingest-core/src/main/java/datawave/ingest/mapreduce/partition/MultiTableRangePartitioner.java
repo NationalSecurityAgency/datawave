@@ -67,7 +67,9 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
             
             try {
                 NonShardedSplitsFile.Reader reader = new NonShardedSplitsFile.Reader(context.getConfiguration(), localCacheFiles, getSplitsFileType());
-                splitToLocationMap.set(reader.getSplitsAndLocationsByTable());
+                if (getSplitsFileType().equals(SplitsFileType.SPLITSANDLOCATIONS)) {
+                    splitToLocationMap.set(reader.getSplitsAndLocationsByTable());
+                }
                 splitsByTable.set(reader.getSplitsByTable());
                 if (splitsByTable.get().isEmpty() && splitToLocationMap.get().isEmpty()) {
                     log.error("Non-sharded splits by table cannot be empty.  If this is a development system, please create at least one split in one of the non-sharded tables (see bin/ingest/seed_index_splits.sh).");

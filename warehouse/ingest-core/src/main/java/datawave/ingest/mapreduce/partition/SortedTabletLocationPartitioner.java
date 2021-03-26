@@ -2,8 +2,11 @@ package datawave.ingest.mapreduce.partition;
 
 import com.google.common.collect.TreeMultimap;
 import datawave.ingest.mapreduce.job.SplitsFileType;
+import org.apache.commons.collections.BinaryHeap;
+import org.apache.commons.collections.buffer.PriorityBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import sun.tools.java.BinaryExceptionHandler;
 
 import java.util.*;
 
@@ -45,6 +48,8 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
         int locationsAssigned = 0;
         int assignedReducer = 0;
         
+        Map<Integer,Integer> reducerToSplitCount = new HashMap<>();
+        
         TreeMultimap<String,Integer> locationToSplits = TreeMultimap.create();
         
         for (int k = 0; k < cutPointArrayLength; k++) {
@@ -61,8 +66,24 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
             }
             
             locationsAssigned++;
-            // simple round robin for now. if accumulo isn't balanced we will feel the effects here and will likely want to add constraints at some point
-            assignedReducer = locationsAssigned % numPartitions;
+            // simple round robin for now until we've assigned something to each partition
+            int sum = null == reducerToSplitCount.get(assignedReducer) ? 0 : reducerToSplitCount.get(assignedReducer);
+            reducerToSplitCount.put(assignedReducer, sum + splitsForCurrentLocation.size());
+            
+            if (reducerToSplitCount.size() < numPartitions) {
+                assignedReducer = locationsAssigned % numPartitions;
+            } else {
+                // Once all partitions have at least one assignment, look for the one with the smallest number of splits
+                int leastSplits = Integer.MAX_VALUE;
+                int leastReducer = 0;
+                for (Map.Entry<Integer,Integer> reducer : reducerToSplitCount.entrySet()) {
+                    if (reducer.getValue() < leastSplits) {
+                        leastReducer = reducer.getKey();
+                        leastSplits = reducer.getValue();
+                    }
+                }
+                assignedReducer = leastReducer;
+            }
             
         }
         

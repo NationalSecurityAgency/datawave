@@ -114,20 +114,20 @@ public class SortedTabletLocationPartitionerTest {
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
         Assert.assertEquals(numPartitions, numberTimesPartitionSeen.size());
         
-        // 3rd location
+        Assert.assertEquals(6, numberTimesPartitionSeen.get(0).intValue());
+        Assert.assertEquals(7, numberTimesPartitionSeen.get(1).intValue());
+        Assert.assertEquals(7, numberTimesPartitionSeen.get(2).intValue());
+        Assert.assertEquals(6, numberTimesPartitionSeen.get(3).intValue());
+        
         int resultRow1 = partitioner.getPartition(getBulkIngestKey("a"), new Value(), numPartitions);
         int resultRow2 = partitioner.getPartition(getBulkIngestKey("p"), new Value(), numPartitions);
         Assert.assertEquals(resultRow1, resultRow2);
         
-        // 7th location mod 4 = 3
-        int resultRow = partitioner.getPartition(getBulkIngestKey("i"), new Value(), numPartitions);
-        Assert.assertEquals(resultRow1, resultRow);
-        
-        int resultRow3 = partitioner.getPartition(getBulkIngestKey("b"), new Value(), numPartitions);
-        int resultRow4 = partitioner.getPartition(getBulkIngestKey("w"), new Value(), numPartitions);
+        int resultRow3 = partitioner.getPartition(getBulkIngestKey("j"), new Value(), numPartitions);
+        int resultRow4 = partitioner.getPartition(getBulkIngestKey("z"), new Value(), numPartitions);
         Assert.assertEquals(resultRow3, resultRow4);
         
-        Assert.assertNotEquals(resultRow1, resultRow3);
+        Assert.assertNotEquals(resultRow1, resultRow4);
         
     }
     
