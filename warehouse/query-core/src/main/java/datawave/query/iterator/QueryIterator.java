@@ -277,27 +277,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         pruneIvaratorCacheDirs();
     }
     
-    // this method will prune any ivarator cache directories that are not available on this node
-    private void pruneIvaratorCacheDirs() throws IOException {
-        ivaratorCacheDirConfigs.removeIf(this::pruneIvaratorCacheDir);
-    }
-    
-    private boolean pruneIvaratorCacheDir(IvaratorCacheDirConfig config) {
-        boolean fsExists = false;
-        
-        // first, make sure the cache configuration is valid
-        if (config.isValid()) {
-            Path basePath = new Path(config.getBasePathURI());
-            
-            try {
-                FileSystem fs = this.getFileSystemCache().getFileSystem(basePath.toUri());
-                fsExists = fs.mkdirs(basePath) || fs.exists(basePath);
-            } catch (Exception e) {
-                log.debug("Ivarator Cache Dir does not exist: " + basePath);
-            }
-        }
-        
-        return !fsExists;
+    // this method will prune any ivarator cache directories that do not have a valid configuration.
+    private void pruneIvaratorCacheDirs() {
+        ivaratorCacheDirConfigs.removeIf(config -> !config.isValid());
     }
     
     @Override

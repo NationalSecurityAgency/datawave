@@ -1,6 +1,7 @@
 package datawave.query.util.sortedset;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -112,6 +113,10 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
             // go through the handler factories and try to persist the sorted set
             for (int i = 0; i < handlerFactories.size() && !buffer.isPersisted(); i++) {
                 SortedSetFileHandlerFactory handlerFactory = handlerFactories.get(i);
+                
+                // Lazily create the required directories that the files will be written to.
+                // handlerFactory.ensureDirsCreated();
+                
                 SortedSetFileHandler handler = createFileHandler(handlerFactory);
                 
                 // if we have a valid handler, try to persist
@@ -119,6 +124,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
                     Exception cause = null;
                     for (int attempts = 0; attempts <= numRetries && !buffer.isPersisted(); attempts++) {
                         try {
+                            
                             buffer.persist(handler);
                         } catch (IOException e) {
                             if (attempts == numRetries)
