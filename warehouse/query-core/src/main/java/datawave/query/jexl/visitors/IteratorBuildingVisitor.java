@@ -1033,8 +1033,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * Create a cache directory path for a specified regex node. If alternatives have been specified, then random alternatives will be attempted until one is
-     * found that can be written to.
+     * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      * 
      * @return A path
      */
