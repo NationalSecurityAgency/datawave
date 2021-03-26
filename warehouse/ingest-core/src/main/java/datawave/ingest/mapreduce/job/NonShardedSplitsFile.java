@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.util.StringUtils;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.codec.binary.Base64;
@@ -35,6 +36,8 @@ public class NonShardedSplitsFile {
     protected static final Logger log = Logger.getLogger(NonShardedSplitsFile.class);
     public static final String SPLITS_FILE_NAME_PROPERTY_KEY = "datawave.ingest.bulk.NonShardedSplitsFile.cutFile";
     private static final String SPLITS_FILE_NAME_PROPERTY_VALUE = "splits.txt";
+    private static final String TAB = "/t";
+    private static final String SEPARATOR = "/";
     
     public static class Writer {
         private URI uri;
@@ -122,7 +125,7 @@ public class NonShardedSplitsFile {
             } else if (splitsFileType.equals(SplitsFileType.SPLITSANDLOCATIONS)) {
                 tableSplitsAndLocations = splits.getSplitsAndLocationByTable(table);
                 for (Text splitAndLocation : tableSplitsAndLocations.keySet()) {
-                    out.println(table + "\t" + new String(Base64.encodeBase64(splitAndLocation.getBytes())) + "\t"
+                    out.println(table + TAB + new String(Base64.encodeBase64(splitAndLocation.getBytes())) + TAB
                                     + tableSplitsAndLocations.get(splitAndLocation));
                     if (log.isTraceEnabled()) {
                         log.trace(table + " split: " + splitAndLocation);
@@ -131,7 +134,7 @@ public class NonShardedSplitsFile {
             }
             if (tableSplits != null) {
                 for (Text split : tableSplits) {
-                    out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
+                    out.println(table + TAB + new String(Base64.encodeBase64(split.getBytes())));
                     if (log.isTraceEnabled()) {
                         log.trace(table + " split: " + split);
                     }
@@ -161,7 +164,7 @@ public class NonShardedSplitsFile {
     }
     
     private static boolean matchesFileName(String cutFileName, Path cacheFile) {
-        return cacheFile.getName().endsWith(cutFileName);
+        return cacheFile.getName().substring(cacheFile.getName().lastIndexOf(SEPARATOR) + 1).equals(cutFileName);
     }
     
     public static class Reader {
@@ -187,7 +190,7 @@ public class NonShardedSplitsFile {
             try (BufferedReader in = new BufferedReader(new FileReader(cacheFile.toString()))) {
                 String line;
                 while ((line = in.readLine()) != null) {
-                    String[] parts = line.split("\\t");
+                    String[] parts = StringUtils.split(line, "\\t");
                     isSameTable = parts[0].equals(previousTableName);
                     hasSplits = parts.length > 1;
                     hasLocations = parts.length > 2;
@@ -228,9 +231,9 @@ public class NonShardedSplitsFile {
             if (hasLocations) {
                 splitsAndLocations.put(previousTableName, new TreeMap(cutPointsAndLocations));
                 log.info("Adding cut points and locations for the table: " + previousTableName);
-                splits.put(previousTableName, cutPointsAndLocations.keySet().toArray(new Text[cutPointsAndLocations.size()]));
+                splits.put(previousTableName, cutPointsAndLocations.keySet().toArray(new Text[0]));
             } else if (hasSplits) {
-                splits.put(previousTableName, cutPoints.toArray(new Text[cutPoints.size()]));
+                splits.put(previousTableName, cutPoints.toArray(new Text[0]));
                 log.info("Adding cut points for table: " + previousTableName);
             }
         }

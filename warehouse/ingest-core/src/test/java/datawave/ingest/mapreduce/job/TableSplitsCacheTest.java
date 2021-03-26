@@ -25,8 +25,6 @@ import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -34,9 +32,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class TableSplitsCacheTest {
     
@@ -667,6 +663,18 @@ public class TableSplitsCacheTest {
             Assert.assertTrue("split size", (split - lastsplit) <= 402);
             lastsplit = split;
         }
+    }
+    
+    @Test
+    public void testLocs() throws IOException {
+        setSplitsCacheDir();
+        TableSplitsCache splitsCache = new TableSplitsCache(createMockJobConf());
+        
+        splitsCache.getSplitsAndLocation();
+        Assert.assertEquals(5, splitsCache.getSplitsAndLocationByTable("shard").size());
+        Assert.assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());
+        Assert.assertEquals(0, splitsCache.getSplitsAndLocationByTable("someOtherTable").size());
+        
     }
     
 }

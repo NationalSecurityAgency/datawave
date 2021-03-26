@@ -261,6 +261,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         while ((line = in.readLine()) != null) {
             String[] parts = StringUtils.split(line, delimiter);
             if (tableName == null || !tableName.equals(parts[0])) {
+                if (null == tmpSplitLocations || tmpSplitLocations.isEmpty()) {
+                    this.splitLocations.remove(tableName);
+                }
                 tableName = parts[0];
                 splits = new ArrayList<>();
                 tmpSplitLocations = new TreeMap<>();
@@ -273,6 +276,10 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             if (parts.length > 2) {
                 tmpSplitLocations.put(new Text(Base64.decodeBase64(parts[1].getBytes())), parts[2]);
             }
+            
+        }
+        if (null == tmpSplitLocations || tmpSplitLocations.isEmpty()) {
+            this.splitLocations.remove(tableName);
         }
         in.close();
     }

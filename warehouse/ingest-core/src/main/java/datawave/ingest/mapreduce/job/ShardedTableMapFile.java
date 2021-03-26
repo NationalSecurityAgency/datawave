@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.job;
 
+import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
@@ -208,7 +209,6 @@ public class ShardedTableMapFile {
     
     private static Map<String,Path> loadMap(Configuration conf, boolean doValidation) throws IOException, URISyntaxException, AccumuloSecurityException,
                     AccumuloException {
-        AccumuloHelper accumuloHelper = null;
         Path workDir = new Path(conf.get(SPLIT_WORK_DIR));// todo make sure this is set in ingest job
         String[] tableNames = StringUtils.split(conf.get(TABLE_NAMES), ",");// todo make sure this is set in ingest job
         
@@ -232,11 +232,8 @@ public class ShardedTableMapFile {
             if (shardedTableMapFilePaths.containsKey(shardedTableName) && null != shardedTableMapFilePaths.get(shardedTableName)) {
                 shardedMapFile = new Path(shardedTableMapFilePaths.get(shardedTableName));
             } else {
-                if (null == accumuloHelper) {
-                    accumuloHelper = new AccumuloHelper();
-                    accumuloHelper.setup(conf);
-                }
-                shardedMapFile = createShardedMapFile(log, conf, workDir, accumuloHelper, shardedTableName, doValidation);
+                
+                shardedMapFile = createShardedMapFile(log, conf, workDir, shardedTableName, doValidation);
             }
             
             // Ensure that we either computed, or were given, a valid path to the shard mappings
@@ -284,8 +281,6 @@ public class ShardedTableMapFile {
      *            hadoop configuration
      * @param workDir
      *            base dir in HDFS where the file is written
-     * @param accumuloHelper
-     *            Accumulo helper to query shard locations
      * @param shardedTableName
      *            name of the shard table--the table whose locations we are querying
      * @param validateShardLocations
@@ -294,8 +289,8 @@ public class ShardedTableMapFile {
      * @throws IOException
      * @throws URISyntaxException
      */
-    public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, AccumuloHelper accumuloHelper, String shardedTableName,
-                    boolean validateShardLocations) throws IOException, URISyntaxException {
+    public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, String shardedTableName, boolean validateShardLocations)
+                    throws IOException {
         Path shardedMapFile = null;
         // minus one to make zero based indexed
         int daysToVerify = conf.getInt(SHARDS_BALANCED_DAYS_TO_VERIFY, 2) - 1;
@@ -305,7 +300,7 @@ public class ShardedTableMapFile {
             // get the mapping of shard IDs to tablet locations.
             log.info("Reading metadata entries for " + shardedTableName);
             
-            Map<Text,String> splitToLocations = getLocations(log, accumuloHelper, shardedTableName);
+            Map<Text,String> splitToLocations = getLocations(log, conf, shardedTableName);
             if (validateShardLocations) {
                 validateShardIdLocations(conf, shardedTableName, daysToVerify, splitToLocations);
             }
@@ -326,42 +321,54 @@ public class ShardedTableMapFile {
      *
      * @param log
      *            logger for reporting errors
-     * @param accumuloHelper
-     *            Accumulo helper to query shard locations
      * @param shardedTableName
      *            name of the shard table--the table whose locations we are querying
      * @return a map of split (endRow) to the location of those tablets in accumulo
      */
-    public static Map<Text,String> getLocations(Logger log, AccumuloHelper accumuloHelper, String shardedTableName) {
+    public static Map<Text,String> getLocations(Logger log, Configuration conf, String shardedTableName) {
         // split (endRow) -> String location mapping
         Map<Text,String> splitToLocation = new TreeMap<>();
+        AccumuloHelper accumuloHelper = null;
         
         boolean keepRetrying = true;
         int attempts = 0;
-        while (keepRetrying && attempts < MAX_RETRY_ATTEMPTS) {
-            try {
-                TableOperations tableOps = accumuloHelper.getConnector().tableOperations();
-                attempts++;
-                // if table does not exist don't want to catch the errors and end up in infinite loop
-                if (!tableOps.exists(shardedTableName)) {
-                    log.error("Table " + shardedTableName + " not found, skipping split locations for missing table");
-                } else {
-                    Range range = new Range();
-                    Locations locations = tableOps.locate(shardedTableName, Collections.singletonList(range));
-                    List<TabletId> tabletIds = locations.groupByRange().get(range);
-                    
-                    tabletIds.stream().filter(tId -> tId.getEndRow() != null)
-                                    .forEach(tId -> splitToLocation.put(tId.getEndRow(), locations.getTabletLocation(tId)));
+        
+        try {
+            TableSplitsCache splitsCache = new TableSplitsCache(conf);
+            splitToLocation = splitsCache.getSplitsAndLocationByTable(shardedTableName);
+        } catch (Exception e) {
+            log.warn("Unable to retrieve splits and locations from splits cache.  Proceeding to read directly from Accumulo.");
+            
+            accumuloHelper = new AccumuloHelper();
+            accumuloHelper.setup(conf);
+            
+            while (keepRetrying && attempts < MAX_RETRY_ATTEMPTS) {
+                try (AccumuloClient client = accumuloHelper.newClient()) {
+                    TableOperations tableOps = client.tableOperations();
+                    attempts++;
+                    // if table does not exist don't want to catch the errors and end up in infinite loop
+                    if (!tableOps.exists(shardedTableName)) {
+                        log.error("Table " + shardedTableName + " not found, skipping split locations for missing table");
+                    } else {
+                        Range range = new Range();
+                        Locations locations = tableOps.locate(shardedTableName, Collections.singletonList(range));
+                        List<TabletId> tabletIds = locations.groupByRange().get(range);
+                        
+                        for (TabletId tId : tabletIds) {
+                            if (null != tId && null != tId.getEndRow()) {
+                                splitToLocation.put(tId.getEndRow(), locations.getTabletLocation(tId));
+                            }
+                        }
+                    }
+                    // made it here, no errors so break out
+                    keepRetrying = false;
+                } catch (Exception e2) {
+                    log.warn(e.getClass().getName() + ":" + e2.getMessage() + " ... retrying ...", e2);
+                    UtilWaitThread.sleep(3000);
+                    splitToLocation.clear();
                 }
-                // made it here, no errors so break out
-                keepRetrying = false;
-            } catch (Exception e) {
-                log.warn(e.getClass().getName() + ":" + e.getMessage() + " ... retrying ...", e);
-                UtilWaitThread.sleep(3000);
-                splitToLocation.clear();
             }
         }
-        
         return splitToLocation;
     }
     
