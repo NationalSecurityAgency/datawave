@@ -2,16 +2,18 @@ package datawave.query;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.BaseRawData;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -29,6 +31,9 @@ import static datawave.query.testframework.RawDataManager.NE_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 
 public class DataTypeQueryTest extends AbstractFunctionalQuery {
+    
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
     private static final Logger log = Logger.getLogger(DataTypeQueryTest.class);
     
@@ -50,8 +55,8 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             dataTypes.add(new CitiesDataType(entry, generic));
         }
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        client = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
     
     public DataTypeQueryTest() {
@@ -159,7 +164,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         for (String num : TEST_NUMS) {
             String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
-            query = "((BoundedRange = true) && (" + query + "))";
+            query = "((_Bounded_ = true) && (" + query + "))";
             runTest(query, expect, qOptions);
         }
     }
@@ -176,7 +181,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         for (String num : TEST_NUMS) {
             String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
-            query = "((BoundedRange = true) && (" + query + "))";
+            query = "((_Bounded_ = true) && (" + query + "))";
             runTest(query, expect, qOptions);
         }
     }

@@ -767,13 +767,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setHitList(hitListBool);
         }
         
-        // Get the TYPE_METADATA_IN_HDFS parameter if given
-        String typeMetadataInHdfsString = settings.findParameter(QueryParameters.TYPE_METADATA_IN_HDFS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(typeMetadataInHdfsString)) {
-            Boolean typeMetadataInHdfsBool = Boolean.parseBoolean(typeMetadataInHdfsString);
-            config.setTypeMetadataInHdfs(typeMetadataInHdfsBool);
-        }
-        
         // Get the BYPASS_ACCUMULO parameter if given
         String bypassAccumuloString = settings.findParameter(BYPASS_ACCUMULO).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(bypassAccumuloString)) {
@@ -793,11 +786,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang.StringUtils.isNotBlank(rawTypesString)) {
             Boolean rawTypesBool = Boolean.parseBoolean(rawTypesString);
             config.setRawTypes(rawTypesBool);
-            // if raw types are going to be replaced in the type metadata, we cannot use the hdfs-cached typemetadata
-            // these properties are mutually exclusive
-            if (rawTypesBool) {
-                config.setTypeMetadataInHdfs(false);
-            }
         }
         
         // Get the FILTER_MASKED_VALUES spring setting
@@ -1265,14 +1253,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setHitList(boolean hitList) {
         getConfig().setHitList(hitList);
-    }
-    
-    public boolean isTypeMetadataInHdfs() {
-        return getConfig().isTypeMetadataInHdfs();
-    }
-    
-    public void setTypeMetadataInHdfs(boolean typeMetadataInHdfs) {
-        getConfig().setTypeMetadataInHdfs(typeMetadataInHdfs);
     }
     
     public int getEventPerDayThreshold() {
@@ -1882,7 +1862,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryOptions.POSTPROCESSING_CLASSES);
         optionalParams.add(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS);
         optionalParams.add(QueryOptions.HIT_LIST);
-        optionalParams.add(QueryOptions.TYPE_METADATA_IN_HDFS);
         optionalParams.add(QueryOptions.DATE_INDEX_TIME_TRAVEL);
         optionalParams.add(QueryParameters.LIMIT_FIELDS);
         optionalParams.add(QueryParameters.GROUP_FIELDS);

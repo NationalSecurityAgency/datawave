@@ -37,15 +37,15 @@ import org.apache.hadoop.util.StringUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
-
-import com.google.common.io.Files;
+import org.junit.rules.TemporaryFolder;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.util.time.DateHelper;
 import datawave.util.TableName;
+import datawave.util.time.DateHelper;
 
 public class ShardedTableMapFileTest {
     private static final Log LOG = LogFactory.getLog(ShardedTableMapFileTest.class);
@@ -55,6 +55,9 @@ public class ShardedTableMapFileTest {
     private static final String TABLE_NAME = "unitTestTable";
     private static final int SHARDS_PER_DAY = 10;
     private static Configuration conf;
+    
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     @BeforeClass
     public static void defineShardLocationsFile() throws IOException {
@@ -150,7 +153,7 @@ public class ShardedTableMapFileTest {
     private MiniAccumuloCluster createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet) throws IOException, InterruptedException,
                     AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         MiniAccumuloCluster accumuloCluster;
-        File clusterDir = Files.createTempDir();
+        File clusterDir = temporaryFolder.newFolder();
         LOG.info("Created local directory for MiniAccumuloCluster: " + clusterDir.getAbsolutePath());
         accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
         accumuloCluster.start();
@@ -194,7 +197,7 @@ public class ShardedTableMapFileTest {
     
     private FileSystem setWorkingDirectory(Configuration conf) throws IOException {
         FileSystem fs = FileSystem.getLocal(conf);
-        File tempWorkDir = Files.createTempDir();
+        File tempWorkDir = temporaryFolder.newFolder();
         fs.setWorkingDirectory(new Path(tempWorkDir.toString()));
         conf.set(ShardedTableMapFile.SPLIT_WORK_DIR, tempWorkDir.toString());
         return fs;
@@ -203,7 +206,7 @@ public class ShardedTableMapFileTest {
     @Test(expected = IOException.class)
     public void testGetAllShardedTableMapFilesWithoutPath() throws Exception {
         Configuration conf = new Configuration();
-        File tempWorkDir = Files.createTempDir();
+        File tempWorkDir = temporaryFolder.newFolder();
         conf.set(FileSystem.FS_DEFAULT_NAME_KEY, tempWorkDir.toURI().toString());
         FileSystem fs = FileSystem.get(tempWorkDir.toURI(), conf);
         fs.setWorkingDirectory(new Path(tempWorkDir.toString()));

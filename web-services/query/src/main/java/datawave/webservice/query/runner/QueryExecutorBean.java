@@ -32,6 +32,7 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -487,7 +488,16 @@ public class QueryExecutorBean implements QueryExecutor {
             Arrays.sort(dns);
             qd.dnList = Arrays.asList(dns);
             qd.proxyServers = dp.getProxyServers();
+            
+            // Verify that the calling principal has access to the query logic.
+            if (!qd.logic.containsDNWithAccess(qd.dnList)) {
+                UnauthorizedQueryException qe = new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + qd.dnList, 401);
+                GenericResponse<String> response = new GenericResponse<>();
+                response.addException(qe);
+                throw new UnauthorizedException(qe, response);
+            }
         }
+        
         log.trace(qd.userid + " has authorizations " + ((qd.p instanceof DatawavePrincipal) ? ((DatawavePrincipal) qd.p).getAuthorizations() : ""));
         
         // always check against the max
