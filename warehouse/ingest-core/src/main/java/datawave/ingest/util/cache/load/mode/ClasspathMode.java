@@ -10,7 +10,7 @@ public class ClasspathMode implements LoadJobCacheMode {
     public static final String CLASSPATH_DELIM = ":";
     
     @Override
-    public Collection<String> getFilesToLoad(ModeOptions options) {
+    public Collection<String> getFilesToLoad(LoadModeOptions options) {
         String classpath = Args.notNull(options.getClasspath(), "Classpath can not be null");
         return FilesFinder.getFilesFromClasspath(classpath, CLASSPATH_DELIM);
     }

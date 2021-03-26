@@ -14,7 +14,7 @@ public class FilePatternMode implements LoadJobCacheMode {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadJobCacheLauncher.class);
     
     @Override
-    public Collection<String> getFilesToLoad(ModeOptions options) {
+    public Collection<String> getFilesToLoad(LoadModeOptions options) {
         Collection<String> filesToLoad = Lists.newArrayList();
         
         String inputPath = options.getInputPath();

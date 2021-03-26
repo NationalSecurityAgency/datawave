@@ -1,4 +1,4 @@
-package datawave.ingest.util.cache.load.converter;
+package datawave.ingest.util.cache.converter;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -6,8 +6,8 @@ import org.junit.Test;
 import static datawave.ingest.util.cache.load.mode.LoadJobCacheMode.Mode.CLASSPATH;
 import static datawave.ingest.util.cache.load.mode.LoadJobCacheMode.Mode.FILE_PATTERN;
 
-public class ModeConverterTest {
-    private static final ModeConverter MODE_CONVERTER = new ModeConverter();
+public class LoadModeConverterTest {
+    private static final LoadModeConverter MODE_CONVERTER = new LoadModeConverter();
     
     @Test
     public void testClasspathMode() {

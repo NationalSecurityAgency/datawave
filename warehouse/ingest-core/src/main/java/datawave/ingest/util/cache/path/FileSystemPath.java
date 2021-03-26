@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /** Class that will map an output path to its file system specified by the passed in configurations */
 public class FileSystemPath implements AutoCloseable {
@@ -17,6 +18,11 @@ public class FileSystemPath implements AutoCloseable {
     
     private final Path outputPath;
     private final FileSystem fileSystem;
+    
+    public FileSystemPath(FileSystem fileSystem, Path outputPath) {
+        this.fileSystem = fileSystem;
+        this.outputPath = outputPath;
+    }
     
     public FileSystemPath(Path outputPath, Collection<Configuration> confs) {
         Optional<FileSystem> optFs = HadoopFileSystemUtils.getFileSystem(confs, outputPath);
@@ -44,4 +50,41 @@ public class FileSystemPath implements AutoCloseable {
             LOGGER.warn("Unable to close {}", fileSystem, e);
         }
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof FileSystemPath)) {
+            return false;
+        }
+        
+        FileSystemPath that = ((FileSystemPath) obj);
+        String thatOutputPath = that.getOutputPath().toUri().getPath();
+        String thisOutputPath = outputPath.toUri().getPath();
+        
+        return thisOutputPath.equals(thatOutputPath) && that.getFileSystem().equals(this.fileSystem);
+    }
+    
+    @Override
+    public String toString() {
+        return "Path: " + outputPath.toUri().getPath() + " Filesystem: " + fileSystem.toString();
+    }
+    
+    /**
+     * Will associate a file system to each input path
+     *
+     * @param paths
+     *            Input paths to associate with a file system.
+     * @param confs
+     *            Hadoop configuration object used to find available file systems.
+     * @return A collection of object that associate the path to its file system.
+     */
+    public static Collection<FileSystemPath> getFileSystemPaths(Collection<Path> paths, Collection<Configuration> confs) {
+        // @formatter:off
+        return paths
+                .stream()
+                .map(path -> new FileSystemPath(path, confs))
+                .collect(Collectors.toList());
+        // @formatter:on
+    }
+    
 }

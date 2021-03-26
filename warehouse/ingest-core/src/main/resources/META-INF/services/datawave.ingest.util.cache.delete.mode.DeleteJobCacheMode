@@ -1,0 +1,2 @@
+datawave.ingest.util.cache.delete.mode.DeletesSpecifiedMode
+datawave.ingest.util.cache.delete.mode.OldInactiveMode

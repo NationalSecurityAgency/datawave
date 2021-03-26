@@ -1,5 +1,8 @@
 package datawave.common.io;
 
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.http.util.Args;
 
 import java.io.File;
@@ -12,6 +15,7 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -89,4 +93,35 @@ public class FilesFinder {
             throw new RuntimeException("Unable to convert " + pathEntry + " to a canonical path.", e);
         }
     }
+    
+    /**
+     * Will search the source path for files that match the pattern
+     *
+     * @param fileSystem
+     *            The file system
+     * @param sourcePath
+     *            The source path to list
+     * @param pattern
+     *            The pattern to evaluate matching files
+     * @return An array of files status objects representing matching files.
+     */
+    public static FileStatus[] listPath(FileSystem fileSystem, org.apache.hadoop.fs.Path sourcePath, Pattern pattern) {
+        try {
+            return fileSystem.listStatus(sourcePath, getCachePathFilter(pattern));
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to list files from " + sourcePath + " of pattern" + pattern, e);
+        }
+    }
+    
+    /**
+     * Will create a PathFilter based on a pattern
+     *
+     * @param pattern
+     *            A pattern to filter matches
+     * @return A path filter that will evaluate files based on a pattern
+     */
+    private static PathFilter getCachePathFilter(Pattern pattern) {
+        return path -> pattern.matcher(path.getName()).matches();
+    }
+    
 }

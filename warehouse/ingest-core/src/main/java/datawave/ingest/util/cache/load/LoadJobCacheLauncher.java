@@ -5,12 +5,12 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.Lists;
 import datawave.ingest.util.ConfigurationFileHelper;
-import datawave.ingest.util.cache.load.converter.HadoopPathConverter;
-import datawave.ingest.util.cache.load.converter.ShortConverter;
+import datawave.ingest.util.cache.converter.HadoopPathConverter;
+import datawave.ingest.util.cache.converter.ShortConverter;
 import datawave.ingest.util.cache.load.mode.ClasspathMode;
 import datawave.ingest.util.cache.load.mode.LoadJobCacheMode;
-import datawave.ingest.util.cache.load.converter.ModeConverter;
-import datawave.ingest.util.cache.load.mode.ModeOptions;
+import datawave.ingest.util.cache.converter.LoadModeConverter;
+import datawave.ingest.util.cache.load.mode.LoadModeOptions;
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -23,7 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Load job cache launcher will copy local configuration and jars file to a configurable timestamped location in hdfs
@@ -49,7 +48,7 @@ public class LoadJobCacheLauncher {
     @Parameter(names = {"-h", "-help", "--help", "-?"}, help = true, description = "Prints job options.")
     boolean help;
     
-    @Parameter(names = {"--load-mode"}, description = "Mode to determine how to find files to load the cache.", converter = ModeConverter.class)
+    @Parameter(names = {"--load-mode"}, description = "Mode to determine how to find files to load the cache.", converter = LoadModeConverter.class)
     LoadJobCacheMode loadMode = new ClasspathMode();
     
     @Parameter(names = {"--output-paths"}, description = "The output directories to load", converter = HadoopPathConverter.class, required = true)
@@ -67,12 +66,12 @@ public class LoadJobCacheLauncher {
      * @param options
      *            Mode options that will determine the files to load to cache
      */
-    public void run(ModeOptions options) {
+    public void run(LoadModeOptions options) {
         Collection<FileSystemPath> fsPaths = Lists.newArrayList();
         Collection<Configuration> hadoopConfs = ConfigurationFileHelper.getHadoopConfs(hadoopConfDirs);
         
         try {
-            fsPaths = getFileSystemPaths(outputPaths, hadoopConfs);
+            fsPaths = FileSystemPath.getFileSystemPaths(outputPaths, hadoopConfs);
             Collection<String> filesToUpload = loadMode.getFilesToLoad(options);
             if (!filesToUpload.isEmpty()) {
                 LOGGER.info("Loading job cache with timestamp directory {}", timestampDir);
@@ -85,28 +84,19 @@ public class LoadJobCacheLauncher {
         }
     }
     
-    private Collection<FileSystemPath> getFileSystemPaths(Collection<Path> paths, Collection<Configuration> confs) {
-        // @formatter:off
-        return paths
-                .stream()
-                .map(path -> new FileSystemPath(path, confs))
-                .collect(Collectors.toList());
-        // @formatter:on
-    }
-    
     public static void main(String[] args) throws Exception {
         LOGGER.info("Starting load job cache utility");
         LoadJobCacheLauncher launcher = new LoadJobCacheLauncher();
-        ModeOptions modeOptions = new ModeOptions();
+        LoadModeOptions loadModeOptions = new LoadModeOptions();
         
-        JCommander jCommander = JCommander.newBuilder().addObject(launcher).addObject(modeOptions).build();
+        JCommander jCommander = JCommander.newBuilder().addObject(launcher).addObject(loadModeOptions).build();
         try {
             jCommander.parse(args);
             if (launcher.help) {
                 jCommander.usage();
-                System.exit(-1);
+            } else {
+                launcher.run(loadModeOptions);
             }
-            launcher.run(modeOptions);
         } catch (ParameterException e) {
             System.err.println(e.getMessage());
             jCommander.usage();

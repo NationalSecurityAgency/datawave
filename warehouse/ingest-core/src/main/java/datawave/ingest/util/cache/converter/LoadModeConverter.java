@@ -1,4 +1,4 @@
-package datawave.ingest.util.cache.load.converter;
+package datawave.ingest.util.cache.converter;
 
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.ParameterException;
@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 /** JCommander converter class to convert a command line string to the LoadJobCacheMode object */
-public class ModeConverter implements IStringConverter<LoadJobCacheMode> {
+public class LoadModeConverter implements IStringConverter<LoadJobCacheMode> {
     @Override
     public LoadJobCacheMode convert(String value) {
         Optional<LoadJobCacheMode> mode = LoadJobCacheMode.getLoadCacheMode(LoadJobCacheMode.Mode.valueOf(value));

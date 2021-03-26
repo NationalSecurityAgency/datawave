@@ -18,8 +18,7 @@ public interface LoadJobCacheMode {
      */
     static Optional<LoadJobCacheMode> getLoadCacheMode(Mode mode) {
         // @formatter:off
-        return StreamSupport
-                .stream(serviceLoader.spliterator(), false)
+        return StreamSupport.stream(serviceLoader.spliterator(), false)
                 .filter(loaderMode -> loaderMode.getMode().equals(mode))
                 .findFirst();
         // @formatter:on
@@ -39,7 +38,7 @@ public interface LoadJobCacheMode {
      *            Mode options necessary for finding local files
      * @return A collection of files to load
      */
-    Collection<String> getFilesToLoad(ModeOptions options);
+    Collection<String> getFilesToLoad(LoadModeOptions options);
     
     /** Mode enum for specifying the method to find files to load */
     enum Mode {

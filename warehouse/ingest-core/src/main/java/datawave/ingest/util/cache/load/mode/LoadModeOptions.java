@@ -3,7 +3,7 @@ package datawave.ingest.util.cache.load.mode;
 import com.beust.jcommander.Parameter;
 
 /** JCommander options class that will define the mode options for LoadJobCacheLauncher */
-public class ModeOptions {
+public class LoadModeOptions {
     
     private static final String DATAWAVE_HOME = System.getenv().getOrDefault("DATAWAVE_HOME", "/opt/datawave-ingest/current/");
     
