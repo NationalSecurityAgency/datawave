@@ -42,15 +42,18 @@ public class ContentKeyValueFactory {
             try {
                 c.setContents(decode(new String(value.get())));
             } catch (Exception e) {
+                log.error("Base64/GZip decode failed!", e);
                 // Thrown when data is not Base64 encoded. Try GZIP
                 if (isGzip(value.get())) {
                     try {
                         c.setContents(gunzip(value.get()));
                     } catch (IOException ioe) {
+                        log.error("GZip decode failed!", ioe);
                         // Not GZIP, now what?
                         c.setContents(value.get());
                     }
                 } else {
+                    log.warn("Failed all attempts to decode value. Setting contents ");
                     c.setContents(value.get());
                 }
             }
