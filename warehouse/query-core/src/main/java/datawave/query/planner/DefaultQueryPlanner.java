@@ -2053,10 +2053,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.DOCUMENT_PERMUTATION_CLASSES, docPermutationConfig.toString(), false);
         }
         
+        // if groupby function is used, for include.grouping.context to br true
+        if (config.getGroupFields() != null && !config.getGroupFields().isEmpty()) {
+            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(true), false);
+        } else {
+            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);
+        }
+        
         addOption(cfg, QueryOptions.REDUCED_RESPONSE, Boolean.toString(config.isReducedResponse()), false);
         addOption(cfg, QueryOptions.DISABLE_EVALUATION, Boolean.toString(config.isDisableEvaluation()), false);
         addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, Boolean.toString(config.isDisableIndexOnlyDocuments()), false);
-        addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);
         addOption(cfg, QueryOptions.CONTAINS_INDEX_ONLY_TERMS, Boolean.toString(config.isContainsIndexOnlyTerms()), false);
         addOption(cfg, QueryOptions.CONTAINS_COMPOSITE_TERMS, Boolean.toString(config.isContainsCompositeTerms()), false);
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);

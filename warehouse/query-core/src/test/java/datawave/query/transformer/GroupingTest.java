@@ -253,7 +253,6 @@ public abstract class GroupingTest {
     @Test
     public void testGrouping() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -312,7 +311,6 @@ public abstract class GroupingTest {
     @Test
     public void testGrouping2() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -344,7 +342,6 @@ public abstract class GroupingTest {
     @Test
     public void testGrouping3() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -366,7 +363,6 @@ public abstract class GroupingTest {
     @Test
     public void testGrouping4() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -388,7 +384,6 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingUsingFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
@@ -419,7 +414,6 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingUsingLuceneFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
@@ -451,7 +445,6 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingUsingLuceneFunctionWithDuplicateValues() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
