@@ -118,13 +118,15 @@ public class ZooQueryLockManager implements QueryLockManager {
     public boolean isLocked(TaskKey task) throws IOException {
         return getQueryLock(task.getQueryId()).isLocked(task);
     }
-
+    
     /**
      * Determine if the specified query exists in the underlying cluster
      *
-     * @param queryId The query id
+     * @param queryId
+     *            The query id
      * @return true if it exists
-     * @throws IOException If there was a lock system access failure
+     * @throws IOException
+     *             If there was a lock system access failure
      */
     @Override
     public boolean exists(UUID queryId) throws IOException {
@@ -132,14 +134,14 @@ public class ZooQueryLockManager implements QueryLockManager {
         if (semaphores.containsKey(queryId)) {
             return true;
         }
-
+        
         try {
             return (client.checkExists().forPath(getBasePath(queryId)) != null);
         } catch (Exception e) {
             throw new IOException("Failed to examine zookeeper path for " + getBaseTaskLockPath(queryId), e);
         }
     }
-
+    
     /**
      * Get the list of tasks that currently have locks (in this JVM)
      *
@@ -278,14 +280,16 @@ public class ZooQueryLockManager implements QueryLockManager {
         private final SharedCount maxPermits;
         private final InterProcessSemaphoreV2 semaphore;
         private final Map<TaskKey,LeaseAndLock> leases = new HashMap<>();
-
+        
         private class LeaseAndLock {
             final Lease lease;
             final InterProcessMutex lock;
+            
             LeaseAndLock(Lease lease, InterProcessMutex lock) {
                 this.lease = lease;
                 this.lock = lock;
             }
+            
             public void close() throws IOException {
                 try {
                     lock.release();
@@ -296,7 +300,7 @@ public class ZooQueryLockManager implements QueryLockManager {
                 }
             }
         }
-
+        
         QueryLock(UUID queryId) throws IOException {
             this.queryId = queryId;
             // first lets setup the shared count if needed
@@ -306,14 +310,14 @@ public class ZooQueryLockManager implements QueryLockManager {
             } catch (Exception e) {
                 throw new IOException("Unable to start zookeeper counter", e);
             }
-
+            
             // now lets create the semaphore
             semaphore = getSemaphore(queryId, maxPermits);
         }
-
+        
         QueryLock(UUID queryId, int count) throws IOException {
             this(queryId);
-
+            
             // set the number of permits
             updatePermits(count);
         }
@@ -385,7 +389,7 @@ public class ZooQueryLockManager implements QueryLockManager {
             if (lease == null) {
                 throw new TaskLockException("Task not locked: " + task);
             }
-
+            
             lease.close();
         }
         

@@ -213,7 +213,7 @@ public class QueryStorageCacheTest {
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-
+        
         TaskKey key = new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), query.getQueryLogicName());
         lockManager.createSemaphore(key.getQueryId(), 3);
         try {
@@ -277,7 +277,7 @@ public class QueryStorageCacheTest {
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-
+        
         lockManager.createSemaphore(queryId, 3);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
@@ -314,7 +314,7 @@ public class QueryStorageCacheTest {
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-
+        
         lockManager.createSemaphore(queryId, 3);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         

@@ -308,8 +308,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
                 semaphore.incrementAndGet();
             } else {
                 // requeue, this was not a test message
-                rabbitTemplate.convertAndSend(message.getMessageProperties().getReceivedExchange(),
-                                message.getMessageProperties().getReceivedRoutingKey(), message.getBody());
+                rabbitTemplate.convertAndSend(message.getMessageProperties().getReceivedExchange(), message.getMessageProperties().getReceivedRoutingKey(),
+                                message.getBody());
             }
         }
         

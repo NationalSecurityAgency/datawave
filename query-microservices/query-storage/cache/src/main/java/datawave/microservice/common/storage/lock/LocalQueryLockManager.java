@@ -155,19 +155,21 @@ public class LocalQueryLockManager implements QueryLockManager {
         }
         return false;
     }
-
+    
     /**
      * Determine if the specified query exists in the underlying cluster
      *
-     * @param queryId The query id
+     * @param queryId
+     *            The query id
      * @return true if it exists
-     * @throws IOException If there was a lock system access failure
+     * @throws IOException
+     *             If there was a lock system access failure
      */
     @Override
     public boolean exists(UUID queryId) throws IOException {
         return semaphores.containsKey(queryId);
     }
-
+    
     /**
      * Get the list of tasks that currently have locks
      *
