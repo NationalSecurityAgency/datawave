@@ -1,5 +1,6 @@
 package datawave.microservice.common.storage;
 
+import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,24 +14,29 @@ public interface QueryLockManager {
      *            The query id
      * @param count
      *            The max count for the semaphore
+     * @throws IOException
+     *             if there was a lock system access failure
      */
-    public void createSemaphore(UUID queryId, int count);
+    void createSemaphore(UUID queryId, int count) throws IOException;
     
     /**
-     * Delete a semaphore.
-     *
+     * This will drop any cached data for this queryid, leaving the query locks in the underlying cluster. Any local task locks will be released.
+     * 
      * @param queryId
      *            The query id
      */
-    default void deleteSemaphore(UUID queryId) {
+    void closeSemaphore(UUID queryId) throws IOException;
+    
+    /**
+     * Delete a semaphore. This will delete the query in the underlying cluster.
+     *
+     * @param queryId
+     *            The query id
+     * @throws IOException
+     *             if there was a lock system access failure
+     */
+    default void deleteSemaphore(UUID queryId) throws IOException {
         createSemaphore(queryId, 0);
-        for (TaskKey task : getLockedTasks(queryId)) {
-            try {
-                releaseLock(task);
-            } catch (TaskLockException e) {
-                // ignore
-            }
-        }
     }
     
     /**
@@ -39,12 +45,14 @@ public interface QueryLockManager {
      * @param task
      *            The task to lock
      * @param waitMs
-     *            How long to wait for semaphore availability
+     *            How long to wait for semaphore availability and then how long to wait for the lock
      * @return true if able to lock the task
      * @throws TaskLockException
      *             if the task is already locked or the query semaphore does not exist
+     * @throws IOException
+     *             if there was a lock system access failure
      */
-    public boolean acquireLock(TaskKey task, long waitMs) throws TaskLockException;
+    boolean acquireLock(TaskKey task, long waitMs) throws TaskLockException, IOException;
     
     /**
      * Release the lock for a task. This will also decrement the semaphore allowing another task to be locked.
@@ -53,8 +61,10 @@ public interface QueryLockManager {
      *            The task to unlock
      * @throws TaskLockException
      *             if the task is not locked.
+     * @throws IOException
+     *             if there was a lock system access failure
      */
-    public void releaseLock(TaskKey task) throws TaskLockException;
+    void releaseLock(TaskKey task) throws TaskLockException, IOException;
     
     /**
      * Determine if a task is locked.
@@ -62,21 +72,45 @@ public interface QueryLockManager {
      * @param task
      *            The task
      * @return True if locked
+     * @throws IOException
+     *             if there was a lock system access failure
      */
-    public boolean isLocked(TaskKey task);
+    boolean isLocked(TaskKey task) throws IOException;
     
     /**
-     * Get the set of tasks that currently have locks
+     * Get the set of tasks that currently have locks in this JVM
      *
      * @param queryId
      *            The query id
      * @return the list of tasks
+     * @throws IOException
+     *             if there was a lock system access failure
      */
-    public Set<TaskKey> getLockedTasks(UUID queryId);
+    Set<TaskKey> getLockedTasks(UUID queryId) throws IOException;
     
     /**
-     * Get the list of queries that currently have semaphores
+     * Get the list of queries that currently have semaphores in this JVM
      *
+     * @throws IOException
+     *             if there was a lock system access failure
      */
-    public Set<UUID> getQueries();
+    Set<UUID> getQueries() throws IOException;
+    
+    /**
+     * Get the task ids for all locks that the zookeeper cluster knows about
+     * 
+     * @param queryId
+     *            The query id
+     * @return A set of task UUIDs
+     * @throws IOException
+     */
+    Set<UUID> getDistributedLockedTasks(UUID queryId) throws IOException;
+    
+    /**
+     * Get the query ids for all semaphores that the zookeeper cluster knows about
+     * 
+     * @return The set of query UUIDs
+     * @throws IOException
+     */
+    Set<UUID> getDistributedQueries() throws IOException;
 }

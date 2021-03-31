@@ -63,6 +63,8 @@ query:
   storage:
     backend:
       RABBITMQ
+    lockManager:
+      ZOO
 
 ---
 
@@ -73,6 +75,8 @@ query:
   storage:
     backend:
       KAFKA
+    lockManager:
+      ZOO
 
 ---
 
@@ -82,6 +86,8 @@ spring:
 query:
   storage:
     backend:
+      LOCAL
+    lockManager:
       LOCAL
 
 ---

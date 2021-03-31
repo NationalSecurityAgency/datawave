@@ -98,7 +98,7 @@ public class QueryStorageCacheTest {
         }
     }
     
-    void clearLocks() {
+    void clearLocks() throws IOException {
         for (UUID queryId : lockManager.getQueries()) {
             lockManager.deleteSemaphore(queryId);
         }

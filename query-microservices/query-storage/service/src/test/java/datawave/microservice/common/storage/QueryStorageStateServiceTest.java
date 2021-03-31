@@ -75,19 +75,19 @@ public class QueryStorageStateServiceTest {
     private static final String TEST_POOL = "storageTestPool";
     
     @Before
-    public void setup() {
+    public void setup() throws IOException {
         jwtRestTemplate = restTemplateBuilder.build(JWTRestTemplate.class);
         DN = SubjectIssuerDNPair.of(userDN, "issuerDn");
         storageService.clear();
     }
     
     @After
-    public void cleanup() {
+    public void cleanup() throws IOException {
         storageService.clear();
     }
     
     @Test
-    public void testStateStorageService() throws ParseException, InterruptedException, TaskLockException {
+    public void testStateStorageService() throws ParseException, InterruptedException, TaskLockException, IOException {
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
         query.setQueryLogicName("EventQuery");

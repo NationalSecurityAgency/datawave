@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class LocalQueryLockManager implements QueryLockManager {
     
@@ -31,6 +32,7 @@ public class LocalQueryLockManager implements QueryLockManager {
      * @param queryId
      *            The query id
      * @param count
+     *            The max permits
      */
     @Override
     public void createSemaphore(UUID queryId, int count) {
@@ -48,6 +50,22 @@ public class LocalQueryLockManager implements QueryLockManager {
                 synchronized (lock) {
                     semaphores.remove(queryId);
                 }
+            }
+        }
+    }
+    
+    /**
+     * This will drop any cached data for this queryid, leaving the query locks in the underlying cluster. Any local task locks will be released.
+     *
+     * @param queryId
+     *            The query id
+     */
+    @Override
+    public void closeSemaphore(UUID queryId) {
+        QueryLock lock = semaphores.get(queryId);
+        if (lock != null) {
+            synchronized (lock) {
+                semaphores.remove(queryId);
             }
         }
     }
@@ -162,5 +180,28 @@ public class LocalQueryLockManager implements QueryLockManager {
         synchronized (semaphores) {
             return new HashSet<>(semaphores.keySet());
         }
+    }
+    
+    /**
+     * Get the task ids for all locks that the zookeeper cluster knows about
+     *
+     * @param queryId
+     *            The query id
+     *
+     * @return A set of task UUIDs
+     */
+    @Override
+    public Set<UUID> getDistributedLockedTasks(UUID queryId) {
+        return getLockedTasks(queryId).stream().map(c -> c.getTaskId()).collect(Collectors.toSet());
+    }
+    
+    /**
+     * Get the query ids for all semaphores that the zookeeper cluster knows about
+     *
+     * @return The set of query UUIDs
+     */
+    @Override
+    public Set<UUID> getDistributedQueries() {
+        return getQueries();
     }
 }

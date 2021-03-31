@@ -2,6 +2,7 @@ package datawave.microservice.common.storage;
 
 import datawave.webservice.query.Query;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,7 +21,7 @@ public interface QueryStorageCache {
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The create task key
      */
-    TaskKey storeQuery(QueryPool queryPool, Query query, int count);
+    TaskKey storeQuery(QueryPool queryPool, Query query, int count) throws IOException;
     
     /**
      * Create a new query task. This will create a new query task, store it, and send out a task notification.
@@ -31,7 +32,7 @@ public interface QueryStorageCache {
      *            The query checkpoint
      * @return The new query task
      */
-    QueryTask createTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint);
+    QueryTask createTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) throws IOException;
     
     /**
      * Get a task for a given task key and lock it for processing. This return null if the task no longer exists. This will throw an exception if the task is
@@ -45,7 +46,7 @@ public interface QueryStorageCache {
      * @throws TaskLockException
      *             if the task is already locked
      */
-    QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException;
+    QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException, IOException;
     
     /**
      * Update a stored query task with an updated checkpoint. This will also release the lock. This will throw an exception is the task is not locked.
@@ -58,7 +59,7 @@ public interface QueryStorageCache {
      * @throws TaskLockException
      *             if the task is not locked
      */
-    QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) throws TaskLockException;
+    QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) throws TaskLockException, IOException;
     
     /**
      * Delete a query task. This will also release the lock. This will throw an exception if the task is not locked.
@@ -68,7 +69,7 @@ public interface QueryStorageCache {
      * @throws TaskLockException
      *             if the task is not locked
      */
-    void deleteTask(TaskKey taskKey) throws TaskLockException;
+    void deleteTask(TaskKey taskKey) throws TaskLockException, IOException;
     
     /**
      * Delete a query
@@ -77,7 +78,7 @@ public interface QueryStorageCache {
      *            the query id
      * @return true if deleted
      */
-    public boolean deleteQuery(UUID queryId);
+    public boolean deleteQuery(UUID queryId) throws IOException;
     
     /**
      * Delete all queries for a query pool
@@ -86,12 +87,12 @@ public interface QueryStorageCache {
      *            The query pool
      * @return true if anything deleted
      */
-    public boolean deleteQueryPool(QueryPool queryPool);
+    public boolean deleteQueryPool(QueryPool queryPool) throws IOException;
     
     /**
      * Clear the cache
      */
-    public void clear();
+    public void clear() throws IOException;
     
     /**
      * Get queries that are in storage for a specified query pool
@@ -100,7 +101,7 @@ public interface QueryStorageCache {
      *            The query pool
      * @return The list of query IDs
      */
-    public List<UUID> getQueries(QueryPool queryPool);
+    public List<UUID> getQueries(QueryPool queryPool) throws IOException;
     
     /**
      * Get the tasks that are stored for a specified query
@@ -109,5 +110,5 @@ public interface QueryStorageCache {
      *            The query id
      * @return The list of task keys
      */
-    public List<TaskKey> getTasks(UUID queryId);
+    public List<TaskKey> getTasks(UUID queryId) throws IOException;
 }

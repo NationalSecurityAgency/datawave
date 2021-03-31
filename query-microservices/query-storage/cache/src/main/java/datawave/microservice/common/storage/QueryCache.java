@@ -202,6 +202,7 @@ public class QueryCache {
      * Get a list of query states from the cache for a specified query pool
      * 
      * @param queryPool
+     *            The query pool
      * @return a list of query states
      */
     public List<QueryState> getQueries(QueryPool queryPool) {
@@ -244,6 +245,7 @@ public class QueryCache {
      * Get the task descriptions for a specified query
      * 
      * @param queryId
+     *            The query id
      * @return a list of task descriptions
      */
     public List<TaskDescription> getTaskDescriptions(UUID queryId) {
