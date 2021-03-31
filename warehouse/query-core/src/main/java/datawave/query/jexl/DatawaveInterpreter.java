@@ -96,17 +96,8 @@ public class DatawaveInterpreter extends Interpreter {
         
         result = super.visit(node, data);
         
-        if (this.arithmetic instanceof HitListArithmetic) {
-            HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
-            Set<String> hitSet = hitListArithmetic.getHitSet();
-            if (hitSet != null && result instanceof Collection<?>) {
-                for (Object o : ((Collection<?>) result)) {
-                    if (o instanceof ValueTuple) {
-                        hitListArithmetic.add((ValueTuple) o);
-                    }
-                }
-            }
-        }
+        addHits(result);
+        
         // if the function stands alone, then it needs to return ag boolean
         // if the function is paired with a method that is called on its results (like 'size') then the
         // actual results must be returned.
@@ -341,18 +332,25 @@ public class DatawaveInterpreter extends Interpreter {
                                                 rightInclusive);
                             }
                         }
-                        if (this.arithmetic instanceof HitListArithmetic) {
-                            HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
-                            Set<String> hitSet = hitListArithmetic.getHitSet();
-                            if (hitSet != null) {
-                                hitSet.addAll((Collection<String>) evaluation);
-                            }
-                        }
+                        addHits(fieldValue);
                     }
                 }
             }
         }
         return evaluation;
+    }
+    
+    private void addHits(Object fieldValue) {
+        if (this.arithmetic instanceof HitListArithmetic && fieldValue != null) {
+            HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
+            if (fieldValue instanceof Collection<?>) {
+                for (Object o : ((Collection<?>) fieldValue)) {
+                    addHits(o);
+                }
+            } else if (fieldValue instanceof ValueTuple) {
+                hitListArithmetic.add((ValueTuple) fieldValue);
+            }
+        }
     }
     
     public Object visit(ASTAndNode node, Object data) {
@@ -501,7 +499,7 @@ public class DatawaveInterpreter extends Interpreter {
                     }
                 }
             } catch (IOException | URISyntaxException e) {
-                log.warn("Unable to load ExceededOrThreshold Paramters during evaluation", e);
+                log.warn("Unable to load ExceededOrThreshold Parameters during evaluation", e);
             }
         }
         
@@ -570,6 +568,8 @@ public class DatawaveInterpreter extends Interpreter {
         
         if (evaluation.isEmpty())
             return Boolean.FALSE;
+        
+        addHits(evaluation);
         
         return evaluation;
     }
