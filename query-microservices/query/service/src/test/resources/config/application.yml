@@ -17,6 +17,8 @@ query:
   storage:
     backend:
       LOCAL
+    lockManager:
+      LOCAL
   logic:
     baseEventQuery:
       accumuloPassword: "value"
