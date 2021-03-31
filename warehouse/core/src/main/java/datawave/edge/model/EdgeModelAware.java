@@ -138,11 +138,12 @@ public interface EdgeModelAware {
                     context.setConfigLocations(EDGE_MODEL_CONTEXT);
                     context.refresh();
                     loadMaps(context);
-                    context.close();
                 } catch (Throwable t) {
                     log.fatal("Edge model configuration not loaded!! Edge queries will fail until this issue is corrected.");
                     log.fatal(String.format("Ensure that the Spring config file '%s' is on the classpath and contains bean names '%s', '%s', and '%s'",
                                     EDGE_MODEL_CONTEXT, BASE_MODEL_BEAN, KEYUTIL_MODEL_BEAN, TRANSFORM_MODEL_BEAN), t);
+                } finally {
+                    context.close();
                 }
             }
         }
