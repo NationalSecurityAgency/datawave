@@ -2053,7 +2053,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.DOCUMENT_PERMUTATION_CLASSES, docPermutationConfig.toString(), false);
         }
         
-        // if groupby function is used, for include.grouping.context to br true
+        // if groupby function is used, force include.grouping.context to be true
         if (config.getGroupFields() != null && !config.getGroupFields().isEmpty()) {
             addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(true), false);
         } else {
