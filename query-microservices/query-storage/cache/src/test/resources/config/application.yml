@@ -65,6 +65,8 @@ query:
       RABBITMQ
     lockManager:
       ZOO
+    zooKeeperConnectionString:
+      localhost:2181
 
 ---
 
@@ -77,6 +79,8 @@ query:
       KAFKA
     lockManager:
       ZOO
+    zooKeeperConnectionString:
+      localhost:2181
 
 ---
 

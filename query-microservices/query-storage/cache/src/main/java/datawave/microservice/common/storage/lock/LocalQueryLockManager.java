@@ -4,6 +4,7 @@ import datawave.microservice.common.storage.QueryLockManager;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.TaskLockException;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -154,7 +155,19 @@ public class LocalQueryLockManager implements QueryLockManager {
         }
         return false;
     }
-    
+
+    /**
+     * Determine if the specified query exists in the underlying cluster
+     *
+     * @param queryId The query id
+     * @return true if it exists
+     * @throws IOException If there was a lock system access failure
+     */
+    @Override
+    public boolean exists(UUID queryId) throws IOException {
+        return semaphores.containsKey(queryId);
+    }
+
     /**
      * Get the list of tasks that currently have locks
      *

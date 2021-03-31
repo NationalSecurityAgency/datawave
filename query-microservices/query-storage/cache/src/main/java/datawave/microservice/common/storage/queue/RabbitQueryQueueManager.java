@@ -296,10 +296,10 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         private AtomicInteger semaphore = new AtomicInteger(0);
         
         @RabbitListener(id = LISTENER_ID, autoStartup = "true")
-        public void processMessage(Message<byte[]> message) {
+        public void processMessage(org.springframework.amqp.core.Message message) {
             String body = null;
             try {
-                body = new ObjectMapper().readerFor(String.class).readValue(message.getPayload());
+                body = new ObjectMapper().readerFor(String.class).readValue(message.getBody());
             } catch (Exception e) {
                 // body is not a json string
             }
@@ -308,8 +308,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
                 semaphore.incrementAndGet();
             } else {
                 // requeue, this was not a test message
-                rabbitTemplate.convertAndSend(message.getHeaders().get(AmqpHeaders.RECEIVED_EXCHANGE).toString(),
-                                message.getHeaders().get(AmqpHeaders.RECEIVED_ROUTING_KEY).toString(), message.getPayload());
+                rabbitTemplate.convertAndSend(message.getMessageProperties().getReceivedExchange(),
+                                message.getMessageProperties().getReceivedRoutingKey(), message.getBody());
             }
         }
         

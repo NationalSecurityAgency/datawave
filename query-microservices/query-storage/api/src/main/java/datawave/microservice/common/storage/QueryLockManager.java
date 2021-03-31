@@ -78,6 +78,17 @@ public interface QueryLockManager {
     boolean isLocked(TaskKey task) throws IOException;
     
     /**
+     * Determine if the specified query exists in the underlying cluster
+     * 
+     * @param queryId
+     *            The query id
+     * @return true if it exists
+     * @throws IOException
+     *             If there was a lock system access failure
+     */
+    boolean exists(UUID queryId) throws IOException;
+    
+    /**
      * Get the set of tasks that currently have locks in this JVM
      *
      * @param queryId

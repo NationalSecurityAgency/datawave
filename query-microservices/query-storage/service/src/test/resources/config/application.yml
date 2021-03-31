@@ -86,4 +86,44 @@ query:
 ---
 
 spring:
+  profiles: use-rabbitmq
+
+query:
+  storage:
+    backend:
+      RABBITMQ
+    lockManager:
+      ZOO
+    zooKeeperConnectionString:
+      localhost:2181
+
+---
+
+spring:
+  profiles: use-kafka
+
+query:
+  storage:
+    backend:
+      KAFKA
+    lockManager:
+      ZOO
+    zooKeeperConnectionString:
+      localhost:2181
+
+---
+
+spring:
+  profiles: use-localqueues
+
+query:
+  storage:
+    backend:
+      LOCAL
+    lockManager:
+      LOCAL
+
+---
+
+spring:
   profiles: missing

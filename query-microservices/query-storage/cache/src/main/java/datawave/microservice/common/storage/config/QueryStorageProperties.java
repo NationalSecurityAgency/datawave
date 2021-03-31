@@ -27,10 +27,10 @@ public class QueryStorageProperties {
     private String zookeeperConnectionString;
     
     // which backend should be used
-    private BACKEND backend = BACKEND.LOCAL;
+    private BACKEND backend;
     
     // which lock manager should be used
-    private LOCKMGR lockManager = LOCKMGR.LOCAL;
+    private LOCKMGR lockManager;
     
     public boolean isSynchStorage() {
         return synchStorage;

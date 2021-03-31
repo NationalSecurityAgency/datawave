@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-localqueue"})
+@ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-localqueues"})
 @EnableRabbit
 public class QueryStorageCacheTest {
     private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);
@@ -167,6 +167,7 @@ public class QueryStorageCacheTest {
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
+        lockManager.createSemaphore(queryId, 3);
         QueryTask task = storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         TaskKey key = task.getTaskKey();
         assertEquals(checkpoint.getQueryKey(), key);
@@ -181,13 +182,7 @@ public class QueryStorageCacheTest {
         
         assertFalse(lockManager.isLocked(task.getTaskKey()));
         
-        try {
-            task = storageService.getTask(key, 0);
-            fail("Expected failure due to lack of query lock");
-        } catch (TaskLockException e) {
-            lockManager.createSemaphore(queryId, 3);
-            task = storageService.getTask(key, 0);
-        }
+        task = storageService.getTask(key, 0);
         assertQueryTask(key, QueryTask.QUERY_ACTION.NEXT, query, task);
         assertTrue(lockManager.isLocked(task.getTaskKey()));
         
@@ -218,8 +213,9 @@ public class QueryStorageCacheTest {
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-        
+
         TaskKey key = new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), query.getQueryLogicName());
+        lockManager.createSemaphore(key.getQueryId(), 3);
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing an invalid task key without a lock");
@@ -227,7 +223,6 @@ public class QueryStorageCacheTest {
             // expected
         }
         
-        lockManager.createSemaphore(key.getQueryId(), 3);
         assertTrue(lockManager.acquireLock(key, 0));
         try {
             storageService.checkpointTask(key, checkpoint);
@@ -282,7 +277,8 @@ public class QueryStorageCacheTest {
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-        
+
+        lockManager.createSemaphore(queryId, 3);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
@@ -291,7 +287,6 @@ public class QueryStorageCacheTest {
         assertNull(messageConsumer.receiveTaskNotification(0));
         
         // ensure we can get a task
-        lockManager.createSemaphore(queryId, 3);
         QueryTask task = storageService.getTask(notification.getTaskKey(), 0);
         assertQueryTask(notification.getTaskKey(), QueryTask.QUERY_ACTION.NEXT, query, task);
         
@@ -319,7 +314,8 @@ public class QueryStorageCacheTest {
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-        
+
+        lockManager.createSemaphore(queryId, 3);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
@@ -331,13 +327,7 @@ public class QueryStorageCacheTest {
         List<TaskKey> tasks = storageService.getTasks(queryId);
         assertEquals(1, tasks.size());
         QueryTask task;
-        try {
-            task = storageService.getTask(tasks.get(0), 0);
-            fail("Expected failure due to lack of query lock");
-        } catch (TaskLockException e) {
-            lockManager.createSemaphore(queryId, 3);
-            task = storageService.getTask(tasks.get(0), 0);
-        }
+        task = storageService.getTask(tasks.get(0), 0);
         assertQueryTask(notification.getTaskKey(), QueryTask.QUERY_ACTION.NEXT, query, task);
         
         // now delete the query tasks
