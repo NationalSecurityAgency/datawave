@@ -1,11 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -38,6 +33,8 @@ public class TermCountingVisitor extends BaseVisitor {
     public Object visit(ASTAndNode node, Object data) {
         if (JexlASTHelper.findRange().isRange(node)) {
             // count each bounded range as 1
+            ((MutableInt) data).increment();
+        } else if (QueryPropertyMarkerVisitor.isIvarator(node)) {
             ((MutableInt) data).increment();
         } else {
             // otherwise recurse on the children
