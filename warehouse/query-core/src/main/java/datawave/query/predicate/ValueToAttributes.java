@@ -44,11 +44,11 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     private final Text holder = new Text();
     
     private AttributeFactory attrFactory;
-
-    private Map<String, Multimap<String, String>> compositeToFieldMap;
-    private Map<String, Map<String, String>> compositeFieldSeparatorsByType;
+    
+    private Map<String,Multimap<String,String>> compositeToFieldMap;
+    private Map<String,Map<String,String>> compositeFieldSeparatorsByType;
     private MarkingFunctions markingFunctions;
-    private Multimap<String, Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
+    private Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
     
     private EventDataQueryFilter attrFilter;
     
@@ -126,8 +126,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         if (componentAttributes == null) {
             // finally create the composite from what we have
             try {
-                return Arrays.asList(Maps.immutableEntry(compositeField,
-                                joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
+                return Arrays.asList(Maps.immutableEntry(compositeField, joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
             } catch (Exception e) {
                 log.debug("could not join attributes:", e);
             }
@@ -162,7 +161,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         
         try {
             String data = Text.decode(holder.getBytes(), index + 1, (holder.getLength() - (index + 1)));
-
+            
             Attribute<?> attr = this.attrFactory.create(fieldName, data, k, (attrFilter == null || attrFilter.keep(k)));
             if (attrFilter != null) {
                 attr.setToKeep(attrFilter.keep(k));
@@ -270,14 +269,14 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     private List<String> attributeValues(Attribute<?> attr) {
         if (attr instanceof TypeAttribute) {
             Type<?> type = ((TypeAttribute<?>) attr).getType();
-            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType<?>) type).getNormalizedValues() : Arrays
-                            .asList(type.getNormalizedValue());
+            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType<?>) type).getNormalizedValues() : Arrays.asList(type
+                            .getNormalizedValue());
         } else {
             new Exception().printStackTrace(System.err);
             return Arrays.asList(String.valueOf(attr.getData()));
         }
     }
-
+    
     protected String getDatatypeFromKey(Key key) {
         String cf = key.getColumnFamily().toString();
         int indexOfNull = cf.indexOf('\u0000');
