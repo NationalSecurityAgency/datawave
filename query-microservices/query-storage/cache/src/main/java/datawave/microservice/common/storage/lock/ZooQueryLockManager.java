@@ -8,10 +8,8 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreV2;
 import org.apache.curator.framework.recipes.locks.Lease;
-import org.apache.curator.framework.recipes.locks.Reaper;
 import org.apache.curator.framework.recipes.shared.SharedCount;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.zookeeper.CreateMode;
 
 import java.io.IOException;
 import java.util.Collections;
