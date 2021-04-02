@@ -8,7 +8,7 @@ import java.util.UUID;
 public interface QueryQueueManager {
     
     /**
-     * Create a listener for a specified listener id
+     * Create a listener for a specified listener id. Calling stop on the listener will destroy it.
      *
      * @param listenerId
      *            The listener id
@@ -22,9 +22,25 @@ public interface QueryQueueManager {
      * Ensure a queue is created for a pool. This will create an exchange, a queue, and a binding between them for the query pool.
      *
      * @param queryPool
-     *            the query poll
+     *            the query pool
      */
     void ensureQueueCreated(QueryPool queryPool);
+    
+    /**
+     * A mechanism to delete a queue for a pool.
+     *
+     * @param queryPool
+     *            the query pool
+     */
+    void deleteQueue(QueryPool queryPool);
+    
+    /**
+     * A mechanism to empty a queues messages for a pool
+     * 
+     * @param queryPool
+     *            the query pool
+     */
+    void emptyQueue(QueryPool queryPool);
     
     /**
      * This will send a query task notification message. This will call ensureQueueCreated before sending the message.
@@ -41,6 +57,22 @@ public interface QueryQueueManager {
      *            the query ID
      */
     void ensureQueueCreated(UUID queryId);
+    
+    /**
+     * Delete a queue for a query
+     * 
+     * @param queryId
+     *            the query ID
+     */
+    void deleteQueue(UUID queryId);
+    
+    /**
+     * Empty a queue for a query
+     * 
+     * @param queryId
+     *            the query ID
+     */
+    void emptyQueue(UUID queryId);
     
     /**
      * This will send a result message. This will call ensureQueueCreated before sending the message.

@@ -34,26 +34,87 @@ public class LocalQueryQueueManager implements QueryQueueManager {
      * Create a listener
      * 
      * @param listenerId
+     *            The listener ID
      * @param queueName
+     *            The queue name
      * @return a local queue listener
      */
     public QueryQueueListener createListener(String listenerId, String queueName) {
         LocalQueueListener listener = new LocalQueueListener(listenerId);
-        listenerToQueue.put(listener.getListenerId(), Collections.synchronizedSet(new HashSet<>()));
-        listenerToQueue.get(listenerId).add(queueName);
+        synchronized (listenerToQueue) {
+            listenerToQueue.put(listener.getListenerId(), Collections.synchronizedSet(new HashSet<>()));
+            listenerToQueue.get(listenerId).add(queueName);
+        }
         return listener;
+    }
+    
+    private void ensureQueueCreated(String name) {
+        synchronized (queues) {
+            if (!queues.containsKey(name)) {
+                queues.put(name, new ArrayBlockingQueue<>(10));
+            }
+        }
+    }
+    
+    private void deleteQueue(String name) {
+        synchronized (listenerToQueue) {
+            for (Set<String> queues : listenerToQueue.values()) {
+                queues.remove(name);
+            }
+        }
+        queues.remove(name);
+    }
+    
+    private void emptyQueue(String name) {
+        synchronized (queues) {
+            Queue queue = queues.get(name);
+            if (queue != null) {
+                queue.clear();
+            }
+        }
+    }
+    
+    private void sendMessage(String name, Message<byte[]> message) {
+        ensureQueueCreated(name);
+        synchronized (queues) {
+            Queue queue = queues.get(name);
+            if (queue != null) {
+                queue.add(message);
+            }
+        }
     }
     
     /**
      * Ensure a queue is created for a given pool
      *
      * @param queryPool
+     *            the query pool
      */
     @Override
     public void ensureQueueCreated(QueryPool queryPool) {
-        if (!queues.containsKey(queryPool.getName())) {
-            queues.put(queryPool.getName(), new ArrayBlockingQueue<>(10));
-        }
+        ensureQueueCreated(queryPool.getName());
+    }
+    
+    /**
+     * A mechanism to delete a queue for a pool.
+     *
+     * @param queryPool
+     *            the query pool
+     */
+    @Override
+    public void deleteQueue(QueryPool queryPool) {
+        deleteQueue(queryPool.getName());
+    }
+    
+    /**
+     * A mechanism to empty a queues messages for a pool
+     *
+     * @param queryPool
+     *            the query pool
+     */
+    @Override
+    public void emptyQueue(QueryPool queryPool) {
+        emptyQueue(queryPool.getName());
     }
     
     /**
@@ -64,11 +125,6 @@ public class LocalQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void sendMessage(QueryTaskNotification taskNotification) {
-        QueryPool pool = taskNotification.getTaskKey().getQueryPool();
-        
-        ensureQueueCreated(pool);
-        
-        Queue<Message<byte[]>> queue = queues.get(pool.getName());
         Message<byte[]> message = null;
         try {
             MessageHeaderAccessor header = new MessageHeaderAccessor();
@@ -77,7 +133,7 @@ public class LocalQueryQueueManager implements QueryQueueManager {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Could not serialize a QueryTaskNotification", e);
         }
-        queue.add(message);
+        sendMessage(taskNotification.getTaskKey().getQueryPool().getName(), message);
     }
     
     /**
@@ -88,15 +144,34 @@ public class LocalQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void ensureQueueCreated(UUID queryId) {
-        if (!queues.containsKey(queryId.toString())) {
-            queues.put(queryId.toString(), new ArrayBlockingQueue<>(10));
-        }
+        ensureQueueCreated(queryId.toString());
+    }
+    
+    /**
+     * Delete a queue for a query
+     *
+     * @param queryId
+     *            the query ID
+     */
+    @Override
+    public void deleteQueue(UUID queryId) {
+        deleteQueue(queryId.toString());
+    }
+    
+    /**
+     * Empty a queue for a query
+     *
+     * @param queryId
+     *            the query ID
+     */
+    @Override
+    public void emptyQueue(UUID queryId) {
+        emptyQueue(queryId.toString());
     }
     
     /**
      * This will send a result message. This will call ensureQueueCreated before sending the message.
      * <p>
-     * TODO Should the result be more strongly typed?
      *
      * @param queryId
      *            the query ID
@@ -106,9 +181,6 @@ public class LocalQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void sendMessage(UUID queryId, String resultId, Object result) {
-        ensureQueueCreated(queryId);
-        
-        Queue<Message<byte[]>> queue = queues.get(queryId.toString());
         Message<byte[]> message = null;
         try {
             MessageHeaderAccessor header = new MessageHeaderAccessor();
@@ -118,7 +190,7 @@ public class LocalQueryQueueManager implements QueryQueueManager {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Could not serialize a QueryTaskNotification", e);
         }
-        queue.add(message);
+        sendMessage(queryId.toString(), message);
     }
     
     /**

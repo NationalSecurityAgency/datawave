@@ -9,6 +9,7 @@ import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.apache.log4j.Logger;
+import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -23,7 +24,6 @@ import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.converter.MessagingMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
@@ -40,6 +40,9 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
     
     @Autowired
+    private QueryStorageProperties properties;
+    
+    @Autowired
     private RabbitAdmin rabbitAdmin;
     
     @Autowired
@@ -52,13 +55,10 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     private TestMessageConsumer testMessageConsumer;
     
     @Autowired
-    private ConnectionFactory factory;
+    private ConnectionFactory connectionFactory;
     
     // A mapping of exchange/queue names to routing keys
     private Map<String,String> exchanges = new HashMap<>();
-    
-    @Autowired
-    QueryStorageProperties properties;
     
     /**
      * Create a listener for a specified listener id
@@ -90,6 +90,28 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     }
     
     /**
+     * A mechanism to delete a queue for a pool.
+     *
+     * @param queryPool
+     *            the query pool
+     */
+    @Override
+    public void deleteQueue(QueryPool queryPool) {
+        deleteQueue(queryPool.getName());
+    }
+    
+    /**
+     * A mechanism to empty a queues messages for a pool
+     *
+     * @param queryPool
+     *            the query pool
+     */
+    @Override
+    public void emptyQueue(QueryPool queryPool) {
+        emptyQueue(queryPool.getName());
+    }
+    
+    /**
      * Passes task notifications to the messaging infrastructure.
      *
      * @param taskNotification
@@ -115,6 +137,28 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     @Override
     public void ensureQueueCreated(UUID queryId) {
         ensureQueueCreated(queryId.toString(), queryId.toString(), queryId.toString());
+    }
+    
+    /**
+     * Delete a queue for a query
+     *
+     * @param queryId
+     *            the query ID
+     */
+    @Override
+    public void deleteQueue(UUID queryId) {
+        deleteQueue(queryId.toString());
+    }
+    
+    /**
+     * Empty a queue for a query
+     *
+     * @param queryId
+     *            the query ID
+     */
+    @Override
+    public void emptyQueue(UUID queryId) {
+        emptyQueue(queryId.toString());
     }
     
     /**
@@ -282,6 +326,32 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         }
     }
     
+    private void deleteQueue(String exchangeQueueName) {
+        try {
+            rabbitAdmin.deleteExchange(exchangeQueueName);
+            rabbitAdmin.deleteQueue(exchangeQueueName);
+            exchanges.remove(exchangeQueueName);
+        } catch (AmqpIOException e) {
+            log.error("Failed to delete queue " + exchangeQueueName, e);
+        }
+    }
+    
+    private void emptyQueue(String exchangeQueueName) {
+        try {
+            rabbitAdmin.purgeQueue(exchangeQueueName);
+        } catch (AmqpIOException e) {
+            // log an continue
+            log.error("Failed to empty queue " + exchangeQueueName, e);
+        }
+    }
+    
+    private boolean containsCause(Throwable e, Class<? extends Exception> exceptionClass) {
+        while (e != null && !exceptionClass.isInstance(e)) {
+            e = e.getCause();
+        }
+        return e != null;
+    }
+    
     @Component
     public static class TestMessageConsumer {
         private static final String LISTENER_ID = "RabbitQueryQueueManagerTestListener";
@@ -357,7 +427,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             endpoint.setId(listenerId);
             endpoint.setMessageListener(listenerAdapter);
             DirectRabbitListenerContainerFactory listenerContainerFactory = new DirectRabbitListenerContainerFactory();
-            listenerContainerFactory.setConnectionFactory(factory);
+            listenerContainerFactory.setConnectionFactory(connectionFactory);
             rabbitListenerEndpointRegistry.registerListenerContainer(endpoint, listenerContainerFactory, true);
         }
         

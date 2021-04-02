@@ -2,7 +2,6 @@ package datawave.microservice.common.storage.queue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
@@ -10,10 +9,16 @@ import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DeleteRecordsResult;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.RecordsToDelete;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -25,6 +30,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.messaging.Message;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -36,18 +42,20 @@ import static datawave.microservice.common.storage.queue.KafkaQueryQueueManager.
 public class KafkaQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
     
-    // TODO: inject the values
-    private Map<String,Object> config = ImmutableMap.of("bootstrap.servers", "http://localhost:9092", "group.id", "KafkaQueryQueueManager", "auto.offset.reset",
-                    "latest");
+    @Autowired
+    QueryStorageProperties properties;
+    
+    @Autowired
+    private AdminClient kafkaAdmin;
     
     @Autowired
     private KafkaTemplate kafkaTemplate;
     
+    @Autowired
+    private DefaultKafkaConsumerFactory kafkaConsumerFactory;
+    
     // A mapping of queue names to routing keys
     private Map<String,String> queues = new HashMap<>();
-    
-    @Autowired
-    QueryStorageProperties properties;
     
     /**
      * Create a listener for a specified listener id
@@ -73,6 +81,28 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         QueryTaskNotification testMessage = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "NA"),
                         QueryTask.QUERY_ACTION.TEST);
         ensureQueueCreated(queryPool.getName(), testMessage.getTaskKey().toRoutingKey(), testMessage.getTaskKey().toKey());
+    }
+    
+    /**
+     * A mechanism to delete a queue for a pool.
+     *
+     * @param queryPool
+     *            the query pool
+     */
+    @Override
+    public void deleteQueue(QueryPool queryPool) {
+        deleteQueue(queryPool.getName());
+    }
+    
+    /**
+     * A mechanism to empty a queues messages for a pool
+     *
+     * @param queryPool
+     *            the query pool
+     */
+    @Override
+    public void emptyQueue(QueryPool queryPool) {
+        emptyQueue(queryPool.getName());
     }
     
     /**
@@ -105,6 +135,28 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     @Override
     public void ensureQueueCreated(UUID queryId) {
         ensureQueueCreated(queryId.toString(), queryId.toString(), queryId.toString());
+    }
+    
+    /**
+     * Delete a queue for a query
+     *
+     * @param queryId
+     *            the query ID
+     */
+    @Override
+    public void deleteQueue(UUID queryId) {
+        deleteQueue(queryId.toString());
+    }
+    
+    /**
+     * Empty a queue for a query
+     *
+     * @param queryId
+     *            the query ID
+     */
+    @Override
+    public void emptyQueue(UUID queryId) {
+        emptyQueue(queryId.toString());
     }
     
     /**
@@ -177,6 +229,39 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         }
     }
     
+    private void deleteQueue(String name) {
+        DeleteTopicsResult result = kafkaAdmin.deleteTopics(Collections.singleton(name));
+        try {
+            result.all();
+        } catch (Exception e) {
+            log.error("Failed to delete queue " + name, e);
+        }
+    }
+    
+    private void emptyQueue(String name) {
+        DescribeTopicsResult result = kafkaAdmin.describeTopics(Collections.singleton(name));
+        TopicDescription topic = null;
+        try {
+            topic = result.values().get(name).get();
+        } catch (Exception e) {
+            log.error("Unable to describe topic " + name, e);
+        }
+        if (topic != null) {
+            Map<TopicPartition,RecordsToDelete> partitions = new HashMap<>();
+            RecordsToDelete records = RecordsToDelete.beforeOffset(Long.MAX_VALUE);
+            for (TopicPartitionInfo info : topic.partitions()) {
+                TopicPartition partition = new TopicPartition(name, info.partition());
+                partitions.put(partition, records);
+            }
+            DeleteRecordsResult result2 = kafkaAdmin.deleteRecords(partitions);
+            try {
+                result2.all();
+            } catch (Exception e) {
+                log.error("Unable to empty queue " + name, e);
+            }
+        }
+    }
+    
     public class TestMessageConsumer extends KafkaQueueListener {
         private static final String LISTENER_ID = "KafkaQueryQueueManagerTestListener";
         public static final String TEST_MESSAGE = "TEST_MESSAGE";
@@ -245,9 +330,6 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         public KafkaQueueListener(String listenerId, String topicId) {
             this.listenerId = listenerId;
             this.topicId = topicId;
-            
-            DefaultKafkaConsumerFactory<String,byte[]> kafkaConsumerFactory = new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(),
-                            new ByteArrayDeserializer());
             
             ContainerProperties props = new ContainerProperties(topicId);
             props.setMessageListener(this);

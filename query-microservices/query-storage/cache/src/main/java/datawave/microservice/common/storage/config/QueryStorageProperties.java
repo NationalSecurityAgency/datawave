@@ -18,19 +18,25 @@ public class QueryStorageProperties {
     }
     
     // should storage be synched to disk on every call
-    private boolean synchStorage;
+    private boolean synchStorage = false;
     
     // should task notifications be sent
-    private boolean sendNotifications;
+    private boolean sendNotifications = false;
+    
+    // the rabbitMQ connection string if needed
+    private String rabbitConnectionString = "amqp://localhost:5672";
+    
+    // the kafka connection string if needed
+    private String kafkaConnectionString = "localhost:9092";
     
     // the zookeeper connection string if needed
-    private String zookeeperConnectionString;
+    private String zookeeperConnectionString = "localhost:2181";
     
     // which backend should be used
-    private BACKEND backend;
+    private BACKEND backend = BACKEND.LOCAL;
     
     // which lock manager should be used
-    private LOCKMGR lockManager;
+    private LOCKMGR lockManager = LOCKMGR.LOCAL;
     
     public boolean isSynchStorage() {
         return synchStorage;
@@ -71,4 +77,21 @@ public class QueryStorageProperties {
     public void setZookeeperConnectionString(String zoo) {
         this.zookeeperConnectionString = zoo;
     }
+    
+    public String getRabbitConnectionString() {
+        return rabbitConnectionString;
+    }
+    
+    public void setRabbitConnectionString(String rabbitConnectionString) {
+        this.rabbitConnectionString = rabbitConnectionString;
+    }
+    
+    public String getKafkaConnectionString() {
+        return kafkaConnectionString;
+    }
+    
+    public void setKafkaConnectionString(String kafkaConnectionString) {
+        this.kafkaConnectionString = kafkaConnectionString;
+    }
+    
 }

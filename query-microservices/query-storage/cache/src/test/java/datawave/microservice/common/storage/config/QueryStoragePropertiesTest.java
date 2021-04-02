@@ -26,5 +26,9 @@ public class QueryStoragePropertiesTest {
         assertEquals(QueryStorageProperties.LOCKMGR.ZOO, props.getLockManager());
         props.setZookeeperConnectionString("localhost:199999");
         assertEquals("localhost:199999", props.getZookeeperConnectionString());
+        props.setRabbitConnectionString("localhost:199998");
+        assertEquals("localhost:199998", props.getRabbitConnectionString());
+        props.setKafkaConnectionString("localhost:199997");
+        assertEquals("localhost:199997", props.getKafkaConnectionString());
     }
 }

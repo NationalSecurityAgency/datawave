@@ -86,7 +86,7 @@ query:
 ---
 
 spring:
-  profiles: use-rabbitmq
+  profiles: use-rabbit
 
 query:
   storage:
@@ -114,7 +114,7 @@ query:
 ---
 
 spring:
-  profiles: use-localqueues
+  profiles: use-local
 
 query:
   storage:

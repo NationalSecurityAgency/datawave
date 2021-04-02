@@ -57,12 +57,14 @@ query:
 ---
 
 spring:
-  profiles: use-rabbitmq
+  profiles: use-rabbit
 
 query:
   storage:
     backend:
       RABBITMQ
+    rabbitConnectionString:
+      amqp://localhost:5672
     lockManager:
       ZOO
     zooKeeperConnectionString:
@@ -77,6 +79,8 @@ query:
   storage:
     backend:
       KAFKA
+    kafkaConnectionString:
+      localhost:9092
     lockManager:
       ZOO
     zooKeeperConnectionString:
@@ -85,7 +89,7 @@ query:
 ---
 
 spring:
-  profiles: use-localqueues
+  profiles: use-local
 
 query:
   storage:

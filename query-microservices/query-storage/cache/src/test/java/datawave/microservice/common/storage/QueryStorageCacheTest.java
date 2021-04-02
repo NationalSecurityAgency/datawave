@@ -1,33 +1,19 @@
 package datawave.microservice.common.storage;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParametersImpl;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -49,11 +35,16 @@ import static org.junit.Assert.fail;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-localqueues"})
+@ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-local"})
 @EnableRabbit
 public class QueryStorageCacheTest {
     private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);
     public static final String TEST_POOL = "testPool";
+    
+    @Configuration
+    @Profile("QueryStorageCacheTest")
+    @ComponentScan(basePackages = {"datawave.microservice"})
+    public static class QueryStorageCacheTestConfiguration {}
     
     @Autowired
     private QueryCache queryCache;
@@ -81,17 +72,19 @@ public class QueryStorageCacheTest {
     
     @After
     public void cleanup() throws IOException {
-        messageConsumer.stop();
         cleanupData();
+        messageConsumer.stop();
+        messageConsumer = null;
     }
     
     public void cleanupData() throws IOException {
         storageService.clear();
-        clearLocks();
         clearQueue();
+        clearLocks();
     }
     
     void clearQueue() throws IOException {
+        queueManager.emptyQueue(new QueryPool(TEST_POOL));
         Message<byte[]> msg = messageConsumer.receive();
         while (msg != null) {
             msg = messageConsumer.receive(0L);
@@ -380,6 +373,7 @@ public class QueryStorageCacheTest {
         // make sure it deleted
         queries = storageService.getQueries(queryPool);
         assertEquals(0, queries.size());
+        
     }
     
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {
@@ -406,36 +400,6 @@ public class QueryStorageCacheTest {
         assertEquals(action, task.getAction());
         assertEquals(task.getQueryCheckpoint().getQueryKey(), key);
         assertEquals(query, task.getQueryCheckpoint().getPropertiesAsQuery());
-    }
-    
-    @Configuration
-    @Profile("QueryStorageCacheTest")
-    @ComponentScan(basePackages = {"datawave.microservice"})
-    @EnableCaching
-    public static class QueryStorageCacheTestConfiguration {
-        @Bean
-        @Primary
-        public CacheManager cacheManager() {
-            return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
-        }
-        
-        @Bean
-        @Primary
-        public ConnectionFactory connectionFactory() {
-            SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
-            factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
-            return factory;
-        }
-        
-        @Bean
-        @Primary
-        public KafkaTemplate kafkaTemplate() {
-            Map<String,Object> config = new HashMap<>();
-            config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "http://localhost:9092");
-            config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-            config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-            return new KafkaTemplate(new DefaultKafkaProducerFactory<>(config));
-        }
     }
     
     public static class ExceptionalQueryTaskNotification extends QueryTaskNotification {

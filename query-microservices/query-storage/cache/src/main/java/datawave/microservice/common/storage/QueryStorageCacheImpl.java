@@ -153,6 +153,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     @Override
     public boolean deleteQuery(UUID queryId) throws IOException {
         int deletedTasks = cache.deleteTasks(queryId);
+        queue.deleteQueue(queryId);
         lockManager.deleteSemaphore(queryId);
         return (deletedTasks > 0);
     }
@@ -167,6 +168,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     @Override
     public boolean deleteQueryPool(QueryPool queryPool) throws IOException {
         int deletedTasks = cache.deleteTasks(queryPool);
+        queue.deleteQueue(queryPool);
         for (QueryState query : cache.getQueries(queryPool)) {
             lockManager.deleteSemaphore(query.getQueryId());
         }
@@ -180,6 +182,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public void clear() throws IOException {
         cache.clear();
         for (QueryState queries : cache.getQueries()) {
+            queue.emptyQueue(queries.getQueryId());
             lockManager.deleteSemaphore(queries.getQueryId());
         }
     }

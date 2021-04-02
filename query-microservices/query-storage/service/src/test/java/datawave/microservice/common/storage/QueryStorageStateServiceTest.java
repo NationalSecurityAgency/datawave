@@ -2,8 +2,6 @@ package datawave.microservice.common.storage;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.DatawaveUser;
@@ -16,18 +14,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.connection.SimpleRoutingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.cache.CacheManager;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -52,9 +44,15 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStorageStateServiceTest", "QueryStorageConfig", "sync-enabled", "no-notifications", "use-localqueues"})
+@ActiveProfiles({"QueryStorageStateServiceTest", "sync-enabled", "no-notifications", "use-local"})
 @EnableRabbit
 public class QueryStorageStateServiceTest {
+    
+    @Configuration
+    @Profile("QueryStorageStateServiceTest")
+    @ComponentScan(basePackages = {"datawave.microservice"})
+    public static class QueryStorageStateServiceTestConfiguration {}
+    
     @LocalServerPort
     private int webServicePort;
     
@@ -222,25 +220,4 @@ public class QueryStorageStateServiceTest {
             }
         }
     }
-    
-    @Configuration
-    @Profile("QueryStorageStateServiceTest")
-    @ComponentScan(basePackages = {"datawave.microservice"})
-    public static class QueryStorageStateTestConfiguration {
-        @Bean
-        @Primary
-        public CacheManager cacheManager() {
-            return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
-        }
-        
-        @Bean
-        @Primary
-        public ConnectionFactory connectionFactory() {
-            SimpleRoutingConnectionFactory factory = new SimpleRoutingConnectionFactory();
-            factory.setDefaultTargetConnectionFactory(new CachingConnectionFactory());
-            return factory;
-        }
-        
-    }
-    
 }
