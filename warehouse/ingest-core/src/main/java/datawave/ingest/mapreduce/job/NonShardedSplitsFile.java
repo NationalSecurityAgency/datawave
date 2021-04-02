@@ -99,14 +99,13 @@ public class NonShardedSplitsFile {
             }
         }
         
-        
-        private void writeSplitsToFile(MetadataTableSplits splits, SplitsFileType splitsFileType) throws IOException {
+        private void writeSplitsToFile(TableSplitsCache splits, SplitsFileType splitsFileType) throws IOException {
             PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(new Path(workDirPath, createFileName(splitsFileType)))));
             outputSplitsForNonShardTables(splits, out, splitsFileType);
             out.close();
         }
         
-        private void outputSplitsForNonShardTables(MetadataTableSplits splits, PrintStream out, SplitsFileType splitsFileType) throws IOException {
+        private void outputSplitsForNonShardTables(TableSplitsCache splits, PrintStream out, SplitsFileType splitsFileType) throws IOException {
             for (String table : tableNames) {
                 if (null != shardedTableNames && shardedTableNames.contains(table)) {
                     continue;
@@ -115,7 +114,7 @@ public class NonShardedSplitsFile {
             }
         }
         
-        private void outputSplitsForTable(MetadataTableSplits splits, PrintStream out, String table, SplitsFileType splitsFileType) throws IOException {
+        private void outputSplitsForTable(TableSplitsCache splits, PrintStream out, String table, SplitsFileType splitsFileType) throws IOException {
             Collection<Text> tableSplits = null;
             Map<Text,String> tableSplitsAndLocations;
             if (splitsFileType.equals(SplitsFileType.TRIMMEDBYNUMBER)) {

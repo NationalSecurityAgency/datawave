@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -51,9 +52,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
     private static final String NO_LOCATION = "noloc";
     
-    private static final Logger log = Logger.getLogger(MetadataTableSplits.class);
-    
-    private final Configuration conf;
+    private final Configuration conf = new Configuration();
     private AccumuloHelper cbHelper = null;
     private Path splitsPath = null;
     private Map<String,List<Text>> splits = null;

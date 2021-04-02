@@ -9,6 +9,7 @@ import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.Locations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Range;
@@ -343,8 +344,8 @@ public class ShardedTableMapFile {
             accumuloHelper.setup(conf);
             
             while (keepRetrying && attempts < MAX_RETRY_ATTEMPTS) {
-                try (AccumuloClient client = accumuloHelper.newClient()) {
-                    TableOperations tableOps = client.tableOperations();
+                try {
+                    TableOperations tableOps = accumuloHelper.getConnector().tableOperations();
                     attempts++;
                     // if table does not exist don't want to catch the errors and end up in infinite loop
                     if (!tableOps.exists(shardedTableName)) {
