@@ -75,6 +75,7 @@ public class QueryStorageCacheTest {
         cleanupData();
         messageConsumer.stop();
         messageConsumer = null;
+        queueManager.deleteQueue(new QueryPool(TEST_POOL));
     }
     
     public void cleanupData() throws IOException {
