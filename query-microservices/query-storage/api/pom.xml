@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>1.7</version>
+        <version>1.8</version>
         <relativePath />
     </parent>
     <artifactId>query-storage-api</artifactId>
@@ -13,7 +13,7 @@
         <version.datawave>3.1.5-SNAPSHOT</version.datawave>
         <version.jaxrs>3.7.0.Final</version.jaxrs>
         <version.lang3>3.3.2</version.lang3>
-        <version.spring.messaging>5.1.14.RELEASE</version.spring.messaging>
+        <version.spring.messaging>5.3.5</version.spring.messaging>
     </properties>
     <dependencyManagement>
         <dependencies>

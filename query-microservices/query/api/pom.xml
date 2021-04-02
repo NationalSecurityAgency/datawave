@@ -4,13 +4,13 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>1.7</version>
+        <version>1.8</version>
         <relativePath />
     </parent>
     <artifactId>query-api</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <version.microservice.base-rest-responses>1.2</version.microservice.base-rest-responses>
+        <version.microservice.base-rest-responses>1.3-SNAPSHOT</version.microservice.base-rest-responses>
         <version.validation-api>2.0.1.Final</version.validation-api>
     </properties>
     <dependencyManagement>
