@@ -63,7 +63,7 @@ public class ContentKeyValueFactory {
         
         return c;
     }
-
+    
     private static boolean isGzip(byte[] bytes) {
         if (bytes == null || bytes.length < 4) {
             return false;
@@ -71,20 +71,19 @@ public class ContentKeyValueFactory {
         int head = ((int) bytes[0] & 0xff) | ((bytes[1] << 8) & 0xff00);
         return java.util.zip.GZIPInputStream.GZIP_MAGIC == head;
     }
-
+    
     private static byte[] gunzip(byte[] gzip) throws IOException {
         byte[] buffer = new byte[4096];
         ByteArrayInputStream bais = new ByteArrayInputStream(gzip);
-        try (GZIPInputStream gzis = new GZIPInputStream(bais);
-             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (GZIPInputStream gzis = new GZIPInputStream(bais); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             int length;
-            while((length = gzis.read(buffer)) >= 0) {
+            while ((length = gzis.read(buffer)) >= 0) {
                 baos.write(buffer, 0, length);
             }
             return baos.toByteArray();
         }
     }
-
+    
     /**
      * Decodes the given 'document', which should be gzip'd and base64 encoded
      */
