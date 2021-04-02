@@ -1,23 +1,22 @@
 package datawave.ingest.util.cache.delete;
 
 import com.google.common.base.Predicates;
-import datawave.common.io.FilesFinder;
-import datawave.ingest.util.cache.lease.LockFactory;
+import datawave.ingest.util.cache.JobCacheFactory;
+import datawave.ingest.util.cache.lease.JobCacheLockFactory;
 import datawave.ingest.util.cache.path.FileSystemPath;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** This class will be responsible for deleting job caches */
 public class DeleteJobCache {
-    public static final Comparator<Path> PATH_COMPARATOR = Comparator.comparing(x -> x.toUri().getPath());
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeleteJobCache.class);
     
     /**
      * Find job cache directories that are candidates for deletion.
@@ -31,21 +30,7 @@ public class DeleteJobCache {
      * @return A collection of job cache directories to attempt to delete.
      */
     public static Collection<FileSystemPath> getDeletionCandidates(FileSystemPath jobCachePath, Pattern timestampPattern, int keepNumVersions) {
-        Path cachePath = jobCachePath.getOutputPath();
-        FileSystem fileSystem = jobCachePath.getFileSystem();
-        
-        FileStatus[] pathStatus = FilesFinder.listPath(fileSystem, cachePath, timestampPattern);
-        
-        // @formatter:off
-        return Arrays
-                .stream(pathStatus)
-                .filter(FileStatus::isDirectory)
-                .map(FileStatus::getPath)
-                .sorted(PATH_COMPARATOR.reversed())
-                .skip(keepNumVersions)
-                .map(deleteCachePath -> new FileSystemPath(fileSystem, deleteCachePath))
-                .collect(Collectors.toList());
-        // @formatter:on
+        return JobCacheFactory.getCacheCandidates(jobCachePath, timestampPattern, keepNumVersions);
     }
     
     /**
@@ -74,7 +59,7 @@ public class DeleteJobCache {
      * @param lockFactory
      *            A factory to determine caches that are still active or locked.
      */
-    public static void deleteCacheIfNotActive(Collection<FileSystemPath> jobCachePaths, LockFactory lockFactory) {
+    public static void deleteCacheIfNotActive(Collection<FileSystemPath> jobCachePaths, JobCacheLockFactory lockFactory) {
         // @formatter:off
         jobCachePaths
                 .stream()
@@ -96,6 +81,7 @@ public class DeleteJobCache {
         Path cachePath = jobCachePath.getOutputPath();
         
         try {
+            LOGGER.info("Deleting cache {} ", cachePath);
             return fileSystem.delete(cachePath, true);
         } catch (IOException e) {
             throw new RuntimeException("Unable to delete " + cachePath, e);

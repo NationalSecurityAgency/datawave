@@ -8,6 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -21,6 +24,12 @@ import static datawave.common.io.HadoopFileSystemUtils.getCopyFromLocalFileRunna
 public class LoadJobCache {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadJobCache.class);
     private static final String LOADING_PREFIX = "LOADING_";
+    public static final String JOB_CACHE_TIMESTAMP_FORMAT = "yyyyMMddHHmmss";
+    public static final DateTimeFormatter JOB_CACHE_FORMATER = DateTimeFormatter.ofPattern(JOB_CACHE_TIMESTAMP_FORMAT).withZone(ZoneOffset.UTC);
+    
+    public static String getJobCacheTimestampDir(String prefix) {
+        return prefix + LoadJobCache.JOB_CACHE_FORMATER.format(LocalDateTime.now());
+    }
     
     /**
      * Create a timestamped hdfs directory and copy local files to it.

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -53,7 +54,7 @@ public class FileSystemPath implements AutoCloseable {
     
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof FileSystemPath)) {
+        if (obj.getClass() != this.getClass()) {
             return false;
         }
         
@@ -61,12 +62,17 @@ public class FileSystemPath implements AutoCloseable {
         String thatOutputPath = that.getOutputPath().toUri().getPath();
         String thisOutputPath = outputPath.toUri().getPath();
         
-        return thisOutputPath.equals(thatOutputPath) && that.getFileSystem().equals(this.fileSystem);
+        return thisOutputPath.equals(thatOutputPath) && this.getFileSystem().equals(that.fileSystem);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(outputPath.toUri().getPath());
     }
     
     @Override
     public String toString() {
-        return "Path: " + outputPath.toUri().getPath() + " Filesystem: " + fileSystem.toString();
+        return "Path: " + outputPath.toUri().getPath();
     }
     
     /**

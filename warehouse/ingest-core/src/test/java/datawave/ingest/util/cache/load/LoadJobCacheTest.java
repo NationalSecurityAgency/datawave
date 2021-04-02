@@ -6,7 +6,6 @@ import datawave.common.io.FilesFinder;
 import java.io.File;
 import java.io.IOException;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,11 +25,10 @@ import static datawave.common.test.utils.FileUtils.createTemporaryFile;
 import static datawave.common.test.utils.FileUtils.deletePath;
 import static datawave.ingest.util.cache.load.LoadJobCache.getDeleteCacheConsumer;
 import static datawave.ingest.util.cache.load.LoadJobCache.getLoadCacheConsumer;
-import static datawave.ingest.util.cache.load.LoadJobCacheLauncher.JOB_CACHE_FORMATER;
 
 public class LoadJobCacheTest {
     private static final File TEMP_DIR = Files.createTempDir();
-    private static final String JOB_CACHE_DIR = "jobCache_" + JOB_CACHE_FORMATER.format(LocalDateTime.now());
+    private static final String JOB_CACHE_DIR = LoadJobCache.getJobCacheTimestampDir("jobCache_");
     private static final String FILE_PREFIX = "File";
     
     private static Collection<FileSystemPath> CACHE_PATHS = Lists.newArrayList();

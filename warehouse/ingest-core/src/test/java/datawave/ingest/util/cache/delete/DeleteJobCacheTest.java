@@ -2,7 +2,7 @@ package datawave.ingest.util.cache.delete;
 
 import com.google.common.io.Files;
 import datawave.common.test.utils.FileUtils;
-import datawave.ingest.util.cache.lease.NoOpLockFactory;
+import datawave.ingest.util.cache.lease.JobCacheNoOpLockFactory;
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -98,12 +98,12 @@ public class DeleteJobCacheTest {
         FileSystemPath jobCachePath = new FileSystemPath(FileSystem.getLocal(new Configuration()), new Path(TEMP_DIR));
         
         Collection<FileSystemPath> deletionCandidates = DeleteJobCache.getDeletionCandidates(jobCachePath, JOB_CACHE_PATTERN, 2);
-        DeleteJobCache.deleteCacheIfNotActive(deletionCandidates, new NoOpLockFactory());
+        DeleteJobCache.deleteCacheIfNotActive(deletionCandidates, new JobCacheNoOpLockFactory());
         
         Collection<FileSystemPath> remainingCaches = DeleteJobCache.getDeletionCandidates(jobCachePath, JOB_CACHE_PATTERN, 0);
         Assert.assertEquals(expectedRemainingCaches, remainingCaches);
         
-        DeleteJobCache.deleteCacheIfNotActive(remainingCaches, new NoOpLockFactory());
+        DeleteJobCache.deleteCacheIfNotActive(remainingCaches, new JobCacheNoOpLockFactory());
         setup();
     }
     

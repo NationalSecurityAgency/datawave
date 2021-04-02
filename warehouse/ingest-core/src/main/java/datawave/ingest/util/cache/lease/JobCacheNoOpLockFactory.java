@@ -2,7 +2,7 @@ package datawave.ingest.util.cache.lease;
 
 import java.util.function.Predicate;
 
-public class NoOpLockFactory implements LockFactory {
+public class JobCacheNoOpLockFactory implements JobCacheLockFactory {
     
     @Override
     public boolean acquireLock(String id) {
@@ -25,6 +25,11 @@ public class NoOpLockFactory implements LockFactory {
     @Override
     public Predicate<String> getCacheAvailablePredicate() {
         return input -> true;
+    }
+    
+    @Override
+    public LockCacheStatus getCacheStatus(String id) {
+        return null;
     }
     
 }

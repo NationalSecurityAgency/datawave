@@ -8,8 +8,8 @@ import datawave.ingest.util.cache.converter.DeleteModeConverter;
 import datawave.ingest.util.cache.delete.mode.DeleteJobCacheMode;
 import datawave.ingest.util.cache.delete.mode.DeleteModeOptions;
 import datawave.ingest.util.cache.delete.mode.OldInactiveMode;
+import datawave.ingest.util.cache.lease.JobCacheZkLockFactory;
 import datawave.ingest.util.cache.lease.JobCacheLockFactory;
-import datawave.ingest.util.cache.lease.LockFactory;
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -37,7 +37,7 @@ public class DeleteJobCacheLauncher {
     boolean help;
     
     @Parameter(names = {"--cache-namespace"}, description = "Zookeeper namespace to check for active jobs")
-    String cacheNamespace = "datawave/jobCache/";
+    String cacheNamespace = "datawave/jobCache";
     
     @Parameter(names = {"--lock-timeout-in-ms"}, description = "Zookeeper timeout for acquiring lock")
     int lockTimeoutInMs = 30;
@@ -61,9 +61,11 @@ public class DeleteJobCacheLauncher {
         Collection<Configuration> hadoopConfs = ConfigurationFileHelper.getHadoopConfs(hadoopConfDirs);
         Collection<FileSystemPath> deletionCandidates = deleteMode.getDeletionCandidates(hadoopConfs, options);
         
-        try (LockFactory lockFactory = new JobCacheLockFactory(cacheNamespace, zookeepers, lockTimeoutInMs, lockRetryCount, lockRetryTimeoutInMs)) {
+        try (JobCacheLockFactory lockFactory = new JobCacheZkLockFactory(cacheNamespace, zookeepers, lockTimeoutInMs, lockRetryCount, lockRetryTimeoutInMs)) {
             LOGGER.info("Attempting to delete inactive caches {}", listToString(deletionCandidates));
-            DeleteJobCache.deleteCacheIfNotActive(deletionCandidates, lockFactory);
+            if (!deletionCandidates.isEmpty()) {
+                DeleteJobCache.deleteCacheIfNotActive(deletionCandidates, lockFactory);
+            }
         } catch (Exception e) {
             LOGGER.error("Unable to delete caches {} ", listToString(deletionCandidates), e);
         } finally {

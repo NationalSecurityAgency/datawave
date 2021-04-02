@@ -17,9 +17,6 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -29,9 +26,6 @@ import java.util.List;
  */
 public class LoadJobCacheLauncher {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadJobCacheLauncher.class);
-    
-    public static final String JOB_CACHE_TIMESTAMP_FORMAT = "yyyyMMddHHmmss";
-    public static final DateTimeFormatter JOB_CACHE_FORMATER = DateTimeFormatter.ofPattern(JOB_CACHE_TIMESTAMP_FORMAT).withZone(ZoneOffset.UTC);
     
     @Parameter(names = {"--cache-replication-cnt"}, description = "The number of replicas for loaded cache files.", converter = ShortConverter.class)
     short cacheReplicationCnt = 3;
@@ -58,7 +52,7 @@ public class LoadJobCacheLauncher {
     String subDir;
     
     @Parameter(names = {"--timestamp-dir"}, description = "The timestamp cache directory name.")
-    String timestampDir = "jobCache_" + JOB_CACHE_FORMATER.format(LocalDateTime.now());
+    String timestampDir = LoadJobCache.getJobCacheTimestampDir("jobCache_");
     
     /**
      * Will load job cache from specified arguments
