@@ -1,17 +1,5 @@
 package datawave.webservice.query.runner;
 
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
@@ -40,6 +28,18 @@ import org.apache.htrace.TraceInfo;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 /**
  * Object that encapsulates a running query
  *
@@ -66,6 +66,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private QueryPredictor predictor = null;
+    private long maxResults = 0;
     
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -120,6 +121,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         // If connection is null, then we are likely not going to use this object for query, probably for removing or closing it.
         if (null != client) {
             setClient(client);
+        }
+        this.maxResults = this.logic.getResultLimit(this.settings.getDnList());
+        if (this.maxResults != this.logic.getMaxResults()) {
+            log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
+                            + " has a DN configured with a different limit");
         }
     }
     
@@ -230,7 +236,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                         break;
                     }
-                } else if (this.logic.getMaxResults() >= 0 && numResults >= this.logic.getMaxResults()) {
+                } else if (this.maxResults >= 0 && numResults >= this.maxResults) {
                     log.info("Query logic max results has been reached, aborting query.next call");
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                     break;
