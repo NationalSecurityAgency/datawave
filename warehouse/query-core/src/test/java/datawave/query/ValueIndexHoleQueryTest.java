@@ -33,15 +33,10 @@ import static datawave.query.testframework.RawDataManager.EQ_OP;
  */
 public class ValueIndexHoleQueryTest extends AbstractFunctionalQuery {
     
-<<<<<<< HEAD:warehouse/query-core/src/test/java/datawave/query/IndexHoleQueryTest.java
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
-    private static final Logger log = Logger.getLogger(IndexHoleQueryTest.class);
-=======
     private static final Logger log = Logger.getLogger(ValueIndexHoleQueryTest.class);
->>>>>>> Added IndexColumnIterator to the MetaDataConfig helper setup:warehouse/query-core/src/test/java/datawave/query/ValueIndexHoleQueryTest.java
-    
     private static final List<ValueIndexHole> INDEX_HOLE = new ArrayList<>();
     static {
         String[] dateHole = new String[] {BaseShardIdRange.DATE_2015_0404.getDateStr(), BaseShardIdRange.DATE_2015_0505.getDateStr()};

@@ -1,6 +1,5 @@
 package datawave.query.cardinality;
 
-
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
