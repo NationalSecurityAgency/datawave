@@ -27,8 +27,7 @@ import static datawave.query.testframework.RawDataManager.NOT_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * These tests are highly dependent upon the test data due to the fact that thresholds are tested. Because the test data contains multivalue fields with
@@ -252,11 +251,14 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     public void testMaxIvaratorResultsFailsQuery() throws Exception {
         log.info("------  testMaxIvaratorResultsFailsQuery  ------");
         String regex = RE_OP + "'b.*'";
-        String query = Constants.ANY_FIELD + regex;
-        
+        String city = EQ_OP + "'b-city'";
+        String query = Constants.ANY_FIELD + regex + AND_OP + Constants.ANY_FIELD + city;
+
         String anyRegex = this.dataManager.convertAnyField(regex);
-        String expect = anyRegex;
-        
+        String anyCity = this.dataManager.convertAnyField(city);
+        String expect = anyRegex + AND_OP + anyCity;
+
+
         List<String> dirs = ivaratorConfig();
         // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
         this.logic.setCollapseUids(true);
@@ -264,11 +266,11 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(1);
         // set a small buffer size to ensure we actually persist the buffers so that we can detect this below
         this.logic.setIvaratorCacheBufferSize(2);
-        
+
         runTest(query, expect);
         // verify that the ivarators ran and completed
         assertEquals(3, countComplete(dirs));
-        
+
         // clear list before new set is added
         dirs.clear();
         // now get a new set of ivarator directories
@@ -278,10 +280,12 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         try {
             // verify the query actually fails
             runTest(query, expect);
-            fail("Expected the query to fail with the ivarators fail");
         } catch (Exception e) {
             // expected
         }
+        // and verify that the ivarators indeed did not complete (i.e. failed)
+        assertEquals(0, countComplete(dirs));
+
     }
     
     /**
