@@ -148,7 +148,7 @@
         <!-- The max number of terms AFTER all expansions -->
         <property name="maxTermThreshold" value="10" />	<!-- was ${beq.maxTermThreshold} -->
         <!-- The max query depth -->
-        <property name="maxDepthThreshold" value="5" />	<!-- was ${beq.maxDepthThreshold} -->
+        <property name="maxDepthThreshold" value="10" />	<!-- was ${beq.maxDepthThreshold} -->
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->
         <property name="maxUnfieldedExpansionThreshold" value="20" />	<!-- was ${beq.unfieldedExpansionThreshold} -->
         <!-- The max value (regex or range) expansion -->
