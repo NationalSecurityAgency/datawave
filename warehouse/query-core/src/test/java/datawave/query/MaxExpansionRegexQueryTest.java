@@ -253,12 +253,11 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String regex = RE_OP + "'b.*'";
         String city = EQ_OP + "'b-city'";
         String query = Constants.ANY_FIELD + regex + AND_OP + Constants.ANY_FIELD + city;
-
+        
         String anyRegex = this.dataManager.convertAnyField(regex);
         String anyCity = this.dataManager.convertAnyField(city);
         String expect = anyRegex + AND_OP + anyCity;
-
-
+        
         List<String> dirs = ivaratorConfig();
         // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
         this.logic.setCollapseUids(true);
@@ -266,11 +265,11 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(1);
         // set a small buffer size to ensure we actually persist the buffers so that we can detect this below
         this.logic.setIvaratorCacheBufferSize(2);
-
+        
         runTest(query, expect);
         // verify that the ivarators ran and completed
         assertEquals(3, countComplete(dirs));
-
+        
         // clear list before new set is added
         dirs.clear();
         // now get a new set of ivarator directories
@@ -285,7 +284,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         }
         // and verify that the ivarators indeed did not complete (i.e. failed)
         assertEquals(0, countComplete(dirs));
-
+        
     }
     
     /**
