@@ -330,7 +330,7 @@ public class QueryStorageCacheTest {
         // ensure we did not get another task notification
         assertNull(messageConsumer.receiveTaskNotification(0));
         
-        // make sure it deleted
+        // make sure it -d
         tasks = storageService.getTasks(queryId);
         assertEquals(0, tasks.size());
     }
@@ -366,7 +366,7 @@ public class QueryStorageCacheTest {
         assertQueryTask(notification.getTaskKey(), QueryTask.QUERY_ACTION.NEXT, query, task);
         
         // now delete the query tasks
-        storageService.deleteQueryPool(queryPool);
+        storageService.deleteQuery(queryId);
         
         // ensure we did not get another task notification
         assertNull(messageConsumer.receiveTaskNotification(0));
