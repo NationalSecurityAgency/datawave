@@ -22,6 +22,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 import org.springframework.util.Assert;
+import sun.reflect.generics.tree.Tree;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
@@ -362,10 +363,31 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             if (this.groupFieldsSet.contains(shorterName)) {
                 expandedGroupFieldsList.add(shortName);
                 log.trace("{} contains {}", this.groupFieldsSet, shorterName);
-                GroupingTypeAttribute<?> created = makeGroupingTypeAttribute(shortName, field.getData());
-                created.setColumnVisibility(field.getColumnVisibility());
-                fieldMap.put(fieldName, created);
-                fieldToFieldWithContextMap.put(shortName, fieldName);
+                
+                if (field.getData() instanceof Collection<?>) {
+                    // This handles multi-valued entries that do not have gouping context
+                    // Create GroupingTypeAttribute and put in ordered map ordered on the attribute type
+                    Multimap<Type<?>,GroupingTypeAttribute<?>> attrSortedMap = TreeMultimap.create();
+                    for (Object typeAttribute : ((Collection<?>) field.getData())) {
+                        Type<?> type = ((TypeAttribute<?>) typeAttribute).getType();
+                        GroupingTypeAttribute<?> created = makeGroupingTypeAttribute(shortName, type);
+                        created.setColumnVisibility(field.getColumnVisibility());
+                        attrSortedMap.put(type, created);
+                    }
+                    
+                    // Add GroupingTypeAttribute to fieldMap with a grouping context that is based on ordered attribute type
+                    int i = 0;
+                    for (Entry<Type<?>,GroupingTypeAttribute<?>> sortedEntry : attrSortedMap.entries()) {
+                        String fieldNameWithContext = fieldName + "." + i++;
+                        fieldMap.put(fieldNameWithContext, sortedEntry.getValue());
+                        fieldToFieldWithContextMap.put(shortName, fieldNameWithContext);
+                    }
+                } else {
+                    GroupingTypeAttribute<?> created = makeGroupingTypeAttribute(shortName, field.getData());
+                    created.setColumnVisibility(field.getColumnVisibility());
+                    fieldMap.put(fieldName, created);
+                    fieldToFieldWithContextMap.put(shortName, fieldName);
+                }
             } else {
                 log.trace("{} does not contain {}", this.groupFieldsSet, shorterName);
             }
@@ -569,4 +591,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             return hcb.toHashCode();
         }
     }
+    
+    // static class SortedGroupAtrrTypeMap extends TreeMultimap <Type<T extends Comparable<T>>, GroupingTypeAttribute<T>> {
+    //
+    // }
 }
