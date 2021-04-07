@@ -1032,23 +1032,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return null;
     }
     
-    private boolean isUsable(Path path) throws IOException {
-        try {
-            if (!hdfsFileSystem.getFileSystem(path.toUri()).mkdirs(path)) {
-                throw new IOException("Unable to mkdirs: fs.mkdirs(" + path + ")->false");
-            }
-        } catch (MalformedURLException e) {
-            throw new IOException("Unable to load hadoop configuration", e);
-        } catch (Exception e) {
-            log.warn("Unable to access " + path, e);
-            return false;
-        }
-        return true;
-    }
-    
     /**
-     * Create a cache directory path for a specified regex node. If alternatives have been specified, then random alternatives will be attempted until one is
-     * found that can be written to.
+     * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      * 
      * @return A path
      */
@@ -1070,10 +1055,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         path = new Path(path, scanId);
                     }
                     path = new Path(path, subdirectory);
-                    if (isUsable(path)) {
-                        URI uri = path.toUri();
-                        pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
-                    }
+                    URI uri = path.toUri();
+                    pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
                 }
             }
         }

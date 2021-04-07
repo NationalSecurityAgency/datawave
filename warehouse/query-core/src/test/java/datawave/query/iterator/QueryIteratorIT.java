@@ -563,7 +563,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*d'))";
         
         // setup a bogus ivarator cache dir for the config
-        options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(new IvaratorCacheDirConfig("hdfs://bogusPath")));
+        options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(new IvaratorCacheDirConfig("hddfs://bogusPath")));
         
         index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
