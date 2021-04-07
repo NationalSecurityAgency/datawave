@@ -64,6 +64,13 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                     ExceededValueThresholdMarkerJexlNode.class);
     // @formatter:on
     
+    // @formatter:off
+    private static final List<Class<? extends QueryPropertyMarker>> IVARATOR_TYPES = ImmutableList.of(
+            ExceededOrThresholdMarkerJexlNode.class,
+            ExceededTermThresholdMarkerJexlNode.class,
+            ExceededValueThresholdMarkerJexlNode.class);
+    // @formatter:on
+    
     private final Set<String> allowedTypes;
     private final Set<String> deniedTypes;
     private List<JexlNode> sourceNodes;
@@ -116,6 +123,17 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
      */
     public static boolean isDelayedPredicate(JexlNode node) {
         return instanceOf(node, DELAYED_PREDICATE_TYPES);
+    }
+    
+    /**
+     * Test a node to determine if it is an Ivarator node or not
+     * 
+     * @param node
+     *            the node to test
+     * @return true if the node is an instance of an IVARATOR_TYPE, false otherwise
+     */
+    public static boolean isIvarator(JexlNode node) {
+        return instanceOf(node, IVARATOR_TYPES);
     }
     
     /**
