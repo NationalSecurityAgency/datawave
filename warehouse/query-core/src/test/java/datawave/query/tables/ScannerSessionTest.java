@@ -86,7 +86,7 @@ public class ScannerSessionTest {
             writeData();
         } catch (MutationsRejectedException e) {
             instance.stop();
-            throw new RuntimeException("failed to write data");
+            throw new RuntimeException("failed to write data", e);
         }
     }
     
