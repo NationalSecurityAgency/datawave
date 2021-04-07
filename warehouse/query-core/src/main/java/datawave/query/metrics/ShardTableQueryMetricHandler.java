@@ -40,6 +40,7 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
+import datawave.marking.MarkingFunctions;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
@@ -134,6 +135,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     private Collection<String> connectorAuthorizationCollection = null;
     private String connectorAuthorizations = null;
+    private MarkingFunctions markingFunctions = null;
     
     @SuppressWarnings("FieldCanBeLocal")
     private final String JOB_ID = "job_201109071404_1";
@@ -161,6 +163,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         String accumuloPassword = conf.get("AccumuloRecordWriter.password");
         byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
         conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
+        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     }
     
     @PostConstruct
@@ -279,11 +282,17 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         event.setConf(this.conf);
         event.setDataType(type);
         event.setDate(storedQueryMetric.getCreateDate().getTime());
-        // get security marking set in the config, otherwise default to PUBLIC
-        if (visibilityString != null) {
-            event.setVisibility(new ColumnVisibility(visibilityString));
-        } else {
+        // get security markings from metric, otherwise default to PUBLIC
+        Map<String,String> markings = updatedQueryMetric.getMarkings();
+        if (markingFunctions == null || markings == null || markings.isEmpty()) {
             event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
+        } else {
+            try {
+                event.setVisibility(this.markingFunctions.translateToColumnVisibility(markings));
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
+            }
         }
         event.setAuxData(storedQueryMetric);
         event.setRawRecordNumber(1000L);
@@ -639,7 +648,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         try {
             QueryMetric m = new QueryMetric();
             List<FieldBase> field = event.getFields();
-            
+            m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
             
             for (FieldBase f : field) {
