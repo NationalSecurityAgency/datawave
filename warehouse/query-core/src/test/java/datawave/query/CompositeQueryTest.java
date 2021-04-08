@@ -103,6 +103,16 @@ public class CompositeQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
+    public void testRegexWithRangeLhs() throws Exception {
+        log.info("------  testRegexWithRange  ------");
+        String state = "'Mississippi'";
+        String code = "'uS.*'";
+        
+        String qState = CityField.CODE.name() + RE_OP + code + AND_OP + CityField.STATE + EQ_OP + state;
+        runTest(qState, qState);
+    }
+    
+    @Test
     public void testMultiRegex() throws Exception {
         log.info("------  testMultiRegex  ------");
         String state = "'Miss.*'";

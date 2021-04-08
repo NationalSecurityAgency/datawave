@@ -95,8 +95,16 @@ public class ExpandCompositeTermsTest {
     public void test3() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-8' && POINTS==11";
         runTestQuery(query, "WINNER == 'blue' && TEAM_NAME_POINTS == 'gold,gold-8,11'");
+        /**
+         * As part of boundary value testing we are ensuring that for TEAM_NAME_POINTS we aren't combining
+         * these terms during composite expansion since that would result in [term][regex][term]
+         */
         query = "WINNER=='blue' && TEAM=='gold' && NAME=~'gold-?.*' && POINTS==11";
         runTestQuery(query, "WINNER == 'blue' && NAME =~ 'gold-?.*' && TEAM_POINTS == 'gold,11'");
+        /**
+         * As part of boundary value testing we are ensuring that for TEAM_POINTS we aren't combining
+         * these terms during composite expansion since that would result in [regex][term]
+         */
         query = "WINNER=='blue' && TEAM=~'gol.*' && NAME=='gold-8' && POINTS==11";
         runTestQuery(query, "WINNER == 'blue' && TEAM =~ 'gol.*' && NAME == 'gold-8' && POINTS == 11");
     }
@@ -176,7 +184,32 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test8() throws Exception {
         String query = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE == 'honda') && TYPE == 'truck'";
+        /**
+         * Since our field is MAKE_COLOR and we have a regex on the rhs, we can quote the left and allow the right
+         * to be expanded. This will allow us to support the case where we have an ASTEQNode that has a period. If
+         * we do not do the escape the RegexAnalyzer will mistakenly assume the period of the original ASTEQNode is
+         * part of a regex.
+         */
         String expected = "TYPE == 'truck' && (WHEELS == '4' || WHEELS == '+aE4') && ((COLOR =~ '.*ed' && MAKE_COLOR == 'honda') || (MAKE_COLOR =~ '\\Qhonda\\E,.*ed' && ((_Eval_ = true) && (MAKE == 'honda' && COLOR =~ '.*ed'))))";
+        runTestQuery(query, expected);
+    }
+
+    @Test
+    public void test8a() throws Exception {
+        String query = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
+        /**
+         * Unlike test8, we are validating that our composite expansion cannot occur and result in quoted ASTEQNodes
+         * because we don't have one.
+         */
+        String expected = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
+        runTestQuery(query, expected);
+
+        /**
+         * Since the field is MAKE_COLOR we can't composite here as the lhs is a regex. This would effectively result
+         * in looking for MAKE=~'honda.*', thus the expand composite terms visitor will not join these terms.
+         */
+        query = "COLOR == 'red' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
+        expected = "TYPE == 'truck' && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && (COLOR_WHEELS == 'red,4' || COLOR_WHEELS == 'red,+aE4')";
         runTestQuery(query, expected);
     }
     

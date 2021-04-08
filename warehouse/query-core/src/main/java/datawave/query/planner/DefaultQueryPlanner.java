@@ -1217,33 +1217,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             logQuery(queryTree, "Query after forceEvaluationOnly is applied");
         }
         stopwatch.stop();
-        
-        if (!disableCompositeFields) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand composite terms");
-            
-            try {
-                config.setCompositeToFieldMap(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()));
-                config.setCompositeTransitionDates(metadataHelper.getCompositeTransitionDateMap(config.getDatatypeFilter()));
-                config.setCompositeFieldSeparators(metadataHelper.getCompositeFieldSeparatorMap(config.getDatatypeFilter()));
-                config.setFieldToDiscreteIndexTypes(CompositeUtils.getFieldToDiscreteIndexTypeMap(config.getQueryFieldsDatatypes()));
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
-            }
-            
-            queryTree = ExpandCompositeTerms.expandTerms(config, queryTree);
-            stopwatch.stop();
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after expanding composite terms:");
-            }
-        }
-        
+       
         if (!disableBoundedLookup) {
+            /**
+             * This will allow composite terms to be checked and expanded; however, there are cases where the expansion
+             * cannot occur. For example if you have three fields and the second and third fields are regex. We may be
+             * able to expand the second field and composite a field of A*B*C, where C is a regex with the
+             * ExpandCompositeTerms visitor, at which point ParallelIndexExpansion can then attempt the composite
+             * field expansion of A*B*C, and (hopefully) result in discrete terms.
+             */
+            queryTree = checkAndExpandCompositeTerms(config, queryTree, timers, scannerFactory, metadataHelper, expansionFields);
+            
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
             TraceStopwatch innerStopwatch = null;
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
+                
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
                                 config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
@@ -1252,6 +1242,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     logQuery(queryTree, "Query after expanding regex:");
                 }
                 innerStopwatch.stop();
+                
+                List<String> debugOutput = null;
+                if (log.isDebugEnabled()) {
+                    debugOutput = new ArrayList<>(32);
+                }
                 
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
                 queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
@@ -1294,7 +1289,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 // if we now have an unexecutable tree because of delayed
                 // predicates, then remove delayed predicates as needed and
                 // reexpand
-                List<String> debugOutput = null;
                 if (log.isDebugEnabled()) {
                     debugOutput = new ArrayList<>(32);
                 }
@@ -1383,9 +1377,60 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (log.isDebugEnabled()) {
                 log.debug("Bounded range and regex conversion has been disabled");
             }
+            
+            queryTree = checkAndExpandCompositeTerms(config, queryTree, timers, scannerFactory, metadataHelper, expansionFields);
         }
         
         return queryTree;
+    }
+    
+    /**
+     * Helper Function which checks whether we can utilize composite indices and then returns an updated tree.
+     * 
+     * @param config
+     *            Shard Configuration
+     * @param queryTree
+     *            incoming query tree
+     * @param timers
+     *            Query stop watch we will use to time this execution segment.
+     * @return updated query tree or the original if composite fields are disabled.
+     */
+    private ASTJexlScript checkAndExpandCompositeTerms(final ShardQueryConfiguration config, final ASTJexlScript queryTree, final QueryStopwatch timers,
+                    ScannerFactory scannerFactory, MetadataHelper metadataHelper, Set<String> expansionFields) {
+        if (!disableCompositeFields) {
+            TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand composite terms ");
+            
+            try {
+                config.setCompositeToFieldMap(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()));
+                config.setCompositeTransitionDates(metadataHelper.getCompositeTransitionDateMap(config.getDatatypeFilter()));
+                config.setCompositeFieldSeparators(metadataHelper.getCompositeFieldSeparatorMap(config.getDatatypeFilter()));
+                config.setFieldToDiscreteIndexTypes(CompositeUtils.getFieldToDiscreteIndexTypeMap(config.getQueryFieldsDatatypes()));
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+                throw new DatawaveFatalQueryException(qe);
+            }
+            
+            ASTJexlScript retTree = null;
+            if (!disableBoundedLookup) {
+                try {
+                    retTree = ExpandCompositeTerms.expandTermsWithRegex(config, queryTree, scannerFactory, metadataHelper, expansionFields);
+                } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
+                    stopwatch.stop();
+                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e1);
+                    throw new DatawaveFatalQueryException(qe);
+                }
+            } else {
+                retTree = ExpandCompositeTerms.expandTerms(config, queryTree);
+            }
+            
+            stopwatch.stop();
+            if (log.isDebugEnabled()) {
+                logQuery(retTree, "Query after expanding composite terms:");
+            }
+            return retTree;
+        }
+        return queryTree;
+        
     }
     
     /**

@@ -12,8 +12,11 @@ import datawave.query.composite.Composite;
 import datawave.query.composite.CompositeRange;
 import datawave.query.composite.CompositeTerm;
 import datawave.query.composite.CompositeUtils;
+import datawave.query.tables.ScannerFactory;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
@@ -22,6 +25,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -30,6 +34,7 @@ import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
@@ -39,7 +44,7 @@ import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +60,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 /**
@@ -64,7 +71,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  */
 public class ExpandCompositeTerms extends RebuildingVisitor {
     
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandCompositeTerms.class);
+    private static final Logger log = getLogger(ExpandCompositeTerms.class);
     
     private final ShardQueryConfiguration config;
     
@@ -104,6 +111,71 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         }
         
         return (T) script.jjtAccept(visitor, new ExpandData());
+    }
+    
+    /**
+     * Expand all nodes which have multiple dataTypes for the field.
+     *
+     * @param config
+     *            Configuration parameters relevant to our query
+     * @param script
+     *            The jexl node representing the query
+     * @return An expanded version of the passed-in script containing composite nodes
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends JexlNode> T expandTermsWithRegex(ShardQueryConfiguration config, T script, ScannerFactory scannerFactory,
+                    MetadataHelper metadataHelper, Set<String> expansionFields) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        
+        ExpandCompositeTerms visitor = new ExpandCompositeTerms(config);
+        
+        // need to flatten the tree so i get all and nodes at the same level
+        script = TreeFlatteningRebuildingVisitor.flatten(script);
+        
+        if (null == visitor.config.getCompositeToFieldMap()) {
+            QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
+            throw new DatawaveFatalQueryException(qe);
+        }
+        
+        T newTree = (T) script.jjtAccept(visitor, new ExpandData());
+        
+        if (newTree instanceof ASTJexlScript) {
+            Set<String> indexedFields = null;
+            Set<String> indexOnlyFields = null;
+            Set<String> nonEventFields = null;
+            if (config.getMinSelectivity() > 0) {
+                try {
+                    indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
+                    indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
+                    nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
+                } catch (TableNotFoundException te) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, te);
+                    throw new DatawaveFatalQueryException(qe);
+                }
+            }
+            
+            final ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
+                            config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
+            try {
+                T expandedTree = (T) regexExpansion.visit((ASTJexlScript) newTree, null);
+                /**
+                 * Don't promote a tree that isn't executable. If that is the case resort to returning the tree created by the composite expansion.
+                 */
+                if (ExecutableDeterminationVisitor.isExecutable(expandedTree, config, indexedFields, indexOnlyFields, nonEventFields, null, metadataHelper)) {
+                    return (T) expandedTree.jjtAccept(visitor, new ExpandData());
+                }
+            } catch (CannotExpandUnfieldedTermFatalException cee) {
+                /**
+                 * Exceptions in the executor of ParallelIndexExpansion wrap other exceptions. In the case where we have a do not perform query optimization
+                 * exception we want to pass that along. Therefore we will check the cause and return the original DoNotPerformOptimizedQueryException.
+                 */
+                if (null != cee.getCause() && cee.getCause() instanceof DoNotPerformOptimizedQueryException) {
+                    throw (DoNotPerformOptimizedQueryException) cee.getCause();
+                } else {
+                    throw cee;
+                }
+            }
+        }
+        return newTree;
     }
     
     /**
@@ -332,6 +404,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         List<JexlNode> unmodifiedNodes = new ArrayList<>();
         List<JexlNode> modifiedNodes = new ArrayList<>();
         for (JexlNode nonLeafNode : nonLeafNodes) {
+            if (log.isDebugEnabled()) {
+                log.debug("Processing non leaf node {}", JexlStringBuildingVisitor.buildQuery(nonLeafNode));
+            }
             ExpandData eData = new ExpandData();
             
             // add the anded leaf nodes from our ancestors
@@ -749,7 +824,6 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 }
                 
                 tempComposites = updateComposites(tempComposites, nodes);
-                
                 // if our updated composites list is empty,
                 // then we failed to update the composites
                 if (tempComposites.isEmpty())
