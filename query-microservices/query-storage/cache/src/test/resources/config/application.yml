@@ -16,8 +16,7 @@ logging:
 
 ---
 
-spring:
-  profiles: sync-disabled
+spring.config.activate.on-profile: sync-disabled
 
 query:
   storage:
@@ -26,8 +25,7 @@ query:
 
 ---
 
-spring:
-  profiles: sync-enabled
+spring.config.activate.on-profile: sync-enabled
 
 query:
   storage:
@@ -36,8 +34,7 @@ query:
 
 ---
 
-spring:
-  profiles: send-notifications
+spring.config.activate.on-profile: send-notifications
 
 query:
   storage:
@@ -46,8 +43,7 @@ query:
 
 ---
 
-spring:
-  profiles: no-notifications
+spring.config.activate.on-profile: no-notifications
 
 query:
   storage:
@@ -56,8 +52,7 @@ query:
 
 ---
 
-spring:
-  profiles: use-rabbit
+spring.config.activate.on-profile: use-rabbit
 
 query:
   storage:
@@ -72,8 +67,7 @@ query:
 
 ---
 
-spring:
-  profiles: use-kafka
+spring.config.activate.on-profile: use-kafka
 
 query:
   storage:
@@ -88,8 +82,7 @@ query:
 
 ---
 
-spring:
-  profiles: use-local
+spring.config.activate.on-profile: use-local
 
 query:
   storage:
@@ -100,5 +93,4 @@ query:
 
 ---
 
-spring:
-  profiles: missing
+spring.config.activate.on-profile: missing
