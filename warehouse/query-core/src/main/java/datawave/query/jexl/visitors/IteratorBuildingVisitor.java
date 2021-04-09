@@ -1312,7 +1312,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     public static class FunctionFilter implements Filter {
-        private Script script;
+        
+        private final Script script;
+        private final DatawaveJexlContext context;
         
         public FunctionFilter(List<ASTFunctionNode> nodes) {
             ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
@@ -1333,6 +1335,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             // Evaluate the JexlContext against the Script
             this.script = engine.createScript(query);
+            
+            // setup a re-usable context
+            this.context = new DatawaveJexlContext();
         }
         
         @Override
@@ -1347,13 +1352,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             index = fieldValue.lastIndexOf('\0', index - 1);
             fieldValue = fieldValue.substring(0, index);
             
-            // create a jexl context with this valud
-            JexlContext context = new DatawaveJexlContext();
+            // set the field value into the JexlContext
             context.set(fieldName, new ValueTuple(fieldName, fieldValue, fieldValue, null));
             
             boolean matched = false;
             
             Object o = script.execute(context);
+            
+            // Clear the context for future reuse
+            context.clear();
             
             // Jexl might return us a null depending on the AST
             if (o != null && Boolean.class.isAssignableFrom(o.getClass())) {
