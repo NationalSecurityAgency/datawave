@@ -583,7 +583,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     /**
-     * NOT THREAD SAFE -- relies on QueryStopwatch is not thread safe
+     * NOT THREAD SAFE - relies on QueryStopwatch which is not thread safe
      * 
      * @param lastOperation
      * @param queryTree
