@@ -204,23 +204,51 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         
         int dateComparison;
         
+        /*
+         * Here are ways the Dates represented in the indexedDates.bitset may overlap query range for a field. Case #1 (indexed before query start date only -
+         * whole query range is a hole ) Case #2:(indexed partially into the query range - covering start date) Case #3:(indexed partially inside of query range
+         * - covering end date) Case #4 (indexed completely after the query range - whole query range is a hole) Case #5 (index completely covers the query
+         * range - no holes) Case #6 no field indexed dates are in the metadata so the whole range is a hole.
+         */
+        
         for (String field : fieldToDatatypeMap.keySet()) {
             indexedDates = metadataHelper.getIndexDates(field, config.getDatatypeFilter());
             if (indexedDates != null && indexedDates.getIndexedDatesBitSet() != null) {
                 if (indexedDates != null && indexedDates.getIndexedDatesBitSet().size() > 0) {
                     
+                    // If the field does have dates that are indexed in the query
+                    dateComparison = queryStartDate.compareTo(indexedDates.getStartDay().getYyyymmdd());
+                    
                     // Check if the query end date came before the first indexed date.
+                    // If the query end date comes before the first indexed date of the field
+                    // then the field was not indexed within the query range and the entire
+                    // query range is a "Field hole"
                     if (queryEndDate.compareTo(indexedDates.getStartDay().getYyyymmdd()) < 0) {
+                        // CASE #4 in the above diagram has occurred.
                         FieldIndexHole queryRangeIsAHole = new FieldIndexHole(field, queryStartDate, queryEndDate);
                         config.getFieldIndexHoles().add(queryRangeIsAHole);
                         // Get the next field to calculate field index holes.
                         continue;
                     }
                     
-                    // Lexical comparison of yyyyMMdd is what is used to see what came first.
-                    dateComparison = queryStartDate.compareTo(indexedDates.getStartDay().getYyyymmdd());
+                    // CASE #1 from above
+                    if (queryStartDate.compareTo(indexedDates.getStartDay().getYyyymmdd()) > 0) {
+                        long numDaysIndexedBeforeQuery = YearMonthDay.getNumOfDaysBetween(indexedDates.getStartDay(), new YearMonthDay(queryStartDate));
+                        if (numDaysIndexedBeforeQuery >= indexedDates.getIndexedDatesBitSet().length()) {
+                            FieldIndexHole queryRangeIsAHole = new FieldIndexHole(field, queryStartDate, queryEndDate);
+                            config.getFieldIndexHoles().add(queryRangeIsAHole);
+                            // Get the next field to calculate field index holes.
+                            continue;
+                        }
+                    }
                     
-                    // if
+                    // CASE #5
+                    if (indexedDates.getStartDay().getYyyymmdd().compareTo(queryStartDate) < 0) {
+                        long numDaysIndexedBeforeQuery = YearMonthDay.getNumOfDaysBetween(indexedDates.getStartDay(), new YearMonthDay(queryStartDate));
+                        if ((numDaysInQuery + numDaysIndexedBeforeQuery) < numDaysIndexedBeforeQuery + indexedDates.getIndexedDatesBitSet().length())
+                            continue;
+                        
+                    }
                     
                     if (dateComparison < 0) { // Query Start date is before the indexedDates.getStartDay
                         // Create a hole from the start date to the first date the field was indexed
@@ -262,6 +290,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                         // Create the FieldIndexHoles and put them in the config.
                     }
                 } else {
+                    // CASE #6 from above. Hole range is a hole for this field
                     FieldIndexHole queryRangeIsAHole = new FieldIndexHole(field, queryStartDate, queryEndDate);
                     config.getFieldIndexHoles().add(queryRangeIsAHole);
                     // Get the next field to calculate field index hole
