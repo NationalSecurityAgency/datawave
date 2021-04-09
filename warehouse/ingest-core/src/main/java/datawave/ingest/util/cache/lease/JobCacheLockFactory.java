@@ -2,9 +2,28 @@ package datawave.ingest.util.cache.lease;
 
 import org.apache.hadoop.conf.Configuration;
 
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.function.Predicate;
+import java.util.stream.StreamSupport;
 
 public interface JobCacheLockFactory extends AutoCloseable {
+    ServiceLoader<JobCacheLockFactory> serviceLoader = ServiceLoader.load(JobCacheLockFactory.class);
+    
+    /**
+     * Find mode that will determine which locking mechanism to use for the job cache
+     *
+     * @param mode
+     *            Enum that specifies locking mechanism
+     * @return An optional for JobCacheLockFactory
+     */
+    static Optional<JobCacheLockFactory> getLockFactory(JobCacheLockFactory.Mode mode) {
+        // @formatter:off
+        return StreamSupport.stream(serviceLoader.spliterator(), false)
+                .filter(lockFactoryMode -> lockFactoryMode.getMode().equals(mode))
+                .findFirst();
+        // @formatter:on
+    }
     
     /**
      * Acquire a lock based on the id.
@@ -64,4 +83,17 @@ public interface JobCacheLockFactory extends AutoCloseable {
      * @return True if the lock was released.
      */
     boolean releaseLock(String id);
+    
+    /**
+     * Get enum representing mode specified
+     *
+     * @return A mode to specify type of lock factory
+     */
+    JobCacheLockFactory.Mode getMode();
+    
+    /** Mode enum for specifying the method to find files to load */
+    enum Mode {
+        ZOOKEEPER, NO_OP
+    }
+    
 }

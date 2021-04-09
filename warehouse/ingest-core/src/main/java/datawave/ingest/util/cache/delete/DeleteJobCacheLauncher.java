@@ -4,12 +4,14 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import datawave.ingest.util.ConfigurationFileHelper;
+import datawave.ingest.util.cache.converter.CacheLockConverter;
 import datawave.ingest.util.cache.converter.DeleteModeConverter;
 import datawave.ingest.util.cache.delete.mode.DeleteJobCacheMode;
 import datawave.ingest.util.cache.delete.mode.DeleteModeOptions;
 import datawave.ingest.util.cache.delete.mode.OldInactiveMode;
 import datawave.ingest.util.cache.lease.JobCacheZkLockFactory;
 import datawave.ingest.util.cache.lease.JobCacheLockFactory;
+import datawave.ingest.util.cache.lease.LockFactoryModeOptions;
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -30,38 +32,29 @@ public class DeleteJobCacheLauncher {
     @Parameter(names = {"--delete-mode"}, description = "Mode to determine how to delete job cache directories.", converter = DeleteModeConverter.class)
     DeleteJobCacheMode deleteMode = new OldInactiveMode();
     
+    @Parameter(names = {"--lock-mode"}, description = "Mode to determine what the locking mechanism.", converter = CacheLockConverter.class)
+    JobCacheLockFactory lockFactory = new JobCacheZkLockFactory();
+    
     @Parameter(names = {"--hadoop-conf-dirs"}, description = "The hadoop configuration directories")
     List<String> hadoopConfDirs = Arrays.asList(System.getenv("INGEST_HADOOP_CONF"), System.getenv("WAREHOUSE_HADOOP_CONF"));
     
     @Parameter(names = {"-h", "-help", "--help", "-?"}, help = true, description = "Prints job options.")
     boolean help;
     
-    @Parameter(names = {"--cache-namespace"}, description = "Zookeeper namespace to check for active jobs")
-    String cacheNamespace = "datawave/jobCache";
-    
-    @Parameter(names = {"--lock-timeout-in-ms"}, description = "Zookeeper timeout for acquiring lock")
-    int lockTimeoutInMs = 30;
-    
-    @Parameter(names = {"--lock-retry-timeout-in-ms"}, description = "Zookeeper timeout for retrying connection ")
-    int lockRetryTimeoutInMs = 30;
-    
-    @Parameter(names = {"--lock-retry-count"}, description = "Zookeeper retry connection attempts ")
-    int lockRetryCount = 30;
-    
-    @Parameter(names = {"--zookeepers"}, description = "Zookeeper instances.", required = true)
-    String zookeepers;
-    
     /**
      * Will delete job cache paths based on the deletion mode specified.
      *
-     * @param options
+     * @param deleteModeOptions
      *            Mode options that will determine which job caches to delete.
+     * @param lockModeOptions
+     *            Mode options that will determine the locking mechanism to use.
      */
-    public void run(DeleteModeOptions options) {
+    public void run(DeleteModeOptions deleteModeOptions, LockFactoryModeOptions lockModeOptions) {
         Collection<Configuration> hadoopConfs = ConfigurationFileHelper.getHadoopConfs(hadoopConfDirs);
-        Collection<FileSystemPath> deletionCandidates = deleteMode.getDeletionCandidates(hadoopConfs, options);
+        Collection<FileSystemPath> deletionCandidates = deleteMode.getDeletionCandidates(hadoopConfs, deleteModeOptions);
         
-        try (JobCacheLockFactory lockFactory = new JobCacheZkLockFactory(cacheNamespace, zookeepers, lockTimeoutInMs, lockRetryCount, lockRetryTimeoutInMs)) {
+        try {
+            lockFactory.init(lockModeOptions.getConf());
             LOGGER.info("Attempting to delete inactive caches {}", listToString(deletionCandidates));
             if (!deletionCandidates.isEmpty()) {
                 DeleteJobCache.deleteCacheIfNotActive(deletionCandidates, lockFactory);
@@ -69,6 +62,7 @@ public class DeleteJobCacheLauncher {
         } catch (Exception e) {
             LOGGER.error("Unable to delete caches {} ", listToString(deletionCandidates), e);
         } finally {
+            lockFactory.close();
             deletionCandidates.forEach(FileSystemPath::close);
         }
     }
@@ -92,13 +86,15 @@ public class DeleteJobCacheLauncher {
     public static void main(String[] args) throws Exception {
         LOGGER.info("Starting delete job cache utility");
         DeleteJobCacheLauncher launcher = new DeleteJobCacheLauncher();
-        DeleteModeOptions options = new DeleteModeOptions();
+        DeleteModeOptions deleteModeOptions = new DeleteModeOptions();
+        LockFactoryModeOptions lockModeOptions = new LockFactoryModeOptions();
         
         // @formatter:off
         JCommander jCommander = JCommander
                 .newBuilder()
                 .addObject(launcher)
-                .addObject(options)
+                .addObject(deleteModeOptions)
+                .addObject(lockModeOptions)
                 .build();
         // @formatter:on
         
@@ -107,7 +103,7 @@ public class DeleteJobCacheLauncher {
             if (launcher.help) {
                 jCommander.usage();
             } else {
-                launcher.run(options);
+                launcher.run(deleteModeOptions, lockModeOptions);
             }
         } catch (ParameterException e) {
             System.err.println(e.getMessage());

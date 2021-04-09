@@ -89,6 +89,11 @@ public class JobCacheZkLockFactory implements JobCacheLockFactory {
     }
     
     @Override
+    public Mode getMode() {
+        return Mode.ZOOKEEPER;
+    }
+    
+    @Override
     public void close() {
         jobIdToLeases.forEach(this::releaseLock);
         jobIdToLeases.clear();

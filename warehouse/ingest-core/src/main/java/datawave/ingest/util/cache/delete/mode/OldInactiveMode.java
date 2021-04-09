@@ -2,7 +2,6 @@ package datawave.ingest.util.cache.delete.mode;
 
 import com.google.common.base.Predicates;
 import datawave.ingest.util.cache.JobCacheFactory;
-import datawave.ingest.util.cache.delete.DeleteJobCacheLauncher;
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;

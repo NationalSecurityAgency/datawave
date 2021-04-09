@@ -2,6 +2,7 @@ package datawave.ingest.util.cache.delete;
 
 import com.google.common.io.Files;
 import datawave.common.test.utils.FileUtils;
+import datawave.ingest.util.cache.JobCacheFactory;
 import datawave.ingest.util.cache.lease.JobCacheNoOpLockFactory;
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.conf.Configuration;
@@ -61,58 +62,44 @@ public class DeleteJobCacheTest {
         // @formatter:on
         
         TimeUnit.MILLISECONDS.sleep(10);
-        return createTemporaryFile(new File(jarFile)).getParent();
+        return new File(createTemporaryFile(jarFile)).getParent();
     }
     
     @Test
     public void shouldGivePriorityToKeepList() {
-        Collection<Path> deletePaths = convertToPaths(CACHE_TIMESTAMP_DIR_A, CACHE_TIMESTAMP_DIR_B);
-        Collection<Path> keepPaths = convertToPaths(CACHE_TIMESTAMP_DIR_B);
-        Collection<Path> expectedCandidates = convertToPaths(CACHE_TIMESTAMP_DIR_A);
+        Collection<Path> deletePaths = convertToPaths(CACHE_TIMESTAMP_DIR_C, CACHE_TIMESTAMP_DIR_D);
+        Collection<Path> keepPaths = convertToPaths(CACHE_TIMESTAMP_DIR_D);
+        Collection<Path> expectedCandidates = convertToPaths(CACHE_TIMESTAMP_DIR_C);
         
         Collection<Path> deletionCandidates = DeleteJobCache.getDeletionCandidates(deletePaths, keepPaths);
         Assert.assertEquals(expectedCandidates, deletionCandidates);
     }
     
     @Test
-    public void shouldFindNoCandidatesSincePatternNotFound() throws IOException {
-        FileSystemPath jobCachePath = new FileSystemPath(FileSystem.getLocal(new Configuration()), new Path(TEMP_DIR));
-        Pattern missPattern = Pattern.compile("missCache_\\d{17}");
-        Collection<FileSystemPath> deletionCandidates = DeleteJobCache.getDeletionCandidates(jobCachePath, missPattern, 0);
-        Assert.assertTrue(deletionCandidates.isEmpty());
-    }
-    
-    @Test
-    public void shouldKeepNumberOfVersionsSpecified() throws IOException {
-        Collection<FileSystemPath> expectedCandidates = convertToFileSystemPaths(CACHE_TIMESTAMP_DIR_A);
-        
-        FileSystemPath jobCachePath = new FileSystemPath(FileSystem.getLocal(new Configuration()), new Path(TEMP_DIR));
-        Collection<FileSystemPath> deletionCandidates = DeleteJobCache.getDeletionCandidates(jobCachePath, JOB_CACHE_PATTERN, 3);
-        
-        Assert.assertEquals(expectedCandidates, deletionCandidates);
-    }
-    
-    @Test
-    public void shouldDeleteCandidatesFromCache() throws IOException, InterruptedException {
+    public void shouldDeleteCacheCandidates() throws IOException {
+        Collection<FileSystemPath> expectedDeletedCaches = convertToFileSystemPaths(CACHE_TIMESTAMP_DIR_B, CACHE_TIMESTAMP_DIR_A);
         Collection<FileSystemPath> expectedRemainingCaches = convertToFileSystemPaths(CACHE_TIMESTAMP_DIR_D, CACHE_TIMESTAMP_DIR_C);
         FileSystemPath jobCachePath = new FileSystemPath(FileSystem.getLocal(new Configuration()), new Path(TEMP_DIR));
         
-        Collection<FileSystemPath> deletionCandidates = DeleteJobCache.getDeletionCandidates(jobCachePath, JOB_CACHE_PATTERN, 2);
+        Collection<FileSystemPath> deletionCandidates = JobCacheFactory.getCacheCandidates(jobCachePath, JOB_CACHE_PATTERN, 2);
+        Assert.assertEquals(deletionCandidates, expectedDeletedCaches);
+        
         DeleteJobCache.deleteCacheIfNotActive(deletionCandidates, new JobCacheNoOpLockFactory());
+        Assert.assertTrue(expectedDeletedCaches.stream().allMatch(this::cacheDoesNotExist));
         
-        Collection<FileSystemPath> remainingCaches = DeleteJobCache.getDeletionCandidates(jobCachePath, JOB_CACHE_PATTERN, 0);
+        Collection<FileSystemPath> remainingCaches = JobCacheFactory.getCacheCandidates(jobCachePath, JOB_CACHE_PATTERN, 0);
         Assert.assertEquals(expectedRemainingCaches, remainingCaches);
-        
-        DeleteJobCache.deleteCacheIfNotActive(remainingCaches, new JobCacheNoOpLockFactory());
-        setup();
     }
     
-    private Collection<Path> convertToPaths(String... paths) {
-        // @formatter:off
-        return Arrays.stream(paths)
-                .map(Path::new)
-                .collect(Collectors.toList());
-        // @formatter:on
+    private boolean cacheDoesNotExist(FileSystemPath fileSystemPath) {
+        FileSystem fileSystem = fileSystemPath.getFileSystem();
+        Path cachePath = fileSystemPath.getOutputPath();
+        
+        try {
+            return !fileSystem.exists(cachePath);
+        } catch (IOException e) {
+            return false;
+        }
     }
     
     private Collection<FileSystemPath> convertToFileSystemPaths(String... paths) throws IOException {
@@ -123,6 +110,13 @@ public class DeleteJobCacheTest {
                 .map(path -> new FileSystemPath(fileSystem, path))
                 .collect(Collectors.toList());
         // @formatter:on
-        
+    }
+    
+    private Collection<Path> convertToPaths(String... paths) {
+        // @formatter:off
+        return Arrays.stream(paths)
+                .map(Path::new)
+                .collect(Collectors.toList());
+        // @formatter:on
     }
 }

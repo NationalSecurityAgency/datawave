@@ -20,6 +20,11 @@ public class JobCacheNoOpLockFactory implements JobCacheLockFactory {
     }
     
     @Override
+    public Mode getMode() {
+        return Mode.NO_OP;
+    }
+    
+    @Override
     public void close() {}
     
     @Override

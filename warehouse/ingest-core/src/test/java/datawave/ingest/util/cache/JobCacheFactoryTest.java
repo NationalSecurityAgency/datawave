@@ -3,6 +3,7 @@ package datawave.ingest.util.cache;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import datawave.common.test.utils.FileUtils;
+import datawave.ingest.util.cache.lease.JobCacheLockFactory;
 import datawave.ingest.util.cache.lease.JobCacheZkLockFactory;
 import datawave.ingest.util.cache.lease.LockCacheStatus;
 import datawave.ingest.util.cache.path.FileSystemPath;
@@ -11,6 +12,7 @@ import org.apache.curator.test.TestingServer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -29,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static datawave.common.test.utils.FileUtils.createTemporaryFile;
+import static datawave.common.test.utils.FileUtils.createTemporaryDir;
 
 public class JobCacheFactoryTest {
     private static final String TEMP_DIR = Files.createTempDir().getAbsolutePath();
@@ -67,25 +69,23 @@ public class JobCacheFactoryTest {
     
     private static String getTimestampPath() throws IOException, InterruptedException {
         // @formatter:off
-        String jarFile =  new StringJoiner(File.separator)
+        String cacheDir =  new StringJoiner(File.separator)
                 .add(TEMP_DIR)
                 .add(JOB_CACHE_PREFIX+JOB_CACHE_FORMATER.format(LocalDateTime.now()))
-                .add("File.jar")
                 .toString();
         // @formatter:on
         
         TimeUnit.MILLISECONDS.sleep(10);
-        return createTemporaryFile(new File(jarFile)).getParent();
+        return createTemporaryDir(cacheDir);
     }
     
     private JobCacheFactory jobCacheFactory;
-    private Configuration conf;
     
     @Before
     public void setup() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-        conf = new Configuration();
+        Configuration conf = new Configuration();
         conf.set(JobCacheFactory.DW_JOB_CACHE_BASE_PATH, TEMP_DIR);
-        conf.set(JobCacheFactory.DW_JOB_CACHE_LOCK_FACTORY, JobCacheZkLockFactory.class.getName());
+        conf.set(JobCacheFactory.DW_JOB_CACHE_LOCK_FACTORY_MODE, JobCacheLockFactory.Mode.ZOOKEEPER.name());
         conf.set(JobCacheFactory.DW_JOB_CACHE_TIMESTAMP_DIR_PREFIX, JOB_CACHE_PREFIX);
         conf.set(JobCacheFactory.DW_JOB_CACHE_TIMESTAMP_PATTERN, JOB_CACHE_PATTERN.pattern());
         
@@ -107,38 +107,31 @@ public class JobCacheFactoryTest {
     public void shouldFindLatestAvailableCache() throws Exception {
         Path expectedJobCache = new Path(CACHE_TIMESTAMP_B);
         
-        try (JobCacheZkLockFactory lockFactory = new JobCacheZkLockFactory()) {
-            lockFactory.init(conf);
-            acquireLock(lockFactory, "", CACHE_TIMESTAMP_C, CACHE_TIMESTAMP_D);
-            Path jobCache = jobCacheFactory.getJobCache(TEST_JOB_ID1);
-            Assert.assertEquals(expectedJobCache.getName(), jobCache.getName());
-        }
+        acquireLock("", CACHE_TIMESTAMP_C, CACHE_TIMESTAMP_D);
+        Path jobCache = jobCacheFactory.getJobCache(TEST_JOB_ID1);
+        Assert.assertEquals(expectedJobCache.getName(), jobCache.getName());
     }
     
     @Test(expected = Exception.class)
     public void shouldThrowExceptionWhenNoCacheIsAvailable() throws Exception {
-        try (JobCacheZkLockFactory lockFactory = new JobCacheZkLockFactory()) {
-            lockFactory.init(conf);
-            acquireLock(lockFactory, "", CACHE_TIMESTAMP_A, CACHE_TIMESTAMP_B, CACHE_TIMESTAMP_C, CACHE_TIMESTAMP_D);
-            jobCacheFactory.getJobCache(TEST_JOB_ID1);
-        }
+        acquireLock("", CACHE_TIMESTAMP_A, CACHE_TIMESTAMP_B, CACHE_TIMESTAMP_C, CACHE_TIMESTAMP_D);
+        jobCacheFactory.getJobCache(TEST_JOB_ID1);
     }
     
     @Test
     public void shouldReleaseLock() throws Exception {
-        try (JobCacheZkLockFactory lockFactory = new JobCacheZkLockFactory()) {
-            lockFactory.init(conf);
-            
-            Path jobCache = jobCacheFactory.getJobCache(TEST_JOB_ID1);
-            LockCacheStatus status = lockFactory.getCacheStatus(jobCache.getName());
-            Assert.assertTrue(status.isCacheActive());
-            Assert.assertTrue(status.getJobIds().contains(getLockPath(jobCache.getName(), TEST_JOB_ID1)));
-            
-            Assert.assertTrue(jobCacheFactory.releaseId(TEST_JOB_ID1));
-            status = lockFactory.getCacheStatus(jobCache.getName());
-            Assert.assertFalse(status.isCacheActive());
-            Assert.assertFalse(status.getJobIds().contains(getLockPath(jobCache.getName(), TEST_JOB_ID1)));
-        }
+        JobCacheLockFactory lockFactory = jobCacheFactory.getLockFactory();
+        
+        Path jobCache = jobCacheFactory.getJobCache(TEST_JOB_ID1);
+        LockCacheStatus status = lockFactory.getCacheStatus(jobCache.getName());
+        Assert.assertTrue(status.isCacheActive());
+        Assert.assertTrue(status.getJobIds().contains(getLockPath(jobCache.getName(), TEST_JOB_ID1)));
+        
+        Assert.assertTrue(jobCacheFactory.releaseId(TEST_JOB_ID1));
+        status = lockFactory.getCacheStatus(jobCache.getName());
+        Assert.assertFalse(status.isCacheActive());
+        Assert.assertFalse(status.getJobIds().contains(getLockPath(jobCache.getName(), TEST_JOB_ID1)));
+        
     }
     
     @Test
@@ -149,22 +142,45 @@ public class JobCacheFactoryTest {
         expectedStatuses.add(getCacheStatus(CACHE_TIMESTAMP_B, false));
         expectedStatuses.add(getCacheStatus(CACHE_TIMESTAMP_A, false, TEST_JOB_ID1, TEST_JOB_ID2));
         
-        try (JobCacheZkLockFactory lockFactory = new JobCacheZkLockFactory()) {
-            lockFactory.init(conf);
-            
-            acquireLock(lockFactory, TEST_JOB_ID1, CACHE_TIMESTAMP_A);
-            acquireLock(lockFactory, TEST_JOB_ID2, CACHE_TIMESTAMP_A);
-            acquireLock(lockFactory, "", CACHE_TIMESTAMP_C);
-            acquireLock(lockFactory, TEST_JOB_ID2, CACHE_TIMESTAMP_D);
-            
-            FileSystemPath baseCachePath = new FileSystemPath(FileSystem.getLocal(new Configuration()), new Path(TEMP_DIR));
-            Collection<JobCacheStatus> cacheStatuses = jobCacheFactory.getJobCacheStatuses(baseCachePath);
-            
-            Assert.assertEquals(expectedStatuses, cacheStatuses);
-        }
+        acquireLock(TEST_JOB_ID1, CACHE_TIMESTAMP_A);
+        acquireLock(TEST_JOB_ID2, CACHE_TIMESTAMP_A);
+        acquireLock("", CACHE_TIMESTAMP_C);
+        acquireLock(TEST_JOB_ID2, CACHE_TIMESTAMP_D);
+        
+        FileSystemPath baseCachePath = new FileSystemPath(FileSystem.getLocal(new Configuration()), new Path(TEMP_DIR));
+        Collection<JobCacheStatus> cacheStatuses = jobCacheFactory.getJobCacheStatuses(baseCachePath);
+        
+        Assert.assertEquals(expectedStatuses, cacheStatuses);
     }
     
-    private void acquireLock(JobCacheZkLockFactory lockFactory, String jobId, String... caches) {
+    @Test
+    public void shouldFindNoCandidatesSincePatternNotFound() throws IOException {
+        FileSystemPath jobCachePath = new FileSystemPath(FileSystem.getLocal(new Configuration()), new Path(TEMP_DIR));
+        Pattern missPattern = Pattern.compile("missCache_\\d{17}");
+        Collection<FileSystemPath> foundCandidates = JobCacheFactory.getCacheCandidates(jobCachePath, missPattern, 0);
+        Assert.assertTrue(foundCandidates.isEmpty());
+    }
+    
+    @Test
+    public void shouldKeepNumberOfVersionsSpecified() throws IOException {
+        Collection<FileSystemPath> expectedCandidates = convertToFileSystemPaths(CACHE_TIMESTAMP_A);
+        FileSystemPath jobCachePath = new FileSystemPath(FileSystem.getLocal(new Configuration()), new Path(TEMP_DIR));
+        Collection<FileSystemPath> foundCandidates = JobCacheFactory.getCacheCandidates(jobCachePath, JOB_CACHE_PATTERN, 3);
+        Assert.assertEquals(expectedCandidates, foundCandidates);
+    }
+    
+    private Collection<FileSystemPath> convertToFileSystemPaths(String... paths) throws IOException {
+        FileSystem fileSystem = FileSystem.getLocal(new Configuration());
+        // @formatter:off
+        return Arrays.stream(paths)
+                .map(Path::new)
+                .map(path -> new FileSystemPath(fileSystem, path))
+                .collect(Collectors.toList());
+        // @formatter:on
+    }
+    
+    private void acquireLock(String jobId, String... caches) {
+        JobCacheLockFactory lockFactory = jobCacheFactory.getLockFactory();
         // @formatter:off
         Arrays.stream(caches)
                 .map(this::getTimestampName)

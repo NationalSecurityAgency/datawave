@@ -2,6 +2,7 @@ package datawave.ingest.util.cache;
 
 import com.google.common.collect.Maps;
 import datawave.common.io.FilesFinder;
+import datawave.ingest.util.cache.converter.CacheLockConverter;
 import datawave.ingest.util.cache.delete.DeleteJobCache;
 import datawave.ingest.util.cache.lease.JobCacheLockFactory;
 import datawave.ingest.util.cache.load.LoadJobCache;
@@ -32,7 +33,7 @@ public class JobCacheFactory {
     public static final String DW_JOB_CACHE_TIMESTAMP_DIR_PREFIX = "datawave.job.cache.timestamp.dir.prefix";
     public static final String DW_JOB_CACHE_TIMESTAMP_PATTERN = "datawave.job.cache.timestamp.pattern";
     public static final String DW_JOB_CACHE_BASE_PATH = "datawave.job.cache.base.path";
-    public static final String DW_JOB_CACHE_LOCK_FACTORY = "datawave.job.cache.lock.factory";
+    public static final String DW_JOB_CACHE_LOCK_FACTORY_MODE = "datawave.job.cache.lock.factory.mode";
     
     private final FileSystemPath jobCacheBasePath;
     private final Pattern timestampPattern;
@@ -40,13 +41,15 @@ public class JobCacheFactory {
     private final String timestampDirPrefix;
     private final Map<String,String> jobIdToCacheId = Maps.newHashMap();
     
-    public JobCacheFactory(Configuration conf) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public JobCacheFactory(Configuration conf) throws IOException {
         Path basePath = new Path(Args.notNull(conf.get(DW_JOB_CACHE_BASE_PATH), DW_JOB_CACHE_BASE_PATH));
         jobCacheBasePath = new FileSystemPath(basePath.getFileSystem(conf), basePath);
+        
         timestampPattern = Pattern.compile(Args.notNull(conf.get(DW_JOB_CACHE_TIMESTAMP_PATTERN), DW_JOB_CACHE_TIMESTAMP_PATTERN));
         timestampDirPrefix = Args.notNull(conf.get(DW_JOB_CACHE_TIMESTAMP_DIR_PREFIX), DW_JOB_CACHE_TIMESTAMP_DIR_PREFIX);
         
-        lockFactory = getLockFactoryClass(Args.notNull(conf.get(DW_JOB_CACHE_LOCK_FACTORY), DW_JOB_CACHE_LOCK_FACTORY));
+        String lockFactoryMode = Args.notNull(conf.get(DW_JOB_CACHE_LOCK_FACTORY_MODE), DW_JOB_CACHE_LOCK_FACTORY_MODE);
+        lockFactory = new CacheLockConverter().convert(lockFactoryMode);
         lockFactory.init(conf);
     }
     
@@ -128,7 +131,8 @@ public class JobCacheFactory {
      * Will attempt to release all locks for each cache id stored.
      */
     public void close() {
-        jobIdToCacheId.values().forEach(lockFactory::releaseLock);
+        jobIdToCacheId.clear();
+        lockFactory.close();
     }
     
     /**
@@ -160,6 +164,10 @@ public class JobCacheFactory {
         // @formatter:on
     }
     
+    JobCacheLockFactory getLockFactory() {
+        return lockFactory;
+    }
+    
     /**
      * Find the job cache status for this job cache path
      *
@@ -184,23 +192,4 @@ public class JobCacheFactory {
         Arrays.stream(lockIdElements).forEach(joiner::add);
         return joiner.toString();
     }
-    
-    /**
-     * Form the lock id by joining the passed in array with file.separator as the delimiter.
-     *
-     * @param clazzName
-     *            The lock factory class name passed in.
-     * @return An instance of a JobCacheLockFactory
-     */
-    private JobCacheLockFactory getLockFactoryClass(String clazzName) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        Class<?> clazz = Class.forName(clazzName);
-        Object lockFactoryObj = clazz.newInstance();
-        if (!(lockFactoryObj instanceof JobCacheLockFactory)) {
-            throw new IllegalArgumentException("Unable to create lock factory since " + clazzName + " is not an instance of "
-                            + JobCacheLockFactory.class.getName());
-        }
-        
-        return (JobCacheLockFactory) lockFactoryObj;
-    }
-    
 }

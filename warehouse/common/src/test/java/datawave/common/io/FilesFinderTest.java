@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import java.util.stream.Stream;
 
 import static datawave.common.test.utils.FileUtils.createTemporaryFile;
@@ -34,10 +35,10 @@ public class FilesFinderTest {
     
     @BeforeClass
     public static void setup() throws IOException {
-        TEST_LEVEL0_PROP_FILE = createTemporaryFile(TEMP_DIR, 0, FILE_PREFIX, "properties").getAbsolutePath();
-        TEST_LEVEL1_JAR_FILE = createTemporaryFile(TEMP_DIR, 1, FILE_PREFIX, "jar").getAbsolutePath();
-        TEST_LEVEL1_XML_FILE = createTemporaryFile(TEMP_DIR, 1, FILE_PREFIX, "xml").getAbsolutePath();
-        TEST_LEVEL2_XML_FILE = createTemporaryFile(TEMP_DIR, 2, FILE_PREFIX, "xml").getAbsolutePath();
+        TEST_LEVEL0_PROP_FILE = createTemporaryFile(TEMP_DIR, 0, FILE_PREFIX, "properties");
+        TEST_LEVEL1_JAR_FILE = createTemporaryFile(TEMP_DIR, 1, FILE_PREFIX, "jar");
+        TEST_LEVEL1_XML_FILE = createTemporaryFile(TEMP_DIR, 1, FILE_PREFIX, "xml");
+        TEST_LEVEL2_XML_FILE = createTemporaryFile(TEMP_DIR, 2, FILE_PREFIX, "xml");
     }
     
     @AfterClass

@@ -107,7 +107,7 @@ public class FilesFinder {
      */
     public static FileStatus[] listPath(FileSystem fileSystem, org.apache.hadoop.fs.Path sourcePath, Pattern pattern) {
         try {
-            return fileSystem.listStatus(sourcePath, getCachePathFilter(pattern));
+            return fileSystem.listStatus(sourcePath, getPathNameFilter(pattern));
         } catch (IOException e) {
             throw new RuntimeException("Unable to list files from " + sourcePath + " of pattern" + pattern, e);
         }
@@ -120,7 +120,7 @@ public class FilesFinder {
      *            A pattern to filter matches
      * @return A path filter that will evaluate files based on a pattern
      */
-    private static PathFilter getCachePathFilter(Pattern pattern) {
+    private static PathFilter getPathNameFilter(Pattern pattern) {
         return path -> pattern.matcher(path.getName()).matches();
     }
     

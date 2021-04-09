@@ -1,14 +1,15 @@
 package datawave.common.test.utils;
 
-import com.google.common.io.Files;
-
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -26,20 +27,19 @@ public class FileUtils {
         try (Stream<Path> allTmpPaths = java.nio.file.Files.walk(Paths.get(filePath), Integer.MAX_VALUE, FileVisitOption.FOLLOW_LINKS)) {
             
             // @formatter:off
-            boolean allDeleted = allTmpPaths
+            Collection<Path> deletePaths = allTmpPaths
                     .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .allMatch(File::delete);
+                    .collect(Collectors.toList());
             // @formatter:on
             
-            if (!allDeleted) {
-                throw new IOException("Unable to delete all artifacts in " + filePath);
+            for (Path tmpPath : deletePaths) {
+                Files.delete(tmpPath);
             }
         }
     }
     
     /**
-     * Create a temporary file for test purposes.
+     * Create a temporary file at a certain path depth for test purposes.
      *
      * @param baseDir
      *            The top level parent directory where the files will be created
@@ -52,17 +52,16 @@ public class FileUtils {
      * @throws IOException
      *             An exception is thrown if an I/O issue occurs while creating file.
      */
-    public static File createTemporaryFile(String baseDir, int depth, String filePrefix, String fileSuffix) throws IOException {
-        StringJoiner pathMaker = new StringJoiner(File.separator).add(baseDir);
+    public static String createTemporaryFile(String baseDir, int depth, String filePrefix, String fileSuffix) throws IOException {
+        StringJoiner pathMaker = new StringJoiner(FileSystems.getDefault().getSeparator()).add(baseDir);
         
         // @formatter:off
         IntStream.range(1, depth + 1)
                 .mapToObj(String::valueOf)
-                .sorted()
                 .forEach(pathMaker::add);
         // @formatter:on
         
-        return createTemporaryFile(new File(pathMaker.add(filePrefix + depth + "." + fileSuffix).toString()));
+        return createTemporaryFile(pathMaker.add(filePrefix + depth + "." + fileSuffix).toString());
     }
     
     /**
@@ -74,12 +73,22 @@ public class FileUtils {
      * @throws IOException
      *             An exception is thrown if an I/O issue occurs while deleting
      */
-    public static File createTemporaryFile(File tmpFile) throws IOException {
-        Files.createParentDirs(tmpFile);
-        
-        if (!tmpFile.createNewFile()) {
-            throw new IOException("Unable to create " + tmpFile);
-        }
-        return tmpFile;
+    public static String createTemporaryFile(String tmpFile) throws IOException {
+        Path filePath = Paths.get(tmpFile);
+        createTemporaryDir(filePath.getParent().toFile().getAbsolutePath());
+        return Files.createFile(filePath).toFile().getAbsolutePath();
+    }
+    
+    /**
+     * Create a temporary directory
+     *
+     * @param tmpDir
+     *            The directory to create
+     * @return The directory that was created.
+     * @throws IOException
+     *             An exception is thrown if an I/O issue occurs while deleting
+     */
+    public static String createTemporaryDir(String tmpDir) throws IOException {
+        return Files.createDirectories(Paths.get(tmpDir)).toFile().getAbsolutePath();
     }
 }

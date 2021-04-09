@@ -27,7 +27,7 @@ import static datawave.ingest.util.cache.load.LoadJobCache.getDeleteCacheConsume
 import static datawave.ingest.util.cache.load.LoadJobCache.getLoadCacheConsumer;
 
 public class LoadJobCacheTest {
-    private static final File TEMP_DIR = Files.createTempDir();
+    private static final String TEMP_DIR = Files.createTempDir().getAbsolutePath();
     private static final String JOB_CACHE_DIR = LoadJobCache.getJobCacheTimestampDir("jobCache_");
     private static final String FILE_PREFIX = "File";
     
@@ -37,25 +37,23 @@ public class LoadJobCacheTest {
     @BeforeClass
     public static void setupClass() throws IOException {
         // @formatter: off
-        FILES_TO_LOAD = Stream
-                        .of(createTemporaryFile(TEMP_DIR.getAbsolutePath(), 0, FILE_PREFIX, "properties"),
-                                        createTemporaryFile(TEMP_DIR.getAbsolutePath(), 1, FILE_PREFIX, "jar"),
-                                        createTemporaryFile(TEMP_DIR.getAbsolutePath(), 1, FILE_PREFIX, "xml"),
-                                        createTemporaryFile(TEMP_DIR.getAbsolutePath(), 2, FILE_PREFIX, "xml")).map(File::getAbsolutePath)
+        FILES_TO_LOAD = Stream.of(createTemporaryFile(TEMP_DIR, 0, FILE_PREFIX, "properties"), createTemporaryFile(TEMP_DIR, 1, FILE_PREFIX, "jar"),
+                        createTemporaryFile(TEMP_DIR, 1, FILE_PREFIX, "xml"), createTemporaryFile(TEMP_DIR, 2, FILE_PREFIX, "xml"))
                         .collect(Collectors.toList());
+        // @formatter: on
         
         Collection<Configuration> confs = Stream.of(new Configuration()).collect(Collectors.toList());
         
         CACHE_PATHS = Stream
-                        .of(new org.apache.hadoop.fs.Path(TEMP_DIR.getAbsolutePath() + File.separator + "output1"),
-                                        new org.apache.hadoop.fs.Path(TEMP_DIR.getAbsolutePath() + File.separator + "output2"))
-                        .map(path -> new FileSystemPath(path, confs)).collect(Collectors.toList());
+                        .of(new org.apache.hadoop.fs.Path(TEMP_DIR + File.separator + "output1"),
+                                        new org.apache.hadoop.fs.Path(TEMP_DIR + File.separator + "output2")).map(path -> new FileSystemPath(path, confs))
+                        .collect(Collectors.toList());
         // @formatter: on
     }
     
     @AfterClass
     public static void tearDownClass() throws IOException {
-        deletePath(TEMP_DIR.getAbsolutePath());
+        deletePath(TEMP_DIR);
     }
     
     @After

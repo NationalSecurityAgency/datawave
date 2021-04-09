@@ -11,7 +11,7 @@ public class ClasspathMode implements LoadJobCacheMode {
     
     @Override
     public Collection<String> getFilesToLoad(LoadModeOptions options) {
-        String classpath = Args.notNull(options.getClasspath(), "Classpath can not be null");
+        String classpath = Args.notNull(options.getClasspath(), "Classpath");
         return FilesFinder.getFilesFromClasspath(classpath, CLASSPATH_DELIM);
     }
     

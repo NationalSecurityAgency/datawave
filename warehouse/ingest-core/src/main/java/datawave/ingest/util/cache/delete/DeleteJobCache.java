@@ -1,7 +1,6 @@
 package datawave.ingest.util.cache.delete;
 
 import com.google.common.base.Predicates;
-import datawave.ingest.util.cache.JobCacheFactory;
 import datawave.ingest.util.cache.lease.JobCacheLockFactory;
 import datawave.ingest.util.cache.path.FileSystemPath;
 import org.apache.hadoop.fs.FileSystem;
@@ -11,27 +10,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** This class will be responsible for deleting job caches */
 public class DeleteJobCache {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteJobCache.class);
-    
-    /**
-     * Find job cache directories that are candidates for deletion.
-     *
-     * @param jobCachePath
-     *            An object that contains the job cache path and its associated file system.
-     * @param timestampPattern
-     *            A pattern that matches job cache directories.
-     * @param keepNumVersions
-     *            The number of versions to keep if possible.
-     * @return A collection of job cache directories to attempt to delete.
-     */
-    public static Collection<FileSystemPath> getDeletionCandidates(FileSystemPath jobCachePath, Pattern timestampPattern, int keepNumVersions) {
-        return JobCacheFactory.getCacheCandidates(jobCachePath, timestampPattern, keepNumVersions);
-    }
     
     /**
      * Find job cache directories that are candidates for deletion.
