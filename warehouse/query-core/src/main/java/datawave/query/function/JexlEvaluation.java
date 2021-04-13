@@ -3,6 +3,7 @@ package datawave.query.function;
 import datawave.query.attributes.Attributes;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DefaultArithmetic;
+import datawave.query.jexl.DelayedNonEventIndexContext;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.JexlArithmetic;
@@ -75,6 +76,11 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         
         boolean matched = isMatched(o);
         
+        // Add delayed info to document
+        if (matched && input.third() instanceof DelayedNonEventIndexContext) {
+            ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
+        }
+        
         if (arithmetic instanceof HitListArithmetic) {
             HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
             if (matched) {
@@ -101,9 +107,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
             }
             hitListArithmetic.clear();
         }
-        
         return matched;
-        
     }
     
 }
