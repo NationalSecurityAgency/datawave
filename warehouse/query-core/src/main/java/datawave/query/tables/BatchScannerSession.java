@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Throwables;
+import datawave.microservice.query.configuration.Result;
 import org.apache.accumulo.core.client.impl.ScannerOptions;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
@@ -50,7 +51,7 @@ import datawave.webservice.query.Query;
 /**
  * 
  */
-public class BatchScannerSession extends ScannerSession implements Iterator<Entry<Key,Value>>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
+public class BatchScannerSession extends ScannerSession implements Iterator<Result>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
     
     private static final int THIRTY_MINUTES = 108000000;
     

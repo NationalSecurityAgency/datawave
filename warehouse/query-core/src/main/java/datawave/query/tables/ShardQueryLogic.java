@@ -3,6 +3,8 @@ package datawave.query.tables;
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -12,6 +14,7 @@ import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.configuration.Result;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -74,6 +77,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -563,7 +567,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.scheduler = getScheduler(config, scannerFactory);
         
         this.scanner = null;
-        this.iterator = this.scheduler.iterator();
+        this.iterator = Result.keyValueIterator(this.scheduler.iterator());
         
         if (!config.isSortedUIDs()) {
             this.iterator = new DedupingIterator(this.iterator);
@@ -2278,6 +2282,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         setupQuery(config);
     }
     
+    public boolean isCheckpointable() {
+        return config.isCheckpointable();
+    }
+    
+    public void setCheckpointable(boolean checkpointable) {
+        config.setCheckpointable(checkpointable);
+    }
+    
     /**
      * This can be called at any point to get a checkpoint such that this query logic instance can be torn down to be rebuilt later. At a minimum this should be
      * called after the getTransformIterator is depleted of results.
@@ -2287,11 +2299,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
      * @return The query checkpoint
      */
     @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey) {
-        return checkpoint(queryKey, this.config);
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        if (!isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
+        }
+        
+        // if we have started returning results, then capture the state of the query scheduler
+        if (this.scheduler != null) {
+            return this.scheduler.checkpoint(queryKey);
+        }
+        // otherwise we still need to plan or there are no results
+        else {
+            return Lists.newArrayList(ShardQueryLogic.checkpoint(queryKey, this.config));
+        }
     }
     
-    public QueryCheckpoint checkpoint(QueryKey queryKey, GenericQueryConfiguration config) {
+    public static QueryCheckpoint checkpoint(QueryKey queryKey, GenericQueryConfiguration config) {
         return new QueryCheckpoint(queryKey, ((ShardQueryConfiguration) config).toMap());
     }
     

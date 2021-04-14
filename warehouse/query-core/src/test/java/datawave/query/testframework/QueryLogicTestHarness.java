@@ -1,5 +1,7 @@
 package datawave.query.testframework;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import datawave.data.type.Type;
 import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
@@ -93,21 +95,24 @@ public class QueryLogicTestHarness {
             while (iter.hasNext()) {
                 actualResults = processResult(actualResults, iter.next(), checkers);
                 QueryKey queryKey = new QueryKey(new QueryPool("default"), logic.getConfig().getQuery().getId(), logic.getLogicName());
-                QueryCheckpoint cp = ((CheckpointableQueryLogic) logic).checkpoint(queryKey);
+                List<QueryCheckpoint> cps = ((CheckpointableQueryLogic) logic).checkpoint(queryKey);
                 Connector connection = logic.getConfig().getConnector();
-                // create a new instance of the logic
-                try {
-                    logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName(), logic.getPrincipal());
-                } catch (CloneNotSupportedException e) {
-                    Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
+                iter = null;
+                for (QueryCheckpoint cp : cps) {
+                    // create a new instance of the logic
+                    try {
+                        logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName(), logic.getPrincipal());
+                    } catch (CloneNotSupportedException e) {
+                        Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
+                    }
+                    // now reset the logic given the checkpoint
+                    try {
+                        ((CheckpointableQueryLogic) logic).setupQuery(connection, cp);
+                    } catch (Exception e) {
+                        Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());
+                    }
+                    iter = (iter == null ? logic.iterator() : Iterators.concat(iter, logic.iterator()));
                 }
-                // now reset the logic given the checkpoint
-                try {
-                    ((CheckpointableQueryLogic) logic).setupQuery(connection, cp);
-                } catch (Exception e) {
-                    Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());
-                }
-                iter = logic.iterator();
             }
         } else {
             for (Map.Entry<Key,Value> entry : logic) {

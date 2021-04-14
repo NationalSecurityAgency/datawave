@@ -2,6 +2,7 @@ package datawave.query.index.lookup;
 
 import com.google.common.collect.Maps;
 import datawave.ingest.protobuf.Uid;
+import datawave.microservice.query.configuration.Result;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
@@ -55,7 +56,7 @@ public class EntryParserTest {
         iterator.seek(new Range(), Collections.emptySet(), false);
         
         EntryParser parser = new EntryParser("hello", "world", true);
-        Map.Entry<Key,Value> top = Maps.immutableEntry(iterator.getTopKey(), iterator.getTopValue());
+        Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
         assertTrue(iterator.hasTop());
         
@@ -90,7 +91,7 @@ public class EntryParserTest {
         assertTrue(iterator.hasTop());
         
         EntryParser parser = new EntryParser("hello", "world", false);
-        Map.Entry<Key,Value> top = Maps.immutableEntry(iterator.getTopKey(), iterator.getTopValue());
+        Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
         
         assertNotNull(tuple);
@@ -122,7 +123,7 @@ public class EntryParserTest {
         assertTrue(iterator.hasTop());
         
         EntryParser parser = new EntryParser("hello", "world", false);
-        Map.Entry<Key,Value> top = Maps.immutableEntry(iterator.getTopKey(), iterator.getTopValue());
+        Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
         
         assertNotNull(tuple);

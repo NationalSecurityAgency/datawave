@@ -4,7 +4,22 @@ import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
 import org.apache.accumulo.core.client.Connector;
 
+import java.util.List;
+
 public interface CheckpointableQueryLogic {
+    
+    /**
+     * This will allow us to check if a query logic is actually checkpointable. Even if the query logic supports it, the caller may have to tell the query logic
+     * that it is going to be checkpointed.
+     */
+    boolean isCheckpointable();
+    
+    /**
+     * This will tell the query logic that is is going to be checkpointed.
+     * 
+     * @param checkpointable
+     */
+    void setCheckpointable(boolean checkpointable);
     
     /**
      * This can be called at any point to get a checkpoint such that this query logic instance can be torn down to be rebuilt later. At a minimum this should be
@@ -12,9 +27,9 @@ public interface CheckpointableQueryLogic {
      *
      * @param queryKey
      *            - the query key to include in the checkpoint
-     * @return The query checkpoint
+     * @return The query checkpoints
      */
-    QueryCheckpoint checkpoint(QueryKey queryKey);
+    List<QueryCheckpoint> checkpoint(QueryKey queryKey);
     
     /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if

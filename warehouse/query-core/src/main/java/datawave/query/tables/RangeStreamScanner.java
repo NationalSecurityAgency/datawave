@@ -19,11 +19,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.base.Function;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Iterators;
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.microservice.query.configuration.Result;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import datawave.webservice.query.Query;
 
@@ -45,6 +48,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import javax.annotation.Nullable;
+
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation
  * specific details if you are using custom iterators, as we are reinitializing a seek
@@ -61,9 +66,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     // simply compare the strings. no need for a date formatter
     protected static final int dateCfLength = 8;
     protected boolean seenUnexpectedKey = false;
-    protected Queue<Entry<Key,Value>> currentQueue;
+    protected Queue<Result> currentQueue;
     
-    protected Entry<Key,Value> prevDay = null;
+    protected Result prevDay = null;
     
     protected ReentrantReadWriteLock queueLock = new ReentrantReadWriteLock(true);
     
@@ -235,12 +240,12 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         }
     }
     
-    protected int scannerInvariant(final Iterator<Entry<Key,Value>> iter) {
-        PeekingIterator<Entry<Key,Value>> kvIter = new PeekingIterator<>(iter);
+    protected int scannerInvariant(final Iterator<Result> iter) {
+        PeekingIterator<Result> kvIter = new PeekingIterator<>(iter);
         
         int retrievalCount = 0;
         
-        Entry<Key,Value> myEntry;
+        Result myEntry;
         
         String currentDay = null;
         
@@ -262,7 +267,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         writeLock.lock();
         try {
             while (kvIter.hasNext()) {
-                Entry<Key,Value> currentKeyValue = kvIter.peek();
+                Result currentKeyValue = kvIter.peek();
                 
                 IndexInfo infos = new IndexInfo();
                 try {
@@ -346,7 +351,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             
             if (currentQueue.size() >= shardsPerDayThreshold && stats.getPercentile(50) > MAX_MEDIAN) {
                 
-                Entry<Key,Value> top = currentQueue.poll();
+                Result top = currentQueue.poll();
                 
                 Key topKey = top.getKey();
                 if (log.isTraceEnabled())
@@ -369,7 +374,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                     throw new DatawaveFatalQueryException(e);
                 }
                 
-                myEntry = Maps.immutableEntry(newKey, newValue);
+                myEntry = new Result(top.getContext(), newKey, newValue);
                 lastSeenKey = newKey;
                 
                 try {
@@ -401,11 +406,11 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     private int dequeue(boolean forceAll) {
         int count = 0;
         
-        Queue<Entry<Key,Value>> kvIter = Queues.newArrayDeque(currentQueue);
+        Queue<Result> kvIter = Queues.newArrayDeque(currentQueue);
         
         currentQueue.clear();
         boolean result = true;
-        for (Entry<Key,Value> top : kvIter) {
+        for (Result top : kvIter) {
             
             if (result) {
                 do {
@@ -572,7 +577,15 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
             }
             
-            Iterator<Entry<Key,Value>> iter = baseScanner.iterator();
+            Iterator<Result> iter = Iterators.transform(baseScanner.iterator(), new Function<Entry<Key,Value>,Result>() {
+                @Override
+                public Result apply(@Nullable Entry<Key,Value> input) {
+                    if (input == null) {
+                        return null;
+                    }
+                    return new Result(input.getKey(), input.getValue());
+                }
+            });
             
             // do not continue if we've reached the end of the corpus
             

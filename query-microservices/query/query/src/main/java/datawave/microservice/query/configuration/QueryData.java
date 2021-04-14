@@ -3,21 +3,25 @@ package datawave.microservice.query.configuration;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class to encapsulate all required information to run a query.
  *
  */
-public class QueryData {
+public class QueryData implements ResultContext {
     List<IteratorSetting> settings = Lists.newArrayList();
     String query;
     Collection<Range> ranges = Sets.newHashSet();
     Collection<String> columnFamilies = Sets.newHashSet();
+    Map.Entry<Key,Value> lastResult;
     
     public QueryData() {}
     
@@ -73,6 +77,14 @@ public class QueryData {
     
     public void addIterator(IteratorSetting cfg) {
         this.settings.add(cfg);
+    }
+    
+    public void setLastResult(Map.Entry<Key,Value> result) {
+        this.lastResult = result;
+    }
+    
+    public Map.Entry<Key,Value> getLastResult() {
+        return lastResult;
     }
     
     @Override

@@ -6,7 +6,10 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import datawave.microservice.common.storage.QueryCheckpoint;
+import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.configuration.Result;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
@@ -95,13 +98,19 @@ public class PushdownScheduler extends Scheduler {
         settings.add(customSetting);
     }
     
+    @Override
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        // TODO
+        return null;
+    }
+    
     /*
      * (non-Javadoc)
      * 
      * @see java.lang.Iterable#iterator()
      */
     @Override
-    public Iterator<Entry<Key,Value>> iterator() {
+    public Iterator<Result> iterator() {
         if (null == this.config) {
             throw new IllegalArgumentException("Null configuration provided");
         }
@@ -122,7 +131,7 @@ public class PushdownScheduler extends Scheduler {
      * @throws AccumuloSecurityException
      * @throws AccumuloException
      */
-    protected Iterator<Entry<Key,Value>> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
+    protected Iterator<Result> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
         
         String tableName = config.getShardTableName();
         
@@ -173,7 +182,11 @@ public class PushdownScheduler extends Scheduler {
     }
     
     protected Iterator<QueryData> getQueryDataIterator() {
-        return config.getQueries();
+        if (config.isCheckpointable()) {
+            return new SingleRangeQueryDataIterator(config.getQueries());
+        } else {
+            return config.getQueries();
+        }
     }
     
     /*

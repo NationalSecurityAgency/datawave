@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
+import datawave.microservice.query.configuration.Result;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -482,7 +483,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 uidSetting.addOption(CreateUidsIterator.PARSE_TLD_UIDS, Boolean.valueOf(config.getParseTldUids()).toString());
                 scanner.addScanIterator(uidSetting);
                 
-                itr = Iterators.transform(scanner.iterator(), new EntryParser(node, fieldName, literal, indexOnlyFields));
+                itr = Iterators.transform(Result.resultIterator(null, scanner.iterator()), new EntryParser(node, fieldName, literal, indexOnlyFields));
             }
             
             /*

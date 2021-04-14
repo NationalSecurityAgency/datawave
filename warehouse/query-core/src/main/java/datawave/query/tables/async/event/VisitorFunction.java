@@ -101,7 +101,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
         SessionOptions options = input.getOptions();
         
-        ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getLastKnownLocation());
+        ScannerChunk newSettings = new ScannerChunk(null, input.getRanges(), input.getContext(), input.getLastKnownLocation());
         
         SessionOptions newOptions = new SessionOptions(options);
         

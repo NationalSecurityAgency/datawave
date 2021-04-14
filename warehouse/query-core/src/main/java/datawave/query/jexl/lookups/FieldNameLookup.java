@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
+import datawave.microservice.query.configuration.Result;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
@@ -77,7 +78,7 @@ public class FieldNameLookup extends IndexLookup {
         
         final Text holder = new Text();
         
-        Iterator<Entry<Key,Value>> iter = Iterators.emptyIterator();
+        Iterator<Result> iter = Iterators.emptyIterator();
         
         Collection<ScannerSession> sessions = Lists.newArrayList();
         

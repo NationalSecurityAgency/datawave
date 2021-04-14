@@ -1,20 +1,31 @@
 package datawave.query.scheduler;
 
+import com.google.common.collect.Lists;
+import datawave.microservice.common.storage.QueryCheckpoint;
+import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.configuration.Result;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.logic.CheckpointableQueryLogic;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -45,7 +56,7 @@ public class SequentialScheduler extends Scheduler {
      * @see java.lang.Iterable#iterator()
      */
     @Override
-    public Iterator<Entry<Key,Value>> iterator() {
+    public Iterator<Result> iterator() {
         if (null == this.config) {
             throw new IllegalArgumentException("Null configuration provided");
         }
@@ -79,15 +90,17 @@ public class SequentialScheduler extends Scheduler {
         return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
     }
     
-    public class SequentialSchedulerIterator implements Iterator<Entry<Key,Value>> {
+    public class SequentialSchedulerIterator implements Iterator<Result> {
         
         protected final ShardQueryConfiguration config;
         protected final ScannerFactory scannerFactory;
         
         protected Iterator<QueryData> queries = null;
-        protected Entry<Key,Value> currentEntry = null;
+        protected QueryData currentQuery = null;
+        protected Result currentEntry = null;
+        protected Result lastEntry = null;
         protected BatchScanner currentBS = null;
-        protected Iterator<Entry<Key,Value>> currentIter = null;
+        protected Iterator<Result> currentIter = null;
         
         protected volatile boolean closed = false;
         
@@ -95,6 +108,9 @@ public class SequentialScheduler extends Scheduler {
             this.config = config;
             this.scannerFactory = scannerFactory;
             this.queries = config.getQueries();
+            if (this.config.isCheckpointable()) {
+                this.queries = new SingleRangeQueryDataIterator(this.queries);
+            }
         }
         
         /*
@@ -104,54 +120,47 @@ public class SequentialScheduler extends Scheduler {
          */
         @Override
         public boolean hasNext() {
-            if (closed) {
-                return false;
-            }
-            
-            if (null != this.currentEntry) {
-                return true;
-            } else if (null != this.currentBS && null != this.currentIter) {
-                if (this.currentIter.hasNext()) {
-                    this.currentEntry = this.currentIter.next();
-                    
-                    return hasNext();
-                } else {
-                    this.currentBS.close();
-                }
-            }
-            
-            QueryData newQueryData = null;
             while (true) {
+                if (closed) {
+                    return false;
+                }
+                
+                if (null != this.currentEntry) {
+                    return true;
+                } else if (null != this.currentBS && null != this.currentIter) {
+                    if (this.currentIter.hasNext()) {
+                        this.currentEntry = this.currentIter.next();
+                        
+                        return hasNext();
+                    } else {
+                        this.currentBS.close();
+                    }
+                }
+                
+                lastEntry = null;
+                currentQuery = null;
                 if (this.queries.hasNext()) {
                     // Keep track of how many QueryData's we make
                     QueryData qd = this.queries.next();
                     if (null != qd.getRanges())
                         rangesSeen += qd.getRanges().size();
                     count.incrementAndGet();
-                    if (null == newQueryData)
-                        newQueryData = new QueryData(qd);
-                    else {
-                        newQueryData.getRanges().addAll(qd.getRanges());
-                    }
-                    
-                } else
-                    break;
-            }
-            
-            if (null != newQueryData) {
-                
-                try {
-                    this.currentBS = createBatchScanner(this.config, this.scannerFactory, newQueryData);
-                } catch (TableNotFoundException e) {
-                    throw new RuntimeException(e);
+                    currentQuery = qd;
                 }
                 
-                this.currentIter = this.currentBS.iterator();
-                
-                return hasNext();
+                if (null != currentQuery) {
+                    
+                    try {
+                        this.currentBS = createBatchScanner(this.config, this.scannerFactory, currentQuery);
+                    } catch (TableNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                    
+                    this.currentIter = Result.resultIterator(currentQuery, this.currentBS.iterator());
+                } else {
+                    return false;
+                }
             }
-            
-            return false;
         }
         
         /*
@@ -160,18 +169,43 @@ public class SequentialScheduler extends Scheduler {
          * @see java.util.Iterator#next()
          */
         @Override
-        public Entry<Key,Value> next() {
+        public Result next() {
             if (closed) {
                 return null;
             }
             
             if (hasNext()) {
-                Entry<Key,Value> cur = this.currentEntry;
+                this.lastEntry = this.currentEntry;
                 this.currentEntry = null;
-                return cur;
+                return this.lastEntry;
             }
             
             return null;
+        }
+        
+        public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+            if (closed) {
+                return Collections.emptyList();
+            } else {
+                List<QueryCheckpoint> checkpoints = new ArrayList<>();
+                if (currentQuery != null) {
+                    if (lastEntry != null) {
+                        Range r = currentQuery.getRanges().iterator().next();
+                        r = new Range(lastEntry.getKey(), false, r.getEndKey(), r.isEndKeyInclusive());
+                        currentQuery.setRanges(Collections.singleton(r));
+                        lastEntry = null;
+                    }
+                    config.setQueries(null);
+                    config.setQueries(Collections.singleton(currentQuery).iterator());
+                    checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+                    currentQuery = null;
+                }
+                while (queries.hasNext()) {
+                    config.setQueries(Collections.singleton(queries.next()).iterator());
+                    checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+                }
+                return checkpoints;
+            }
         }
         
         /*
@@ -191,6 +225,21 @@ public class SequentialScheduler extends Scheduler {
             if (null != this.currentBS) {
                 this.currentBS.close();
             }
+        }
+    }
+    
+    @Override
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        if (!config.isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot checkpoint a scheduler which is not checkpointable");
+        }
+        if (this.iterator != null) {
+            return this.iterator.checkpoint(queryKey);
+        } else {
+            if (null == this.config) {
+                throw new IllegalArgumentException("Null configuration provided");
+            }
+            return Lists.newArrayList(ShardQueryLogic.checkpoint(queryKey, this.config));
         }
     }
     

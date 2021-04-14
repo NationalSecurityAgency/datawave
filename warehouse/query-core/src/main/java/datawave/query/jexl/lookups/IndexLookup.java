@@ -11,6 +11,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import datawave.microservice.query.configuration.Result;
 import datawave.query.config.ShardQueryConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -45,7 +46,7 @@ public abstract class IndexLookup {
     /**
      * 
      */
-    protected boolean timedScan(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, final ShardQueryConfiguration config,
+    protected boolean timedScan(final Iterator<Result> iter, final IndexLookupMap fieldsToValues, final ShardQueryConfiguration config,
                     final boolean unfieldedLookup, final Set<String> fields, final boolean isReverse, final long timeout, final Logger log) {
         
         long maxLookup = timeout;
@@ -112,7 +113,7 @@ public abstract class IndexLookup {
         return result;
     }
     
-    protected Callable<Boolean> createTimedCallable(Iterator<Entry<Key,Value>> iter, IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
+    protected Callable<Boolean> createTimedCallable(Iterator<Result> iter, IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
                     boolean unfieldedLookup, Set<String> fields, boolean isReverse, long timeout) {
         throw new UnsupportedOperationException("This operation isn't supported by this index lookup");
     }

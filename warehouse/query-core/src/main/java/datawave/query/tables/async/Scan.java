@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import datawave.microservice.query.configuration.Result;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.impl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
@@ -51,7 +52,7 @@ public class Scan implements Callable<Scan> {
     
     private ResourceQueue delegatorReference;
     
-    protected BlockingQueue<Entry<Key,Value>> results;
+    protected BlockingQueue<Result> results;
     
     private String localTableName;
     
@@ -74,7 +75,7 @@ public class Scan implements Callable<Scan> {
     private AccumuloResource delegatedResource = null;
     
     public Scan(String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, ResourceQueue delegatorReference,
-                    Class<? extends AccumuloResource> delegatedResourceInitializer, BlockingQueue<Entry<Key,Value>> results, ExecutorService callingService) {
+                    Class<? extends AccumuloResource> delegatedResourceInitializer, BlockingQueue<Result> results, ExecutorService callingService) {
         myScan = chunk;
         if (log.isTraceEnabled())
             log.trace("Size of ranges:  " + myScan.getRanges().size());
@@ -246,7 +247,7 @@ public class Scan implements Callable<Scan> {
                 delegatedResource = ResourceFactory.initializeResource(initializer, delegatedResource, localTableName, localAuths, currentRange).setOptions(
                                 myScan.getOptions());
                 
-                Iterator<Entry<Key,Value>> iter = delegatedResource.iterator();
+                Iterator<Result> iter = Result.resultIterator(myScan.getContext(), delegatedResource.iterator());
                 
                 if (null != myStats)
                     myStats.getTimer(TIMERS.SCANNER_START).suspend();
@@ -259,7 +260,7 @@ public class Scan implements Callable<Scan> {
                     lastSeenKey = null;
                 }
                 
-                Entry<Key,Value> myEntry = null;
+                Result myEntry = null;
                 if (null != myStats)
                     myStats.getTimer(TIMERS.SCANNER_ITERATE).resume();
                 while (iter.hasNext()) {

@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
+import datawave.microservice.query.configuration.Result;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
@@ -70,7 +71,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         Multimap<String,Range> forwardMap = ArrayListMultimap.create(), reverseMap = ArrayListMultimap.create();
         
         // Loop over all the patterns, classifying them as forward or reverse index satisfiable
-        Iterator<Entry<Key,Value>> iter = Iterators.emptyIterator();
+        Iterator<Result> iter = Iterators.emptyIterator();
         
         Collection<ScannerSession> sessions = Lists.newArrayList();
         
@@ -206,7 +207,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
     }
     
     @Override
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
+    protected Callable<Boolean> createTimedCallable(final Iterator<Result> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
                     final boolean unfieldedLookup, final Set<String> fields, final boolean isReverse, long timeout) {
         final Set<String> myDatatypeFilter = config.getDatatypeFilter();
         return () -> {

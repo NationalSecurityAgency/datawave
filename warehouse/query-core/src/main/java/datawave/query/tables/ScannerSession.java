@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import datawave.microservice.query.configuration.Result;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.StatsListener;
@@ -40,7 +41,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  * result queue is polled in the actual next() and hasNext() calls. Note that the uncaughtExceptionHandler from the Query is used to pass exceptions up which
  * will also fail the overall query if something happens. If this is not desired then a local handler should be set.
  */
-public class ScannerSession extends AbstractExecutionThreadService implements Iterator<Entry<Key,Value>> {
+public class ScannerSession extends AbstractExecutionThreadService implements Iterator<Result> {
     
     /**
      * last seen key, used for moving across the sliding window of ranges.
@@ -55,12 +56,12 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     /**
      * Result queue, providing us objects
      */
-    protected ArrayBlockingQueue<Entry<Key,Value>> resultQueue;
+    protected ArrayBlockingQueue<Result> resultQueue;
     
     /**
      * Current entry to return. this will be popped from the result queue.
      */
-    protected Entry<Key,Value> currentEntry;
+    protected Result currentEntry;
     
     /**
      * Delegates scanners to us, blocking if none are available or used by other sources.
@@ -364,9 +365,9 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
      */
     @Override
-    public Entry<Key,Value> next() {
+    public Result next() {
         try {
-            Entry<Key,Value> retVal = currentEntry;
+            Result retVal = currentEntry;
             currentEntry = null;
             return retVal;
         } finally {
@@ -453,7 +454,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource, tableName, auths, currentRange).setOptions(
                             options);
             
-            Iterator<Entry<Key,Value>> iter = delegatedResource.iterator();
+            Iterator<Result> iter = Result.resultIterator(null, delegatedResource.iterator());
             
             // do not continue if we've reached the end of the corpus
             
@@ -517,10 +518,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         }
     }
     
-    protected int scannerInvariant(final Iterator<Entry<Key,Value>> iter) {
+    protected int scannerInvariant(final Iterator<Result> iter) {
         int retrievalCount = 0;
         
-        Entry<Key,Value> myEntry = null;
+        Result myEntry = null;
         Key highest = null;
         while (iter.hasNext()) {
             myEntry = iter.next();

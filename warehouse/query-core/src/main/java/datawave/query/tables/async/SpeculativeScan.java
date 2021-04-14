@@ -15,6 +15,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.configuration.Result;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -51,7 +53,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
     
     protected ExecutorService service = null;
     
-    protected LinkedBlockingDeque<Entry<Key,Value>> myResultQueue;
+    protected LinkedBlockingDeque<Result> myResultQueue;
     
     protected ReentrantLock writeControl = new ReentrantLock();
     
@@ -82,7 +84,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
     }
     
     public SpeculativeScan(String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, ResourceQueue delegatorReference,
-                    Class<? extends AccumuloResource> delegatedResourceInitializer, ArrayBlockingQueue<Entry<Key,Value>> results, ExecutorService callingService) {
+                    Class<? extends AccumuloResource> delegatedResourceInitializer, ArrayBlockingQueue<Result> results, ExecutorService callingService) {
         super(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, results, callingService);
         scans = Lists.newArrayList();
         scanFutures = Lists.newArrayList();
@@ -228,7 +230,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
         
     }
     
-    public LinkedBlockingDeque<Entry<Key,Value>> getQueue() {
+    public LinkedBlockingDeque<Result> getQueue() {
         return myResultQueue;
     }
     

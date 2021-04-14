@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import datawave.microservice.query.configuration.Result;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -31,7 +32,7 @@ import datawave.query.util.Tuples;
  *
  * A delayed predicate node is build if the IndexInfo does not have any document ids or if the column qualifier indicates a day range.
  */
-public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,IndexInfo>> {
+public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
     protected ASTEQNode currNode;
     
     protected String fieldName;
@@ -64,7 +65,7 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
     }
     
     @Override
-    public Tuple2<String,IndexInfo> apply(Entry<Key,Value> entry) {
+    public Tuple2<String,IndexInfo> apply(Result entry) {
         IndexInfo info = new IndexInfo();
         try {
             info.readFields(new DataInputStream(new ByteArrayInputStream(entry.getValue().get())));

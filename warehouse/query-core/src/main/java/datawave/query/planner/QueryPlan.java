@@ -191,7 +191,7 @@ public class QueryPlan {
         addRanges(ranges);
     }
     
-    public Iterable<Range> getRanges() {
+    public Collection<Range> getRanges() {
         return ranges;
     }
     

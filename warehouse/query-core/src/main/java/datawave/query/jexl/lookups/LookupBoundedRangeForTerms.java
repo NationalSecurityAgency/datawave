@@ -7,6 +7,7 @@ import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
 import datawave.data.type.DiscreteIndexType;
+import datawave.microservice.query.configuration.Result;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -159,7 +160,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
             }
             
             try {
-                timedScan(bs.iterator(), fieldToUniqueTerms, config, false, fields, false, maxLookup, null);
+                timedScan(Result.resultIterator(null, bs.iterator()), fieldToUniqueTerms, config, false, fields, false, maxLookup, null);
             } finally {
                 scannerFactory.close(bs);
             }
@@ -187,7 +188,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
     }
     
     @Override
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
+    protected Callable<Boolean> createTimedCallable(final Iterator<Result> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
                     final boolean unfieldedLookup, final Set<String> fields, boolean isReverse, long timeout) {
         final Set<String> myDatatypeFilter = datatypeFilter;
         return () -> {

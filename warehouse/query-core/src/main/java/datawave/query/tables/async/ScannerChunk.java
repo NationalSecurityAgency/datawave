@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.configuration.Result;
+import datawave.microservice.query.configuration.ResultContext;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -19,6 +22,7 @@ import datawave.query.tables.SessionOptions;
  */
 public class ScannerChunk {
     
+    protected ResultContext context;
     protected SessionOptions options;
     protected ConcurrentLinkedQueue<Range> ranges;
     protected Range lastRange;
@@ -31,13 +35,15 @@ public class ScannerChunk {
      * 
      * @param options
      * @param ranges
+     * @param context
      */
-    public ScannerChunk(SessionOptions options, Collection<Range> ranges) {
-        this(options, ranges, "localhost");
+    public ScannerChunk(SessionOptions options, Collection<Range> ranges, ResultContext context) {
+        this(options, ranges, context, "localhost");
     }
     
-    public ScannerChunk(SessionOptions options, Collection<Range> ranges, String server) {
+    public ScannerChunk(SessionOptions options, Collection<Range> ranges, ResultContext context, String server) {
         Preconditions.checkNotNull(ranges);
+        this.context = context;
         this.options = options;
         this.ranges = new ConcurrentLinkedQueue<>();
         this.lastKnownLocation = server;
@@ -90,6 +96,10 @@ public class ScannerChunk {
     public int hashCode() {
         return hashCode;
         
+    }
+    
+    public ResultContext getContext() {
+        return context;
     }
     
     public Range getLastRange() {

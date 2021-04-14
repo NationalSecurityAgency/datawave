@@ -27,6 +27,9 @@ import java.util.Set;
  *
  */
 public abstract class GenericQueryConfiguration {
+    // is this execution expected to be checkpointable (changes how we allocate ranges to scanners)
+    private boolean checkpointable = false;
+    
     private Connector connector = null;
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
     
@@ -96,6 +99,14 @@ public abstract class GenericQueryConfiguration {
      */
     public void setQueries(Iterator<QueryData> queries) {
         this.queries = queries;
+    }
+    
+    public boolean isCheckpointable() {
+        return checkpointable;
+    }
+    
+    public void setCheckpointable(boolean checkpointable) {
+        this.checkpointable = checkpointable;
     }
     
     @JsonIgnore
