@@ -205,11 +205,12 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         
         int dateComparison;
         
-        /*READ THIS COMMENT (the code formatter always destroys my formatting of the comment
-         * Here are ways the Dates represented in the indexedDates.bitset may overlap query range for a field. Case #1 Indexed before query start date only -
-         * whole query range is a hole Case #2: Indexed partially into the query range - beginning after query start date Case #3: Indexed partially inside of
-         * query range - extending past query end date Case #4 Indexed completely after the query range - whole query range is a hole Case #5 Index completely
-         * covers the query range - no holes Case #6 No field indexed dates are in the metadata so the whole range is a hole.
+        /*
+         * READ THIS COMMENT (the code formatter always destroys my formatting of the comment Here are ways the Dates represented in the indexedDates.bitset may
+         * overlap query range for a field. Case #1 Indexed before query start date only - whole query range is a hole Case #2: Indexed partially into the query
+         * range - beginning after query start date Case #3: Indexed partially inside of query range - extending past query end date Case #4 Indexed completely
+         * after the query range - whole query range is a hole Case #5 Index completely covers the query range - no holes Case #6 No field indexed dates are in
+         * the metadata so the whole range is a hole.
          */
         
         for (String field : fieldToDatatypeMap.keySet()) {
@@ -266,7 +267,6 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                             // Line below should be correct but breaks the build
                             // TODO Figure out what the first index hole is without breaking any tests.
                             // config.getFieldIndexHoles().add(new FieldIndexHole(field, queryStartDate, indexedDates.getStartDay().getYyyymmdd()));
-                            // TODO Use the bitset object to create the remaining field index holes
                             
                             boolean startOfHole = false;
                             YearMonthDay addHoleStart = null;
@@ -277,6 +277,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                                     if (startOfHole) {
                                         YearMonthDay addHoleEnd = YearMonthDay.addDays(queryStartDate, bitsetIndex - 1);
                                         config.getFieldIndexHoles().add(new FieldIndexHole(field, addHoleStart.getYyyymmdd(), addHoleEnd.getYyyymmdd()));
+                                        startOfHole = false;
                                     }
                                     continue;
                                 } else {
@@ -287,31 +288,42 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                             }
                             
                         }
-                    } else if (dateComparison > 0)// Query start date happened after the first date that was indexed
+                    } else if (dateComparison >= 0)// Query start date happened after the first date that was indexed
                     {
-                        diffBetweenQueryStartAndIndexStart = YearMonthDay.getNumOfDaysBetween(indexedDates.getStartDay(), new YearMonthDay(queryStartDate));
+                        if (dateComparison == 0)
+                            diffBetweenQueryStartAndIndexStart = 0;
+                        else
+                            diffBetweenQueryStartAndIndexStart = YearMonthDay.getNumOfDaysBetween(indexedDates.getStartDay(), new YearMonthDay(queryStartDate));
+                        
                         if (diffBetweenQueryStartAndIndexStart > Integer.MAX_VALUE) {
                             log.error("Date span is too long create bitset for indexes - this should not happen");
                             log.error("Will not attempt to create FieldIndexHoles for field: " + field);
                             continue;
                         } else {
                             bitSetStartIndex = (int) diffBetweenQueryStartAndIndexStart;
+                            boolean startOfHole = false;
+                            YearMonthDay addHoleStart = null;
+                            
+                            for (int bitsetIndex = bitSetStartIndex; bitsetIndex < indexedDates.getIndexedDatesBitSet().length(); bitsetIndex++) {
+                                if (bitsetIndex + bitSetStartIndex > numDaysInQuery)
+                                    break; // loop has incremented to a date out of query range
+                                if (indexedDates.getIndexedDatesBitSet().get(bitsetIndex)) {
+                                    if (startOfHole) {
+                                        YearMonthDay addHoleEnd = YearMonthDay.addDays(queryStartDate, bitsetIndex - 1);
+                                        config.getFieldIndexHoles().add(new FieldIndexHole(field, addHoleStart.getYyyymmdd(), addHoleEnd.getYyyymmdd()));
+                                        startOfHole = false;
+                                    }
+                                    continue;
+                                } else {
+                                    startOfHole = true;
+                                    addHoleStart = YearMonthDay.addDays(queryStartDate, bitsetIndex);
+                                }
+                            }
                             
                         }
                         
-                    } else {
-                        bitSetStartIndex = 0;
                     }
                     
-                    /*
-                     * for (int dayIndex = 0; dayIndex < numDaysRepresentedInBitset; dayIndex++) { if
-                     * (nextIndexedDatesValue.getIndexedDatesBitSet().get(dayIndex)) { accumulatedDatesBitset.set(dayIndex + aggregatedBitSetIndex); }
-                     * nextDateToContinueBitset = YearMonthDay.nextDay(nextDateToContinueBitset.getYyyymmdd()); aggregatedBitSetIndex++; }
-                     */
-                    
-                    for (int bitSetIndex = bitSetStartIndex; bitSetIndex < indexedDates.getIndexedDatesBitSet().length(); bitSetIndex++) {
-                        // Create the FieldIndexHoles and put them in the config.
-                    }
                 } else {
                     // CASE #6 from above. Hole range is a hole for this field
                     FieldIndexHole queryRangeIsAHole = new FieldIndexHole(field, queryStartDate, queryEndDate);
