@@ -19,6 +19,10 @@
             <artifactId>java-statsd-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-balancers</artifactId>
             <version>${project.version}</version>

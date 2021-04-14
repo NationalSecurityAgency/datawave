@@ -94,8 +94,10 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.io.Text;
 import org.apache.htrace.Trace;
 import org.apache.htrace.TraceScope;
@@ -103,6 +105,7 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import javax.annotation.Nullable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
@@ -277,27 +280,55 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         pruneIvaratorCacheDirs();
     }
     
-    // this method will prune any ivarator cache directories that are not available on this node
-    private void pruneIvaratorCacheDirs() throws IOException {
-        ivaratorCacheDirConfigs.removeIf(this::pruneIvaratorCacheDir);
-    }
-    
-    private boolean pruneIvaratorCacheDir(IvaratorCacheDirConfig config) {
-        boolean fsExists = false;
-        
-        // first, make sure the cache configuration is valid
-        if (config.isValid()) {
-            Path basePath = new Path(config.getBasePathURI());
-            
-            try {
-                FileSystem fs = this.getFileSystemCache().getFileSystem(basePath.toUri());
-                fsExists = fs.mkdirs(basePath) || fs.exists(basePath);
-            } catch (Exception e) {
-                log.debug("Ivarator Cache Dir does not exist: " + basePath);
+    // this method will prune any ivarator cache directories that do not have a valid configuration.
+    private void pruneIvaratorCacheDirs() {
+        IvaratorCacheDirConfig validConfig = null;
+        for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
+            if (hasValidBasePath(config)) {
+                validConfig = config;
+                break;
             }
         }
-        
-        return !fsExists;
+        ivaratorCacheDirConfigs.clear();
+        if (validConfig != null) {
+            ivaratorCacheDirConfigs.add(validConfig);
+        }
+    }
+    
+    private boolean hasValidBasePath(IvaratorCacheDirConfig config) {
+        if (config.isValid()) {
+            try {
+                Path basePath = new Path(config.getBasePathURI());
+                FileSystem fileSystem = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                return isWritablePath(basePath, fileSystem);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    private boolean isWritablePath(Path path, FileSystem fileSystem) {
+        try {
+            FileStatus fileStatus = fileSystem.getFileStatus(path);
+            // If the path exists, verify that it's a directory, not a file.
+            if (fileStatus.isDirectory()) {
+                // Verify that we have write access to the directory.
+                fileSystem.access(path, FsAction.WRITE);
+                return true;
+            }
+            return false;
+        } catch (FileNotFoundException e) {
+            // If the path does not exist, check if the path's parent is a writable directory.
+            Path parent = path.getParent();
+            if (parent != null) {
+                return isWritablePath(parent, fileSystem);
+            }
+            // If the parent is null, we're at the root directory and we do not have write access.
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     @Override
@@ -541,7 +572,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     /**
      * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
      * interrupted because the client is no longer listening.
-     * 
+     *
      * @param e
      */
     private void handleException(Exception e) throws IOException {
@@ -600,7 +631,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * Build the document iterator
-     * 
+     *
      * @param documentRange
      * @param seekRange
      * @param columnFamilies
@@ -723,7 +754,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * There was a request to create a serial pipeline. The factory may not choose to honor this.
-     * 
+     *
      * @return
      */
     private boolean getSerialPipelineRequest() {
@@ -732,7 +763,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * A routine which should always be used to create deep copies of the source. This ensures that we are thread safe when doing these copies.
-     * 
+     *
      * @return
      */
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
@@ -1167,7 +1198,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * If we are performing evaluation (have a query) and are not performing a full-table scan, then we want to instantiate the boolean logic iterators
-     * 
+     *
      * @return Whether or not the boolean logic iterators should be used
      */
     public boolean instantiateBooleanLogic() {
@@ -1226,7 +1257,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * Determines if a range is document specific according to the following criteria
-     * 
+     *
      * <pre>
      *     1. Cannot have a null start or end key
      *     2. Cannot span multiple rows
@@ -1365,7 +1396,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * Determine whether the query can be completely satisfied by the field index
-     * 
+     *
      * @return true if it can be completely satisfied.
      */
     protected boolean isFieldIndexSatisfyingQuery() {

@@ -31,10 +31,15 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -279,14 +284,79 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         if (config.canHandleExceededValueThreshold()) {
             URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
             
+            Map<String,Integer> pushdownCapacity = new HashMap<>();
+            ASTJexlScript script;
             if (hdfsQueryCacheUri != null) {
                 FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
-                // Find large lists of values against the same field and push down into
-                // an Ivarator
-                return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
+                // Find large lists of values against the same field and push down into an Ivarator
+                script = PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString(), pushdownCapacity);
             } else {
-                return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, null, null);
+                script = PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, null, null, pushdownCapacity);
             }
+            
+            // check term limits and use the capacity map to reduce further if necessary
+            int termCount = TermCountingVisitor.countTerms(script);
+            if (termCount > config.getMaxTermThreshold()) {
+                // check if the capacity is available to get under the term limit
+                // determine if its possible to reduce enough to meet the threshold
+                int capacitySum = 0;
+                for (Integer capacity : pushdownCapacity.values()) {
+                    capacitySum += capacity;
+                }
+                
+                if (termCount - capacitySum <= config.getMaxTermThreshold()) {
+                    // preserve the original config and set minimum thresholds for creating Value and Range ivarators
+                    int originalMaxOrExpansionThreshold = config.getMaxOrExpansionThreshold();
+                    int originalMaxOrRangeThreshold = config.getMaxOrRangeThreshold();
+                    
+                    config.setMaxOrExpansionThreshold(2);
+                    config.setMaxOrRangeThreshold(2);
+                    
+                    try {
+                        // invert pushdownCapacity to get the largest payoffs first
+                        SortedMap<Integer,List<String>> sortedMap = new TreeMap<>();
+                        for (String fieldName : pushdownCapacity.keySet()) {
+                            Integer reduction = pushdownCapacity.get(fieldName);
+                            List<String> fields = sortedMap.computeIfAbsent(reduction, k -> new ArrayList<>());
+                            fields.add(fieldName);
+                        }
+                        
+                        // sort from largest to smallest reductions and make reductions until under the threshold
+                        Set<String> fieldsToReduce = new HashSet<>();
+                        int toReduce = termCount - config.getMaxTermThreshold();
+                        while (toReduce > 0) {
+                            // get the highest value field out of the map
+                            Integer reduction = sortedMap.lastKey();
+                            List<String> fields = sortedMap.get(reduction);
+                            
+                            // take the first field
+                            String field = fields.remove(0);
+                            fieldsToReduce.add(field);
+                            toReduce -= reduction;
+                            
+                            // if there are no more reductions of this size remove the reduction from pushdown capacity
+                            if (fields.size() == 0) {
+                                sortedMap.remove(reduction);
+                            }
+                        }
+                        
+                        // execute the reduction
+                        if (hdfsQueryCacheUri != null) {
+                            FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
+                            // Find large lists of values against the same field and push down into an Ivarator
+                            script = PushdownLargeFieldedListsVisitor.pushdown(config, script, fs, hdfsQueryCacheUri.toString(), null, fieldsToReduce);
+                        } else {
+                            script = PushdownLargeFieldedListsVisitor.pushdown(config, script, null, null, null, fieldsToReduce);
+                        }
+                    } finally {
+                        // reset config thresholds
+                        config.setMaxOrExpansionThreshold(originalMaxOrExpansionThreshold);
+                        config.setMaxOrRangeThreshold(originalMaxOrRangeThreshold);
+                    }
+                }
+            }
+            
+            return script;
         } else {
             return queryTree;
         }

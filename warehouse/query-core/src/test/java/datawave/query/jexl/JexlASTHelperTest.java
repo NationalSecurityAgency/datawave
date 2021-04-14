@@ -2,6 +2,7 @@ package datawave.query.jexl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
