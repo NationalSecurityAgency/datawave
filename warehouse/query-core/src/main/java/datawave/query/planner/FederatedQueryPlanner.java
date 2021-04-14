@@ -9,6 +9,7 @@ import datawave.query.config.ValueIndexHole;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.NoResultsException;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
@@ -266,6 +267,24 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                             // TODO Figure out what the first index hole is without breaking any tests.
                             // config.getFieldIndexHoles().add(new FieldIndexHole(field, queryStartDate, indexedDates.getStartDay().getYyyymmdd()));
                             // TODO Use the bitset object to create the remaining field index holes
+                            
+                            boolean startOfHole = false;
+                            YearMonthDay addHoleStart = null;
+                            for (int bitsetIndex = bitSetStartIndex; bitsetIndex < indexedDates.getIndexedDatesBitSet().length(); bitsetIndex++) {
+                                if (bitsetIndex + bitSetStartIndex > numDaysInQuery)
+                                    break; // loop has incremented to a date out of query range
+                                if (indexedDates.getIndexedDatesBitSet().get(bitsetIndex)) {
+                                    if (startOfHole) {
+                                        YearMonthDay addHoleEnd = YearMonthDay.addDays(queryStartDate, bitsetIndex - 1);
+                                        config.getFieldIndexHoles().add(new FieldIndexHole(field, addHoleStart.getYyyymmdd(), addHoleEnd.getYyyymmdd()));
+                                    }
+                                    continue;
+                                } else {
+                                    startOfHole = true;
+                                    addHoleStart = YearMonthDay.addDays(queryStartDate, bitsetIndex);
+                                }
+                                
+                            }
                             
                         }
                     } else if (dateComparison > 0)// Query start date happened after the first date that was indexed
