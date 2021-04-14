@@ -168,11 +168,8 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         }
         
         for (FieldIndexHole fieldIndexHole : configuration.getFieldIndexHoles()) {
-            // TODO remove comparison below. This may be wrong.
-            if (fieldIndexHole.getStartDate().compareTo(fieldIndexHole.getEndDate()) == 0) {
-                addDatesToSet(bounds, queryDates, fieldIndexHole.getStartDate());
-                addDatesToSet(bounds, queryDates, fieldIndexHole.getEndDate());
-            }
+            addDatesToSet(bounds, queryDates, fieldIndexHole.getStartDate());
+            addDatesToSet(bounds, queryDates, fieldIndexHole.getEndDate());
         }
         
         return queryDates;
