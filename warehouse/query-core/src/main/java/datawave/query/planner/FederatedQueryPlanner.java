@@ -221,14 +221,14 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                     // then the field was not indexed within the query range and the entire
                     // query range is a "Field hole"
                     if (queryEndDate.compareTo(indexedDates.getStartDay().getYyyymmdd()) < 0) {
-                        // CASE #4 in the above diagram has occurred.
+                        // CASE #4 in the above diagram has occurred. (indexed completely after the query range - whole query range is a hole)
                         FieldIndexHole queryRangeIsAHole = new FieldIndexHole(field, queryStartDate, queryEndDate);
                         config.getFieldIndexHoles().add(queryRangeIsAHole);
                         // Get the next field to calculate field index holes.
                         continue;
                     }
                     
-                    // CASE #1 from above
+                    // CASE #1 from above - (indexed before query start date only whole query range is a hole )
                     if (queryStartDate.compareTo(indexedDates.getStartDay().getYyyymmdd()) > 0) {
                         long numDaysIndexedBeforeQuery = YearMonthDay.getNumOfDaysBetween(indexedDates.getStartDay(), new YearMonthDay(queryStartDate));
                         if (numDaysIndexedBeforeQuery >= indexedDates.getIndexedDatesBitSet().length()) {
@@ -239,7 +239,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                         }
                     }
                     
-                    // CASE #5
+                    // CASE #5 Case #5 (index completely covers the query range - no holes)
                     if (indexedDates.getStartDay().getYyyymmdd().compareTo(queryStartDate) < 0) {
                         long numDaysIndexedBeforeQuery = YearMonthDay.getNumOfDaysBetween(indexedDates.getStartDay(), new YearMonthDay(queryStartDate));
                         if ((numDaysInQuery + numDaysIndexedBeforeQuery) < numDaysIndexedBeforeQuery + indexedDates.getIndexedDatesBitSet().length())
@@ -250,7 +250,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                     // If the field does have dates that are indexed in the query
                     dateComparison = queryStartDate.compareTo(indexedDates.getStartDay().getYyyymmdd());
                     
-                    if (dateComparison < 0) { // Query Start date is before the indexedDates.getStartDay
+                    if (dateComparison < 0) { // Query Start date is before the first indexed date (indexedDates.getStartDay)
                         // Create a hole from the start date to the first date the field was indexed
                         diffBetweenQueryStartAndIndexStart = YearMonthDay.getNumOfDaysBetween(new YearMonthDay(queryStartDate), indexedDates.getStartDay());
                         if (diffBetweenQueryStartAndIndexStart > Integer.MAX_VALUE) {
@@ -260,7 +260,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                         } else { // There is a series of days where the field is not indexed.
                         
                             bitSetStartIndex = (int) diffBetweenQueryStartAndIndexStart;
-                            // CASE #2 from long comment above.
+                            // CASE #2 - indexed partially into the query range - beginning after query start date)
                             // 1. Create an FieldIndexHole from query start date to the day before indexedDates.getStartDay()
                             // Line below should be correct but breaks the build
                             // TODO Figure out what the first index hole is without breaking any tests.
@@ -268,7 +268,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                             // TODO Use the bitset object to create the remaining field index holes
                             
                         }
-                    } else if (dateComparison > 0)//
+                    } else if (dateComparison > 0)// Query start date happened after the first date that was indexed
                     {
                         diffBetweenQueryStartAndIndexStart = YearMonthDay.getNumOfDaysBetween(indexedDates.getStartDay(), new YearMonthDay(queryStartDate));
                         if (diffBetweenQueryStartAndIndexStart > Integer.MAX_VALUE) {
