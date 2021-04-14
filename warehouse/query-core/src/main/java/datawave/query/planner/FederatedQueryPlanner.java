@@ -83,8 +83,6 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             }
             
             List<FieldIndexHole> fieldIndexHoles = ((ShardQueryConfiguration) config).getFieldIndexHoles();
-            // if (log.isDebugEnabled() && log.getLevel().equals(Level.DEBUG))
-            checkForErrorsInFieldIndexHoles((ShardQueryConfiguration) config);
             List<ValueIndexHole> valueIndexHoles = ((ShardQueryConfiguration) config).getValueIndexHoles();
             holeDates = generateStartAndEndDates((ShardQueryConfiguration) config);
             if ((valueIndexHoles == null && fieldIndexHoles == null) || (valueIndexHoles.size() == 0 && fieldIndexHoles.size() == 0) || holeDates.size() == 0) {
@@ -123,24 +121,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         return returnQueryData;
     }
     
-    /*
-     * This function removes improperly calculate field index holes and will be removed as soon as all debugging in ticket #825 is complete. I need to see that
-     * the test don't pass because of bad index holes.
-     */
-    
-    private void checkForErrorsInFieldIndexHoles(ShardQueryConfiguration config) {
-        ArrayList<FieldIndexHole> removalList = new ArrayList<>();
-        for (FieldIndexHole fieldIndexHole : config.getFieldIndexHoles()) {
-            if (fieldIndexHole.getStartDate().compareTo(fieldIndexHole.getEndDate()) > 0) {
-                log.error("There was a problem calculating the FieldIndexHole " + fieldIndexHole);
-                log.error("End date in feild Index hole can't come before start date.");
-                removalList.add(fieldIndexHole);
-                log.info("Invalid field index hole removed " + fieldIndexHole);
-            }
-        }
-        config.getFieldIndexHoles().removeAll(removalList);
-    }
-    
+     
     private CloseableIterable<QueryData> getQueryData(ShardQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory,
                     Date startDate, Date endDate) throws DatawaveQueryException {
         log.debug("getQueryData in the FederatedQueryPlanner is called ");
