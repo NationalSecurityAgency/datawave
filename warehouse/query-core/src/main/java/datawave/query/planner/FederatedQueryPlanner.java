@@ -205,11 +205,11 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         
         int dateComparison;
         
-        /*
-         * Here are ways the Dates represented in the indexedDates.bitset may overlap query range for a field. Case #1 (indexed before query start date only -
-         * whole query range is a hole ) Case #2:(indexed partially into the query range - beginning after query start date) Case #3:(indexed partially inside
-         * of query range - extending past query end date) Case #4 (indexed completely after the query range - whole query range is a hole) Case #5 (index
-         * completely covers the query range - no holes) Case #6 no field indexed dates are in the metadata so the whole range is a hole.
+        /*READ THIS COMMENT (the code formatter always destroys my formatting of the comment
+         * Here are ways the Dates represented in the indexedDates.bitset may overlap query range for a field. Case #1 Indexed before query start date only -
+         * whole query range is a hole Case #2: Indexed partially into the query range - beginning after query start date Case #3: Indexed partially inside of
+         * query range - extending past query end date Case #4 Indexed completely after the query range - whole query range is a hole Case #5 Index completely
+         * covers the query range - no holes Case #6 No field indexed dates are in the metadata so the whole range is a hole.
          */
         
         for (String field : fieldToDatatypeMap.keySet()) {
